@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
 import { Icon } from "../bulma_derived_components";
-import { User, Schedule as ScheduleType, FriendshipState } from "../../types";
+import { User, Schedule, Color as FriendshipState, ScheduleType, Color } from "../../types";
 import { nextAvailable } from "../../reducers/schedule";
 
 const ButtonContainer = styled.div<{ isActive: boolean; isPrimary?: boolean }>`
@@ -9,12 +9,13 @@ const ButtonContainer = styled.div<{ isActive: boolean; isPrimary?: boolean }>`
     position: relative;
     border-radius: 0 !important;
     cursor: pointer;
-    padding: 0.5rem 0.5rem 0.5rem 1rem;
+    padding: 0.5rem 0.5rem 0.5rem 0.75rem;
     transition: background 0.1s ease;
     display: flex;
     flex-direction: row;
     justify-content: space-between;
     background: ${(props) => (props.isActive ? "#F5F6F8" : "#FFF")};
+    align-items: center;
 
     &:hover {
         background: #ebedf1;
@@ -40,18 +41,42 @@ const ButtonContainer = styled.div<{ isActive: boolean; isPrimary?: boolean }>`
 
     .option-icon i.primary:hover {
         color: ${(props) =>
-            props.isPrimary ? "#295FCE" : "#7E7E7E"}; !important
+            props.isPrimary ? "#295FCE" : "#7E7E7E"}; !important;
+    }
+
+    .initial-icon {
+        color: white; !important;
+        font-size: 1vw;
     }
 `;
 
 const ButtonLabelContainer = styled.div<{ width: number }>`
     display: flex;
-    flex-grow: 1;
+    flex-grow: 0.5;
     font-weight: 400;
+    justify-content: start;
     max-width: ${(props) => props.width}%;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+`;
+
+const InitialIcon = styled.div<{ color: Color }>`
+    color: white;
+    background-color: ${(props) => props.color};
+    opacity: 65%;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-weight: 600;
+    font-size: 1vw;
+
+    display: inline-flex;
+    height: 1.75vw;
+    max-width: 1.75vw;
+    min-width: 1.75vw;
 `;
 
 interface FriendButtonProps {
@@ -59,6 +84,7 @@ interface FriendButtonProps {
     isActive: boolean;
     display: () => void;
     removeFriend: () => void;
+    color: Color
 }
 
 const FriendButton = ({
@@ -66,9 +92,13 @@ const FriendButton = ({
     isActive,
     display,
     removeFriend,
+    color
 }: FriendButtonProps) => (
     <ButtonContainer isActive={isActive} onClick={display}>
-        <ButtonLabelContainer width={75}>{friendName}</ButtonLabelContainer>
+        <InitialIcon color={color}>
+            <div className="initial-icon">{friendName.split(" ")[0][0]}</div>
+        </InitialIcon>
+        <ButtonLabelContainer width={65}>{friendName}</ButtonLabelContainer>
         <Icon
             onClick={(e) => {
                 removeFriend();
@@ -382,6 +412,50 @@ const ScheduleSelectorDropdown = ({
     let hasFriends = friendshipState.acceptedFriends.length != 0;
     let numRequests = friendshipState.requestsReceived.length;
 
+    // Used for box coloring, from StackOverflow:
+    // https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript
+    const hashString = (s: string) => {
+        let hash = 0;
+        if (!s || s.length === 0) return hash;
+        for (let i = 0; i < s.length; i += 1) {
+            const chr = s.charCodeAt(i);
+            hash = (hash << 5) - hash + chr;
+            hash |= 0; // Convert to 32bit integer
+        }
+        return hash;
+    };
+
+    // step 2 in the CIS121 review: hashing with linear probing.
+    // hash every section to a color, but if that color is taken, try the next color in the
+    // colors array. Only start reusing colors when all the colors are used.
+    const getColor = (() => {
+        const colors = [
+            Color.BLUE,
+            Color.RED,
+            Color.AQUA,
+            Color.ORANGE,
+            Color.GREEN,
+            Color.PINK,
+            Color.SEA,
+            Color.INDIGO,
+        ];
+        // some CIS120: `used` is a *closure* storing the colors currently in the schedule
+        let used: Color[] = [];
+        return (c: string) => {
+            if (used.length === colors.length) {
+                // if we've used all the colors, it's acceptable to start reusing colors.
+                used = [];
+            }
+            let i = Math.abs(hashString(c));
+            while (used.indexOf(colors[i % colors.length]) !== -1) {
+                i += 1;
+            }
+            const color = colors[i % colors.length];
+            used.push(color);
+            return color;
+        };
+    })();
+
     useEffect(() => {
         const listener = (event: Event) => {
             if (
@@ -496,6 +570,7 @@ const ScheduleSelectorDropdown = ({
                                     friendshipState.activeFriend.username ===
                                         friend.username
                                 }
+                                color={getColor(friend.username)}
                             />
                         ))}
                         <AddNew onClick={addFriend} role="button" href="#">

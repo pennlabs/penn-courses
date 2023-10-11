@@ -6,6 +6,7 @@ import { Icon } from "../bulma_derived_components";
 const InitialIcon = styled.div<{ color: Color }>`
     color: white;
     background-color: ${(props) => props.color};
+    opacity: 65%;
     justify-content: center;
     align-items: center;
     text-align: center;
@@ -13,6 +14,7 @@ const InitialIcon = styled.div<{ color: Color }>`
     border-radius: 50%;
     font-weight: 600;
     font-size: 1vw;
+    margin-right: 1rem;
 
     padding: 0.25rem;
 
@@ -23,7 +25,7 @@ const InitialIcon = styled.div<{ color: Color }>`
 
 const FriendRequestContainer = styled.div`
     display: grid;
-    grid-template-columns: 10% 57% 23% 10%;
+    grid-template-columns: 15% 52% 23% 10%;
     height: 100%
     width: 100%;
     height: 2.5vw;

@@ -174,12 +174,7 @@ export const setPrimaryScheduleIdOnFrontend = (scheduleId) => ({
 export const checkForDefaultSchedules = (schedulesFromBackend) => (
     dispatch
 ) => {
-    if (
-        !schedulesFromBackend.reduce(
-            (acc, { name }) => acc || name === "cart",
-            false
-        )
-    ) {
+    if (!schedulesFromBackend.find((acc, { name }) => acc || name === "cart")) {
         dispatch(createScheduleOnBackend("cart"));
     }
     // if the user doesn't have an initial schedule, create it

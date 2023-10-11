@@ -93,11 +93,11 @@ const StyledToast = styled(ToastContainer)`
 `;
 
 let middlewares = [thunkMiddleware, analyticsMiddleware];
-// if (process.env.NODE_ENV === "development") {
-//     // eslint-disable-next-line
-//     const { logger: loggerMiddleware } = require("redux-logger");
-//     middlewares = [thunkMiddleware, loggerMiddleware, analyticsMiddleware];
-// }
+if (process.env.NODE_ENV === "development") {
+    // eslint-disable-next-line
+    const { logger: loggerMiddleware } = require("redux-logger");
+    middlewares = [thunkMiddleware, loggerMiddleware, analyticsMiddleware];
+}
 
 export function showToast(text: string, error: boolean) {
     if (error) {
