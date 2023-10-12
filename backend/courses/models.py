@@ -248,6 +248,20 @@ class Course(models.Model):
             """
         ),
     )
+    
+    credits = models.DecimalField(
+        max_digits=4,  # some course for 2019C is 14 CR...
+        decimal_places=2,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text=dedent(
+            """
+            The number of cus all acitivites of this course requie (precomputed for efficiency).
+            Maintained by the registrar import / recomputestats script.
+            """
+        ),
+    )
 
     class Meta:
         unique_together = (
