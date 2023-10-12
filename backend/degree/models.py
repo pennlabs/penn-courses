@@ -1,6 +1,10 @@
 from django.db import models
 from textwrap import dedent
+from typing import Iterable
+from courses.models import Course
+from django.db.models import Count, Sum
 
+from degree.utils.model_utils import q_object_parser
 
 class DegreePlan(models.Model):
     """
@@ -63,16 +67,17 @@ class Rule(models.Model):
     This model represents a degree requirement rule.
     """
 
-    num = models.IntegerField(
+    num_courses = models.IntegerField(
         null=True,
         help_text=dedent(
             """
-            The minimum number of courses or subrules required for this rule.
+            The minimum number of courses or subrules required for this rule. Only non-null
+            if this is a Rule leaf.
             """
         ),
     )
 
-    cus = models.DecimalField(
+    credits = models.DecimalField(
         decimal_places=1,
         max_digits=4,
         null=True,
@@ -113,7 +118,38 @@ class Rule(models.Model):
             This rule's parent Rule if it has one.
             """
         ),
+        related_name="children"
     )
 
     def __str__(self) -> str:
-        return f"{self.q}, num={self.num}, cus={self.cus}, degree_plan={self.degree_plan}"
+        return f"{self.q}, num={self.num_courses}, cus={self.credits}, degree_plan={self.degree_plan}"
+
+
+    def evaluate(self, full_codes: Iterable[str]) -> bool:
+        """
+        Check if this rule is fulfilled by the provided
+        courses.
+        """
+        if self.q is not None:
+            # TODO: remove in prod code?
+            assert not self.children.all().exists()
+            fulfillments = Course.objects.filter(
+                q_object_parser.parse(self.q),
+                id__in=full_codes
+            ).annotate(
+                num_courses=Count(),
+                credits=Sum()
+            )
+            fulfillment = fulfillment.get()
+
+            if fulfillment.num_courses < self.num_courses or fulfillment.credits < self.credits:
+                return False
+
+            # run some extra checks...
+            return True
+        
+        assert self.children.all().exists()    
+        for child in self.children.all():
+            if not child.evaluate():
+                return False
+        return True
