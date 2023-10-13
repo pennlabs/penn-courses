@@ -2,7 +2,8 @@ from django.db import models
 from textwrap import dedent
 from typing import Iterable
 from courses.models import Course
-from django.db.models import Count, Sum
+from django.db.models import Count, Sum, Q, DecimalField
+from django.db.models.functions import Coalesce
 
 from degree.utils.model_utils import q_object_parser
 
@@ -12,7 +13,7 @@ class DegreePlan(models.Model):
     """
 
     program = models.CharField(
-        max_length=32,
+        max_length=10,
         choices=[
             ("EU_BSE", "Engineering BSE"),
             ("EU_BAS", "Engineering BAS"),
@@ -26,7 +27,7 @@ class DegreePlan(models.Model):
         ),
     )
     degree = models.CharField(
-        max_length=32,
+        max_length=4,
         help_text=dedent(
             """
             The degree code for this degree plan, e.g., BSE
@@ -34,7 +35,7 @@ class DegreePlan(models.Model):
         ),
     )
     major = models.CharField(
-        max_length=32,
+        max_length=4,
         help_text=dedent(
             """
             The major code for this degree plan, e.g., BIOL
@@ -42,7 +43,7 @@ class DegreePlan(models.Model):
         ),
     )
     concentration = models.CharField(
-        max_length=32,
+        max_length=4,
         null=True,
         help_text=dedent(
             """
@@ -67,7 +68,7 @@ class Rule(models.Model):
     This model represents a degree requirement rule.
     """
 
-    num_courses = models.IntegerField(
+    num_courses = models.PositiveSmallIntegerField(
         null=True,
         help_text=dedent(
             """
@@ -78,13 +79,13 @@ class Rule(models.Model):
     )
 
     credits = models.DecimalField(
-        decimal_places=1,
+        decimal_places=2,
         max_digits=4,
         null=True,
         help_text=dedent(
             """
             The minimum number of CUs required for this rule. Only non-null
-            if this is a Rule leaf.
+            if this is a Rule leaf. Can be 
             """
         ),
     )
@@ -104,7 +105,9 @@ class Rule(models.Model):
         help_text=dedent(
             """
             String representing a Q() object that returns the set of courses
-            satisfying this rule. Only non-empty if this is a Rule leaf.
+            satisfying this rule. Only non-null/non-empty if this is a Rule leaf.
+            This Q object is expected to be normalized before it is serialized
+            to a string.
             """
         ),
     )
@@ -121,6 +124,14 @@ class Rule(models.Model):
         related_name="children"
     )
 
+    class Meta:
+        constraints = [
+            models.CheckConstraint(check=(
+                (Q(credits__isnull=True) | Q(credits__gt=0)) # check credits and num are non-zero
+                & (Q(num_courses__isnull=True) | Q(num_courses__gt=0))
+            ), name="num_course_credits_gt_0")   
+        ]
+
     def __str__(self) -> str:
         return f"{self.q}, num={self.num_courses}, cus={self.credits}, degree_plan={self.degree_plan}"
 
@@ -130,26 +141,32 @@ class Rule(models.Model):
         Check if this rule is fulfilled by the provided
         courses.
         """
-        if self.q is not None:
-            # TODO: remove in prod code?
+        if self.q:
             assert not self.children.all().exists()
-            fulfillments = Course.objects.filter(
+            total_courses, total_credits = Course.objects.filter(
                 q_object_parser.parse(self.q),
-                id__in=full_codes
-            ).annotate(
-                num_courses=Count(),
-                credits=Sum()
-            )
-            fulfillment = fulfillment.get()
-
-            if fulfillment.num_courses < self.num_courses or fulfillment.credits < self.credits:
+                full_code__in=full_codes
+            ).aggregate(
+                total_courses=Count("id"),
+                total_credits=Coalesce(
+                    Sum("credits"), 0, 
+                    output_field=DecimalField(max_digits=4, decimal_places=2)
+                )
+            ).values()
+                        
+            assert self.num_courses is not None or self.credits is not None
+            if self.num_courses is not None and total_courses < self.num_courses:
+                return False
+            
+            if self.credits is not None and total_credits < self.credits:
                 return False
 
-            # run some extra checks...
+            # TODO: run some extra checks...
+            
             return True
         
         assert self.children.all().exists()    
         for child in self.children.all():
-            if not child.evaluate():
+            if not child.evaluate(full_codes):
                 return False
         return True
