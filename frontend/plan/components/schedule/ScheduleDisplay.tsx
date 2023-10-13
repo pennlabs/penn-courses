@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import styled from "styled-components";
 import { isMobileOnly } from "react-device-detect";
 import Days from "./Days";
@@ -8,14 +8,14 @@ import GridLines from "./GridLines";
 import Stats from "./Stats";
 
 import {
-    ColorsMap,
+    Color,
     Day,
     Meeting,
     Section,
     MeetingBlock,
     FriendshipState,
 } from "../../types";
-import { getConflictGroups, getColor } from "../meetUtil";
+import { getConflictGroups } from "../meetUtil";
 
 const EmptyScheduleContainer = styled.div`
     font-size: 0.8em;
@@ -48,6 +48,19 @@ const FriendEmptySchedule = ({ message }: { message: string }) => (
         <br />
     </EmptyScheduleContainer>
 );
+
+// Used for box coloring, from StackOverflow:
+// https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript
+const hashString = (s: string) => {
+    let hash = 0;
+    if (!s || s.length === 0) return hash;
+    for (let i = 0; i < s.length; i += 1) {
+        const chr = s.charCodeAt(i);
+        hash = (hash << 5) - hash + chr;
+        hash |= 0; // Convert to 32bit integer
+    }
+    return hash;
+};
 
 const transformTime = (t: number) => {
     const frac = t % 1;
@@ -128,10 +141,6 @@ const ScheduleDisplay = ({
     // actual schedule elements are offset by the row/col offset since
     // days/times take up a row/col respectively.
 
-    const [colors, setColors] = useState({} as ColorsMap)
-    // a meeting is the data that represents a single block on the schedule.
-    const [meetings, setMeetings] = useState([] as MeetingBlock[])
-
     if (
         !schedData
     ) {
@@ -141,7 +150,7 @@ const ScheduleDisplay = ({
     const rowOffset = 1;
     const colOffset = 1;
 
-    let sections : Section[];
+    let sections;
 
     if (readOnly) {
         sections = friendshipState.activeFriendSchedule.sections || [];
@@ -169,36 +178,65 @@ const ScheduleDisplay = ({
     const getNumRows = () => (endHour - startHour + 1) * 4 + rowOffset;
     const getNumCol = () => 5 + colOffset + (showWeekend ? 2 : 0);
 
-    
+    // step 2 in the CIS121 review: hashing with linear probing.
+    // hash every section to a color, but if that color is taken, try the next color in the
+    // colors array. Only start reusing colors when all the colors are used.
+    const getColor = (() => {
+        const colors = [
+            Color.BLUE,
+            Color.RED,
+            Color.AQUA,
+            Color.ORANGE,
+            Color.GREEN,
+            Color.PINK,
+            Color.SEA,
+            Color.INDIGO,
+        ];
+        // some CIS120: `used` is a *closure* storing the colors currently in the schedule
+        let used: Color[] = [];
+        return (c: string) => {
+            if (used.length === colors.length) {
+                // if we've used all the colors, it's acceptable to start reusing colors.
+                used = [];
+            }
+            let i = Math.abs(hashString(c));
+            while (used.indexOf(colors[i % colors.length]) !== -1) {
+                i += 1;
+            }
+            const color = colors[i % colors.length];
+            used.push(color);
+            return color;
+        };
+    })();
     const sectionIds = sections.map((x) => x.id);
 
-    function setUpMeetings(sections : Section[]) {
-        sections.forEach((s) => {
-            setColors({...colors, [s.id]: getColor(s.id)})
-            if (s.meetings) {
-                meetings.push(
-                    ...s.meetings.map((m) => ({
-                        day: m.day as Day,
-                        start: transformTime(m.start),
-                        end: transformTime(m.end),
-                        course: {
-                            color: colors[s.id],
-                            id: s.id,
-                            coreqFulfilled:
-                                s.associated_sections.length === 0 ||
-                                s.associated_sections.filter(
-                                    (coreq) => sectionIds.indexOf(coreq.id) !== -1
-                                ).length > 0,
-                        },
-                        style: {
-                            width: "100%",
-                            left: "0",
-                        },
-                    }))
-                );
-            }
-        });
-    }
+    // a meeting is the data that represents a single block on the schedule.
+    const meetings: MeetingBlock[] = [];
+    sections.forEach((s) => {
+        const color = getColor(s.id);
+        if (s.meetings) {
+            meetings.push(
+                ...s.meetings.map((m) => ({
+                    day: m.day as Day,
+                    start: transformTime(m.start),
+                    end: transformTime(m.end),
+                    course: {
+                        color,
+                        id: s.id,
+                        coreqFulfilled:
+                            s.associated_sections.length === 0 ||
+                            s.associated_sections.filter(
+                                (coreq) => sectionIds.indexOf(coreq.id) !== -1
+                            ).length > 0,
+                    },
+                    style: {
+                        width: "100%",
+                        left: "0",
+                    },
+                }))
+            );
+        }
+    });
 
     startHour = Math.floor(
         Math.min(startHour, ...meetings.map((m) => m.start))
@@ -224,10 +262,6 @@ const ScheduleDisplay = ({
         gridTemplateRows: `repeat(${getNumRows() - 2}, 1fr)`,
         padding: isMobileOnly ? "0.2rem" : "1rem",
     };
-
-    useEffect(() => {
-        setUpMeetings(sections)
-    }, [sections]);
 
     return (
         <ScheduleBox>
