@@ -223,3 +223,7 @@ export type FilterType =
         requestsReceived: Friendship[];
         requestsSent: Friendship[];
     }
+
+    export interface ColorsMap {
+        [key: string]: Color
+    }
