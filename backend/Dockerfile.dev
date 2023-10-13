@@ -5,7 +5,7 @@ LABEL maintainer="Penn Labs"
 WORKDIR /backend
 
 # Copy project dependencies
-COPY Pipfile* .
+COPY Pipfile* ./
 
 # Install backend dependencies
 RUN pipenv install --dev

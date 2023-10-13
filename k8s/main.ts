@@ -10,6 +10,13 @@ export class MyChart extends PennLabsChart {
 
     const backendImage = 'pennlabs/penn-courses-backend';
     const secret = 'penn-courses';
+    const ingressProps = {
+      annotations: {
+        ['ingress.kubernetes.io/content-security-policy']: "frame-ancestors 'none';",
+        ["ingress.kubernetes.io/protocol"]: "https",
+        ["traefik.ingress.kubernetes.io/router.middlewares"]: "default-redirect-http@kubernetescrd"
+      }
+    }
 
     new RedisApplication(this, 'redis', { deployment: { 
 	    image: 'redis/redis-stack-server',
@@ -31,9 +38,7 @@ export class MyChart extends PennLabsChart {
         replicas: 4,
       },
       djangoSettingsModule: 'PennCourses.settings.production',
-      ingressProps: {
-        annotations: { ['ingress.kubernetes.io/content-security-policy']: "frame-ancestors 'none';" },
-      },
+      ingressProps,
       domains: [{ host: 'penncourseplan.com', paths: ["/api", "/admin", "/accounts", "/assets"] },
       { host: 'penncoursealert.com', paths: ["/api", "/admin", "/accounts", "/assets", "/webhook"] },
       { host: 'penncoursereview.com', paths: ["/api", "/admin", "/accounts", "/assets"] }],
@@ -47,9 +52,7 @@ export class MyChart extends PennLabsChart {
         replicas: 1,
       },
       djangoSettingsModule: 'PennCourses.settings.production',
-      ingressProps: {
-        annotations: { ['ingress.kubernetes.io/content-security-policy']: "frame-ancestors 'none';" },
-      },
+      ingressProps,
       domains: [{ host: 'penncoursereview.com', paths: ["/api/ws"] }],
     });
 
