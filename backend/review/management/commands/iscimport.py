@@ -220,7 +220,7 @@ class Command(BaseCommand):
 
         for semester in semesters:
             print(f"Loading {semester}...")
-            with transaction.atomic():  # Only commit changes if the whole script succeeds
+            with transaction.atomic():  # Only commit changes if all imports for the semester succeed 
                 to_delete = Review.objects.filter(section__course__semester=semester)
                 delete_count = to_delete.count()
                 if delete_count > 0:
