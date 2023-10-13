@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
 import { Icon } from "../bulma_derived_components";
-import { User, Color, FriendshipState, Schedule as ScheduleType, ColorsMap } from "../../types";
+import { User, Schedule as ScheduleType, Color, FriendshipState } from "../../types";
 import { nextAvailable } from "../../reducers/schedule";
-import { getColor } from "../meetUtil";
 
 const ButtonContainer = styled.div<{ isActive: boolean; isPrimary?: boolean }>`
     line-height: 1.5;
@@ -409,12 +408,53 @@ const ScheduleSelectorDropdown = ({
 }: ScheduleSelectorDropdownProps) => {
     const [isActive, setIsActive] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
-    const [colors, setColors] = useState({} as ColorsMap)
 
     let hasFriends = friendshipState.acceptedFriends.length != 0;
     let numRequests = friendshipState.requestsReceived.length;
 
+    // Used for box coloring, from StackOverflow:
+    // https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript
+    const hashString = (s: string) => {
+        let hash = 0;
+        if (!s || s.length === 0) return hash;
+        for (let i = 0; i < s.length; i += 1) {
+            const chr = s.charCodeAt(i);
+            hash = (hash << 5) - hash + chr;
+            hash |= 0; // Convert to 32bit integer
+        }
+        return hash;
+    };
 
+    // step 2 in the CIS121 review: hashing with linear probing.
+    // hash every section to a color, but if that color is taken, try the next color in the
+    // colors array. Only start reusing colors when all the colors are used.
+    const getColor = (() => {
+        const colors = [
+            Color.BLUE,
+            Color.RED,
+            Color.AQUA,
+            Color.ORANGE,
+            Color.GREEN,
+            Color.PINK,
+            Color.SEA,
+            Color.INDIGO,
+        ];
+        // some CIS120: `used` is a *closure* storing the colors currently in the schedule
+        let used: Color[] = [];
+        return (c: string) => {
+            if (used.length === colors.length) {
+                // if we've used all the colors, it's acceptable to start reusing colors.
+                used = [];
+            }
+            let i = Math.abs(hashString(c));
+            while (used.indexOf(colors[i % colors.length]) !== -1) {
+                i += 1;
+            }
+            const color = colors[i % colors.length];
+            used.push(color);
+            return color;
+        };
+    })();
 
     useEffect(() => {
         const listener = (event: Event) => {
@@ -430,21 +470,6 @@ const ScheduleSelectorDropdown = ({
             document.removeEventListener("click", listener);
         };
     });
-
-    function test(key: string) {
-        setColors({...colors,
-        [key]: getColor(key)})
-
-        return colors[key]
-    }
-
-    useEffect(() => {
-        friendshipState.acceptedFriends.map((friend) => {
-            test(friend.username)
-        })
-    }, [friendshipState])
-
-    
 
     return (
         <ScheduleDropdownContainer ref={ref} isActive={isActive}>
@@ -545,7 +570,7 @@ const ScheduleSelectorDropdown = ({
                                     friendshipState.activeFriend.username ===
                                         friend.username
                                 }
-                                color={colors[friend.username]}
+                                color={getColor(friend.username)}
                             />
                         ))}
                         <AddNew onClick={addFriend} role="button" href="#">
