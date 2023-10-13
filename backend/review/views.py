@@ -268,7 +268,7 @@ def course_plots(request, course_code):
     """
     try:
         course = (
-            Course.objects.filter(course_filters_pcr, full_code=course_code)
+            Course.objects.filter(course_filters_pcr_allow_xlist, full_code=course_code)
             .order_by("-semester")[:1]
             .select_related("topic", "topic__most_recent")
             .get()
