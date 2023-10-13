@@ -1,92 +1,8 @@
 from django.db.models import Q
 
 from degree.models import DegreePlan, Rule
-
-# TODO: these should not be hardcoded, but rather added to the database
-E_DEPTS = ["BE", "CIS", "CMPE", "EAS", "ESE", "MEAM", "MSE", "NETS", "ROBO"]  # SEAS
-A_DEPTS = [
-    "AFST",
-    "AMCS",
-    "ANTH",
-    "ARAB",
-    "ARCH",
-    "ARTH",
-    "ASAM",
-    "ASTR",
-    "BIBB",
-    "BIOE",
-    "BIOL",
-    "BIOM",
-    "BMIN",
-    "CAMB",
-    "CHEM",
-    "CHIN",
-    "CIMS",
-    "CINE",
-    "CIS",
-    "CLST",
-    "COLL",
-    "COML",
-    "CRIM",
-    "CSCI",
-    "EALC",
-    "ECON",
-    "ENGL",
-    "ENVS",
-    "FNAR",
-    "FOLK",
-    "FREN",
-    "GDES",
-    "GEOL",
-    "GRMN",
-    "GSWS",
-    "HCMG",
-    "HEBR",
-    "HIST",
-    "HSOC",
-    "IGGS",
-    "INTL",
-    "ITAL",
-    "JPAN",
-    "LALS",
-    "LATN",
-    "LGIC",
-    "LING",
-    "MATH",
-    "MUSC",
-    "NELC",
-    "PHIL",
-    "PHYS",
-    "PPE",
-    "PSCI",
-    "PSYC",
-    "RELS",
-    "RUSS",
-    "SAST",
-    "SOCI",
-    "SPAN",
-    "STAT",
-    "STSC",
-    "SWRK",
-    "TAML",
-    "THAR",
-    "TURK",
-    "URBS",
-    "URDU",
-    "WRIT",
-]  # SAS
-W_DEPTS = [
-    "ACCT",
-    "BEPP",
-    "FNCE",
-    "HCMG",
-    "LGST",
-    "MKTG",
-    "OIDD",
-    "REAL",
-    "STAT",
-]  # Wharton
-
+from pprint import pprint
+from constants import ENG_DEPTS, SAS_DEPTS, WH_DEPTS
 
 def parse_coursearray(courseArray) -> Q:
     """
@@ -145,11 +61,11 @@ def parse_coursearray(courseArray) -> Q:
                         assert len(filter["valueList"]) == 1
                         match filter["valueList"][0]:
                             case "E" | "EU":
-                                sub_q = Q(course__department__code__in=E_DEPTS)
+                                sub_q = Q(course__department__code__in=ENG_DEPTS)
                             case "A" | "AU":
-                                sub_q = Q(course__department__code__in=A_DEPTS)
+                                sub_q = Q(course__department__code__in=SAS_DEPTS)
                             case "W" | "WU":
-                                sub_q = Q(course__department__code__in=W_DEPTS)
+                                sub_q = Q(course__department__code__in=WH_DEPTS)
                             case _:
                                 raise ValueError(
                                     f"Unsupported college in withArray: {filter['valueList'][0]}"
@@ -232,7 +148,7 @@ def evaluate_condition(condition, degree_plan) -> bool:
         raise LookupError(f"Unknown condition type in ifStmt: {condition.keys()}")
 
 
-def parse_rulearray(ruleArray, degree_plan, parent_rule=None) -> list[Rule]:
+def parse_rulearray(ruleArray, degree_plan, parent: Rule=None) -> list[Rule]:
     """
     Logic to parse a single degree ruleArray in a blockArray requirement.
     A ruleArray consists of a list of rule objects that contain a requirement object.
@@ -287,10 +203,7 @@ def parse_rulearray(ruleArray, degree_plan, parent_rule=None) -> list[Rule]:
                 rules.append(
                     Rule(
                         q=str(parse_coursearray(rule_req["courseArray"])),
-                        min_num=num,
-                        max_num=max_num,
-                        min_cus=cus,
-                        max_cus=max_cus,
+                        credits=
                     )
                 )
             case "IfStmt":
@@ -334,7 +247,6 @@ def parse_rulearray(ruleArray, degree_plan, parent_rule=None) -> list[Rule]:
                 else:
                     print("WARNING: subset has no ruleArray")
             case "Group":  # TODO: this is nested
-                assert parent_rule is None or parent_rule["ruleType"] != "Group"
                 q = Q()
                 [q := q & rule.q for rule in parse_rulearray(rule["ruleArray"], degree_plan)]
 
@@ -354,7 +266,7 @@ def parse_rulearray(ruleArray, degree_plan, parent_rule=None) -> list[Rule]:
 
 
 # TODO: Make the function names more descriptive
-def parse_degreeworks(json: str, degree_plan: DegreePlan) -> list[Rule]:
+def parse_degreeworks(json: dict, degree_plan: DegreePlan) -> list[Rule]:
     """
     Returns a list of Rules given a DegreeWorks JSON audit and a DegreePlan.
     """
@@ -368,11 +280,36 @@ def parse_degreeworks(json: str, degree_plan: DegreePlan) -> list[Rule]:
             name=requirement["title"],
             code=requirement["requirementValue"],
             # TODO: parse min_cus
-            min_cus=0,
+            credits=0,
         )
 
         # TODO: Should associate each Rule here with this Requirement
-        print(parse_rulearray(requirement["ruleArray"], degree_plan))
+        parse_rulearray(requirement["ruleArray"], degree_plan)
 
         degree_reqs.append(degree_req)
     return degree_reqs
+
+if __name__ == "__main__":
+    from backend.degree.utils.constants import E_BAS_DEGREE_PLANS, W_DEGREE_PLANS, A_DEGREE_PLANS
+    from backend.degree.utils.request_degreeworks import DegreeworksClient
+    from os import getenv
+
+    pennid = getenv("PENN_ID")
+    assert pennid is not None        
+    auth_token = getenv("X-AUTH-TOKEN")
+    assert pennid is not None
+    refresh_token = getenv("REFRESH_TOKEN")
+    assert refresh_token is not None
+    name = getenv("NAME")
+    assert name is not None
+
+    client = DegreeworksClient(
+        pennid=pennid,
+        auth_token=auth_token,
+        refresh_token=refresh_token,
+        name=name
+    )
+
+    for i, degree_plan in enumerate(E_BAS_DEGREE_PLANS):
+        print(degree_plan)
+        pprint(parse_degreeworks(client.audit(degree_plan), degree_plan))

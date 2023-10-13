@@ -1,18 +1,10 @@
-
 from textwrap import dedent
-
 from dataclasses import asdict
-
 from django.core.management.base import BaseCommand
-
-from degree.degreeworks.request_degreeworks import DegreeworksClient
-
+from backend.degree.utils.request_degreeworks import DegreeworksClient
 from os import getenv
-
 from tqdm import tqdm
-
 from pprint import pprint
-
 from courses.util import get_current_semester
 
 class Command(BaseCommand):

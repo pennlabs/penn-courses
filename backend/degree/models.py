@@ -67,6 +67,15 @@ class Rule(models.Model):
     """
     This model represents a degree requirement rule.
     """
+    title = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text=dedent(
+            """
+            The title for this rule.
+            """
+        )
+    )
 
     num_courses = models.PositiveSmallIntegerField(
         null=True,
@@ -162,7 +171,7 @@ class Rule(models.Model):
                 return False
 
             # TODO: run some extra checks...
-            
+
             return True
         
         assert self.children.all().exists()    

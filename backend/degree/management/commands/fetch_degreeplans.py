@@ -3,7 +3,7 @@ from textwrap import dedent
 
 from django.core.management.base import BaseCommand
 
-from degree.degreeworks.request_degreeworks import DegreeworksClient
+from backend.degree.utils.request_degreeworks import DegreeworksClient
 
 from degree.degreeworks.parse_degreeworks import parse_degreeworks
 
@@ -12,6 +12,8 @@ from os import getenv
 from pprint import pprint
 
 from courses.util import get_current_semester
+
+from django.db import transaction
 
 class Command(BaseCommand):
     help = dedent("""
@@ -72,7 +74,9 @@ class Command(BaseCommand):
             name=name
         )
 
+
         for year in range(since_year, to_year + 1):
             for program in client.get_programs(year=year):
                 for degree_plan in client.degree_plans_of(program, year=year):
-                    pprint(parse_degreeworks(client.audit(degree_plan), degree_plan))
+                    with transaction.atomic():
+                        parse_degreeworks(client.audit(degree_plan), degree_plan)
