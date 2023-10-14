@@ -18,9 +18,12 @@ export class MyChart extends PennLabsChart {
       }
     }
 
-    new RedisApplication(this, 'redis', { deployment: { 
+    new RedisApplication(this, 'redis', {
+      deployment: { 
 	    image: 'redis/redis-stack-server',
-	    tag: '6.2.6-v6' } });
+        tag: '6.2.6-v6'
+      }
+    });
 
     new DjangoApplication(this, 'celery', {
       deployment: {
