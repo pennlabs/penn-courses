@@ -148,9 +148,9 @@ function App() {
 
     // update on router value updates as it fires multiple times, starting with null.
     useEffect(() => {
-        // change page based on url route query.
-        setPage(router.query.route ? (router.query.route as string) : "home");
-    }, [router.query.route]);
+        // change page based on url route query. 
+        setPage(router.query.route ? router.query.route as string : "home");
+    }, [router.query.route])
 
     useEffect(() => {
         ReactGA.initialize("UA-21029575-12");
@@ -270,7 +270,7 @@ function App() {
                         ) : null}
                     </Flex>
                 ) : (
-                    <ManageAlertWrapper sendError={sendError} />
+                    <ManageAlertWrapper sendError={sendError}/>
                 )}
 
                 <Timeline courseCode={timeline} setTimeline={setTimeline} />
