@@ -1,8 +1,7 @@
 import React from "react";
 import * as Sentry from "@sentry/browser";
 import { createGlobalStyle } from "styled-components";
-import Head from "next/head";
-import { Announcement } from "pcx-shared-components/src/common/Announcement";
+import Head from 'next/head'
 
 Sentry.init({
     dsn: "https://7c27d176a3984f8c931600ca1751d526@sentry.pennlabs.org/16",
@@ -32,19 +31,6 @@ function App({ Component, pageProps }) {
             </Head>
             <GlobalStyles />
             <Component {...pageProps} />
-
-            <div
-                style={{
-                    position: "fixed",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    padding: 20,
-                    zIndex: 1000,
-                }}
-            >
-                <Announcement type="issue" title="Weekend Maintenance Alert" />
-            </div>
         </>
     );
 }
