@@ -135,7 +135,9 @@ const handleUpdateSchedulesOnFrontend = (state, schedulesFromBackend) => {
 
     schedulesFromBackend.forEach((scheduleFromBackend) => {
         if (
-            newState.deletedSchedules.find((schedule) => schedule === scheduleFromBackend.name)
+            newState.deletedSchedules.find(
+                (schedule) => schedule === scheduleFromBackend.name
+            )
         ) {
             return;
         }
@@ -301,8 +303,10 @@ export const schedule = (state = initialState, action) => {
         case DELETE_SCHEDULE_ON_FRONTEND:
             return handleScheduleDeletion(state, action.scheduleName);
         case DELETION_ATTEMPTED:
-            state.deletedSchedules.push(action.scheduleName)
-            return {...state};
+            state.deletedSchedules.push(action.scheduleName);
+            return {
+                ...state,
+            };
         case CREATE_CART_ON_FRONTEND:
             return {
                 ...state,

@@ -19,7 +19,9 @@
         "import/extensions": 0,
         "no-bitwise": "off",
         "no-await-in-loop": "warn",
-        "semi": ["warn", "always"]
+        "semi": ["warn", "always"],
+        "no-use-before-define": "off",
+        "no-console": "off"
     },
     "settings": {
         "import/resolver": {
