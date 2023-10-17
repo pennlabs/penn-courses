@@ -21,7 +21,7 @@ interface AddScheduleFriendsModalInteriorProps {
     defaultValue: string;
     placeholder: string;
     overwriteDefault: boolean;
-    mode: string;
+    requestType: string;
     activeFriendName: string;
 }
 
@@ -35,7 +35,7 @@ const AddScheduleFriendsModalInterior = ({
     defaultValue,
     placeholder,
     overwriteDefault = false,
-    mode,
+    requestType,
     activeFriendName,
 }: AddScheduleFriendsModalInteriorProps) => {
     const [inputRef, setInputRef] = useState<HTMLInputElement | null>(null);
@@ -48,7 +48,7 @@ const AddScheduleFriendsModalInterior = ({
             user,
             userInput,
             existingData as string[],
-            mode,
+            requestType,
             changed,
             setErrorObj
         );
@@ -60,7 +60,7 @@ const AddScheduleFriendsModalInterior = ({
         }
 
         if (!errorObj.error) {
-            if (mode == "friend") {
+            if (requestType == "friend") {
                 sendFriendRequest(
                     user,
                     inputRef.value,
@@ -82,7 +82,7 @@ const AddScheduleFriendsModalInterior = ({
                         }
                     }
                 );
-            } else if (mode == "schedule") {
+            } else if (requestType == "schedule") {
                 namingFunction(inputRef.value);
                 close();
             }

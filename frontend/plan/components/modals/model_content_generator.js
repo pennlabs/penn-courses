@@ -36,7 +36,7 @@ export const generateModalInterior = (reduxState) => {
                 <NameScheduleModalInterior
                     buttonName="Rename"
                     existingData={Object.keys(reduxState.schedule.schedules)}
-                    mode="schedule"
+                    requestType="schedule"
                 />
             );
         case "CREATE_SCHEDULE":
@@ -44,7 +44,7 @@ export const generateModalInterior = (reduxState) => {
                 <NameScheduleModalInterior
                     buttonName="Create"
                     existingData={Object.keys(reduxState.schedule.schedules)}
-                    mode="schedule"
+                    requestType="schedule"
                 />
             );
         case "ADD_FRIEND":
@@ -53,7 +53,7 @@ export const generateModalInterior = (reduxState) => {
                     user={reduxState.login.user}
                     buttonName="Request"
                     existingData={reduxState.friendships.acceptedFriends}
-                    mode="friend"
+                    requestType="friend"
                     placeholder="Enter your friend's PennKey"
                     activeFriendName={
                         reduxState.friendships.activeFriend.username
