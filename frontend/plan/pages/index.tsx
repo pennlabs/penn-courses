@@ -9,6 +9,7 @@ import Tab from "@material-ui/core/Tab";
 import LoginModal from "pcx-shared-components/src/accounts/LoginModal";
 import styled, { createGlobalStyle } from "styled-components";
 import Schedule from "../components/schedule/Schedule";
+import { toast } from "react-toastify";
 
 import {
     initGA,
@@ -26,6 +27,7 @@ import { openModal } from "../actions";
 import { preventMultipleTabs } from "../components/syncutils";
 import { DISABLE_MULTIPLE_TABS } from "../constants/sync_constants";
 import { User } from "../types";
+import { ToastContainer } from "react-toastify";
 
 const GlobalStyle = createGlobalStyle`
   html {
@@ -78,11 +80,35 @@ const Box = styled.div`
     }
 `;
 
+const StyledToast = styled(ToastContainer)`
+    .Toastify__toast {
+        border-radius: 1rem;
+        background-color: white;
+    }
+    .Toastify__toast-body {
+        font-family: "Gill Sans", sans-serif;
+        color: black;
+        font-size: 1.2rem;
+    }
+`;
+
 let middlewares = [thunkMiddleware, analyticsMiddleware];
 if (process.env.NODE_ENV === "development") {
     // eslint-disable-next-line
     const { logger: loggerMiddleware } = require("redux-logger");
     middlewares = [thunkMiddleware, loggerMiddleware, analyticsMiddleware];
+}
+
+export function showToast(text: string, error: boolean) {
+    if (error) {
+        toast.error(text, {
+            position: toast.POSITION.TOP_CENTER,
+        });
+    } else {
+        toast.success(text, {
+            position: toast.POSITION.TOP_CENTER,
+        });
+    }
 }
 
 function Index() {
@@ -386,6 +412,10 @@ function Index() {
                                         : "smooth-transition column is-5"
                                 }
                             >
+                                <StyledToast
+                                    autoClose={1000}
+                                    hideProgressBar={true}
+                                />
                                 <Schedule />
                             </div>
                         </div>

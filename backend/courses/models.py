@@ -1424,3 +1424,66 @@ def create_or_update_user_profile(sender, instance, created, **kwargs):
     if created and instance.email != "":
         instance.profile.email = instance.email
     instance.profile.save()
+
+
+class Friendship(models.Model):
+    """
+    Used to track friendships along with requests status
+    """
+
+    sender = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.CASCADE,
+        null=True,
+        related_name="sent_friendships",
+        help_text="The person (user) who sent the request.",
+    )
+
+    recipient = models.ForeignKey(
+        get_user_model(),
+        related_name="received_friendships",
+        on_delete=models.CASCADE,
+        null=True,
+        help_text="The person (user) who recieved the request.",
+    )
+
+    class Status(models.TextChoices):
+        SENT = "S", "Sent"
+        ACCEPTED = "A", "Accepted"
+        REJECTED = "R", "Rejected"
+
+    status = models.CharField(
+        max_length=1,
+        choices=Status.choices,
+        default=Status.SENT,
+    )
+
+    def are_friends(self, user1_id, user2_id):
+        """
+        Checks if two users are friends (lookup by user id)
+        """
+        return Friendship.objects.filter(
+            Q(sender_id=user1_id, recipient_id=user2_id, status=Friendship.Status.ACCEPTED)
+            | Q(sender_id=user2_id, recipient_id=user1_id, status=Friendship.Status.ACCEPTED)
+        ).exists()
+
+    def save(self, *args, **kwargs):
+        if self.status == self.Status.ACCEPTED and self.accepted_at is None:
+            self.accepted_at = timezone.now()
+        if self.status == self.Status.REJECTED:
+            self.accepted_at = None
+            self.sent_at = None
+        if self.status == self.Status.SENT and self.sent_at is None:
+            self.sent_at = timezone.now()
+        super().save(*args, **kwargs)
+
+    accepted_at = models.DateTimeField(null=True)
+    sent_at = models.DateTimeField(null=True)
+
+    class Meta:
+        unique_together = (("sender", "recipient"),)
+
+    def __str__(self):
+        return (
+            f"Friendship(Sender: {self.sender}, Recipient: {self.recipient}, Status: {self.status})"
+        )

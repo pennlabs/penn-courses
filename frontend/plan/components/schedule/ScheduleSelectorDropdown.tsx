@@ -1,13 +1,133 @@
 import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
 import { Icon } from "../bulma_derived_components";
+import { User, Schedule as ScheduleType, Color, FriendshipState } from "../../types";
+import { nextAvailable } from "../../reducers/schedule";
+
+const ButtonContainer = styled.div<{ isActive: boolean; isPrimary?: boolean }>`
+    line-height: 1.5;
+    position: relative;
+    border-radius: 0 !important;
+    cursor: pointer;
+    padding: 0.5rem 0.5rem 0.5rem 0.75rem;
+    transition: background 0.1s ease;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    background: ${(props) => (props.isActive ? "#F5F6F8" : "#FFF")};
+    align-items: center;
+
+    &:hover {
+        background: #ebedf1;
+    }
+
+    * {
+        font-size: 0.75rem;
+        color: #333333;
+    }
+
+    .option-icon i {
+        pointer-events: auto;
+        color: #b2b2b2;
+    }
+
+    .option-icon i:hover {
+        color: #7E7E7E; !important;
+    }
+
+    .option-icon i.primary {
+        color: ${(props) => (props.isPrimary ? "#669afb" : "#b2b2b2")};
+    }
+
+    .option-icon i.primary:hover {
+        color: ${(props) =>
+            props.isPrimary ? "#295FCE" : "#7E7E7E"}; !important;
+    }
+
+    .initial-icon {
+        color: white; !important;
+        font-size: 1vw;
+    }
+`;
+
+const ButtonLabelContainer = styled.div<{ width: number }>`
+    display: flex;
+    flex-grow: 0.5;
+    font-weight: 400;
+    justify-content: start;
+    max-width: ${(props) => props.width}%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+`;
+
+const InitialIcon = styled.div<{ color: Color }>`
+    color: white;
+    background-color: ${(props) => props.color};
+    opacity: 65%;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-weight: 600;
+    font-size: 1vw;
+
+    display: inline-flex;
+    height: 1.75vw;
+    max-width: 1.75vw;
+    min-width: 1.75vw;
+`;
+
+interface FriendButtonProps {
+    friendName: string;
+    isActive: boolean;
+    display: () => void;
+    removeFriend: () => void;
+    color: Color
+}
+
+const FriendButton = ({
+    friendName,
+    isActive,
+    display,
+    removeFriend,
+    color
+}: FriendButtonProps) => (
+    <ButtonContainer isActive={isActive} onClick={display}>
+        <InitialIcon color={color}>
+            <div className="initial-icon">{friendName.split(" ")[0][0]}</div>
+        </InitialIcon>
+        <ButtonLabelContainer width={65}>{friendName}</ButtonLabelContainer>
+        <Icon
+            onClick={(e) => {
+                removeFriend();
+                e.stopPropagation();
+            }}
+            role="button"
+            className="option-icon"
+        >
+            <i className="fa fa-minus-circle" aria-hidden="true" />
+        </Icon>
+    </ButtonContainer>
+);
+
+const ScheduleOptionsContainer = styled.div`
+    display: flex;
+    flex-grow: 0.5;
+    justify-content: flex-end;
+    width: 25%;
+`;
 
 interface DropdownButton {
     isActive: boolean;
+    isPrimary: boolean;
     text: string;
+    hasFriends: boolean;
     onClick: () => void;
     makeActive: () => void;
     mutators: {
+        setPrimary: () => void;
         copy: () => void;
         download: () => void;
         remove: () => void;
@@ -15,70 +135,18 @@ interface DropdownButton {
     };
 }
 
-const DropdownButtonContainer = styled.div<{ isActive: boolean }>`
-    line-height: 1.5;
-    position: relative;
-    border-radius: 0 !important;
-    cursor: pointer;
-    padding: 0.5rem 0.5rem 0.5rem 1rem;
-    transition: background 0.1s ease;
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    background: ${(props) => (props.isActive ? "#F5F6F8" : "#FFF")};
-
-    &:hover {
-        background: ${(props) => (props.isActive ? "#EBEDF1" : "#F5F6F8")};
-    }
-
-    * {
-        font-size: 0.75rem;
-        color: #333333;
-    }
-`;
-
-const ScheduleNameContainer = styled.div`
-    display: flex;
-    flex-grow: 1;
-    font-weight: 400;
-    max-width: 50%;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-`;
-
-const ScheduleOptionsContainer = styled.div`
-    display: flex;
-    flex-grow: 0.5;
-    justify-content: flex-end;
-    width: 25%;
-
-    i {
-        color: #b2b2b2 !important;
-    }
-
-    i:hover {
-        color: #f5f6f8 !important;
-    }
-`;
-
 const DropdownButton = ({
     isActive,
+    isPrimary,
     text,
+    hasFriends,
     onClick,
     makeActive,
-    mutators: { copy, download, remove, rename },
+    mutators: { setPrimary, copy, download, remove, rename },
 }: DropdownButton) => (
-    <DropdownButtonContainer
+    <ButtonContainer
         role="button"
-        onClick={(e) => {
-            // NOTE: explicit cast to HTMLElement to resolve compile error
-            // .getAttribute doesn't exist on type EventTarget
-            const targetClass = (e.target as HTMLElement).getAttribute("class");
-            if (targetClass && targetClass.indexOf("s-option") !== -1) {
-                // one of the icons has been clicked
-                return;
-            }
+        onClick={() => {
             if (onClick) {
                 onClick();
             }
@@ -87,47 +155,70 @@ const DropdownButton = ({
             }
         }}
         isActive={isActive}
+        isPrimary={isPrimary}
     >
-        <ScheduleNameContainer>{text}</ScheduleNameContainer>
+        <ButtonLabelContainer width={50}>{text}</ButtonLabelContainer>
         <ScheduleOptionsContainer>
-            <div onClick={rename} className="s-option-copy" role="button">
-                <Icon>
-                    <i className="far fa-edit" aria-hidden="true" />
+            {hasFriends && (
+                <Icon
+                    onClick={(e) => {
+                        setPrimary();
+                        e.stopPropagation();
+                    }}
+                    role="button"
+                    className="option-icon"
+                >
+                    <i
+                        className={`primary ${
+                            isPrimary ? "fa" : "far"
+                        } fa-user`}
+                        aria-hidden="true"
+                    />
                 </Icon>
-            </div>
-            <div onClick={copy} className="s-option-copy" role="button">
-                <Icon>
-                    <i className="far fa-copy" aria-hidden="true" />
-                </Icon>
-            </div>
-            <div onClick={download} className="s-option-copy" role="button">
-                <Icon>
-                    <i className="fa fa-download" aria-hidden="true" />
-                </Icon>
-            </div>
-            <div onClick={remove} className="s-option-copy" role="button">
-                <Icon>
-                    <i className="fa fa-trash" aria-hidden="true" />
-                </Icon>
-            </div>
+            )}
+            <Icon
+                onClick={(e) => {
+                    rename();
+                    e.stopPropagation();
+                }}
+                role="button"
+                className="option-icon"
+            >
+                <i className="far fa-edit" aria-hidden="true" />
+            </Icon>
+            <Icon
+                onClick={(e) => {
+                    copy();
+                    e.stopPropagation();
+                }}
+                role="button"
+                className="option-icon"
+            >
+                <i className="far fa-copy" aria-hidden="true" />
+            </Icon>
+            <Icon
+                onClick={(e) => {
+                    download();
+                    e.stopPropagation();
+                }}
+                role="button"
+                className="option-icon"
+            >
+                <i className="fa fa-download" aria-hidden="true" />
+            </Icon>
+            <Icon
+                onClick={(e) => {
+                    remove();
+                    e.stopPropagation();
+                }}
+                role="button"
+                className="option-icon"
+            >
+                <i className="fa fa-trash" aria-hidden="true" />
+            </Icon>
         </ScheduleOptionsContainer>
-    </DropdownButtonContainer>
+    </ButtonContainer>
 );
-``
-interface ScheduleSelectorDropdownProps {
-    activeName: string;
-    contents: {
-        text: string;
-        onClick: () => void;
-    }[];
-    mutators: {
-        copy: (scheduleName: string) => void;
-        download: (scheduleName: string) => void;
-        remove: (scheduleName: string) => void;
-        create: () => void;
-        rename: (oldName: string) => void;
-    };
-}
 
 const ScheduleDropdownContainer = styled.div`
     border-radius: 0.5rem;
@@ -149,7 +240,7 @@ const ScheduleDropdownContainer = styled.div`
 `;
 
 const DropdownTrigger = styled.div`
-    margin-left: 0.75rem;
+    margin-left: 1.5rem;
     height: 1.5rem;
     width: 1.5rem;
     text-align: center;
@@ -172,7 +263,7 @@ const DropdownMenu = styled.div`
     display: ${({ isActive }: { isActive: boolean }) =>
         isActive ? "block" : "none"};
     left: 0;
-    min-width: 12rem;
+    min-width: 15rem;
     padding-top: 4px;
     position: absolute;
     top: 100%;
@@ -186,7 +277,29 @@ const DropdownContent = styled.div`
     padding: 0;
 `;
 
-const AddSchedule = styled.a`
+const FriendContent = styled.div`
+    background-color: #fff;
+    border-top: 0.05rem solid #c7c6ce;
+    padding: 0;
+
+    div.info {
+        font-weight: 450;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.5rem;
+        opacity: 75%;
+    }
+    div i {
+        color: #669afb;
+    }
+
+    .friends {
+        font-size: 0.68rem;
+        color: #171717;
+        font-weight: 700;
+    }
+`;
+
+const AddNew = styled.a`
     display: flex;
     flex-direction: row;
     justify-content: space-between;
@@ -198,7 +311,7 @@ const AddSchedule = styled.a`
     background: #fff;
 
     &:hover {
-        background: #f5f6f8;
+        background: #ebedf1;
     }
 
     span,
@@ -209,13 +322,139 @@ const AddSchedule = styled.a`
     }
 `;
 
+const PendingRequests = styled.a`
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    font-size: 0.68rem;
+    border-radius: 0 !important;
+    cursor: pointer;
+    padding: 0.5rem 0.5rem 0.5rem 0.75rem;
+    transition: background 0.1s ease;
+    background-color: #fff;
+
+    &:hover {
+        background-color: #dfe9fc;
+    }
+
+    span {
+        float: left;
+        text-align: left;
+        color: #4a4a4a;
+    }
+
+    div {
+        background-color: #e58d8d;
+        border-radius: 0.5rem;
+        padding: 0 0.3rem 0 0.3rem;
+        color: white;
+        font-size: 0.68rem;
+        align-items: center;
+    }
+`;
+
+interface ScheduleSelectorDropdownProps {
+    user: User;
+    activeName: string;
+    primaryScheduleId: string;
+    allSchedules: ScheduleType[];
+    friendshipState: FriendshipState;
+    displayOwnSchedule: (scheduleName: string) => void;
+    readOnly: boolean;
+    friendshipMutators: {
+        fetchFriendSchedule: (friend: User) => void;
+        fetchBackendFriendships: (user: User, activeFriendName: string) => void;
+        deleteFriendshipOnBackend: (
+            user: User,
+            friendPennkey: string,
+            activeFriendName: string
+        ) => void;
+    };
+    schedulesMutators: {
+        copy: (scheduleName: string) => void;
+        download: (scheduleName: string) => void;
+        remove: (user: User, scheduleName: string, scheduleId: string) => void;
+        rename: (oldName: string) => void;
+        createSchedule: () => void;
+        addFriend: () => void;
+        showRequests: () => void;
+        setPrimary: (user: User, scheduleName: string) => void;
+    };
+}
+
 const ScheduleSelectorDropdown = ({
+    user,
     activeName,
-    contents,
-    mutators: { download, copy, remove, rename, create },
+    primaryScheduleId,
+    allSchedules,
+    friendshipState,
+    displayOwnSchedule,
+    readOnly,
+    friendshipMutators: {
+        fetchFriendSchedule,
+        deleteFriendshipOnBackend,
+        fetchBackendFriendships,
+    },
+    schedulesMutators: {
+        copy,
+        download, 
+        remove,
+        rename,
+        createSchedule,
+        addFriend,
+        showRequests,
+        setPrimary,
+    },
 }: ScheduleSelectorDropdownProps) => {
     const [isActive, setIsActive] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
+
+    let hasFriends = friendshipState.acceptedFriends.length != 0;
+    let numRequests = friendshipState.requestsReceived.length;
+
+    // Used for box coloring, from StackOverflow:
+    // https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript
+    const hashString = (s: string) => {
+        let hash = 0;
+        if (!s || s.length === 0) return hash;
+        for (let i = 0; i < s.length; i += 1) {
+            const chr = s.charCodeAt(i);
+            hash = (hash << 5) - hash + chr;
+            hash |= 0; // Convert to 32bit integer
+        }
+        return hash;
+    };
+
+    // step 2 in the CIS121 review: hashing with linear probing.
+    // hash every section to a color, but if that color is taken, try the next color in the
+    // colors array. Only start reusing colors when all the colors are used.
+    const getColor = (() => {
+        const colors = [
+            Color.BLUE,
+            Color.RED,
+            Color.AQUA,
+            Color.ORANGE,
+            Color.GREEN,
+            Color.PINK,
+            Color.SEA,
+            Color.INDIGO,
+        ];
+        // some CIS120: `used` is a *closure* storing the colors currently in the schedule
+        let used: Color[] = [];
+        return (c: string) => {
+            if (used.length === colors.length) {
+                // if we've used all the colors, it's acceptable to start reusing colors.
+                used = [];
+            }
+            let i = Math.abs(hashString(c));
+            while (used.indexOf(colors[i % colors.length]) !== -1) {
+                i += 1;
+            }
+            const color = colors[i % colors.length];
+            used.push(color);
+            return color;
+        };
+    })();
 
     useEffect(() => {
         const listener = (event: Event) => {
@@ -231,12 +470,23 @@ const ScheduleSelectorDropdown = ({
             document.removeEventListener("click", listener);
         };
     });
+
     return (
         <ScheduleDropdownContainer ref={ref} isActive={isActive}>
-            <span className="selected_name">{activeName}</span>
+            <span className="selected_name">
+                {readOnly && friendshipState.activeFriend
+                    ? friendshipState.activeFriend.first_name + "'s Schedule"
+                    : activeName}
+            </span>
             <DropdownTrigger
                 isActive={isActive}
-                onClick={() => setIsActive(!isActive)}
+                onClick={() => {
+                    fetchBackendFriendships(
+                        user,
+                        friendshipState.activeFriend.username
+                    );
+                    setIsActive(!isActive);
+                }}
                 role="button"
             >
                 <div aria-haspopup={true} aria-controls="dropdown-menu">
@@ -247,31 +497,97 @@ const ScheduleSelectorDropdown = ({
             </DropdownTrigger>
             <DropdownMenu isActive={isActive} role="menu">
                 <DropdownContent>
-                    {Array.from(contents.entries()).map(
-                        ([index, { onClick, text: scheduleName }]) => (
-                            <DropdownButton
-                                key={index}
-                                isActive={scheduleName === activeName}
-                                makeActive={() => {
-                                    setIsActive(false);
-                                }}
-                                onClick={onClick}
-                                text={scheduleName}
-                                mutators={{
-                                    copy: () => copy(scheduleName),
-                                    download: () => download(scheduleName),
-                                    remove: () => remove(scheduleName),
-                                    rename: () => rename(scheduleName),
-                                }}
-                            />
-                        )
-                    )}
-                    <AddSchedule onClick={create} role="button" href="#">
+                    {allSchedules &&
+                        Object.entries(allSchedules).map(([name, data]) => {
+                            return (
+                                <DropdownButton
+                                    key={data.id}
+                                    isActive={name === activeName}
+                                    makeActive={() => {
+                                        setIsActive(false);
+                                    }}
+                                    isPrimary={primaryScheduleId === data.id}
+                                    hasFriends={hasFriends}
+                                    onClick={() => displayOwnSchedule(name)}
+                                    text={name}
+                                    mutators={{
+                                        setPrimary: () => {
+                                            setPrimary(user, data.id);
+                                        },
+                                        copy: () =>
+                                            copy(
+                                                nextAvailable(
+                                                    name,
+                                                    allSchedules
+                                                )
+                                            ),
+                                        download: () => download(name),
+                                        remove: () =>
+                                            remove(user, name, data.id),
+                                        rename: () => rename(name),
+                                    }}
+                                />
+                            );
+                        })}
+                    <AddNew onClick={createSchedule} role="button" href="#">
                         <Icon>
                             <i className="fa fa-plus" aria-hidden="true" />
                         </Icon>
                         <span> Add new schedule </span>
-                    </AddSchedule>
+                    </AddNew>
+
+                    <FriendContent>
+                        <div className="info">
+                            {hasFriends ? (
+                                <div>
+                                    <div>
+                                        Click{" "}
+                                        <i
+                                            className="fa fa-user"
+                                            aria-hidden="true"
+                                        />{" "}
+                                        to set your shared schedule
+                                    </div>
+                                </div>
+                            ) : (
+                                "Add a friend to share a schedule"
+                            )}
+                        </div>
+                        {friendshipState.acceptedFriends.map((friend) => (
+                            <FriendButton
+                                friendName={`${friend.first_name} ${friend.last_name}`}
+                                display={() => fetchFriendSchedule(friend)}
+                                removeFriend={() => {
+                                    deleteFriendshipOnBackend(
+                                        user,
+                                        friend.username,
+                                        friendshipState.activeFriend.username
+                                    );
+                                }}
+                                isActive={
+                                    readOnly &&
+                                    friendshipState.activeFriend &&
+                                    friendshipState.activeFriend.username ===
+                                        friend.username
+                                }
+                                color={getColor(friend.username)}
+                            />
+                        ))}
+                        <AddNew onClick={addFriend} role="button" href="#">
+                            <Icon>
+                                <i className="fa fa-plus" aria-hidden="true" />
+                            </Icon>
+                            <span> Add new friend </span>
+                        </AddNew>
+                        <PendingRequests
+                            onClick={showRequests}
+                            role="button"
+                            href="#"
+                        >
+                            <span> Pending Requests </span>
+                            <div>{numRequests}</div>
+                        </PendingRequests>
+                    </FriendContent>
                 </DropdownContent>
             </DropdownMenu>
         </ScheduleDropdownContainer>

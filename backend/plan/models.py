@@ -16,6 +16,7 @@ class Schedule(models.Model):
         on_delete=models.CASCADE,
         help_text="The person (user) to which the schedule belongs.",
     )
+
     sections = models.ManyToManyField(
         Section,
         help_text=dedent(
@@ -25,6 +26,7 @@ class Schedule(models.Model):
         """
         ),
     )
+
     semester = models.CharField(
         max_length=5,
         help_text=dedent(
@@ -34,6 +36,7 @@ class Schedule(models.Model):
         """
         ),
     )
+
     name = models.CharField(
         max_length=255,
         help_text=dedent(
@@ -43,6 +46,11 @@ class Schedule(models.Model):
         """
         ),
     )
+
+    @property
+    def is_primary(self):
+        return hasattr(self, "primary_schedule")
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -51,3 +59,33 @@ class Schedule(models.Model):
 
     def __str__(self):
         return "User: %s, Schedule ID: %s" % (self.person, self.id)
+
+
+class PrimarySchedule(models.Model):
+    """
+    Used to save the primary schedule for a user. This is the schedule that is displayed
+    on the main page.
+    """
+
+    user = models.OneToOneField(
+        get_user_model(),
+        on_delete=models.CASCADE,
+        null=True,
+        related_name="primary_schedule",
+        help_text="The User to which this schedule belongs.",
+    )
+
+    schedule = models.OneToOneField(
+        Schedule,
+        on_delete=models.CASCADE,
+        null=True,
+        related_name="primary_schedule",
+        help_text="The schedule that is the primary schedule for the user.",
+    )
+
+    class Meta:
+        # for now, we only allow one primary schedule per user
+        unique_together = (("user",),)
+
+    def __str__(self):
+        return f"PrimarySchedule(User: {self.user}, Schedule ID: {self.schedule_id})"

@@ -1,12 +1,14 @@
 import {
-    createScheduleOnBackend,
-    deleteSchedule,
-    deleteScheduleOnBackend,
-    fetchBackendSchedulesAndInitializeCart,
-    enforceSemester,
+    fetchBackendSchedules,
     updateScheduleOnBackend,
-    openModal,
+    changeSchedule,
+    deleteScheduleOnFrontend,
+    updateSchedulesOnFrontend,
+    findOwnPrimarySchedule,
+    setStateReadOnly,
+    checkForDefaultSchedules,
 } from "../actions";
+import { fetchBackendFriendships } from "../actions/friendshipUtil";
 import { SYNC_INTERVAL } from "../constants/sync_constants";
 
 /**
@@ -29,144 +31,108 @@ const allPushed = (scheduleState) => {
  * @param store The redux store
  */
 const initiateSync = async (store) => {
-    // Retrieve all the schedules that have been observed coming from
-    // the backend at any point in time.
-    // This ensures that schedules can be safely deleted without randomly returning.
-    let schedulesObserved;
-    const localStorageSchedulesObserved = localStorage.getItem(
-        "coursePlanObservedSchedules"
-    );
-    if (localStorageSchedulesObserved) {
-        try {
-            schedulesObserved = JSON.parse(localStorageSchedulesObserved) || {};
-        } catch (ignored) {
-            schedulesObserved = {};
-        }
-    } else {
-        schedulesObserved = {};
-    }
-
-    // Make sure the most up-to-date semester is being used
-    await new Promise((resolve) => {
-        const handleSemester = (semester) => {
-            store.dispatch(enforceSemester(semester));
-            resolve();
-        };
-        fetch("/api/options/")
-            .then((response) => response.json())
-            .then((options) => {
-                handleSemester(options.SEMESTER);
-            })
-            .catch(() => {
-                store.dispatch(
-                    openModal("SEMESTER_FETCH_ERROR", {}, "An Error Occurred")
-                );
-            });
-    });
-
-    let firstSync = !localStorage.getItem("usesBackendSync");
-    localStorage.setItem("usesBackendSync", "true");
-
     const cloudPull = () => {
-        const scheduleStateInit = store.getState().schedule;
-        const shouldInitCart = !scheduleStateInit.cartPushedToBackend;
+        if (!store.getState().friendships.pulledFromBackend) {
+            store.dispatch(
+                fetchBackendFriendships(
+                    store.getState().login.user,
+                    store.getState().friendships.activeFriend.username
+                )
+            );
+        }
+
+        if (
+            store.getState().friendships.activeFriend.username === "" &&
+            store.getState().schedule.readOnly
+        ) {
+            store.dispatch(setStateReadOnly(false));
+        }
+
         return new Promise((resolve) => {
             store.dispatch(
-                fetchBackendSchedulesAndInitializeCart(
-                    scheduleStateInit.cartSections,
-                    shouldInitCart,
-                    (newSchedulesObserved) => {
-                        // record the new schedules that have been observed
-                        const newSchedulesObservedSet = {};
-                        let cartFound = false;
-                        newSchedulesObserved.forEach(({ id, name }) => {
-                            if (name === "cart") {
-                                cartFound = true;
-                            }
-                            schedulesObserved[id] = true;
-                            newSchedulesObservedSet[id] = true;
-                        });
+                fetchBackendSchedules((schedulesFromBackend) => {
+                    const scheduleState = store.getState().schedule;
 
-                        if (!cartFound && !shouldInitCart) {
-                            // the cart was deleted on the backend; reset it
-                            store.dispatch(deleteSchedule("cart"));
-                        }
+                    if (
+                        (!scheduleState.scheduleSelected ||
+                            scheduleState.scheduleSelected === "") &&
+                        Object.keys(scheduleState.schedules).length !== 0
+                    ) {
+                        store.dispatch(
+                            changeSchedule(
+                                Object.keys(scheduleState.schedules)[0]
+                            )
+                        );
+                    }
 
-                        const scheduleState = store.getState().schedule;
-                        Object.keys(schedulesObserved).forEach((id) => {
-                            // The schedule has been observed from the backend before,
-                            // but is no longer being observed; Should be deleted locally.
-                            if (!newSchedulesObservedSet[id]) {
-                                // find the name of the schedule with the deleted id
-                                const schedName = Object.entries(
-                                    scheduleState.schedules
+                    store.dispatch(
+                        updateSchedulesOnFrontend(schedulesFromBackend)
+                    );
+
+                    Object.keys(scheduleState.schedules).forEach(
+                        (scheduleName) => {
+                            if (
+                                !schedulesFromBackend.reduce(
+                                    (acc, schedule) =>
+                                        acc || schedule.name === scheduleName,
+                                    false
                                 )
-                                    .filter(
-                                        ([_, { id: selectedId }]) =>
-                                            `${selectedId}` === `${id}`
-                                    )
-                                    .map(([name, _]) => name)[0];
-                                if (schedName) {
-                                    store.dispatch(deleteSchedule(schedName));
+                            ) {
+                                // The local schedule is no longer observed on the backend.
+                                // Should be deleted locally.
+                                if (scheduleName) {
+                                    store.dispatch(
+                                        deleteScheduleOnFrontend(scheduleName)
+                                    );
                                 }
                             }
-                        });
-                        localStorage.setItem(
-                            "coursePlanObservedSchedules",
-                            JSON.stringify(schedulesObserved)
+                        }
+                    );
+
+                    store.dispatch(
+                        checkForDefaultSchedules(schedulesFromBackend)
+                    );
+
+                    if (
+                        !scheduleState.primaryScheduleId ||
+                        scheduleState.primaryScheduleId === "-1" ||
+                        !schedulesFromBackend.reduce(
+                            (acc, schedule) =>
+                                acc ||
+                                schedule.id === scheduleState.primaryScheduleId,
+                            false
+                        )
+                    ) {
+                        store.dispatch(
+                            findOwnPrimarySchedule(store.getState().login.user)
                         );
-                        resolve();
                     }
-                )
+
+                    resolve();
+                })
             );
         });
     };
 
     const cloudPush = () => {
         const scheduleState = store.getState().schedule || {};
-        // Delete all schedules (on the backend) that have been deleted
-        Object.keys(scheduleState.deletedSchedules || {}).forEach(
-            (deletedScheduleId) => {
-                // Don't queue a deletion on the backend if it has already been queued
-                const deletionState =
-                    scheduleState.deletedSchedules[deletedScheduleId];
-                if (deletionState && deletionState.deletionQueued) {
-                    return;
-                }
-                store.dispatch(deleteScheduleOnBackend(deletedScheduleId));
-            }
-        );
 
         // Update the server if the cart has been updated
         if (!scheduleState.cartPushedToBackend && "cartId" in scheduleState) {
             store.dispatch(
                 updateScheduleOnBackend("cart", {
                     id: scheduleState.cartId,
-                    meetings: scheduleState.cartSections,
+                    sections: scheduleState.cartSections,
                 })
             );
         }
 
         // Update the server with any new changes to schedules
-        Object.keys(scheduleState.schedules).forEach((scheduleName) => {
-            const schedule = scheduleState.schedules[scheduleName];
-            if (!schedule.pushedToBackend) {
-                const shouldCreateOnBackend =
-                    schedule.backendCreationState &&
-                    !schedule.backendCreationState.creationQueued &&
-                    !("id" in schedule);
-                if (shouldCreateOnBackend || firstSync) {
-                    store.dispatch(
-                        createScheduleOnBackend(scheduleName, schedule.meetings)
-                    );
-                } else {
-                    store.dispatch(
-                        updateScheduleOnBackend(scheduleName, schedule)
-                    );
-                }
+        Object.entries(scheduleState.schedules).forEach(([name, data]) => {
+            if (!data.pushedToBackend) {
+                store.dispatch(updateScheduleOnBackend(name, data));
             }
         });
-        firstSync = false;
     };
 
     const waitBeforeNextSync = () =>

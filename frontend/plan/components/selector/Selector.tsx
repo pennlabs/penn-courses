@@ -7,7 +7,6 @@ import {
     doAPIRequest,
     fetchCourseDetails,
     updateCourseInfo,
-    addSchedItem,
     removeSchedItem,
     updateScrollPos,
 } from "../../actions/index";
@@ -24,7 +23,6 @@ interface SelectorProps {
     course: Course;
     getCourse: (courseId: string) => void;
     clearCourse: () => void;
-    addToSchedule: (section: string) => void;
     removeFromSchedule: (id: string) => void;
     isLoadingCourseInfo: boolean;
     isSearchingCourseInfo: boolean;
@@ -54,7 +52,6 @@ const Selector: FunctionComponent<SelectorProps> = ({
     course,
     getCourse,
     clearCourse,
-    addToSchedule,
     removeFromSchedule,
     isLoadingCourseInfo,
     isSearchingCourseInfo,
@@ -245,7 +242,6 @@ const mapStateToProps = ({
 const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
     getCourse: (courseId: string) => dispatch(fetchCourseDetails(courseId)),
     clearCourse: () => dispatch(updateCourseInfo(null)),
-    addToSchedule: (section: Section) => dispatch(addSchedItem(section)),
     removeFromSchedule: (id: string) => dispatch(removeSchedItem(id)),
     setScrollPos: (scrollPos: number) => dispatch(updateScrollPos(scrollPos)),
 });

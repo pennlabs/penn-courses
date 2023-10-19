@@ -1745,6 +1745,7 @@
             "hashes": [
                 "sha256:4cc4727258671ac5fa17ab422155e9aaef8a2008ebb86e4404b66deaae965db2"
             ],
+            "index": "pypi",
             "markers": "sys_platform == 'linux'",
             "version": "==2.0.22"
         },

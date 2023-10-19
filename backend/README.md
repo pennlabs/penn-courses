@@ -193,3 +193,10 @@ If you don't want to use docker alone, you can also set up and run the dev envir
 7. Running tests
    - Run `python manage.py test` to run our test suite.
    - To run a specific test, you can use the format `python manage.py test tests.review.test_api.OneReviewTestCase.test_course` (also note that in this example, you can use any prefix of that path to run a larger set of tests).
+
+## Linting
+```
+pipenv run black -l100 .
+pipenv run isort .
+pipenv run flake8 .
+```
