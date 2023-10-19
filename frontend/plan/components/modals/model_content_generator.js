@@ -37,6 +37,7 @@ export const generateModalInterior = (reduxState) => {
                     buttonName="Rename"
                     existingData={Object.keys(reduxState.schedule.schedules)}
                     requestType="schedule"
+                    overwriteDefault={true}
                 />
             );
         case "CREATE_SCHEDULE":
@@ -45,6 +46,7 @@ export const generateModalInterior = (reduxState) => {
                     buttonName="Create"
                     existingData={Object.keys(reduxState.schedule.schedules)}
                     requestType="schedule"
+                    overwriteDefault={true}
                 />
             );
         case "ADD_FRIEND":

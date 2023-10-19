@@ -40,7 +40,6 @@ const AddScheduleFriendsModalInterior = ({
 }: AddScheduleFriendsModalInteriorProps) => {
     const [inputRef, setInputRef] = useState<HTMLInputElement | null>(null);
     const [userInput, setUserInput] = useState(defaultValue);
-    const [changed, setChanged] = useState(false);
     const [errorObj, setErrorObj] = useState({ message: "", error: false });
 
     useEffect(() => {
@@ -49,7 +48,6 @@ const AddScheduleFriendsModalInterior = ({
             userInput,
             existingData as string[],
             requestType,
-            changed,
             setErrorObj
         );
     }, [userInput]);
@@ -99,7 +97,6 @@ const AddScheduleFriendsModalInterior = ({
                 }}
                 onChange={() => {
                     setUserInput(inputRef?.value || "");
-                    setChanged(true);
                 }}
                 onClick={() => {
                     if (overwriteDefault && userInput === defaultValue) {
