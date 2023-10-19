@@ -404,7 +404,7 @@ class FriendshipView(generics.ListAPIView):
 
     schema = PcxAutoSchema(
         response_codes={
-            reverse_func("friendship"): {
+            "friendship": {
                 "GET": {
                     200: "Friendships retrieved successfully.",
                 },
@@ -421,7 +421,7 @@ class FriendshipView(generics.ListAPIView):
             }
         },
         custom_parameters={
-            reverse_func("friendship"): {
+            "friendship": {
                 "DELETE": [
                     {
                         "name": "pennkey",
@@ -434,7 +434,7 @@ class FriendshipView(generics.ListAPIView):
             },
         },
         override_request_schema={
-            reverse_func("friendship"): {
+            "friendship": {
                 "POST": {
                     "type": "object",
                     "properties": {
