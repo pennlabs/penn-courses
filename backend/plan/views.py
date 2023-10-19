@@ -18,8 +18,7 @@ from courses.models import Course, Meeting, Section
 from courses.serializers import CourseListSerializer
 from courses.util import get_course_and_section, get_current_semester
 from courses.views import get_accepted_friends
-from PennCourses.docs_settings import PcxAutoSchema 
-
+from PennCourses.docs_settings import PcxAutoSchema
 from plan.management.commands.recommendcourses import (
     clean_course_input,
     recommend_courses,
