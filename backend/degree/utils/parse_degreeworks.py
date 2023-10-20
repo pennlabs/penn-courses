@@ -2,8 +2,8 @@ from pprint import pprint
 
 from django.db.models import Q
 
-from backend.degree.utils.departments import ENG_DEPTS, SAS_DEPTS, WH_DEPTS
 from degree.models import DegreePlan, Rule
+from degree.utils.departments import ENG_DEPTS, SAS_DEPTS, WH_DEPTS
 
 
 def parse_coursearray(courseArray) -> Q:
@@ -288,8 +288,8 @@ def parse_degreeworks(json: dict, degree_plan: DegreePlan) -> list[Rule]:
 
 
 if __name__ == "__main__":
-    from backend.degree.utils.departments import E_BAS_DEGREE_PLANS, W_DEGREE_PLANS, A_DEGREE_PLANS
-    from backend.degree.utils.degreeworks_client import DegreeworksClient
+    from degree.utils.departments import E_BAS_DEGREE_PLANS, W_DEGREE_PLANS, A_DEGREE_PLANS
+    from degree.utils.degreeworks_client import DegreeworksClient
     from os import getenv
 
     pennid = getenv("PENN_ID")
