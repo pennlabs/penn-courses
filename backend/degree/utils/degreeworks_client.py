@@ -1,7 +1,9 @@
-from requests import Session
-from degree.models import DegreePlan
 import json
 from pathlib import Path
+from requests import Session
+
+from degree.models import DegreePlan
+
 
 BASE_URL = "https://degreeworks-prod-j.isc-seo.upenn.edu:9904"  # "128.91.225.72:9904"
 

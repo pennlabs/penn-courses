@@ -1,16 +1,12 @@
+from os import getenv
 from textwrap import dedent
 
 from django.core.management.base import BaseCommand
+from django.db import transaction
 
 from backend.degree.utils.degreeworks_client import DegreeworksClient
-
-from degree.utils.parse_degreeworks import parse_degreeworks
-
-from os import getenv
-
 from courses.util import get_current_semester
-
-from django.db import transaction
+from degree.utils.parse_degreeworks import parse_degreeworks
 
 
 class Command(BaseCommand):

@@ -1,9 +1,11 @@
-from textwrap import dedent
 from dataclasses import asdict
-from django.core.management.base import BaseCommand
-from backend.degree.utils.degreeworks_client import DegreeworksClient
 from os import getenv
 from pprint import pprint
+from textwrap import dedent
+
+from django.core.management.base import BaseCommand
+
+from backend.degree.utils.degreeworks_client import DegreeworksClient
 from courses.util import get_current_semester
 
 

@@ -1,8 +1,9 @@
-from django.db.models import Q
-from lark import Lark, Transformer
+from ast import literal_eval
 from functools import reduce
 from operator import or_, and_
-from ast import literal_eval
+
+from django.db.models import Q
+from lark import Lark, Transformer
 
 """
 This file contains a parser for that can convert a stringified Q object

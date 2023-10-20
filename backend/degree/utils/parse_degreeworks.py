@@ -1,8 +1,9 @@
+from pprint import pprint
+
 from django.db.models import Q
 
-from degree.models import DegreePlan, Rule
-from pprint import pprint
 from backend.degree.utils.departments import ENG_DEPTS, SAS_DEPTS, WH_DEPTS
+from degree.models import DegreePlan, Rule
 
 
 def parse_coursearray(courseArray) -> Q:
