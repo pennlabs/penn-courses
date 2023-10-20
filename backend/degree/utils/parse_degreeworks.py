@@ -2,7 +2,8 @@ from django.db.models import Q
 
 from degree.models import DegreePlan, Rule
 from pprint import pprint
-from constants import ENG_DEPTS, SAS_DEPTS, WH_DEPTS
+from backend.degree.utils.departments import ENG_DEPTS, SAS_DEPTS, WH_DEPTS
+
 
 def parse_coursearray(courseArray) -> Q:
     """
@@ -148,7 +149,7 @@ def evaluate_condition(condition, degree_plan) -> bool:
         raise LookupError(f"Unknown condition type in ifStmt: {condition.keys()}")
 
 
-def parse_rulearray(ruleArray, degree_plan, parent: Rule=None) -> list[Rule]:
+def parse_rulearray(ruleArray, degree_plan, parent: Rule = None) -> list[Rule]:
     """
     Logic to parse a single degree ruleArray in a blockArray requirement.
     A ruleArray consists of a list of rule objects that contain a requirement object.
@@ -200,12 +201,7 @@ def parse_rulearray(ruleArray, degree_plan, parent: Rule=None) -> list[Rule]:
                     else:
                         assert rule_req["classCreditOperator"] == "AND"
 
-                rules.append(
-                    Rule(
-                        q=str(parse_coursearray(rule_req["courseArray"])),
-                        credits=
-                    )
-                )
+                rules.append(Rule(q=str(parse_coursearray(rule_req["courseArray"])), credits=0))
             case "IfStmt":
                 assert "rightCondition" not in rule_req
                 try:
@@ -289,13 +285,14 @@ def parse_degreeworks(json: dict, degree_plan: DegreePlan) -> list[Rule]:
         degree_reqs.append(degree_req)
     return degree_reqs
 
+
 if __name__ == "__main__":
-    from backend.degree.utils.constants import E_BAS_DEGREE_PLANS, W_DEGREE_PLANS, A_DEGREE_PLANS
-    from backend.degree.utils.request_degreeworks import DegreeworksClient
+    from backend.degree.utils.departments import E_BAS_DEGREE_PLANS, W_DEGREE_PLANS, A_DEGREE_PLANS
+    from backend.degree.utils.degreeworks_client import DegreeworksClient
     from os import getenv
 
     pennid = getenv("PENN_ID")
-    assert pennid is not None        
+    assert pennid is not None
     auth_token = getenv("X-AUTH-TOKEN")
     assert pennid is not None
     refresh_token = getenv("REFRESH_TOKEN")
@@ -304,10 +301,7 @@ if __name__ == "__main__":
     assert name is not None
 
     client = DegreeworksClient(
-        pennid=pennid,
-        auth_token=auth_token,
-        refresh_token=refresh_token,
-        name=name
+        pennid=pennid, auth_token=auth_token, refresh_token=refresh_token, name=name
     )
 
     for i, degree_plan in enumerate(E_BAS_DEGREE_PLANS):

@@ -7,6 +7,7 @@ from django.db.models.functions import Coalesce
 
 from degree.utils.model_utils import q_object_parser
 
+
 class DegreePlan(models.Model):
     """
     This model represents a degree plan for a specific year.
@@ -67,6 +68,7 @@ class Rule(models.Model):
     """
     This model represents a degree requirement rule.
     """
+
     title = models.CharField(
         max_length=200,
         blank=True,
@@ -74,7 +76,7 @@ class Rule(models.Model):
             """
             The title for this rule.
             """
-        )
+        ),
     )
 
     num_courses = models.PositiveSmallIntegerField(
@@ -130,20 +132,26 @@ class Rule(models.Model):
             This rule's parent Rule if it has one.
             """
         ),
-        related_name="children"
+        related_name="children",
     )
 
     class Meta:
         constraints = [
-            models.CheckConstraint(check=(
-                (Q(credits__isnull=True) | Q(credits__gt=0)) # check credits and num are non-zero
-                & (Q(num_courses__isnull=True) | Q(num_courses__gt=0))
-            ), name="num_course_credits_gt_0")   
+            models.CheckConstraint(
+                check=(
+                    (
+                        Q(credits__isnull=True) | Q(credits__gt=0)
+                    )  # check credits and num are non-zero
+                    & (Q(num_courses__isnull=True) | Q(num_courses__gt=0))
+                ),
+                name="num_course_credits_gt_0",
+            )
         ]
 
     def __str__(self) -> str:
-        return f"{self.q}, num={self.num_courses}, cus={self.credits}, degree_plan={self.degree_plan}"
-
+        return (
+            f"{self.q}, num={self.num_courses}, cus={self.credits}, degree_plan={self.degree_plan}"
+        )
 
     def evaluate(self, full_codes: Iterable[str]) -> bool:
         """
@@ -152,29 +160,29 @@ class Rule(models.Model):
         """
         if self.q:
             assert not self.children.all().exists()
-            total_courses, total_credits = Course.objects.filter(
-                q_object_parser.parse(self.q),
-                full_code__in=full_codes
-            ).aggregate(
-                total_courses=Count("id"),
-                total_credits=Coalesce(
-                    Sum("credits"), 0, 
-                    output_field=DecimalField(max_digits=4, decimal_places=2)
+            total_courses, total_credits = (
+                Course.objects.filter(q_object_parser.parse(self.q), full_code__in=full_codes)
+                .aggregate(
+                    total_courses=Count("id"),
+                    total_credits=Coalesce(
+                        Sum("credits"), 0, output_field=DecimalField(max_digits=4, decimal_places=2)
+                    ),
                 )
-            ).values()
-                        
+                .values()
+            )
+
             assert self.num_courses is not None or self.credits is not None
             if self.num_courses is not None and total_courses < self.num_courses:
                 return False
-            
+
             if self.credits is not None and total_credits < self.credits:
                 return False
 
             # TODO: run some extra checks...
 
             return True
-        
-        assert self.children.all().exists()    
+
+        assert self.children.all().exists()
         for child in self.children.all():
             if not child.evaluate(full_codes):
                 return False

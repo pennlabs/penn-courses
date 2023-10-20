@@ -248,7 +248,7 @@ class Course(models.Model):
             """
         ),
     )
-    
+
     credits = models.DecimalField(
         max_digits=4,  # some course for 2019C is 14 CR...
         decimal_places=2,

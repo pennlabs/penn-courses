@@ -3,19 +3,27 @@
 from django.db import migrations, models
 from alert.management.commands.recomputestats import COURSE_CREDITS_RAW_SQL
 
+
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('courses', '0054_alter_ngssrestriction_inclusive'),
+        ("courses", "0054_alter_ngssrestriction_inclusive"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='course',
-            name='credits',
-            field=models.DecimalField(blank=True, db_index=True, decimal_places=2, help_text='\nThe number of cus all acitivites of this course requie (precomputed for efficiency).\nMaintained by the registrar import / recomputestats script.\n', max_digits=4, null=True),
+            model_name="course",
+            name="credits",
+            field=models.DecimalField(
+                blank=True,
+                db_index=True,
+                decimal_places=2,
+                help_text="\nThe number of cus all acitivites of this course requie (precomputed for efficiency).\nMaintained by the registrar import / recomputestats script.\n",
+                max_digits=4,
+                null=True,
+            ),
         ),
         migrations.RunSQL(
             COURSE_CREDITS_RAW_SQL,
-        )
+        ),
     ]

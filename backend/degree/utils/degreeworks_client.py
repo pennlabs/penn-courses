@@ -1,10 +1,10 @@
 from requests import Session
-from degree.degreeworks.structs import DegreePlan
-from tqdm import tqdm
+from degree.models import DegreePlan
 import json
 from pathlib import Path
 
-BASE_URL = "https://degreeworks-prod-j.isc-seo.upenn.edu:9904" # "128.91.225.72:9904" 
+BASE_URL = "https://degreeworks-prod-j.isc-seo.upenn.edu:9904"  # "128.91.225.72:9904"
+
 
 class DegreeworksClient:
     def __init__(self, auth_token, refresh_token, pennid, name):
@@ -53,7 +53,9 @@ class DegreeworksClient:
 
         return res.json()
 
-    def degree_plans_of(self, program_code: str, year: int, undergrad_only=False) -> list[DegreePlan]:
+    def degree_plans_of(
+        self, program_code: str, year: int, undergrad_only=False
+    ) -> list[DegreePlan]:
         goals_payload = [
             {
                 "id": "programCollection",
@@ -359,7 +361,9 @@ class DegreeworksClient:
                 # CONCENTRATION
                 concentrations = res.json()[1]["goals"][1]["choices"]
                 if len(concentrations) == 0:
-                    degree_plans.append(DegreePlan(program_code, degree_code, major_code, None, 2023))
+                    degree_plans.append(
+                        DegreePlan(program_code, degree_code, major_code, None, 2023)
+                    )
                     continue
                 for concentration in concentrations:
                     concentration_code = concentration["key"]
@@ -369,7 +373,7 @@ class DegreeworksClient:
 
         return degree_plans
 
-    def get_programs(self, timeout=30, year: int=2023) -> str:
+    def get_programs(self, timeout=30, year: int = 2023) -> str:
         goals_payload = [
             {
                 "id": "programCollection",
@@ -2328,36 +2332,16 @@ class DegreeworksClient:
         return [program["key"] for program in res.json()[0]["goals"][1]["choices"]]
 
 
-def write_dp(dp: DegreePlan, audit_json: dict, dir: str | Path="degreeplans", overwrite=False):
+def write_dp(dp: DegreePlan, audit_json: dict, dir: str | Path = "degreeplans", overwrite=False):
     file_name = f"{dp.year}-{dp.program}-{dp.degree}-{dp.major}"
     if dp.concentration is not None:
         file_name += f"-{dp.concentration}"
     Path(dir).mkdir(
-        exist_ok=True, # will still throw an error if dir is a non-directory file
-        parents=True
+        exist_ok=True, parents=True  # will still throw an error if dir is a non-directory file
     )
-    file_path = Path(
-        dir, 
-        file_name
-    )
+    file_path = Path(dir, file_name)
     if not overwrite and file_path.exists():
         raise FileExistsError(f"Degree plan with path `{file_name}`")
 
     with open(file_path, "w") as f:
         json.dump(audit_json, f, indent=4)
-
-
-if __name__ == "__main__":
-    client = DegreeworksClient(
-        pennid=env["PENN_ID"],
-        auth_token=env["X-AUTH-TOKEN"],
-        refresh_token=env["REFRESH_TOKEN"]
-    )
-
-    for year in range(2017, 2023 + 1):
-        print(year)
-        for program in client.get_programs(year=year):
-            print("\t" + program)
-            for degree_plan in tqdm(client.degree_plans_of(program, year=year)):
-                write_dp(degree_plan, client.audit(degree_plan))
-            
