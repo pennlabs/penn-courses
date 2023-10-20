@@ -293,7 +293,7 @@ if __name__ == "__main__":
 
     pennid = getenv("PENN_ID")
     assert pennid is not None
-    auth_token = getenv("X-AUTH-TOKEN")
+    auth_token = getenv("X_AUTH_TOKEN")
     assert pennid is not None
     refresh_token = getenv("REFRESH_TOKEN")
     assert refresh_token is not None

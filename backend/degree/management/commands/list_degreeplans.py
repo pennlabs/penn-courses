@@ -12,7 +12,7 @@ class Command(BaseCommand):
         """
     Lists the available degreeplans for a semester. 
         
-    Expects PENN_ID, X-AUTH-TOKEN, REFRESH_TOKEN, NAME environment variables are set. It is
+    Expects PENN_ID, X_AUTH_TOKEN, REFRESH_TOKEN, NAME environment variables are set. It is
     recommended you add a .env file to the backend and let pipenv load it in for you.
     """
     )
@@ -57,7 +57,7 @@ class Command(BaseCommand):
 
         pennid = getenv("PENN_ID")
         assert pennid is not None
-        auth_token = getenv("X-AUTH-TOKEN")
+        auth_token = getenv("X_AUTH_TOKEN")
         assert pennid is not None
         refresh_token = getenv("REFRESH_TOKEN")
         assert refresh_token is not None

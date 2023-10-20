@@ -16,7 +16,7 @@ class DegreeworksClient:
         cookies = {
             "REFRESH_TOKEN": refresh_token,
             "NAME": name,
-            "X-AUTH-TOKEN": auth_token,
+            "X_AUTH_TOKEN": auth_token,
         }
         headers = {
             "Host": "degreeworks-prod-j.isc-seo.upenn.edu:9904",
