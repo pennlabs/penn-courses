@@ -464,6 +464,10 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         )
         return queryset
 
+class AutomaticCourseScheduler(generics.ListAPIView, BaseCourseMixin):
+    
+
+        
 
 class CalendarAPIView(APIView):
     schema = PcxAutoSchema(
@@ -561,3 +565,5 @@ class CalendarAPIView(APIView):
         response = HttpResponse(calendar, content_type="text/calendar")
         response["Content-Disposition"] = "attachment; pcp-schedule.ics"
         return response
+
+        

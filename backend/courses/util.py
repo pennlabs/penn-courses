@@ -672,3 +672,6 @@ def get_semesters(semesters=None, verbose=False):
                 "(if an error is encountered)."
             )
     return semesters
+
+
+    
