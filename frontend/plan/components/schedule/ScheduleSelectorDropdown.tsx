@@ -195,7 +195,8 @@ const DropdownButton = ({
             >
                 <i className="far fa-copy" aria-hidden="true" />
             </Icon>
-            <Icon
+            {/* TODO: Add back when working */}
+            {/* <Icon
                 onClick={(e) => {
                     download();
                     e.stopPropagation();
@@ -204,7 +205,7 @@ const DropdownButton = ({
                 className="option-icon"
             >
                 <i className="fa fa-download" aria-hidden="true" />
-            </Icon>
+            </Icon> */}
             <Icon
                 onClick={(e) => {
                     remove();
@@ -408,8 +409,8 @@ const ScheduleSelectorDropdown = ({
     const [isActive, setIsActive] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
-    let hasFriends = friendshipState.acceptedFriends.length != 0;
-    let numRequests = friendshipState.requestsReceived.length;
+    const hasFriends = friendshipState.acceptedFriends.length != 0;
+    const numRequests = friendshipState.requestsReceived.length;
 
     // Used for box coloring, from StackOverflow:
     // https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript
@@ -511,6 +512,8 @@ const ScheduleSelectorDropdown = ({
                                     text={name}
                                     mutators={{
                                         setPrimary: () => {
+                                            console.log(primaryScheduleId);
+                                            console.log(data.id);
                                             if (primaryScheduleId === data.id) {
                                                 setPrimary(user, null);
                                             } else {

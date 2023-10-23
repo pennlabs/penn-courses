@@ -60,7 +60,9 @@ class PrimaryScheduleTest(TestCase):
         self.assertEqual(response.json()["sections"][0]["course"]["id"], self.cis120.course.id)
 
     def test_replace_primary_schedule(self):
-        response = self.client.put(primary_schedule_url, {"schedule_id": self.deleted_schedule_id})  # invalid ID
+        response = self.client.put(
+            primary_schedule_url, {"schedule_id": self.deleted_schedule_id}
+        )  # invalid ID
 
         self.assertEqual(response.status_code, 400)
 

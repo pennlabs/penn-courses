@@ -205,10 +205,10 @@ class PrimaryScheduleViewSet(viewsets.ModelViewSet):
             | Q(user_id__in=Subquery(get_accepted_friends(self.request.user).values("id")))
         ).prefetch_related(
             Prefetch("schedule__sections", Section.with_reviews.all()),
-            "sections__associated_sections",
-            "sections__instructors",
-            "sections__meetings",
-            "sections__meetings__room",
+            "schedule__sections__associated_sections",
+            "schedule__sections__instructors",
+            "schedule__sections__meetings",
+            "schedule__sections__meetings__room",
         )
 
     schema = PcxAutoSchema(
@@ -244,7 +244,6 @@ class PrimaryScheduleViewSet(viewsets.ModelViewSet):
         res = {}
         user = request.user
         schedule_id = request.data.get("schedule_id")
-        
         if not schedule_id:
             # Delete primary schedule
             primary_schedule_entry = self.get_queryset().filter(user=user).first()
@@ -253,9 +252,7 @@ class PrimaryScheduleViewSet(viewsets.ModelViewSet):
                 res["message"] = "Primary schedule successfully unset"
             res["message"] = "Primary schedule was already unset"
         else:
-            schedule = Schedule.objects.filter(
-                person_id=user.id, id=schedule_id
-            ).first()
+            schedule = Schedule.objects.filter(person_id=user.id, id=schedule_id).first()
             if not schedule:
                 res["message"] = "Schedule does not exist"
                 return JsonResponse(res, status=status.HTTP_400_BAD_REQUEST)
