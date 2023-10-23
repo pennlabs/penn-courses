@@ -260,7 +260,10 @@ make_manual_schema_changes if you need to), you can download it from the /api/op
 
 
 def get_url_by_name(name):
-    path = get_resolver().reverse_dict[name][0][0][0]
+    reverse = get_resolver().reverse_dict
+    if name not in reverse:
+        raise ValueError(f"Tried to get URL by name '{reverse}', but no such URL exists.")
+    path = reverse[name][0][0][0]
     path = path.replace(r"%(pk)s", r"{id}")
     return "/" + re.sub(r"%\(([^)]+)\)s", r"{\1}", path)
 
