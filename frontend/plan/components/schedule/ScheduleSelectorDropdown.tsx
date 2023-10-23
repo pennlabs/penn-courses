@@ -41,7 +41,7 @@ const ButtonContainer = styled.div<{ isActive: boolean; isPrimary?: boolean }>`
 
     .option-icon i.primary:hover {
         color: ${(props) =>
-            props.isPrimary ? "#295FCE" : "#7E7E7E"}; !important;
+        props.isPrimary ? "#295FCE" : "#7E7E7E"}; !important;
     }
 
     .initial-icon {
@@ -169,9 +169,8 @@ const DropdownButton = ({
                     className="option-icon"
                 >
                     <i
-                        className={`primary ${
-                            isPrimary ? "fa" : "far"
-                        } fa-user`}
+                        className={`primary ${isPrimary ? "fa" : "far"
+                            } fa-user`}
                         aria-hidden="true"
                     />
                 </Icon>
@@ -196,7 +195,8 @@ const DropdownButton = ({
             >
                 <i className="far fa-copy" aria-hidden="true" />
             </Icon>
-            <Icon
+            {/* TODO: Add back when working */}
+            {/* <Icon
                 onClick={(e) => {
                     download();
                     e.stopPropagation();
@@ -205,7 +205,7 @@ const DropdownButton = ({
                 className="option-icon"
             >
                 <i className="fa fa-download" aria-hidden="true" />
-            </Icon>
+            </Icon> */}
             <Icon
                 onClick={(e) => {
                     remove();
@@ -235,7 +235,7 @@ const ScheduleDropdownContainer = styled.div`
 
     i.fa.fa-chevron-down::before {
         content: ${({ isActive }: { isActive: boolean }) =>
-            isActive ? '"\f077"' : ""} !important;
+        isActive ? '"\f077"' : ""} !important;
     }
 `;
 
@@ -250,7 +250,7 @@ const DropdownTrigger = styled.div`
 
     div {
         background: ${({ isActive }: { isActive: boolean }) =>
-            isActive ? "rgba(162, 180, 237, 0.38) !important" : "none"};
+        isActive ? "rgba(162, 180, 237, 0.38) !important" : "none"};
     }
 
     div:hover {
@@ -378,7 +378,7 @@ interface ScheduleSelectorDropdownProps {
         createSchedule: () => void;
         addFriend: () => void;
         showRequests: () => void;
-        setPrimary: (user: User, scheduleName: string) => void;
+        setPrimary: (user: User, scheduleName: string | null) => void;
     };
 }
 
@@ -397,7 +397,7 @@ const ScheduleSelectorDropdown = ({
     },
     schedulesMutators: {
         copy,
-        download, 
+        download,
         remove,
         rename,
         createSchedule,
@@ -409,8 +409,8 @@ const ScheduleSelectorDropdown = ({
     const [isActive, setIsActive] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
-    let hasFriends = friendshipState.acceptedFriends.length != 0;
-    let numRequests = friendshipState.requestsReceived.length;
+    const hasFriends = friendshipState.acceptedFriends.length != 0;
+    const numRequests = friendshipState.requestsReceived.length;
 
     // Used for box coloring, from StackOverflow:
     // https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript
@@ -512,7 +512,13 @@ const ScheduleSelectorDropdown = ({
                                     text={name}
                                     mutators={{
                                         setPrimary: () => {
-                                            setPrimary(user, data.id);
+                                            console.log(primaryScheduleId);
+                                            console.log(data.id);
+                                            if (primaryScheduleId === data.id) {
+                                                setPrimary(user, null);
+                                            } else {
+                                                setPrimary(user, data.id);
+                                            }
                                         },
                                         copy: () =>
                                             copy(
@@ -568,7 +574,7 @@ const ScheduleSelectorDropdown = ({
                                     readOnly &&
                                     friendshipState.activeFriend &&
                                     friendshipState.activeFriend.username ===
-                                        friend.username
+                                    friend.username
                                 }
                                 color={getColor(friend.username)}
                             />
