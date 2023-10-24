@@ -10,7 +10,6 @@ def compute_has_status_updates(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("courses", "0042_section_has_reviews"),
     ]

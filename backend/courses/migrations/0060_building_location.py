@@ -5,15 +5,19 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('courses', '0059_merge_20230816_2208'),
+        ("courses", "0059_merge_20230816_2208"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='building',
-            name='location',
-            field=django.contrib.gis.db.models.fields.PointField(blank=True, help_text='\nThe location of the building, in the form POINT({longitude} {latitude}), e.g.\nPOINT(-75.176773 39.961380) for the Towne Building.\n', null=True, srid=4326),
+            model_name="building",
+            name="location",
+            field=django.contrib.gis.db.models.fields.PointField(
+                blank=True,
+                help_text="\nThe location of the building, in the form POINT({longitude} {latitude}), e.g.\nPOINT(-75.176773 39.961380) for the Towne Building.\n",
+                null=True,
+                srid=4326,
+            ),
         ),
     ]

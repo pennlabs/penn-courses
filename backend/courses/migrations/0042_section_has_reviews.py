@@ -10,7 +10,6 @@ def compute_has_reviews(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("courses", "0041_remove_section_raw_demand"),
         ("review", "0004_auto_20200512_1526"),

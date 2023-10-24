@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("courses", "0047_alter_room_number"),
         ("courses", "0048_alter_attribute_school"),

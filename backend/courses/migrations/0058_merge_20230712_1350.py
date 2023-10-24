@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("courses", "0054_userprofile_uuid_secret_and_more"),
         ("courses", "0057_alter_ngssrestriction_inclusive"),

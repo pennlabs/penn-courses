@@ -8,7 +8,6 @@ import alert.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("courses", "0032_auto_20210418_0343"),
         ("alert", "0011_auto_20201108_1535"),

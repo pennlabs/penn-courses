@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("courses", "0030_auto_20201002_0714"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),

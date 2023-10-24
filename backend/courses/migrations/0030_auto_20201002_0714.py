@@ -8,7 +8,6 @@ import courses.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ("courses", "0029_auto_20200512_1525"),

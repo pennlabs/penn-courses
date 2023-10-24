@@ -4,7 +4,6 @@ from django.db import migrations
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("courses", "0054_alter_ngssrestriction_inclusive"),
         ("courses", "0057_alter_ngssrestriction_inclusive"),

@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("alert", "0013_pcademanddistributionestimate_csdv_gamma_fit_log_likelihood"),
     ]

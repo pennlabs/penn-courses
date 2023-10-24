@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("courses", "0045_course_crn_course_non_null_crn_semester_unique"),
     ]
