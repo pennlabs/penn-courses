@@ -7,6 +7,8 @@ WORKDIR /backend
 # Copy project dependencies
 COPY Pipfile* ./
 
+# %TODO: Update both Dockerfile and Dockerfile.dev to install dependencies for GeoDjango: gdal-bin libgdal-dev python3-gdal
+
 # Install backend dependencies
 RUN pipenv install --dev
 
