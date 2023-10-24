@@ -5,7 +5,6 @@ import re
 import uuid
 from decimal import Decimal
 from datetime import datetime, timezone, timedelta
-from math import radians, sin, cos, sqrt, atan2
 
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
@@ -682,36 +681,23 @@ def translate_time(timestamp):
     Example: "2011-10-05T14:48:00.000Z"
     Returns: datetime object, day of week, date string, time string
     """
+    day_map = {
+        "Mon": "M",
+        "Tue": "T",
+        "Wed": "W",
+        "Thu": "R",
+        "Fri": "F",
+        "Sat": "S",
+        "Sun": "U",
+    }
     try:
         date = datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%fZ")
     except ValueError:
         raise ValueError("Invalid timestamp format")
     eastern_tz = timezone(-timedelta(hours=5))
     date_eastern = date.replace(tzinfo=timezone.utc).astimezone(eastern_tz)
-    day = date_eastern.strftime("%a")[0]
+    # day = date_eastern.strftime("%a")[0]
+    day = day_map[date_eastern.strftime("%a")]
     date_str = date_eastern.strftime("%Y-%m-%d")
     time_str = date_eastern.strftime("%H.%M")
     return date_eastern, day, date_str, float(time_str)
-
-
-def get_geo_proximity(cur_lat, cur_lon, target_lat, target_lon):
-    """
-    Given an input geolocation, return the distance between the current location and the target location.
-    """
-    # approximate radius of earth in km
-    R = 6373.0
-
-    lat1 = radians(cur_lat)
-    lon1 = radians(cur_lon)
-    lat2 = radians(target_lat)
-    lon2 = radians(target_lon)
-
-    dlon = lon2 - lon1
-    dlat = lat2 - lat1
-
-    a = sin(dlat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(dlon / 2) ** 2
-    c = 2 * atan2(sqrt(a), sqrt(1 - a))
-
-    distance = R * c
-
-    return distance

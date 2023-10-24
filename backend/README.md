@@ -142,6 +142,7 @@ If you don't want to use docker alone, you can also set up and run the dev envir
 - Python 3.10 ([`pyenv`](https://github.com/pyenv/pyenv) is recommended)
 - [`pipenv`](https://pipenv.pypa.io/en/latest/)
 - [`docker` and `docker-compose`](https://docs.docker.com/get-docker/)
+- Dependencies for GeoDjango: `GEOS`, `PROJ`, `GDAL` (see [GeoDjango installation docs](https://docs.djangoproject.com/en/3.2/ref/contrib/gis/install/))
 
 `psql` is required to load data into the db, but it should be installed when you install `postgres`/`psycopg2`.
 
@@ -149,18 +150,19 @@ If you don't want to use docker alone, you can also set up and run the dev envir
 2. Compiling postgres (`psycopg2`)
 
    - **Mac**
-     > :warning: NOTE: If your computer runs on Apple silicon and you use Rosetta to run Python as an x86 program, use `arch -x86_64 brew <rest of command>` for all `brew` commands.
-
+     <!-- > :warning: NOTE: If your computer runs on Apple silicon and you use Rosetta to run Python as an x86 program, use `arch -x86_64 brew <rest of command>` for all `brew` commands. -->
      1. `brew install postgresql`
      2. `brew install openssl`
      3. `brew unlink openssl && brew link openssl --force`
-     4. Follow the instructions printed by the previous command to add openssl to your PATH and export flags for compilers, e.g.:
+     4. `brew install gdal; brew install libgeoip`
+     5. Follow the instructions printed by the previous command to add openssl to your PATH and export flags for compilers, e.g.:
         - `echo 'export PATH="/usr/local/opt/openssl@3/bin:$PATH"' >> ~/.zshrc`
         - `export LDFLAGS="-L/usr/local/opt/openssl@3/lib"`
         - `export CPPFLAGS="-I/usr/local/opt/openssl@3/include"`
 
    - **Windows (WSL) or Linux:**
      - `apt-get install gcc python3-dev libpq-dev`
+     - `apt-get install gdal-bin libgdal-dev python3-gdal binutils libproj-dev`
 
 3. Running Docker
    1. Open a new terminal window (also in the `backend` directory) and run `docker-compose up`
