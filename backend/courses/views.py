@@ -17,6 +17,7 @@ from courses.models import (
     Section,
     StatusUpdate,
     User,
+    Meeting,
 )
 from courses.search import TypedCourseSearchBackend, TypedSectionSearchBackend
 from courses.serializers import (
@@ -31,7 +32,7 @@ from courses.serializers import (
     StatusUpdateSerializer,
     UserSerializer,
 )
-from courses.util import get_current_semester
+from courses.util import get_current_semester, translate_time, get_geo_proximity
 from PennCourses.docs_settings import PcxAutoSchema
 from plan.management.commands.recommendcourses import retrieve_course_clusters, vectorize_user
 
@@ -524,3 +525,49 @@ class FriendshipView(generics.ListAPIView):
             res["message"] = "Friendship request already rejected."
             return JsonResponse(res, status=status.HTTP_409_CONFLICT)
         return JsonResponse(res, status=status.HTTP_200_OK)
+
+
+class AuditView(generics.ListAPIView):
+    """
+    This route allows you to list courses that are currently happening with filters to
+    exclude departments, buildings etc. The route will return a list of courses in
+    decreasing course_quality. Without GET parameters, this route will return all
+    currently running courses.
+    """
+
+    def get(self, request, semester):
+        timestamp = request.GET.get("timestamp")
+        lat = request.GET.get("lat")
+        lon = request.GET.get("lon")
+        try:
+            date, day, date_str, time_float = translate_time(str(timestamp))
+        except ValueError:
+            return Response(
+                {
+                    "error": "Invalid timestamp format. Please use ISO format (e.g. 2011-10-05T14:48:00.000Z)."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        meetings = Meeting.objects.filter(Q(start__lte=time_float) & Q(end__gte=time_float))
+        if lat and lon:
+            proximity_threshold = 1.0  # km
+            meetings = meetings.filter(
+                room__building__latitude__isnull=False,
+                room__building__longitude__isnull=False,
+            )
+            meetings = [
+                meeting
+                for meeting in meetings
+                if get_geo_proximity(
+                    float(lat),
+                    float(lon),
+                    meeting.room.building.latitude,
+                    meeting.room.building.longitude,
+                )
+                <= proximity_threshold
+            ]
+            meetings = Meeting.objects.filter(id__in=[meeting.id for meeting in meetings])
+        sections = Section.objects.filter(meetings__in=meetings)
+        courses = Course.objects.filter(sections__in=sections, semester=semester)
+        serializer = CourseListSerializer(courses, many=True)
+        return Response(serializer.data)
