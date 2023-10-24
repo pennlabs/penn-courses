@@ -15,11 +15,8 @@ from courses.models import (
     StatusUpdate,
     UserProfile,
 )
-
-from review.models import Review, ReviewBit
-
-
 from plan.management.commands.recommendcourses import cosine_similarity
+from review.models import Review, ReviewBit
 
 
 class MeetingSerializer(serializers.ModelSerializer):

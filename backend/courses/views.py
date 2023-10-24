@@ -1,4 +1,6 @@
 from django.contrib.auth import get_user_model
+from django.contrib.gis.geos import Point
+from django.contrib.gis.measure import Distance
 from django.db.models import Prefetch, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -6,24 +8,23 @@ from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django.contrib.gis.geos import Point
-from django.contrib.gis.measure import Distance
 
-from courses.filters import CourseSearchFilterBackend, attribute_filter
+from courses.filters import attribute_filter
 from courses.models import (
     Attribute,
     Course,
     Friendship,
+    Meeting,
     NGSSRestriction,
     PreNGSSRequirement,
     Section,
     StatusUpdate,
     User,
-    Meeting,
 )
-from courses.search import TypedCourseSearchBackend, TypedSectionSearchBackend
+from courses.search import TypedSectionSearchBackend
 from courses.serializers import (
     AttributeListSerializer,
+    AuditSerializer,
     CourseDetailSerializer,
     CourseListSerializer,
     FriendshipSerializer,
@@ -33,7 +34,6 @@ from courses.serializers import (
     SectionDetailSerializer,
     StatusUpdateSerializer,
     UserSerializer,
-    AuditSerializer,
 )
 from courses.util import get_current_semester, translate_time
 from PennCourses.docs_settings import PcxAutoSchema
@@ -546,7 +546,8 @@ class AuditView(generics.ListAPIView):
         except ValueError:
             return Response(
                 {
-                    "error": "Invalid timestamp format. Please use ISO format (e.g. 2011-10-05T14:48:00.000Z)."
+                    "error": "Invalid timestamp format. Please use ISO format \
+                                (e.g. 2011-10-05T14:48:00.000Z)."
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )

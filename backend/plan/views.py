@@ -231,7 +231,8 @@ class PrimaryScheduleViewSet(viewsets.ModelViewSet):
                         "schedule_id": {
                             "type": "integer",
                             "description": (
-                                "The ID of the schedule you want to make primary (or null to unset)."
+                                "The ID of the schedule you want to make primary \
+                                        (or null to unset)."
                             ),
                         },
                     },
