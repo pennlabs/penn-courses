@@ -555,7 +555,7 @@ class AuditView(generics.ListAPIView):
             Q(start__lte=time_float) & Q(end__gte=time_float) & Q(day=day)
         )
         if lat and lon:
-            proximity_threshold = Distance(km=1.0)
+            proximity_threshold = Distance(km=0.2)
             cur_point = Point(float(lon), float(lat), srid=4326)
             meetings = meetings.filter(
                 room__building__latitude__isnull=False,
