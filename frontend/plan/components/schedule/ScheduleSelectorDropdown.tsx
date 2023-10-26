@@ -3,6 +3,7 @@ import styled from "styled-components";
 import { Icon } from "../bulma_derived_components";
 import { User, Schedule as ScheduleType, Color, FriendshipState } from "../../types";
 import { nextAvailable } from "../../reducers/schedule";
+import NewLabel from "../common/NewLabel";
 
 const ButtonContainer = styled.div<{ isActive: boolean; isPrimary?: boolean }>`
     line-height: 1.5;
@@ -227,6 +228,7 @@ const ScheduleDropdownContainer = styled.div`
     display: inline-flex;
     position: relative;
     vertical-align: top;
+    width: 100%;
 
     * {
         border: 0;
@@ -342,16 +344,42 @@ const PendingRequests = styled.a`
         text-align: left;
         color: #4a4a4a;
     }
-
-    div {
-        background-color: #e58d8d;
-        border-radius: 0.5rem;
-        padding: 0 0.3rem 0 0.3rem;
-        color: white;
-        font-size: 0.68rem;
-        align-items: center;
-    }
 `;
+
+const PendingRequestsNum = styled.div`
+    background-color: #e58d8d;
+    border-radius: 0.5rem;
+    padding: 0 0.3rem 0 0.3rem;
+    color: white;
+    font-size: 0.68rem;
+    align-items: center;
+`
+
+const ScheduleDropdownHeader = styled.div`
+    display: flex;
+    position: relative;
+    width: 100%;
+`
+
+const ShareSchedulePromoContainer = styled.div`
+    display: flex;
+    margin-left: auto;
+`
+
+const ShareSchedulePromo = styled.div`
+    display: flex;
+    border-radius: 0.81rem;
+    background-color: #878ed8;
+    color: white;
+    font-size: 0.8rem;
+    align-items: center;
+    justify-items: center;
+    font-weight: 500;
+    justify-content: start;
+    padding: 0 0.5rem 0 0.5rem;
+    user-select: none; 
+    margin-left: 0.5rem;
+`
 
 interface ScheduleSelectorDropdownProps {
     user: User;
@@ -473,28 +501,41 @@ const ScheduleSelectorDropdown = ({
 
     return (
         <ScheduleDropdownContainer ref={ref} isActive={isActive}>
-            <span className="selected_name">
-                {readOnly && friendshipState.activeFriend
-                    ? friendshipState.activeFriend.first_name + "'s Schedule"
-                    : activeName}
-            </span>
-            <DropdownTrigger
-                isActive={isActive}
-                onClick={() => {
-                    fetchBackendFriendships(
-                        user,
-                        friendshipState.activeFriend.username
-                    );
-                    setIsActive(!isActive);
-                }}
-                role="button"
-            >
-                <div aria-haspopup={true} aria-controls="dropdown-menu">
-                    <Icon>
-                        <i className="fa fa-chevron-down" aria-hidden="true" />
-                    </Icon>
-                </div>
-            </DropdownTrigger>
+            <ScheduleDropdownHeader>
+                <span className="selected_name">
+                    {readOnly && friendshipState.activeFriend
+                        ? friendshipState.activeFriend.first_name + "'s Schedule"
+                        : activeName}
+                </span>
+                <DropdownTrigger
+                    isActive={isActive}
+                    onClick={() => {
+                        fetchBackendFriendships(
+                            user,
+                            friendshipState.activeFriend.username
+                        );
+                        setIsActive(!isActive);
+                    }}
+                    role="button"
+                >
+                    <div aria-haspopup={true} aria-controls="dropdown-menu">
+                        <Icon>
+                            <i className="fa fa-chevron-down" aria-hidden="true" />
+                        </Icon>
+                    </div>
+                </DropdownTrigger>
+                {(!readOnly || !friendshipState.activeFriend) && <ShareSchedulePromoContainer>
+                    <NewLabel />
+                    <ShareSchedulePromo onClick={() => setIsActive(!isActive)}>
+                    <img
+                        style={{ width: "1.3rem", paddingRight: "0.3rem" }}
+                        src="/icons/share.svg"
+                        alt="share"
+                    />
+                    Share Schedule
+                    </ShareSchedulePromo> 
+                </ShareSchedulePromoContainer>}
+            </ScheduleDropdownHeader>
             <DropdownMenu isActive={isActive} role="menu">
                 <DropdownContent>
                     {allSchedules &&
@@ -591,7 +632,7 @@ const ScheduleSelectorDropdown = ({
                             href="#"
                         >
                             <span> Pending Requests </span>
-                            <div>{numRequests}</div>
+                            <PendingRequestsNum>{numRequests}</PendingRequestsNum>
                         </PendingRequests>
                     </FriendContent>
                 </DropdownContent>

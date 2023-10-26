@@ -144,7 +144,9 @@ const ScheduleDisplay = ({
     if (
         !schedData
     ) {
-        return <FriendEmptySchedule message="Loading...Standby" />;
+        return <ScheduleBox>
+           <FriendEmptySchedule message="Loading...Standby" />
+            </ScheduleBox>;
     }
 
     const rowOffset = 1;

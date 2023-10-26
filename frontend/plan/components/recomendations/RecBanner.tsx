@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import styled from "styled-components";
 import RecHide from "./RecHide";
 import RecInfo from "pcx-shared-components/src/common/InfoTool";
-import RecNew from "./RecNew";
+import NewLabel from "../common/NewLabel";
 import { Icon } from "../bulma_derived_components";
 
 const TIME_OUT_DURATION = 2000;
@@ -77,7 +77,7 @@ const RecBanner = ({ show, setShow, setRefresh }: RecBannerProps) => {
         <BannerContainer collapse={!show}>
             {/* left side */}
             <BannerLeft>
-                <RecNew />
+                <NewLabel />
                 <Title>Recommended</Title>
                 <RecInfo text={text}/>
                 <RefreshIconContainer
