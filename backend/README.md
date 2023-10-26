@@ -60,6 +60,13 @@ pasted in this public README). If you are not in Penn Labs, see the "Loading Cou
 
 NOTE: when using `pipenv`, environment variables are only refreshed when you exit your shell and rerun `pipenv shell` (this is a common source of confusing behavior, so it's good to know about).
 
+## Linting
+
+We use `black`, `flake8`, and 'isort' to lint our code. Once you are in the `backend` directory, you can run the following commands to lint:
+1. `pipenv run black`
+2. `pipenv run isort`
+3. `pipenv run flake8`
+
 ## Loading Courses Data 
 
 ### Via Database Dump (Penn Labs members)
