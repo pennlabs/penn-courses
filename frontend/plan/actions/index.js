@@ -677,13 +677,9 @@ export const findOwnPrimarySchedule = (user) => (dispatch) => {
                 );
             })
             .then((foundSched) => {
-                if (foundSched) {
-                    dispatch(
-                        setPrimaryScheduleIdOnFrontend(foundSched.schedule_id)
-                    );
-                } else {
-                    dispatch(setPrimaryScheduleIdOnFrontend("-1"));
-                }
+                dispatch(
+                    setPrimaryScheduleIdOnFrontend(foundSched?.schedule_id)
+                );
             })
             .catch((error) => {
                 console.log(error);
@@ -698,7 +694,7 @@ export const setCurrentUserPrimarySchedule = (user, scheduleId) => (
         schedule_id: scheduleId,
     };
     const init = {
-        method: "PUT",
+        method: "POST",
         credentials: "include",
         mode: "same-origin",
         headers: {

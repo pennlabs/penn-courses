@@ -80,15 +80,15 @@ const Box = styled.div`
     }
 `;
 
-const StyledToast = styled(ToastContainer)`
+const Toast = styled(ToastContainer)`
     .Toastify__toast {
         border-radius: 1rem;
         background-color: white;
     }
     .Toastify__toast-body {
-        font-family: "Gill Sans", sans-serif;
+        font-family: BlinkMacSystemFont;
         color: black;
-        font-size: 1.2rem;
+        font-size: 1rem;
     }
 `;
 
@@ -102,11 +102,11 @@ if (process.env.NODE_ENV === "development") {
 export function showToast(text: string, error: boolean) {
     if (error) {
         toast.error(text, {
-            position: toast.POSITION.TOP_CENTER,
+            position: toast.POSITION.TOP_RIGHT,
         });
     } else {
         toast.success(text, {
-            position: toast.POSITION.TOP_CENTER,
+            position: toast.POSITION.TOP_RIGHT,
         });
     }
 }
@@ -412,7 +412,7 @@ function Index() {
                                         : "smooth-transition column is-5"
                                 }
                             >
-                                <StyledToast
+                                <Toast
                                     autoClose={1000}
                                     hideProgressBar={true}
                                 />

@@ -190,12 +190,12 @@ class PrimaryScheduleViewSet(viewsets.ModelViewSet):
     list: Get the primary schedule for the current user as well as primary
     schedules of the user's friends.
 
-    update: Create or update the primary schedule for the current user.
+    create: Create/update/delete the primary schedule for the current user.
     """
 
     model = PrimarySchedule
     queryset = PrimarySchedule.objects.none()
-    http_method_names = ["get", "put"]
+    http_method_names = ["get", "post"]
     permission_classes = [IsAuthenticated]
     serializer_class = PrimaryScheduleSerializer
 
@@ -203,40 +203,69 @@ class PrimaryScheduleViewSet(viewsets.ModelViewSet):
         return PrimarySchedule.objects.filter(
             Q(user=self.request.user)
             | Q(user_id__in=Subquery(get_accepted_friends(self.request.user).values("id")))
+        ).prefetch_related(
+            Prefetch("schedule__sections", Section.with_reviews.all()),
+            "schedule__sections__associated_sections",
+            "schedule__sections__instructors",
+            "schedule__sections__meetings",
+            "schedule__sections__meetings__room",
         )
 
     schema = PcxAutoSchema(
         response_codes={
-            "primary-schedule": {
+            "primary-schedules-list": {
                 "GET": {
                     200: "Primary schedule (and friend's schedules) retrieved successfully.",
                 },
-                "PUT": {
-                    200: "Primary schedule updated successfully.",
+                "POST": {
+                    201: "Primary schedule updated successfully.",
                     400: "Invalid schedule in request.",
                 },
             },
-        }
+        },
+        override_request_schema={
+            "primary-schedules-list": {
+                "POST": {
+                    "type": "object",
+                    "properties": {
+                        "schedule_id": {
+                            "type": "integer",
+                            "description": (
+                                "The ID of the schedule you want to make primary \
+                                        (or null to unset)."
+                            ),
+                        },
+                    },
+                }
+            }
+        },
     )
 
-    def put(self, request):
+    def post(self, request):
         res = {}
         user = request.user
-        schedule = Schedule.objects.filter(
-            person_id=user.id, id=request.data.get("schedule_id")
-        ).first()
-        if not schedule:
-            res["message"] = "Schedule does not exist"
-            return JsonResponse(res, status=status.HTTP_400_BAD_REQUEST)
-
-        primary_schedule_entry = self.get_queryset().filter(user=user).first()
-        if primary_schedule_entry:
-            primary_schedule_entry.schedule = schedule
-            primary_schedule_entry.save()
-            res["message"] = "Primary schedule successfully updated"
+        schedule_id = request.data.get("schedule_id")
+        if not schedule_id:
+            # Delete primary schedule
+            primary_schedule_entry = self.get_queryset().filter(user=user).first()
+            if primary_schedule_entry:
+                primary_schedule_entry.delete()
+                res["message"] = "Primary schedule successfully unset"
+            res["message"] = "Primary schedule was already unset"
         else:
-            PrimarySchedule.objects.create(user=user, schedule=schedule)
-            res["message"] = "Primary schedule successfully created"
+            schedule = Schedule.objects.filter(person_id=user.id, id=schedule_id).first()
+            if not schedule:
+                res["message"] = "Schedule does not exist"
+                return JsonResponse(res, status=status.HTTP_400_BAD_REQUEST)
+
+            primary_schedule_entry = self.get_queryset().filter(user=user).first()
+            if primary_schedule_entry:
+                primary_schedule_entry.schedule = schedule
+                primary_schedule_entry.save()
+                res["message"] = "Primary schedule successfully updated"
+            else:
+                PrimarySchedule.objects.create(user=user, schedule=schedule)
+                res["message"] = "Primary schedule successfully created"
 
         return JsonResponse(res, status=status.HTTP_200_OK)
 
@@ -367,7 +396,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 )
 
     def update(self, request, pk=None):
-        if not Schedule.objects.filter(id=pk).exists():
+        if not pk or not Schedule.objects.filter(id=pk).exists():
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
         try:
             schedule = self.get_queryset().get(id=pk)

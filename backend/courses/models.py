@@ -4,6 +4,7 @@ from textwrap import dedent
 
 import phonenumbers
 from django.contrib.auth import get_user_model
+from django.contrib.gis.db import models as gis_models
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
@@ -1026,6 +1027,16 @@ class Building(models.Model):
             """
         The longitude of the building, in the signed decimal degrees format (global range of
         [-180.0, 180.0]), e.g. `-75.176773` for the Towne Building.
+        """
+        ),
+    )
+    location = gis_models.PointField(
+        blank=True,
+        null=True,
+        help_text=dedent(
+            """
+        The location of the building, in the form POINT({longitude} {latitude}), e.g.
+        POINT(-75.176773 39.961380) for the Towne Building.
         """
         ),
     )

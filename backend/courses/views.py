@@ -1,4 +1,6 @@
 from django.contrib.auth import get_user_model
+from django.contrib.gis.geos import Point
+from django.contrib.gis.measure import Distance
 from django.db.models import Prefetch, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
@@ -7,20 +9,22 @@ from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from courses.filters import CourseSearchFilterBackend
+from courses.filters import attribute_filter
 from courses.models import (
     Attribute,
     Course,
     Friendship,
+    Meeting,
     NGSSRestriction,
     PreNGSSRequirement,
     Section,
     StatusUpdate,
     User,
 )
-from courses.search import TypedCourseSearchBackend, TypedSectionSearchBackend
+from courses.search import TypedSectionSearchBackend
 from courses.serializers import (
     AttributeListSerializer,
+    AuditSerializer,
     CourseDetailSerializer,
     CourseListSerializer,
     FriendshipSerializer,
@@ -31,7 +35,7 @@ from courses.serializers import (
     StatusUpdateSerializer,
     UserSerializer,
 )
-from courses.util import get_current_semester
+from courses.util import get_current_semester, translate_time
 from PennCourses.docs_settings import PcxAutoSchema
 from plan.management.commands.recommendcourses import retrieve_course_clusters, vectorize_user
 
@@ -212,9 +216,6 @@ class CourseListSearch(CourseList):
         )
 
         return context
-
-    filter_backends = [TypedCourseSearchBackend, CourseSearchFilterBackend]
-    search_fields = ("full_code", "title", "sections__instructors__name")
 
 
 class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
@@ -524,3 +525,46 @@ class FriendshipView(generics.ListAPIView):
             res["message"] = "Friendship request already rejected."
             return JsonResponse(res, status=status.HTTP_409_CONFLICT)
         return JsonResponse(res, status=status.HTTP_200_OK)
+
+
+class AuditView(generics.ListAPIView):
+    """
+    This route allows you to list courses that are currently happening with filters to
+    exclude departments, buildings etc. The route will return a list of courses in
+    decreasing course_quality. Without GET parameters, this route will return all
+    currently running courses.
+    """
+
+    def get(self, request, semester):
+        timestamp = request.query_params.get("timestamp")
+        lat = request.query_params.get("lat")
+        lon = request.query_params.get("lon")
+        attributes = request.query_params.get("attributes")
+        limit = request.query_params.get("limit") or 10
+        try:
+            date, day, date_str, time_float = translate_time(str(timestamp))
+        except ValueError:
+            return Response(
+                {
+                    "error": "Invalid timestamp format. Please use ISO format \
+                                (e.g. 2011-10-05T14:48:00.000Z)."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        meetings = Meeting.objects.filter(
+            Q(start__lte=time_float) & Q(end__gte=time_float) & Q(day=day)
+        )
+        if lat and lon:
+            proximity_threshold = Distance(km=0.2)
+            cur_point = Point(float(lon), float(lat), srid=4326)
+            meetings = meetings.filter(
+                room__building__latitude__isnull=False,
+                room__building__longitude__isnull=False,
+                room__building__location__distance_lte=(cur_point, proximity_threshold),
+            )
+        sections = Section.objects.filter(meetings__in=meetings)
+        courses = Course.objects.filter(sections__in=sections, semester=semester)
+        courses = attribute_filter(courses, attributes)
+        meetings = meetings.filter(section__course__in=courses)[:limit]
+        serializer = AuditSerializer(meetings, many=True)
+        return Response(serializer.data)

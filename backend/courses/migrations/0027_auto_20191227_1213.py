@@ -9,7 +9,6 @@ import courses.models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
         ("courses", "0026_merge_20191117_1420"),

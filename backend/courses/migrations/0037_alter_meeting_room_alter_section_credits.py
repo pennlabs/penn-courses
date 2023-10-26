@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("courses", "0036_course_syllabus_url_meeting_end_date_and_more"),
     ]

@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django.contrib.gis",
     "rest_framework",
     "corsheaders",
     "shortener.apps.ShortenerConfig",
@@ -93,7 +94,7 @@ WSGI_APPLICATION = "PennCourses.wsgi.application"
 DATABASES = {
     "default": dj_database_url.config(
         # this is overriden by the DATABASE_URL env var
-        default="postgres://penn-courses:postgres@localhost:5432/postgres"
+        default="postgis://penn-courses:postgres@localhost:5432/postgres"
     )
 }
 
@@ -228,3 +229,6 @@ PRE_NGSS_PERMIT_REQ_RESTRICTION_CODES = [  # TODO: add post-NGSS list
 ROUGH_MINIMUM_DEMAND_DISTRIBUTION_ESTIMATES = (
     200  # Aim for at least 200 demand distribution estimates over the course of a semester
 )
+
+# GeoDjango GDAL Settings
+GDAL_LIBRARY_PATH = os.environ.get("GDAL_LIBRARY_PATH", "")

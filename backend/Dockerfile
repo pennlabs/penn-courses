@@ -8,6 +8,10 @@ COPY Pipfile* /app/
 # Install project dependencies
 RUN pipenv install --system --deploy
 
+
+# Install system dependencies to support GeoDjango
+RUN apt-get update && apt-get install -y gdal-bin libgdal-dev python3-gdal binutils libproj-dev
+
 # Copy project files
 COPY . /app/
 

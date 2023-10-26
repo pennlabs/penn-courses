@@ -122,7 +122,6 @@ class PreNGSSRequirementFilterTestCase(TestCase):
 
 class IsOpenFilterTestCase(TestCase):
     def setUp(self):
-
         _, self.cis_160_001 = create_mock_data(
             code="CIS-160-001", semester=TEST_SEMESTER, meeting_days="TR"
         )

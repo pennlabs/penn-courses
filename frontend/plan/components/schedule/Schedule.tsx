@@ -68,13 +68,12 @@ interface ScheduleProps {
         ) => void;
     };
     schedulesMutator: {
-        setPrimary: (user: User, scheduleId: string) => void;
+        setPrimary: (user: User, scheduleId: string | null) => void;
         copy: (scheduleName: string) => void;
         download: (scheduleName: string) => void;
         remove: (user: User, scheduleName: string, scheduleId: string) => void;
         rename: (oldName: string) => void;
 
-        // NOT IN ORIGINAL PROPS
         createSchedule: () => void;
         addFriend: () => void;
         showRequests: () => void;
@@ -162,7 +161,7 @@ const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
             ),
     },
     schedulesMutator: {
-        setPrimary: (user: User, scheduleId: string) =>
+        setPrimary: (user: User, scheduleId: string | null) =>
             dispatch(setCurrentUserPrimarySchedule(user, scheduleId)),
         copy: (scheduleName: string) =>
             dispatch(createScheduleOnBackend(scheduleName)),

@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.models import User
+from django.contrib.gis import admin as gis_admin
 from django.template import loader
 from django.urls import reverse
 from django.utils.html import format_html, format_html_join
@@ -203,13 +204,17 @@ class StatusUpdateAdmin(admin.ModelAdmin):
     search_fields = ("section__full_code",)
 
 
+class BuildingAdmin(gis_admin.OSMGeoAdmin):
+    pass
+
+
 admin.site.register(APIKey)
 admin.site.register(APIPrivilege)
 admin.site.register(Department, DepartmentAdmin)
 admin.site.register(Course, CourseAdmin)
 admin.site.register(Topic, TopicAdmin)
 admin.site.register(Section, SectionAdmin)
-admin.site.register(Building)
+admin.site.register(Building, BuildingAdmin)
 admin.site.register(Room)
 admin.site.register(PreNGSSRequirement, PreNGSSRequirementAdmin)
 admin.site.register(PreNGSSRestriction)

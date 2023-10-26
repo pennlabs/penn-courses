@@ -35,4 +35,5 @@ urlpatterns = [
     ),
     path("statusupdate/<slug:full_code>/", views.StatusUpdateView.as_view(), name="statusupdate"),
     path("friendship/", views.FriendshipView.as_view(), name="friendship"),
+    path("<slug:semester>/audit/", views.AuditView.as_view(), name="audit"),
 ]

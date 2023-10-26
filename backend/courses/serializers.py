@@ -16,6 +16,7 @@ from courses.models import (
     UserProfile,
 )
 from plan.management.commands.recommendcourses import cosine_similarity
+from review.models import Review, ReviewBit
 
 
 class MeetingSerializer(serializers.ModelSerializer):
@@ -465,3 +466,40 @@ class FriendshipRequestSerializer(serializers.Serializer):
     def to_representation(self, instance):
         print("in representation function")
         return super().to_representation(instance)
+
+
+class AuditSerializer(serializers.ModelSerializer):
+    id = serializers.CharField(source="section.course.full_code", read_only=True)
+    title = serializers.CharField(source="section.course.title", read_only=True)
+    description = serializers.CharField(source="section.course.description", read_only=True)
+    instructors = serializers.SerializerMethodField(read_only=True)
+
+    building = serializers.CharField(source="room.building", read_only=True)
+    room_number = serializers.CharField(source="room.number", read_only=True)
+
+    reviews = serializers.SerializerMethodField(read_only=True)
+
+    def get_instructors(self, obj):
+        instructors = obj.section.instructors.all()
+        return [instructor.name for instructor in instructors]
+
+    def get_reviews(self, obj):
+        reviews = Review.objects.filter(section=obj.section)
+        reviewbits = ReviewBit.objects.filter(review__in=reviews)
+        return [(reviewbit.field, reviewbit.average) for reviewbit in reviewbits]
+
+    class Meta:
+        model = Meeting
+        fields = [
+            "id",
+            "title",
+            "description",
+            "start",
+            "day",
+            "end",
+            "room",
+            "building",
+            "room_number",
+            "instructors",
+            "reviews",
+        ]

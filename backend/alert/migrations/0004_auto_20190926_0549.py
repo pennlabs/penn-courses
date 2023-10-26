@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("courses", "0019_apikey_apiprivilege"),
         ("alert", "0003_courseupdate_registration"),

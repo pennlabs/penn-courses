@@ -7,8 +7,12 @@ WORKDIR /backend
 # Copy project dependencies
 COPY Pipfile* ./
 
+
 # Install backend dependencies
 RUN pipenv install --dev
+
+# Install system dependencies for GeoDjango
+RUN	apt-get update && apt-get install -y gdal-bin libgdal-dev python3-gdal binutils libproj-dev
 
 # Alias runserver command
 RUN echo 'alias runserver="python manage.py runserver 0.0.0.0:8000"' >> ~/.bashrc
