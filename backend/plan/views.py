@@ -15,9 +15,10 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from courses.models import Course, Meeting, Section
-from courses.serializers import CourseListSerializer
+from courses.serializers import CourseListSerializer, SectionDetailSerializer
 from courses.util import get_course_and_section, get_current_semester
 from courses.views import get_accepted_friends
+from courses.util import get_course_and_section, get_current_semester, find_possible_schedules
 from PennCourses.docs_settings import PcxAutoSchema
 from plan.management.commands.recommendcourses import (
     clean_course_input,
@@ -85,7 +86,7 @@ from plan.serializers import PrimaryScheduleSerializer, ScheduleSerializer
         },
     )
 )
-@permission_classes([IsAuthenticated])
+#@permission_classes([IsAuthenticated])
 def recommend_courses_view(request):
     """
     This route will optionally take in current and past courses. In order to
@@ -464,9 +465,37 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         )
         return queryset
 
-class AutomaticCourseScheduler(generics.ListAPIView, BaseCourseMixin):
-    
+class AutomaticCourseScheduler(APIView):
+    http_method_names = ["get", "post", "delete", "put"]
+    def get(self, request, *args, **kwargs):
+        return HttpResponse({"message": "success"}, status=status.HTTP_200_OK)
+    def post(self, request, *args, **kwargs):
+        courses = request.data.get("courses")
+        semester = request.data.get("semester")
+        breaks = request.data.get("breaks")
+        print("YAY")
+        course_objects = Course.objects.filter(full_code__in=courses, semester=semester).all()
+        sections = Section.objects.filter(course__in=course_objects).all()
+        sections_json = SectionDetailSerializer(sections, many=True).data
+        class_sections = {}
+        for section in sections_json:
+            course_code = "-".join(section["id"].split("-")[0:2])
+            if course_code not in class_sections.keys():
+                class_sections[course_code] = [section]
+            else:
+                class_sections[course_code].append(section)
+                
+        data = find_possible_schedules(class_sections, 5, breaks)
 
+        if len(data) == 0:
+            return Response([], status=status.HTTP_404_NOT_FOUND)
+        
+        sec1 = Section.objects.filter(full_code__in=data1,course__in=course_objects).all()
+        sec_json = SectionDetailSerializer(sec1, many=True).data
+        
+
+        return Response(sec_json, status=status.HTTP_200_OK)
+            
         
 
 class CalendarAPIView(APIView):
