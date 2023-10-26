@@ -22,7 +22,8 @@ export class MyChart extends PennLabsChart {
       deployment: { 
 	    image: 'redis/redis-stack-server',
         tag: '6.2.6-v6'
-      }
+      },
+      persistData: true,
     });
 
     new DjangoApplication(this, 'celery', {
