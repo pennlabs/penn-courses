@@ -36,6 +36,7 @@ def assert_semesters_not_current(semesters):
                 f"Did you forget to update the SEMESTER option in the Django admin console?"
             )
 
+
 class Command(BaseCommand):
     help = """
     Import course review data from the zip of mysqldump files that we get from ISC every semester.
@@ -159,7 +160,7 @@ class Command(BaseCommand):
         import_all = kwargs["import_all"]
         s3_bucket = kwargs["s3_bucket"]
         is_zip_file = kwargs["zip"] or s3_bucket is not None
-        summary_file = kwargs["summary_file"] # either summary table or summary hist table
+        summary_file = kwargs["summary_file"]  # either summary table or summary hist table
         import_details = kwargs["import_details"]
         import_descriptions = kwargs["import_descriptions"]
         show_progress_bar = kwargs["show_progress_bar"]
@@ -220,7 +221,7 @@ class Command(BaseCommand):
 
         for semester in semesters:
             print(f"Loading {semester}...")
-            with transaction.atomic():  # Only commit changes if all imports for the semester succeed 
+            with transaction.atomic():  # Commit changes if all imports for the semester succeed
                 to_delete = Review.objects.filter(section__course__semester=semester)
                 delete_count = to_delete.count()
                 if delete_count > 0:
@@ -234,12 +235,15 @@ class Command(BaseCommand):
                             return 0
 
                     print(
-                        f"Deleting {delete_count} existing reviews for {semester} from the database..."
+                        f"Deleting {delete_count} existing reviews for {semester} "
+                        "from the database..."
                     )
                     to_delete.delete()
 
                 print(f"Importing reviews for semester {semester}")
-                stats = import_summary_rows((r for r in summary_rows if r["TERM"] == semester), show_progress_bar)
+                stats = import_summary_rows(
+                    (r for r in summary_rows if r["TERM"] == semester), show_progress_bar
+                )
                 print(stats)
 
                 gc.collect()

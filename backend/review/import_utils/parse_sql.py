@@ -1,10 +1,11 @@
 import gc
 import re
 from datetime import datetime
-from courses.util import translate_semester_inv, semester_suffix_map_inv
 
 from lark import Lark, Transformer
 from tqdm import tqdm
+
+from courses.util import semester_suffix_map_inv, translate_semester_inv
 
 
 """
@@ -81,7 +82,6 @@ class SQLDumpTransformer(Transformer):
             if stripped_term[-2:] in semester_suffix_map_inv:
                 row_dict["TERM"] = translate_semester_inv(stripped_term)
         return row_dict
-
 
     def TOKEN(self, items):
         """

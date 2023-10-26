@@ -122,9 +122,7 @@ class SQLParseTestCase(TestCase):
         (TERM) Values ('202230');
         """
         parse = parse_row(query)
-        expected = {
-            "TERM": "2022C"
-        }
+        expected = {"TERM": "2022C"}
         self.assertDictEqual(parse, expected)
 
 
