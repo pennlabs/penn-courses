@@ -536,11 +536,11 @@ class AuditView(generics.ListAPIView):
     """
 
     def get(self, request, semester):
-        timestamp = request.GET.get("timestamp")
-        lat = request.GET.get("lat")
-        lon = request.GET.get("lon")
-        attributes = request.GET.get("attributes")
-        limit = request.GET.get("limit") or 10
+        timestamp = request.query_params.get("timestamp")
+        lat = request.query_params.get("lat")
+        lon = request.query_params.get("lon")
+        attributes = request.query_params.get("attributes")
+        limit = request.query_params.get("limit") or 10
         try:
             date, day, date_str, time_float = translate_time(str(timestamp))
         except ValueError:

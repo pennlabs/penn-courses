@@ -1034,7 +1034,7 @@ class Building(models.Model):
         blank=True,
         null=True,
         help_text=dedent(
-        """
+            """
         The location of the building, in the form POINT({longitude} {latitude}), e.g.
         POINT(-75.176773 39.961380) for the Towne Building.
         """
