@@ -553,8 +553,6 @@ const ScheduleSelectorDropdown = ({
                                     text={name}
                                     mutators={{
                                         setPrimary: () => {
-                                            console.log(primaryScheduleId);
-                                            console.log(data.id);
                                             if (primaryScheduleId === data.id) {
                                                 setPrimary(user, null);
                                             } else {
