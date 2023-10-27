@@ -9,6 +9,10 @@ Welcome to the Penn Courses Backend (PCX)!
 
 ### Running the Backend with Docker-Compose
 
+   > :warning: If you are a backend developer, it's highly recommended to run the dev environment locally. 
+   > See [Running the Backend Natively](#running-the-backend-natively) for instructions on how to do this. 
+   > If you're a frontend developer, you can use the docker container.
+
 1. Build the docker image (the `[sudo]` part means try running without sudo first)
 ```sh
 cd backend
@@ -63,24 +67,33 @@ NOTE: when using `pipenv`, environment variables are only refreshed when you exi
 ## Linting
 
 We use `black`, `flake8`, and 'isort' to lint our code. Once you are in the `backend` directory, you can run the following commands to lint:
-1. `pipenv run black`
-2. `pipenv run isort`
-3. `pipenv run flake8`
+1. `pipenv run black -l100 .`
+2. `pipenv run isort .`
+3. `pipenv run flake8 .`
+
+Alternatively, you can run `make lint` in the backend directory to run all three commands at once.
 
 ## Loading Courses Data 
 
 ### Via Database Dump (Penn Labs members)
 
+   > :warning: NOTE: If this is giving you permission denied, try running `psql template1` and enter the following query `CREATE DATABASE postgres WITH OWNER "penn-courses"` manually.
 - To get going quickly with a local database loaded with lots of test data,
    you can download this [pcx_test.sql](https://files.slack.com/files-pri/T4EM1119V-F04FPSTNF46/download/pcx_test_12_2022.sql) SQL dump file. You will only be able to access this if you are a member of labs; if you still need access to data, read on.
 - First you'll need to install `psql` (see [Prerequisites](#prerequisites))
-- Clear the existing contents of your local database with `psql template1 -c 'drop database postgres;' -h localhost -U penn-courses` (the password is `postgres`)
-- Create a new database with `psql template1 -c 'create database postgres with owner "penn-courses";' -h localhost -U penn-courses` (same password).
-   
-   > :warning: NOTE: If this is giving you permission denied, try running `psql template1` and enter the following query `CREATE DATABASE postgres WITH OWNER "penn-courses"`.
-- Finally, run `psql -h localhost -d postgres -U penn-courses -f pcx_test.sql` (replacing `pcx_test.sql` with the full path to that file on your computer) to load
-   the contents of the test database (this might take a while).
+- Rename the sql dump you downloaded to `pcx_test.sql` and place it in the `backend` directory. Then run `make load` to load the data into your local database. This might take a while.
 - For accessing the Django admin site, the admin username is `admin` and the password is `admin` if you use this test db.
+
+[//]: # (- Clear the existing contents of your local database with `psql template1 -c 'drop database postgres;' -h localhost -U penn-courses` &#40;the password is `postgres`&#41;)
+
+[//]: # (- Create a new database with `psql template1 -c 'create database postgres with owner "penn-courses";' -h localhost -U penn-courses` &#40;same password&#41;.)
+
+[//]: # (   )
+
+[//]: # (- Finally, run `psql -h localhost -d postgres -U penn-courses -f pcx_test.sql` &#40;replacing `pcx_test.sql` with the full path to that file on your computer&#41; to load)
+
+[//]: # (   the contents of the test database &#40;this might take a while&#41;.)
+
 
 
 ### On Demand
@@ -153,50 +166,28 @@ If you don't want to use docker alone, you can also set up and run the dev envir
 `psql` is required to load data into the db, but it should be installed when you install `postgres`/`psycopg2`.
 
 1. `cd backend`
-2. Compiling postgres (`psycopg2`)
-
-   - **Mac**
-     > :warning: NOTE: If your computer runs on Apple silicon and you use Rosetta to run Python as an x86 program, use `arch -x86_64 brew <rest of command>` for all `brew` commands.
-
-     1. `brew install postgresql`
-     2. `brew install openssl`
-     3. `brew unlink openssl && brew link openssl --force`
-     4. Follow the instructions printed by the previous command to add openssl to your PATH and export flags for compilers, e.g.:
-        - `echo 'export PATH="/usr/local/opt/openssl@3/bin:$PATH"' >> ~/.zshrc`
-        - `export LDFLAGS="-L/usr/local/opt/openssl@3/lib"`
-        - `export CPPFLAGS="-I/usr/local/opt/openssl@3/include"`
-
-   - **Windows (WSL) or Linux:**
-     - `apt-get install gcc python3-dev libpq-dev`
-
-3. Running Docker
-   1. Open a new terminal window (also in the `backend` directory) and run `docker-compose up`
+2. Compiling postgres (`psycopg2`) and installing dependencies
+   - Run `make install` in the background directory
+3. Running Containerized Database and Cache
+    - Open a new terminal window and run `make launchdb` to start the database and cache
       > :warning: Depending on your system configuration, you may have to start `docker` manually. If this is the case (ie, if you cannot get `docker-compose up` to work due to a docker connection error) try this:
-      >
       > - (linux) `[sudo] systemctl start docker`
       > - (WSL) `[sudo] service docker start`
 
-4. Setting up your Penn Courses development environment
+4. Migrate Django models
+    - To migrate the Django models, run `make migrate` in the backend directory. This will create the database tables in your local PostgreSQL database.
 
-   1. `pipenv install --dev`
-   2. `pipenv shell`
-   3. `python manage.py migrate`
-
-5. Loading test data (if you are a member of Penn Labs). If you are not a member of Penn Labs, you can skip this section and load in course data from the registrar, as explained below.
-
+5. Loading test data using `make load` (if you are a member of Penn Labs). If you are not a member of Penn Labs, you can skip this section and load in course data from the registrar, as explained below.
 
 6. Running the backend
-
-   - Run the backend in development mode with the command `python manage.py runserver`. This will start the server at port `8000`.
+   - Run the backend in development mode with the command `make runserver`. This will start the server at port `8000`.
    - Once the server is running, you can access the admin console at `localhost:8000/admin`, browse auto-generated API documentation from the code on your branch at `localhost:8000/api/documentation`, or use any of the other routes supported by this backend (comprehensively described by the API documentation), usually of the form `localhost:8000/api/...`
-     
       > :warning: NOTE: if you don't need documentation specific to your branch, it is usually more convenient to browse the API docs at [penncoursereview.com/api/documentation](https://penncoursereview.com/api/documentation)
    - With the backend server running, you can also run the frontend for any of our PCX products by following the instructions in the `frontend` README.
-     
       > :warning: NOTE: If you have not loaded the test data from the previous step (Step 4), ensure that you have created a local user named "Penn-Courses" with the password "postgres" in your PostgreSQL. To add the user, navigate to your pgAdmin, and follow the path of Object -> Create -> Login/Group Role and create the appropriate user.
-      
+
       > :warning: NOTE: If you ever encounter a `pg_hba.conf` entry error, open the `~/var/lib/postgresql/data/pg_hba.conf` file in your docker container and append the line `host  all  all 0.0.0.0/0 md5` into the file.
 
 7. Running tests
-   - Run `python manage.py test` to run our test suite.
-   - To run a specific test, you can use the format `python manage.py test tests.review.test_api.OneReviewTestCase.test_course` (also note that in this example, you can use any prefix of that path to run a larger set of tests).
+   - Run `make runtests` to run our test suite.
+   - To run a specific test, you can use `python manage.py test tests.review.test_api.OneReviewTestCase.test_course` (also note that in this example, you can use any prefix of that path to run a larger set of tests).
