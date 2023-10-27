@@ -67,8 +67,6 @@ class Command(BaseCommand):
         name = getenv("NAME")
         assert name is not None
 
-        print(pennid, auth_token, refresh_token, name)
-
         client = DegreeworksClient(
             pennid=pennid, auth_token=auth_token, refresh_token=refresh_token, name=name
         )
