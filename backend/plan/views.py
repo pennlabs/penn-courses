@@ -16,9 +16,8 @@ from rest_framework.views import APIView
 
 from courses.models import Course, Meeting, Section
 from courses.serializers import CourseListSerializer, SectionDetailSerializer
-from courses.util import get_course_and_section, get_current_semester
-from courses.views import get_accepted_friends
 from courses.util import get_course_and_section, get_current_semester, find_possible_schedules
+from courses.views import get_accepted_friends
 from PennCourses.docs_settings import PcxAutoSchema
 from plan.management.commands.recommendcourses import (
     clean_course_input,
@@ -473,9 +472,10 @@ class AutomaticCourseScheduler(APIView):
         courses = request.data.get("courses")
         semester = request.data.get("semester")
         breaks = request.data.get("breaks")
-        print("YAY")
+
         course_objects = Course.objects.filter(full_code__in=courses, semester=semester).all()
-        sections = Section.objects.filter(course__in=course_objects).all()
+        sections_query = Section.objects.filter(course__in=course_objects)
+        sections = sections_query.all()
         sections_json = SectionDetailSerializer(sections, many=True).data
         class_sections = {}
         for section in sections_json:
@@ -484,17 +484,33 @@ class AutomaticCourseScheduler(APIView):
                 class_sections[course_code] = [section]
             else:
                 class_sections[course_code].append(section)
-                
-        data = find_possible_schedules(class_sections, 5, breaks)
-
+        
+        contin = True
+        ticker = 0
+        while (ticker < 6) and contin:
+            data = find_possible_schedules(class_sections, 5, breaks)
+            if len(data) == 0:
+                ticker += 1
+            else:
+                contin = False
+            
         if len(data) == 0:
-            return Response([], status=status.HTTP_404_NOT_FOUND)
+                return Response([], status=status.HTTP_404_NOT_FOUND)
+        data1 = data[len(data)-1]
         
-        sec1 = Section.objects.filter(full_code__in=data1,course__in=course_objects).all()
-        sec_json = SectionDetailSerializer(sec1, many=True).data
+        section_hash = {}
+        for s in sections:
+            section_hash[s.full_code] = s
+        output = []
+        for (i, schedule) in enumerate(data):
+            a = []
+            for section in schedule:
+                a.append(section_hash[section])
+            output.append(MiniSectionSerializer(a, many=True).data)
+            if i >= 5:
+                break
         
-
-        return Response(sec_json, status=status.HTTP_200_OK)
+        return Response(output, status=status.HTTP_200_OK)
             
         
 

@@ -853,7 +853,6 @@ def find_possible_schedules(courses, count=None,breaks={"M": [], "T": [], "W": [
                 unwanted.append((day_to_num[day]+0.01*float(break_i[0]), day_to_num[day]+0.01*float(break_i[1])))
         for unwanted_interval in unwanted:
                 [not_ok.append(interval[2]) for interval in intervals if not (interval[0] > unwanted_interval[1] or interval[1] < unwanted_interval[0])]
-        print(not_ok)
         if (len(not_ok) > 0):
             return False
         for i in range(len(intervals)):
@@ -873,7 +872,7 @@ def find_possible_schedules(courses, count=None,breaks={"M": [], "T": [], "W": [
         for day_class in day_classes:
             scheduler.add_interval(day_class[0], day_class[1], day_class[2], day_class[3])
         day_schedules = []
-        for _ in range(100):
+        for _ in range(5):
             day_schedules.append(scheduler.find_optimal_schedule(breaks[day]))
         day_schedules_unique = remove_duplicates(day_schedules)
         return day_schedules_unique
