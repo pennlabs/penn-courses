@@ -8,6 +8,8 @@ from courses.util import get_current_semester
 from degree.utils.degreeworks_client import DegreeworksClient
 from degree.utils.parse_degreeworks import parse_degreeworks
 
+from pprint import pprint
+
 
 class Command(BaseCommand):
     help = dedent(
@@ -65,6 +67,8 @@ class Command(BaseCommand):
         name = getenv("NAME")
         assert name is not None
 
+        print(pennid, auth_token, refresh_token, name)
+
         client = DegreeworksClient(
             pennid=pennid, auth_token=auth_token, refresh_token=refresh_token, name=name
         )
@@ -73,4 +77,5 @@ class Command(BaseCommand):
             for program in client.get_programs(year=year):
                 for degree_plan in client.degree_plans_of(program, year=year):
                     with transaction.atomic():
-                        parse_degreeworks(client.audit(degree_plan), degree_plan)
+                        rules = parse_degreeworks(client.audit(degree_plan), degree_plan)
+                        pprint(rules)

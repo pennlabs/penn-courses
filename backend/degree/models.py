@@ -103,16 +103,18 @@ class Rule(models.Model):
 
     degree_plan = models.ForeignKey(
         DegreePlan,
+        null=True,
         on_delete=models.CASCADE,
         help_text=dedent(
             """
-            The degree plan that has this rule.
+            The degree plan that has this rule. Null if this rule has a parent.
             """
         ),
     )
 
     q = models.TextField(
         max_length=1000,
+        blank=True,
         help_text=dedent(
             """
             String representing a Q() object that returns the set of courses
@@ -129,7 +131,8 @@ class Rule(models.Model):
         on_delete=models.CASCADE,
         help_text=dedent(
             """
-            This rule's parent Rule if it has one.
+            This rule's parent Rule if it has one. Null if this is a top level rule
+            (ie, degree_plan is not null)
             """
         ),
         related_name="children",

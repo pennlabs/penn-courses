@@ -150,59 +150,45 @@ def evaluate_condition(condition, degree_plan) -> bool:
         raise LookupError(f"Unknown condition type in ifStmt: {condition.keys()}")
 
 
-def parse_rulearray(ruleArray, degree_plan, parent: Rule = None) -> list[Rule]:
+def parse_rulearray(ruleArray: list[dict], degree_plan: DegreePlan, rules: list[Rule], parent: Rule = None) -> None:
     """
     Logic to parse a single degree ruleArray in a blockArray requirement.
     A ruleArray consists of a list of rule objects that contain a requirement object.
     """
-    rules = []
-    for rule in ruleArray:
-        rule_req = rule["requirement"]
-        assert (
-            rule["ruleType"] == "Group" or rule["ruleType"] == "Subset" or "ruleArray" not in rule
+    for rule_json in ruleArray:
+        this_rule = Rule(
+            parent=parent,
+            degree_plan=None
         )
-        match rule["ruleType"]:
+        rules.append(this_rule)
+
+        rule_req = rule_json["requirement"]
+        assert (
+            rule_json["ruleType"] == "Group" or rule_json["ruleType"] == "Subset" or "ruleArray" not in rule_json
+        )
+        match rule_json["ruleType"]:
             case "Course":
                 """
                 A Course rule can either specify a number (or range) of classes required or a number (or range) of CUs
                 required, or both.
                 """
                 # check the number of classes/credits
-                num = (
+                num_courses = (
                     int(rule_req.get("classesBegin"))
                     if rule_req.get("classesBegin") is not None
                     else None
                 )
-                max_num = (
-                    int(rule_req.get("classesEnd"))
-                    if rule_req.get("classesEnd") is not None
-                    else None
-                )
-                cus = (
+                credits = (
                     float(rule_req.get("creditsBegin"))
                     if rule_req.get("creditsBegin") is not None
                     else None
                 )
-                max_cus = (
-                    float(rule_req.get("creditsEnd"))
-                    if rule_req.get("creditsEnd") is not None
-                    else None
-                )
-
-                if num is None and cus is None:
+                if num_courses is None and credits is None:
                     raise ValueError("No classesBegin or creditsBegin in Course requirement")
 
-                if (num is None and max_num) or (cus is None and max_cus):
-                    raise ValueError(f"Course requirement specified end without begin: {rule_req}")
-
-                # TODO: What is the point of this?
-                if max_num is None and max_cus is None:
-                    if not (num and cus):
-                        assert rule_req["classCreditOperator"] == "OR"
-                    else:
-                        assert rule_req["classCreditOperator"] == "AND"
-
-                rules.append(Rule(q=str(parse_coursearray(rule_req["courseArray"])), credits=0))
+                this_rule.q = repr(parse_coursearray(rule_req["courseArray"]))
+                this_rule.credits = credits
+                this_rule.num_courses = num_courses
             case "IfStmt":
                 assert "rightCondition" not in rule_req
                 try:
@@ -212,7 +198,7 @@ def parse_rulearray(ruleArray, degree_plan, parent: Rule = None) -> list[Rule]:
                     print("Warning: " + e.args[0])
                     continue  # do nothing if we can't evaluate the condition bc of insufficient information
 
-                match rule["booleanEvaluation"]:
+                match rule_json["booleanEvaluation"]:
                     case "False":
                         degreeworks_eval = False
                     case "True":
@@ -221,71 +207,59 @@ def parse_rulearray(ruleArray, degree_plan, parent: Rule = None) -> list[Rule]:
                         degreeworks_eval = None
                     case _:
                         raise LookupError(
-                            f"Unknown boolean evaluation in ifStmt: {rule['booleanEvaluation']}"
+                            f"Unknown boolean evaluation in ifStmt: {rule_json['booleanEvaluation']}"
                         )
 
                 assert degreeworks_eval is None or evaluation == bool(degreeworks_eval)
 
                 # add if part or else part, depending on evaluation of the condition
                 if evaluation:
-                    rules += parse_rulearray(rule_req["ifPart"]["ruleArray"], degree_plan)
+                    parse_rulearray(rule_req["ifPart"]["ruleArray"], degree_plan, rules, parent=parent)
                 elif "elsePart" in rule_req:
-                    rules += parse_rulearray(rule_req["elsePart"]["ruleArray"], degree_plan)
-            case "Block" | "Blocktype":  # headings
-                pass
-            case "Complete" | "Incomplete":
-                assert "ifElsePart" in rule  # this is a nested requirement
-                continue  # do nothing
-            case "Noncourse":
-                continue  # this is a presentation or something else that's required
-            case "Subset":  # what does this mean
-                if "ruleArray" in rule:
-                    rules += parse_rulearray(rule["ruleArray"], degree_plan)
+                    parse_rulearray(rule_req["elsePart"]["ruleArray"], degree_plan, rules, parent=parent)
+            case "Subset":
+                if "ruleArray" in rule_json:
+                    parse_rulearray(rule_json["ruleArray"], degree_plan, rules, parent=parent)
                 else:
                     print("WARNING: subset has no ruleArray")
             case "Group":  # TODO: this is nested
-                q = Q()
-                [q := q & rule.q for rule in parse_rulearray(rule["ruleArray"], degree_plan)]
-
-                # TODO: Indicate somehow that this is a group
-                rules.append(
-                    Rule(
-                        q=str(q),
-                        min_num=rule_req["numberOfGroups"],
-                        min_cus=None,
-                        max_cus=None,
-                        max_num=None,
-                    )
-                )
+                
+                parse_rulearray(rule_json["ruleArray"], degree_plan, rules, parent=this_rule)
+                this_rule.num_courses=rule_req["numberOfGroups"],
+            case "Complete" | "Incomplete":
+                assert "ifElsePart" in rule_json  # this is a nested requirement
+                continue  # do nothing
+            case "Noncourse":
+                continue  # this is a presentation or something else that's required
+            case "Block" | "Blocktype":  # headings
+                pass
             case _:
-                raise LookupError(f"Unknown rule type {rule['ruleType']}")
-    return rules
+                raise LookupError(f"Unknown rule type {rule_json['ruleType']}")
 
 
 # TODO: Make the function names more descriptive
 def parse_degreeworks(json: dict, degree_plan: DegreePlan) -> list[Rule]:
     """
     Returns a list of Rules given a DegreeWorks JSON audit and a DegreePlan.
+    Note that this method calls the save method of the degree_plan.
     """
     blockArray = json.get("blockArray")
-
-    # TODO: Instead of creating a list assign each Requirement to DegreePlan
-    degree_reqs = []
+    rules = []
 
     for requirement in blockArray:
         degree_req = Rule(
-            name=requirement["title"],
-            code=requirement["requirementValue"],
-            # TODO: parse min_cus
-            credits=0,
+            title=requirement["title"],
+            # TODO: use requirement code?
+            credits=None,
+            num_courses=None,
+            degree_plan=degree_plan
         )
 
         # TODO: Should associate each Rule here with this Requirement
-        parse_rulearray(requirement["ruleArray"], degree_plan)
-
-        degree_reqs.append(degree_req)
-    return degree_reqs
-
+        rules.append(degree_req)
+        parse_rulearray(requirement["ruleArray"], degree_plan, rules, parent=degree_req)
+    degree_plan.save()
+    return Rule.bulk_create(rules)
 
 if __name__ == "__main__":
     from degree.utils.departments import E_BAS_DEGREE_PLANS, W_DEGREE_PLANS, A_DEGREE_PLANS
