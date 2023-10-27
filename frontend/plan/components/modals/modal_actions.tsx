@@ -42,6 +42,11 @@ export const validateInput = (
                 message: "'cart' is not a valid schedule name",
                 error: true,
             });
+        } else if (input === "Path Registration") {
+            callback({
+                message: "'Path Registration' is not a valid schedule name",
+                error: true,
+            });
         } else {
             callback({
                 message: "",

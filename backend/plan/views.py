@@ -1,4 +1,5 @@
 import arrow
+from accounts.authentication import PlatformAuthentication
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
 from django.db.models import Prefetch, Q, Subquery
@@ -10,6 +11,7 @@ from ics import Event as ICSEvent
 from ics.grammar.parse import ContentLine
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, permission_classes, schema
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -19,6 +21,7 @@ from courses.serializers import CourseListSerializer
 from courses.util import get_course_and_section, get_current_semester
 from courses.views import get_accepted_friends
 from PennCourses.docs_settings import PcxAutoSchema
+from PennCourses.settings.base import PATH_REGISTRATION_SCHEDULE_NAME
 from plan.management.commands.recommendcourses import (
     clean_course_input,
     recommend_courses,
@@ -396,6 +399,20 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
+    def validate_name(self, request, existing_schedule=None):
+        if PATH_REGISTRATION_SCHEDULE_NAME in [
+            request.data.get("name"),
+            existing_schedule and existing_schedule.name,
+        ] and not isinstance(request.successful_authenticator, PlatformAuthentication):
+            raise PermissionDenied(
+                "You cannot create/update/delete a schedule with the name "
+                + PATH_REGISTRATION_SCHEDULE_NAME
+            )
+
+    def destroy(self, request, *args, **kwargs):
+        self.validate_name(request, existing_schedule=self.get_object())
+        return super().destroy(request, *args, **kwargs)
+
     def update(self, request, pk=None):
         if not pk or not Schedule.objects.filter(id=pk).exists():
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
@@ -406,6 +423,8 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 {"detail": "You do not have access to the specified schedule."},
                 status=status.HTTP_403_FORBIDDEN,
             )
+
+        self.validate_name(request, existing_schedule=schedule)
 
         try:
             sections = self.get_sections(request.data)
@@ -438,6 +457,8 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         if Schedule.objects.filter(id=request.data.get("id")).exists():
             return self.update(request, request.data.get("id"))
+
+        self.validate_name(request)
 
         try:
             sections = self.get_sections(request.data)

@@ -8,6 +8,7 @@ from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
 from courses.util import get_average_reviews, invalidate_current_semester_cache
+from PennCourses.settings.base import PATH_REGISTRATION_SCHEDULE_NAME
 from plan.models import Schedule
 from tests.courses.util import create_mock_data_with_reviews
 
@@ -684,3 +685,66 @@ class ScheduleTest(TestCase):
         self.assertEqual(response.data["name"], "New Test Schedule")
         self.assertEqual(response.data["semester"], TEST_SEMESTER)
         self.assertEqual(len(response.data["sections"]), 0)
+
+    def test_create_path_registration_schedule_403(self):
+        response = self.client.post(
+            "/api/plan/schedules/",
+            json.dumps(
+                {
+                    "semester": TEST_SEMESTER,
+                    "name": PATH_REGISTRATION_SCHEDULE_NAME,
+                    "sections": [
+                        {"id": "CIS-121-001", "semester": TEST_SEMESTER},
+                        {"id": "CIS-160-001", "semester": TEST_SEMESTER},
+                    ],
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(
+            response.data["detail"],
+            "You cannot create/update/delete a schedule with the name "
+            + PATH_REGISTRATION_SCHEDULE_NAME,
+        )
+
+    def test_update_to_path_registration_schedule_403(self):
+        response = self.client.put(
+            f"/api/plan/schedules/{self.s.id}/",
+            json.dumps({"name": PATH_REGISTRATION_SCHEDULE_NAME, "sections": []}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(
+            response.data["detail"],
+            "You cannot create/update/delete a schedule with the name "
+            + PATH_REGISTRATION_SCHEDULE_NAME,
+        )
+
+    def test_update_from_path_registration_schedule_403(self):
+        path_schedule = Schedule.objects.create(
+            name=PATH_REGISTRATION_SCHEDULE_NAME, person=self.s.person, semester=TEST_SEMESTER
+        )
+        response = self.client.put(
+            f"/api/plan/schedules/{path_schedule.id}/",
+            json.dumps({"name": "Not Path Registration", "sections": []}),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(
+            response.data["detail"],
+            "You cannot create/update/delete a schedule with the name "
+            + PATH_REGISTRATION_SCHEDULE_NAME,
+        )
+
+    def test_delete_path_registration_schedule_403(self):
+        path_schedule = Schedule.objects.create(
+            name=PATH_REGISTRATION_SCHEDULE_NAME, person=self.s.person, semester=TEST_SEMESTER
+        )
+        response = self.client.delete(f"/api/plan/schedules/{path_schedule.id}/")
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(
+            response.data["detail"],
+            "You cannot create/update/delete a schedule with the name "
+            + PATH_REGISTRATION_SCHEDULE_NAME,
+        )
