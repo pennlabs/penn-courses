@@ -7,7 +7,7 @@ from django.core.cache import cache
 from django.core.exceptions import ValidationError
 from django.core.management.base import BaseCommand
 from django.db import connection, transaction
-from django.db.models import Count, F, OuterRef, Q, Subquery, Value
+from django.db.models import Count, F, OuterRef, Q, Subquery, Value, Sum, DecimalField
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 from tqdm import tqdm
@@ -77,6 +77,37 @@ def recompute_has_status_updates():
         )
 
 
+# course credits = sum(section credis for all activities)
+COURSE_CREDITS_RAW_SQL = dedent(
+    """
+    WITH CourseCredits AS (
+        SELECT U0."id", SUM(U2."activity_cus") AS total_credits
+        FROM "courses_course" U0
+        INNER JOIN (
+            SELECT MAX(U1."credits") AS "activity_cus", U1."course_id"
+            FROM "courses_section" U1
+            GROUP BY U1."course_id", U1."activity"
+        ) AS U2
+        ON U0."id" = U2."course_id"
+        GROUP BY U0."id"
+    )
+
+    UPDATE "courses_course" U0
+    SET "credits" = CourseCredits.total_credits
+    FROM CourseCredits
+    WHERE U0."id" = CourseCredits."id";       
+"""
+)
+
+
+def recompute_course_credits(
+    model=Course,  # so this function can be used in migrations (see django.db.migrations.RunPython)
+):
+
+    with connection.cursor() as cursor:
+        cursor.execute(COURSE_CREDITS_RAW_SQL)
+
+
 def recompute_precomputed_fields(verbose=False):
     """
     Recomputes the following precomputed fields:
@@ -94,6 +125,9 @@ def recompute_precomputed_fields(verbose=False):
     if verbose:
         print("\tRecomputing Course.num_activities")
     recompute_num_activities()
+    if verbose:
+        print("\tRecomputing Course.credits")
+    recompute_course_credits()
     if verbose:
         print("\tRecomputing Section.num_meetings")
     recompute_meeting_count()

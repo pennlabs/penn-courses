@@ -236,7 +236,7 @@ def get_or_create_course_and_section(
     section_manager=None,
     course_defaults=None,
     section_defaults=None,
-):
+) -> (Course, Section, bool, bool):
     if section_manager is None:
         section_manager = Section.objects
     dept_code, course_id, section_id = separate_course_code(course_code)
