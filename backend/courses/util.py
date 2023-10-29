@@ -686,9 +686,9 @@ def find_possible_schedules(
         def __init__(self):
             self.intervals = []
 
-        def add_interval(self, start_time, end_time, class_name, section):
+        def add_interval(self, start_time, end_time, class_name, section, credit):
             # Adds an interval to the list of intervals
-            self.intervals.append((start_time, end_time, class_name, section))
+            self.intervals.append((start_time, end_time, class_name, section, credit))
             return True
 
         def find_optimal_schedule(self, unwanted_intervals=[]):
@@ -795,6 +795,7 @@ def find_possible_schedules(
                                 float(meeting["end"]) + 0.001 * random.random(),
                                 "-".join(section["id"].split("-")[0:2]),
                                 section["id"],
+                                section["credits"]
                             )
                         )
         return lectures_on_day
@@ -813,7 +814,7 @@ def find_possible_schedules(
         # Removes the time intervals from the schedule list
         sections = []
         for s in schedules:
-            sections.append(s[3])
+            sections.append((s[3], s[4]))
         return sections
 
     def remove_duplicates(given_l):
@@ -839,7 +840,7 @@ def find_possible_schedules(
         hash = {}
         courses = []
         for node in given_l:
-            class_name = "-".join(node.split("-")[0:2])
+            class_name = "-".join(node[0].split("-")[0:2])
             if class_name not in hash.keys():
                 hash[class_name] = [node]
             else:
@@ -848,6 +849,12 @@ def find_possible_schedules(
             # Chooses a random lecture for each class
             courses.append(random.choice(hash[key]))
         return courses
+
+    def credit_count(sections):
+        acc = 0
+        for section in sections:
+            acc += section[1]
+        return acc
 
     def check_if_schedule_possible(schedule, courses, unwanted_intervals):
         """
@@ -867,13 +874,14 @@ def find_possible_schedules(
         intervals = []
         for course in courses:
             for section in course:
-                if section["id"] in schedule:
+                if (section["id"],section["credits"]) in schedule:
                     for meeting in section["meetings"]:
                         intervals.append(
                             (
                                 day_to_num[meeting["day"]] + 0.01 * float(meeting["start"]),
                                 day_to_num[meeting["day"]] + 0.01 * float(meeting["end"]),
                                 section["id"],
+                                section["credits"]
                             )
                         )
         intervals = sorted(intervals, key=lambda x: x[0])
@@ -912,7 +920,8 @@ def find_possible_schedules(
         day_classes = find_lectures_on_day(lectures, day)
         scheduler = Scheduler()
         for day_class in day_classes:
-            scheduler.add_interval(day_class[0], day_class[1], day_class[2], day_class[3])
+            scheduler.add_interval(day_class[0], day_class[1], day_class[2],
+                                   day_class[3], day_class[4])
         day_schedules = []
         for _ in range(5):
             day_schedules.append(scheduler.find_optimal_schedule(breaks[day]))
@@ -938,14 +947,18 @@ def find_possible_schedules(
         newschedule = schedule
         for course in recs:
             if course != []:
+                print(course)
+                print()
                 course_name = "-".join(course[0]["id"].split("-")[0:2])
-                schedule_names = list(map(lambda x: "-".join(x.split("-")[0:2]), schedule))
+                schedule_names = list(map(lambda x: "-".join(x[0].split("-")[0:2]), schedule))
                 if course_name in schedule_names:
                     for section in course:
+                        print(section["id"])
                         if check_if_schedule_possible(
-                            schedule + [section["id"]], recs + lectures, breaks
+                            schedule + [(section["id"], section["credits"])], recs + lectures,
+                            breaks
                         ):
-                            newschedule.append(section["id"])
+                            newschedule.append((section["id"], section["credits"]))
                             break
         return newschedule
 
@@ -963,7 +976,6 @@ def find_possible_schedules(
     wed_schedules = scheduler_for_day(lectures, "W", breaks)
     thurs_schedules = scheduler_for_day(lectures, "R", breaks)
     fri_schedules = scheduler_for_day(lectures, "F", breaks)
-
     possible_mwf = []
     for i in range(len(monday_schedules)):
         for j in range(len(wed_schedules)):
@@ -979,7 +991,6 @@ def find_possible_schedules(
     for i in range(len(possible_tr)):
         for j in range(len(possible_mwf)):
             total_schedules.append(possible_tr[i] + possible_mwf[j])
-
     courses = list(map(schedule_to_section, total_schedules))
     courses_unique = list(map(remove_duplicates, courses))
 
@@ -998,8 +1009,16 @@ def find_possible_schedules(
                     for c in itertools.combinations(choose[i], count)
                     if c not in combinations
                 ]
+                """
+                [
+                    combinations.append(list(c))
+                    for c in itertools.combinations(choose[i], count + 1)
+                    if c not in combinations
+                ]
+                """
     else:
         combinations = choose
     choose = [add_recs_to_schedule(schedule, recs, lectures, breaks) for schedule in combinations]
-    choose = sorted(choose, key=lambda x: len(x))
+    choose = [schedule for schedule in choose if credit_count(schedule) <= count]
+    choose = sorted(choose, key=lambda x: random.random())
     return choose
