@@ -1,11 +1,10 @@
+import itertools
 import json
 import logging
 import os
+import random
 import re
 import uuid
-import random
-import itertools
-
 from decimal import Decimal
 
 from django.core.cache import cache
@@ -677,9 +676,12 @@ def get_semesters(semesters=None, verbose=False):
     return semesters
 
 
+def find_possible_schedules(
+    courses, count=None, breaks={"M": [], "T": [], "W": [], "R": [], "F": []}
+):
 
-def find_possible_schedules(courses, count=None,breaks={"M": [], "T": [], "W": [], "R": [], "F": []}):
     day_to_num = {"M": 0, "T": 1, "W": 2, "R": 3, "F": 4}
+
     class Scheduler:
         def __init__(self):
             self.intervals = []
@@ -695,8 +697,16 @@ def find_possible_schedules(courses, count=None,breaks={"M": [], "T": [], "W": [
             # Remove unwanted intervals
             not_ok = []
             for unwanted_interval in unwanted_intervals:
-                [not_ok.append(interval[3]) for interval in sorted_intervals if not (interval[0] > unwanted_interval[1] or interval[1] < unwanted_interval[0])]
-            sorted_intervals = [interval for interval in sorted_intervals if not (interval[3] in not_ok)]
+                [
+                    not_ok.append(interval[3])
+                    for interval in sorted_intervals
+                    if not (
+                        interval[0] > unwanted_interval[1] or interval[1] < unwanted_interval[0]
+                    )
+                ]
+            sorted_intervals = [
+                interval for interval in sorted_intervals if not (interval[3] in not_ok)
+            ]
             # Initialize variables
             n = len(sorted_intervals)
             dp = [1] * n
@@ -704,7 +714,9 @@ def find_possible_schedules(courses, count=None,breaks={"M": [], "T": [], "W": [
             # Iterate over sorted intervals
             for i in range(1, n):
                 for j in range(i):
-                    if sorted_intervals[j][1] <= sorted_intervals[i][0] and sorted_intervals[j][2] != sorted_intervals[i][2]:
+                    if (sorted_intervals[j][1] <= sorted_intervals[i][0]) and (
+                        sorted_intervals[j][2] != sorted_intervals[i][2]
+                    ):
                         if dp[j] + 1 > dp[i]:
                             dp[i] = dp[j] + 1
                             prev[i] = j
@@ -729,25 +741,28 @@ def find_possible_schedules(courses, count=None,breaks={"M": [], "T": [], "W": [
                     selected_classes.add(class_name)
                     final_schedule.append(section)
             return final_schedule
-            
+
     def find_sections(courses):
         """
         Separates the lectures and recitations of a certain course into a hash map
         """
         course_to_sections = {}
         for course in courses.keys():
-            course_to_sections[course] = {"LEC": [section for section in courses[course] if section["activity"] == "LEC"], 
-                                                "REC": [section for section in courses[course] if section["activity"] == "REC"],}
+            course_to_sections[course] = {
+                "LEC": [section for section in courses[course] if section["activity"] == "LEC"],
+                "REC": [section for section in courses[course] if section["activity"] == "REC"],
+            }
         return course_to_sections
 
     def find_activities(c_to_s, activity):
         """
-        Given a dictionary of courses and their sections, returns a list of only the activities of a certain type (ex: LEC).
-        
+        Given a dictionary of courses and their sections,
+        returns a list of only the activities of a certain type (ex: LEC).
+
         Parameters:
         c_to_s (dict): A dictionary of courses and their sections.
         activity (str): The type of activity to filter by (ex: LEC).
-        
+
         Returns:
         list: A list of activities of the specified type.
         """
@@ -765,7 +780,8 @@ def find_possible_schedules(courses, count=None,breaks={"M": [], "T": [], "W": [
             day (str): The day to search for lectures on.
 
         Returns:
-            list: A list of tuples containing the start time, end time, course code, and section ID for each lecture on the given day.
+            list: A list of tuples containing the start time, end time,
+            course code, and section ID for each lecture on the given day.
         """
         lectures_on_day = []
         for lecture in lectures:
@@ -773,13 +789,20 @@ def find_possible_schedules(courses, count=None,breaks={"M": [], "T": [], "W": [
                 for meeting in section["meetings"]:
                     if meeting["day"] == day:
                         # Adds a randomizer to randomize the order they are fed to the scheduler
-                        lectures_on_day.append((float(meeting["start"]), float(meeting["end"])+0.001*random.random(), "-".join(section["id"].split("-")[0:2]), section["id"] ))
+                        lectures_on_day.append(
+                            (
+                                float(meeting["start"]),
+                                float(meeting["end"]) + 0.001 * random.random(),
+                                "-".join(section["id"].split("-")[0:2]),
+                                section["id"],
+                            )
+                        )
         return lectures_on_day
-
 
     def schedule_to_section(schedules):
         """
-        Given a list of schedules, returns a list of sections by stripping the time intervals from the schedule list.
+        Given a list of schedules,
+        returns a list of sections by stripping the time intervals from the schedule list.
 
         Parameters:
             schedules (list): A list of schedules.
@@ -793,17 +816,17 @@ def find_possible_schedules(courses, count=None,breaks={"M": [], "T": [], "W": [
             sections.append(s[3])
         return sections
 
-    def remove_duplicates(l):
+    def remove_duplicates(given_l):
         """
         Removes duplicates from a list.
         Example:
         remove_duplicates([1,1,1,3,5,7,7]) = [1,3,5,7]
         """
         newl = []
-        [newl.append(x) for x in l if x not in newl]
+        [newl.append(x) for x in given_l if x not in newl]
         return newl
 
-    def choose_class_hash(l):
+    def choose_class_hash(given_l):
         """
         Given a list of section nodes, chooses one section per class from each schedule randomly.
 
@@ -815,7 +838,7 @@ def find_possible_schedules(courses, count=None,breaks={"M": [], "T": [], "W": [
         """
         hash = {}
         courses = []
-        for node in l:
+        for node in given_l:
             class_name = "-".join(node.split("-")[0:2])
             if class_name not in hash.keys():
                 hash[class_name] = [node]
@@ -828,44 +851,63 @@ def find_possible_schedules(courses, count=None,breaks={"M": [], "T": [], "W": [
 
     def check_if_schedule_possible(schedule, courses, unwanted_intervals):
         """
-        Given a schedule and a list of courses, checks if the schedule is possible by ensuring that there are no time conflicts
+        Given a schedule and a list of courses,
+        checks if the schedule is possible by ensuring that there are no time conflicts
         between the meetings of the courses in the schedule.
 
         Parameters:
             schedule (list): A list of section IDs representing the courses in the schedule.
-            courses (list): A list of dictionaries representing the courses, where each dictionary contains a list of sections.
+            courses (list): A list of dictionaries representing the courses,
+            where each dictionary contains a list of sections.
 
         Returns:
             bool: True if the schedule is possible, False otherwise.
         """
-        
+
         intervals = []
         for course in courses:
             for section in course:
                 if section["id"] in schedule:
                     for meeting in section["meetings"]:
-                        intervals.append((day_to_num[meeting["day"]]+0.01*float(meeting["start"]), day_to_num[meeting["day"]]+0.01*float(meeting["end"]), section["id"]))
+                        intervals.append(
+                            (
+                                day_to_num[meeting["day"]] + 0.01 * float(meeting["start"]),
+                                day_to_num[meeting["day"]] + 0.01 * float(meeting["end"]),
+                                section["id"],
+                            )
+                        )
         intervals = sorted(intervals, key=lambda x: x[0])
         not_ok = []
         unwanted = []
         for day in unwanted_intervals.keys():
             for break_i in unwanted_intervals[day]:
-                unwanted.append((day_to_num[day]+0.01*float(break_i[0]), day_to_num[day]+0.01*float(break_i[1])))
+                unwanted.append(
+                    (
+                        day_to_num[day] + 0.01 * float(break_i[0]),
+                        day_to_num[day] + 0.01 * float(break_i[1]),
+                    )
+                )
         for unwanted_interval in unwanted:
-                [not_ok.append(interval[2]) for interval in intervals if not (interval[0] > unwanted_interval[1] or interval[1] < unwanted_interval[0])]
-        if (len(not_ok) > 0):
+            [
+                not_ok.append(interval[2])
+                for interval in intervals
+                if not (interval[0] > unwanted_interval[1] or interval[1] < unwanted_interval[0])
+            ]
+        if len(not_ok) > 0:
             return False
         for i in range(len(intervals)):
             if i == 0:
                 continue
-            if intervals[i][0] < intervals[i-1][1]:
+            if intervals[i][0] < intervals[i - 1][1]:
                 return False
         return True
 
     def scheduler_for_day(lectures, day, breaks):
         """
-        Takes a list of lectures and a day of week, and returns a list of unique schedules for that day.
-        The schedules are generated by taking 10 samples of possible schedules based on the dynamic programming algorithm.
+        Takes a list of lectures and a day of week,
+        and returns a list of unique schedules for that day.
+        The schedules are generated by taking 10 samples of possible schedules
+        based on the dynamic programming algorithm.
         """
         day_classes = find_lectures_on_day(lectures, day)
         scheduler = Scheduler()
@@ -883,11 +925,14 @@ def find_possible_schedules(courses, count=None,breaks={"M": [], "T": [], "W": [
 
         Parameters:
             schedule (list): A list of strings representing the current schedule.
-            recs (list): A list of lists, where each inner list contains dictionaries representing recitation sections for a course.
-            lectures (list): A list of lists, where each inner list contains dictionaries representing lecture sections for a course.
+            recs (list): A list of lists, where each inner list contains dictionaries
+            representing recitation sections for a course.
+            lectures (list): A list of lists, where each inner list contains dictionaries
+            representing lecture sections for a course.
 
         Returns:
-            list: A list of strings representing the updated schedule with recitation sections added.
+            list: A list of strings representing the updated schedule
+            with recitation sections added.
 
         """
         newschedule = schedule
@@ -897,18 +942,22 @@ def find_possible_schedules(courses, count=None,breaks={"M": [], "T": [], "W": [
                 schedule_names = list(map(lambda x: "-".join(x.split("-")[0:2]), schedule))
                 if course_name in schedule_names:
                     for section in course:
-                        if check_if_schedule_possible(schedule+[section["id"]], recs+lectures, breaks):
+                        if check_if_schedule_possible(
+                            schedule + [section["id"]], recs + lectures, breaks
+                        ):
                             newschedule.append(section["id"])
                             break
-        return newschedule             
+        return newschedule
+
     """
-        Given a list of courses, returns a list of all possible schedules that can be made from those courses.
+        Given a list of courses, returns a list of all possible schedules
+        that can be made from those courses.
         If a count is specified, returns only schedules with that many courses.
     """
     c_to_s = find_sections(courses)
     lectures = find_activities(c_to_s, "LEC")
     recs = find_activities(c_to_s, "REC")
-        
+
     monday_schedules = scheduler_for_day(lectures, "M", breaks)
     tues_schedules = scheduler_for_day(lectures, "T", breaks)
     wed_schedules = scheduler_for_day(lectures, "W", breaks)
@@ -920,7 +969,7 @@ def find_possible_schedules(courses, count=None,breaks={"M": [], "T": [], "W": [
         for j in range(len(wed_schedules)):
             for k in range(len(fri_schedules)):
                 possible_mwf.append(monday_schedules[i] + wed_schedules[j] + fri_schedules[k])
-        
+
     possible_tr = []
     for i in range(len(tues_schedules)):
         for j in range(len(thurs_schedules)):
@@ -930,24 +979,27 @@ def find_possible_schedules(courses, count=None,breaks={"M": [], "T": [], "W": [
     for i in range(len(possible_tr)):
         for j in range(len(possible_mwf)):
             total_schedules.append(possible_tr[i] + possible_mwf[j])
-        
 
     courses = list(map(schedule_to_section, total_schedules))
     courses_unique = list(map(remove_duplicates, courses))
 
     choose = list(map(choose_class_hash, courses_unique))
-    choose = [schedule for schedule in choose if check_if_schedule_possible(schedule, lectures, breaks)]
-    if count != None:
+    choose = [
+        schedule for schedule in choose if check_if_schedule_possible(schedule, lectures, breaks)
+    ]
+    if count is not None:
         combinations = []
         for i in range(len(choose)):
             if len(choose[i]) <= count:
                 combinations.append(choose[i])
             else:
-                [combinations.append(list(c)) for c in itertools.combinations(choose[i], count) if c not in combinations]
+                [
+                    combinations.append(list(c))
+                    for c in itertools.combinations(choose[i], count)
+                    if c not in combinations
+                ]
     else:
         combinations = choose
     choose = [add_recs_to_schedule(schedule, recs, lectures, breaks) for schedule in combinations]
     choose = sorted(choose, key=lambda x: len(x))
     return choose
-        
-    

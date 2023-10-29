@@ -506,7 +506,7 @@ class AutomaticCourseScheduler(APIView):
             a = []
             for section in schedule:
                 a.append(section_hash[section])
-            output.append(MiniSectionSerializer(a, many=True).data)
+            output.append(SectionDetailSerializer(a, many=True).data)
             if i >= 5:
                 break
         
