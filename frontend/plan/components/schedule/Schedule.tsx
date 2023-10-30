@@ -89,6 +89,7 @@ const Schedule = ({
     removeSection,
     focusSection,
     changeMySchedule,
+    unsetActiveFriend,
     setTab,
     friendshipMutators,
     schedulesMutator,
