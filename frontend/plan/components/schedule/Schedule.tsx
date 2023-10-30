@@ -13,7 +13,6 @@ import {
     deleteScheduleOnBackend,
     downloadSchedule,
     openModal,
-    setStateReadOnly,
     setCurrentUserPrimarySchedule,
 } from "../../actions";
 import ScheduleSelectorDropdown from "./ScheduleSelectorDropdown";
@@ -59,7 +58,6 @@ interface ScheduleProps {
     removeSection: (idDashed: string) => void;
     focusSection: (id: string) => void;
     changeMySchedule: (scheduleName: string) => void;
-    setStateReadOnly: (readOnly: boolean) => void;
     unsetActiveFriend: () => void;
     setTab?: (_: number) => void;
     friendshipMutators: {
@@ -146,8 +144,6 @@ const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
     focusSection: (id: string) => dispatch(fetchCourseDetails(id)),
     changeMySchedule: (scheduleName: string) =>
         dispatch(changeMySchedule(scheduleName)),
-    setStateReadOnly: (readOnly: boolean) =>
-        dispatch(setStateReadOnly(readOnly)),
     unsetActiveFriend: () => dispatch(unsetActiveFriend()),
     friendshipMutators: {
         fetchFriendSchedule: (friend: User) =>

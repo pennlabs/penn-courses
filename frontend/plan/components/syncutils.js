@@ -5,7 +5,6 @@ import {
     deleteScheduleOnFrontend,
     updateSchedulesOnFrontend,
     findOwnPrimarySchedule,
-    setStateReadOnly,
     checkForDefaultSchedules,
 } from "../actions";
 import { fetchBackendFriendships } from "../actions/friendshipUtil";
@@ -34,8 +33,7 @@ const initiateSync = async (store) => {
     const cloudPull = () => {
         if (!store.getState().friendships.pulledFromBackend) {
             store.dispatch(
-                fetchBackendFriendships(
-                    store.getState().login.user)
+                fetchBackendFriendships(store.getState().login.user)
             );
         }
 

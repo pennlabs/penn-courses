@@ -153,7 +153,7 @@ const handleUpdateSchedulesOnFrontend = (state, schedulesFromBackend) => {
                 (newState.cartPushedToBackend &&
                     cloudUpdated >= newState.cartUpdatedAt &&
                     cloudUpdated - newState.cartUpdatedAt >=
-                    MIN_TIME_DIFFERENCE)
+                        MIN_TIME_DIFFERENCE)
             ) {
                 newState = {
                     ...newState,
@@ -171,7 +171,7 @@ const handleUpdateSchedulesOnFrontend = (state, schedulesFromBackend) => {
                     foundSchedule.pushedToBackend &&
                     cloudUpdated >= foundSchedule.updated_at &&
                     foundSchedule.updated_at - cloudUpdated >=
-                    MIN_TIME_DIFFERENCE)
+                        MIN_TIME_DIFFERENCE)
             ) {
                 newState = {
                     ...newState,
@@ -321,7 +321,8 @@ export const schedule = (state = initialState, action) => {
             return {
                 ...state,
                 // Only Path Registration schedule should be read only in own schedules
-                readOnly: action.scheduleName === PATH_REGISTRATION_SCHEDULE_NAME,
+                readOnly:
+                    action.scheduleName === PATH_REGISTRATION_SCHEDULE_NAME,
                 scheduleSelected: action.scheduleName,
             };
         case TOGGLE_CHECK:

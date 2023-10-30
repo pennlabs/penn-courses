@@ -119,41 +119,23 @@ export const generateModalActions = (dispatch, modalKey, modalProps) => {
             };
         case "ADD_FRIEND":
             return {
-                sendFriendRequest: (
-                    user,
-                    friendPennkey,
-                    onComplete
-                ) =>
+                sendFriendRequest: (user, friendPennkey, onComplete) =>
                     dispatch(
-                        sendFriendRequest(
-                            user,
-                            friendPennkey,
-                            onComplete
-                        )
+                        sendFriendRequest(user, friendPennkey, onComplete)
                     ),
             };
         case "SHOW_REQUESTS":
             return {
                 sendFriendRequest: (user, friendPennkey) =>
                     dispatch(
-                        sendFriendRequest(
-                            user,
-                            friendPennkey,
-                            (res) => {
-                                if (!res.ok) {
-                                    console.log(res);
-                                }
+                        sendFriendRequest(user, friendPennkey, (res) => {
+                            if (!res.ok) {
+                                console.log(res);
                             }
-                        )
+                        })
                     ),
-                deleteFriendshipOnBackend: (
-                    user,
-                    friendPennkey) =>
-                    dispatch(
-                        deleteFriendshipOnBackend(
-                            user,
-                            friendPennkey)
-                    ),
+                deleteFriendshipOnBackend: (user, friendPennkey) =>
+                    dispatch(deleteFriendshipOnBackend(user, friendPennkey)),
             };
         case "DOWNLOAD_SCHEDULE":
             return {
