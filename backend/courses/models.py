@@ -222,6 +222,7 @@ class Course(models.Model):
         "Course",
         related_name="listing_set",
         on_delete=models.CASCADE,
+        blank=True,  # So you can leave blank for a self-reference on course creation forms
         help_text=dedent(
             """
         The primary Course object with which this course is crosslisted. The set of crosslisted

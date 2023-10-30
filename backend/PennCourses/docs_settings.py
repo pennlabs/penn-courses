@@ -205,6 +205,22 @@ An example:
         }
     }
 
+You can also include a "media_type" key in the schema object of your custom response,
+for setting a nonstandard response content type.
+
+An example:
+    override_response_schema={
+        "calendar-view": {
+            "GET": {
+                200: {
+                    "media_type": "text/calendar",
+                    "type": "string",
+                    "description": "A calendar file in ICS format."
+                }
+            }
+        }
+    }
+
 If you want to manually set the description of a path parameter for a certain path/method,
 you can do so by including a custom_path_parameter_desc kwarg in your PcxAutoSchema instantiation,
 with keys of the form path > method > variable_name pointing to a string description.  Example:
@@ -260,7 +276,10 @@ make_manual_schema_changes if you need to), you can download it from the /api/op
 
 
 def get_url_by_name(name):
-    path = get_resolver().reverse_dict[name][0][0][0]
+    reverse = get_resolver().reverse_dict
+    if name not in reverse:
+        raise ValueError(f"Tried to get URL by name '{reverse}', but no such URL exists.")
+    path = reverse[name][0][0][0]
     path = path.replace(r"%(pk)s", r"{id}")
     return "/" + re.sub(r"%\(([^)]+)\)s", r"{\1}", path)
 
@@ -1351,16 +1370,26 @@ class PcxAutoSchema(AutoSchema):
                 if status_code not in responses.keys():
                     responses[status_code] = {
                         "description": "",
-                        "content": deepcopy(default_schema_content),
+                        "content": deepcopy(default_schema_content),  # to be mutated below
                     }
             for status_code in responses.keys():
                 if status_code in override_response_schema[path][method]:
                     custom_schema = override_response_schema[path][method][status_code]
+                    custom_media_type = custom_schema.get("media_type")
+                    if custom_media_type:
+                        del custom_schema["media_type"]
                     if "content" not in responses[status_code]:
                         responses[status_code]["content"] = dict()
                         for ct in self.request_media_types:
-                            responses[status_code]["content"][ct] = custom_schema
+                            responses[status_code]["content"][ct] = dict()
+                            responses[status_code]["content"][ct]["schema"] = custom_schema
                     else:
                         for response_schema in responses[status_code]["content"].values():
                             response_schema["schema"] = custom_schema
+                    if custom_media_type:
+                        if custom_media_type not in responses[status_code]["content"]:
+                            responses[status_code]["content"][custom_media_type] = dict()
+                        responses[status_code]["content"][custom_media_type][
+                            "schema"
+                        ] = custom_schema
         return responses

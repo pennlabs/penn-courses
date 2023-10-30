@@ -42,6 +42,11 @@ export const validateInput = (
                 message: "'cart' is not a valid schedule name",
                 error: true,
             });
+        } else if (input === "Path Registration") {
+            callback({
+                message: "'Path Registration' is not a valid schedule name",
+                error: true,
+            });
         } else {
             callback({
                 message: "",
@@ -104,9 +109,8 @@ export const handleFriendshipRequestResponse = (
     }
     if (res.status == 409) {
         if (
-            existingData.reduce(
-                (acc, friend) => acc || friend.username === requestedFriend,
-                false
+            existingData.find(
+                (friend) => friend.username === requestedFriend
             )
         ) {
             return {

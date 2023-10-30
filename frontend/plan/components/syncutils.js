@@ -1,11 +1,10 @@
 import {
     fetchBackendSchedules,
     updateScheduleOnBackend,
-    changeSchedule,
+    changeMySchedule,
     deleteScheduleOnFrontend,
     updateSchedulesOnFrontend,
     findOwnPrimarySchedule,
-    setStateReadOnly,
     checkForDefaultSchedules,
 } from "../actions";
 import { fetchBackendFriendships } from "../actions/friendshipUtil";
@@ -34,18 +33,8 @@ const initiateSync = async (store) => {
     const cloudPull = () => {
         if (!store.getState().friendships.pulledFromBackend) {
             store.dispatch(
-                fetchBackendFriendships(
-                    store.getState().login.user,
-                    store.getState().friendships.activeFriend.username
-                )
+                fetchBackendFriendships(store.getState().login.user)
             );
-        }
-
-        if (
-            store.getState().friendships.activeFriend.username === "" &&
-            store.getState().schedule.readOnly
-        ) {
-            store.dispatch(setStateReadOnly(false));
         }
 
         return new Promise((resolve) => {
@@ -59,7 +48,7 @@ const initiateSync = async (store) => {
                         Object.keys(scheduleState.schedules).length !== 0
                     ) {
                         store.dispatch(
-                            changeSchedule(
+                            changeMySchedule(
                                 Object.keys(scheduleState.schedules)[0]
                             )
                         );
@@ -70,19 +59,21 @@ const initiateSync = async (store) => {
                     );
 
                     Object.keys(scheduleState.schedules).forEach(
-                        (scheduleName) => {
+                        (frontendScheduleName) => {
                             if (
-                                !schedulesFromBackend.reduce(
-                                    (acc, schedule) =>
-                                        acc || schedule.name === scheduleName,
-                                    false
+                                !schedulesFromBackend.find(
+                                    (backendSchedule) =>
+                                        backendSchedule.name ===
+                                        frontendScheduleName
                                 )
                             ) {
                                 // The local schedule is no longer observed on the backend.
                                 // Should be deleted locally.
-                                if (scheduleName) {
+                                if (frontendScheduleName) {
                                     store.dispatch(
-                                        deleteScheduleOnFrontend(scheduleName)
+                                        deleteScheduleOnFrontend(
+                                            frontendScheduleName
+                                        )
                                     );
                                 }
                             }
@@ -96,11 +87,10 @@ const initiateSync = async (store) => {
                     if (
                         !scheduleState.primaryScheduleId ||
                         scheduleState.primaryScheduleId === "-1" ||
-                        !schedulesFromBackend.reduce(
-                            (acc, schedule) =>
-                                acc ||
-                                schedule.id === scheduleState.primaryScheduleId,
-                            false
+                        !schedulesFromBackend.find(
+                            (backendSchedule) =>
+                                backendSchedule.id ===
+                                scheduleState.primaryScheduleId
                         )
                     ) {
                         store.dispatch(

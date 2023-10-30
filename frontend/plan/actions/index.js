@@ -48,7 +48,7 @@ export const CLEAR_ALL_SCHEDULE_DATA = "CLEAR_ALL_SCHEDULE_DATA";
 export const CREATE_CART_ON_FRONTEND = "CREATE_CART_ON_FRONTEND";
 export const CREATE_SCHEDULE_ON_FRONTEND = "CREATE_SCHEDULE_ON_FRONTEND";
 export const DELETE_SCHEDULE_ON_FRONTEND = "DELETE_SCHEDULE_ON_FRONTEND";
-export const CHANGE_SCHEDULE = "CHANGE_SCHEDULE";
+export const CHANGE_MY_SCHEDULE = "CHANGE_MY_SCHEDULE";
 export const RENAME_SCHEDULE = "RENAME_SCHEDULE";
 export const CLEAR_SCHEDULE = "CLEAR_SCHEDULE";
 export const DOWNLOAD_SCHEDULE = "DOWNLOAD_SCHEDULE";
@@ -70,8 +70,8 @@ export const renameSchedule = (oldName, newName) => ({
     newName,
 });
 
-export const changeSchedule = (scheduleName) => ({
-    type: CHANGE_SCHEDULE,
+export const changeMySchedule = (scheduleName) => ({
+    type: CHANGE_MY_SCHEDULE,
     scheduleName,
 });
 
@@ -642,6 +642,9 @@ export const deleteScheduleOnBackend = (user, scheduleName, scheduleId) => (
     if (scheduleName === "cart") {
         return;
     }
+    if (scheduleName === "Path Registration") {
+        return;
+    }
     dispatch(deletionAttempted(scheduleName));
     rateLimitedFetch(`/plan/schedules/${scheduleId}/`, {
         method: "DELETE",
@@ -677,13 +680,9 @@ export const findOwnPrimarySchedule = (user) => (dispatch) => {
                 );
             })
             .then((foundSched) => {
-                if (foundSched) {
-                    dispatch(
-                        setPrimaryScheduleIdOnFrontend(foundSched.schedule_id)
-                    );
-                } else {
-                    dispatch(setPrimaryScheduleIdOnFrontend("-1"));
-                }
+                dispatch(
+                    setPrimaryScheduleIdOnFrontend(foundSched?.schedule.id)
+                );
             })
             .catch((error) => {
                 console.log(error);
@@ -698,7 +697,7 @@ export const setCurrentUserPrimarySchedule = (user, scheduleId) => (
         schedule_id: scheduleId,
     };
     const init = {
-        method: "PUT",
+        method: "POST",
         credentials: "include",
         mode: "same-origin",
         headers: {

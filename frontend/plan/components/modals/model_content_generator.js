@@ -57,9 +57,6 @@ export const generateModalInterior = (reduxState) => {
                     existingData={reduxState.friendships.acceptedFriends}
                     requestType="friend"
                     placeholder="Enter your friend's PennKey"
-                    activeFriendName={
-                        reduxState.friendships.activeFriend.username
-                    }
                 />
             );
         case "SHOW_REQUESTS":
@@ -68,9 +65,6 @@ export const generateModalInterior = (reduxState) => {
                     user={reduxState.login.user}
                     received={reduxState.friendships.requestsReceived}
                     sent={reduxState.friendships.requestsSent}
-                    activeFriendName={
-                        reduxState.friendships.activeFriend.username
-                    }
                 />
             );
         case "WELCOME":
@@ -125,48 +119,23 @@ export const generateModalActions = (dispatch, modalKey, modalProps) => {
             };
         case "ADD_FRIEND":
             return {
-                sendFriendRequest: (
-                    user,
-                    friendPennkey,
-                    activeFriendName,
-                    onComplete
-                ) =>
+                sendFriendRequest: (user, friendPennkey, onComplete) =>
                     dispatch(
-                        sendFriendRequest(
-                            user,
-                            friendPennkey,
-                            activeFriendName,
-                            onComplete
-                        )
+                        sendFriendRequest(user, friendPennkey, onComplete)
                     ),
             };
         case "SHOW_REQUESTS":
             return {
-                sendFriendRequest: (user, friendPennkey, activeFriendName) =>
+                sendFriendRequest: (user, friendPennkey) =>
                     dispatch(
-                        sendFriendRequest(
-                            user,
-                            friendPennkey,
-                            activeFriendName,
-                            (res) => {
-                                if (!res.ok) {
-                                    console.log(res);
-                                }
+                        sendFriendRequest(user, friendPennkey, (res) => {
+                            if (!res.ok) {
+                                console.log(res);
                             }
-                        )
+                        })
                     ),
-                deleteFriendshipOnBackend: (
-                    user,
-                    friendPennkey,
-                    activeFriendName
-                ) =>
-                    dispatch(
-                        deleteFriendshipOnBackend(
-                            user,
-                            friendPennkey,
-                            activeFriendName
-                        )
-                    ),
+                deleteFriendshipOnBackend: (user, friendPennkey) =>
+                    dispatch(deleteFriendshipOnBackend(user, friendPennkey)),
             };
         case "DOWNLOAD_SCHEDULE":
             return {
