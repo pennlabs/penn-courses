@@ -323,9 +323,12 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
     update:
     Send a put request to this route to update a specific schedule.
-    The `id` path parameter (an integer) specifies which schedule you want to update.  If a
-    schedule with the specified id does not exist, a 404 is returned. In the body of the PUT,
-    use the same format as a POST request (see the create schedule docs).
+    The `id` path parameter (an integer) specifies which schedule you want to update. [You can also
+    pass `path` for the `id` path parameter, in order to create/update a Path Registration schedule
+    for the user (the name of the schedule must be `Path Registration`, and you must be
+    authenticated via Platform's token auth for IPC, e.g. from Penn Mobile).] If a schedule with
+    the specified id does not exist, a 404 is returned. In the body of the PUT, use the same format
+    as a POST request (see the Create Schedule docs).
     This is an alternate way to update schedules (you can also just include the id field
     in a schedule when you post and it will update that schedule if the id exists).  Note that in a
     put request the  id field in the putted object is ignored; the id taken from the route
