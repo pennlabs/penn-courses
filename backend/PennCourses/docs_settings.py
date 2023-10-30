@@ -278,7 +278,7 @@ make_manual_schema_changes if you need to), you can download it from the /api/op
 def get_url_by_name(name):
     reverse = get_resolver().reverse_dict
     if name not in reverse:
-        raise ValueError(f"Tried to get URL by name '{reverse}', but no such URL exists.")
+        raise ValueError(f"Tried to get URL by name '{name}', but no such URL exists.")
     path = reverse[name][0][0][0]
     path = path.replace(r"%(pk)s", r"{id}")
     return "/" + re.sub(r"%\(([^)]+)\)s", r"{\1}", path)
@@ -417,6 +417,7 @@ custom_operation_id = {  # keys are (path, method) tuples, values are custom nam
     ("courses-search", "GET"): "Course Search",
     ("section-search", "GET"): "Section Search",
     ("review-autocomplete", "GET"): "Retrieve Autocomplete Dump",
+    ("calendar-view", "GET"): "Get Calendar",
 }
 assert all(
     [

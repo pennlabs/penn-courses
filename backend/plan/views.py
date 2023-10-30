@@ -426,14 +426,13 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         if not from_path and (not pk or not Schedule.objects.filter(id=pk).exists()):
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
         try:
-            schedule = (
-                self.get_queryset().get_or_create(
+            if from_path:
+                schedule, _ = self.get_queryset().get_or_create(
                     name=PATH_REGISTRATION_SCHEDULE_NAME,
                     defaults={"person": self.request.user, "semester": get_current_semester},
-                )[0]
-                if from_path
-                else self.get_queryset().get(id=pk)
-            )
+                )
+            else:
+                schedule = self.get_queryset().get(id=pk)
         except Schedule.DoesNotExist:
             return Response(
                 {"detail": "You do not have access to the specified schedule."},
