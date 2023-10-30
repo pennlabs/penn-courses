@@ -124,8 +124,19 @@ const ModalContainer = styled.div`
     display: flex;
     flex-direction: column;
     justify-content: center;
-
     margin-top: -20px;
+`;
+
+const ModalSubHeader = styled.header`
+    align-items: center;
+    display: flex;
+    flex-shrink: 0;
+    justify-content: flex-start;
+    position: relative;
+    font-weight: 500;
+    padding: 0.6rem 1rem 0.5rem 0;
+    font-size: 1rem;
+    color: black;
 `;
 
 interface PendingRequestsModalInteriorProps {
@@ -196,8 +207,10 @@ const PendingRequestsModalInterior = ({
             {received.length === 0 && sent.length === 0 && (
                 <div>No requests sent or received yet.</div>
             )}
-            {received &&
-                received.map((fs) => (
+            {received.length > 0 &&
+                <>
+                <ModalSubHeader>Received</ModalSubHeader>
+                {received.map((fs) => (
                     <FriendRequest
                         mode="received"
                         color={getColor(fs.sender.username)}
@@ -214,9 +227,11 @@ const PendingRequestsModalInterior = ({
                         }}
                     />
                 ))}
-
-            {sent &&
-                sent.map((fs) => (
+                </>}
+            {sent.length > 0 &&
+                <>
+                <ModalSubHeader>Sent</ModalSubHeader>
+                {sent.map((fs) => (
                     <FriendRequest
                         mode="sent"
                         color={getColor(fs.recipient.username)}
@@ -228,6 +243,7 @@ const PendingRequestsModalInterior = ({
                         }}
                     />
                 ))}
+                </>}
         </ModalContainer>
     );
 };

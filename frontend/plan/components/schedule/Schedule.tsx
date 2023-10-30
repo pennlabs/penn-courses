@@ -3,8 +3,6 @@ import styled from "styled-components";
 import { connect } from "react-redux";
 import { ThunkDispatch } from "redux-thunk";
 
-import { PATH_REGISTRATION_SCHEDULE_NAME } from "../../constants/constants";
-
 import {
     removeSchedItem,
     fetchCourseDetails,

@@ -54,7 +54,7 @@ const ButtonContainer = styled.div<{ isActive: boolean; isPrimary?: boolean }>`
 
 const ButtonLabelContainer = styled.div<{ width: number }>`
     display: flex;
-    flex-grow: 0.5;
+    flex-grow: 1;
     font-weight: 400;
     justify-content: start;
     max-width: ${(props) => props.width}%;
