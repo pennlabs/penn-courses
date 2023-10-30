@@ -59,19 +59,21 @@ const initiateSync = async (store) => {
                     );
 
                     Object.keys(scheduleState.schedules).forEach(
-                        (scheduleName) => {
+                        (frontendScheduleName) => {
                             if (
-                                !schedulesFromBackend.reduce(
-                                    (acc, schedule) =>
-                                        acc || schedule.name === scheduleName,
-                                    false
+                                !schedulesFromBackend.find(
+                                    (backendSchedule) =>
+                                        backendSchedule.name ===
+                                        frontendScheduleName
                                 )
                             ) {
                                 // The local schedule is no longer observed on the backend.
                                 // Should be deleted locally.
-                                if (scheduleName) {
+                                if (frontendScheduleName) {
                                     store.dispatch(
-                                        deleteScheduleOnFrontend(scheduleName)
+                                        deleteScheduleOnFrontend(
+                                            frontendScheduleName
+                                        )
                                     );
                                 }
                             }
@@ -85,11 +87,10 @@ const initiateSync = async (store) => {
                     if (
                         !scheduleState.primaryScheduleId ||
                         scheduleState.primaryScheduleId === "-1" ||
-                        !schedulesFromBackend.reduce(
-                            (acc, schedule) =>
-                                acc ||
-                                schedule.id === scheduleState.primaryScheduleId,
-                            false
+                        !schedulesFromBackend.find(
+                            (backendSchedule) =>
+                                backendSchedule.id ===
+                                scheduleState.primaryScheduleId
                         )
                     ) {
                         store.dispatch(
