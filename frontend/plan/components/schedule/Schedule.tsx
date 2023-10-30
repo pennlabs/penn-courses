@@ -3,6 +3,8 @@ import styled from "styled-components";
 import { connect } from "react-redux";
 import { ThunkDispatch } from "redux-thunk";
 
+import { PATH_REGISTRATION_SCHEDULE_NAME } from "../../constants/constants";
+
 import {
     removeSchedItem,
     fetchCourseDetails,
@@ -108,7 +110,9 @@ const Schedule = ({
                     readOnly={readOnly}
                     displayOwnSchedule={(name: string) => {
                         switchSchedule(name);
-                        setStateReadOnly(false);
+
+                        // Only Path Registration schedule should be read only in own schedules
+                        setStateReadOnly(name === PATH_REGISTRATION_SCHEDULE_NAME);
                     }}
                     friendshipMutators={friendshipMutators}
                     schedulesMutators={schedulesMutator}
