@@ -173,13 +173,10 @@ const handleUpdateSchedulesOnFrontend = (state, schedulesFromBackend) => {
                     foundSchedule.updated_at - cloudUpdated >=
                         MIN_TIME_DIFFERENCE)
             ) {
+                const alreadySelectedSchedule =
+                    newState.schedules[newState.scheduleSelected];
                 newState = {
                     ...newState,
-                    scheduleSelected: newState.schedules[
-                        newState.scheduleSelected
-                    ]
-                        ? newState.scheduleSelected
-                        : scheduleFromBackend.name,
                     schedules: {
                         ...newState.schedules,
                         [scheduleFromBackend.name]: {
@@ -190,6 +187,15 @@ const handleUpdateSchedulesOnFrontend = (state, schedulesFromBackend) => {
                         },
                     },
                 };
+                if (!alreadySelectedSchedule) {
+                    newState.scheduleSelected = scheduleFromBackend.name;
+                    if (
+                        newState.scheduleSelected ===
+                        PATH_REGISTRATION_SCHEDULE_NAME
+                    ) {
+                        newState.readOnly = true;
+                    }
+                }
             }
         }
     });
@@ -344,7 +350,11 @@ export const schedule = (state = initialState, action) => {
                     },
                 };
             }
-            showToast("Cannot add courses to a friend's schedule!", true);
+            if (state.scheduleSelected === PATH_REGISTRATION_SCHEDULE_NAME) {
+                showToast("Cannot edit Path registration here!", true);
+            } else {
+                showToast("Cannot change a friend's schedule!", true);
+            }
 
             return {
                 ...state,
