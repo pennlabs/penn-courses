@@ -392,12 +392,10 @@ interface ScheduleSelectorDropdownProps {
     readOnly: boolean;
     friendshipMutators: {
         fetchFriendSchedule: (friend: User) => void;
-        fetchBackendFriendships: (user: User, activeFriendName: string) => void;
+        fetchBackendFriendships: (user: User) => void;
         deleteFriendshipOnBackend: (
             user: User,
-            friendPennkey: string,
-            activeFriendName: string
-        ) => void;
+            friendPennkey: string) => void;
     };
     schedulesMutators: {
         copy: (scheduleName: string) => void;
@@ -512,9 +510,7 @@ const ScheduleSelectorDropdown = ({
                     isActive={isActive}
                     onClick={() => {
                         fetchBackendFriendships(
-                            user,
-                            friendshipState.activeFriend.username
-                        );
+                            user);
                         setIsActive(!isActive);
                     }}
                     role="button"
@@ -609,9 +605,7 @@ const ScheduleSelectorDropdown = ({
                                 removeFriend={() => {
                                     deleteFriendshipOnBackend(
                                         user,
-                                        friend.username,
-                                        friendshipState.activeFriend.username
-                                    );
+                                        friend.username);
                                 }}
                                 isActive={
                                     readOnly &&

@@ -57,9 +57,6 @@ export const generateModalInterior = (reduxState) => {
                     existingData={reduxState.friendships.acceptedFriends}
                     requestType="friend"
                     placeholder="Enter your friend's PennKey"
-                    activeFriendName={
-                        reduxState.friendships.activeFriend.username
-                    }
                 />
             );
         case "SHOW_REQUESTS":
@@ -68,9 +65,6 @@ export const generateModalInterior = (reduxState) => {
                     user={reduxState.login.user}
                     received={reduxState.friendships.requestsReceived}
                     sent={reduxState.friendships.requestsSent}
-                    activeFriendName={
-                        reduxState.friendships.activeFriend.username
-                    }
                 />
             );
         case "WELCOME":
@@ -128,26 +122,23 @@ export const generateModalActions = (dispatch, modalKey, modalProps) => {
                 sendFriendRequest: (
                     user,
                     friendPennkey,
-                    activeFriendName,
                     onComplete
                 ) =>
                     dispatch(
                         sendFriendRequest(
                             user,
                             friendPennkey,
-                            activeFriendName,
                             onComplete
                         )
                     ),
             };
         case "SHOW_REQUESTS":
             return {
-                sendFriendRequest: (user, friendPennkey, activeFriendName) =>
+                sendFriendRequest: (user, friendPennkey) =>
                     dispatch(
                         sendFriendRequest(
                             user,
                             friendPennkey,
-                            activeFriendName,
                             (res) => {
                                 if (!res.ok) {
                                     console.log(res);
@@ -157,15 +148,11 @@ export const generateModalActions = (dispatch, modalKey, modalProps) => {
                     ),
                 deleteFriendshipOnBackend: (
                     user,
-                    friendPennkey,
-                    activeFriendName
-                ) =>
+                    friendPennkey) =>
                     dispatch(
                         deleteFriendshipOnBackend(
                             user,
-                            friendPennkey,
-                            activeFriendName
-                        )
+                            friendPennkey)
                     ),
             };
         case "DOWNLOAD_SCHEDULE":

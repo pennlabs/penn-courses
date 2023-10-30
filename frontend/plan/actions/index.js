@@ -48,7 +48,7 @@ export const CLEAR_ALL_SCHEDULE_DATA = "CLEAR_ALL_SCHEDULE_DATA";
 export const CREATE_CART_ON_FRONTEND = "CREATE_CART_ON_FRONTEND";
 export const CREATE_SCHEDULE_ON_FRONTEND = "CREATE_SCHEDULE_ON_FRONTEND";
 export const DELETE_SCHEDULE_ON_FRONTEND = "DELETE_SCHEDULE_ON_FRONTEND";
-export const CHANGE_SCHEDULE = "CHANGE_SCHEDULE";
+export const CHANGE_MY_SCHEDULE = "CHANGE_MY_SCHEDULE";
 export const RENAME_SCHEDULE = "RENAME_SCHEDULE";
 export const CLEAR_SCHEDULE = "CLEAR_SCHEDULE";
 export const DOWNLOAD_SCHEDULE = "DOWNLOAD_SCHEDULE";
@@ -70,8 +70,8 @@ export const renameSchedule = (oldName, newName) => ({
     newName,
 });
 
-export const changeSchedule = (scheduleName) => ({
-    type: CHANGE_SCHEDULE,
+export const changeMySchedule = (scheduleName) => ({
+    type: CHANGE_MY_SCHEDULE,
     scheduleName,
 });
 
@@ -262,15 +262,14 @@ function buildCourseSearchUrl(filterData) {
         if (
             filterData[filterFields[i]] &&
             JSON.stringify(filterData[filterFields[i]]) !==
-                JSON.stringify(defaultFilters[i])
+            JSON.stringify(defaultFilters[i])
         ) {
             const filterRange = filterData[filterFields[i]];
             if (filterFields[i] === "time") {
                 const start = decimalToTime(24 - filterRange[1]);
                 const end = decimalToTime(24 - filterRange[0]);
-                queryString += `&${filterFields[i]}=${
-                    start === 7 ? "" : start
-                }-${end === 10.3 ? "" : end}`;
+                queryString += `&${filterFields[i]}=${start === 7 ? "" : start
+                    }-${end === 10.3 ? "" : end}`;
             } else {
                 queryString += `&${filterFields[i]}=${filterRange[0]}-${filterRange[1]}`;
             }
@@ -305,7 +304,7 @@ function buildCourseSearchUrl(filterData) {
         if (
             filterData[checkboxFields[i]] &&
             JSON.stringify(filterData[checkboxFields[i]]) !==
-                JSON.stringify(checkboxDefaultFields[i])
+            JSON.stringify(checkboxDefaultFields[i])
         ) {
             const applied = [];
             Object.keys(filterData[checkboxFields[i]]).forEach((item) => {
@@ -336,7 +335,7 @@ function buildCourseSearchUrl(filterData) {
         if (
             filterData[buttonFields[i]] &&
             JSON.stringify(filterData[buttonFields[i]]) !==
-                JSON.stringify(buttonDefaultFields[i])
+            JSON.stringify(buttonDefaultFields[i])
         ) {
             // get each filter's value
             const applied = filterData[buttonFields[i]];
@@ -582,7 +581,7 @@ export const updateScheduleOnBackend = (name, schedule) => (dispatch) => {
                 dispatch(markScheduleSynced(name));
             }
         })
-        .catch(() => {});
+        .catch(() => { });
 };
 
 export function fetchSectionInfo(searchData) {

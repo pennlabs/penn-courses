@@ -67,7 +67,7 @@ const FriendName = styled.div`
     color: #4a4a4a;
 `;
 
-const ActionContainer = styled.div<{mode: string}>`
+const ActionContainer = styled.div<{ mode: string }>`
     background-color: ${(props) => props.mode === "sent" ? "white" : "#7878eb"};
     color: ${(props) => props.mode === "sent" ? "#4A4A4A" : "white"};
     font-weight: 600;
@@ -132,24 +132,18 @@ interface PendingRequestsModalInteriorProps {
     user: User;
     received: Friendship[];
     sent: Friendship[];
-    activeFriendName: string;
     sendFriendRequest: (
         user: User,
-        pennkey: string,
-        activeFriendName: string
-    ) => void;
+        pennkey: string) => void;
     deleteFriendshipOnBackend: (
         user: User,
-        pennkey: string,
-        activeFriendName: string
-    ) => void;
+        pennkey: string) => void;
 }
 
 const PendingRequestsModalInterior = ({
     user,
     received,
     sent,
-    activeFriendName,
     sendFriendRequest,
     deleteFriendshipOnBackend,
 }: PendingRequestsModalInteriorProps) => {
@@ -211,16 +205,12 @@ const PendingRequestsModalInterior = ({
                         approve={() =>
                             sendFriendRequest(
                                 user,
-                                fs.sender.username,
-                                activeFriendName
-                            )
+                                fs.sender.username)
                         }
                         cancel={() => {
                             deleteFriendshipOnBackend(
                                 user,
-                                fs.sender.username,
-                                activeFriendName
-                            );
+                                fs.sender.username);
                         }}
                     />
                 ))}
@@ -234,9 +224,7 @@ const PendingRequestsModalInterior = ({
                         cancel={() => {
                             deleteFriendshipOnBackend(
                                 user,
-                                fs.recipient.username,
-                                activeFriendName,
-                            );
+                                fs.recipient.username);
                         }}
                     />
                 ))}

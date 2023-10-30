@@ -5,8 +5,8 @@ import {
 
 const initialState = {
     pulledFromBackend: false,
-    activeFriend: {},
-    activeFriendSchedule: {},
+    activeFriend: null,
+    activeFriendSchedule: null,
     acceptedFriends: [],
     requestsReceived: [],
     requestsSent: [],

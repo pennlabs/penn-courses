@@ -11,6 +11,13 @@ export const switchActiveFriend = (friend, found, sections) => ({
     sections,
 });
 
+export const unsetActiveFriend = () => ({
+    type: SWITCH_ACTIVE_FRIEND,
+    friend: null,
+    found: null,
+    sections: null,
+})
+
 export const updateFriendshipsOnFrontend = (
     backendRequestsReceived,
     backendRequestsSent,
@@ -25,7 +32,7 @@ export const updateFriendshipsOnFrontend = (
 /**
  * Pulls user's friends from the backend
  */
-export const fetchBackendFriendships = (user, activeFriendName) => (
+export const fetchBackendFriendships = (user) => (
     dispatch
 ) => {
     doAPIRequest("/base/friendship")
@@ -61,24 +68,13 @@ export const fetchBackendFriendships = (user, activeFriendName) => (
                     backendAcceptedFriends
                 )
             );
-
-            if (
-                !backendAcceptedFriends.reduce(
-                    (acc, friend) =>
-                        acc || friend.username === activeFriendName,
-                    false
-                )
-            ) {
-                dispatch(setStateReadOnly(false));
-            }
         })
         .catch((error) => console.log(error));
 };
 
 export const deleteFriendshipOnBackend = (
     user,
-    friendPennkey,
-    activeFriendName
+    friendPennkey
 ) => (dispatch) => {
     const init = {
         method: "DELETE",
@@ -95,7 +91,7 @@ export const deleteFriendshipOnBackend = (
     };
     doAPIRequest("/base/friendship/", init)
         .then(() => {
-            dispatch(fetchBackendFriendships(user, activeFriendName));
+            dispatch(fetchBackendFriendships(user));
         })
         .catch((error) => console.log(error));
 };
@@ -103,7 +99,6 @@ export const deleteFriendshipOnBackend = (
 export const sendFriendRequest = (
     user,
     friendPennkey,
-    activeFriendName,
     onComplete
 ) => (dispatch) => {
     const init = {
@@ -120,7 +115,7 @@ export const sendFriendRequest = (
         }),
     };
     doAPIRequest("/base/friendship/", init).then((res) => {
-        dispatch(fetchBackendFriendships(user, activeFriendName));
+        dispatch(fetchBackendFriendships(user));
         onComplete(res);
     });
 };

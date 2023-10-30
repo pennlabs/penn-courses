@@ -1,7 +1,7 @@
 import {
     fetchBackendSchedules,
     updateScheduleOnBackend,
-    changeSchedule,
+    changeMySchedule,
     deleteScheduleOnFrontend,
     updateSchedulesOnFrontend,
     findOwnPrimarySchedule,
@@ -35,17 +35,8 @@ const initiateSync = async (store) => {
         if (!store.getState().friendships.pulledFromBackend) {
             store.dispatch(
                 fetchBackendFriendships(
-                    store.getState().login.user,
-                    store.getState().friendships.activeFriend.username
-                )
+                    store.getState().login.user)
             );
-        }
-
-        if (
-            store.getState().friendships.activeFriend.username === "" &&
-            store.getState().schedule.readOnly
-        ) {
-            store.dispatch(setStateReadOnly(false));
         }
 
         return new Promise((resolve) => {
@@ -59,7 +50,7 @@ const initiateSync = async (store) => {
                         Object.keys(scheduleState.schedules).length !== 0
                     ) {
                         store.dispatch(
-                            changeSchedule(
+                            changeMySchedule(
                                 Object.keys(scheduleState.schedules)[0]
                             )
                         );

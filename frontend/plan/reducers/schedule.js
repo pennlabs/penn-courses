@@ -2,7 +2,7 @@ import {
     CLEAR_ALL_SCHEDULE_DATA,
     SET_STATE_READ_ONLY,
     SET_PRIMARY_SCHEDULE_ID_ON_FRONTEND,
-    CHANGE_SCHEDULE,
+    CHANGE_MY_SCHEDULE,
     RENAME_SCHEDULE,
     CLEAR_SCHEDULE,
     DOWNLOAD_SCHEDULE,
@@ -22,6 +22,8 @@ import { scheduleContainsSection } from "../components/meetUtil";
 import { showToast } from "../pages";
 
 import { MIN_TIME_DIFFERENCE } from "../constants/sync_constants";
+
+import { PATH_REGISTRATION_SCHEDULE_NAME } from "../constants/constants";
 
 // the state contains the following two pieces of data:
 //  1. An object associating each schedule name with the schedule objecct
@@ -151,7 +153,7 @@ const handleUpdateSchedulesOnFrontend = (state, schedulesFromBackend) => {
                 (newState.cartPushedToBackend &&
                     cloudUpdated >= newState.cartUpdatedAt &&
                     cloudUpdated - newState.cartUpdatedAt >=
-                        MIN_TIME_DIFFERENCE)
+                    MIN_TIME_DIFFERENCE)
             ) {
                 newState = {
                     ...newState,
@@ -169,7 +171,7 @@ const handleUpdateSchedulesOnFrontend = (state, schedulesFromBackend) => {
                     foundSchedule.pushedToBackend &&
                     cloudUpdated >= foundSchedule.updated_at &&
                     foundSchedule.updated_at - cloudUpdated >=
-                        MIN_TIME_DIFFERENCE)
+                    MIN_TIME_DIFFERENCE)
             ) {
                 newState = {
                     ...newState,
@@ -315,9 +317,11 @@ export const schedule = (state = initialState, action) => {
                 cartPushedToBackend: true,
                 cartUpdatedAt: Date.now(),
             };
-        case CHANGE_SCHEDULE:
+        case CHANGE_MY_SCHEDULE:
             return {
                 ...state,
+                // Only Path Registration schedule should be read only in own schedules
+                readOnly: action.scheduleName === PATH_REGISTRATION_SCHEDULE_NAME,
                 scheduleSelected: action.scheduleName,
             };
         case TOGGLE_CHECK:

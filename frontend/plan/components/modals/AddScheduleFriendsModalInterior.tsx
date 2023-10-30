@@ -13,7 +13,6 @@ interface AddScheduleFriendsModalInteriorProps {
     sendFriendRequest: (
         user: User,
         pennkey: string,
-        activeFriendName: string,
         callback: (res: any) => void
     ) => void;
     close: () => void;
@@ -22,7 +21,6 @@ interface AddScheduleFriendsModalInteriorProps {
     placeholder: string;
     overwriteDefault: boolean;
     requestType: string;
-    activeFriendName: string;
 }
 
 const AddScheduleFriendsModalInterior = ({
@@ -36,7 +34,6 @@ const AddScheduleFriendsModalInterior = ({
     placeholder,
     overwriteDefault = false,
     requestType,
-    activeFriendName,
 }: AddScheduleFriendsModalInteriorProps) => {
     const [inputRef, setInputRef] = useState<HTMLInputElement | null>(null);
     const [userInput, setUserInput] = useState(defaultValue);
@@ -62,7 +59,6 @@ const AddScheduleFriendsModalInterior = ({
                 sendFriendRequest(
                     user,
                     inputRef.value,
-                    activeFriendName,
                     (res: any) => {
                         const responseResult = handleFriendshipRequestResponse(
                             res,

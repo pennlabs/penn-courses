@@ -17,8 +17,6 @@ import {
 } from "../../types";
 import { getConflictGroups } from "../meetUtil";
 
-import { PATH_REGISTRATION_SCHEDULE_NAME } from "../../constants/constants";
-
 const EmptyScheduleContainer = styled.div`
     font-size: 0.8em;
     text-align: center;
@@ -122,7 +120,6 @@ const ScheduleContents = styled.div`
 `;
 
 interface ScheduleDisplayProps {
-    schedName: string;
     schedData: {
         sections: Section[];
     };
@@ -134,7 +131,6 @@ interface ScheduleDisplayProps {
 }
 
 const ScheduleDisplay = ({
-    schedName,
     schedData,
     friendshipState,
     focusSection,
@@ -153,18 +149,12 @@ const ScheduleDisplay = ({
         </ScheduleBox>;
     }
 
-    const isPathSchedule = schedName == PATH_REGISTRATION_SCHEDULE_NAME;
-
     const rowOffset = 1;
     const colOffset = 1;
 
     let sections;
 
-    if (readOnly) {
-        sections = friendshipState.activeFriendSchedule.sections || [];
-    } else {
-        sections = schedData.sections || [];
-    }
+    sections = friendshipState.activeFriendSchedule?.sections || schedData.sections || [];
 
     const notEmpty = sections.length > 0;
 
@@ -298,7 +288,7 @@ const ScheduleDisplay = ({
                                 row: rowOffset,
                                 col: colOffset,
                             }}
-                            readOnly={readOnly || isPathSchedule}
+                            readOnly={readOnly}
                             remove={() => removeSection(meeting.course.id)}
                             key={`${meeting.course.id}-${meeting.day}`}
                             focusSection={() => {
@@ -319,12 +309,12 @@ const ScheduleDisplay = ({
                     )}
                 {!notEmpty &&
                     readOnly &&
-                    friendshipState.activeFriendSchedule.found && (
+                    friendshipState.activeFriendSchedule?.found && (
                         <FriendEmptySchedule message="Your friend has not added courses to their schedule yet" />
                     )}
                 {!notEmpty &&
                     readOnly &&
-                    friendshipState.activeFriendSchedule.found && (
+                    friendshipState.activeFriendSchedule?.found && (
                         <FriendEmptySchedule message="Penn Course Plan doesn't have your course registration data (yet!)." />
                     )}
             </ScheduleContents>
