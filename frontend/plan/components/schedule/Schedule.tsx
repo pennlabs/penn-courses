@@ -115,6 +115,7 @@ const Schedule = ({
                 />
             </ScheduleDropdownHeader>
             <ScheduleDisplay
+                schedName={activeScheduleName}
                 schedData={currScheduleData}
                 friendshipState={friendshipState}
                 readOnly={readOnly}

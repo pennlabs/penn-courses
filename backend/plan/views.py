@@ -376,7 +376,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     @staticmethod
-    def get_sections(data):
+    def get_sections(data, skip_missing=False):
         raw_sections = []
         if "meetings" in data:
             raw_sections = data.get("meetings")
@@ -384,8 +384,14 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             raw_sections = data.get("sections")
         sections = []
         for s in raw_sections:
-            _, section = get_course_and_section(s.get("id"), s.get("semester"))
-            sections.append(section)
+            try:
+                _, section = get_course_and_section(s.get("id"), s.get("semester"))
+                sections.append(section)
+            except ObjectDoesNotExist as e:
+                if skip_missing:
+                    continue
+                else:
+                    raise e
         return sections
 
     @staticmethod
@@ -399,11 +405,13 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-    def validate_name(self, request, existing_schedule=None):
+    def validate_name(self, request, existing_schedule=None, allow_path=False):
         if PATH_REGISTRATION_SCHEDULE_NAME in [
             request.data.get("name"),
             existing_schedule and existing_schedule.name,
-        ] and not isinstance(request.successful_authenticator, PlatformAuthentication):
+        ] and not (
+            allow_path and isinstance(request.successful_authenticator, PlatformAuthentication)
+        ):
             raise PermissionDenied(
                 "You cannot create/update/delete a schedule with the name "
                 + PATH_REGISTRATION_SCHEDULE_NAME
@@ -414,20 +422,28 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
     def update(self, request, pk=None):
-        if not pk or not Schedule.objects.filter(id=pk).exists():
+        from_path = pk == "path"
+        if not from_path and (not pk or not Schedule.objects.filter(id=pk).exists()):
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
         try:
-            schedule = self.get_queryset().get(id=pk)
+            schedule = (
+                self.get_queryset().get_or_create(
+                    name=PATH_REGISTRATION_SCHEDULE_NAME,
+                    defaults={"person": self.request.user, "semester": get_current_semester},
+                )[0]
+                if from_path
+                else self.get_queryset().get(id=pk)
+            )
         except Schedule.DoesNotExist:
             return Response(
                 {"detail": "You do not have access to the specified schedule."},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        self.validate_name(request, existing_schedule=schedule)
+        self.validate_name(request, existing_schedule=schedule, allow_path=from_path)
 
         try:
-            sections = self.get_sections(request.data)
+            sections = self.get_sections(request.data, skip_missing=from_path)
         except ObjectDoesNotExist:
             return Response(
                 {"detail": "One or more sections not found in database."},
@@ -441,7 +457,9 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         try:
             schedule.person = request.user
             schedule.semester = request.data.get("semester", get_current_semester())
-            schedule.name = request.data.get("name")
+            schedule.name = (
+                PATH_REGISTRATION_SCHEDULE_NAME if from_path else request.data.get("name")
+            )
             schedule.save()
             schedule.sections.set(sections)
             return Response({"message": "success", "id": schedule.id}, status=status.HTTP_200_OK)
@@ -518,6 +536,11 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
 class CalendarAPIView(APIView):
     schema = PcxAutoSchema(
+        custom_path_parameter_desc={
+            "calendar-view": {
+                "GET": {"schedule_pk": "The PCP id of the schedule you want to export."},
+            },
+        },
         response_codes={
             "calendar-view": {
                 "GET": {
@@ -525,20 +548,22 @@ class CalendarAPIView(APIView):
                 },
             },
         },
+        override_response_schema={
+            "calendar-view": {
+                "GET": {
+                    200: {
+                        "media_type": "text/calendar",
+                        "type": "string",
+                        "description": "A calendar file in ICS format",
+                    }
+                }
+            }
+        },
     )
 
     def get(self, *args, **kwargs):
         """
         Return a .ics file of the user's selected schedule
-        ---
-        responses:
-            "200":
-                description: Return a calendar file in ICS format.
-                content:
-                    text/calendar:
-                        schema:
-                            type: string
-        ---
         """
         schedule_pk = kwargs["schedule_pk"]
 

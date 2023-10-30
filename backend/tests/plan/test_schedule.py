@@ -1,4 +1,5 @@
 import json
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.db.models.signals import post_save
@@ -748,3 +749,128 @@ class ScheduleTest(TestCase):
             "You cannot create/update/delete a schedule with the name "
             + PATH_REGISTRATION_SCHEDULE_NAME,
         )
+
+    def platform_introspect_response(self):
+        # Build a response from platform's introspect route
+        # (for mocking platform IPC auth for Path Registration schedule updating)
+        return {
+            "exp": 1123,
+            "user": {
+                "pennid": self.s.person.id,
+                "first_name": "first",
+                "last_name": "last",
+                "username": "abc",
+                "email": "test@test.com",
+                "affiliation": [],
+                "user_permissions": [],
+                "groups": ["student", "member"],
+                "token": {
+                    "access_token": "abc",
+                    "refresh_token": "123",
+                    "expires_in": 100,
+                },
+            },
+        }
+
+    @patch("accounts.authentication.requests.post")
+    def test_update_from_path_nonexistent_schedule(self, mock_request):
+        mock_request.return_value.status_code = 200
+        mock_request.return_value.json = self.platform_introspect_response
+        response = self.client.get("/api/plan/schedules/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        response = APIClient(enforce_csrf_checks=True).put(
+            "/api/plan/schedules/path/",
+            json.dumps(
+                {
+                    "name": PATH_REGISTRATION_SCHEDULE_NAME,
+                    "sections": [{"id": "CIS-120-001", "semester": TEST_SEMESTER}],
+                }
+            ),
+            content_type="application/json",
+            HTTP_AUTHORIZATION="Bearer abc",
+        )
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get("/api/plan/schedules/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(
+            sum([d["name"] == PATH_REGISTRATION_SCHEDULE_NAME for d in response.data]), 1
+        )
+        for schedule in response.data:
+            if schedule["name"] == PATH_REGISTRATION_SCHEDULE_NAME:
+                path_schedule = schedule
+        self.assertEqual(len(path_schedule["sections"]), 1)
+        self.assertEqual(path_schedule["sections"][0]["id"], "CIS-120-001")
+
+    @patch("accounts.authentication.requests.post")
+    def test_update_from_path(self, mock_request):
+        mock_request.return_value.status_code = 200
+        mock_request.return_value.json = self.platform_introspect_response
+        response = self.client.get("/api/plan/schedules/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        Schedule.objects.create(
+            name=PATH_REGISTRATION_SCHEDULE_NAME, person=self.s.person, semester=TEST_SEMESTER
+        )
+        response = self.client.get("/api/plan/schedules/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+        response = APIClient(enforce_csrf_checks=True).put(
+            "/api/plan/schedules/path/",
+            json.dumps(
+                {
+                    "name": PATH_REGISTRATION_SCHEDULE_NAME,
+                    "sections": [{"id": "CIS-120-001", "semester": TEST_SEMESTER}],
+                }
+            ),
+            content_type="application/json",
+            HTTP_AUTHORIZATION="Bearer abc",
+        )
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get("/api/plan/schedules/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(
+            sum([d["name"] == PATH_REGISTRATION_SCHEDULE_NAME for d in response.data]), 1
+        )
+        for schedule in response.data:
+            if schedule["name"] == PATH_REGISTRATION_SCHEDULE_NAME:
+                path_schedule = schedule
+        self.assertEqual(len(path_schedule["sections"]), 1)
+        self.assertEqual(path_schedule["sections"][0]["id"], "CIS-120-001")
+
+    @patch("accounts.authentication.requests.post")
+    def test_update_from_path_nonexistent_sections(self, mock_request):
+        mock_request.return_value.status_code = 200
+        mock_request.return_value.json = self.platform_introspect_response
+        Schedule.objects.create(
+            name=PATH_REGISTRATION_SCHEDULE_NAME, person=self.s.person, semester=TEST_SEMESTER
+        )
+        response = APIClient(enforce_csrf_checks=True).put(
+            "/api/plan/schedules/path/",
+            json.dumps(
+                {
+                    "name": PATH_REGISTRATION_SCHEDULE_NAME,
+                    "sections": [
+                        {"id": "FAKE-120-001", "semester": TEST_SEMESTER},
+                        {"id": "CIS-120-001", "semester": TEST_SEMESTER},
+                        {"id": "FAKE-1200-001", "semester": TEST_SEMESTER},
+                    ],
+                }
+            ),
+            content_type="application/json",
+            HTTP_AUTHORIZATION="Bearer abc",
+        )
+        self.assertEqual(response.status_code, 200)
+        response = self.client.get("/api/plan/schedules/")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual(
+            sum([d["name"] == PATH_REGISTRATION_SCHEDULE_NAME for d in response.data]), 1
+        )
+        for schedule in response.data:
+            if schedule["name"] == PATH_REGISTRATION_SCHEDULE_NAME:
+                path_schedule = schedule
+        self.assertEqual(len(path_schedule["sections"]), 1)
+        self.assertEqual(path_schedule["sections"][0]["id"], "CIS-120-001")

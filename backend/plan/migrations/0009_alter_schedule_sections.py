@@ -6,14 +6,18 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('courses', '0059_merge_20230816_2208'),
-        ('plan', '0008_alter_primaryschedule_unique_together_and_more'),
+        ("courses", "0059_merge_20230816_2208"),
+        ("plan", "0008_alter_primaryschedule_unique_together_and_more"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='schedule',
-            name='sections',
-            field=models.ManyToManyField(blank=True, help_text='\nThe class sections which comprise the schedule. The semester of each of these sections is\nassumed to  match the semester defined by the semester field below.\n', to='courses.Section'),
+            model_name="schedule",
+            name="sections",
+            field=models.ManyToManyField(
+                blank=True,
+                help_text="\nThe class sections which comprise the schedule. The semester of each of these sections is\nassumed to  match the semester defined by the semester field below.\n",
+                to="courses.Section",
+            ),
         ),
     ]

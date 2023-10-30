@@ -4,6 +4,7 @@ import { Icon } from "../bulma_derived_components";
 import { User, Schedule as ScheduleType, Color, FriendshipState } from "../../types";
 import { nextAvailable } from "../../reducers/schedule";
 import NewLabel from "../common/NewLabel";
+import { PATH_REGISTRATION_SCHEDULE_NAME } from "../../constants/constants";
 
 const ButtonContainer = styled.div<{ isActive: boolean; isPrimary?: boolean }>`
     line-height: 1.5;
@@ -131,8 +132,8 @@ interface DropdownButton {
         setPrimary: () => void;
         copy: () => void;
         download: () => void;
-        remove: () => void;
-        rename: () => void;
+        remove: (() => void) | null;
+        rename: (() => void) | null;
     };
 }
 
@@ -176,7 +177,7 @@ const DropdownButton = ({
                     />
                 </Icon>
             )}
-            <Icon
+            {rename && <Icon
                 onClick={(e) => {
                     rename();
                     e.stopPropagation();
@@ -185,7 +186,7 @@ const DropdownButton = ({
                 className="option-icon"
             >
                 <i className="far fa-edit" aria-hidden="true" />
-            </Icon>
+            </Icon>}
             <Icon
                 onClick={(e) => {
                     copy();
@@ -207,7 +208,7 @@ const DropdownButton = ({
             >
                 <i className="fa fa-download" aria-hidden="true" />
             </Icon> */}
-            <Icon
+            {remove && <Icon
                 onClick={(e) => {
                     remove();
                     e.stopPropagation();
@@ -216,7 +217,7 @@ const DropdownButton = ({
                 className="option-icon"
             >
                 <i className="fa fa-trash" aria-hidden="true" />
-            </Icon>
+            </Icon>}
         </ScheduleOptionsContainer>
     </ButtonContainer>
 );
@@ -527,53 +528,56 @@ const ScheduleSelectorDropdown = ({
                 {(!readOnly || !friendshipState.activeFriend) && <ShareSchedulePromoContainer>
                     <NewLabel />
                     <ShareSchedulePromo onClick={() => setIsActive(!isActive)}>
-                    <img
-                        style={{ width: "1.3rem", paddingRight: "0.3rem" }}
-                        src="/icons/share.svg"
-                        alt="share"
-                    />
-                    Share Schedule
-                    </ShareSchedulePromo> 
+                        <img
+                            style={{ width: "1.3rem", paddingRight: "0.3rem" }}
+                            src="/icons/share.svg"
+                            alt="share"
+                        />
+                        Share Schedule
+                    </ShareSchedulePromo>
                 </ShareSchedulePromoContainer>}
             </ScheduleDropdownHeader>
             <DropdownMenu isActive={isActive} role="menu">
                 <DropdownContent>
                     {allSchedules &&
-                        Object.entries(allSchedules).map(([name, data]) => {
-                            return (
-                                <DropdownButton
-                                    key={data.id}
-                                    isActive={name === activeName}
-                                    makeActive={() => {
-                                        setIsActive(false);
-                                    }}
-                                    isPrimary={primaryScheduleId === data.id}
-                                    hasFriends={hasFriends}
-                                    onClick={() => displayOwnSchedule(name)}
-                                    text={name}
-                                    mutators={{
-                                        setPrimary: () => {
-                                            if (primaryScheduleId === data.id) {
-                                                setPrimary(user, null);
-                                            } else {
-                                                setPrimary(user, data.id);
-                                            }
-                                        },
-                                        copy: () =>
-                                            copy(
-                                                nextAvailable(
-                                                    name,
-                                                    allSchedules
-                                                )
-                                            ),
-                                        download: () => download(name),
-                                        remove: () =>
-                                            remove(user, name, data.id),
-                                        rename: () => rename(name),
-                                    }}
-                                />
-                            );
-                        })}
+                        Object.entries(allSchedules)
+                            .sort(([nameA], [nameB]) => // Always put the path registration schedule at the top
+                                (nameA === PATH_REGISTRATION_SCHEDULE_NAME ? -1 : nameB === PATH_REGISTRATION_SCHEDULE_NAME ? 1 : 0))
+                            .map(([name, data]) => {
+                                const mutable = name !== PATH_REGISTRATION_SCHEDULE_NAME;
+                                return (
+                                    <DropdownButton
+                                        key={data.id}
+                                        isActive={name === activeName}
+                                        makeActive={() => {
+                                            setIsActive(false);
+                                        }}
+                                        isPrimary={primaryScheduleId === data.id}
+                                        hasFriends={hasFriends}
+                                        onClick={() => displayOwnSchedule(name)}
+                                        text={name}
+                                        mutators={{
+                                            setPrimary: () => {
+                                                if (primaryScheduleId === data.id) {
+                                                    setPrimary(user, null);
+                                                } else {
+                                                    setPrimary(user, data.id);
+                                                }
+                                            },
+                                            copy: () =>
+                                                copy(
+                                                    nextAvailable(
+                                                        name,
+                                                        allSchedules
+                                                    )
+                                                ),
+                                            download: () => download(name),
+                                            remove: mutable ? (() => remove(user, name, data.id)) : null,
+                                            rename: mutable ? (() => rename(name)) : null,
+                                        }}
+                                    />
+                                );
+                            })}
                     <AddNew onClick={createSchedule} role="button" href="#">
                         <Icon>
                             <i className="fa fa-plus" aria-hidden="true" />

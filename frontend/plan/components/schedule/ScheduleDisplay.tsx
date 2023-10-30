@@ -17,6 +17,8 @@ import {
 } from "../../types";
 import { getConflictGroups } from "../meetUtil";
 
+import { PATH_REGISTRATION_SCHEDULE_NAME } from "../../constants/constants";
+
 const EmptyScheduleContainer = styled.div`
     font-size: 0.8em;
     text-align: center;
@@ -94,19 +96,19 @@ const ScheduleContents = styled.div`
     padding: ${({ notEmpty, dims }: { notEmpty: boolean; dims: any }) =>
         notEmpty ? dims.padding : "1rem"};
     grid-template-columns: ${({
-        notEmpty,
-        dims,
-    }: {
-        notEmpty: boolean;
-        dims: any;
-    }) => (notEmpty ? dims.gridTemplateColumns : "none")};
+            notEmpty,
+            dims,
+        }: {
+            notEmpty: boolean;
+            dims: any;
+        }) => (notEmpty ? dims.gridTemplateColumns : "none")};
     grid-template-rows: ${({
-        notEmpty,
-        dims,
-    }: {
-        notEmpty: boolean;
-        dims: any;
-    }) => (notEmpty ? dims.gridTemplateRows : "none")};
+            notEmpty,
+            dims,
+        }: {
+            notEmpty: boolean;
+            dims: any;
+        }) => (notEmpty ? dims.gridTemplateRows : "none")};
 
     @media only screen and (max-width: 480px) {
         height: 100%;
@@ -120,6 +122,7 @@ const ScheduleContents = styled.div`
 `;
 
 interface ScheduleDisplayProps {
+    schedName: string;
     schedData: {
         sections: Section[];
     };
@@ -131,6 +134,7 @@ interface ScheduleDisplayProps {
 }
 
 const ScheduleDisplay = ({
+    schedName,
     schedData,
     friendshipState,
     focusSection,
@@ -145,9 +149,11 @@ const ScheduleDisplay = ({
         !schedData
     ) {
         return <ScheduleBox>
-           <FriendEmptySchedule message="Loading...Standby" />
-            </ScheduleBox>;
+            <FriendEmptySchedule message="Loading...Standby" />
+        </ScheduleBox>;
     }
+
+    const isPathSchedule = schedName == PATH_REGISTRATION_SCHEDULE_NAME;
 
     const rowOffset = 1;
     const colOffset = 1;
@@ -292,7 +298,7 @@ const ScheduleDisplay = ({
                                 row: rowOffset,
                                 col: colOffset,
                             }}
-                            readOnly={readOnly}
+                            readOnly={readOnly || isPathSchedule}
                             remove={() => removeSection(meeting.course.id)}
                             key={`${meeting.course.id}-${meeting.day}`}
                             focusSection={() => {
@@ -315,6 +321,11 @@ const ScheduleDisplay = ({
                     readOnly &&
                     friendshipState.activeFriendSchedule.found && (
                         <FriendEmptySchedule message="Your friend has not added courses to their schedule yet" />
+                    )}
+                {!notEmpty &&
+                    readOnly &&
+                    friendshipState.activeFriendSchedule.found && (
+                        <FriendEmptySchedule message="Penn Course Plan doesn't have your course registration data (yet!)." />
                     )}
             </ScheduleContents>
             {notEmpty && <Stats meetings={sections} />}
