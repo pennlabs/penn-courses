@@ -109,9 +109,8 @@ export const handleFriendshipRequestResponse = (
     }
     if (res.status == 409) {
         if (
-            existingData.reduce(
-                (acc, friend) => acc || friend.username === requestedFriend,
-                false
+            existingData.find(
+                (friend) => friend.username === requestedFriend
             )
         ) {
             return {
