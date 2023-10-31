@@ -151,7 +151,7 @@ def course_reviews(request, course_code):
     except Course.DoesNotExist:
         raise Http404()
 
-    topic = course.topic
+    topic = course.primary_listing.topic
     course = topic.most_recent
     course_code = course.full_code
     aliases = course.crosslistings.values_list("full_code", flat=True)
