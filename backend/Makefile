@@ -13,14 +13,6 @@ runtests:
 launchdb:
 	docker compose up -d
 
-# Make migrations (when models are changed)
-makemigrations:
-	python manage.py makemigrations
-
-# Migrate (when migrations are created)
-migrate:
-	python manage.py migrate
-
 # Lint
 lint:
 	PIPENV_VERBOSITY=-1

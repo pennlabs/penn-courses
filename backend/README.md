@@ -84,17 +84,6 @@ Alternatively, you can run `make lint` in the backend directory to run all three
 - Rename the sql dump you downloaded to `pcx_test.sql` and place it in the `backend` directory. Then run `make load` to load the data into your local database. This might take a while.
 - For accessing the Django admin site, the admin username is `admin` and the password is `admin` if you use this test db.
 
-[//]: # (- Clear the existing contents of your local database with `psql template1 -c 'drop database postgres;' -h localhost -U penn-courses` &#40;the password is `postgres`&#41;)
-
-[//]: # (- Create a new database with `psql template1 -c 'create database postgres with owner "penn-courses";' -h localhost -U penn-courses` &#40;same password&#41;.)
-
-[//]: # (   )
-
-[//]: # (- Finally, run `psql -h localhost -d postgres -U penn-courses -f pcx_test.sql` &#40;replacing `pcx_test.sql` with the full path to that file on your computer&#41; to load)
-
-[//]: # (   the contents of the test database &#40;this might take a while&#41;.)
-
-
 
 ### On Demand
 
@@ -175,7 +164,8 @@ If you don't want to use docker alone, you can also set up and run the dev envir
       > - (WSL) `[sudo] service docker start`
 
 4. Migrate Django models
-    - To migrate the Django models, run `make migrate` in the backend directory. This will create the database tables in your local PostgreSQL database.
+   - Activate the virtual environment with `pipenv shell`
+   - To migrate the Django models, run `python manage.py migrate` in the backend directory. This will create the database tables in your local PostgresSQL database.
 
 5. Loading test data using `make load` (if you are a member of Penn Labs). If you are not a member of Penn Labs, you can skip this section and load in course data from the registrar, as explained below.
 
