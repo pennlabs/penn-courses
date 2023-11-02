@@ -32,10 +32,7 @@ from plan.management.commands.recommendcourses import (
     vectorize_user_by_courses,
 )
 from plan.models import PrimarySchedule, Schedule
-from plan.serializers import (
-    PrimaryScheduleSerializer,
-    ScheduleSerializer,
-)
+from plan.serializers import PrimaryScheduleSerializer, ScheduleSerializer
 
 
 @api_view(["POST"])
