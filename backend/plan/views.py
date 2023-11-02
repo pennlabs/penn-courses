@@ -659,14 +659,8 @@ class AutomaticCourseScheduler(APIView):
         },
     )
 
-    http_method_names = ["get", "post"]
-
-    def get(self, request, *args, **kwargs):
-        desired = Course.objects.filter(
-            full_code="FNCE-1010", semester=get_current_semester()
-        ).all()
-        return Response(CourseDetailSerializer(desired, many=True).data, status=status.HTTP_200_OK)
-
+    http_method_names = ["post"]
+    
     def post(self, request, *args, **kwargs):
         courses = request.data.get("courses")
         semester = request.data.get("semester")
