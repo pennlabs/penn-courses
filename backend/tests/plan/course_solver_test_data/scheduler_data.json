@@ -1,0 +1,73 @@
+[
+    [
+        {
+            "id": "CIS-1600-002",
+            "status": "O",
+            "activity": "LEC",
+            "credits": 1.0,
+            "capacity": 0,
+            "semester": "2022C",
+            "meetings": [
+                {
+                    "day": "T",
+                    "start": 13.0,
+                    "end": 14.0,
+                    "room": "LLAB 10"
+                }
+            ],
+            "instructors": [],
+            "associated_sections": [],
+            "registration_volume": 0
+        },
+        {
+            "id": "CIS-1200-002",
+            "status": "O",
+            "activity": "LEC",
+            "credits": 1.0,
+            "capacity": 0,
+            "semester": "2022C",
+            "meetings": [
+                {
+                    "day": "F",
+                    "start": 13.0,
+                    "end": 14.0,
+                    "room": "LLAB 10"
+                },
+                {
+                    "day": "M",
+                    "start": 13.0,
+                    "end": 14.0,
+                    "room": "LLAB 10"
+                },
+                {
+                    "day": "W",
+                    "start": 13.0,
+                    "end": 14.0,
+                    "room": "LLAB 10"
+                }
+            ],
+            "instructors": [],
+            "associated_sections": [],
+            "registration_volume": 0
+        },
+        {
+            "id": "CIS-1200-213",
+            "status": "O",
+            "activity": "REC",
+            "credits": 0.0,
+            "capacity": 0,
+            "semester": "2022C",
+            "meetings": [
+                {
+                    "day": "T",
+                    "start": 15.15,
+                    "end": 16.15,
+                    "room": "LLAB 10"
+                }
+            ],
+            "instructors": [],
+            "associated_sections": [],
+            "registration_volume": 0
+        }
+    ]
+]
