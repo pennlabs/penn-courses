@@ -17,11 +17,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from courses.models import Course, Meeting, Section
-from courses.serializers import (
-    CourseDetailSerializer,
-    CourseListSerializer,
-    SectionDetailSerializer,
-)
+from courses.serializers import CourseListSerializer, SectionDetailSerializer
 from courses.util import find_possible_schedules, get_course_and_section, get_current_semester
 from courses.views import get_accepted_friends
 from PennCourses.docs_settings import PcxAutoSchema
@@ -660,7 +656,7 @@ class AutomaticCourseScheduler(APIView):
     )
 
     http_method_names = ["post"]
-    
+
     def post(self, request, *args, **kwargs):
         courses = request.data.get("courses")
         semester = request.data.get("semester")
