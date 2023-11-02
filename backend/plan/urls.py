@@ -3,11 +3,11 @@ from django.views.generic import TemplateView
 from rest_framework_nested import routers
 
 from plan.views import (
+    AutomaticCourseScheduler,
     CalendarAPIView,
     PrimaryScheduleViewSet,
     ScheduleViewSet,
     recommend_courses_view,
-    AutomaticCourseScheduler,
 )
 
 

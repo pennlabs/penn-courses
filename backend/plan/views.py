@@ -17,8 +17,12 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from courses.models import Course, Meeting, Section
-from courses.serializers import CourseListSerializer, CourseDetailSerializer, SectionDetailSerializer
-from courses.util import get_course_and_section, get_current_semester, find_possible_schedules
+from courses.serializers import (
+    CourseDetailSerializer,
+    CourseListSerializer,
+    SectionDetailSerializer,
+)
+from courses.util import find_possible_schedules, get_course_and_section, get_current_semester
 from courses.views import get_accepted_friends
 from PennCourses.docs_settings import PcxAutoSchema
 from PennCourses.settings.base import PATH_REGISTRATION_SCHEDULE_NAME
@@ -30,10 +34,7 @@ from plan.management.commands.recommendcourses import (
     vectorize_user_by_courses,
 )
 from plan.models import PrimarySchedule, Schedule
-from plan.serializers import (
-    PrimaryScheduleSerializer,
-    ScheduleSerializer,
-)
+from plan.serializers import PrimaryScheduleSerializer, ScheduleSerializer
 
 
 @api_view(["POST"])
