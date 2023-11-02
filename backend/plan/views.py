@@ -17,8 +17,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from courses.models import Course, Meeting, Section
-from courses.serializers import CourseListSerializer
-from courses.util import get_course_and_section, get_current_semester
+from courses.serializers import CourseListSerializer, CourseDetailSerializer, SectionDetailSerializer
+from courses.util import get_course_and_section, get_current_semester, find_possible_schedules
 from courses.views import get_accepted_friends
 from PennCourses.docs_settings import PcxAutoSchema
 from PennCourses.settings.base import PATH_REGISTRATION_SCHEDULE_NAME
@@ -30,7 +30,10 @@ from plan.management.commands.recommendcourses import (
     vectorize_user_by_courses,
 )
 from plan.models import PrimarySchedule, Schedule
-from plan.serializers import PrimaryScheduleSerializer, ScheduleSerializer
+from plan.serializers import (
+    PrimaryScheduleSerializer,
+    ScheduleSerializer,
+)
 
 
 @api_view(["POST"])
@@ -639,3 +642,81 @@ class CalendarAPIView(APIView):
         response = HttpResponse(calendar, content_type="text/calendar")
         response["Content-Disposition"] = "attachment; pcp-schedule.ics"
         return response
+
+
+class AutomaticCourseScheduler(APIView):
+
+    schema = PcxAutoSchema(
+        response_codes={
+            "calendar-view": {
+                "POST": {
+                    200: "Possible schedules found successfully",
+                    400: "Courses do not exist",
+                    404: "Cannot find any possible schedules",
+                },
+            },
+        },
+    )
+
+    http_method_names = ["get", "post"]
+
+    def get(self, request, *args, **kwargs):
+        desired = Course.objects.filter(
+            full_code="FNCE-1010", semester=get_current_semester()
+        ).all()
+        return Response(CourseDetailSerializer(desired, many=True).data, status=status.HTTP_200_OK)
+
+    def post(self, request, *args, **kwargs):
+        courses = request.data.get("courses")
+        semester = request.data.get("semester")
+        breaks = request.data.get("breaks")
+        cred_limit = request.data.get("credit_limit")
+        try:
+            course_objects = Course.objects.filter(full_code__in=courses, semester=semester).all()
+        except ObjectDoesNotExist:
+            return Response(
+                {"detail": "One or more courses not found in database."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            sections_query = Section.objects.filter(course__in=course_objects)
+            sections = sections_query.all()
+        except ObjectDoesNotExist:
+            return Response(
+                {"detail": "One or more sections not found in database."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        sections_json = SectionDetailSerializer(sections, many=True).data
+        class_sections = {}
+        for section in sections_json:
+            course_code = "-".join(section["id"].split("-")[0:2])
+            if course_code not in class_sections.keys():
+                class_sections[course_code] = [section]
+            else:
+                class_sections[course_code].append(section)
+
+        contin = True
+        ticker = 0
+        while (ticker < 6) and contin:
+            data = find_possible_schedules(class_sections, cred_limit, breaks)
+            if len(data) == 0:
+                ticker += 1
+            else:
+                contin = False
+        if len(data) == 0:
+            return Response([], status=status.HTTP_404_NOT_FOUND)
+        section_hash = {}
+        for s in sections:
+            section_hash[s.full_code] = s
+        output = []
+        for (i, schedule) in enumerate(data):
+            a = []
+            for section in schedule:
+                a.append(section_hash[section[0]])
+            output.append(SectionDetailSerializer(a, many=True, read_only=False).data)
+            if i >= 5:
+                break
+
+        return Response(output, status=status.HTTP_200_OK)
