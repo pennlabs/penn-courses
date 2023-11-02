@@ -30,6 +30,29 @@ def create_mock_data(code, semester, meeting_days="MWF", start=1100, end=1200):
     return course, section
 
 
+def create_mock_recitation(code, semester, meeting_days="MWF", start=1100, end=1200):
+    course, section, _, _ = get_or_create_course_and_section(code, semester)
+    course.description = "This is a fake class."
+    course.save()
+    section.credits = 0
+    section.status = "O"
+    section.activity = "REC"
+    section.save()
+    m = [
+        {
+            "building_code": "LLAB",
+            "room_code": "10",
+            "days": meeting_days,
+            "begin_time_24": start,
+            "begin_time": time_str(start),
+            "end_time_24": end,
+            "end_time": time_str(end),
+        }
+    ]
+    set_meetings(section, m)
+    return course, section
+
+
 def create_mock_data_with_reviews(code, semester, number_of_instructors):
     course, section = create_mock_data(code, semester)
     reviews = []

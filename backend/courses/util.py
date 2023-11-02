@@ -679,6 +679,11 @@ def get_semesters(semesters=None, verbose=False):
 def find_possible_schedules(
     courses, count=None, breaks={"M": [], "T": [], "W": [], "R": [], "F": []}
 ):
+    """
+        Given a list of courses, returns a list of all possible schedules
+        that can be made from those courses.
+        If a count is specified, returns only schedules with that many courses.
+    """
 
     day_to_num = {"M": 0, "T": 1, "W": 2, "R": 3, "F": 4}
 
@@ -721,7 +726,10 @@ def find_possible_schedules(
                             dp[i] = dp[j] + 1
                             prev[i] = j
             # Find the maximum number of non-overlapping intervals
-            max_intervals = max(dp)
+            if dp:
+                max_intervals = max(dp)
+            else:
+                return []
             # Find the index of the last interval in the optimal schedule
             last_interval_index = dp.index(max_intervals)
             # Build the optimal schedule by backtracking through the prev array
@@ -870,7 +878,8 @@ def find_possible_schedules(
         Returns:
             bool: True if the schedule is possible, False otherwise.
         """
-
+        if schedule == []:
+            return False
         intervals = []
         for course in courses:
             for section in course:
@@ -947,13 +956,10 @@ def find_possible_schedules(
         newschedule = schedule
         for course in recs:
             if course != []:
-                print(course)
-                print()
                 course_name = "-".join(course[0]["id"].split("-")[0:2])
                 schedule_names = list(map(lambda x: "-".join(x[0].split("-")[0:2]), schedule))
                 if course_name in schedule_names:
                     for section in course:
-                        print(section["id"])
                         if check_if_schedule_possible(
                             schedule + [(section["id"], section["credits"])], recs + lectures,
                             breaks
@@ -962,11 +968,6 @@ def find_possible_schedules(
                             break
         return newschedule
 
-    """
-        Given a list of courses, returns a list of all possible schedules
-        that can be made from those courses.
-        If a count is specified, returns only schedules with that many courses.
-    """
     c_to_s = find_sections(courses)
     lectures = find_activities(c_to_s, "LEC")
     recs = find_activities(c_to_s, "REC")
