@@ -23,15 +23,14 @@ const StatusGridItem = styled(GridItem)`
 const TrashImg = styled(Img)`
     cursor: pointer;
     opacity: 75%;
-    
+
     &:hover {
         opacity: 100%;
     }
     &:active {
         transform: translateY(0.1rem);
     }
-    
-`
+`;
 
 // Component for an alert entry (renders as a row in CSS grid)
 interface AlertItemProps {
