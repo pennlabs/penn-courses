@@ -1067,16 +1067,14 @@ def find_possible_schedules(
             else:
                 [
                     combinations.append(list(c))
-                    for c in itertools.combinations(choose[i], count)
+                    for c in itertools.combinations(choose[i], int(count))
                     if c not in combinations
                 ]
-                """
                 [
                     combinations.append(list(c))
-                    for c in itertools.combinations(choose[i], count + 1)
+                    for c in itertools.combinations(choose[i], int(count) + 1)
                     if c not in combinations
                 ]
-                """
     else:
         combinations = choose
     choose = [add_recs_to_schedule(schedule, recs, lectures, breaks) for schedule in combinations]
