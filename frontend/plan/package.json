@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node server.js",
+    "dev": "export NODE_OPTIONS=--openssl-legacy-provider && node server.js",
     "build": "next build",
     "start": "NODE_ENV=production node server.js",
     "test": "echo no tests yet",
@@ -44,7 +44,7 @@
     "react-redux": "^7.2.0",
     "react-spring": "^8.0.27",
     "react-swipeable-views": "^0.13.3",
-    "react-toastify": "9.0.0",
+    "react-toastify": "9.0.3",
     "react-truncate-markup": "^4.1.0",
     "redux": "^4.0.4",
     "redux-thunk": "^2.3.0",

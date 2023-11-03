@@ -222,6 +222,7 @@ class Course(models.Model):
         "Course",
         related_name="listing_set",
         on_delete=models.CASCADE,
+        blank=True,  # So you can leave blank for a self-reference on course creation forms
         help_text=dedent(
             """
         The primary Course object with which this course is crosslisted. The set of crosslisted
@@ -392,7 +393,7 @@ class Topic(models.Model):
     )
 
     @staticmethod
-    def merge_all(topics):
+    def merge_all(topics: list["Topic"]):
         if not topics:
             raise ValueError("Cannot merge an empty list of topics.")
         with transaction.atomic():
@@ -1359,14 +1360,20 @@ class UserProfile(models.Model):
         """
         Validator to check that a phone number is in the proper form. The number must be in a
         form which is parseable by the
-        [phonenumbers library](https://pypi.org/project/phonenumbers/).
+        [phonenumbers library](https://pypi.org/project/phonenumbers/) and also valid.
+
+        Note: validators are NOT called automatically on model object save. They are called
+        on `object.full_clean()`, and also on serializer validation (returning a 400 if violated).
+        https://docs.djangoproject.com/en/4.2/ref/validators/
         """
-        if value.strip() == "":
+        if not value or not value.strip():
             return
         try:
-            phonenumbers.parse(value, "US")
-        except phonenumbers.phonenumberutil.NumberParseException:
-            raise ValidationError("Enter a valid phone number.")
+            parsed_number = phonenumbers.parse(value, "US")
+            if not phonenumbers.is_valid_number(parsed_number):
+                raise ValueError(f"Invalid phone number '{value}'.")
+        except (phonenumbers.phonenumberutil.NumberParseException, ValueError) as e:
+            raise ValidationError(str(e))
 
     phone = models.CharField(
         blank=True,
@@ -1396,16 +1403,14 @@ class UserProfile(models.Model):
         does not throw an error.
         It then calls the normal save method.
         """
-        if self.phone is not None and self.phone.strip() == "":
+        if not self.phone or not self.phone.strip():
             self.phone = None
-        if self.phone is not None:
-            try:
-                phone_number = phonenumbers.parse(self.phone, "US")
-                self.phone = phonenumbers.format_number(
-                    phone_number, phonenumbers.PhoneNumberFormat.E164
-                )
-            except phonenumbers.phonenumberutil.NumberParseException:
-                raise ValidationError("Invalid phone number (this should have been caught already)")
+        if self.phone:
+            # self.phone should be validated by `validate_phone`
+            phone_number = phonenumbers.parse(self.phone, "US")
+            self.phone = phonenumbers.format_number(
+                phone_number, phonenumbers.PhoneNumberFormat.E164
+            )
         super().save(*args, **kwargs)
 
 
@@ -1420,3 +1425,66 @@ def create_or_update_user_profile(sender, instance, created, **kwargs):
     if created and instance.email != "":
         instance.profile.email = instance.email
     instance.profile.save()
+
+
+class Friendship(models.Model):
+    """
+    Used to track friendships along with requests status
+    """
+
+    sender = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.CASCADE,
+        null=True,
+        related_name="sent_friendships",
+        help_text="The person (user) who sent the request.",
+    )
+
+    recipient = models.ForeignKey(
+        get_user_model(),
+        related_name="received_friendships",
+        on_delete=models.CASCADE,
+        null=True,
+        help_text="The person (user) who recieved the request.",
+    )
+
+    class Status(models.TextChoices):
+        SENT = "S", "Sent"
+        ACCEPTED = "A", "Accepted"
+        REJECTED = "R", "Rejected"
+
+    status = models.CharField(
+        max_length=1,
+        choices=Status.choices,
+        default=Status.SENT,
+    )
+
+    def are_friends(self, user1_id, user2_id):
+        """
+        Checks if two users are friends (lookup by user id)
+        """
+        return Friendship.objects.filter(
+            Q(sender_id=user1_id, recipient_id=user2_id, status=Friendship.Status.ACCEPTED)
+            | Q(sender_id=user2_id, recipient_id=user1_id, status=Friendship.Status.ACCEPTED)
+        ).exists()
+
+    def save(self, *args, **kwargs):
+        if self.status == self.Status.ACCEPTED and self.accepted_at is None:
+            self.accepted_at = timezone.now()
+        if self.status == self.Status.REJECTED:
+            self.accepted_at = None
+            self.sent_at = None
+        if self.status == self.Status.SENT and self.sent_at is None:
+            self.sent_at = timezone.now()
+        super().save(*args, **kwargs)
+
+    accepted_at = models.DateTimeField(null=True)
+    sent_at = models.DateTimeField(null=True)
+
+    class Meta:
+        unique_together = (("sender", "recipient"),)
+
+    def __str__(self):
+        return (
+            f"Friendship(Sender: {self.sender}, Recipient: {self.recipient}, Status: {self.status})"
+        )
