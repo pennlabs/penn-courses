@@ -25,6 +25,7 @@ const GridSubtitle = styled.div`
     padding-top: 0.4rem;
     font-family: "Inter", sans-serif;
     font-weight: bold;
+    white-space: nowrap;
 `;
 
 const TrashImg = styled(Img)`
