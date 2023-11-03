@@ -230,7 +230,7 @@ def parse_rulearray(
             case "Group":  # TODO: this is nested
 
                 parse_rulearray(rule_json["ruleArray"], degree_plan, rules, parent=this_rule)
-                this_rule.num_courses = (rule_req["numberOfGroups"],)
+                this_rule.num_courses = int(rule_req["numberOfGroups"])
             case "Complete" | "Incomplete":
                 assert "ifElsePart" in rule_json  # this is a nested requirement
                 continue  # do nothing
@@ -263,8 +263,10 @@ def parse_degreeworks(json: dict, degree_plan: DegreePlan) -> list[Rule]:
         # TODO: Should associate each Rule here with this Requirement
         rules.append(degree_req)
         parse_rulearray(requirement["ruleArray"], degree_plan, rules, parent=degree_req)
-    degree_plan.save()
-    return Rule.bulk_create(rules)
+
+    for rule in rules:
+        rule.save()
+    return rules
 
 
 if __name__ == "__main__":
@@ -273,12 +275,12 @@ if __name__ == "__main__":
     from os import getenv
 
     pennid = getenv("PENN_ID")
-    assert pennid is not None
     auth_token = getenv("X_AUTH_TOKEN")
-    assert pennid is not None
     refresh_token = getenv("REFRESH_TOKEN")
-    assert refresh_token is not None
     name = getenv("NAME")
+    assert pennid is not None
+    assert auth_token is not None
+    assert refresh_token is not None
     assert name is not None
 
     client = DegreeworksClient(

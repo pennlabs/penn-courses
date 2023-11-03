@@ -35,7 +35,7 @@ class DegreeworksClient:
             "isKeepCurriculum": False,
             "school": "UG",
             "degree": degree_plan.degree,
-            "catalogYear": degree_plan.year,
+            "catalogYear": str(degree_plan.year),
             "goals": [
                 {"code": "MAJOR", "value": degree_plan.major},
                 {"code": "CONC", "value": degree_plan.concentration},
@@ -1844,13 +1844,25 @@ class DegreeworksClient:
                 concentrations = res.json()[1]["goals"][1]["choices"]
                 if len(concentrations) == 0:
                     degree_plans.append(
-                        DegreePlan(program_code, degree_code, major_code, None, 2023)
+                        DegreePlan(
+                            program=program_code,
+                            degree=degree_code,
+                            major=major_code,
+                            concentration=None,
+                            year=year,
+                        )
                     )
                     continue
                 for concentration in concentrations:
                     concentration_code = concentration["key"]
                     degree_plans.append(
-                        DegreePlan(program_code, degree_code, major_code, concentration_code, 2023)
+                        DegreePlan(
+                            program=program_code,
+                            degree=degree_code,
+                            major=major_code,
+                            concentration=concentration_code,
+                            year=year,
+                        )
                     )
 
         return degree_plans

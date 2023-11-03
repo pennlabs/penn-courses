@@ -5,6 +5,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from courses.util import get_current_semester
+from degree.models import program_code_to_name
 from degree.utils.degreeworks_client import DegreeworksClient
 from degree.utils.parse_degreeworks import parse_degreeworks
 
@@ -75,5 +76,9 @@ class Command(BaseCommand):
             for program in client.get_programs(year=year):
                 for degree_plan in client.degree_plans_of(program, year=year):
                     with transaction.atomic():
+                        if degree_plan.program not in program_code_to_name:
+                            continue
+                        degree_plan.save()
+                        print(f"Saving degree plan {degree_plan}...")
                         rules = parse_degreeworks(client.audit(degree_plan), degree_plan)
                         pprint(rules)
