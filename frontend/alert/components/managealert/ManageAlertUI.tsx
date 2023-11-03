@@ -201,7 +201,7 @@ export const ManageAlert = ({
      * Returns alerts grouped by course
      * @return grouped alerts
      */
-    const groupedAlerts = testAlerts
+    const groupedAlerts = alerts
         .sort((a, b) => a.section.localeCompare(b.section))
         .reduce((res, obj) => {
             const [courseName, midNum, endNum] = obj.section.split("-");
