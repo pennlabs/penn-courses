@@ -73,6 +73,7 @@ class TestCourseSolver(TestCase):
         self.assertEqual(json_data, json_correct)
 
     def testNOTFOUND(self):
+        self.client.login(username="bobthelittlekid", password="harvard")
         response = self.client.post(
             reverse("automatic-scheduler"),
             json.dumps(
