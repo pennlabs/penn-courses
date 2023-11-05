@@ -473,9 +473,13 @@ class CalendarAPIView(APIView):
                 start_datetime = first_meeting.start_date + " "
                 end_datetime = first_meeting.start_date + " "
 
-            if int(first_meeting.start) < 10:
+            ifms = int(first_meeting.start) % 12
+
+            ifme = int(first_meeting.end) %
+
+            if ifms != 0 and ifms < 10:
                 start_datetime += "0"
-            if int(first_meeting.end) < 10:
+            if ifme != 0 and ifme < 10:
                 end_datetime += "0"
 
             start_datetime += start_time
@@ -495,9 +499,10 @@ class CalendarAPIView(APIView):
                 ContentLine(
                     "RRULE",
                     {},
-                    f'FREQ=WEEKLY;UNTIL={end_date}Z;WKST=SU;BYDAY={",".join(days)}',
+                    f'FREQ=WEEKLY;UNTIL={end_date}Z;TZOFFSETFROM:-0400;WKST=SU;BYDAY={",".join(days)}',
                 )
             )
+
 
             calendar.events.add(e)
 

@@ -9,8 +9,12 @@ on: push
 jobs:
   backend-check:
     name: "Backend Check"
+<<<<<<< HEAD
     uses: pennlabs/shared-actions/.github/workflows/django.yaml@8785a7d7b9158d8d5705a0202f5695db2c0beb97
 
+=======
+    uses: pennlabs/shared-actions/.github/workflows/django-check.yaml@2453452f049da3144fd225e2782d4e8816e41b62
+>>>>>>> Update shared-build-deploy.yaml
     with:
       projectName: PennCourses
       path: backend
