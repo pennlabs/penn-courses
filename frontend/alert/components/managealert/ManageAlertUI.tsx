@@ -91,7 +91,7 @@ export const ManageAlert = ({
     const [searchTimeout, setSearchTimeout] = useState<number>();
     const [numSelected, setNumSelected] = useState(0);
 
-    //Alerts for testing
+    // Alerts for testing
     var alert1: Alert = {
         id: 1,
         originalCreatedAt: "2023-09-11T12:00:00Z",
@@ -201,7 +201,7 @@ export const ManageAlert = ({
      * Returns alerts grouped by course
      * @return grouped alerts
      */
-    const groupedAlerts = alerts
+    const groupedAlerts = testAlerts
         .sort((a, b) => a.section.localeCompare(b.section))
         .reduce((res, obj) => {
             const [courseName, midNum, endNum] = obj.section.split("-");
