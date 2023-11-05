@@ -3,20 +3,12 @@ from rest_framework import generics
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 
 from degree.models import (
-    Degree,
-    # DegreeRequirement,
-    # DegreeFulfillment,
-    # DegreePlan
+    DegreePlan,
 )
 
 from degree.serializers import (
-    DegreeSerializer,
-    # DegreePlanSerializer,
-    # DegreeFulfillmentSerializer,
-    # DegreeRequirementSerializer
+    DegreePlanSerializer,
 )
-
-# Create your views here.
 
 
 class DegreeList(generics.ListAPIView):
@@ -32,11 +24,11 @@ class DegreeList(generics.ListAPIView):
         },
     )
 
-    serializer_class = DegreeSerializer
+    serializer_class = DegreePlanSerializer
 
     # TODO: Actually return a list of possible degrees
     def get_queryset(self):
-        queryset = Degree.filter()
+        queryset = DegreePlan.filter()
         return queryset
 
 
@@ -59,10 +51,14 @@ class DegreeDetail(generics.RetrieveAPIView):
         },
     )
 
-    serializer_class = DegreeSerializer  # TODO: have a DegreeSerializer and DegreeListSerializer
+    serializer_class = DegreePlanSerializer  # TODO: have a DegreeSerializer and DegreeListSerializer
     lookup_field = "full_code"
 
     # TODO: Actually include requirement data
     def get_queryset(self):
-        queryset = Degree.all()
+        queryset = DegreePlan.all()
         return queryset
+
+class RuleList(generics.RetrieveAPIView):
+    # TODO implement, maybe not needed
+    pass
