@@ -1,6 +1,7 @@
 import json
 
 from django.conf import settings
+from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework.test import APIClient
@@ -10,6 +11,9 @@ from tests.courses.util import create_mock_data, create_mock_recitation
 
 class TestCourseSolver(TestCase):
     def setUp(self):
+        self.u1 = User.objects.create_user(
+            username="bobthelittlekid", email="bob@harvard.edu", password="harvard"
+        )
         self.s = ["CIS-1200", "CIS-1600", "MATH-1410", "OIDD-1010", "FNCE-1010", "WRIT-0760"]
         self.cis1200, self.cis1200_1 = create_mock_data(
             "CIS-1200-002", "2022C", start=1100, end=1200
@@ -33,7 +37,22 @@ class TestCourseSolver(TestCase):
         self.cis1600_2.save()
         self.client = APIClient()
 
+    def testNotLoggedIn(self):
+        response = self.client.post(
+            reverse("automatic-scheduler"),
+            json.dumps(
+                {
+                    "courses": ["CIS-1200", "CIS-1600"],
+                    "semester": "2022C",
+                    "breaks": {"M": [], "T": [[10.59, 12.01]], "W": [], "R": [], "F": []},
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(403, response.status_code)
+
     def testScheduler(self):
+        self.client.login(username="bobthelittlekid", password="harvard")
         response = self.client.post(
             reverse("automatic-scheduler"),
             json.dumps(

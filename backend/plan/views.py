@@ -641,6 +641,7 @@ class CalendarAPIView(APIView):
         return response
 
 
+@permission_classes([IsAuthenticated])
 class AutomaticCourseScheduler(APIView):
 
     schema = PcxAutoSchema(
