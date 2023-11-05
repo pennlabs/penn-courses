@@ -19,6 +19,7 @@ class Schedule(models.Model):
 
     sections = models.ManyToManyField(
         Section,
+        blank=True,
         help_text=dedent(
             """
         The class sections which comprise the schedule. The semester of each of these sections is

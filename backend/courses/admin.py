@@ -169,12 +169,6 @@ class SectionAdmin(admin.ModelAdmin):
         self.obj = super().get_object(request, object_id, from_field)
         return self.obj
 
-    def formfield_for_manytomany(self, db_field, request, **kwargs):
-        # Filter displayed restrictions by whether this section has that restriction
-        if db_field.name == "pre_ngss_restrictions":
-            kwargs["queryset"] = PreNGSSRestriction.objects.filter(sections__id=self.obj.id)
-        return super().formfield_for_manytomany(db_field, request, **kwargs)
-
     def course_link(self, instance):
         link = reverse("admin:courses_course_change", args=[instance.course.id])
         return format_html('<a href="{}">{}</a>', link, instance.course.__str__())

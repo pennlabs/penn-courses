@@ -11,6 +11,13 @@ export const switchActiveFriend = (friend, found, sections) => ({
     sections,
 });
 
+export const unsetActiveFriend = () => ({
+    type: SWITCH_ACTIVE_FRIEND,
+    friend: null,
+    found: null,
+    sections: null,
+});
+
 export const updateFriendshipsOnFrontend = (
     backendRequestsReceived,
     backendRequestsSent,
@@ -25,9 +32,7 @@ export const updateFriendshipsOnFrontend = (
 /**
  * Pulls user's friends from the backend
  */
-export const fetchBackendFriendships = (user, activeFriendName) => (
-    dispatch
-) => {
+export const fetchBackendFriendships = (user) => (dispatch) => {
     doAPIRequest("/base/friendship")
         .then((res) => {
             return res.json();
@@ -61,25 +66,13 @@ export const fetchBackendFriendships = (user, activeFriendName) => (
                     backendAcceptedFriends
                 )
             );
-
-            if (
-                !backendAcceptedFriends.reduce(
-                    (acc, friend) =>
-                        acc || friend.username === activeFriendName,
-                    false
-                )
-            ) {
-                dispatch(setStateReadOnly(false));
-            }
         })
         .catch((error) => console.log(error));
 };
 
-export const deleteFriendshipOnBackend = (
-    user,
-    friendPennkey,
-    activeFriendName
-) => (dispatch) => {
+export const deleteFriendshipOnBackend = (user, friendPennkey) => (
+    dispatch
+) => {
     const init = {
         method: "DELETE",
         credentials: "include",
@@ -95,17 +88,14 @@ export const deleteFriendshipOnBackend = (
     };
     doAPIRequest("/base/friendship/", init)
         .then(() => {
-            dispatch(fetchBackendFriendships(user, activeFriendName));
+            dispatch(fetchBackendFriendships(user));
         })
         .catch((error) => console.log(error));
 };
 
-export const sendFriendRequest = (
-    user,
-    friendPennkey,
-    activeFriendName,
-    onComplete
-) => (dispatch) => {
+export const sendFriendRequest = (user, friendPennkey, onComplete) => (
+    dispatch
+) => {
     const init = {
         method: "POST",
         credentials: "include",
@@ -120,7 +110,7 @@ export const sendFriendRequest = (
         }),
     };
     doAPIRequest("/base/friendship/", init).then((res) => {
-        dispatch(fetchBackendFriendships(user, activeFriendName));
+        dispatch(fetchBackendFriendships(user));
         onComplete(res);
     });
 };

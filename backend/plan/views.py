@@ -1,4 +1,5 @@
 import arrow
+from accounts.authentication import PlatformAuthentication
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
 from django.db.models import Prefetch, Q, Subquery
@@ -10,6 +11,7 @@ from ics import Event as ICSEvent
 from ics.grammar.parse import ContentLine
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, permission_classes, schema
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -19,6 +21,7 @@ from courses.serializers import CourseListSerializer
 from courses.util import get_course_and_section, get_current_semester
 from courses.views import get_accepted_friends
 from PennCourses.docs_settings import PcxAutoSchema
+from PennCourses.settings.base import PATH_REGISTRATION_SCHEDULE_NAME
 from plan.management.commands.recommendcourses import (
     clean_course_input,
     recommend_courses,
@@ -190,12 +193,12 @@ class PrimaryScheduleViewSet(viewsets.ModelViewSet):
     list: Get the primary schedule for the current user as well as primary
     schedules of the user's friends.
 
-    update: Create or update the primary schedule for the current user.
+    create: Create/update/delete the primary schedule for the current user.
     """
 
     model = PrimarySchedule
     queryset = PrimarySchedule.objects.none()
-    http_method_names = ["get", "put"]
+    http_method_names = ["get", "post"]
     permission_classes = [IsAuthenticated]
     serializer_class = PrimaryScheduleSerializer
 
@@ -203,40 +206,70 @@ class PrimaryScheduleViewSet(viewsets.ModelViewSet):
         return PrimarySchedule.objects.filter(
             Q(user=self.request.user)
             | Q(user_id__in=Subquery(get_accepted_friends(self.request.user).values("id")))
+        ).prefetch_related(
+            Prefetch("schedule__sections", Section.with_reviews.all()),
+            "schedule__sections__associated_sections",
+            "schedule__sections__instructors",
+            "schedule__sections__meetings",
+            "schedule__sections__meetings__room",
         )
 
     schema = PcxAutoSchema(
         response_codes={
-            "primary-schedule": {
+            "primary-schedules-list": {
                 "GET": {
-                    200: "Primary schedule (and friend's schedules) retrieved successfully.",
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Primary schedule (and friend's schedules) "
+                    "retrieved successfully.",
                 },
-                "PUT": {
-                    200: "Primary schedule updated successfully.",
+                "POST": {
+                    201: "Primary schedule updated successfully.",
                     400: "Invalid schedule in request.",
                 },
             },
-        }
+        },
+        override_request_schema={
+            "primary-schedules-list": {
+                "POST": {
+                    "type": "object",
+                    "properties": {
+                        "schedule_id": {
+                            "type": "integer",
+                            "description": (
+                                "The ID of the schedule you want to make primary "
+                                "(or null to unset)."
+                            ),
+                        },
+                    },
+                }
+            }
+        },
     )
 
-    def put(self, request):
+    def create(self, request):
         res = {}
         user = request.user
-        schedule = Schedule.objects.filter(
-            person_id=user.id, id=request.data.get("schedule_id")
-        ).first()
-        if not schedule:
-            res["message"] = "Schedule does not exist"
-            return JsonResponse(res, status=status.HTTP_400_BAD_REQUEST)
-
-        primary_schedule_entry = self.get_queryset().filter(user=user).first()
-        if primary_schedule_entry:
-            primary_schedule_entry.schedule = schedule
-            primary_schedule_entry.save()
-            res["message"] = "Primary schedule successfully updated"
+        schedule_id = request.data.get("schedule_id")
+        if not schedule_id:
+            # Delete primary schedule
+            primary_schedule_entry = self.get_queryset().filter(user=user).first()
+            if primary_schedule_entry:
+                primary_schedule_entry.delete()
+                res["message"] = "Primary schedule successfully unset"
+            res["message"] = "Primary schedule was already unset"
         else:
-            PrimarySchedule.objects.create(user=user, schedule=schedule)
-            res["message"] = "Primary schedule successfully created"
+            schedule = Schedule.objects.filter(person_id=user.id, id=schedule_id).first()
+            if not schedule:
+                res["message"] = "Schedule does not exist"
+                return JsonResponse(res, status=status.HTTP_400_BAD_REQUEST)
+
+            primary_schedule_entry = self.get_queryset().filter(user=user).first()
+            if primary_schedule_entry:
+                primary_schedule_entry.schedule = schedule
+                primary_schedule_entry.save()
+                res["message"] = "Primary schedule successfully updated"
+            else:
+                PrimarySchedule.objects.create(user=user, schedule=schedule)
+                res["message"] = "Primary schedule successfully created"
 
         return JsonResponse(res, status=status.HTTP_200_OK)
 
@@ -290,9 +323,12 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
     update:
     Send a put request to this route to update a specific schedule.
-    The `id` path parameter (an integer) specifies which schedule you want to update.  If a
-    schedule with the specified id does not exist, a 404 is returned. In the body of the PUT,
-    use the same format as a POST request (see the create schedule docs).
+    The `id` path parameter (an integer) specifies which schedule you want to update. [You can also
+    pass `path` for the `id` path parameter, in order to create/update a Path Registration schedule
+    for the user (the name of the schedule must be `Path Registration`, and you must be
+    authenticated via Platform's token auth for IPC, e.g. from Penn Mobile).] If a schedule with
+    the specified id does not exist, a 404 is returned. In the body of the PUT, use the same format
+    as a POST request (see the Create Schedule docs).
     This is an alternate way to update schedules (you can also just include the id field
     in a schedule when you post and it will update that schedule if the id exists).  Note that in a
     put request the  id field in the putted object is ignored; the id taken from the route
@@ -343,7 +379,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     @staticmethod
-    def get_sections(data):
+    def get_sections(data, skip_missing=False):
         raw_sections = []
         if "meetings" in data:
             raw_sections = data.get("meetings")
@@ -351,8 +387,14 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             raw_sections = data.get("sections")
         sections = []
         for s in raw_sections:
-            _, section = get_course_and_section(s.get("id"), s.get("semester"))
-            sections.append(section)
+            try:
+                _, section = get_course_and_section(s.get("id"), s.get("semester"))
+                sections.append(section)
+            except ObjectDoesNotExist as e:
+                if skip_missing:
+                    continue
+                else:
+                    raise e
         return sections
 
     @staticmethod
@@ -366,19 +408,44 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
+    def validate_name(self, request, existing_schedule=None, allow_path=False):
+        if PATH_REGISTRATION_SCHEDULE_NAME in [
+            request.data.get("name"),
+            existing_schedule and existing_schedule.name,
+        ] and not (
+            allow_path and isinstance(request.successful_authenticator, PlatformAuthentication)
+        ):
+            raise PermissionDenied(
+                "You cannot create/update/delete a schedule with the name "
+                + PATH_REGISTRATION_SCHEDULE_NAME
+            )
+
+    def destroy(self, request, *args, **kwargs):
+        self.validate_name(request, existing_schedule=self.get_object())
+        return super().destroy(request, *args, **kwargs)
+
     def update(self, request, pk=None):
-        if not Schedule.objects.filter(id=pk).exists():
+        from_path = pk == "path"
+        if not from_path and (not pk or not Schedule.objects.filter(id=pk).exists()):
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
         try:
-            schedule = self.get_queryset().get(id=pk)
+            if from_path:
+                schedule, _ = self.get_queryset().get_or_create(
+                    name=PATH_REGISTRATION_SCHEDULE_NAME,
+                    defaults={"person": self.request.user, "semester": get_current_semester},
+                )
+            else:
+                schedule = self.get_queryset().get(id=pk)
         except Schedule.DoesNotExist:
             return Response(
                 {"detail": "You do not have access to the specified schedule."},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
+        self.validate_name(request, existing_schedule=schedule, allow_path=from_path)
+
         try:
-            sections = self.get_sections(request.data)
+            sections = self.get_sections(request.data, skip_missing=from_path)
         except ObjectDoesNotExist:
             return Response(
                 {"detail": "One or more sections not found in database."},
@@ -392,7 +459,9 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         try:
             schedule.person = request.user
             schedule.semester = request.data.get("semester", get_current_semester())
-            schedule.name = request.data.get("name")
+            schedule.name = (
+                PATH_REGISTRATION_SCHEDULE_NAME if from_path else request.data.get("name")
+            )
             schedule.save()
             schedule.sections.set(sections)
             return Response({"message": "success", "id": schedule.id}, status=status.HTTP_200_OK)
@@ -408,6 +477,8 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         if Schedule.objects.filter(id=request.data.get("id")).exists():
             return self.update(request, request.data.get("id"))
+
+        self.validate_name(request)
 
         try:
             sections = self.get_sections(request.data)
@@ -467,6 +538,11 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
 class CalendarAPIView(APIView):
     schema = PcxAutoSchema(
+        custom_path_parameter_desc={
+            "calendar-view": {
+                "GET": {"schedule_pk": "The PCP id of the schedule you want to export."},
+            },
+        },
         response_codes={
             "calendar-view": {
                 "GET": {
@@ -474,20 +550,22 @@ class CalendarAPIView(APIView):
                 },
             },
         },
+        override_response_schema={
+            "calendar-view": {
+                "GET": {
+                    200: {
+                        "media_type": "text/calendar",
+                        "type": "string",
+                        "description": "A calendar file in ICS format",
+                    }
+                }
+            }
+        },
     )
 
     def get(self, *args, **kwargs):
         """
         Return a .ics file of the user's selected schedule
-        ---
-        responses:
-            "200":
-                description: Return a calendar file in ICS format.
-                content:
-                    text/calendar:
-                        schema:
-                            type: string
-        ---
         """
         schedule_pk = kwargs["schedule_pk"]
 

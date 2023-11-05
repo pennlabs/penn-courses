@@ -2,7 +2,7 @@ import {
     CLEAR_ALL_SCHEDULE_DATA,
     SET_STATE_READ_ONLY,
     SET_PRIMARY_SCHEDULE_ID_ON_FRONTEND,
-    CHANGE_SCHEDULE,
+    CHANGE_MY_SCHEDULE,
     RENAME_SCHEDULE,
     CLEAR_SCHEDULE,
     DOWNLOAD_SCHEDULE,
@@ -22,6 +22,8 @@ import { scheduleContainsSection } from "../components/meetUtil";
 import { showToast } from "../pages";
 
 import { MIN_TIME_DIFFERENCE } from "../constants/sync_constants";
+
+import { PATH_REGISTRATION_SCHEDULE_NAME } from "../constants/constants";
 
 // the state contains the following two pieces of data:
 //  1. An object associating each schedule name with the schedule objecct
@@ -171,13 +173,10 @@ const handleUpdateSchedulesOnFrontend = (state, schedulesFromBackend) => {
                     foundSchedule.updated_at - cloudUpdated >=
                         MIN_TIME_DIFFERENCE)
             ) {
+                const alreadySelectedSchedule =
+                    newState.schedules[newState.scheduleSelected];
                 newState = {
                     ...newState,
-                    scheduleSelected: newState.schedules[
-                        newState.scheduleSelected
-                    ]
-                        ? newState.scheduleSelected
-                        : scheduleFromBackend.name,
                     schedules: {
                         ...newState.schedules,
                         [scheduleFromBackend.name]: {
@@ -188,6 +187,15 @@ const handleUpdateSchedulesOnFrontend = (state, schedulesFromBackend) => {
                         },
                     },
                 };
+                if (!alreadySelectedSchedule) {
+                    newState.scheduleSelected = scheduleFromBackend.name;
+                    if (
+                        newState.scheduleSelected ===
+                        PATH_REGISTRATION_SCHEDULE_NAME
+                    ) {
+                        newState.readOnly = true;
+                    }
+                }
             }
         }
     });
@@ -315,9 +323,12 @@ export const schedule = (state = initialState, action) => {
                 cartPushedToBackend: true,
                 cartUpdatedAt: Date.now(),
             };
-        case CHANGE_SCHEDULE:
+        case CHANGE_MY_SCHEDULE:
             return {
                 ...state,
+                // Only Path Registration schedule should be read only in own schedules
+                readOnly:
+                    action.scheduleName === PATH_REGISTRATION_SCHEDULE_NAME,
                 scheduleSelected: action.scheduleName,
             };
         case TOGGLE_CHECK:
@@ -339,7 +350,11 @@ export const schedule = (state = initialState, action) => {
                     },
                 };
             }
-            showToast("Cannot add courses to a friend's schedule!", true);
+            if (state.scheduleSelected === PATH_REGISTRATION_SCHEDULE_NAME) {
+                showToast("Cannot edit Path registration here!", true);
+            } else {
+                showToast("Cannot change a friend's schedule!", true);
+            }
 
             return {
                 ...state,

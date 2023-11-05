@@ -16,6 +16,7 @@ import {
     FriendshipState,
 } from "../../types";
 import { getConflictGroups } from "../meetUtil";
+import { PATH_REGISTRATION_SCHEDULE_NAME } from "../../constants/constants";
 
 const EmptyScheduleContainer = styled.div`
     font-size: 0.8em;
@@ -41,7 +42,7 @@ const EmptySchedule = () => (
     </EmptyScheduleContainer>
 );
 
-const FriendEmptySchedule = ({ message }: { message: string }) => (
+const EmptyScheduleMessage = ({ message }: { message: string }) => (
     <EmptyScheduleContainer>
         <NoCoursesImage src="/icons/empty-state-cal.svg" alt="" />
         <NoCoursesAdded>{message}</NoCoursesAdded>
@@ -94,19 +95,19 @@ const ScheduleContents = styled.div`
     padding: ${({ notEmpty, dims }: { notEmpty: boolean; dims: any }) =>
         notEmpty ? dims.padding : "1rem"};
     grid-template-columns: ${({
-        notEmpty,
-        dims,
-    }: {
-        notEmpty: boolean;
-        dims: any;
-    }) => (notEmpty ? dims.gridTemplateColumns : "none")};
+            notEmpty,
+            dims,
+        }: {
+            notEmpty: boolean;
+            dims: any;
+        }) => (notEmpty ? dims.gridTemplateColumns : "none")};
     grid-template-rows: ${({
-        notEmpty,
-        dims,
-    }: {
-        notEmpty: boolean;
-        dims: any;
-    }) => (notEmpty ? dims.gridTemplateRows : "none")};
+            notEmpty,
+            dims,
+        }: {
+            notEmpty: boolean;
+            dims: any;
+        }) => (notEmpty ? dims.gridTemplateRows : "none")};
 
     @media only screen and (max-width: 480px) {
         height: 100%;
@@ -120,6 +121,7 @@ const ScheduleContents = styled.div`
 `;
 
 interface ScheduleDisplayProps {
+    schedName: string;
     schedData: {
         sections: Section[];
     };
@@ -131,6 +133,7 @@ interface ScheduleDisplayProps {
 }
 
 const ScheduleDisplay = ({
+    schedName,
     schedData,
     friendshipState,
     focusSection,
@@ -144,7 +147,9 @@ const ScheduleDisplay = ({
     if (
         !schedData
     ) {
-        return <FriendEmptySchedule message="Loading...Standby" />;
+        return <ScheduleBox>
+            <EmptyScheduleMessage message="Loading...Standby" />
+        </ScheduleBox>;
     }
 
     const rowOffset = 1;
@@ -152,11 +157,7 @@ const ScheduleDisplay = ({
 
     let sections;
 
-    if (readOnly) {
-        sections = friendshipState.activeFriendSchedule.sections || [];
-    } else {
-        sections = schedData.sections || [];
-    }
+    sections = friendshipState.activeFriendSchedule?.sections || schedData.sections || [];
 
     const notEmpty = sections.length > 0;
 
@@ -307,12 +308,17 @@ const ScheduleDisplay = ({
                     readOnly &&
                     friendshipState.activeFriendSchedule &&
                     !friendshipState.activeFriendSchedule.found && (
-                        <FriendEmptySchedule message="Your friend is not sharing a schedule yet" />
+                        <EmptyScheduleMessage message="Your friend is not sharing a schedule yet" />
                     )}
                 {!notEmpty &&
                     readOnly &&
-                    friendshipState.activeFriendSchedule.found && (
-                        <FriendEmptySchedule message="Your friend has not added courses to their schedule yet" />
+                    friendshipState.activeFriendSchedule?.found && (
+                        <EmptyScheduleMessage message="Your friend has not added courses to their schedule yet" />
+                    )}
+                {!notEmpty &&
+                    readOnly &&
+                    schedName == PATH_REGISTRATION_SCHEDULE_NAME && (
+                        <EmptyScheduleMessage message="Penn Course Plan doesn't have your course registration data (yet!)." />
                     )}
             </ScheduleContents>
             {notEmpty && <Stats meetings={sections} />}

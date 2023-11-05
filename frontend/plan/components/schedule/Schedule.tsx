@@ -6,12 +6,11 @@ import { ThunkDispatch } from "redux-thunk";
 import {
     removeSchedItem,
     fetchCourseDetails,
-    changeSchedule,
+    changeMySchedule,
     createScheduleOnBackend,
     deleteScheduleOnBackend,
     downloadSchedule,
     openModal,
-    setStateReadOnly,
     setCurrentUserPrimarySchedule,
 } from "../../actions";
 import ScheduleSelectorDropdown from "./ScheduleSelectorDropdown";
@@ -27,6 +26,7 @@ import {
     deleteFriendshipOnBackend,
     fetchBackendFriendships,
     fetchFriendPrimarySchedule,
+    unsetActiveFriend
 } from "../../actions/friendshipUtil";
 
 const ScheduleContainer = styled.div`
@@ -55,26 +55,24 @@ interface ScheduleProps {
     friendshipState: FriendshipState;
     removeSection: (idDashed: string) => void;
     focusSection: (id: string) => void;
-    switchSchedule: (scheduleName: string) => void;
-    setStateReadOnly: (readOnly: boolean) => void;
+    changeMySchedule: (scheduleName: string) => void;
+    unsetActiveFriend: () => void;
     setTab?: (_: number) => void;
     friendshipMutators: {
         fetchFriendSchedule: (friend: User) => void;
-        fetchBackendFriendships: (user: User, activeFriendName: string) => void;
+        fetchBackendFriendships: (user: User) => void;
         deleteFriendshipOnBackend: (
             user: User,
-            friendPennkey: string,
-            activeFriendName: string
+            friendPennkey: string
         ) => void;
     };
     schedulesMutator: {
-        setPrimary: (user: User, scheduleId: string) => void;
+        setPrimary: (user: User, scheduleId: string | null) => void;
         copy: (scheduleName: string) => void;
         download: (scheduleName: string) => void;
         remove: (user: User, scheduleName: string, scheduleId: string) => void;
         rename: (oldName: string) => void;
 
-        // NOT IN ORIGINAL PROPS
         createSchedule: () => void;
         addFriend: () => void;
         showRequests: () => void;
@@ -90,8 +88,8 @@ const Schedule = ({
     readOnly,
     removeSection,
     focusSection,
-    switchSchedule,
-    setStateReadOnly,
+    changeMySchedule,
+    unsetActiveFriend,
     setTab,
     friendshipMutators,
     schedulesMutator,
@@ -108,14 +106,15 @@ const Schedule = ({
                     primaryScheduleId={primaryScheduleId}
                     readOnly={readOnly}
                     displayOwnSchedule={(name: string) => {
-                        switchSchedule(name);
-                        setStateReadOnly(false);
+                        changeMySchedule(name);
+                        unsetActiveFriend();
                     }}
                     friendshipMutators={friendshipMutators}
                     schedulesMutators={schedulesMutator}
                 />
             </ScheduleDropdownHeader>
             <ScheduleDisplay
+                schedName={activeScheduleName}
                 schedData={currScheduleData}
                 friendshipState={friendshipState}
                 readOnly={readOnly}
@@ -143,26 +142,23 @@ const mapStateToProps = (state: any) => {
 const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
     removeSection: (idDashed: string) => dispatch(removeSchedItem(idDashed)),
     focusSection: (id: string) => dispatch(fetchCourseDetails(id)),
-    switchSchedule: (scheduleName: string) =>
-        dispatch(changeSchedule(scheduleName)),
-    setStateReadOnly: (displayingFriend: boolean) =>
-        dispatch(setStateReadOnly(displayingFriend)),
+    changeMySchedule: (scheduleName: string) =>
+        dispatch(changeMySchedule(scheduleName)),
+    unsetActiveFriend: () => dispatch(unsetActiveFriend()),
     friendshipMutators: {
         fetchFriendSchedule: (friend: User) =>
             dispatch(fetchFriendPrimarySchedule(friend)),
-        fetchBackendFriendships: (user: User, activeFriendName: string) =>
-            dispatch(fetchBackendFriendships(user, activeFriendName)),
+        fetchBackendFriendships: (user: User) =>
+            dispatch(fetchBackendFriendships(user)),
         deleteFriendshipOnBackend: (
             user: User,
-            friendPennkey: string,
-            activeFriendName: string
-        ) =>
+            friendPennkey: string) =>
             dispatch(
-                deleteFriendshipOnBackend(user, friendPennkey, activeFriendName)
+                deleteFriendshipOnBackend(user, friendPennkey)
             ),
     },
     schedulesMutator: {
-        setPrimary: (user: User, scheduleId: string) =>
+        setPrimary: (user: User, scheduleId: string | null) =>
             dispatch(setCurrentUserPrimarySchedule(user, scheduleId)),
         copy: (scheduleName: string) =>
             dispatch(createScheduleOnBackend(scheduleName)),

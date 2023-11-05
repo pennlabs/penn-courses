@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node server.js",
+    "dev": "export NODE_OPTIONS=--openssl-legacy-provider && node server.js",
     "build": "next build",
     "start": "NODE_ENV=production node server.js",
     "test": "echo no tests yet",

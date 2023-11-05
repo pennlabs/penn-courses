@@ -33,4 +33,4 @@ class PrimaryScheduleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PrimarySchedule
-        fields = ["user", "user_id", "schedule_id", "schedule"]
+        fields = ["user", "schedule"]
