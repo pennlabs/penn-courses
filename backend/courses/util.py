@@ -744,6 +744,7 @@ def find_possible_schedules(
     """
 
     day_to_num = {"M": 0, "T": 1, "W": 2, "R": 3, "F": 4}
+    whitelist = ["CIS-7000"]
 
     class Scheduler:
         def __init__(self):
@@ -802,10 +803,14 @@ def find_possible_schedules(
             for interval in optimal_schedule:
                 class_name = interval[2]
                 sections = [i for i in optimal_schedule if i[2] == class_name]
-                section = random.choice(sections)
-                if class_name not in selected_classes:
+                if class_name not in whitelist:
+                    section = random.choice(sections)
+                    if class_name not in selected_classes:
+                        selected_classes.add(class_name)
+                        final_schedule.append(section)
+                else:
                     selected_classes.add(class_name)
-                    final_schedule.append(section)
+                    final_schedule += sections
             return final_schedule
 
     def find_sections(courses):
@@ -913,7 +918,10 @@ def find_possible_schedules(
                 hash[class_name].append(node)
         for key in hash.keys():
             # Chooses a random lecture for each class
-            courses.append(random.choice(hash[key]))
+            if key not in whitelist:
+                courses.append(random.choice(hash[key]))
+            else:
+                courses += hash[key]
         return courses
 
     def credit_count(sections):
