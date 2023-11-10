@@ -6,6 +6,24 @@ import { CodeDecoration } from "./CommonStyles"
 import { Course } from "../../types/course"
 import { useSearchContext } from "./SearchContext"
 
+export const PreviewWrapper = styled.div`
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	background-color: white;
+	padding-top: 1rem;
+	padding-bottom: 1rem;
+	padding-left: 0.75rem;
+	padding-right: 0.75rem;
+	box-shadow: 0 0 22px -12px rgb(0 0 0 / 0.25);
+	margin-bottom: 2rem;
+	border-radius: 5px;
+	& > div + div {
+		border-top: 1px solid #e0e0e0;
+		padding-top: 1.5rem;
+	}
+`
+
 const Instructors = styled.div`
 	font-style: italic;
 `
@@ -117,7 +135,7 @@ export const CoursePreview: React.FC<{
 						style={{
 							color: m.isMatch ? "white" : "inherit",
 							backgroundColor: m.isMatch ? "#85b8ba" : "transparent",
-							fontWeight: m.isMatch ? "extrabold" : "normal",
+							fontWeight: m.isMatch ? 900 : "normal",
 						}}>
 						{m.text}
 					</span>
