@@ -78,6 +78,9 @@ def parse_coursearray(courseArray) -> Q:
                     case "DWGRADE":
                         print("WARNING: ignoring DWGRADE")
                         sub_q = Q()
+                    case "DWCOURSENUMBER":
+                        print("WARNING: ignoring DWCOURSENUMBER")
+                        sub_q = Q()
                     case _:
                         raise LookupError(f"Unknown filter type in withArray: {filter['code']}")
                 match filter[
