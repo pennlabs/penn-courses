@@ -431,7 +431,7 @@ def set_meetings(section, meetings):
         start_date = extract_date(meeting.get("start_date"))
         end_date = extract_date(meeting.get("end_date"))
         for day in list(meeting["days"]):
-            Meeting.objects.get_or_create(
+            meeting = Meeting.objects.update_or_create(
                 section=section,
                 day=day,
                 start=start_time,
@@ -516,9 +516,10 @@ def add_attributes(course, attributes):
     course.attributes.clear()
     for attribute in attributes:
         school = identify_school(attribute.get("attribute_code"))
-        attr, _ = Attribute.objects.get_or_create(
+        desc = attribute.get("attribute_desc")
+        attr, _ = Attribute.objects.update_or_create(
             code=attribute.get("attribute_code"),
-            defaults={"description": attribute.get("attribute_desc"), "school": school},
+            defaults={"description": desc, "school": school},
         )
         attr.courses.add(course)
 
@@ -556,12 +557,16 @@ def add_restrictions(course, restrictions):
     """
     course.ngss_restrictions.clear()
     for restriction in restrictions:
-        res, _ = NGSSRestriction.objects.get_or_create(
-            code=restriction.get("restriction_code"),
+        code = restriction.get("restriction_code")
+        description = restriction.get("restriction_desc")
+        restriction_type = restriction.get("restriction_type")
+        inclusive = restriction.get("incl_excl_ind") == "I"
+        res, _ = NGSSRestriction.objects.update_or_create(
+            code=code,
             defaults={
-                "description": restriction.get("restriction_desc"),
-                "restriction_type": restriction.get("restriction_type"),
-                "inclusive": restriction.get("incl_excl_ind") == "I",
+                "description": description,
+                "restriction_type": restriction_type,
+                "inclusive": inclusive,
             },
         )
         res.courses.add(course)

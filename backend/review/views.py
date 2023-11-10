@@ -14,7 +14,7 @@ from django.conf import settings
 
 from courses.models import Course, Department, Instructor, PreNGSSRestriction, Section
 from courses.util import get_current_semester, get_or_create_add_drop_period
-from PennCourses.docs_settings import PcxAutoSchema, reverse_func
+from PennCourses.docs_settings import PcxAutoSchema
 from PennCourses.settings.base import (
     PRE_NGSS_PERMIT_REQ_RESTRICTION_CODES,
     TIME_ZONE,
@@ -113,7 +113,7 @@ reviewbit_filters_pcr = Q(
 @schema(
     PcxAutoSchema(
         response_codes={
-            reverse_func("course-reviews", args=["course_code"]): {
+            "course-reviews": {
                 "GET": {
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Reviews retrieved successfully.",
                     404: "Course with given course_code not found.",
@@ -121,7 +121,7 @@ reviewbit_filters_pcr = Q(
             },
         },
         custom_path_parameter_desc={
-            reverse_func("course-reviews", args=["course_code"]): {
+            "course-reviews": {
                 "GET": {
                     "course_code": (
                         "The dash-joined department and code of the course you want reviews for, e.g. `CIS-120` for CIS-120."  # noqa E501
@@ -155,7 +155,7 @@ def course_reviews(request, course_code):
     except Course.DoesNotExist:
         raise Http404()
 
-    topic = course.topic
+    topic = course.primary_listing.topic
     course = topic.most_recent
     course_code = course.full_code
     aliases = course.crosslistings.values_list("full_code", flat=True)
@@ -234,7 +234,7 @@ def course_reviews(request, course_code):
 @schema(
     PcxAutoSchema(
         response_codes={
-            reverse_func("course-plots", args=["course_code"]): {
+            "course-plots": {
                 "GET": {
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Plots retrieved successfully.",
                     404: "Course with given course_code not found.",
@@ -242,7 +242,7 @@ def course_reviews(request, course_code):
             },
         },
         custom_parameters={
-            reverse_func("course-plots", args=["course_code"]): {
+            "course-plots": {
                 "GET": [
                     {
                         "name": "course_code",
@@ -272,7 +272,7 @@ def course_plots(request, course_code):
     """
     try:
         course = (
-            Course.objects.filter(course_filters_pcr, full_code=course_code)
+            Course.objects.filter(course_filters_pcr_allow_xlist, full_code=course_code)
             .order_by("-semester")[:1]
             .select_related("topic", "topic__most_recent")
             .get()
@@ -369,11 +369,19 @@ def check_instructor_id(instructor_id):
         raise Http404("Instructor with given instructor_id not found.")
 
 
+INSTRUCTOR_COURSE_REVIEW_FIELDS = [
+    "instructor_quality",
+    "course_quality",
+    "work_required",
+    "difficulty",
+]
+
+
 @api_view(["GET"])
 @schema(
     PcxAutoSchema(
         response_codes={
-            reverse_func("instructor-reviews", args=["instructor_id"]): {
+            "instructor-reviews": {
                 "GET": {
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Reviews retrieved successfully.",
                     404: "Instructor with given instructor_id not found.",
@@ -381,7 +389,7 @@ def check_instructor_id(instructor_id):
             },
         },
         custom_path_parameter_desc={
-            reverse_func("instructor-reviews", args=["instructor_id"]): {
+            "instructor-reviews": {
                 "GET": {
                     "instructor_id": (
                         "The integer id of the instructor you want reviews for. Note that you can get the relative path for any instructor including this id by using the `url` field of objects in the `instructors` list returned by Retrieve Autocomplete Data."  # noqa E501
@@ -423,6 +431,7 @@ def instructor_reviews(request, instructor_id):
         )
         & section_filters_pcr,
         extra_metrics=True,
+        fields=INSTRUCTOR_COURSE_REVIEW_FIELDS,
     ).annotate(
         most_recent_full_code=F("topic__most_recent__full_code"),
     )
@@ -465,7 +474,7 @@ def instructor_reviews(request, instructor_id):
 @schema(
     PcxAutoSchema(
         response_codes={
-            reverse_func("department-reviews", args=["department_code"]): {
+            "department-reviews": {
                 "GET": {
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Reviews retrieved successfully.",
                     404: "Department with the given department_code not found.",
@@ -473,7 +482,7 @@ def instructor_reviews(request, instructor_id):
             }
         },
         custom_path_parameter_desc={
-            reverse_func("department-reviews", args=["department_code"]): {
+            "department-reviews": {
                 "GET": {
                     "department_code": (
                         "The department code you want reviews for, e.g. `CIS` for the CIS department."  # noqa E501
@@ -539,7 +548,7 @@ def department_reviews(request, department_code):
 @schema(
     PcxAutoSchema(
         response_codes={
-            reverse_func("course-history", args=["course_code", "instructor_id"]): {
+            "course-history": {
                 "GET": {
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Reviews retrieved successfully.",
                     404: "Invalid course_code or instructor_id.",
@@ -547,7 +556,7 @@ def department_reviews(request, department_code):
             }
         },
         custom_path_parameter_desc={
-            reverse_func("course-history", args=["course_code", "instructor_id"]): {
+            "course-history": {
                 "GET": {
                     "course_code": (
                         "The dash-joined department and code of the course you want reviews for, e.g. `CIS-120` for CIS-120."  # noqa E501
@@ -646,7 +655,7 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
 @schema(
     PcxAutoSchema(
         response_codes={
-            reverse_func("review-autocomplete"): {
+            "review-autocomplete": {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Autocomplete dump retrieved successfully."},
             },
         },

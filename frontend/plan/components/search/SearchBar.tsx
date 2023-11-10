@@ -71,7 +71,7 @@ interface SearchBarProps {
     store: object;
     storeLoaded: boolean;
     setShowLoginModal: React.Dispatch<React.SetStateAction<boolean>>;
-    activeSchedule: number;
+    activeSchedule: {id: number};
     updateButtonFilter: (field: string) => (value: number) => void;
 }
 
@@ -297,8 +297,8 @@ function SearchBar({
     store,
     storeLoaded,
     setShowLoginModal,
+    updateButtonFilter,
     activeSchedule,
-    updateButtonFilter
 }: /* eslint-enable no-shadow */
 SearchBarProps) {
     const router = useRouter();
@@ -311,6 +311,7 @@ SearchBarProps) {
     useEffect(() => {
         // ensure that the user is logged in before initiating the sync
         if (user && storeLoaded) {
+            clearScheduleData();
             initiateSync(store);
         }
     }, [user, store, storeLoaded]);
@@ -474,17 +475,19 @@ SearchBarProps) {
                     />
                 </DropdownButton>
             )}
-            <ButtonFilter
-                title="Fit Schedule"
-                filterData={filterData}
-                clearFilter={clearFilterSearch("schedule-fit")}
-                // @ts-ignore
-                startSearch={conditionalStartSearch}
-                value={activeSchedule}
-                buttonProperty="schedule-fit"
-                updateButtonFilter={updateButtonFilter("schedule-fit")}
-            >
-            </ButtonFilter> 
+            {activeSchedule && 
+                <ButtonFilter
+                    title="Fit Schedule"
+                    filterData={filterData}
+                    clearFilter={clearFilterSearch("schedule-fit")}
+                    // @ts-ignore
+                    startSearch={conditionalStartSearch}
+                    value={activeSchedule.id}
+                    buttonProperty="schedule-fit"
+                    updateButtonFilter={updateButtonFilter("schedule-fit")}
+                >
+                </ButtonFilter> 
+            }
             <ButtonFilter
                 title="Is Open"
                 filterData={filterData}
@@ -663,13 +666,14 @@ const mapStateToProps = (state) => ({
     isLoadingCourseInfo: state.sections.courseInfoLoading,
     isSearchingCourseInfo: state.sections.searchInfoLoading,
     user: state.login.user,
-    activeSchedule: state.schedule.schedules[state.schedule.scheduleSelected].id,
+    activeSchedule: state.schedule.schedules[state.schedule.scheduleSelected],
 });
 
 // @ts-ignore
 const mapDispatchToProps = (dispatch) => ({
     login: (user: User) => dispatch(login(user)),
     logout: () => dispatch(logout()),
+    clearAllScheduleData: () => dispatch(clearAllScheduleData()),
     loadRequirements: () => dispatch(loadRequirements()),
     startSearch: (filterData: FilterData) =>
         dispatch(fetchCourseSearch(filterData)),

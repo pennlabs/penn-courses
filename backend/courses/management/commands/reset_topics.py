@@ -1,3 +1,4 @@
+import gc
 from textwrap import dedent
 
 from django.core.management.base import BaseCommand
@@ -19,6 +20,7 @@ def fill_topics(verbose=False):
         if not course.topic:
             filled += 1
             course.save()
+            gc.collect()
     if verbose:
         print(f"Filled the topic field of {filled} courses.")
 
