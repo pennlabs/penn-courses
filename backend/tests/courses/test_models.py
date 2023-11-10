@@ -1,6 +1,10 @@
+import json
+
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
+from django.forms import ValidationError
 from django.test import TestCase
+from django.urls import reverse
 from options.models import Option
 from rest_framework.test import APIClient
 
@@ -416,10 +420,46 @@ class PreNGSSRequirementTestCase(TestCase):
 
 
 class UserProfileTestCase(TestCase):
-    def test_profile_created(self):
-        u = User.objects.create_user(
+    def setUp(self):
+        self.user = User.objects.create_user(
             username="test", password="top_secret", email="test@example.com"
         )
-        self.assertTrue(UserProfile.objects.filter(user=u).exists())
-        p = UserProfile.objects.get(user=u)
-        self.assertEqual(u.email, p.email)
+        self.user_profile = UserProfile.objects.get(user=self.user)
+
+    def test_profile_created(self):
+        self.assertTrue(self.user_profile)
+        self.assertEqual(self.user.email, self.user_profile.email)
+
+    def test_phone_valid1(self):
+        self.user_profile.phone = "+1 (917)-567-8901"
+        self.user_profile.save()
+
+    def test_phone_valid2(self):
+        self.user_profile.phone = "19178286431"
+        self.user_profile.save()
+
+    def test_phone_invalid(self):
+        self.user_profile.phone = "917828643"
+        with self.assertRaises(ValidationError):
+            self.user_profile.full_clean()
+            self.user_profile.save()
+
+    def test_phone_invalid_response_400(self):
+        set_semester()
+        User.objects.create_user(username="jacob", password="top_secret")
+        self.client = APIClient()
+        self.client.login(username="jacob", password="top_secret")
+        response = self.client.put(
+            reverse("user-view"),
+            json.dumps(
+                {
+                    "profile": {
+                        "email": "example@email.com",
+                        "phone": "91782864",
+                        "push_notifications": True,
+                    }
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 400)

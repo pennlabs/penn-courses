@@ -166,6 +166,14 @@ export interface User {
     profile: Profile;
 }
 
+export interface Friendship {
+    sender: User;
+    recipient: User;
+    sent_at: string;
+    accepted_at: string;
+    status: string;
+}
+
 export interface FilterData {
     searchString: string;
     searchType: string;
@@ -206,4 +214,16 @@ export type FilterType =
           U: boolean;
           time: [number, number];
       }
-    | number
+    | number;
+
+    export interface FriendshipState {
+        activeFriend: User;
+        activeFriendSchedule: { found: boolean; sections: Section[] };
+        acceptedFriends: User[];
+        requestsReceived: Friendship[];
+        requestsSent: Friendship[];
+    }
+
+    export interface ColorsMap {
+        [key: string]: Color
+    }

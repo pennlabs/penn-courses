@@ -20,5 +20,7 @@ postgres
 *-test.json
 celerybeat-schedule
 pcr-backup*
-
-.venv
+./Pipfile
+./Pipfile.lock
+./package.json
+./yarn.lock

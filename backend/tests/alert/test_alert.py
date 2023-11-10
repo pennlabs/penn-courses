@@ -1031,7 +1031,7 @@ class AlertRegistrationTestCase(TestCase):
         self.user = User.objects.create_user(username="jacob", password="top_secret")
         self.user.save()
         self.user.profile.email = "j@gmail.com"
-        self.user.profile.phone = "+11234567890"
+        self.user.profile.phone = "+19178286431"
         self.user.profile.save()
         self.user = User.objects.get(username="jacob")
         self.client = APIClient()
@@ -1124,7 +1124,7 @@ class AlertRegistrationTestCase(TestCase):
         contact_infos = (
             # If we enabled push notifications by default in these tests, push_username would be
             # set to "jacob", since that is the username of the default user for these tests.
-            [{"number": "+11234567890", "email": "j@gmail.com", "push_username": None}]
+            [{"number": "+19178286431", "email": "j@gmail.com", "push_username": None}]
             if contact_infos is None
             else contact_infos
         )
@@ -1673,7 +1673,7 @@ class AlertRegistrationTestCase(TestCase):
                     "email": new_user.profile.email,
                     "push_username": new_user.username,
                 },
-                {"number": "+11234567890", "email": "j@gmail.com", "push_username": None},
+                {"number": "+19178286431", "email": "j@gmail.com", "push_username": None},
             ],
             should_send=True,
             close_notification=False,
@@ -1743,7 +1743,7 @@ class AlertRegistrationTestCase(TestCase):
             self.cis1200,
             5,
             [
-                {"number": "+11234567890", "email": "j@gmail.com"},
+                {"number": "+19178286431", "email": "j@gmail.com"},
                 {"number": "+12234567890", "email": "newj@gmail.com"},
             ],
         )
@@ -2435,7 +2435,7 @@ class AlertRegistrationTestCase(TestCase):
         possible cases; with push notifications enabled (push_notif parameter set to True),
         or disabled (push_notif set to False).
         """
-        contact_infos = [{"number": "+11234567890", "email": "j@gmail.com", "push_username": None}]
+        contact_infos = [{"number": "+19178286431", "email": "j@gmail.com", "push_username": None}]
         if push_notif:
             response = self.client.put(
                 reverse("user-view"),
@@ -2574,7 +2574,7 @@ class AlertRegistrationTestCase(TestCase):
         Ensure that cancelling or deleting a registration also cancels a pending close notification
         """
         contact_infos = [
-            {"number": "+11234567890", "email": "j@gmail.com", "push_username": self.user.username}
+            {"number": "+19178286431", "email": "j@gmail.com", "push_username": self.user.username}
         ]
         first_id = self.registration_cis1200.id
 
