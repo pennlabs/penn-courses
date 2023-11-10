@@ -295,8 +295,8 @@ class SearchBar extends Component {
 							cursor: "pointer",
 							border: "solid 1px #e6e6e6",
 							fontSize: this.props.isTitle ? 18 : null,
-							height: "4rem",
-							padding: 12,
+							height: this.props.isTitle ? "4rem" : 32,
+							padding: this.props.isTitle ? 12 : 0,
 						}),
 						input: (styles) => ({
 							...styles,

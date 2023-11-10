@@ -5,6 +5,7 @@ import { Star } from "../common"
 import { CodeDecoration } from "./CommonStyles"
 import { Course } from "../../types/course"
 import { useSearchContext } from "./SearchContext"
+import { Link } from "react-router-dom"
 
 export const PreviewWrapper = styled.div`
 	display: flex;
@@ -86,61 +87,66 @@ export const CoursePreview: React.FC<{
 		return split
 	}, [query])
 
-	console.log(matchedDescription)
-
 	return (
 		<Container style={style} onClick={onClick}>
-			<div
+			<Link
+				to={`/course/${course.cleanCode}`}
 				style={{
-					display: "flex",
-					flexDirection: "row",
-					justifyContent: "space-between",
-					alignItems: "center",
+					color: "inherit",
+					textDecoration: "none",
 				}}>
 				<div
 					style={{
 						display: "flex",
-						flexDirection: "column",
-						gap: ".5rem",
+						flexDirection: "row",
+						justifyContent: "space-between",
+						alignItems: "center",
 					}}>
-					<Top>
-						<div>
-							<CodeDecoration>{course.code}</CodeDecoration>
-							<span>{course.title}</span>
-						</div>
-						<Star isFilled={course.current} />
-					</Top>
-					{course.instructors?.length && (
-						<Instructors>
-							<span
-								style={{
-									fontWeight: "bold",
-								}}>
-								Most Recently:
-							</span>
-							<span>{course.instructors.join(", ")}</span>
-						</Instructors>
-					)}
-				</div>
-				<ScoreWrapper>
-					<RatingBox rating={course.quality} label="Quality" />
-					<RatingBox rating={course.work} label="Work" />
-					<RatingBox rating={course.difficulty} label="Difficulty" />
-				</ScoreWrapper>
-			</div>
-			<Description>
-				{matchedDescription.map((m, i) => (
-					<span
-						key={i}
+					<div
 						style={{
-							color: m.isMatch ? "white" : "inherit",
-							backgroundColor: m.isMatch ? "#85b8ba" : "transparent",
-							fontWeight: m.isMatch ? 900 : "normal",
+							display: "flex",
+							flexDirection: "column",
+							gap: ".5rem",
 						}}>
-						{m.text}
-					</span>
-				))}
-			</Description>
+						<Top>
+							<div>
+								<CodeDecoration>{course.code}</CodeDecoration>
+								<span>{course.title}</span>
+							</div>
+							<Star isFilled={course.current} />
+						</Top>
+						{course.instructors?.length && (
+							<Instructors>
+								<span
+									style={{
+										fontWeight: "bold",
+									}}>
+									Most Recently:
+								</span>
+								<span>{course.instructors.join(", ")}</span>
+							</Instructors>
+						)}
+					</div>
+					<ScoreWrapper>
+						<RatingBox rating={course.quality} label="Quality" />
+						<RatingBox rating={course.work} label="Work" />
+						<RatingBox rating={course.difficulty} label="Difficulty" />
+					</ScoreWrapper>
+				</div>
+				<Description>
+					{matchedDescription.map((m, i) => (
+						<span
+							key={i}
+							style={{
+								color: m.isMatch ? "white" : "inherit",
+								backgroundColor: m.isMatch ? "#85b8ba" : "transparent",
+								fontWeight: m.isMatch ? 900 : "normal",
+							}}>
+							{m.text}
+						</span>
+					))}
+				</Description>
+			</Link>
 		</Container>
 	)
 }
