@@ -187,9 +187,13 @@ def parse_rulearray(
                 if num_courses is None and credits is None:
                     raise ValueError("No classesBegin or creditsBegin in Course requirement")
 
-                this_rule.q = repr(parse_coursearray(rule_req["courseArray"]))
-                this_rule.credits = credits
-                this_rule.num_courses = num_courses
+                # a rule with 0 required courses/credits is not a rule
+                if num_courses == 0 or credits == 0:
+                    rules.pop()
+                else:
+                    this_rule.q = repr(parse_coursearray(rule_req["courseArray"]))
+                    this_rule.credits = credits
+                    this_rule.num_courses = num_courses
             case "IfStmt":
                 assert "rightCondition" not in rule_req
                 try:
@@ -227,8 +231,7 @@ def parse_rulearray(
                     parse_rulearray(rule_json["ruleArray"], degree_plan, rules, parent=parent)
                 else:
                     print("WARNING: subset has no ruleArray")
-            case "Group":  # TODO: this is nested
-
+            case "Group":  # this is nested
                 parse_rulearray(rule_json["ruleArray"], degree_plan, rules, parent=this_rule)
                 this_rule.num_courses = int(rule_req["numberOfGroups"])
             case "Complete" | "Incomplete":
