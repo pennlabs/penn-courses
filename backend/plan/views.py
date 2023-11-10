@@ -475,7 +475,7 @@ class CalendarAPIView(APIView):
 
             ifms = int(first_meeting.start) % 12
 
-            ifme = int(first_meeting.end) %
+            ifme = int(first_meeting.end) % 12
 
             if ifms != 0 and ifms < 10:
                 start_datetime += "0"
