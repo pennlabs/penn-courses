@@ -64,6 +64,11 @@ class DegreePlan(models.Model):
         )
     )
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=['year', 'program', 'major', 'concentration'], name='unique degreeplan')
+        ]
+
     def __str__(self) -> str:
         return f"{self.program} {self.degree} in {self.major} with conc. {self.concentration} ({self.year})"
 
