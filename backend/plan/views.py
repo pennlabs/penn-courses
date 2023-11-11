@@ -1,4 +1,7 @@
-import arrow
+import math
+from datetime import date, datetime, time
+from decimal import Decimal
+
 from accounts.authentication import PlatformAuthentication
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
@@ -16,7 +19,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from courses.models import Course, Meeting, Section
+from courses.models import Course, Section
 from courses.serializers import CourseListSerializer
 from courses.util import get_course_and_section, get_current_semester
 from courses.views import get_accepted_friends
@@ -563,12 +566,20 @@ class CalendarAPIView(APIView):
         },
     )
 
+    @staticmethod
+    def decimal_to_time(time_decimal: Decimal) -> time:
+        hour = math.floor(time_decimal)
+        minute = math.floor((time_decimal % 1) * 100)
+        return time(hour=hour, minute=minute, tzinfo="America/New York")
+
+    DAY_MAPPING = {"M": "MO", "T": "TU", "W": "WE", "R": "TH", "F": "FR"}
+
     def get(self, *args, **kwargs):
         """
         Return a .ics file of the user's selected schedule
         """
-        schedule_pk = kwargs["schedule_pk"]
 
+        schedule_pk = kwargs["schedule_pk"]
         schedule = (
             Schedule.objects.filter(pk=schedule_pk)
             .prefetch_related("sections", "sections__meetings")
@@ -578,59 +589,32 @@ class CalendarAPIView(APIView):
         if not schedule:
             return Response({"detail": "Invalid schedule"}, status=status.HTTP_403_FORBIDDEN)
 
-        day_mapping = {"M": "MO", "T": "TU", "W": "WE", "R": "TH", "F": "FR"}
-
-        calendar = ICSCal(creator="Penn Labs")
+        calendar = ICSCal(creator="Penn Course Plan")
         calendar.extra.append(ContentLine(name="X-WR-CALNAME", value=f"{schedule.name} Schedule"))
 
         for section in schedule.sections.all():
-            e = ICSEvent()
-            e.name = section.full_code
-            e.created = timezone.now()
+            e = ICSEvent(name=section.full_code, created=timezone.now())
 
+            first_meeting = (
+                section.meetings.first()
+            )  # Note: ignore everything but the meetings with the same times
+            start_date = date.fromisoformat(first_meeting.start_date)
+            end_date = date.fromisoformat(first_meeting.end_date)
+            start_datetime = datetime.combine(start_date, self.decimal_to_time(first_meeting.start))
+            end_datetime = datetime.combine(start_date, self.decimal_to_time(first_meeting.end))
+
+            e.begin = start_datetime.strftime("%Y%m%dT%H%M%S")
+            e.end = end_datetime.strftime("%Y%m%dT%H%M%S")
+
+            # recurring events
             days = []
             for meeting in section.meetings.all():
-                days.append(day_mapping[meeting.day])
-            first_meeting = list(section.meetings.all())[0]
-
-            start_time = str(Meeting.int_to_time(first_meeting.start))
-            end_time = str(Meeting.int_to_time(first_meeting.end))
-
-            if not start_time:
-                start_time = ""
-            if not end_time:
-                end_time = ""
-
-            if first_meeting.start_date is None:
-                start_datetime = ""
-                end_datetime = ""
-            else:
-                start_datetime = first_meeting.start_date + " "
-                end_datetime = first_meeting.start_date + " "
-
-            if int(first_meeting.start) < 10:
-                start_datetime += "0"
-            if int(first_meeting.end) < 10:
-                end_datetime += "0"
-
-            start_datetime += start_time
-            end_datetime += end_time
-
-            e.begin = arrow.get(
-                start_datetime, "YYYY-MM-DD HH:mm A", tzinfo="America/New York"
-            ).format("YYYYMMDDTHHmmss")
-            e.end = arrow.get(end_datetime, "YYYY-MM-DD HH:mm A", tzinfo="America/New York").format(
-                "YYYYMMDDTHHmmss"
-            )
-            end_date = arrow.get(
-                first_meeting.end_date, "YYYY-MM-DD", tzinfo="America/New York"
-            ).format("YYYYMMDDTHHmmss")
-
+                days.append(self.DAY_MAPPING[meeting.day])
             e.extra.append(
                 ContentLine(
                     "RRULE",
                     {},
-                    f'FREQ=WEEKLY;UNTIL={end_date}Z;WKST=SU;BYDAY={",".join(days)}',
+                    f'FREQ=WEEKLY;UNTIL={end_date.strftime("%Y%m%dT%H%M%S")}Z;TZOFFSETFROM:-0400;WKST=SU;BYDAY={",".join(days)}',  # noqa E501
                 )
             )
 
