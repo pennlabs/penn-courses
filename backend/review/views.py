@@ -276,7 +276,7 @@ def course_plots(request, course_code):
     except Course.DoesNotExist:
         raise Http404()
 
-    course = course.topic.most_recent
+    course = course.primary_listing.topic.most_recent
 
     current_semester = get_current_semester()
 
@@ -582,8 +582,8 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
     check_instructor_id(instructor_id)
     instructor = get_object_or_404(Instructor, id=instructor_id)
 
-    topic = course.topic
-    course = course.topic.most_recent
+    topic = course.primary_listing.topic
+    course = topic.most_recent
 
     reviews = review_averages(
         Review.objects.filter(
