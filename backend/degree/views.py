@@ -2,7 +2,7 @@ from rest_framework import generics
 
 from degree.models import DegreePlan
 from degree.serializers import DegreePlanDetailSerializer, DegreePlanSerializer
-from PennCourses.docs_settings import PcxAutoSchema, reverse_func
+from PennCourses.docs_settings import PcxAutoSchema
 
 
 class DegreeList(generics.ListAPIView):
@@ -12,9 +12,7 @@ class DegreeList(generics.ListAPIView):
 
     schema = PcxAutoSchema(
         response_codes={
-            reverse_func("degree-list"): {
-                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses listed successfully."}
-            }
+            "degree-list": {"GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses listed successfully."}}
         },
     )
 
@@ -34,7 +32,7 @@ class DegreeDetail(generics.RetrieveAPIView):
 
     schema = PcxAutoSchema(
         response_codes={
-            reverse_func("degree-detail", args=["graduation", "full_code"]): {
+            "degree-detail": {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Degree detail retrieved successfully."}
             }
         },
