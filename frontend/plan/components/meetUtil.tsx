@@ -5,7 +5,7 @@
  * the format HH.MM.
  */
 
-import { Meeting, MeetingBlock, Section, Day } from "../types";
+import { Meeting, MeetingBlock, Section, Day, Color } from "../types";
 
 /**
  *  Returns whether the given section object is contained within the meetings list
@@ -13,14 +13,16 @@ import { Meeting, MeetingBlock, Section, Day } from "../types";
  * @param section A section object
  * @returns {boolean} Whether section is in the list of meetings (based on id)
  */
-export const meetingsContainSection = (
+export const scheduleContainsSection = (
     meetings: Meeting[],
     section: Section
 ): boolean => {
     let sectionFound = false;
-    meetings.forEach(({ id }) => {
-        sectionFound = sectionFound || id === section.id;
-    });
+    if (meetings) {
+        meetings.forEach(({ id }) => {
+            sectionFound = sectionFound || id === section.id;
+        });
+    }
     return sectionFound;
 };
 

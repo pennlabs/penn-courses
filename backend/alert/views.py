@@ -29,7 +29,7 @@ from courses.util import (
     translate_semester_inv,
     update_course_from_record,
 )
-from PennCourses.docs_settings import PcxAutoSchema, reverse_func
+from PennCourses.docs_settings import PcxAutoSchema
 
 
 logger = logging.getLogger(__name__)
@@ -252,7 +252,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
     schema = PcxAutoSchema(
         response_codes={
-            reverse_func("registrations-list"): {
+            "registrations-list": {
                 "POST": {
                     201: "[DESCRIBE_RESPONSE_SCHEMA]Registration successfully created.",
                     400: "Bad request (e.g. given null section).",
@@ -263,7 +263,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 },
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Registrations successfully listed."},
             },
-            reverse_func("registrations-detail", args=["id"]): {
+            "registrations-detail": {
                 "PUT": {
                     200: "Registration successfully updated (or no changes necessary).",
                     400: "Bad request (see route description).",
@@ -277,7 +277,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             },
         },
         override_response_schema={
-            reverse_func("registrations-list"): {
+            "registrations-list": {
                 "POST": {
                     201: {
                         "properties": {
@@ -590,10 +590,10 @@ class RegistrationHistoryViewSet(AutoPrefetchViewSetMixin, viewsets.ReadOnlyMode
 
     schema = PcxAutoSchema(
         response_codes={
-            reverse_func("registrationhistory-list"): {
+            "registrationhistory-list": {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Registration history successfully listed."}
             },
-            reverse_func("registrationhistory-detail", args=["id"]): {
+            "registrationhistory-detail": {
                 "GET": {
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Historic registration detail "
                     "successfully retrieved.",

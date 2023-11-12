@@ -273,9 +273,9 @@ def gen_stat(stats):
     return stat
 
 
-def import_summary_rows(summaries, show_progress_bar=True):
+def import_summary_rows(summaries: iter, show_progress_bar=True):
     """
-    Imports summary rows given a summaries list.
+    Imports summary rows given a summaries iterable.
     """
     stats = dict()
     stat = gen_stat(stats)

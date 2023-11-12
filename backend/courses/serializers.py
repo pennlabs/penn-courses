@@ -6,6 +6,7 @@ from rest_framework import serializers
 from courses.models import (
     Attribute,
     Course,
+    Friendship,
     Instructor,
     Meeting,
     NGSSRestriction,
@@ -424,6 +425,13 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ["username"]
 
 
+class PublicUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = get_user_model()
+        fields = ["username", "first_name", "last_name"]
+        read_only_fields = ["username"]
+
+
 class StatusUpdateSerializer(serializers.ModelSerializer):
     section = serializers.ReadOnlyField(
         source="section__full_code",
@@ -441,3 +449,28 @@ class StatusUpdateSerializer(serializers.ModelSerializer):
         model = StatusUpdate
         fields = ["section", "old_status", "new_status", "created_at", "alert_sent"]
         read_only_fields = fields
+
+
+class FriendshipSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Friendship
+        fields = ["sender", "recipient", "status", "sent_at", "accepted_at"]
+
+    sender = PublicUserSerializer(
+        read_only=True,
+        help_text="The user that is sending the request.",
+        required=False,
+    )
+    recipient = PublicUserSerializer(
+        read_only=True,
+        help_text="The user that is recieving the request.",
+        required=False,
+    )
+
+
+class FriendshipRequestSerializer(serializers.Serializer):
+    friend_id = serializers.IntegerField()
+
+    def to_representation(self, instance):
+        print("in representation function")
+        return super().to_representation(instance)

@@ -8,7 +8,6 @@ from tqdm import tqdm
 
 from courses.course_similarity.heuristics import (
     description_rejection_heuristics,
-    lev_divided_by_avg_length,
     title_rejection_heuristics,
 )
 from courses.management.commands.load_crosswalk import load_crosswalk
@@ -54,19 +53,10 @@ def same_course(course_a, course_b):
 
 def similar_courses(course_a, course_b):
     title_a, title_b = course_a.title.strip().lower(), course_b.title.strip().lower()
-    if (
-        not title_rejection_heuristics(title_a, title_b)
-        and lev_divided_by_avg_length(title_a, title_b) < 0.2
-    ):
+    if not title_rejection_heuristics(title_a, title_b):
         return True
-    desc_a, desc_b = (
-        course_a.description.strip().lower(),
-        course_b.description.strip().lower(),
-    )
-    if (
-        not description_rejection_heuristics(desc_a, desc_b)
-        and lev_divided_by_avg_length(desc_a, desc_b) < 0.2
-    ):
+    desc_a, desc_b = course_a.description.strip().lower(), course_b.description.strip().lower()
+    if not description_rejection_heuristics(desc_a, desc_b):
         return True
     return False
 
