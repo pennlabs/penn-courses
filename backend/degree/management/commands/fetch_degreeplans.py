@@ -5,8 +5,11 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from courses.util import get_current_semester
+from degree.models import program_code_to_name, DegreePlan
 from degree.utils.degreeworks_client import DegreeworksClient
 from degree.utils.parse_degreeworks import parse_degreeworks
+
+from pprint import pprint
 
 
 class Command(BaseCommand):
@@ -71,6 +74,19 @@ class Command(BaseCommand):
 
         for year in range(since_year, to_year + 1):
             for program in client.get_programs(year=year):
+                if degree_plan.program not in program_code_to_name:
+                    continue
                 for degree_plan in client.degree_plans_of(program, year=year):
                     with transaction.atomic():
-                        parse_degreeworks(client.audit(degree_plan), degree_plan)
+                        DegreePlan.objects.filter(
+                            program=degree_plan.program,
+                            degree=degree_plan.degree,
+                            major=degree_plan.major,
+                            concentration=degree_plan.concentration,
+                            year=degree_plan.year,
+                        ).all().delete()
+
+                        degree_plan.save()
+                        print(f"Saving degree plan {degree_plan}...")
+                        rules = parse_degreeworks(client.audit(degree_plan), degree_plan)
+                        pprint(rules)

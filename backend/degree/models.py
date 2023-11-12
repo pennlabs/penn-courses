@@ -7,6 +7,15 @@ from django.db.models.functions import Coalesce
 
 from degree.utils.model_utils import q_object_parser
 
+program_choices = [
+    ("EU_BSE", "Engineering BSE"),
+    ("EU_BAS", "Engineering BAS"),
+    ("AU_BA", "College BA"),
+    ("WU_BS", "Wharton BS"),
+]
+
+program_code_to_name = dict(program_choices)
+
 
 class DegreePlan(models.Model):
     """
@@ -15,12 +24,7 @@ class DegreePlan(models.Model):
 
     program = models.CharField(
         max_length=10,
-        choices=[
-            ("EU_BSE", "Engineering BSE"),
-            ("EU_BAS", "Engineering BAS"),
-            ("AU_BA", "College BA"),
-            ("WU_BS", "Wharton BS"),
-        ],
+        choices=program_choices,
         help_text=dedent(
             """
             The program code for this degree plan, e.g., EU_BSE
@@ -59,6 +63,14 @@ class DegreePlan(models.Model):
             """
         )
     )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["program", "degree", "major", "concentration", "year"],
+                name="unique degreeplan",
+            )
+        ]
 
     def __str__(self) -> str:
         return f"{self.program} {self.degree} in {self.major} with conc. {self.concentration} ({self.year})"
@@ -103,16 +115,18 @@ class Rule(models.Model):
 
     degree_plan = models.ForeignKey(
         DegreePlan,
+        null=True,
         on_delete=models.CASCADE,
         help_text=dedent(
             """
-            The degree plan that has this rule.
+            The degree plan that has this rule. Null if this rule has a parent.
             """
         ),
     )
 
     q = models.TextField(
         max_length=1000,
+        blank=True,
         help_text=dedent(
             """
             String representing a Q() object that returns the set of courses
@@ -129,7 +143,8 @@ class Rule(models.Model):
         on_delete=models.CASCADE,
         help_text=dedent(
             """
-            This rule's parent Rule if it has one.
+            This rule's parent Rule if it has one. Null if this is a top level rule
+            (ie, degree_plan is not null)
             """
         ),
         related_name="children",
@@ -149,14 +164,11 @@ class Rule(models.Model):
         ]
 
     def __str__(self) -> str:
-        return (
-            f"{self.q}, num={self.num_courses}, cus={self.credits}, degree_plan={self.degree_plan}"
-        )
+        return f"{self.title}, q={self.q}, num={self.num_courses}, cus={self.credits}, degree_plan={self.degree_plan}, parent={self.parent.title if self.parent else None}"
 
     def evaluate(self, full_codes: Iterable[str]) -> bool:
         """
-        Check if this rule is fulfilled by the provided
-        courses.
+        Check if this rule is fulfilled by the provided courses.
         """
         if self.q:
             assert not self.children.all().exists()
