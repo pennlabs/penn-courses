@@ -2,18 +2,14 @@ from django.shortcuts import render
 from rest_framework import generics
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 
-from degree.models import (
-    DegreePlan,
-)
+from degree.models import DegreePlan, Rule
 
-from degree.serializers import (
-    DegreePlanSerializer,
-)
+from degree.serializers import DegreePlanSerializer, DegreePlanDetailSerializer, RuleSerializer
 
 
 class DegreeList(generics.ListAPIView):
     """
-    Retrieve a list of (all) degrees available.
+    Retrieve a list of (all) degrees available from a given year.
     """
 
     schema = PcxAutoSchema(
@@ -26,15 +22,10 @@ class DegreeList(generics.ListAPIView):
 
     serializer_class = DegreePlanSerializer
 
-    # TODO: Actually return a list of possible degrees
     def get_queryset(self):
-        queryset = DegreePlan.filter()
+        year = self.kwargs["year"]
+        queryset = DegreePlan.objects.filter(year=year)
         return queryset
-
-
-class DegreeListSearch(DegreeList):
-    # TODO: unimplemented
-    pass
 
 
 class DegreeDetail(generics.RetrieveAPIView):
@@ -51,14 +42,5 @@ class DegreeDetail(generics.RetrieveAPIView):
         },
     )
 
-    serializer_class = DegreePlanSerializer  # TODO: have a DegreeSerializer and DegreeListSerializer
-    lookup_field = "full_code"
-
-    # TODO: Actually include requirement data
-    def get_queryset(self):
-        queryset = DegreePlan.all()
-        return queryset
-
-class RuleList(generics.RetrieveAPIView):
-    # TODO implement, maybe not needed
-    pass
+    serializer_class = DegreePlanDetailSerializer
+    queryset = DegreePlan.objects.all()

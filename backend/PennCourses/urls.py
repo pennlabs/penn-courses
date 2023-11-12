@@ -16,6 +16,7 @@ api_urlpatterns = [
     path("review/", include("review.urls")),
     path("plan/", include("plan.urls")),
     path("alert/", include("alert.urls")),
+    path("degree/", include("degree.urls")),
     path("base/", include("courses.urls")),
     path("options/", include("options.urls", namespace="options")),
     path(
