@@ -1,9 +1,11 @@
-from django.test import TestCase
-from degree.utils.model_utils import q_object_parser
 from django.db.models import Q
+from django.test import TestCase
 from lark.exceptions import LarkError
-from degree.models import Rule, DegreePlan
+
 from courses.util import get_or_create_course_and_section
+from degree.models import DegreePlan, Rule
+from degree.utils.model_utils import q_object_parser
+
 
 TEST_SEMESTER = "2023C"
 
