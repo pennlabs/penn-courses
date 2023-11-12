@@ -41,9 +41,6 @@ urlpatterns = [
         views.NGSSRestrictionList.as_view(),
         name="restrictions-list",
     ),
-    path(
-        "statusupdate/<slug:full_code>/",
-        views.StatusUpdateView.as_view(),
-        name="statusupdate",
-    ),
+    path("statusupdate/<slug:full_code>/", views.StatusUpdateView.as_view(), name="statusupdate"),
+    path("friendship/", views.FriendshipView.as_view(), name="friendship"),
 ]

@@ -27,6 +27,16 @@ ISC_CROSSLIST_TABLE = "TEST_PCR_CROSSLIST_SUMMARY_V"
 ISC_DESC_TABLE = "TEST_PCR_COURSE_DESC_V"
 
 
+def assert_semesters_not_current(semesters):
+    current_semester = get_current_semester()
+    for semester in semesters:
+        if semester == current_semester:
+            raise ValueError(
+                f"You cannot import reviews for the current semester ({current_semester}). "
+                f"Did you forget to update the SEMESTER option in the Django admin console?"
+            )
+
+
 class Command(BaseCommand):
     help = """
     Import course review data from the zip of mysqldump files that we get from ISC every semester.
@@ -152,7 +162,7 @@ class Command(BaseCommand):
         import_all = kwargs["import_all"]
         s3_bucket = kwargs["s3_bucket"]
         is_zip_file = kwargs["zip"] or s3_bucket is not None
-        summary_file = kwargs["summary_file"]
+        summary_file = kwargs["summary_file"]  # either summary table or summary hist table
         import_details = kwargs["import_details"]
         import_descriptions = kwargs["import_descriptions"]
         show_progress_bar = kwargs["show_progress_bar"]
@@ -166,13 +176,7 @@ class Command(BaseCommand):
                 "Must define semester with (-s) or explicitly import all semesters with (-a)."
             )
         if semesters is not None:
-            current_semester = get_current_semester()
-            for semester in semesters:
-                if semester == current_semester:
-                    raise ValueError(
-                        f"You cannot import reviews for the current semester ({current_semester}). "
-                        f"Did you forget to update the SEMESTER option in the Django admin console?"
-                    )
+            assert_semesters_not_current(semesters)
 
         if s3_bucket is not None:
             fp = "/tmp/pcrdump.zip"
@@ -187,63 +191,66 @@ class Command(BaseCommand):
             "modified if the whole script succeeds."
         )
 
-        with transaction.atomic():  # Only commit changes if the whole script succeeds
-            # TODO: When we import details and crosslistings, get their data here too.
-            tables_to_get = [summary_file]
-            idx = 1
-            detail_idx = -1
-            if import_details:
-                tables_to_get.append(ISC_RATING_TABLE)
-                detail_idx = idx
-                idx += 1
+        tables_to_get = [summary_file]
+        idx = 1
+        detail_idx = -1
+        if import_details:
+            tables_to_get.append(ISC_RATING_TABLE)
+            detail_idx = idx
+            idx += 1
 
-            description_idx = -1
-            if import_descriptions:
-                tables_to_get.append(ISC_DESC_TABLE)
-                description_idx = idx
-                idx += 1
+        description_idx = -1
+        if import_descriptions:
+            tables_to_get.append(ISC_DESC_TABLE)
+            description_idx = idx
+            idx += 1
 
-            files = self.get_files(src, is_zip_file, tables_to_get)
+        files = self.get_files(src, is_zip_file, tables_to_get)
+        summary_fo = files[0]
 
-            summary_fo = files[0]
-            print("Loading summary file...")
-            summary_rows = load_sql_dump(summary_fo, progress=show_progress_bar, lazy=False)
+        print("Loading summary file...")
+        summary_rows = load_sql_dump(summary_fo, progress=show_progress_bar, lazy=False)
+        gc.collect()
+        print("SQL parsed and loaded!")
+        if not import_all:
+            full_len = len(summary_rows)
+            summary_rows = [r for r in summary_rows if r["TERM"] in semesters]
             gc.collect()
-            print("SQL parsed and loaded!")
+            filtered_len = len(summary_rows)
+            print(f"Filtered {full_len} rows down to {filtered_len} rows.")
+        semesters = sorted(list({r["TERM"] for r in summary_rows}))
+        gc.collect()
 
-            if not import_all:
-                full_len = len(summary_rows)
-                summary_rows = [r for r in summary_rows if r["TERM"] in semesters]
-                gc.collect()
-                filtered_len = len(summary_rows)
-                print(f"Filtered {full_len} rows down to {filtered_len} rows.")
+        for semester in semesters:
+            print(f"Loading {semester}...")
+            with transaction.atomic():  # Commit changes if all imports for the semester succeed
+                to_delete = Review.objects.filter(section__course__semester=semester)
+                delete_count = to_delete.count()
+                if delete_count > 0:
+                    if not force:
+                        prompt = input(
+                            f"This import will overwrite {delete_count} rows that have already been"
+                            + "imported. Continue? (y/N) "
+                        )
+                        if prompt.strip().upper() != "Y":
+                            print("Aborting...")
+                            return 0
 
-            semesters = sorted(list({r["TERM"] for r in summary_rows}))
-            gc.collect()
-            to_delete = Review.objects.filter(section__course__semester__in=semesters)
-            delete_count = to_delete.count()
-
-            if delete_count > 0:
-                if not force:
-                    prompt = input(
-                        f"This import will overwrite {delete_count} rows that have already been"
-                        + "imported. Continue? (y/N) "
+                    print(
+                        f"Deleting {delete_count} existing reviews for {semester} "
+                        "from the database..."
                     )
-                    if prompt.strip().upper() != "Y":
-                        print("Aborting...")
-                        return 0
+                    to_delete.delete()
 
-                print(
-                    f"Deleting {delete_count} existing reviews for semesters from the database..."
+                print(f"Importing reviews for semester {semester}")
+                stats = import_summary_rows(
+                    (r for r in summary_rows if r["TERM"] == semester), show_progress_bar
                 )
-                to_delete.delete()
+                print(stats)
 
-            print(f"Importing reviews for semester(s) {', '.join(semesters)}")
-            stats = import_summary_rows(summary_rows, show_progress_bar)
-            print(stats)
+                gc.collect()
 
-            gc.collect()
-
+        with transaction.atomic():
             if import_details:
                 print("Loading details file...")
                 stats = import_ratings_rows(
@@ -262,16 +269,16 @@ class Command(BaseCommand):
                 )
                 print(stats)
 
-            self.close_files(files)
-            # invalidate cached views
-            print("Invalidating cache...")
-            del_count = clear_cache()
-            print(f"{del_count if del_count >=0 else 'all'} cache entries removed.")
+        self.close_files(files)
+        # invalidate cached views
+        print("Invalidating cache...")
+        del_count = clear_cache()
+        print(f"{del_count if del_count >=0 else 'all'} cache entries removed.")
 
-            gc.collect()
+        gc.collect()
 
-            print("Recomputing Section.has_reviews...")
-            recompute_has_reviews()
+        print("Recomputing Section.has_reviews...")
+        recompute_has_reviews()
 
         print("Done.")
         return 0

@@ -1,7 +1,17 @@
 import React from "react";
-import { createScheduleOnFrontend, renameSchedule } from "../../actions";
-import NameScheduleModalInterior from "./NameScheduleModalInterior";
+import {
+    renameSchedule,
+    downloadSchedule,
+    createScheduleOnBackend,
+} from "../../actions";
+import {
+    sendFriendRequest,
+    deleteFriendshipOnBackend,
+} from "../../actions/friendshipUtil";
+import NameScheduleModalInterior from "./AddScheduleFriendsModalInterior";
+import PendingRequestsModalInterior from "./PendingRequestsModalInterior";
 import WelcomeModalInterior from "./WelcomeModalInterior";
+import CalendarModal from "./CalendarModal";
 
 /**
  * Generates a modal interior component based on the redux state.
@@ -25,22 +35,56 @@ export const generateModalInterior = (reduxState) => {
             return (
                 <NameScheduleModalInterior
                     buttonName="Rename"
-                    usedScheduleNames={Object.keys(
-                        reduxState.schedule.schedules
-                    )}
+                    existingData={Object.keys(reduxState.schedule.schedules)}
+                    requestType="schedule"
+                    overwriteDefault={true}
                 />
             );
         case "CREATE_SCHEDULE":
             return (
                 <NameScheduleModalInterior
                     buttonName="Create"
+                    existingData={Object.keys(reduxState.schedule.schedules)}
+                    requestType="schedule"
+                    overwriteDefault={true}
+                />
+            );
+        case "ADD_FRIEND":
+            return (
+                <NameScheduleModalInterior
+                    user={reduxState.login.user}
+                    buttonName="Request"
+                    existingData={reduxState.friendships.acceptedFriends}
+                    requestType="friend"
+                    placeholder="Enter your friend's PennKey"
+                />
+            );
+        case "SHOW_REQUESTS":
+            return (
+                <PendingRequestsModalInterior
+                    user={reduxState.login.user}
+                    received={reduxState.friendships.requestsReceived}
+                    sent={reduxState.friendships.requestsSent}
+                />
+            );
+        case "WELCOME":
+            return (
+                <WelcomeModalInterior
                     usedScheduleNames={Object.keys(
                         reduxState.schedule.schedules
                     )}
                 />
             );
-        case "WELCOME":
-            return <WelcomeModalInterior />;
+        case "DOWNLOAD_SCHEDULE":
+            return (
+                <CalendarModal
+                    schedulePk={
+                        reduxState.schedule.schedules[
+                            reduxState.schedule.scheduleSelected
+                        ].id
+                    }
+                />
+            );
         case "MULTITAB":
             return (
                 <div>
@@ -71,7 +115,32 @@ export const generateModalActions = (dispatch, modalKey, modalProps) => {
         case "CREATE_SCHEDULE":
             return {
                 namingFunction: (newName) =>
-                    dispatch(createScheduleOnFrontend(newName)),
+                    dispatch(createScheduleOnBackend(newName)),
+            };
+        case "ADD_FRIEND":
+            return {
+                sendFriendRequest: (user, friendPennkey, onComplete) =>
+                    dispatch(
+                        sendFriendRequest(user, friendPennkey, onComplete)
+                    ),
+            };
+        case "SHOW_REQUESTS":
+            return {
+                sendFriendRequest: (user, friendPennkey) =>
+                    dispatch(
+                        sendFriendRequest(user, friendPennkey, (res) => {
+                            if (!res.ok) {
+                                console.log(res);
+                            }
+                        })
+                    ),
+                deleteFriendshipOnBackend: (user, friendPennkey) =>
+                    dispatch(deleteFriendshipOnBackend(user, friendPennkey)),
+            };
+        case "DOWNLOAD_SCHEDULE":
+            return {
+                namingFunction: (newName) =>
+                    dispatch(downloadSchedule(newName)),
             };
         default:
             return {};
