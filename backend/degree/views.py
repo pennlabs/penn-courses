@@ -1,10 +1,8 @@
-from django.shortcuts import render
 from rest_framework import generics
+
+from degree.models import DegreePlan
+from degree.serializers import DegreePlanDetailSerializer, DegreePlanSerializer
 from PennCourses.docs_settings import PcxAutoSchema, reverse_func
-
-from degree.models import DegreePlan, Rule
-
-from degree.serializers import DegreePlanSerializer, DegreePlanDetailSerializer, RuleSerializer
 
 
 class DegreeList(generics.ListAPIView):

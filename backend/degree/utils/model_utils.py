@@ -1,13 +1,13 @@
-from ast import literal_eval
 from functools import reduce
-from operator import or_, and_
+from operator import and_, or_
 
 from django.db.models import Q
 from lark import Lark, Transformer
 
+
 """
 This file contains a parser for that can convert a stringified Q object
-(ie, repr(Q(...))) back into a Q object. Note that this parser 
+(ie, repr(Q(...))) back into a Q object. Note that this parser
 relies on the stability of the Q object __repr__ method. Run the associated
 tests to make sure the output of Q(...).__repr__ is as expected and that this
 parser re-builds the Q object correctly.
@@ -75,7 +75,7 @@ q_object_parser = Lark(
 
     ?connector_clause: and_clause
                     | or_clause
-     
+
     condition: "(" string "," value ")"
     and_clause:"(AND:" [clause ("," clause)*] ")"
     or_clause: "(OR:" [clause ("," clause)*] ")"
@@ -85,7 +85,7 @@ q_object_parser = Lark(
           | SIGNED_INT -> sint
           | SIGNED_FLOAT -> sfloat
           | none
-    
+
     none: "None"
     string: /'.*?(?<!\\)(\\\\)*?'/ // escapable strings
           | /".*?(?<!\\)(\\\\)*?"/

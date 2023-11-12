@@ -1,6 +1,3 @@
-from textwrap import dedent
-
-from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from degree.models import DegreePlan, Rule
