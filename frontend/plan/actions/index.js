@@ -3,6 +3,7 @@ import AwesomeDebouncePromise from "awesome-debounce-promise";
 import { batch } from "react-redux";
 import getCsrf from "../components/csrf";
 import { MIN_FETCH_INTERVAL } from "../constants/sync_constants";
+import { PATH_REGISTRATION_SCHEDULE_NAME } from "../constants/constants";
 
 export const UPDATE_SEARCH = "UPDATE_SEARCH";
 export const UPDATE_SEARCH_REQUEST = "UPDATE_SEARCH_REQUEST";
@@ -611,10 +612,10 @@ export function fetchSectionInfo(searchData) {
  * @param sections The list of sections for the schedule
  * @returns {Function}
  */
-export const createScheduleOnBackend = (name) => (dispatch) => {
+export const createScheduleOnBackend = (name, sections = []) => (dispatch) => {
     const scheduleObj = {
         name,
-        sections: [],
+        sections,
     };
     doAPIRequest("/plan/schedules/", {
         method: "POST",
@@ -629,7 +630,7 @@ export const createScheduleOnBackend = (name) => (dispatch) => {
     })
         .then((response) => response.json())
         .then(({ id }) => {
-            dispatch(createScheduleOnFrontend(name, id, []));
+            dispatch(createScheduleOnFrontend(name, id, sections));
         })
         .catch((error) => {
             console.log(error);
@@ -639,12 +640,13 @@ export const createScheduleOnBackend = (name) => (dispatch) => {
 export const deleteScheduleOnBackend = (user, scheduleName, scheduleId) => (
     dispatch
 ) => {
-    if (scheduleName === "cart") {
+    if (
+        scheduleName === "cart" ||
+        scheduleName === PATH_REGISTRATION_SCHEDULE_NAME
+    ) {
         return;
     }
-    if (scheduleName === "Path Registration") {
-        return;
-    }
+
     dispatch(deletionAttempted(scheduleName));
     rateLimitedFetch(`/plan/schedules/${scheduleId}/`, {
         method: "DELETE",

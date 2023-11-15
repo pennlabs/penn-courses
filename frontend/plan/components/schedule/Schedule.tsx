@@ -68,7 +68,7 @@ interface ScheduleProps {
     };
     schedulesMutator: {
         setPrimary: (user: User, scheduleId: string | null) => void;
-        copy: (scheduleName: string) => void;
+        copy: (scheduleName: string, sections: Section[]) => void;
         download: (scheduleName: string) => void;
         remove: (user: User, scheduleName: string, scheduleId: string) => void;
         rename: (oldName: string) => void;
@@ -160,8 +160,8 @@ const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
     schedulesMutator: {
         setPrimary: (user: User, scheduleId: string | null) =>
             dispatch(setCurrentUserPrimarySchedule(user, scheduleId)),
-        copy: (scheduleName: string) =>
-            dispatch(createScheduleOnBackend(scheduleName)),
+        copy: (scheduleName: string, sections: Section[]) =>
+            dispatch(createScheduleOnBackend(scheduleName, sections)),
         download: (scheduleName: string) =>
             dispatch(
                 openModal(

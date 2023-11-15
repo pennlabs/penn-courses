@@ -53,7 +53,6 @@ const initiateSync = async (store) => {
                             )
                         );
                     }
-
                     store.dispatch(
                         updateSchedulesOnFrontend(schedulesFromBackend)
                     );
@@ -147,10 +146,7 @@ const initiateSync = async (store) => {
 
     window.addEventListener("beforeunload", (e) => {
         if (!allPushed(store.getState().schedule)) {
-            // If the schedules aren't pushed, notify the user that they have unsaved changes
-            // and push the schedules.
-            e.preventDefault();
-            e.returnValue = "";
+            // If the schedules aren't pushed, push the changes before reloading.
             cloudPush();
         }
     });
