@@ -153,7 +153,7 @@ const handleUpdateSchedulesOnFrontend = (state, schedulesFromBackend) => {
                 (newState.cartPushedToBackend &&
                     cloudUpdated >= newState.cartUpdatedAt &&
                     cloudUpdated - newState.cartUpdatedAt >=
-                    MIN_TIME_DIFFERENCE)
+                        MIN_TIME_DIFFERENCE)
             ) {
                 newState = {
                     ...newState,
@@ -171,7 +171,7 @@ const handleUpdateSchedulesOnFrontend = (state, schedulesFromBackend) => {
                     foundSchedule.pushedToBackend &&
                     cloudUpdated >= foundSchedule.updated_at &&
                     foundSchedule.updated_at - cloudUpdated >=
-                    MIN_TIME_DIFFERENCE)
+                        MIN_TIME_DIFFERENCE)
             ) {
                 newState = {
                     ...newState,
@@ -182,24 +182,25 @@ const handleUpdateSchedulesOnFrontend = (state, schedulesFromBackend) => {
                             id: scheduleFromBackend.id,
                             pushedToBackend: true,
                             updated_at: Date.now(),
-                            created_at: new Date(scheduleFromBackend.created_at).getTime()
+                            created_at: new Date(
+                                scheduleFromBackend.created_at
+                            ).getTime(),
                         },
                     },
                 };
             }
         }
-
     });
 
     const alreadySelectedSchedule =
         newState.schedules[newState.scheduleSelected];
 
     if (!alreadySelectedSchedule) {
-        newState.scheduleSelected = Object.keys(scheduleState.schedules)[0];
-        if (
-            newState.scheduleSelected ===
-            PATH_REGISTRATION_SCHEDULE_NAME
-        ) {
+        newState = {
+            ...newState,
+            scheduleSelected: Object.keys(newState.schedules)[0],
+        };
+        if (newState.scheduleSelected === PATH_REGISTRATION_SCHEDULE_NAME) {
             newState.readOnly = true;
         }
     }

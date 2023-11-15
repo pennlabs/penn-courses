@@ -263,14 +263,15 @@ function buildCourseSearchUrl(filterData) {
         if (
             filterData[filterFields[i]] &&
             JSON.stringify(filterData[filterFields[i]]) !==
-            JSON.stringify(defaultFilters[i])
+                JSON.stringify(defaultFilters[i])
         ) {
             const filterRange = filterData[filterFields[i]];
             if (filterFields[i] === "time") {
                 const start = decimalToTime(24 - filterRange[1]);
                 const end = decimalToTime(24 - filterRange[0]);
-                queryString += `&${filterFields[i]}=${start === 7 ? "" : start
-                    }-${end === 10.3 ? "" : end}`;
+                queryString += `&${filterFields[i]}=${
+                    start === 7 ? "" : start
+                }-${end === 10.3 ? "" : end}`;
             } else {
                 queryString += `&${filterFields[i]}=${filterRange[0]}-${filterRange[1]}`;
             }
@@ -305,7 +306,7 @@ function buildCourseSearchUrl(filterData) {
         if (
             filterData[checkboxFields[i]] &&
             JSON.stringify(filterData[checkboxFields[i]]) !==
-            JSON.stringify(checkboxDefaultFields[i])
+                JSON.stringify(checkboxDefaultFields[i])
         ) {
             const applied = [];
             Object.keys(filterData[checkboxFields[i]]).forEach((item) => {
@@ -336,7 +337,7 @@ function buildCourseSearchUrl(filterData) {
         if (
             filterData[buttonFields[i]] &&
             JSON.stringify(filterData[buttonFields[i]]) !==
-            JSON.stringify(buttonDefaultFields[i])
+                JSON.stringify(buttonDefaultFields[i])
         ) {
             // get each filter's value
             const applied = filterData[buttonFields[i]];
@@ -582,7 +583,7 @@ export const updateScheduleOnBackend = (name, schedule) => (dispatch) => {
                 dispatch(markScheduleSynced(name));
             }
         })
-        .catch(() => { });
+        .catch(() => {});
 };
 
 export function fetchSectionInfo(searchData) {
@@ -614,7 +615,7 @@ export function fetchSectionInfo(searchData) {
 export const createScheduleOnBackend = (name, sections = []) => (dispatch) => {
     const scheduleObj = {
         name,
-        sections: sections,
+        sections,
     };
     doAPIRequest("/plan/schedules/", {
         method: "POST",
@@ -639,7 +640,10 @@ export const createScheduleOnBackend = (name, sections = []) => (dispatch) => {
 export const deleteScheduleOnBackend = (user, scheduleName, scheduleId) => (
     dispatch
 ) => {
-    if (scheduleName === "cart" || scheduleName === PATH_REGISTRATION_SCHEDULE_NAME) {
+    if (
+        scheduleName === "cart" ||
+        scheduleName === PATH_REGISTRATION_SCHEDULE_NAME
+    ) {
         return;
     }
 
