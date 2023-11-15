@@ -552,8 +552,18 @@ const ScheduleSelectorDropdown = ({
                 <DropdownContent>
                     {allSchedules &&
                         Object.entries(allSchedules)
-                            .sort(([nameA], [nameB]) => // Always put the path registration schedule at the top
-                                (nameA === PATH_REGISTRATION_SCHEDULE_NAME ? -1 : nameB === PATH_REGISTRATION_SCHEDULE_NAME ? 1 : 0))
+                            .sort(([nameA, dataA], [nameB, dataB]) => {
+                                /* Always putting primary schedule at the top, followed by the path registration schedule,
+                                 * then rest of schedules should be ordered by created_at
+                                */ 
+                                
+                                if (dataA.id === primaryScheduleId) return -1;
+                                if (dataB.id === primaryScheduleId) return 1;
+                                if (nameA == PATH_REGISTRATION_SCHEDULE_NAME) return -1; 
+                                if (nameB === PATH_REGISTRATION_SCHEDULE_NAME) return -1; 
+                                
+                                return dataA.created_at < dataB.created_at ? -1 : 1;
+                            })
                             .map(([name, data]) => {
                                 const mutable = name !== PATH_REGISTRATION_SCHEDULE_NAME;
                                 return (

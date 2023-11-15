@@ -153,7 +153,7 @@ const handleUpdateSchedulesOnFrontend = (state, schedulesFromBackend) => {
                 (newState.cartPushedToBackend &&
                     cloudUpdated >= newState.cartUpdatedAt &&
                     cloudUpdated - newState.cartUpdatedAt >=
-                        MIN_TIME_DIFFERENCE)
+                    MIN_TIME_DIFFERENCE)
             ) {
                 newState = {
                     ...newState,
@@ -171,10 +171,8 @@ const handleUpdateSchedulesOnFrontend = (state, schedulesFromBackend) => {
                     foundSchedule.pushedToBackend &&
                     cloudUpdated >= foundSchedule.updated_at &&
                     foundSchedule.updated_at - cloudUpdated >=
-                        MIN_TIME_DIFFERENCE)
+                    MIN_TIME_DIFFERENCE)
             ) {
-                const alreadySelectedSchedule =
-                    newState.schedules[newState.scheduleSelected];
                 newState = {
                     ...newState,
                     schedules: {
@@ -184,21 +182,27 @@ const handleUpdateSchedulesOnFrontend = (state, schedulesFromBackend) => {
                             id: scheduleFromBackend.id,
                             pushedToBackend: true,
                             updated_at: Date.now(),
+                            created_at: new Date(scheduleFromBackend.created_at).getTime()
                         },
                     },
                 };
-                if (!alreadySelectedSchedule) {
-                    newState.scheduleSelected = scheduleFromBackend.name;
-                    if (
-                        newState.scheduleSelected ===
-                        PATH_REGISTRATION_SCHEDULE_NAME
-                    ) {
-                        newState.readOnly = true;
-                    }
-                }
             }
         }
+
     });
+
+    const alreadySelectedSchedule =
+        newState.schedules[newState.scheduleSelected];
+
+    if (!alreadySelectedSchedule) {
+        newState.scheduleSelected = Object.keys(scheduleState.schedules)[0];
+        if (
+            newState.scheduleSelected ===
+            PATH_REGISTRATION_SCHEDULE_NAME
+        ) {
+            newState.readOnly = true;
+        }
+    }
 
     return newState;
 };
@@ -219,7 +223,10 @@ const handleRemoveCartItem = (sectionId, state) => ({
 export const schedule = (state = initialState, action) => {
     switch (action.type) {
         case CLEAR_ALL_SCHEDULE_DATA:
-            return { ...initialState };
+            return {
+                ...initialState,
+                scheduleSelected: state.scheduleSelected,
+            };
         // restrict schedules to ones from the current semester
         case SET_PRIMARY_SCHEDULE_ID_ON_FRONTEND:
             return {
