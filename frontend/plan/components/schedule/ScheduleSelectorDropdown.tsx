@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
 import { Icon } from "../bulma_derived_components";
-import { User, Schedule as ScheduleType, Color, FriendshipState } from "../../types";
+import { User, Schedule as ScheduleType, Color, FriendshipState, Section } from "../../types";
 import { nextAvailable } from "../../reducers/schedule";
 import NewLabel from "../common/NewLabel";
 import { PATH_REGISTRATION_SCHEDULE_NAME } from "../../constants/constants";
@@ -411,7 +411,7 @@ interface ScheduleSelectorDropdownProps {
             friendPennkey: string) => void;
     };
     schedulesMutators: {
-        copy: (scheduleName: string) => void;
+        copy: (scheduleName: string, sections: Section[]) => void;
         download: (scheduleName: string) => void;
         remove: (user: User, scheduleName: string, scheduleId: string) => void;
         rename: (oldName: string) => void;
@@ -585,13 +585,15 @@ const ScheduleSelectorDropdown = ({
                                                     setPrimary(user, data.id);
                                                 }
                                             },
-                                            copy: () =>
+                                            copy: () => {
                                                 copy(
                                                     nextAvailable(
                                                         name,
                                                         allSchedules
-                                                    )
-                                                ),
+                                                    ),
+                                                    data.sections
+                                                )
+                                            },
                                             download: () => download(name),
                                             remove: mutable ? (() => remove(user, name, data.id)) : null,
                                             rename: mutable ? (() => rename(name)) : null,

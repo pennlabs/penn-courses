@@ -611,10 +611,10 @@ export function fetchSectionInfo(searchData) {
  * @param sections The list of sections for the schedule
  * @returns {Function}
  */
-export const createScheduleOnBackend = (name) => (dispatch) => {
+export const createScheduleOnBackend = (name, sections = []) => (dispatch) => {
     const scheduleObj = {
         name,
-        sections: [],
+        sections: sections,
     };
     doAPIRequest("/plan/schedules/", {
         method: "POST",
@@ -629,7 +629,7 @@ export const createScheduleOnBackend = (name) => (dispatch) => {
     })
         .then((response) => response.json())
         .then(({ id }) => {
-            dispatch(createScheduleOnFrontend(name, id, []));
+            dispatch(createScheduleOnFrontend(name, id, sections));
         })
         .catch((error) => {
             console.log(error);
