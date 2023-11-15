@@ -10,7 +10,7 @@ from rest_framework.response import Response
 
 from courses.models import Course, Department, Instructor, PreNGSSRestriction, Section
 from courses.util import get_current_semester, get_or_create_add_drop_period
-from PennCourses.docs_settings import PcxAutoSchema
+from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 from PennCourses.settings.base import (
     PRE_NGSS_PERMIT_REQ_RESTRICTION_CODES,
     TIME_ZONE,
@@ -54,6 +54,7 @@ There probably is a way to fit everything into a serializer, but at the time of 
 it'd be shoe-horned in so much that it made more sense to use "bare" ApiViews.
 """
 
+#$$ Q FILTERS
 
 # A Q filter defining which sections we will include in demand distribution estimates,
 # also used by extra_metrics_section_filters_pcr (see below)
@@ -98,10 +99,10 @@ section_filters_pcr = Q(course__primary_listing_id=F("course_id")) & (
     | ((~Q(course__title="") | ~Q(course__description="")) & ~Q(activity="REC") & ~Q(status="X"))
 )
 
-review_filters_pcr = Q(section__course__primary_listing_id=F("section__course_id"))
+review_filters_pcr = Q(section__course__primary_listing_id=F("section__course_id")) # review is for a primary listing
 
 reviewbit_filters_pcr = Q(
-    review__section__course__primary_listing_id=F("review__section__course_id")
+    review__section__course__primary_listing_id=F("review__section__course_id") # is a primary listing
 )
 
 
@@ -109,7 +110,7 @@ reviewbit_filters_pcr = Q(
 @schema(
     PcxAutoSchema(
         response_codes={
-            "course-reviews": {
+            reverse_func("course-reviews", args=["course_code"]): {
                 "GET": {
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Reviews retrieved successfully.",
                     404: "Course with given course_code not found.",
@@ -117,7 +118,7 @@ reviewbit_filters_pcr = Q(
             },
         },
         custom_path_parameter_desc={
-            "course-reviews": {
+            reverse_func("course-reviews", args=["course_code"]): {
                 "GET": {
                     "course_code": (
                         "The dash-joined department and code of the course you want reviews for, e.g. `CIS-120` for CIS-120."  # noqa E501
@@ -151,14 +152,14 @@ def course_reviews(request, course_code):
     except Course.DoesNotExist:
         raise Http404()
 
-    topic = course.primary_listing.topic
+    topic = course.topic
     course = topic.most_recent
     course_code = course.full_code
     aliases = course.crosslistings.values_list("full_code", flat=True)
 
     instructor_reviews = review_averages(
-        Review.objects.filter(review_filters_pcr, section__course__topic=topic),
-        reviewbit_subfilters=Q(review_id=OuterRef("id")),
+        Review.objects.filter(review_filters_pcr, section__course__topic=topic), # annotate reviews for the topic in question
+        reviewbit_subfilters=Q(review_id=OuterRef("id")), # filter to reviewbits that match the id of the review
         section_subfilters=Q(id=OuterRef("section_id")),
         fields=FIELD_SLUGS,
         prefix="bit_",
@@ -230,7 +231,7 @@ def course_reviews(request, course_code):
 @schema(
     PcxAutoSchema(
         response_codes={
-            "course-plots": {
+            reverse_func("course-plots", args=["course_code"]): {
                 "GET": {
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Plots retrieved successfully.",
                     404: "Course with given course_code not found.",
@@ -238,7 +239,7 @@ def course_reviews(request, course_code):
             },
         },
         custom_parameters={
-            "course-plots": {
+            reverse_func("course-plots", args=["course_code"]): {
                 "GET": [
                     {
                         "name": "course_code",
@@ -268,7 +269,7 @@ def course_plots(request, course_code):
     """
     try:
         course = (
-            Course.objects.filter(course_filters_pcr_allow_xlist, full_code=course_code)
+            Course.objects.filter(course_filters_pcr, full_code=course_code)
             .order_by("-semester")[:1]
             .select_related("topic", "topic__most_recent")
             .get()
@@ -276,7 +277,7 @@ def course_plots(request, course_code):
     except Course.DoesNotExist:
         raise Http404()
 
-    course = course.primary_listing.topic.most_recent
+    course = course.topic.most_recent
 
     current_semester = get_current_semester()
 
@@ -365,19 +366,11 @@ def check_instructor_id(instructor_id):
         raise Http404("Instructor with given instructor_id not found.")
 
 
-INSTRUCTOR_COURSE_REVIEW_FIELDS = [
-    "instructor_quality",
-    "course_quality",
-    "work_required",
-    "difficulty",
-]
-
-
 @api_view(["GET"])
 @schema(
     PcxAutoSchema(
         response_codes={
-            "instructor-reviews": {
+            reverse_func("instructor-reviews", args=["instructor_id"]): {
                 "GET": {
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Reviews retrieved successfully.",
                     404: "Instructor with given instructor_id not found.",
@@ -385,7 +378,7 @@ INSTRUCTOR_COURSE_REVIEW_FIELDS = [
             },
         },
         custom_path_parameter_desc={
-            "instructor-reviews": {
+            reverse_func("instructor-reviews", args=["instructor_id"]): {
                 "GET": {
                     "instructor_id": (
                         "The integer id of the instructor you want reviews for. Note that you can get the relative path for any instructor including this id by using the `url` field of objects in the `instructors` list returned by Retrieve Autocomplete Data."  # noqa E501
@@ -427,7 +420,6 @@ def instructor_reviews(request, instructor_id):
         )
         & section_filters_pcr,
         extra_metrics=True,
-        fields=INSTRUCTOR_COURSE_REVIEW_FIELDS,
     ).annotate(
         most_recent_full_code=F("topic__most_recent__full_code"),
     )
@@ -470,7 +462,7 @@ def instructor_reviews(request, instructor_id):
 @schema(
     PcxAutoSchema(
         response_codes={
-            "department-reviews": {
+            reverse_func("department-reviews", args=["department_code"]): {
                 "GET": {
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Reviews retrieved successfully.",
                     404: "Department with the given department_code not found.",
@@ -478,7 +470,7 @@ def instructor_reviews(request, instructor_id):
             }
         },
         custom_path_parameter_desc={
-            "department-reviews": {
+            reverse_func("department-reviews", args=["department_code"]): {
                 "GET": {
                     "department_code": (
                         "The department code you want reviews for, e.g. `CIS` for the CIS department."  # noqa E501
@@ -544,7 +536,7 @@ def department_reviews(request, department_code):
 @schema(
     PcxAutoSchema(
         response_codes={
-            "course-history": {
+            reverse_func("course-history", args=["course_code", "instructor_id"]): {
                 "GET": {
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Reviews retrieved successfully.",
                     404: "Invalid course_code or instructor_id.",
@@ -552,7 +544,7 @@ def department_reviews(request, department_code):
             }
         },
         custom_path_parameter_desc={
-            "course-history": {
+            reverse_func("course-history", args=["course_code", "instructor_id"]): {
                 "GET": {
                     "course_code": (
                         "The dash-joined department and code of the course you want reviews for, e.g. `CIS-120` for CIS-120."  # noqa E501
@@ -582,8 +574,8 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
     check_instructor_id(instructor_id)
     instructor = get_object_or_404(Instructor, id=instructor_id)
 
-    topic = course.primary_listing.topic
-    course = topic.most_recent
+    topic = course.topic
+    course = course.topic.most_recent
 
     reviews = review_averages(
         Review.objects.filter(
@@ -651,7 +643,7 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
 @schema(
     PcxAutoSchema(
         response_codes={
-            "review-autocomplete": {
+            reverse_func("review-autocomplete"): {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Autocomplete dump retrieved successfully."},
             },
         },
