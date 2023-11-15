@@ -45,6 +45,7 @@ def review_averages(
     prefix="",
     semester_aggregations=False,
     extra_metrics=True,
+    core_metrics=True,
 ):
     """
     Annotate the queryset with the average of all ReviewBits matching the given subfilters.
@@ -62,6 +63,7 @@ def review_averages(
     :param: extra_metrics: option to include extra metrics in PCR aggregations; final enrollment,
         percent of add/drop period open, average number of openings during add/drop,
         and percentage of sections filled in advance registration
+    :param: core_metrics: option to include core averages (e.g., average_difficulty). By default on.
     """
     from courses.models import Section, StatusUpdate
     from review.views import extra_metrics_section_filters_pcr
@@ -82,21 +84,25 @@ def review_averages(
 
     queryset = queryset.annotate(
         **{
-            **{
-                (prefix + field): Subquery(
-                    ReviewBit.objects.filter(
-                        reviewbit_subfilters,
-                        field=field,
-                        review__responses__gt=0,
+            **(
+                {
+                    (prefix + field): Subquery(
+                        ReviewBit.objects.filter(
+                            reviewbit_subfilters,
+                            field=field,
+                            review__responses__gt=0,
+                        )
+                        .values("field")
+                        .order_by()
+                        .annotate(avg=Avg("average"))
+                        .values("avg")[:1],
+                        output_field=FloatField(),
                     )
-                    .values("field")
-                    .order_by()
-                    .annotate(avg=Avg("average"))
-                    .values("avg")[:1],
-                    output_field=FloatField(),
-                )
-                for field in fields
-            },
+                    for field in fields
+                }
+                if core_metrics
+                else dict()
+            ),
             **(
                 {
                     (prefix + "final_enrollment"): Subquery(
@@ -208,6 +214,7 @@ def annotate_with_matching_reviews(
     fields=None,
     prefix="",
     extra_metrics=True,
+    core_metrics=True,
 ):
     """
     Annotate each element the passed-in queryset with a subset of all review averages.
@@ -225,6 +232,7 @@ def annotate_with_matching_reviews(
     :param: extra_metrics: option to include extra metrics in PCR aggregations; final enrollment,
         percent of add/drop period open, average number of openings during add/drop,
         and percentage of sections filled in advance registration
+    :param: core_metrics: option to include core averages (e.g., average_difficulty). By default on.
     """
 
     from courses.models import Section  # avoid circular imports
@@ -255,11 +263,12 @@ def annotate_with_matching_reviews(
         prefix,
         semester_aggregations=True,
         extra_metrics=extra_metrics,
+        core_metrics=core_metrics
     )
 
 
 def annotate_average_and_recent(
-    qs, match_review_on, match_section_on, extra_metrics=True, fields=None
+    qs, match_review_on, match_section_on, extra_metrics=True, fields=None, core_metrics=True
 ):
     """
     Annotate queryset with both all reviews and recent reviews.
@@ -275,6 +284,8 @@ def annotate_average_and_recent(
         percent of add/drop period open, average number of openings during add/drop,
         and percentage of sections filled in advance registration
     :param: fields: option to specify the fields averaged by the query
+    :param: fields: option to specify the fields averaged by the query
+    :param: core_metrics: option to include core averages (e.g., average_difficulty). By default on.
     """
     qs = annotate_with_matching_reviews(
         qs,
@@ -284,6 +295,7 @@ def annotate_average_and_recent(
         prefix="average_",
         extra_metrics=extra_metrics,
         fields=fields,
+        core_metrics=core_metrics,
     )
     qs = annotate_with_matching_reviews(
         qs,
@@ -293,5 +305,6 @@ def annotate_average_and_recent(
         prefix="recent_",
         extra_metrics=extra_metrics,
         fields=fields,
+        core_metrics=core_metrics,
     )
     return qs

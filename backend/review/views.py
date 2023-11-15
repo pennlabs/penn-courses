@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 from dateutil.tz import gettz
-from django.db.models import F, Max, OuterRef, Q, Subquery, Value
+from django.db.models import F, Max, OuterRef, Q, Subquery, Value, Avg, FloatField
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes, schema
@@ -26,7 +26,7 @@ from review.documentation import (
     instructor_for_course_reviews_response_schema,
     instructor_reviews_response_schema,
 )
-from review.models import ALL_FIELD_SLUGS, Review
+from review.models import ALL_FIELD_SLUGS, Review, ReviewBit
 from review.util import (
     aggregate_reviews,
     avg_and_recent_demand_plots,
@@ -91,7 +91,8 @@ def extra_metrics_section_filters_pcr(current_semester=None):
 
 
 course_filters_pcr_allow_xlist = ~Q(title="") | ~Q(description="") | Q(sections__has_reviews=True)
-course_filters_pcr = Q(primary_listing_id=F("id")) & course_filters_pcr_allow_xlist
+course_filters_pcr_require_primary_listing = Q(primary_listing_id=F("id"))
+course_filters_pcr = course_filters_pcr_require_primary_listing & course_filters_pcr_allow_xlist
 
 section_filters_pcr = Q(course__primary_listing_id=F("course_id")) & (
     Q(has_reviews=True)
@@ -372,6 +373,8 @@ INSTRUCTOR_COURSE_REVIEW_FIELDS = [
     "difficulty",
 ]
 
+# TODO: remove before merging into prod
+USE_NEW_QUERIES = True
 
 @api_view(["GET"])
 @schema(
@@ -411,11 +414,49 @@ def instructor_reviews(request, instructor_id):
     )
     inst = get_single_dict_from_qs(instructor_qs)
 
+    courses = Course.objects.filter(
+        course_filters_pcr,
+        sections__instructors__id=instructor_id,
+    )
+
+    if USE_NEW_QUERIES:
+        courses = courses.annotate(**{
+            ("average_" + field): Subquery(
+                ReviewBit.objects.filter(
+                    review__responses__gt=0,
+                    review__section__course__topic=OuterRef("topic"),
+                    review__instructor_id=instructor_id,
+                    field=field
+                ).annotate(avg=Avg("average")).values("avg")[:1],
+                output_field=FloatField(),
+            )
+            for field in INSTRUCTOR_COURSE_REVIEW_FIELDS
+        })
+
+        courses = courses.annotate(max_semester=Subquery(
+            Review.objects.filter(  # Note: do not need review_filters_pcr since the outer course is a primary listing
+                section__course__id=OuterRef("id"),
+                instructor__id=instructor_id,
+                responses__gt=0,
+            ).annotate(max=Max("section__course__semester")).values("max")[:1]
+        )).values("max_semester")
+
+        # get the max semester for each course
+        courses = courses.annotate(**{
+            ("recent_" + field): Subquery(
+                ReviewBit.objects.filter(
+                    review__responses__gt=0,
+                    review__section__course__topic=OuterRef("topic"),
+                    review__instructor_id=instructor_id,
+                    field=field,
+                    review__section__course__semester=OuterRef("max_semester")
+                ).annotate(avg=Avg("average")).values("avg")[:1]
+            )
+            for field in INSTRUCTOR_COURSE_REVIEW_FIELDS
+        })
+
     courses = annotate_average_and_recent(
-        Course.objects.filter(
-            course_filters_pcr,
-            sections__instructors__id=instructor_id,
-        ).distinct(),
+        courses,
         match_review_on=Q(
             section__course__topic=OuterRef(OuterRef("topic")),
             instructor_id=instructor_id,
@@ -428,7 +469,10 @@ def instructor_reviews(request, instructor_id):
         & section_filters_pcr,
         extra_metrics=True,
         fields=INSTRUCTOR_COURSE_REVIEW_FIELDS,
-    ).annotate(
+        core_metrics=(not USE_NEW_QUERIES),
+    )
+    
+    courses = courses.annotate(
         most_recent_full_code=F("topic__most_recent__full_code"),
     )
 
@@ -446,6 +490,7 @@ def instructor_reviews(request, instructor_id):
     courses_res = dict()
     max_sem = dict()
     for r in courses.values():
+        print(r)
         if not r["average_semester_count"]:
             continue
         full_code = r["most_recent_full_code"]
