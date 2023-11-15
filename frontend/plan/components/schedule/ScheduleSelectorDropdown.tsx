@@ -250,15 +250,6 @@ const DropdownTrigger = styled.div`
     outline: none !important;
     border: none !important;
     background: transparent;
-
-    div {
-        background: ${({ isActive }: { isActive: boolean }) =>
-        isActive ? "rgba(162, 180, 237, 0.38) !important" : "none"};
-    }
-
-    div:hover {
-        background: rgba(175, 194, 255, 0.27);
-    }
 `;
 
 const DropdownMenu = styled.div`
@@ -382,6 +373,28 @@ const ShareSchedulePromo = styled.div`
     margin-left: 0.5rem;
 `
 
+const ReceivedRequestNotice = styled.div`
+    background-color: #e58d8d;
+    border-radius: 50%;
+    align-items: center;
+    width: 0.4rem;
+    height: 0.4rem;
+    position: relative;
+    top: 0;
+    right: 0.2rem;
+`
+
+const DropdownTriggerContainer = styled.div`
+    display: flex;
+
+    background: ${({ isActive }: { isActive: boolean }) =>
+        isActive ? "rgba(162, 180, 237, 0.38) !important" : "none"};
+
+    :hover {
+        background: rgba(175, 194, 255, 0.27);
+    }
+`
+
 interface ScheduleSelectorDropdownProps {
     user: User;
     activeName: string;
@@ -501,26 +514,28 @@ const ScheduleSelectorDropdown = ({
     return (
         <ScheduleDropdownContainer ref={ref} isActive={isActive}>
             <ScheduleDropdownHeader>
-                <span className="selected_name">
-                    {readOnly && friendshipState.activeFriend
-                        ? friendshipState.activeFriend.first_name + "'s Schedule"
-                        : activeName}
-                </span>
-                <DropdownTrigger
+                <DropdownTriggerContainer 
                     isActive={isActive}
-                    onClick={() => {
-                        fetchBackendFriendships(
-                            user);
-                        setIsActive(!isActive);
-                    }}
-                    role="button"
-                >
-                    <div aria-haspopup={true} aria-controls="dropdown-menu">
-                        <Icon>
-                            <i className="fa fa-chevron-down" aria-hidden="true" />
-                        </Icon>
-                    </div>
-                </DropdownTrigger>
+                        onClick={() => {
+                            fetchBackendFriendships(
+                                user);
+                            setIsActive(!isActive);
+                        }}
+                        role="button">
+                    <span className="selected_name">
+                        {readOnly && friendshipState.activeFriend
+                            ? friendshipState.activeFriend.first_name + "'s Schedule"
+                            : activeName}
+                    </span>
+                    <DropdownTrigger>
+                        <div aria-haspopup={true} aria-controls="dropdown-menu">
+                            <Icon>
+                                <i className="fa fa-chevron-down" aria-hidden="true" />
+                            </Icon>
+                        </div>
+                    </DropdownTrigger>
+                    {numRequests > 0 && <ReceivedRequestNotice/>}
+                </DropdownTriggerContainer>
                 {(!readOnly || !friendshipState.activeFriend) && <ShareSchedulePromoContainer>
                     <NewLabel />
                     <ShareSchedulePromo onClick={() => setIsActive(!isActive)}>
