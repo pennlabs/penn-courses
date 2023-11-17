@@ -1,10 +1,10 @@
 from textwrap import dedent
 from typing import Iterable
 
+from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models import Count, DecimalField, Q, Sum
 from django.db.models.functions import Coalesce
-from django.contrib.auth import get_user_model
 
 from courses.models import Course
 from degree.utils.model_utils import q_object_parser
@@ -210,33 +210,26 @@ class UserDegreePlan(models.Model):
     """
     Stores a users plan for an associated degree
     """
-    
-    name = models.CharField(
-        max_length=255,
-        help_text="The user's nick-name for the degree plan."
-    )
+
+    name = models.CharField(max_length=255, help_text="The user's nickname for the degree plan.")
 
     degree_plan = models.ForeignKey(
         DegreePlan,
         on_delete=models.CASCADE,
     )
 
-    person = models.foreignkey(
+    person = models.ForeignKey(
         get_user_model(),
         on_delete=models.CASCADE,
         help_text="the person (user) to which the schedule belongs.",
     )
 
-    courses = models.ManyToManyField(
-        Course,
-        help_text="Courses used to fulfill the degree_plan."
-    )
-    
+    courses = models.ManyToManyField(Course, help_text="Courses used to fulfill the degree_plan.")
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["name", "person"])
+            models.UniqueConstraint(fields=["name", "person"], name="user_degreeplan_name_person")
         ]

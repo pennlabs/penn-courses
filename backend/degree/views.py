@@ -1,17 +1,18 @@
 from django.core.exceptions import ObjectDoesNotExist
-from django.shortcuts import render
 from django.db import IntegrityError
 from django_auto_prefetching import AutoPrefetchViewSetMixin
-from rest_framework import generics
-from rest_framework import status, viewsets
+from rest_framework import generics, status, viewsets
 from rest_framework.permissions import IsAuthenticated
-from PennCourses.docs_settings import PcxAutoSchema, reverse_func
 from rest_framework.response import Response
+
 from courses.models import Course
-
-from degree.models import DegreePlan, Rule, UserDegreePlan
-
-from degree.serializers import DegreePlanListSerializer, DegreePlanDetailSerializer, RuleSerializer, UserDegreePlanSerializer
+from degree.models import DegreePlan, UserDegreePlan
+from degree.serializers import (
+    DegreePlanDetailSerializer,
+    DegreePlanListSerializer,
+    UserDegreePlanSerializer,
+)
+from PennCourses.docs_settings import PcxAutoSchema
 
 
 class DegreeList(generics.ListAPIView):
@@ -51,7 +52,6 @@ class DegreeDetail(generics.RetrieveAPIView):
     queryset = DegreePlan.objects.all()
 
 
-
 class UserDegreePlanViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     """
     list, retrieve, create, update, and delete user degree plans.
@@ -82,7 +82,7 @@ class UserDegreePlanViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     404: "No user degree plan with the specified id exists.",
                 },
                 "DELETE": {
-                    204: "Successful delete (the specified user degree plan was found and deleted).",
+                    204: "Successful delete (specified user degree plan was found and deleted).",
                     404: "No schedule with the specified id exists.",
                 },
             },
@@ -93,12 +93,13 @@ class UserDegreePlanViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     http_method_names = ["get", "post", "delete", "put"]
     permission_classes = [IsAuthenticated]
 
-
     @staticmethod
     def get_courses(data):
         courses = data.get("courses", [])
-        return [Course.objects.get(full_code=course["full_code"], semester=course["semester"]) for course in courses]
-
+        return [
+            Course.objects.get(full_code=course["full_code"], semester=course["semester"])
+            for course in courses
+        ]
 
     def update(self, request, pk=None):
         if not UserDegreePlan.objects.filter(id=pk).exists():
@@ -118,13 +119,15 @@ class UserDegreePlanViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 {"detail": "One or more courses not found in database."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        
+
         try:
             user_degree_plan.person = request.user
             user_degree_plan.name = request.data.get("name")
             user_degree_plan.save()
             user_degree_plan.courses.set(courses)
-            return Response({"message": "success", "id": user_degree_plan.id}, status=status.HTTP_200_OK)
+            return Response(
+                {"message": "success", "id": user_degree_plan.id}, status=status.HTTP_200_OK
+            )
         except IntegrityError as e:
             return Response(
                 {
@@ -174,7 +177,7 @@ class UserDegreePlanViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
-    
+
     def get_queryset(self):
         queryset = UserDegreePlan.objects.filter(person=self.request.user)
         queryset = queryset.prefetch_related(

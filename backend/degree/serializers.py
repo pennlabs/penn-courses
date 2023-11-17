@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
-from degree.models import UserDegreePlan, DegreePlan, Rule
 from courses.serializers import CourseDetailSerializer
+from degree.models import DegreePlan, UserDegreePlan, Rule
+
 
 class RuleSerializer(serializers.ModelSerializer):
     class Meta:
@@ -29,7 +30,7 @@ class DegreePlanSerializer(serializers.ModelSerializer):
 class DegreePlanDetailSerializer(serializers.ModelSerializer):
 
     # field to represent the rules related to this Degree Plan
-    rules = RuleSerializer(many=True, read_only=True, source="rule_set", source="rule_set")
+    rules = RuleSerializer(many=True, read_only=True, source="rule_set")
 
     class Meta:
         model = DegreePlan

@@ -150,7 +150,7 @@ class RuleEvaluationTest(TestCase):
         # rule2 is self-contradicting
         self.assertFalse(self.rule2.evaluate([self.cis_1200.full_code, self.cis_1600.full_code]))
 
-    def test_nonexistant_course(self):
+    def test_nonexistent_course(self):
         # CIS-1857 doesn't exist
         self.assertFalse(self.rule4.evaluate("CIS-1857"))
 
