@@ -3,8 +3,8 @@ from textwrap import dedent
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from degree.models import DegreePlan, Rule
-
+from degree.models import UserDegreePlan, DegreePlan, Rule
+from courses.serializers import CourseDetailSerializer
 
 class RuleSerializer(serializers.ModelSerializer):
     class Meta:
@@ -17,7 +17,7 @@ RuleSerializer._declared_fields["rules"] = RuleSerializer(
 )
 
 
-class DegreePlanSerializer(serializers.ModelSerializer):
+class DegreePlanListSerializer(serializers.ModelSerializer):
     class Meta:
         model = DegreePlan
         fields = "__all__"
@@ -31,3 +31,18 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = DegreePlan
         fields = "__all__"
+
+
+class UserDegreePlanSerializer(serializers.ModelSerializer):
+    courses = CourseDetailSerializer(
+        many=True,
+        read_only=False,
+        help_text="The courses used to fulfill degree plan.",
+        required=True,
+    )
+
+    id = serializers.ReadOnlyField(help_text="The id of the schedule.")
+
+    class Meta:
+        model = UserDegreePlan
+        exclude = ["person"]

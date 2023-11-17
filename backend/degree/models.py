@@ -4,6 +4,7 @@ from typing import Iterable
 from courses.models import Course
 from django.db.models import Count, Sum, Q, DecimalField
 from django.db.models.functions import Coalesce
+from django.contrib.auth import get_user_model
 
 from degree.utils.model_utils import q_object_parser
 
@@ -199,3 +200,39 @@ class Rule(models.Model):
             if not child.evaluate(full_codes):
                 return False
         return True
+
+
+class UserDegreePlan(models.Model):
+    """
+    Stores a users plan for an associated degree
+    """
+    
+    name = models.CharField(
+        max_length=255,
+        help_text="The user's nick-name for the degree plan."
+    )
+
+    degree_plan = models.ForeignKey(
+        DegreePlan,
+        on_delete=models.CASCADE,
+    )
+
+    person = models.foreignkey(
+        get_user_model(),
+        on_delete=models.CASCADE,
+        help_text="the person (user) to which the schedule belongs.",
+    )
+
+    courses = models.ManyToManyField(
+        Course,
+        help_text="Courses used to fulfill the degree_plan."
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["name", "person"])
+        ]
