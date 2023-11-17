@@ -1,9 +1,11 @@
-from django.test import TestCase
-from degree.utils.model_utils import q_object_parser
 from django.db.models import Q
+from django.test import TestCase
 from lark.exceptions import LarkError
-from degree.models import Rule, DegreePlan
+
 from courses.util import get_or_create_course_and_section
+from degree.models import DegreePlan, Rule
+from degree.utils.model_utils import q_object_parser
+
 
 TEST_SEMESTER = "2023C"
 
@@ -148,7 +150,7 @@ class RuleEvaluationTest(TestCase):
         # rule2 is self-contradicting
         self.assertFalse(self.rule2.evaluate([self.cis_1200.full_code, self.cis_1600.full_code]))
 
-    def test_nonexistant_course(self):
+    def test_nonexistent_course(self):
         # CIS-1857 doesn't exist
         self.assertFalse(self.rule4.evaluate("CIS-1857"))
 

@@ -1,5 +1,3 @@
-from pprint import pprint
-
 from django.db.models import Q
 
 from degree.models import DegreePlan, Rule
@@ -83,9 +81,9 @@ def parse_coursearray(courseArray) -> Q:
                         sub_q = Q()
                     case _:
                         raise LookupError(f"Unknown filter type in withArray: {filter['code']}")
-                match filter[
-                    "connector"
-                ]:  # TODO: this assumes the connector is to the next element (ie we use the previous filter's connector here)
+                match filter["connector"]:
+                    # TODO: this assumes the connector is to the next element, i.e.,
+                    # we use the previous filter's connector here)
                     case "AND" | "":
                         course_q &= sub_q
                     case "OR":
@@ -173,8 +171,8 @@ def parse_rulearray(
         match rule_json["ruleType"]:
             case "Course":
                 """
-                A Course rule can either specify a number (or range) of classes required or a number (or range) of CUs
-                required, or both.
+                A Course rule can either specify a number (or range) of classes required or a
+                number (or range) of CUs required, or both.
                 """
                 # check the number of classes/credits
                 num_courses = (
@@ -204,7 +202,7 @@ def parse_rulearray(
                 except ValueError as e:
                     assert e.args[0].startswith("Unknowable left type in ifStmt")
                     print("Warning: " + e.args[0])
-                    continue  # do nothing if we can't evaluate the condition bc of insufficient information
+                    continue  # do nothing if we can't evaluate b/c of insufficient info
 
                 match rule_json["booleanEvaluation"]:
                     case "False":
@@ -215,7 +213,8 @@ def parse_rulearray(
                         degreeworks_eval = None
                     case _:
                         raise LookupError(
-                            f"Unknown boolean evaluation in ifStmt: {rule_json['booleanEvaluation']}"
+                            f"Unknown boolean evaluation in ifStmt: \
+                                {rule_json['booleanEvaluation']}"
                         )
 
                 assert degreeworks_eval is None or evaluation == bool(degreeworks_eval)
@@ -273,26 +272,3 @@ def parse_degreeworks(json: dict, degree_plan: DegreePlan) -> list[Rule]:
     for rule in rules:
         rule.save()
     return rules
-
-
-if __name__ == "__main__":
-    from degree.utils.departments import E_BAS_DEGREE_PLANS, W_DEGREE_PLANS, A_DEGREE_PLANS
-    from degree.utils.degreeworks_client import DegreeworksClient
-    from os import getenv
-
-    pennid = getenv("PENN_ID")
-    auth_token = getenv("X_AUTH_TOKEN")
-    refresh_token = getenv("REFRESH_TOKEN")
-    name = getenv("NAME")
-    assert pennid is not None
-    assert auth_token is not None
-    assert refresh_token is not None
-    assert name is not None
-
-    client = DegreeworksClient(
-        pennid=pennid, auth_token=auth_token, refresh_token=refresh_token, name=name
-    )
-
-    for i, degree_plan in enumerate(E_BAS_DEGREE_PLANS):
-        print(degree_plan)
-        pprint(parse_degreeworks(client.audit(degree_plan), degree_plan))

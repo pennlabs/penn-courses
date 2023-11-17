@@ -12,11 +12,11 @@ from courses.util import get_current_semester
 class Command(BaseCommand):
     help = dedent(
         """
-    Lists the available degreeplans for a semester. 
-        
-    Expects PENN_ID, X_AUTH_TOKEN, REFRESH_TOKEN, NAME environment variables are set. It is
-    recommended you add a .env file to the backend and let pipenv load it in for you.
-    """
+        Lists the available degreeplans for a semester.
+
+        Expects PENN_ID, X_AUTH_TOKEN, REFRESH_TOKEN, NAME environment variables are set. It is
+        recommended you add a .env file to the backend and let pipenv load it in for you.
+        """
     )
 
     def add_arguments(self, parser):
