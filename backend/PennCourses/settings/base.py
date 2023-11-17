@@ -93,6 +93,7 @@ WSGI_APPLICATION = "PennCourses.wsgi.application"
 
 DATABASES = {
     "default": dj_database_url.config(
+        # this is overriden by the DATABASE_URL env var
         default="postgres://penn-courses:postgres@localhost:5432/postgres"
     )
 }
@@ -182,7 +183,7 @@ SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
 # Twilio Credentials
 TWILIO_SID = os.environ.get("TWILIO_SID", "")
 TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_TOKEN", "")
-TWILIO_NUMBER = os.environ.get("TWILIO_NUMBER", "+12153984277")
+TWILIO_NUMBER = os.environ.get("TWILIO_NUMBER", "+12157826689")
 
 # Redis
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/1")
@@ -228,3 +229,7 @@ PRE_NGSS_PERMIT_REQ_RESTRICTION_CODES = [  # TODO: add post-NGSS list
 ROUGH_MINIMUM_DEMAND_DISTRIBUTION_ESTIMATES = (
     200  # Aim for at least 200 demand distribution estimates over the course of a semester
 )
+
+# The name of the schedule that is created/verified by Penn Mobile,
+# containing the user's active course registrations from Path.
+PATH_REGISTRATION_SCHEDULE_NAME = "Path Registration"

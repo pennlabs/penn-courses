@@ -20,9 +20,13 @@ const useAlerts = () => {
             data?.map?.((registration) => {
                 let datetime: string | null = null;
                 if (registration.last_notification_sent_at != null) {
-                    const date = Intl.DateTimeFormat("en-US").format(
-                        new Date(registration.last_notification_sent_at)
-                    );
+
+                    //dont include year. format mm/dd
+                    const date = Intl.DateTimeFormat("en-US", {
+                        month: "numeric",
+                        day: "numeric",
+                    }).format(new Date(registration.last_notification_sent_at));
+
                     const time = Intl.DateTimeFormat("en-US", {
                         hour: "numeric",
                         minute: "numeric",

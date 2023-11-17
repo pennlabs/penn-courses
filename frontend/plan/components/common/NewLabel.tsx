@@ -1,7 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 
-const NewBtn = styled.div`
+const Container = styled.div`
     background: #ea5a48;
     color: #fff;
     border-radius: 0.875rem;
@@ -13,8 +13,8 @@ const NewBtn = styled.div`
     text-align: center;
 `;
 
-const RecNew = () => {
-    return <NewBtn>NEW</NewBtn>;
+const NewLabel = () => {
+    return <Container>NEW</Container>;
 };
 
-export default RecNew;
+export default NewLabel;

@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+
 from requests import Session
 
 from degree.models import DegreePlan

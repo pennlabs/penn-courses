@@ -1,6 +1,3 @@
-from textwrap import dedent
-
-from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from degree.models import UserDegreePlan, DegreePlan, Rule
@@ -23,10 +20,16 @@ class DegreePlanListSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class DegreePlanSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DegreePlan
+        fields = "__all__"
+
+
 class DegreePlanDetailSerializer(serializers.ModelSerializer):
 
     # field to represent the rules related to this Degree Plan
-    rules = RuleSerializer(many=True, read_only=True, source="rule_set")
+    rules = RuleSerializer(many=True, read_only=True, source="rule_set", source="rule_set")
 
     class Meta:
         model = DegreePlan

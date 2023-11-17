@@ -1,12 +1,14 @@
-from django.db import models
 from textwrap import dedent
 from typing import Iterable
-from courses.models import Course
-from django.db.models import Count, Sum, Q, DecimalField
+
+from django.db import models
+from django.db.models import Count, DecimalField, Q, Sum
 from django.db.models.functions import Coalesce
 from django.contrib.auth import get_user_model
 
+from courses.models import Course
 from degree.utils.model_utils import q_object_parser
+
 
 program_choices = [
     ("EU_BSE", "Engineering BSE"),
@@ -74,7 +76,8 @@ class DegreePlan(models.Model):
         ]
 
     def __str__(self) -> str:
-        return f"{self.program} {self.degree} in {self.major} with conc. {self.concentration} ({self.year})"
+        return f"{self.program} {self.degree} in {self.major} \
+            with conc. {self.concentration} ({self.year})"
 
 
 class Rule(models.Model):
@@ -109,7 +112,7 @@ class Rule(models.Model):
         help_text=dedent(
             """
             The minimum number of CUs required for this rule. Only non-null
-            if this is a Rule leaf. Can be 
+            if this is a Rule leaf.
             """
         ),
     )
@@ -165,7 +168,8 @@ class Rule(models.Model):
         ]
 
     def __str__(self) -> str:
-        return f"{self.title}, q={self.q}, num={self.num_courses}, cus={self.credits}, degree_plan={self.degree_plan}, parent={self.parent.title if self.parent else None}"
+        return f"{self.title}, q={self.q}, num={self.num_courses}, cus={self.credits}, \
+            degree_plan={self.degree_plan}, parent={self.parent.title if self.parent else None}"
 
     def evaluate(self, full_codes: Iterable[str]) -> bool:
         """

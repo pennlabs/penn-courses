@@ -4,10 +4,10 @@ import {
     REM_SCHOOL_REQ,
     UPDATE_SEARCH_TEXT,
     UPDATE_RANGE_FILTER,
-    CHANGE_SCHEDULE,
-    DELETE_SCHEDULE,
+    CHANGE_MY_SCHEDULE,
     RENAME_SCHEDULE,
-    CREATE_SCHEDULE,
+    CREATE_SCHEDULE_ON_FRONTEND,
+    DELETE_SCHEDULE_ON_FRONTEND,
 } from "../actions";
 
 export const initGA = () => {
@@ -30,10 +30,10 @@ export const logException = (description = "", fatal = false) => {
 
 const filterActions = [ADD_SCHOOL_REQ, REM_SCHOOL_REQ, UPDATE_RANGE_FILTER];
 const schedActions = [
-    CHANGE_SCHEDULE,
-    CREATE_SCHEDULE,
-    DELETE_SCHEDULE,
+    CHANGE_MY_SCHEDULE,
     RENAME_SCHEDULE,
+    CREATE_SCHEDULE_ON_FRONTEND,
+    DELETE_SCHEDULE_ON_FRONTEND,
 ];
 
 // TODO: confirm type of store, next, and action

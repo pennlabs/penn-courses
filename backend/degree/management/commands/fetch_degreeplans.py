@@ -1,25 +1,24 @@
 from os import getenv
+from pprint import pprint
 from textwrap import dedent
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from courses.util import get_current_semester
-from degree.models import program_code_to_name, DegreePlan
+from degree.models import DegreePlan, program_code_to_name
 from degree.utils.degreeworks_client import DegreeworksClient
 from degree.utils.parse_degreeworks import parse_degreeworks
-
-from pprint import pprint
 
 
 class Command(BaseCommand):
     help = dedent(
         """
-    Lists the available degreeplans for a semester. 
-        
-    Expects PENN_ID, X_AUTH_TOKEN, REFRESH_TOKEN, NAME environment variables are set. It is
-    recommended you add a .env file to the backend and let pipenv load it in for you.
-    """
+        Lists the available degreeplans for a semester.
+
+        Expects PENN_ID, X_AUTH_TOKEN, REFRESH_TOKEN, NAME environment variables are set. It is
+        recommended you add a .env file to the backend and let pipenv load it in for you.
+        """
     )
 
     def add_arguments(self, parser):
@@ -74,7 +73,7 @@ class Command(BaseCommand):
 
         for year in range(since_year, to_year + 1):
             for program in client.get_programs(year=year):
-                if degree_plan.program not in program_code_to_name:
+                if program not in program_code_to_name:
                     continue
                 for degree_plan in client.degree_plans_of(program, year=year):
                     with transaction.atomic():
