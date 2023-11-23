@@ -120,6 +120,7 @@ class Rule(models.Model):
         DegreePlan,
         null=True,
         on_delete=models.CASCADE,
+        related_name="rules",
         help_text=dedent(
             """
             The degree plan that has this rule. Null if this rule has a parent.
@@ -274,6 +275,13 @@ class Fulfillment(models.Model):
 
 
 class DoubleCountRestriction(models.Model):
+    degree_plan = models.ForeignKey(
+        DegreePlan,
+        on_delete=models.CASCADE,
+        related_name="double_count_restrictions",
+        help_text="The degree plan with which this is associated"
+    )
+
     max_courses = models.PositiveSmallIntegerField(
         null=True,
         help_text=dedent(
