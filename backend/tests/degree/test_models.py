@@ -164,7 +164,7 @@ class RuleEvaluationTest(TestCase):
 
     def test_unsatisfied_rule_num_courses_credits(self):
         self.rule3.credits = 1.5
-        self.rule3.num_courses = 2
+        self.rule3.num = 2
         self.rule3.save()
         self.assertFalse(self.rule3.evaluate([self.cis_1910.full_code]))
 

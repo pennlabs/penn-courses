@@ -95,13 +95,12 @@ class Rule(models.Model):
         ),
     )
 
-    num_courses = models.PositiveSmallIntegerField(
+    num = models.PositiveSmallIntegerField(
         null=True,
         help_text=dedent(
             """
-            The minimum number of courses or subrules required for this rule. Only non-null
-            if this is a Rule leaf.
-            """
+        The minimum number of courses or subrules required for this rule.
+        """
         ),
     )
 
@@ -168,7 +167,7 @@ class Rule(models.Model):
         ]
 
     def __str__(self) -> str:
-        return f"{self.title}, q={self.q}, num={self.num_courses}, cus={self.credits}, \
+        return f"{self.title}, q={self.q}, num={self.num}, cus={self.credits}, \
             degree_plan={self.degree_plan}, parent={self.parent.title if self.parent else None}"
 
     def evaluate(self, full_codes: Iterable[str]) -> bool:
@@ -188,8 +187,8 @@ class Rule(models.Model):
                 .values()
             )
 
-            assert self.num_courses is not None or self.credits is not None
-            if self.num_courses is not None and total_courses < self.num_courses:
+            assert self.num is not None or self.credits is not None
+            if self.num is not None and total_courses < self.num:
                 return False
 
             if self.credits is not None and total_credits < self.credits:
@@ -216,6 +215,7 @@ class UserDegreePlan(models.Model):
     degree_plan = models.ForeignKey(
         DegreePlan,
         on_delete=models.CASCADE,
+        help_text="The degree plan with which this is associated"
     )
 
     person = models.ForeignKey(
@@ -224,8 +224,6 @@ class UserDegreePlan(models.Model):
         help_text="the person (user) to which the schedule belongs.",
     )
 
-    courses = models.ManyToManyField(Course, help_text="Courses used to fulfill the degree_plan.")
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -233,3 +231,78 @@ class UserDegreePlan(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["name", "person"], name="user_degreeplan_name_person")
         ]
+
+
+class Fulfillment(models.Model):
+    user_degree_plan=models.ForeignKey(
+        UserDegreePlan,
+        on_delete=models.CASCADE,
+        related_name="fulfillments",
+        help_text="The user degree plan with which this fulfillment is associated"
+    )
+
+    full_code = models.CharField(
+        max_length=16,
+        blank=True,
+        db_index=True,
+        help_text="The dash-joined department and code of the course, e.g. `CIS-120` for CIS-120.",
+    )
+
+    semester = models.CharField(
+        max_length=5,
+        null=True,
+        help_text=dedent(
+            """
+        The semester of the course (of the form YYYYx where x is A [for spring],
+        B [summer], or C [fall]), e.g. `2019C` for fall 2019. Null if this fulfillment
+        does not yet have a semester
+        """
+        ),
+    )
+
+    rules = models.ManyToManyField(
+        Rule,
+        related_name="fulfillments",
+        blank=True,
+        help_text=dedent(
+            """
+        The rules this course fulfills. Blank if this course does not apply
+        to any rules.
+        """
+        )
+    )
+
+
+class DoubleCountRestriction(models.Model):
+    max_courses = models.PositiveSmallIntegerField(
+        null=True,
+        help_text=dedent(
+            """
+        The maximum number of courses you can count for both rules.
+        """
+        ),
+    )
+
+    max_credits = models.DecimalField(
+        decimal_places=2,
+        max_digits=4,
+        null=True,
+        help_text=dedent(
+            """
+        The maximum number of CUs you can count for both rules.
+        """
+        ),
+    )
+
+    rule = models.ForeignKey(
+        Rule,
+        on_delete=models.CASCADE,
+        related_name="+"
+    )
+
+    other_rule = models.ForeignKey(
+        Rule,
+        on_delete=models.CASCADE,
+        related_name="+"
+    )
+

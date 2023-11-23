@@ -194,7 +194,7 @@ def parse_rulearray(
                 else:
                     this_rule.q = repr(parse_coursearray(rule_req["courseArray"]))
                     this_rule.credits = credits
-                    this_rule.num_courses = num_courses
+                    this_rule.num = num_courses
             case "IfStmt":
                 assert "rightCondition" not in rule_req
                 try:
@@ -235,7 +235,7 @@ def parse_rulearray(
                     print("WARNING: subset has no ruleArray")
             case "Group":  # this is nested
                 parse_rulearray(rule_json["ruleArray"], degree_plan, rules, parent=this_rule)
-                this_rule.num_courses = int(rule_req["numberOfGroups"])
+                this_rule.num = int(rule_req["numberOfGroups"])
             case "Complete" | "Incomplete":
                 assert "ifElsePart" in rule_json  # this is a nested requirement
                 continue  # do nothing
