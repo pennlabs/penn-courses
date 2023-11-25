@@ -23,7 +23,7 @@ class DegreeList(generics.ListAPIView):
 
     schema = PcxAutoSchema(
         response_codes={
-            "degree-list": {"GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses listed successfully."}}
+            "degree-list": {"GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Degrees listed successfully."}}
         },
     )
 
@@ -52,20 +52,27 @@ class DegreeDetail(generics.RetrieveAPIView):
     serializer_class = DegreePlanDetailSerializer
     queryset = DegreePlan.objects.all()
 
-class UserDegreePlanViewset(viewsets.ModelViewSet):
+class UserDegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     """
     list, retrieve, create, destroy, and update user degree plans.
     """
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         queryset = UserDegreePlan.objects.filter(person=self.request.user)
         queryset = queryset.prefetch_related(
-            "courses",
-            "degreeplan__rules",
+            "fulfillments",
+            "degree_plan",
+            "degree_plan__rules",
         )
         return queryset
 
-    def get_serializer(self, *args, **kwargs):
+    def get_serializer_class(self):
         if self.action == "list":
-            return UserDegreePlanListSerializer(*args, **kwargs)
-        return UserDegreePlanDetailSerializer(*args, **kwargs)
+            return UserDegreePlanListSerializer
+        return UserDegreePlanDetailSerializer
+    
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({ "request": self.request }) # used to get the user
+        return context

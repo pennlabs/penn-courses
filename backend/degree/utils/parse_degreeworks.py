@@ -175,7 +175,7 @@ def parse_rulearray(
                 number (or range) of CUs required, or both.
                 """
                 # check the number of classes/credits
-                num_courses = (
+                num = (
                     int(rule_req.get("classesBegin"))
                     if rule_req.get("classesBegin") is not None
                     else None
@@ -185,16 +185,16 @@ def parse_rulearray(
                     if rule_req.get("creditsBegin") is not None
                     else None
                 )
-                if num_courses is None and credits is None:
+                if num is None and credits is None:
                     raise ValueError("No classesBegin or creditsBegin in Course requirement")
 
                 # a rule with 0 required courses/credits is not a rule
-                if num_courses == 0 or credits == 0:
+                if num == 0 or credits == 0:
                     rules.pop()
                 else:
                     this_rule.q = repr(parse_coursearray(rule_req["courseArray"]))
                     this_rule.credits = credits
-                    this_rule.num = num_courses
+                    this_rule.num = num
             case "IfStmt":
                 assert "rightCondition" not in rule_req
                 try:
@@ -251,7 +251,7 @@ def parse_rulearray(
 def parse_degreeworks(json: dict, degree_plan: DegreePlan) -> list[Rule]:
     """
     Returns a list of Rules given a DegreeWorks JSON audit and a DegreePlan.
-    Note that this method calls the save method of the degree_plan.
+    Note that this method creates rule objects but does not save them.
     """
     blockArray = json.get("blockArray")
     rules = []
@@ -261,14 +261,10 @@ def parse_degreeworks(json: dict, degree_plan: DegreePlan) -> list[Rule]:
             title=requirement["title"],
             # TODO: use requirement code?
             credits=None,
-            num_courses=None,
+            num=None,
             degree_plan=degree_plan,
         )
-
-        # TODO: Should associate each Rule here with this Requirement
+        
         rules.append(degree_req)
         parse_rulearray(requirement["ruleArray"], degree_plan, rules, parent=degree_req)
-
-    for rule in rules:
-        rule.save()
     return rules

@@ -1,7 +1,10 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework import routers
+from degree.views import DegreeDetail, DegreeList, UserDegreePlanViewset
 
-from degree.views import DegreeDetail, DegreeList
+router = routers.DefaultRouter()
 
+router.register("degreeplans", UserDegreePlanViewset, basename="degreeplans")
 
 urlpatterns = [
     path("degrees/<int:year>", DegreeList.as_view(), name="degree-list"),
@@ -10,4 +13,5 @@ urlpatterns = [
         DegreeDetail.as_view(),
         name="degree-detail",
     ),
+    path("", include(router.urls)),
 ]

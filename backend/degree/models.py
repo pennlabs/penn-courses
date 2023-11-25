@@ -76,8 +76,7 @@ class DegreePlan(models.Model):
         ]
 
     def __str__(self) -> str:
-        return f"{self.program} {self.degree} in {self.major} \
-            with conc. {self.concentration} ({self.year})"
+        return f"{self.program} {self.degree} in {self.major} with conc. {self.concentration} ({self.year})" #noqa E501
 
 
 class Rule(models.Model):
@@ -153,20 +152,7 @@ class Rule(models.Model):
         ),
         related_name="children",
     )
-
-    class Meta:
-        constraints = [
-            models.CheckConstraint(
-                check=(
-                    (
-                        Q(credits__isnull=True) | Q(credits__gt=0)
-                    )  # check credits and num are non-zero
-                    & (Q(num_courses__isnull=True) | Q(num_courses__gt=0))
-                ),
-                name="num_course_credits_gt_0",
-            )
-        ]
-
+    
     def __str__(self) -> str:
         return f"{self.title}, q={self.q}, num={self.num}, cus={self.credits}, \
             degree_plan={self.degree_plan}, parent={self.parent.title if self.parent else None}"
@@ -200,9 +186,15 @@ class Rule(models.Model):
             return True
 
         assert self.children.all().exists()
+        count = 0
         for child in self.children.all():
             if not child.evaluate(full_codes):
-                return False
+                if self.num is None:
+                    return False
+            else:
+                count += 1
+        if self.num != None and count < self.num:
+            return False
         return True
 
 

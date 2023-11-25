@@ -20,7 +20,7 @@ RuleSerializer._declared_fields["rules"] = RuleSerializer(
 class DegreePlanListSerializer(serializers.ModelSerializer):
     class Meta:
         model = DegreePlan
-        exclude = ["rules"]
+        fields = "__all__"
 
 
 class DegreePlanSerializer(serializers.ModelSerializer):
@@ -49,7 +49,7 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
 
 class FulfillmentSerializer(serializers.ModelSerializer):
     course = serializers.SerializerMethodField(
-        help=dedent(
+        help_text=dedent(
             """
         The details of the fulfilling course. This is the most recent course with the full code, or null if no course exists with the full code.
         """
@@ -76,13 +76,20 @@ class UserDegreePlanListSerializer(serializers.ModelSerializer):
 class UserDegreePlanDetailSerializer(serializers.ModelSerializer):
     fulfillments = FulfillmentSerializer(
         many=True,
-        read_only=False,
+        read_only=True,
         help_text="The courses used to fulfill degree plan.",
-        required=True,
     )
-
+    degree_plan = DegreePlanDetailSerializer(read_only=True)
+    degree_plan_id = serializers.PrimaryKeyRelatedField(
+        write_only=True,
+        source="degree_plan",
+        queryset=DegreePlan.objects.all(),
+        help_text="The degree plan to which this user degree plan belongs.",
+    )
     id = serializers.ReadOnlyField(help_text="The id of the user degree plan.")
+    person = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
 
     class Meta:
         model = UserDegreePlan
-        exclude = ["person"]
+        fields = "__all__"
