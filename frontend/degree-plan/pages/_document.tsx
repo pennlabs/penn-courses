@@ -5,7 +5,7 @@ export default function Document() {
   return (
     <Html lang="en" style={{backgroundColor:'#F7F9FC'}}>
       <Head>
-        <title>Penn Degree Plan</title>
+        {/* <title>Penn Degree Plan</title> */}
         <meta name="description" content="Penn Degree Plan by Penn Labs" />
       </Head>
         <Main />
