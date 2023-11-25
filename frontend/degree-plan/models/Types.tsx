@@ -22,35 +22,29 @@ export type ICourse = {
     added: boolean,
     dept: string,
     number: string,
-    note: string
 }
 
-enum QualifierType {
-    GPA = "GPA",
-    CUS = "CUS",
-    NUM = "NUM"
+export type ICourseQ = {
+    dept: string,
+    number: string,
+    title: string,
+    semester: string
 }
 
-export type IRule = {
-    num: Number,
-    nax_num: Number,
-    cus: Number,
-    max_cus: Number
-}
+// enum QualifierType {
+//     GPA = "GPA",
+//     CUS = "CUS",
+//     NUM = "NUM"
+// }
 
-export type IQualifier = {
-    label: string,
-    code: string,
-    num: Number,
-    type: QualifierType
-}
+// export type IQualifier = {
+//     label: string,
+//     code: string,
+//     min_cus: Number,
+//     num: Number,
+//     type: QualifierType
+// }
 
-export type IReq = {
-    name: string,
-    code: string,
-    qualifiers: IQualifier[],
-    rules: IRule[]
-} 
 
 export type IDegreePlan = {
     program: string,
@@ -60,6 +54,30 @@ export type IDegreePlan = {
     year: Number
 }
 
+/* This model represents a degree requirement. */ 
+export type IReq = {
+    name: string,
+    code: string,
+    min_cus: Number,
+    degree_plan: IDegreePlan[]
+    // qualifiers: IQualifier[],
+    rules: IRule[]
+} 
+
+/* This model represents a degree requirement rule. A rule has a Q object
+    representing courses that can fulfill this rule and a number of required
+    courses, number of required CUs, or both. */ 
+export type IRule = {
+    courses: ICourseQ[],
+    min_num: Number,
+    max_num: Number,
+    min_cus: Number,
+    max_cus: Number,
+    requirement: string
+}
+
+/* Course model */
+export type IQ = ICourse;
 
 // [
 //     {

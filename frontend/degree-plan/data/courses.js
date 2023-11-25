@@ -82,7 +82,6 @@ export const coursesSpring2024 = [
     "title": "Senior Project",
     "description": "Design and implementation of a significant piece of work: software, hardware or theory. In addition, emphasis on technical writing and oral communication skills. Students must have an abstract of their Senior Project, which is approved and signed by a Project Adviser, at the end of the second week of Fall classes. The project continues during two semesters; students must enroll in CIS 401 during the second semester. At the end of the first semester, students are required to submit an intermediate report and give a class presentation describing their project and progress. Grades are based on technical writing skills (as per submitted report), oral presentation skills (as per class presentation) and progress on the project. These are evaluated by the Project Adviser and the Course Instructor."
   },
-
   {
     "dept": "CIS",
     "number": 401,
