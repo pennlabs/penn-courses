@@ -1,23 +1,29 @@
 from django.contrib.auth import get_user_model
 from django.db.models import Prefetch, Q
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from django_auto_prefetching import AutoPrefetchViewSetMixin
-from rest_framework import generics
+from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from courses.filters import CourseSearchFilterBackend
 from courses.models import (
     Attribute,
     Course,
+    Friendship,
     NGSSRestriction,
     PreNGSSRequirement,
     Section,
     StatusUpdate,
+    User,
 )
 from courses.search import TypedCourseSearchBackend, TypedSectionSearchBackend
 from courses.serializers import (
     AttributeListSerializer,
     CourseDetailSerializer,
     CourseListSerializer,
+    FriendshipSerializer,
     MiniSectionSerializer,
     NGSSRestrictionListSerializer,
     PreNGSSRequirementListSerializer,
@@ -26,11 +32,8 @@ from courses.serializers import (
     UserSerializer,
 )
 from courses.util import get_current_semester
-from PennCourses.docs_settings import PcxAutoSchema, reverse_func
-from plan.management.commands.recommendcourses import (
-    retrieve_course_clusters,
-    vectorize_user,
-)
+from PennCourses.docs_settings import PcxAutoSchema
+from plan.management.commands.recommendcourses import retrieve_course_clusters, vectorize_user
 
 
 SEMESTER_PARAM_DESCRIPTION = (
@@ -75,14 +78,12 @@ class SectionList(generics.ListAPIView, BaseCourseMixin):
 
     schema = PcxAutoSchema(
         response_codes={
-            reverse_func("section-search", args=["semester"]): {
+            "section-search": {
                 "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Sections Listed Successfully."}
             }
         },
         custom_path_parameter_desc={
-            reverse_func("section-search", args=["semester"]): {
-                "GET": {"semester": SEMESTER_PARAM_DESCRIPTION}
-            }
+            "section-search": {"GET": {"semester": SEMESTER_PARAM_DESCRIPTION}}
         },
     )
 
@@ -103,16 +104,12 @@ class SectionDetail(generics.RetrieveAPIView, BaseCourseMixin):
 
     schema = PcxAutoSchema(
         response_codes={
-            reverse_func("sections-detail", args=["semester", "full_code"]): {
-                "GET": {
-                    200: "[DESCRIBE_RESPONSE_SCHEMA]Section detail retrieved successfully."
-                }
+            "sections-detail": {
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Section detail retrieved successfully."}
             }
         },
         custom_path_parameter_desc={
-            reverse_func("sections-detail", args=["semester", "full_code"]): {
-                "GET": {"semester": SEMESTER_PARAM_DESCRIPTION}
-            }
+            "sections-detail": {"GET": {"semester": SEMESTER_PARAM_DESCRIPTION}}
         },
     )
 
@@ -131,21 +128,15 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
 
     schema = PcxAutoSchema(
         response_codes={
-            reverse_func("courses-list", args=["semester"]): {
-                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses listed successfully."}
-            }
+            "courses-list": {"GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses listed successfully."}}
         },
         custom_path_parameter_desc={
-            reverse_func("courses-list", args=["semester"]): {
-                "GET": {"semester": SEMESTER_PARAM_DESCRIPTION}
-            }
+            "courses-list": {"GET": {"semester": SEMESTER_PARAM_DESCRIPTION}}
         },
     )
 
     serializer_class = CourseListSerializer
-    queryset = Course.with_reviews.filter(
-        sections__isnull=False
-    )  # included redundantly for docs
+    queryset = Course.with_reviews.filter(sections__isnull=False)  # included redundantly for docs
 
     def get_queryset(self):
         queryset = Course.with_reviews.filter(sections__isnull=False)
@@ -178,7 +169,7 @@ class CourseListSearch(CourseList):
 
     schema = PcxAutoSchema(
         response_codes={
-            reverse_func("courses-search", args=["semester"]): {
+            "courses-search": {
                 "GET": {
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Courses listed successfully.",
                     400: "Bad request (invalid query).",
@@ -186,9 +177,7 @@ class CourseListSearch(CourseList):
             }
         },
         custom_path_parameter_desc={
-            reverse_func("courses-search", args=["semester"]): {
-                "GET": {"semester": SEMESTER_PARAM_DESCRIPTION}
-            }
+            "courses-search": {"GET": {"semester": SEMESTER_PARAM_DESCRIPTION}}
         },
     )
 
@@ -211,11 +200,7 @@ class CourseListSearch(CourseList):
         """
         context = super().get_serializer_context()
 
-        if (
-            self.request is None
-            or not self.request.user
-            or not self.request.user.is_authenticated
-        ):
+        if self.request is None or not self.request.user or not self.request.user.is_authenticated:
             return context
 
         (
@@ -248,16 +233,12 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
 
     schema = PcxAutoSchema(
         response_codes={
-            reverse_func("courses-detail", args=["semester", "full_code"]): {
-                "GET": {
-                    200: "[DESCRIBE_RESPONSE_SCHEMA]Courses detail retrieved successfully."
-                }
+            "courses-detail": {
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses detail retrieved successfully."}
             }
         },
         custom_path_parameter_desc={
-            reverse_func("courses-detail", args=["semester", "full_code"]): {
-                "GET": {"semester": SEMESTER_PARAM_DESCRIPTION}
-            }
+            "courses-detail": {"GET": {"semester": SEMESTER_PARAM_DESCRIPTION}}
         },
     )
 
@@ -295,14 +276,12 @@ class PreNGSSRequirementList(generics.ListAPIView, BaseCourseMixin):
 
     schema = PcxAutoSchema(
         response_codes={
-            reverse_func("requirements-list", args=["semester"]): {
-                "GET": {
-                    200: "[DESCRIBE_RESPONSE_SCHEMA]Requirements listed successfully."
-                }
+            "requirements-list": {
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Requirements listed successfully."}
             },
         },
         custom_path_parameter_desc={
-            reverse_func("requirements-list", args=["semester"]): {
+            "requirements-list": {
                 "GET": {
                     "semester": (
                         "The semester of the requirement (of the form YYYYx where x is A "
@@ -326,10 +305,8 @@ class AttributeList(generics.ListAPIView):
 
     schema = PcxAutoSchema(
         response_codes={
-            reverse_func("attributes-list"): {
-                "GET": {
-                    200: "[DESCRIBE_RESPONSE_SCHEMA]Attributes listed successfully."
-                }
+            "attributes-list": {
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Attributes listed successfully."}
             },
         },
     )
@@ -345,10 +322,8 @@ class NGSSRestrictionList(generics.ListAPIView):
 
     schema = PcxAutoSchema(
         response_codes={
-            reverse_func("restrictions-list"): {
-                "GET": {
-                    200: "[DESCRIBE_RESPONSE_SCHEMA]Restrictions listed successfully."
-                }
+            "restrictions-list": {
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Restrictions listed successfully."}
             },
         },
     )
@@ -379,14 +354,14 @@ class StatusUpdateView(generics.ListAPIView):
 
     schema = PcxAutoSchema(
         response_codes={
-            reverse_func("statusupdate", args=["full_code"]): {
+            "statusupdate": {
                 "GET": {
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Status Updates for section listed successfully."
                 }
             }
         },
         custom_path_parameter_desc={
-            reverse_func("statusupdate", args=["full_code"]): {
+            "statusupdate": {
                 "GET": {
                     "full_code": (
                         "The code of the section which this status update applies to, in the "
@@ -407,3 +382,157 @@ class StatusUpdateView(generics.ListAPIView):
             section__course__semester=get_current_semester(),
             in_add_drop_period=True,
         ).order_by("created_at")
+
+
+def get_accepted_friends(user):
+    """Return user's accepted friends"""
+    return User.objects.filter(
+        received_friendships__sender=user, received_friendships__status=Friendship.Status.ACCEPTED
+    ) | User.objects.filter(
+        sent_friendships__recipient=user, sent_friendships__status=Friendship.Status.ACCEPTED
+    )
+
+
+class FriendshipView(generics.ListAPIView):
+    """
+    get: Get a list of all friendships and friendship requests (sent and recieved) for the
+    specified user. Filter the list by status (accepted, sent) to distinguish between
+    friendships and friendship requests.
+
+    post: Create a friendship between two users (sender and recipient). If a previous request does
+    not exist between the two friendships, then we create friendship request. If a previous request
+    exists (where the recipient is the sender) and the recipient of a request hits this route, then
+    we accept the request.
+
+    delete: Delete a friendship between two users (sender and recipient). If there exists only
+    a friendship request between two users, then we either delete the friendship request
+    if the sender hits the route, or we reject the request if the recipient hits this route.
+    """
+
+    #  model = Friendship
+    serializer_class = FriendshipSerializer
+    http_method_names = ["get", "post", "delete"]
+    permission_classes = [IsAuthenticated]
+
+    schema = PcxAutoSchema(
+        response_codes={
+            "friendship": {
+                "GET": {
+                    200: "Friendships retrieved successfully.",
+                },
+                "POST": {
+                    201: "Friendship request created successfully.",
+                    200: "Friendship request accepted successfully.",
+                    409: "Friendship request already exists",
+                },
+                "DELETE": {
+                    200: "Friendship rejected/deleted/cancelled successfully.",
+                    404: "Friendship does not exist.",
+                    409: "Friendship request already rejected.",
+                },
+            }
+        },
+        custom_parameters={
+            "friendship": {
+                "DELETE": [
+                    {
+                        "name": "pennkey",
+                        "in": "query",
+                        "description": "The Pennkey of the user you are ending/rejecting your friendship/friend request with.",  # noqa E501
+                        "schema": {"type": "string"},
+                        "required": True,
+                    },
+                ]
+            },
+        },
+        override_request_schema={
+            "friendship": {
+                "POST": {
+                    "type": "object",
+                    "properties": {
+                        "pennkey": {
+                            "type": "string",
+                            "description": "The Pennkey of the user you are sending a friend request to or handling a request from.",  # noqa E501
+                            "required": True,
+                        },
+                    },
+                }
+            }
+        },
+    )
+
+    # only returns accepted / sent friendships
+    def get_queryset(self):
+        return Friendship.objects.filter(
+            Q(sender=self.request.user) | Q(recipient=self.request.user),
+            Q(status=Friendship.Status.ACCEPTED) | Q(status=Friendship.Status.SENT),
+        )
+
+    # returns all friendships (regardless of status)
+    def get_all_friendships(self):
+        return Friendship.objects.filter(
+            Q(sender=self.request.user) | Q(recipient=self.request.user)
+        )
+
+    def post(self, request):
+        sender = request.user
+        recipient = get_object_or_404(User, username=request.data.get("pennkey"))
+
+        existing_friendship = (
+            self.get_all_friendships().filter(Q(recipient=recipient) | Q(sender=recipient)).first()
+        )
+
+        if not existing_friendship:
+            friendship = Friendship(
+                sender=sender, recipient=recipient, status=Friendship.Status.SENT
+            )
+            friendship.save()
+            res = FriendshipSerializer(friendship)
+            return Response(data=res.data, status=status.HTTP_201_CREATED)
+        elif existing_friendship.status == Friendship.Status.REJECTED:
+            existing_friendship.status = Friendship.Status.SENT
+            existing_friendship.sender = sender
+            existing_friendship.recipient = recipient
+            existing_friendship.save()
+            res = FriendshipSerializer(existing_friendship)
+            return Response(data=res.data, status=status.HTTP_200_OK)
+        elif existing_friendship.status == Friendship.Status.SENT:
+            if existing_friendship.sender == sender:
+                return Response({}, status=status.HTTP_409_CONFLICT)
+            elif existing_friendship.recipient == sender:
+                existing_friendship.status = Friendship.Status.ACCEPTED
+                existing_friendship.save()
+                res = FriendshipSerializer(existing_friendship)
+                return Response(res.data, status=status.HTTP_200_OK)
+        else:
+            return Response({}, status=status.HTTP_409_CONFLICT)
+
+    def delete(self, request):
+        # either deletes a friendship or cancels/rejects a friendship request
+        # (depends on who sends the request)
+        res = {}
+        sender = request.user
+        recipient = get_object_or_404(User, username=request.data.get("pennkey"))
+
+        existing_friendship = (
+            self.get_all_friendships().filter(Q(recipient=recipient) | Q(sender=recipient)).first()
+        )
+        if not existing_friendship:
+            res["message"] = "Friendship doesn't exist."
+            return JsonResponse(res, status=status.HTTP_404_NOT_FOUND)
+
+        if existing_friendship.status == Friendship.Status.ACCEPTED:
+            existing_friendship.delete()
+            res["message"] = "Friendship deleted successfully."
+        elif existing_friendship.status == Friendship.Status.SENT:
+            if existing_friendship.sender == sender:
+                existing_friendship.delete()
+                res["message"] = "Friendship request removed."
+            if existing_friendship.recipient == sender:
+                existing_friendship.status = Friendship.Status.REJECTED
+                existing_friendship.save()
+                res["message"] = "Friendship request rejected."
+        else:
+            res["message"] = "Friendship request already rejected."
+            return JsonResponse(res, status=status.HTTP_409_CONFLICT)
+        return JsonResponse(res, status=status.HTTP_200_OK)

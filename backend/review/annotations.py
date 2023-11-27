@@ -72,17 +72,13 @@ def review_averages(
         fields = ["course_quality", "difficulty", "instructor_quality", "work_required"]
 
     class PercentOpenSubqueryAvg(Subquery):
-        template = (
-            "(SELECT AVG(percent_open) FROM (%(subquery)s) percent_open_avg_view)"
-        )
+        template = "(SELECT AVG(percent_open) FROM (%(subquery)s) percent_open_avg_view)"
 
     class NumOpeningsSubqueryAvg(Subquery):
         template = "(SELECT AVG(num_openings) FROM (%(subquery)s) num_openings_view)"
 
     class FilledInAdvRegAvg(Subquery):
-        template = (
-            "(SELECT AVG(filled_in_adv_reg) FROM (%(subquery)s) filled_in_adv_reg_view)"
-        )
+        template = "(SELECT AVG(filled_in_adv_reg) FROM (%(subquery)s) filled_in_adv_reg_view)"
 
     queryset = queryset.annotate(
         **{
@@ -104,9 +100,7 @@ def review_averages(
             **(
                 {
                     (prefix + "final_enrollment"): Subquery(
-                        ReviewBit.objects.filter(
-                            reviewbit_subfilters, review__responses__gt=0
-                        )
+                        ReviewBit.objects.filter(reviewbit_subfilters, review__responses__gt=0)
                         .values(
                             "review_id",
                             "review__enrollment",
@@ -269,7 +263,7 @@ def annotate_with_matching_reviews(
 
 
 def annotate_average_and_recent(
-    qs, match_review_on, match_section_on, extra_metrics=True
+    qs, match_review_on, match_section_on, extra_metrics=True, fields=None
 ):
     """
     Annotate queryset with both all reviews and recent reviews.
@@ -284,6 +278,7 @@ def annotate_average_and_recent(
     :param: extra_metrics: option to include extra metrics in PCR aggregations; final enrollment,
         percent of add/drop period open, average number of openings during add/drop,
         and percentage of sections filled in advance registration
+    :param: fields: option to specify the fields averaged by the query
     """
     qs = annotate_with_matching_reviews(
         qs,
@@ -292,6 +287,7 @@ def annotate_average_and_recent(
         most_recent=False,
         prefix="average_",
         extra_metrics=extra_metrics,
+        fields=fields,
     )
     qs = annotate_with_matching_reviews(
         qs,
@@ -300,5 +296,6 @@ def annotate_average_and_recent(
         most_recent=True,
         prefix="recent_",
         extra_metrics=extra_metrics,
+        fields=fields,
     )
     return qs

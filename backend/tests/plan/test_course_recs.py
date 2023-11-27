@@ -84,8 +84,7 @@ class CourseRecommendationsTestCase(TestCase):
         # Setting up test courses in the db
         test_descriptions = dict()
         with open(
-            settings.BASE_DIR
-            + "/tests/plan/course_recs_test_data/course_descriptions_test.csv"
+            settings.BASE_DIR + "/tests/plan/course_recs_test_data/course_descriptions_test.csv"
         ) as course_desc_file:
             desc_reader = csv.reader(course_desc_file)
             for course, description in desc_reader:
@@ -270,9 +269,7 @@ class CourseRecommendationsTestCase(TestCase):
         )
         freshman_schedule.save()
         for course_code in ["GRMN-502", "GEOL-545", "MUSC-275"]:
-            freshman_schedule.sections.add(
-                self.section_obs[course_code + "-001", TEST_SEMESTER]
-            )
+            freshman_schedule.sections.add(self.section_obs[course_code + "-001", TEST_SEMESTER])
         response = freshman_client.post(reverse("recommend-courses"))
         self.assertEqual(response.status_code, 200, response.content)
         self.assertEqual(len(response.data), 5)
@@ -287,9 +284,7 @@ class CourseRecommendationsTestCase(TestCase):
         )
         gapsem_schedule.save()
         for course_code in ["LGIC-320", "ANTH-395", "NELC-337"]:
-            gapsem_schedule.sections.add(
-                self.section_obs[course_code + "-001", "2017A"]
-            )
+            gapsem_schedule.sections.add(self.section_obs[course_code + "-001", "2017A"])
         response = gapsem_client.post(reverse("recommend-courses"))
         self.assertEqual(response.status_code, 200, response.content)
         self.assertEqual(len(response.data), 5)
@@ -323,9 +318,7 @@ class CourseRecommendationsTestCase(TestCase):
         )
         repeat_schedule_old.save()
         for course_code in ["MUSC-275"]:
-            repeat_schedule_old.sections.add(
-                self.section_obs[course_code + "-001", "2016C"]
-            )
+            repeat_schedule_old.sections.add(self.section_obs[course_code + "-001", "2016C"])
         repeat_schedule = Schedule(
             person=repeat,
             semester=TEST_SEMESTER,
@@ -333,9 +326,7 @@ class CourseRecommendationsTestCase(TestCase):
         )
         repeat_schedule.save()
         for course_code in ["GRMN-502", "GEOL-545", "MUSC-275"]:
-            repeat_schedule.sections.add(
-                self.section_obs[course_code + "-001", TEST_SEMESTER]
-            )
+            repeat_schedule.sections.add(self.section_obs[course_code + "-001", TEST_SEMESTER])
         response = repeat_client.post(reverse("recommend-courses"))
         self.assertEqual(response.status_code, 200, response.content)
         self.assertEqual(len(response.data), 5)
@@ -400,22 +391,12 @@ class CourseRecommendationsTestCase(TestCase):
         for course_ob in data:
             should_be = self.course_objects[course_ob["id"]]
             should_be_str = (
-                JSONRenderer()
-                .render(should_be, renderer_context={"indent": 4})
-                .decode("UTF-8")
+                JSONRenderer().render(should_be, renderer_context={"indent": 4}).decode("UTF-8")
             )
             course_ob_str = (
-                JSONRenderer()
-                .render(course_ob, renderer_context={"indent": 4})
-                .decode("UTF-8")
+                JSONRenderer().render(course_ob, renderer_context={"indent": 4}).decode("UTF-8")
             )
-            error_msg = (
-                "\n\nresponse="
-                + course_ob_str
-                + "\n\nshould be="
-                + should_be_str
-                + "\n\n"
-            )
+            error_msg = "\n\nresponse=" + course_ob_str + "\n\nshould be=" + should_be_str + "\n\n"
             self.assertEqual(should_be, course_ob, error_msg)
 
     def subtest_only_past_courses(self):
@@ -629,16 +610,10 @@ class CourseRecommendationsTestCase(TestCase):
         actual = generate_course_vectors_dict([(0, "CIS-120", "2020A")], False)
         # self.assertEqual does not work with np arrays
         self.assertTrue(
-            actual is not None
-            and isinstance(actual[0], dict)
-            and "CIS-120" in actual[0]
+            actual is not None and isinstance(actual[0], dict) and "CIS-120" in actual[0]
         )
-        self.assertTrue(
-            np.linalg.norm(actual[0]["CIS-120"] - expected[0]["CIS-120"]) < 1e-8
-        )
-        self.assertTrue(
-            np.linalg.norm(actual[1]["CIS-120"] - expected[1]["CIS-120"]) < 1e-8
-        )
+        self.assertTrue(np.linalg.norm(actual[0]["CIS-120"] - expected[0]["CIS-120"]) < 1e-8)
+        self.assertTrue(np.linalg.norm(actual[1]["CIS-120"] - expected[1]["CIS-120"]) < 1e-8)
 
     def test_group_courses_course_multiple_times_one_semester(self, mock):
         actual = group_courses([(0, "CIS-120", "2020A"), (0, "CIS-120", "2020A")])

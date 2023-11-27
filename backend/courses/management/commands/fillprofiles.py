@@ -6,9 +6,7 @@ from courses.models import UserProfile
 
 
 class Command(BaseCommand):
-    help = (
-        "Ensure that user profiles begin with a user's school email if one is on file."
-    )
+    help = "Ensure that user profiles begin with a user's school email if one is on file."
 
     def handle(self, *args, **kwargs):
         root_logger = logging.getLogger("")

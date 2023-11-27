@@ -17,9 +17,7 @@ def get_crosswalk(cross_walk):
     a list of the new codes originating from that source.
     """
     links = defaultdict(list)
-    cross_walk = pd.read_csv(
-        cross_walk, delimiter="|", encoding="unicode_escape", dtype=str
-    )
+    cross_walk = pd.read_csv(cross_walk, delimiter="|", encoding="unicode_escape", dtype=str)
     for _, r in cross_walk.iterrows():
         old_full_code = f"{r['SRS_SUBJ_CODE']}-{r['SRS_COURSE_NUMBER']}"
         new_full_code = f"{r['NGSS_SUBJECT']}-{r['NGSS_COURSE_NUMBER']}"
@@ -91,9 +89,7 @@ def load_crosswalk(print_missing=False, verbose=False):
             # Take minimum semester course (after root course semester) matching child code
             child_to_topic = {child.full_code: child.topic for child in children}
             for child in {child.full_code: child for child in children}.values():
-                assert (
-                    child.topic
-                ), f"Child course {child} of root {root_course} has no topic"
+                assert child.topic, f"Child course {child} of root {root_course} has no topic"
             child_topics = set(child_to_topic.values())
             missing_codes = set(children_codes) - set(child_to_topic.keys())
 
@@ -119,9 +115,7 @@ def load_crosswalk(print_missing=False, verbose=False):
 
     if verbose:
         print(f"Performed {num_merges} Topic merges.")
-        print(
-            f"Added branches, updating the branched_from field of {num_branch_updates} Topics."
-        )
+        print(f"Added branches, updating the branched_from field of {num_branch_updates} Topics.")
         print(f"{num_missing_roots}/{len(crosswalk)} roots not found in db")
         print(
             f"{num_missing_children}/{sum(len(c) for c in crosswalk.values())} "

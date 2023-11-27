@@ -4,7 +4,6 @@ verify_ssl = true
 name = "pypi"
 
 [dev-packages]
-codecov = "*"
 coverage = "*"
 unittest-xml-reporting = "*"
 flake8 = "*"
@@ -24,6 +23,8 @@ django = ">=3.2"
 psycopg2 = "*"
 requests = "*"
 twilio = "*"
+channels = "<3"
+channels-redis = "*"
 phonenumbers = "*"
 celery = "<5"
 redis = ">=3.4.1"
@@ -43,6 +44,10 @@ django-runtime-options = "*"
 pyyaml = "*"
 uritemplate = "*"
 uwsgi = {version = "*", sys_platform = "== 'linux'"}
+uvloop = {version = "*", sys_platform = "== 'linux'"}
+gunicorn = "*"
+uvicorn = {extras = ["standard"], version = "*"}
+httptools = "*"
 ddt = "*"
 lark-parser = "*"
 tqdm = "*"
@@ -58,7 +63,9 @@ scikit-learn = "*"
 pandas = "*"
 python-dateutil = "*"
 docutils = "*"
-selenium-wire = "*"
+ics = "*"
+psycopg2-binary = "*"
+drf-nested-routers = "*"
 
 [requires]
 python_full_version = "3.10"

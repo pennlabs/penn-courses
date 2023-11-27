@@ -5,7 +5,8 @@ import styled from "styled-components";
 // @ts-ignore
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
 import { useRouter } from "next/router";
-import { DropdownButton } from "../DropdownButton";
+import { DropdownButton } from "./DropdownButton";
+import { ButtonFilter } from "./ButtonFilter";
 import { SchoolReq } from "./SchoolReq";
 import { RangeFilter } from "./RangeFilter";
 import { CheckboxFilter } from "./CheckboxFilter";
@@ -23,6 +24,7 @@ import {
     updateSearchText,
     updateRangeFilter,
     updateCheckboxFilter,
+    updateButtonFilter,
     clearAll,
     clearFilter,
     updateSearch,
@@ -69,6 +71,8 @@ interface SearchBarProps {
     store: object;
     storeLoaded: boolean;
     setShowLoginModal: React.Dispatch<React.SetStateAction<boolean>>;
+    activeSchedule: {id: number};
+    updateButtonFilter: (field: string) => (value: number) => void;
 }
 
 function shouldSearch(filterData: FilterData) {
@@ -293,6 +297,8 @@ function SearchBar({
     store,
     storeLoaded,
     setShowLoginModal,
+    updateButtonFilter,
+    activeSchedule,
 }: /* eslint-enable no-shadow */
 SearchBarProps) {
     const router = useRouter();
@@ -305,6 +311,7 @@ SearchBarProps) {
     useEffect(() => {
         // ensure that the user is logged in before initiating the sync
         if (user && storeLoaded) {
+            clearScheduleData();
             initiateSync(store);
         }
     }, [user, store, storeLoaded]);
@@ -468,13 +475,30 @@ SearchBarProps) {
                     />
                 </DropdownButton>
             )}
-            {/* <DropdownButton
-                title="Fit Schedule"
-                filterData={filterData.fit_schedule}
-                defaultFilter={defaultFilters.filterData.fit_schedule}
-                clearFilter={clearFilterSearch("fit_schedule")}
+            {activeSchedule && 
+                <ButtonFilter
+                    title="Fit Schedule"
+                    filterData={filterData}
+                    clearFilter={clearFilterSearch("schedule-fit")}
+                    // @ts-ignore
+                    startSearch={conditionalStartSearch}
+                    value={activeSchedule.id}
+                    buttonProperty="schedule-fit"
+                    updateButtonFilter={updateButtonFilter("schedule-fit")}
+                >
+                </ButtonFilter> 
+            }
+            <ButtonFilter
+                title="Is Open"
+                filterData={filterData}
+                clearFilter={clearFilterSearch("is_open")}
+                // @ts-ignore
+                startSearch={conditionalStartSearch}
+                value={1}
+                buttonProperty="is_open"
+                updateButtonFilter={updateButtonFilter("is_open")}
             >
-            </DropdownButton> //TODO: Add Fit Schedule */}
+            </ButtonFilter> 
         </DropdownContainer>
     );
     if (mobileView) {
@@ -642,12 +666,14 @@ const mapStateToProps = (state) => ({
     isLoadingCourseInfo: state.sections.courseInfoLoading,
     isSearchingCourseInfo: state.sections.searchInfoLoading,
     user: state.login.user,
+    activeSchedule: state.schedule.schedules[state.schedule.scheduleSelected],
 });
 
 // @ts-ignore
 const mapDispatchToProps = (dispatch) => ({
     login: (user: User) => dispatch(login(user)),
     logout: () => dispatch(logout()),
+    clearAllScheduleData: () => dispatch(clearAllScheduleData()),
     loadRequirements: () => dispatch(loadRequirements()),
     startSearch: (filterData: FilterData) =>
         dispatch(fetchCourseSearch(filterData)),
@@ -661,6 +687,8 @@ const mapDispatchToProps = (dispatch) => ({
         value: string,
         toggleState: boolean
     ) => dispatch(updateCheckboxFilter(field, value, toggleState)),
+    updateButtonFilter: (field: string) => (value: number) =>
+        dispatch(updateButtonFilter(field, value)),
     clearAll: () => dispatch(clearAll()),
     clearFilter: (propertyName: string) => dispatch(clearFilter(propertyName)),
     clearSearchResults: () => dispatch(updateSearch([])),

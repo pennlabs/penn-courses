@@ -3,7 +3,7 @@ version: "3"
 services:
   db:
     image: postgres
-    command: postgres -c stats_temp_directory=/tmp
+    command: postgres
     environment:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=penn-courses
@@ -11,7 +11,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - ./postgres:/var/lib/postgresql/data
+      - ./postgres:/var/lib/postgresql/pgdata
   redis:
     image: redis:4.0
     ports:
@@ -32,4 +32,4 @@ services:
     environment:
       - REDIS_URL=redis://redis:6379/1
       - DATABASE_URL=postgres://penn-courses:postgres@db:5432/postgres
-    command: tail -f /dev/null
+    command: pipenv run python manage.py runserver 0.0.0.0:8000

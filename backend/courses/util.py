@@ -147,9 +147,7 @@ def get_add_drop_period(semester):
     cached_adps = cache.get("add_drop_periods", dict())
     if semester not in cached_adps:
         cached_adps[semester] = AddDropPeriod.objects.get(semester=semester)
-        cache.set(
-            "add_drop_periods", cached_adps, timeout=90000
-        )  # cache expires every 25 hours
+        cache.set("add_drop_periods", cached_adps, timeout=90000)  # cache expires every 25 hours
     return cached_adps[semester]
 
 
@@ -238,7 +236,7 @@ def get_or_create_course_and_section(
     section_manager=None,
     course_defaults=None,
     section_defaults=None,
-):
+) -> (Course, Section, bool, bool):
     if section_manager is None:
         section_manager = Section.objects
     dept_code, course_id, section_id = separate_course_code(course_code)
@@ -258,9 +256,7 @@ def get_course_and_section(course_code, semester, section_manager=None):
         section_manager = Section.objects
 
     dept_code, course_id, section_id = separate_course_code(course_code)
-    course = Course.objects.get(
-        department__code=dept_code, code=course_id, semester=semester
-    )
+    course = Course.objects.get(department__code=dept_code, code=course_id, semester=semester)
     section = section_manager.get(course=course, code=section_id)
     return course, section
 
@@ -281,9 +277,7 @@ def update_percent_open(section, new_status_update):
             return
         seconds_before_last = Decimal(
             max(
-                (
-                    last_status_update.created_at - add_drop.estimated_start
-                ).total_seconds(),
+                (last_status_update.created_at - add_drop.estimated_start).total_seconds(),
                 0,
             )
         )
@@ -303,9 +297,7 @@ def update_percent_open(section, new_status_update):
         section.save()
 
 
-def record_update(
-    section, semester, old_status, new_status, alerted, req, created_at=None
-):
+def record_update(section, semester, old_status, new_status, alerted, req, created_at=None):
     from alert.models import validate_add_drop_semester  # avoid circular imports
 
     u = StatusUpdate(
@@ -425,8 +417,7 @@ def set_meetings(section, meetings):
     for meeting in meetings:
         meeting["days"] = "".join(sorted(list(set(meeting["days"]))))
     meeting_times = [
-        f"{meeting['days']} {meeting['begin_time']} - {meeting['end_time']}"
-        for meeting in meetings
+        f"{meeting['days']} {meeting['begin_time']} - {meeting['end_time']}" for meeting in meetings
     ]
     section.meeting_times = json.dumps(meeting_times)
 
@@ -441,15 +432,13 @@ def set_meetings(section, meetings):
                 or meeting["building_desc"].lower() == "no room needed"
             )
         )
-        room = (
-            None if online else get_room(meeting["building_code"], meeting["room_code"])
-        )
+        room = None if online else get_room(meeting["building_code"], meeting["room_code"])
         start_time = Decimal(meeting["begin_time_24"]) / 100
         end_time = Decimal(meeting["end_time_24"]) / 100
         start_date = extract_date(meeting.get("start_date"))
         end_date = extract_date(meeting.get("end_date"))
         for day in list(meeting["days"]):
-            Meeting.objects.get_or_create(
+            meeting = Meeting.objects.update_or_create(
                 section=section,
                 day=day,
                 start=start_time,
@@ -500,9 +489,7 @@ def upsert_course_from_opendata(info, semester, missing_sections=None):
     course.title = info["course_title"] or ""
     course.description = (info["course_description"] or "").strip()
     if info.get("additional_section_narrative"):
-        course.description += (course.description and "\n") + info[
-            "additional_section_narrative"
-        ]
+        course.description += (course.description and "\n") + info["additional_section_narrative"]
     # course.prerequisites = "\n".join(info["prerequisite_notes"])  # TODO: get prerequisite info
     course.syllabus_url = info.get("syllabus_url") or None
 
@@ -538,9 +525,10 @@ def add_attributes(course, attributes):
     course.attributes.clear()
     for attribute in attributes:
         school = identify_school(attribute.get("attribute_code"))
-        attr, _ = Attribute.objects.get_or_create(
+        desc = attribute.get("attribute_desc")
+        attr, _ = Attribute.objects.update_or_create(
             code=attribute.get("attribute_code"),
-            defaults={"description": attribute.get("attribute_desc"), "school": school},
+            defaults={"description": desc, "school": school},
         )
         attr.courses.add(course)
 
@@ -578,12 +566,16 @@ def add_restrictions(course, restrictions):
     """
     course.ngss_restrictions.clear()
     for restriction in restrictions:
-        res, _ = NGSSRestriction.objects.get_or_create(
-            code=restriction.get("restriction_code"),
+        code = restriction.get("restriction_code")
+        description = restriction.get("restriction_desc")
+        restriction_type = restriction.get("restriction_type")
+        inclusive = restriction.get("incl_excl_ind") == "I"
+        res, _ = NGSSRestriction.objects.update_or_create(
+            code=code,
             defaults={
-                "description": restriction.get("restriction_desc"),
-                "restriction_type": restriction.get("restriction_type"),
-                "inclusive": restriction.get("incl_excl_ind") == "I",
+                "description": description,
+                "restriction_type": restriction_type,
+                "inclusive": inclusive,
             },
         )
         res.courses.add(course)

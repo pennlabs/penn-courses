@@ -20,6 +20,7 @@ interface BlockProps {
         color: Color;
         coreqFulfilled: boolean;
     };
+    readOnly: boolean;
     remove: () => void;
     focusSection: () => void;
     style: {
@@ -86,6 +87,7 @@ const InnerBlock = styled.div`
     flex-direction: column;
     width: 100%;
     height: 100%;
+    font-size: 0.9em;
 
     & > span {
         cursor: pointer;
@@ -98,7 +100,15 @@ const InnerBlock = styled.div`
 
 export default function Block(props: BlockProps) {
     const days = ["M", "T", "W", "R", "F", "S", "U"];
-    const { offsets, meeting, course, remove, style, focusSection } = props;
+    const {
+        offsets,
+        meeting,
+        course,
+        readOnly,
+        remove,
+        style,
+        focusSection,
+    } = props;
     let { day, start, end } = meeting;
     start = Math.round(start * 4) / 4; // round to nearest grid location
     end = Math.round(end * 4) / 4;
@@ -117,7 +127,7 @@ export default function Block(props: BlockProps) {
                 onClick={focusSection}
             >
                 <InnerBlock>
-                    {!isMobile && (
+                    {!isMobile && !readOnly && (
                         <RemoveButton
                             onClick={(e) => {
                                 remove();

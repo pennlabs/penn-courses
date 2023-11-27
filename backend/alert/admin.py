@@ -41,12 +41,8 @@ class RegistrationAdmin(admin.ModelAdmin):
         return format_html('<a href="{}">{}</a>', link, instance.section.__str__())
 
     def head_registration_id(self, instance):
-        link = reverse(
-            "admin:alert_registration_change", args=[instance.head_registration_id]
-        )
-        return format_html(
-            '<a href="{}">{}</a>', link, str(instance.head_registration_id)
-        )
+        link = reverse("admin:alert_registration_change", args=[instance.head_registration_id])
+        return format_html('<a href="{}">{}</a>', link, str(instance.head_registration_id))
 
 
 class PcaDemandDistributionEstimateAdmin(admin.ModelAdmin):

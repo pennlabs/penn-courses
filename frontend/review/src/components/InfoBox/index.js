@@ -61,17 +61,20 @@ const InfoBox = ({
   const {
     rInstructorQuality: avgInstructorQuality,
     rCourseQuality: avgCourseQuality,
-    rDifficulty: avgDifficulty
+    rDifficulty: avgDifficulty,
+    rWorkRequired: avgWorkRequired
   } = average;
   const {
     rInstructorQuality: recentInstructorQuality,
     rCourseQuality: recentCourseQuality,
-    rDifficulty: recentDifficulty
+    rDifficulty: recentDifficulty,
+    rWorkRequired: recentWorkRequired
   } = recent;
   const hasReviews =
     avgInstructorQuality != null ||
     avgCourseQuality != null ||
-    avgDifficulty != null;
+    avgDifficulty != null ||
+    avgWorkRequired != null;
 
   const isCourse = type === "course";
   const isInstructor = type === "instructor";
@@ -172,6 +175,7 @@ const InfoBox = ({
             instructor={avgInstructorQuality}
             course={avgCourseQuality}
             difficulty={avgDifficulty}
+            work={avgWorkRequired}
             num_sections={numSections}
           />
 
@@ -180,6 +184,7 @@ const InfoBox = ({
             instructor={recentInstructorQuality}
             course={recentCourseQuality}
             difficulty={recentDifficulty}
+            work={recentWorkRequired}
             num_sections={numSectionsRecent}
           />
         </div>
