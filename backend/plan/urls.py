@@ -3,6 +3,7 @@ from django.views.generic import TemplateView
 from rest_framework_nested import routers
 
 from plan.views import (
+    AutomaticCourseScheduler,
     CalendarAPIView,
     PrimaryScheduleViewSet,
     ScheduleViewSet,
@@ -15,6 +16,7 @@ router.register(r"schedules", ScheduleViewSet, basename="schedules")
 router.register(r"primary-schedules", PrimaryScheduleViewSet, basename="primary-schedules")
 
 urlpatterns = [
+    path("scheduler/", AutomaticCourseScheduler.as_view(), name="automatic-scheduler"),
     path("<int:schedule_pk>/calendar/", CalendarAPIView.as_view(), name="calendar-view"),
     path("", TemplateView.as_view(template_name="plan/build/index.html")),
     path("recommendations/", recommend_courses_view, name="recommend-courses"),
