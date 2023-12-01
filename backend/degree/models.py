@@ -3,7 +3,7 @@ from typing import Iterable
 
 from django.contrib.auth import get_user_model
 from django.db import models
-from django.db.models import Count, DecimalField, Q, Sum
+from django.db.models import Count, DecimalField, Sum
 from django.db.models.functions import Coalesce
 
 from courses.models import Course
@@ -76,7 +76,7 @@ class DegreePlan(models.Model):
         ]
 
     def __str__(self) -> str:
-        return f"{self.program} {self.degree} in {self.major} with conc. {self.concentration} ({self.year})" #noqa E501
+        return f"{self.program} {self.degree} in {self.major} with conc. {self.concentration} ({self.year})"  # noqa E501
 
 
 class Rule(models.Model):
@@ -98,8 +98,8 @@ class Rule(models.Model):
         null=True,
         help_text=dedent(
             """
-        The minimum number of courses or subrules required for this rule.
-        """
+            The minimum number of courses or subrules required for this rule.
+            """
         ),
     )
 
@@ -147,12 +147,12 @@ class Rule(models.Model):
         help_text=dedent(
             """
             This rule's parent Rule if it has one. Null if this is a top level rule
-            (ie, degree_plan is not null)
+            (i.e., degree_plan is not null)
             """
         ),
         related_name="children",
     )
-    
+
     def __str__(self) -> str:
         return f"{self.title}, q={self.q}, num={self.num}, cus={self.credits}, \
             degree_plan={self.degree_plan}, parent={self.parent.title if self.parent else None}"
@@ -193,14 +193,14 @@ class Rule(models.Model):
                     return False
             else:
                 count += 1
-        if self.num != None and count < self.num:
+        if self.num is not None and count < self.num:
             return False
         return True
 
 
 class UserDegreePlan(models.Model):
     """
-    Stores a users plan for an associated degree
+    Stores a users plan for an associated degree.
     """
 
     name = models.CharField(max_length=255, help_text="The user's nickname for the degree plan.")
@@ -208,13 +208,13 @@ class UserDegreePlan(models.Model):
     degree_plan = models.ForeignKey(
         DegreePlan,
         on_delete=models.CASCADE,
-        help_text="The degree plan with which this is associated"
+        help_text="The degree plan with which this is associated.",
     )
 
     person = models.ForeignKey(
         get_user_model(),
         on_delete=models.CASCADE,
-        help_text="the person (user) to which the schedule belongs.",
+        help_text="The user to which the schedule belongs.",
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -227,18 +227,18 @@ class UserDegreePlan(models.Model):
 
 
 class Fulfillment(models.Model):
-    user_degree_plan=models.ForeignKey(
+    user_degree_plan = models.ForeignKey(
         UserDegreePlan,
         on_delete=models.CASCADE,
         related_name="fulfillments",
-        help_text="The user degree plan with which this fulfillment is associated"
+        help_text="The user degree plan with which this fulfillment is associated",
     )
 
     full_code = models.CharField(
         max_length=16,
         blank=True,
         db_index=True,
-        help_text="The dash-joined department and code of the course, e.g. `CIS-120` for CIS-120.",
+        help_text="The dash-joined department and code of the course, e.g. `CIS-120`",
     )
 
     semester = models.CharField(
@@ -246,10 +246,10 @@ class Fulfillment(models.Model):
         null=True,
         help_text=dedent(
             """
-        The semester of the course (of the form YYYYx where x is A [for spring],
-        B [summer], or C [fall]), e.g. `2019C` for fall 2019. Null if this fulfillment
-        does not yet have a semester
-        """
+            The semester of the course (of the form YYYYx where x is A [for spring],
+            B [summer], or C [fall]), e.g. `2019C` for fall 2019. Null if this fulfillment
+            does not yet have a semester.
+            """
         ),
     )
 
@@ -259,10 +259,10 @@ class Fulfillment(models.Model):
         blank=True,
         help_text=dedent(
             """
-        The rules this course fulfills. Blank if this course does not apply
-        to any rules.
-        """
-        )
+            The rules this course fulfills. Blank if this course does not apply
+            to any rules.
+            """
+        ),
     )
 
 
@@ -271,7 +271,7 @@ class DoubleCountRestriction(models.Model):
         DegreePlan,
         on_delete=models.CASCADE,
         related_name="double_count_restrictions",
-        help_text="The degree plan with which this is associated"
+        help_text="The degree plan with which this is associated",
     )
 
     max_courses = models.PositiveSmallIntegerField(
@@ -294,15 +294,6 @@ class DoubleCountRestriction(models.Model):
         ),
     )
 
-    rule = models.ForeignKey(
-        Rule,
-        on_delete=models.CASCADE,
-        related_name="+"
-    )
+    rule = models.ForeignKey(Rule, on_delete=models.CASCADE, related_name="+")
 
-    other_rule = models.ForeignKey(
-        Rule,
-        on_delete=models.CASCADE,
-        related_name="+"
-    )
-
+    other_rule = models.ForeignKey(Rule, on_delete=models.CASCADE, related_name="+")

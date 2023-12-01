@@ -264,7 +264,7 @@ def parse_degreeworks(json: dict, degree_plan: DegreePlan) -> list[Rule]:
             num=None,
             degree_plan=degree_plan,
         )
-        
+
         rules.append(degree_req)
         parse_rulearray(requirement["ruleArray"], degree_plan, rules, parent=degree_req)
     return rules

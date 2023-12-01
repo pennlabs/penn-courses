@@ -55,11 +55,14 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **kwargs):
-        print(dedent("""
+        print(
+            dedent(
+                """
         Note: this script does not delete any existing degreeplans; you may do that manually using the admin panel
         or `manage.py shell`.
         """
-        ))
+            )
+        )
 
         since_year = kwargs["since_year"]
         to_year = kwargs["to_year"] or int(get_current_semester()[:4])
@@ -96,4 +99,4 @@ class Command(BaseCommand):
                         rules = parse_degreeworks(client.audit(degree_plan), degree_plan)
                         for rule in rules:
                             rule.degree_plan = degree_plan
-                            rule.save()                        
+                            rule.save()

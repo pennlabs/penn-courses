@@ -11,6 +11,7 @@ class RuleSerializer(serializers.ModelSerializer):
         model = Rule
         fields = "__all__"
 
+
 # Allow recursive serialization of rules
 RuleSerializer._declared_fields["rules"] = RuleSerializer(
     many=True, read_only=True, source="children"
@@ -25,6 +26,7 @@ class DegreePlanListSerializer(serializers.ModelSerializer):
 
 class DegreePlanSerializer(serializers.ModelSerializer):
     rules = RuleSerializer(many=True, read_only=True)
+
     class Meta:
         model = DegreePlan
         fields = "__all__"
@@ -68,6 +70,7 @@ class FulfillmentSerializer(serializers.ModelSerializer):
 class UserDegreePlanListSerializer(serializers.ModelSerializer):
     degree_plan = DegreePlanListSerializer(read_only=True)
     id = serializers.ReadOnlyField(help_text="The id of the UserDegreePlan.")
+
     class Meta:
         model = UserDegreePlan
         fields = ["id", "name", "degree_plan"]
@@ -88,7 +91,6 @@ class UserDegreePlanDetailSerializer(serializers.ModelSerializer):
     )
     id = serializers.ReadOnlyField(help_text="The id of the user degree plan.")
     person = serializers.HiddenField(default=serializers.CurrentUserDefault())
-
 
     class Meta:
         model = UserDegreePlan

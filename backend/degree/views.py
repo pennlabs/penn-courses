@@ -11,7 +11,7 @@ from degree.serializers import (
     DegreePlanDetailSerializer,
     DegreePlanListSerializer,
     UserDegreePlanDetailSerializer,
-    UserDegreePlanListSerializer
+    UserDegreePlanListSerializer,
 )
 from PennCourses.docs_settings import PcxAutoSchema
 
@@ -52,10 +52,12 @@ class DegreeDetail(generics.RetrieveAPIView):
     serializer_class = DegreePlanDetailSerializer
     queryset = DegreePlan.objects.all()
 
+
 class UserDegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     """
     list, retrieve, create, destroy, and update user degree plans.
     """
+
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
@@ -71,8 +73,8 @@ class UserDegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         if self.action == "list":
             return UserDegreePlanListSerializer
         return UserDegreePlanDetailSerializer
-    
+
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update({ "request": self.request }) # used to get the user
+        context.update({"request": self.request})  # used to get the user
         return context

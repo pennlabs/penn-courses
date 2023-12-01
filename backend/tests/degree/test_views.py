@@ -3,10 +3,11 @@ from rest_framework.test import APIClient
 
 from degree.models import DegreePlan, Rule
 
+
 class DegreeListTest(TestCase):
     def test_list_degrees(self):
         pass
-    
+
 
 class DegreeDetailTest(TestCase):
     def test_retrieve_degree_detail(self):
@@ -40,5 +41,3 @@ class UserDegreePlanViewsetTest(TestCase):
 
     def test_delete_user_degree_plan_with_fulfillments(self):
         pass
-
-
