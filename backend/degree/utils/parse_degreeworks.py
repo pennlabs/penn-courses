@@ -35,7 +35,7 @@ def parse_coursearray(courseArray) -> Q:
                 course_q &= Q(
                     department__code=discipline,
                     code__gte=int(number),
-                    code__lte=end,
+                    code__lte=int(end),
                 )
 
         connector = "AND"  # the connector to the next element; and by default
