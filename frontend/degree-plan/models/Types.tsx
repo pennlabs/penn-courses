@@ -26,9 +26,9 @@ export type ICourse = {
 
 export type ICourseQ = {
     dept: string,
-    number: string,
-    title: string,
-    semester: string
+    number: number,
+    title: string
+    // semester: string
 }
 
 // enum QualifierType {

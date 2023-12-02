@@ -35,7 +35,7 @@ export const reqPanelContainerStyle = {
       }, [])
 
     return(
-        <div style={reqPanelContainerStyle}>
+        <>
           <div className="" style={{backgroundColor:'#DBE2F5', paddingLeft: '15px', paddingTop: '3px', paddingBottom: '2px', paddingRight: '15px', borderTopLeftRadius: '10px', borderTopRightRadius: '10px'}}>
               <div className='m-2 d-flex justify-content-between'>
                 <div style={{color: '#575757', fontWeight: 'bold'}}>Major/Minor/Elective</div>
@@ -54,7 +54,7 @@ export const reqPanelContainerStyle = {
                 </Stack>
               </div>
           </div>
-        </div>
+        </>
     );
 }
 export default ReqPanel;

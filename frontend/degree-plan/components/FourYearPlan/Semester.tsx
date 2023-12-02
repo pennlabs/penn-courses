@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import { useDrop } from "react-dnd";
 import { ItemTypes } from "../dnd/constants";
-import CoursePlanned from "./CoursePlanned";
-import { addCourseToSem } from "@/store/reducers/courses";
 import CoursesPlanned from "./CoursesPlanned";
 import Stats from "./Stats";
 
@@ -33,7 +31,7 @@ const Semester = ({semester, addCourse, index, removeCourseFromSem} : any) => {
     
     return (
         <>
-            <div className="card col-5 m-3" style={semesterCardStyle} ref={drop}>
+            <div className="card col-sm-10 col-md-5 m-3" style={semesterCardStyle} ref={drop}>
                 <div className="mt-1 ms-2 mb-1" style={{fontWeight:500}}>
                     {semester.name}
                 </div>

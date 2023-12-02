@@ -1,25 +1,34 @@
 import React from "react";
-import { useSelector } from 'react-redux';
-import { RootState } from "../store/configureStore";
 import ReqPanel from "../components/Requirements/ReqPanel";
 import PlanPanel from "../components/FourYearPlan/PlanPanel";
 import SearchPanel from "@/components/Search/SearchPanel";
 // import Plan from "../components/example/Plan";
 
-const FourYearPlanPage = () => {
+const pageStyle = {
+    backgroundColor:'#F7F9FC', 
+    padding:'20px'
+}
 
+const panelContainerStyle = {
+    borderRadius: '10px',
+    boxShadow: '0px 0px 10px 6px rgba(0, 0, 0, 0.05)', 
+    backgroundColor: '#FFFFFF',
+    margin: '10px'
+  }
+
+const FourYearPlanPage = () => {
     return (
-        <div style={{backgroundColor:'#F7F9FC', padding:'20px'}}>
-            <div className="d-flex justify-content-center">
-                <div className="m-3">
+        <div style={pageStyle}>
+            <div className="d-flex justify-content-around">
+                <div style={panelContainerStyle}>
                     <PlanPanel/>
                 </div>
-                <div className="m-3 ms-4">
+                <div style={panelContainerStyle} className="col-3">
                     <ReqPanel/>
                 </div>
-                {/* <div className="m-2 col-2">
+                <div style={panelContainerStyle} className="col-3">
                     <SearchPanel/>
-                </div> */}
+                </div>
             </div>
         </div>
     )
