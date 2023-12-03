@@ -12,7 +12,7 @@ const Footer = ({ style }) => (
       <a
         target="_blank"
         rel="noopener noreferrer"
-        href="https://airtable.com/shrVygSaHDL6BswfT"
+        href="https://airtable.com/appFRa4NQvNMEbWsA/shrCCsGC2BjUif5Wx"
       >
         Feedback
       </a>{" "}
