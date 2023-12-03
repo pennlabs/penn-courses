@@ -5,6 +5,8 @@ from datetime import datetime
 from lark import Lark, Transformer
 from tqdm import tqdm
 
+from courses.util import semester_suffix_map_inv, translate_semester_inv
+
 
 """
 This file contains functionality for parsing the SQL dump files that we get from ISC.
@@ -72,7 +74,14 @@ class SQLDumpTransformer(Transformer):
         to generate a row in a quasi-JSON format. Who needs MongoDB?
         """
         _, col_names, values = items
-        return dict(zip(col_names, values))
+        row_dict = dict(zip(col_names, values))
+
+        # Convert new OpenData API semesters to internal semesters
+        if "TERM" in row_dict:
+            stripped_term = row_dict["TERM"].strip()
+            if stripped_term[-2:] in semester_suffix_map_inv:
+                row_dict["TERM"] = translate_semester_inv(stripped_term)
+        return row_dict
 
     def TOKEN(self, items):
         """
@@ -148,9 +157,7 @@ def load_sql_dump(fo, T=SQLDumpTransformer, progress=True, lazy=True):
     if lazy:
         total_rows = sum(1 for _ in entry_regex.finditer(contents))
         gc.collect()
-        return total_rows, map(
-            lambda x: parse_row(x.group(), T), entry_regex.finditer(contents)
-        )
+        return total_rows, map(lambda x: parse_row(x.group(), T), entry_regex.finditer(contents))
     else:
         matches = list(entry_regex.finditer(contents))
         return [parse_row(x.group(), T) for x in tqdm(matches, disable=(not progress))]

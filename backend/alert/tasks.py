@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 
 import numpy as np
 import redis
@@ -51,9 +52,7 @@ def get_registrations_for_alerts(course_code, semester, course_status="O"):
     if course_status == "O":
         return list(section.registrations.filter(**Registration.is_active_filter()))
     elif course_status == "C":
-        return list(
-            section.registrations.filter(**Registration.is_waiting_for_close_filter())
-        )
+        return list(section.registrations.filter(**Registration.is_waiting_for_close_filter()))
     else:
         return []
 
@@ -63,12 +62,8 @@ def send_course_alerts(course_code, course_status, semester=None, sent_by=""):
     if semester is None:
         semester = get_current_semester()
 
-    for reg in get_registrations_for_alerts(
-        course_code, semester, course_status=course_status
-    ):
-        send_alert.delay(
-            reg.id, close_notification=(course_status == "C"), sent_by=sent_by
-        )
+    for reg in get_registrations_for_alerts(course_code, semester, course_status=course_status):
+        send_alert.delay(reg.id, close_notification=(course_status == "C"), sent_by=sent_by)
 
 
 @shared_task(name="pca.tasks.recompute_percent_open")
@@ -87,6 +82,11 @@ def section_demand_change(section_id, updated_at):
     :param: section_id: the id of the section involved in the demand change
     :param: updated_at: the datetime at which the demand change occurred
     """
+    if type(updated_at) is str:
+        updated_at = datetime.fromisoformat(updated_at.replace("Z", "+00:00"))
+    elif type(updated_at) is not datetime:
+        return
+
     section = Section.objects.get(id=section_id)
     semester = section.semester
     if semester != get_current_semester():
@@ -105,9 +105,7 @@ def section_demand_change(section_id, updated_at):
             create_new_distribution_estimate = True
 
         sections_qs = (
-            Section.objects.filter(
-                extra_metrics_section_filters, course__semester=semester
-            )
+            Section.objects.filter(extra_metrics_section_filters, course__semester=semester)
             .select_for_update()
             .annotate(
                 raw_demand=Case(

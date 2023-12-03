@@ -63,13 +63,9 @@ class Command(BaseCommand):
             raise ValueError("No semesters provided for status update export.")
         assert path.endswith(".csv") or path == os.devnull
         script_print_path = ("s3://penn.courses/" if upload_to_s3 else "") + path
-        print(
-            f"Generating {script_print_path} with status updates from semesters {semesters}..."
-        )
+        print(f"Generating {script_print_path} with status updates from semesters {semesters}...")
         rows = 0
-        output_file_path = (
-            "/tmp/export_status_history_output.csv" if upload_to_s3 else path
-        )
+        output_file_path = "/tmp/export_status_history_output.csv" if upload_to_s3 else path
         with open(output_file_path, "w") as output_file:
             csv_writer = csv.writer(
                 output_file, delimiter=",", quotechar='"', quoting=csv.QUOTE_MINIMAL

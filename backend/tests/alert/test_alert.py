@@ -160,14 +160,10 @@ class RegistrationSaveAutoHeadRegistrationTest(TestCase):
 class SendAlertTestCase(TestCase):
     def setUp(self):
         set_semester()
-        _, section, _, _ = get_or_create_course_and_section(
-            "CIS-1600-001", TEST_SEMESTER
-        )
+        _, section, _, _ = get_or_create_course_and_section("CIS-1600-001", TEST_SEMESTER)
         section.capacity = 30
         section.save()
-        self.r_legacy = Registration(
-            email="yo@example.com", phone="+15555555555", section=section
-        )
+        self.r_legacy = Registration(email="yo@example.com", phone="+15555555555", section=section)
         self.r_legacy.save()
         user = User.objects.create_user(username="jacob", password="top_secret")
         user.save()
@@ -192,9 +188,7 @@ class SendAlertTestCase(TestCase):
         self.assertTrue(r_legacy.notification_sent)
         self.assertEqual("ADM", r_legacy.notification_sent_by)
 
-    def send_alert_helper(
-        self, mock_email, mock_text, mock_push_notification, push_notification
-    ):
+    def send_alert_helper(self, mock_email, mock_text, mock_push_notification, push_notification):
         """
         This function checks that tasks.send_alert triggers the proper Alert subclass
         send_alert methods in two cases.  The first case is when push notifications are enabled
@@ -213,32 +207,18 @@ class SendAlertTestCase(TestCase):
         self.assertEquals(push_notification, r.user.profile.push_notifications)
         self.assertFalse(r.notification_sent)
         self.assertTrue(
-            r
-            in get_registrations_for_alerts(
-                "CIS-1600-001", TEST_SEMESTER, course_status="O"
-            )
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="O")
         )
         self.assertFalse(
-            r
-            in get_registrations_for_alerts(
-                "CIS-1600-001", TEST_SEMESTER, course_status="C"
-            )
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="C")
         )
         self.assertEquals(
             0,
-            len(
-                get_registrations_for_alerts(
-                    "CIS-1600-001", TEST_SEMESTER, course_status="X"
-                )
-            ),
+            len(get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="X")),
         )
         self.assertEquals(
             0,
-            len(
-                get_registrations_for_alerts(
-                    "CIS-1600-001", TEST_SEMESTER, course_status=""
-                )
-            ),
+            len(get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="")),
         )
         tasks.send_alert(self.r.id, False, sent_by="ADM")
         r = Registration.objects.get(id=self.r.id)
@@ -249,16 +229,10 @@ class SendAlertTestCase(TestCase):
         self.assertIsNotNone("ADM", r.notification_sent_by)
         self.assertEqual("ADM", r.notification_sent_by)
         self.assertFalse(
-            r
-            in get_registrations_for_alerts(
-                "CIS-1600-001", TEST_SEMESTER, course_status="O"
-            )
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="O")
         )
         self.assertFalse(
-            r
-            in get_registrations_for_alerts(
-                "CIS-1600-001", TEST_SEMESTER, course_status="C"
-            )
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="C")
         )
 
     def test_send_alert_push(self, mock_email, mock_text, mock_push_notification):
@@ -299,16 +273,10 @@ class SendAlertTestCase(TestCase):
         self.r.save()
         r = Registration.objects.get(id=self.r.id)
         self.assertFalse(
-            r
-            in get_registrations_for_alerts(
-                "CIS-1600-001", TEST_SEMESTER, course_status="O"
-            )
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="O")
         )
         self.assertTrue(
-            r
-            in get_registrations_for_alerts(
-                "CIS-1600-001", TEST_SEMESTER, course_status="C"
-            )
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="C")
         )
         tasks.send_alert(self.r.id, close_notification=True, sent_by="ADM")
         if manual_resubscribe:
@@ -324,21 +292,13 @@ class SendAlertTestCase(TestCase):
         self.assertIsNotNone(r.close_notification_sent_at)
         self.assertEqual("ADM", r.close_notification_sent_by)
         self.assertFalse(
-            r
-            in get_registrations_for_alerts(
-                "CIS-1600-001", TEST_SEMESTER, course_status="O"
-            )
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="O")
         )
         self.assertFalse(
-            r
-            in get_registrations_for_alerts(
-                "CIS-1600-001", TEST_SEMESTER, course_status="C"
-            )
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="C")
         )
 
-    def test_send_close_notification_push(
-        self, mock_email, mock_text, mock_push_notification
-    ):
+    def test_send_close_notification_push(self, mock_email, mock_text, mock_push_notification):
         self.send_close_notification_helper(
             mock_email,
             mock_text,
@@ -360,9 +320,7 @@ class SendAlertTestCase(TestCase):
             manual_resubscribe=False,
         )
 
-    def test_send_close_notification_autoresub(
-        self, mock_email, mock_text, mock_push_notification
-    ):
+    def test_send_close_notification_autoresub(self, mock_email, mock_text, mock_push_notification):
         self.send_close_notification_helper(
             mock_email,
             mock_text,
@@ -372,9 +330,7 @@ class SendAlertTestCase(TestCase):
             manual_resubscribe=False,
         )
 
-    def test_send_close_notification(
-        self, mock_email, mock_text, mock_push_notification
-    ):
+    def test_send_close_notification(self, mock_email, mock_text, mock_push_notification):
         self.send_close_notification_helper(
             mock_email,
             mock_text,
@@ -396,9 +352,7 @@ class SendAlertTestCase(TestCase):
             manual_resubscribe=True,
         )
 
-    def test_send_close_notification_resub(
-        self, mock_email, mock_text, mock_push_notification
-    ):
+    def test_send_close_notification_resub(self, mock_email, mock_text, mock_push_notification):
         self.send_close_notification_helper(
             mock_email,
             mock_text,
@@ -421,20 +375,12 @@ class SendAlertTestCase(TestCase):
         self.r.save()
         r = Registration.objects.get(id=self.r.id)
         self.assertFalse(
-            r
-            in get_registrations_for_alerts(
-                "CIS-1600-001", TEST_SEMESTER, course_status="O"
-            )
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="O")
         )
         self.assertFalse(
-            r
-            in get_registrations_for_alerts(
-                "CIS-1600-001", TEST_SEMESTER, course_status="C"
-            )
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="C")
         )
-        tasks.send_alert(
-            self.r.id, close_notification=close_notification, sent_by="ADM"
-        )
+        tasks.send_alert(self.r.id, close_notification=close_notification, sent_by="ADM")
         self.assertFalse(mock_email.called)
         self.assertFalse(mock_text.called)
         self.assertFalse(mock_push_notification.called)
@@ -444,9 +390,7 @@ class SendAlertTestCase(TestCase):
             mock_email, mock_text, mock_push_notification, close_notification=False
         )
 
-    def test_dont_resend_close_notification(
-        self, mock_email, mock_text, mock_push_notification
-    ):
+    def test_dont_resend_close_notification(self, mock_email, mock_text, mock_push_notification):
         self.dont_resend_alert_helper(
             mock_email, mock_text, mock_push_notification, close_notification=True
         )
@@ -486,9 +430,7 @@ class SendAlertTestCase(TestCase):
             close_notification=False,
         )
 
-    def test_resend_alert_forced_push(
-        self, mock_email, mock_text, mock_push_notification
-    ):
+    def test_resend_alert_forced_push(self, mock_email, mock_text, mock_push_notification):
         self.resend_alert_forced_helper(
             mock_email,
             mock_text,
@@ -497,9 +439,7 @@ class SendAlertTestCase(TestCase):
             close_notification=False,
         )
 
-    def test_resend_close_notification_forced(
-        self, mock_email, mock_text, mock_push_notification
-    ):
+    def test_resend_close_notification_forced(self, mock_email, mock_text, mock_push_notification):
         self.resend_alert_forced_helper(
             mock_email,
             mock_text,
@@ -524,15 +464,9 @@ class RegisterTestCase(TestCase):
     def setUp(self):
         set_semester()
         self.sections = []
-        self.sections.append(
-            get_or_create_course_and_section("CIS-1600-001", TEST_SEMESTER)[1]
-        )
-        self.sections.append(
-            get_or_create_course_and_section("CIS-1600-002", TEST_SEMESTER)[1]
-        )
-        self.sections.append(
-            get_or_create_course_and_section("CIS-1200-001", TEST_SEMESTER)[1]
-        )
+        self.sections.append(get_or_create_course_and_section("CIS-1600-001", TEST_SEMESTER)[1])
+        self.sections.append(get_or_create_course_and_section("CIS-1600-002", TEST_SEMESTER)[1])
+        self.sections.append(get_or_create_course_and_section("CIS-1200-001", TEST_SEMESTER)[1])
 
     def test_successful_registration(self):
         res, norm, _ = register_for_course(
@@ -549,9 +483,7 @@ class RegisterTestCase(TestCase):
         self.assertIsNone(r.api_key)
 
     def test_nonnormalized_course_code(self):
-        res, norm, _ = register_for_course(
-            "cis1600001", "e@example.com", "+15555555555"
-        )
+        res, norm, _ = register_for_course("cis1600001", "e@example.com", "+15555555555")
         self.assertEqual(RegStatus.SUCCESS, res)
         self.assertEqual("CIS-1600-001", norm)
         self.assertEqual(1, len(Registration.objects.all()))
@@ -559,9 +491,7 @@ class RegisterTestCase(TestCase):
         self.assertEqual("CIS-1600-001", r.section.full_code)
 
     def test_duplicate_registration(self):
-        r1 = Registration(
-            email="e@example.com", phone="+15555555555", section=self.sections[0]
-        )
+        r1 = Registration(email="e@example.com", phone="+15555555555", section=self.sections[0])
         r1.save()
         res, norm, _ = register_for_course(
             self.sections[0].full_code, "e@example.com", "+15555555555"
@@ -584,9 +514,7 @@ class RegisterTestCase(TestCase):
         self.assertEqual(2, len(Registration.objects.all()))
 
     def test_sameuser_diffsections(self):
-        r1 = Registration(
-            email="e@example.com", phone="+15555555555", section=self.sections[0]
-        )
+        r1 = Registration(email="e@example.com", phone="+15555555555", section=self.sections[0])
         r1.save()
         res, norm, _ = register_for_course(
             self.sections[1].full_code, "e@example.com", "+15555555555"
@@ -595,9 +523,7 @@ class RegisterTestCase(TestCase):
         self.assertEqual(2, len(Registration.objects.all()))
 
     def test_sameuser_diffcourse(self):
-        r1 = Registration(
-            email="e@example.com", phone="+15555555555", section=self.sections[0]
-        )
+        r1 = Registration(email="e@example.com", phone="+15555555555", section=self.sections[0])
         r1.save()
         res, norm, _ = register_for_course(
             self.sections[2].full_code, "e@example.com", "+15555555555"
@@ -606,30 +532,22 @@ class RegisterTestCase(TestCase):
         self.assertEqual(2, len(Registration.objects.all()))
 
     def test_justemail(self):
-        res, norm, _ = register_for_course(
-            self.sections[0].full_code, "e@example.com", None
-        )
+        res, norm, _ = register_for_course(self.sections[0].full_code, "e@example.com", None)
         self.assertEqual(RegStatus.SUCCESS, res)
         self.assertEqual(1, len(Registration.objects.all()))
 
     def test_phony_course(self):
-        res, norm, _ = register_for_course(
-            "PHONY-100-001", "e@example.com", "+15555555555"
-        )
+        res, norm, _ = register_for_course("PHONY-100-001", "e@example.com", "+15555555555")
         self.assertEqual(RegStatus.COURSE_NOT_FOUND, res)
         self.assertEqual(0, Registration.objects.count())
 
     def test_invalid_course(self):
-        res, norm, _ = register_for_course(
-            "econ 0-0-1", "e@example.com", "+15555555555"
-        )
+        res, norm, _ = register_for_course("econ 0-0-1", "e@example.com", "+15555555555")
         self.assertEqual(RegStatus.COURSE_NOT_FOUND, res)
         self.assertEqual(0, Registration.objects.count())
 
     def test_justphone(self):
-        res, norm, _ = register_for_course(
-            self.sections[0].full_code, None, "5555555555"
-        )
+        res, norm, _ = register_for_course(self.sections[0].full_code, None, "5555555555")
         self.assertEqual(RegStatus.SUCCESS, res)
         self.assertEqual(1, len(Registration.objects.all()))
 
@@ -655,9 +573,7 @@ class RegisterTestCase(TestCase):
 class ResubscribeTestCase(TestCase):
     def setUp(self):
         set_semester()
-        _, self.section, _, _ = get_or_create_course_and_section(
-            "CIS-1600-001", TEST_SEMESTER
-        )
+        _, self.section, _, _ = get_or_create_course_and_section("CIS-1600-001", TEST_SEMESTER)
         self.base_reg = Registration(
             email="e@example.com", phone="+15555555555", section=self.section
         )
@@ -747,26 +663,16 @@ class ResubscribeTestCase(TestCase):
 class WebhookTriggeredAlertTestCase(TestCase):
     def setUp(self):
         set_semester()
-        _, self.section, _, _ = get_or_create_course_and_section(
-            "CIS-1600-001", TEST_SEMESTER
-        )
-        self.r1 = Registration(
-            email="e@example.com", phone="+15555555555", section=self.section
-        )
-        self.r2 = Registration(
-            email="f@example.com", phone="+15555555556", section=self.section
-        )
-        self.r3 = Registration(
-            email="g@example.com", phone="+15555555557", section=self.section
-        )
+        _, self.section, _, _ = get_or_create_course_and_section("CIS-1600-001", TEST_SEMESTER)
+        self.r1 = Registration(email="e@example.com", phone="+15555555555", section=self.section)
+        self.r2 = Registration(email="f@example.com", phone="+15555555556", section=self.section)
+        self.r3 = Registration(email="g@example.com", phone="+15555555557", section=self.section)
         self.r1.save()
         self.r2.save()
         self.r3.save()
 
     def test_collect_all(self):
-        result = tasks.get_registrations_for_alerts(
-            self.section.full_code, TEST_SEMESTER
-        )
+        result = tasks.get_registrations_for_alerts(self.section.full_code, TEST_SEMESTER)
         expected_ids = [r.id for r in [self.r1, self.r2, self.r3]]
         result_ids = [r.id for r in result]
         for id_ in expected_ids:
@@ -786,10 +692,7 @@ class WebhookTriggeredAlertTestCase(TestCase):
         self.r2.save()
         self.r3.save()
         result_ids = [
-            r.id
-            for r in tasks.get_registrations_for_alerts(
-                self.section.full_code, TEST_SEMESTER
-            )
+            r.id for r in tasks.get_registrations_for_alerts(self.section.full_code, TEST_SEMESTER)
         ]
         expected_ids = [self.r1.id]
         for id_ in expected_ids:
@@ -801,10 +704,7 @@ class WebhookTriggeredAlertTestCase(TestCase):
         self.r2.notification_sent = True
         self.r2.save()
         result_ids = [
-            r.id
-            for r in tasks.get_registrations_for_alerts(
-                self.section.full_code, TEST_SEMESTER
-            )
+            r.id for r in tasks.get_registrations_for_alerts(self.section.full_code, TEST_SEMESTER)
         ]
         expected_ids = [self.r1.id, self.r3.id]
         for id_ in expected_ids:
@@ -945,9 +845,7 @@ class WebhookViewTestCase(TestCase):
 
     def test_after_adp(self, mock_alert):
         current_adp = get_add_drop_period(semester=TEST_SEMESTER)
-        current_adp.end = datetime.utcnow().replace(
-            tzinfo=gettz(TIME_ZONE)
-        ) - timedelta(days=1)
+        current_adp.end = datetime.utcnow().replace(tzinfo=gettz(TIME_ZONE)) - timedelta(days=1)
         current_adp.save()
         res = self.client.post(
             reverse("webhook", urlconf="alert.urls"),
@@ -1023,8 +921,7 @@ class WebhookViewTestCase(TestCase):
 
     def test_wrong_password(self, mock_alert):
         self.headers["Authorization"] = (
-            "Basic "
-            + base64.standard_b64encode("webhook:abc123".encode("ascii")).decode()
+            "Basic " + base64.standard_b64encode("webhook:abc123".encode("ascii")).decode()
         )
         res = self.client.post(
             reverse("webhook", urlconf="alert.urls"),
@@ -1038,8 +935,7 @@ class WebhookViewTestCase(TestCase):
 
     def test_wrong_user(self, mock_alert):
         self.headers["Authorization"] = (
-            "Basic "
-            + base64.standard_b64encode("baduser:password".encode("ascii")).decode()
+            "Basic " + base64.standard_b64encode("baduser:password".encode("ascii")).decode()
         )
         res = self.client.post(
             reverse("webhook", urlconf="alert.urls"),
@@ -1148,7 +1044,7 @@ class AlertRegistrationTestCase(TestCase):
         self.user = User.objects.create_user(username="jacob", password="top_secret")
         self.user.save()
         self.user.profile.email = "j@gmail.com"
-        self.user.profile.phone = "+11234567890"
+        self.user.profile.phone = "+19178286431"
         self.user.profile.save()
         self.user = User.objects.get(username="jacob")
         self.client = APIClient()
@@ -1186,9 +1082,7 @@ class AlertRegistrationTestCase(TestCase):
             model.close_notification_sent_at,
             self.convert_date(data["close_notification_sent_at"]),
         )
-        self.assertEqual(
-            model.original_created_at, self.convert_date(data["original_created_at"])
-        )
+        self.assertEqual(model.original_created_at, self.convert_date(data["original_created_at"]))
         self.assertEqual(model.created_at, self.convert_date(data["created_at"]))
         self.assertEqual(model.updated_at, self.convert_date(data["updated_at"]))
 
@@ -1244,7 +1138,7 @@ class AlertRegistrationTestCase(TestCase):
         contact_infos = (
             # If we enabled push notifications by default in these tests, push_username would be
             # set to "jacob", since that is the username of the default user for these tests.
-            [{"number": "+11234567890", "email": "j@gmail.com", "push_username": None}]
+            [{"number": "+19178286431", "email": "j@gmail.com", "push_username": None}]
             if contact_infos is None
             else contact_infos
         )
@@ -1267,9 +1161,7 @@ class AlertRegistrationTestCase(TestCase):
         active_registration_ids = [
             reg.id
             for reg in list(
-                Registration.objects.filter(
-                    section=section, **Registration.is_active_filter()
-                )
+                Registration.objects.filter(section=section, **Registration.is_active_filter())
             )
         ]
         waiting_for_close_registration_ids = [
@@ -1301,13 +1193,7 @@ class AlertRegistrationTestCase(TestCase):
                     self.assertEqual(
                         0
                         if not should_send
-                        else len(
-                            [
-                                c
-                                for c in contact_infos
-                                if "email" in c.keys() and c["email"]
-                            ]
-                        ),
+                        else len([c for c in contact_infos if "email" in c.keys() and c["email"]]),
                         send_email_mock.call_count,
                     )
                     self.assertEqual(
@@ -1319,10 +1205,7 @@ class AlertRegistrationTestCase(TestCase):
                                 for c in contact_infos
                                 if "number" in c.keys()
                                 and c["number"]
-                                and (
-                                    "push_username" not in c.keys()
-                                    or not c["push_username"]
-                                )
+                                and ("push_username" not in c.keys() or not c["push_username"])
                             ]
                         ),
                         send_text_mock.call_count,
@@ -1342,9 +1225,7 @@ class AlertRegistrationTestCase(TestCase):
                     for c in contact_infos:
                         self.assertEqual(
                             0
-                            if not should_send
-                            or "email" not in c.keys()
-                            or not c["email"]
+                            if not should_send or "email" not in c.keys() or not c["email"]
                             else 1,
                             len(
                                 [
@@ -1401,9 +1282,7 @@ class AlertRegistrationTestCase(TestCase):
                             else:
                                 self.assertNone(r.close_notification_sent_at)
                     if num_status_updates is not None:
-                        self.assertEqual(
-                            num_status_updates, StatusUpdate.objects.count()
-                        )
+                        self.assertEqual(num_status_updates, StatusUpdate.objects.count())
                     for u in StatusUpdate.objects.all():
                         self.assertTrue(u.alert_sent)
 
@@ -1415,9 +1294,7 @@ class AlertRegistrationTestCase(TestCase):
         fifth (CIS-1210-001)
         """
         first_id = self.registration_cis1200.id
-        self.assertEqual(
-            self.registration_cis1200.head_registration, self.registration_cis1200
-        )
+        self.assertEqual(self.registration_cis1200.head_registration, self.registration_cis1200)
         response = self.client.post(
             reverse("registrations-list"),
             json.dumps({"section": "CIS-1600-001", "auto_resubscribe": False}),
@@ -1431,9 +1308,7 @@ class AlertRegistrationTestCase(TestCase):
 
         response = self.client.get(reverse("registrations-detail", args=[second_id]))
         self.assertEqual(response.status_code, 200)
-        self.check_model_with_response_data(
-            Registration.objects.get(id=second_id), response.data
-        )
+        self.check_model_with_response_data(Registration.objects.get(id=second_id), response.data)
         self.simulate_alert(self.cis1200, 1)
         response = self.client.post(
             reverse("registrations-list"),
@@ -1521,9 +1396,7 @@ class AlertRegistrationTestCase(TestCase):
         self.assertEqual(200, response.status_code)
         response = self.client.get(reverse("registrations-detail", args=[first_id]))
         self.assertEqual(response.status_code, 200)
-        self.check_model_with_response_data(
-            Registration.objects.get(id=first_id), response.data
-        )
+        self.check_model_with_response_data(Registration.objects.get(id=first_id), response.data)
         response = self.client.post(
             reverse("registrations-list"),
             json.dumps({"section": "CIS-1600-001", "auto_resubscribe": True}),
@@ -1533,9 +1406,7 @@ class AlertRegistrationTestCase(TestCase):
         second_id = response.data["id"]
         response = self.client.get(reverse("registrations-detail", args=[second_id]))
         self.assertEqual(response.status_code, 200)
-        self.check_model_with_response_data(
-            Registration.objects.get(id=second_id), response.data
-        )
+        self.check_model_with_response_data(Registration.objects.get(id=second_id), response.data)
         self.simulate_alert(self.cis1200, 1)
         first_ob = Registration.objects.get(id=first_id)
         third_ob = first_ob.resubscribed_to
@@ -1566,9 +1437,7 @@ class AlertRegistrationTestCase(TestCase):
         fifth_id = response.data["id"]
         response = self.client.get(reverse("registrations-detail", args=[fifth_id]))
         self.assertEqual(response.status_code, 200)
-        self.check_model_with_response_data(
-            Registration.objects.get(id=fifth_id), response.data
-        )
+        self.check_model_with_response_data(Registration.objects.get(id=fifth_id), response.data)
         # first is original CIS1200 registration, second is disconnected CIS1600 registration,
         # third is auto-resubscribed from first, fourth is auto-resubscribed from third,
         # and fifth is disconnected CIS1210 registration
@@ -1596,9 +1465,7 @@ class AlertRegistrationTestCase(TestCase):
 
     def test_registrations_get_only_current_semester(self):
         _, self.cis110in2019C = create_mock_data("CIS-1100-001", "2019C")
-        registration = Registration(
-            section=self.cis110in2019C, user=self.user, source="PCA"
-        )
+        registration = Registration(section=self.cis110in2019C, user=self.user, source="PCA")
         registration.auto_resubscribe = False
         registration.save()
         response = self.client.get(reverse("registrations-list"))
@@ -1610,9 +1477,7 @@ class AlertRegistrationTestCase(TestCase):
 
     def test_registration_history_get_only_current_semester(self):
         _, self.cis110in2019C = create_mock_data("CIS-1100-001", "2019C")
-        registration = Registration(
-            section=self.cis110in2019C, user=self.user, source="PCA"
-        )
+        registration = Registration(section=self.cis110in2019C, user=self.user, source="PCA")
         registration.auto_resubscribe = False
         registration.save()
         response = self.client.get(reverse("registrationhistory-list"))
@@ -1630,15 +1495,9 @@ class AlertRegistrationTestCase(TestCase):
         response = self.client.get(reverse("registrations-list"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(3, len(response.data))
-        fourth_data = next(
-            item for item in response.data if item["id"] == ids["fourth_id"]
-        )
-        second_data = next(
-            item for item in response.data if item["id"] == ids["second_id"]
-        )
-        fifth_data = next(
-            item for item in response.data if item["id"] == ids["fifth_id"]
-        )
+        fourth_data = next(item for item in response.data if item["id"] == ids["fourth_id"])
+        second_data = next(item for item in response.data if item["id"] == ids["second_id"])
+        fifth_data = next(item for item in response.data if item["id"] == ids["fifth_id"])
         self.check_model_with_response_data(
             self.registration_cis1200.resubscribed_to.resubscribed_to, fourth_data
         )
@@ -1651,20 +1510,14 @@ class AlertRegistrationTestCase(TestCase):
         response = self.client.get(reverse("registrationhistory-list"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(5, len(response.data))
-        first_data = next(
-            item for item in response.data if item["id"] == ids["first_id"]
-        )
+        first_data = next(item for item in response.data if item["id"] == ids["first_id"])
         first_ob = Registration.objects.get(id=ids["first_id"])
-        self.assertEqual(
-            first_ob.created_at, self.convert_date(first_data["original_created_at"])
-        )
+        self.assertEqual(first_ob.created_at, self.convert_date(first_data["original_created_at"]))
         self.check_model_with_response_data(first_ob, first_data)
         self.assertIsNone(first_ob.resubscribed_from)
         self.assertTrue(first_ob.notification_sent)
         self.assertIsNotNone(first_ob.notification_sent_at)
-        second_data = next(
-            item for item in response.data if item["id"] == ids["second_id"]
-        )
+        second_data = next(item for item in response.data if item["id"] == ids["second_id"])
         second_ob = Registration.objects.get(id=ids["second_id"])
         self.assertEqual(
             second_ob.created_at, self.convert_date(second_data["original_created_at"])
@@ -1674,43 +1527,29 @@ class AlertRegistrationTestCase(TestCase):
         self.assertFalse(hasattr(second_ob, "resubscribed_to"))
         self.assertFalse(second_data["notification_sent"])
         self.assertIsNone(second_data["notification_sent_at"])
-        third_data = next(
-            item for item in response.data if item["id"] == ids["third_id"]
-        )
+        third_data = next(item for item in response.data if item["id"] == ids["third_id"])
         third_ob = Registration.objects.get(id=ids["third_id"])
         self.assertEqual(
             self.registration_cis1200.resubscribed_to,
             Registration.objects.get(id=ids["third_id"]),
         )
         self.assertEqual(first_ob, third_ob.resubscribed_from)
-        self.assertEqual(
-            first_ob.created_at, self.convert_date(third_data["original_created_at"])
-        )
+        self.assertEqual(first_ob.created_at, self.convert_date(third_data["original_created_at"]))
         self.check_model_with_response_data(first_ob.resubscribed_to, third_data)
         self.assertTrue(third_data["notification_sent"])
         self.assertIsNotNone(third_data["notification_sent_at"])
-        fourth_data = next(
-            item for item in response.data if item["id"] == ids["fourth_id"]
-        )
+        fourth_data = next(item for item in response.data if item["id"] == ids["fourth_id"])
         fourth_ob = Registration.objects.get(id=ids["fourth_id"])
         self.assertEqual(first_ob.resubscribed_to.resubscribed_to, fourth_ob)
-        self.assertEqual(
-            first_ob.created_at, self.convert_date(fourth_data["original_created_at"])
-        )
-        self.check_model_with_response_data(
-            first_ob.resubscribed_to.resubscribed_to, fourth_data
-        )
+        self.assertEqual(first_ob.created_at, self.convert_date(fourth_data["original_created_at"]))
+        self.check_model_with_response_data(first_ob.resubscribed_to.resubscribed_to, fourth_data)
         self.assertEqual(third_ob, fourth_ob.resubscribed_from)
         self.assertFalse(hasattr(fourth_ob, "resubscribed_to"))
         self.assertFalse(fourth_data["notification_sent"])
         self.assertIsNone(fourth_data["notification_sent_at"])
-        fifth_data = next(
-            item for item in response.data if item["id"] == ids["fifth_id"]
-        )
+        fifth_data = next(item for item in response.data if item["id"] == ids["fifth_id"])
         fifth_ob = Registration.objects.get(id=ids["fifth_id"])
-        self.assertEqual(
-            fifth_ob.created_at, self.convert_date(fifth_data["original_created_at"])
-        )
+        self.assertEqual(fifth_ob.created_at, self.convert_date(fifth_data["original_created_at"]))
         self.check_model_with_response_data(fifth_ob, fifth_data)
         self.assertIsNone(fifth_ob.resubscribed_from)
         self.assertFalse(hasattr(fifth_ob, "resubscribed_to"))
@@ -1750,9 +1589,7 @@ class AlertRegistrationTestCase(TestCase):
         sixth_data = next(item for item in response.data if item["id"] == sixth_id)
         sixth_ob = Registration.objects.get(id=sixth_id)
         self.assertEqual(fourth_ob.resubscribed_to, sixth_ob)
-        self.assertEqual(
-            first_ob.created_at, self.convert_date(sixth_data["original_created_at"])
-        )
+        self.assertEqual(first_ob.created_at, self.convert_date(sixth_data["original_created_at"]))
         self.check_model_with_response_data(fourth_ob.resubscribed_to, sixth_data)
         self.assertEqual(fourth_ob, sixth_ob.resubscribed_from)
         self.assertFalse(hasattr(sixth_ob, "resubscribed_to"))
@@ -1850,11 +1687,7 @@ class AlertRegistrationTestCase(TestCase):
                     "email": new_user.profile.email,
                     "push_username": new_user.username,
                 },
-                {
-                    "number": "+11234567890",
-                    "email": "j@gmail.com",
-                    "push_username": None,
-                },
+                {"number": "+19178286431", "email": "j@gmail.com", "push_username": None},
             ],
             should_send=True,
             close_notification=False,
@@ -1895,46 +1728,28 @@ class AlertRegistrationTestCase(TestCase):
         response = new_client.get(reverse("registrations-list"))
         self.assertEqual(2, len(response.data))
         self.assertEqual(200, response.status_code)
-        new_first_data = next(
-            item for item in response.data if item["id"] == new_first_id
-        )
+        new_first_data = next(item for item in response.data if item["id"] == new_first_id)
         new_first_ob = Registration.objects.get(id=new_first_id)
         self.check_model_with_response_data(new_first_ob, new_first_data)
-        new_second_data = next(
-            item for item in response.data if item["id"] == new_second_id
-        )
+        new_second_data = next(item for item in response.data if item["id"] == new_second_id)
         new_second_ob = Registration.objects.get(id=new_second_id)
         self.check_model_with_response_data(new_second_ob, new_second_data)
         response = new_client.get(reverse("registrationhistory-list"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(
             0,
-            len(
-                [
-                    item
-                    for item in response.data
-                    if item["id"] in [id for id in ids.values()]
-                ]
-            ),
+            len([item for item in response.data if item["id"] in [id for id in ids.values()]]),
         )
         self.assertEqual(2, len(response.data))
         response = self.client.get(reverse("registrations-list"))
         self.assertEqual(200, response.status_code)
-        self.assertEqual(
-            0, len([item for item in response.data if item["id"] == new_first_id])
-        )
-        self.assertEqual(
-            0, len([item for item in response.data if item["id"] == new_second_id])
-        )
+        self.assertEqual(0, len([item for item in response.data if item["id"] == new_first_id]))
+        self.assertEqual(0, len([item for item in response.data if item["id"] == new_second_id]))
         self.assertEqual(3, len(response.data))
         response = self.client.get(reverse("registrationhistory-list"))
         self.assertEqual(200, response.status_code)
-        self.assertEqual(
-            0, len([item for item in response.data if item["id"] == new_first_id])
-        )
-        self.assertEqual(
-            0, len([item for item in response.data if item["id"] == new_second_id])
-        )
+        self.assertEqual(0, len([item for item in response.data if item["id"] == new_first_id]))
+        self.assertEqual(0, len([item for item in response.data if item["id"] == new_second_id]))
         self.assertEqual(5, len(response.data))
         # now test resubscribing with multiple users and alerts for multiple users
         self.simulate_alert(self.cis1200, 4, close_notification=True, should_send=False)
@@ -1942,7 +1757,7 @@ class AlertRegistrationTestCase(TestCase):
             self.cis1200,
             5,
             [
-                {"number": "+11234567890", "email": "j@gmail.com"},
+                {"number": "+19178286431", "email": "j@gmail.com"},
                 {"number": "+12234567890", "email": "newj@gmail.com"},
             ],
         )
@@ -1966,42 +1781,28 @@ class AlertRegistrationTestCase(TestCase):
             new_third_id = response.data["id"]
         response = self.client.get(reverse("registrations-list"))
         self.assertEqual(3, len(response.data))
-        self.assertEqual(
-            0, len([item for item in response.data if item["id"] == new_first_id])
-        )
-        self.assertEqual(
-            0, len([item for item in response.data if item["id"] == new_second_id])
-        )
+        self.assertEqual(0, len([item for item in response.data if item["id"] == new_first_id]))
+        self.assertEqual(0, len([item for item in response.data if item["id"] == new_second_id]))
         sixth_data = next(item for item in response.data if item["id"] == sixth_id)
         sixth_ob = Registration.objects.get(id=sixth_id)
         self.check_model_with_response_data(sixth_ob, sixth_data)
-        self.assertEqual(
-            Registration.objects.get(id=ids["fourth_id"]), sixth_ob.resubscribed_from
-        )
+        self.assertEqual(Registration.objects.get(id=ids["fourth_id"]), sixth_ob.resubscribed_from)
         self.assertFalse(hasattr(sixth_ob, "resubscribed_to"))
         self.assertFalse(sixth_data["notification_sent"])
         self.assertIsNone(sixth_data["notification_sent_at"])
         response = self.client.get(reverse("registrationhistory-list"))
         self.assertEqual(200, response.status_code)
-        self.assertEqual(
-            0, len([item for item in response.data if item["id"] == new_first_id])
-        )
-        self.assertEqual(
-            0, len([item for item in response.data if item["id"] == new_second_id])
-        )
+        self.assertEqual(0, len([item for item in response.data if item["id"] == new_first_id]))
+        self.assertEqual(0, len([item for item in response.data if item["id"] == new_second_id]))
         self.assertEqual(6, len(response.data))
         response = new_client.get(reverse("registrations-list"))
         self.assertEqual(2, len(response.data))
         self.assertEqual(200, response.status_code)
         next(item for item in response.data if item["id"] == new_third_id)
-        new_third_data = next(
-            item for item in response.data if item["id"] == new_third_id
-        )
+        new_third_data = next(item for item in response.data if item["id"] == new_third_id)
         new_third_ob = Registration.objects.get(id=new_third_id)
         self.check_model_with_response_data(new_third_ob, new_third_data)
-        self.assertEqual(
-            Registration.objects.get(id=new_second_id), new_third_ob.resubscribed_from
-        )
+        self.assertEqual(Registration.objects.get(id=new_second_id), new_third_ob.resubscribed_from)
         self.assertFalse(hasattr(new_third_ob, "resubscribed_to"))
         self.assertFalse(new_third_data["notification_sent"])
         self.assertIsNone(new_third_data["notification_sent_at"])
@@ -2009,13 +1810,7 @@ class AlertRegistrationTestCase(TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual(
             0,
-            len(
-                [
-                    item
-                    for item in response.data
-                    if item["id"] in [id for id in ids.values()]
-                ]
-            ),
+            len([item for item in response.data if item["id"] in [id for id in ids.values()]]),
         )
         self.assertEqual(3, len(response.data))
 
@@ -2124,22 +1919,16 @@ class AlertRegistrationTestCase(TestCase):
                 )
                 self.assertFalse(Registration.objects.get(id=first_id).deleted)
                 self.assertIsNone(Registration.objects.get(id=first_id).deleted_at)
-                self.assertTrue(
-                    Registration.objects.get(id=first_id).resubscribed_to.deleted
-                )
+                self.assertTrue(Registration.objects.get(id=first_id).resubscribed_to.deleted)
                 self.assertIsNotNone(
                     Registration.objects.get(id=first_id).resubscribed_to.deleted_at
                 )
                 self.assertFalse(
-                    Registration.objects.get(
-                        id=first_id
-                    ).resubscribed_to.notification_sent
+                    Registration.objects.get(id=first_id).resubscribed_to.notification_sent
                 )
         else:
             self.assertFalse(Registration.objects.get(id=first_id).notification_sent)
-            self.assertFalse(
-                hasattr(Registration.objects.get(id=first_id), "resubscribed_to")
-            )
+            self.assertFalse(hasattr(Registration.objects.get(id=first_id), "resubscribed_to"))
             self.assertTrue(Registration.objects.get(id=first_id).deleted)
             self.assertIsNotNone(Registration.objects.get(id=first_id).deleted_at)
 
@@ -2166,12 +1955,8 @@ class AlertRegistrationTestCase(TestCase):
         response = self.client.get(reverse("registrations-list"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data))
-        self.assertEqual(
-            0, len([r for r in response.data if str(r["id"]) == str(ids["fifth_id"])])
-        )
-        response = self.client.get(
-            reverse("registrations-detail", args=[ids["fifth_id"]])
-        )
+        self.assertEqual(0, len([r for r in response.data if str(r["id"]) == str(ids["fifth_id"])]))
+        response = self.client.get(reverse("registrations-detail", args=[ids["fifth_id"]]))
         self.assertEqual(200, response.status_code)
 
     def test_cancel_resubscribe_current_group(self):
@@ -2194,15 +1979,9 @@ class AlertRegistrationTestCase(TestCase):
         response = self.client.get(reverse("registrations-list"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(3, len(response.data))
-        self.assertEqual(
-            0, len([r for r in response.data if str(r["id"]) == str(ids["fifth_id"])])
-        )
-        self.assertEqual(
-            1, len([r for r in response.data if str(r["id"]) == str(sixth_id)])
-        )
-        response = self.client.get(
-            reverse("registrations-detail", args=[ids["fifth_id"]])
-        )
+        self.assertEqual(0, len([r for r in response.data if str(r["id"]) == str(ids["fifth_id"])]))
+        self.assertEqual(1, len([r for r in response.data if str(r["id"]) == str(sixth_id)]))
+        response = self.client.get(reverse("registrations-detail", args=[ids["fifth_id"]]))
         self.assertEqual(200, response.status_code)
         self.assertEqual(sixth_id, response.data["id"])
 
@@ -2296,9 +2075,7 @@ class AlertRegistrationTestCase(TestCase):
 
     def test_registration_closed(self):
         self.create_resubscribe_group()
-        Option.objects.update_or_create(
-            key="REGISTRATION_OPEN", value_type="BOOL", value="FALSE"
-        )
+        Option.objects.update_or_create(key="REGISTRATION_OPEN", value_type="BOOL", value="FALSE")
         response = self.client.post(
             reverse("registrations-list"),
             json.dumps({"section": "CIS-1600-001", "auto_resubscribe": False}),
@@ -2311,9 +2088,7 @@ class AlertRegistrationTestCase(TestCase):
         This function tests that you cannot resubscribe if registration is closed.
         """
 
-        Option.objects.update_or_create(
-            key="REGISTRATION_OPEN", value_type="BOOL", value="FALSE"
-        )
+        Option.objects.update_or_create(key="REGISTRATION_OPEN", value_type="BOOL", value="FALSE")
 
         first_id = self.registration_cis1200.id
         self.simulate_alert(self.cis1200, 1, should_send=True)
@@ -2342,9 +2117,7 @@ class AlertRegistrationTestCase(TestCase):
         self.create_resubscribe_group()
 
         current_adp = get_add_drop_period(semester=TEST_SEMESTER)
-        current_adp.end = datetime.utcnow().replace(
-            tzinfo=gettz(TIME_ZONE)
-        ) - timedelta(days=1)
+        current_adp.end = datetime.utcnow().replace(tzinfo=gettz(TIME_ZONE)) - timedelta(days=1)
         current_adp.save()
 
         response = self.client.post(
@@ -2363,9 +2136,7 @@ class AlertRegistrationTestCase(TestCase):
         self.simulate_alert(self.cis1200, 1, should_send=True)
 
         current_adp = get_add_drop_period(semester=TEST_SEMESTER)
-        current_adp.end = datetime.utcnow().replace(
-            tzinfo=gettz(TIME_ZONE)
-        ) - timedelta(days=1)
+        current_adp.end = datetime.utcnow().replace(tzinfo=gettz(TIME_ZONE)) - timedelta(days=1)
         current_adp.save()
 
         if put:
@@ -2425,9 +2196,7 @@ class AlertRegistrationTestCase(TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual(3, len(response.data))
         self.assertEqual(3, len(set(item.get("id") for item in response.data)))
-        self.assertEqual(
-            1, len([item for item in response.data if item.get("id") == sixth_id])
-        )
+        self.assertEqual(1, len([item for item in response.data if item.get("id") == sixth_id]))
         self.assertEqual(
             1,
             len([item for item in response.data if item.get("id") == ids["second_id"]]),
@@ -2475,9 +2244,7 @@ class AlertRegistrationTestCase(TestCase):
             )
         if not cancel_before_sim_webhook and not auto_resub:
             self.assertEqual(400, response.status_code)
-            self.assertEqual(
-                "You cannot cancel a sent registration.", response.data["detail"]
-            )
+            self.assertEqual("You cannot cancel a sent registration.", response.data["detail"])
         else:
             self.assertEqual(200, response.status_code)
             self.assertEqual("Registration cancelled", response.data["detail"])
@@ -2509,16 +2276,12 @@ class AlertRegistrationTestCase(TestCase):
                 )
                 self.assertFalse(Registration.objects.get(id=first_id).cancelled)
                 self.assertIsNone(Registration.objects.get(id=first_id).cancelled_at)
-                self.assertTrue(
-                    Registration.objects.get(id=first_id).resubscribed_to.cancelled
-                )
+                self.assertTrue(Registration.objects.get(id=first_id).resubscribed_to.cancelled)
                 self.assertIsNotNone(
                     Registration.objects.get(id=first_id).resubscribed_to.cancelled_at
                 )
                 self.assertFalse(
-                    Registration.objects.get(
-                        id=first_id
-                    ).resubscribed_to.notification_sent
+                    Registration.objects.get(id=first_id).resubscribed_to.notification_sent
                 )
         else:
             self.assertFalse(Registration.objects.get(id=first_id).notification_sent)
@@ -2527,13 +2290,9 @@ class AlertRegistrationTestCase(TestCase):
                 hasattr(Registration.objects.get(id=first_id), "resubscribed_to"),
             )
             if not auto_resub or not cancel_before_sim_webhook:
-                self.assertTrue(
-                    Registration.objects.get(id=first_id).resubscribed_to.is_active
-                )
+                self.assertTrue(Registration.objects.get(id=first_id).resubscribed_to.is_active)
                 self.assertFalse(
-                    Registration.objects.get(
-                        id=first_id
-                    ).resubscribed_to.notification_sent
+                    Registration.objects.get(id=first_id).resubscribed_to.notification_sent
                 )
             self.assertTrue(Registration.objects.get(id=first_id).cancelled)
             self.assertIsNotNone(Registration.objects.get(id=first_id).cancelled_at)
@@ -2563,9 +2322,7 @@ class AlertRegistrationTestCase(TestCase):
             content_type="application/json",
         )
         self.assertEquals(400, response.status_code)
-        self.assertEquals(
-            "You cannot cancel a deleted registration.", response.data["detail"]
-        )
+        self.assertEquals("You cannot cancel a deleted registration.", response.data["detail"])
 
     def test_cancel_sent(self):
         first_id = self.registration_cis1200.id
@@ -2576,9 +2333,7 @@ class AlertRegistrationTestCase(TestCase):
             content_type="application/json",
         )
         self.assertEquals(400, response.status_code)
-        self.assertEquals(
-            "You cannot cancel a sent registration.", response.data["detail"]
-        )
+        self.assertEquals("You cannot cancel a sent registration.", response.data["detail"])
 
     def test_delete_cancelled(self):
         first_id = self.registration_cis1200.id
@@ -2606,12 +2361,8 @@ class AlertRegistrationTestCase(TestCase):
         response = self.client.get(reverse("registrations-list"))
         self.assertEqual(200, response.status_code)
         self.assertEqual(3, len(response.data))
-        self.assertEqual(
-            1, len([r for r in response.data if str(r["id"]) == str(ids["fifth_id"])])
-        )
-        response = self.client.get(
-            reverse("registrations-detail", args=[ids["fifth_id"]])
-        )
+        self.assertEqual(1, len([r for r in response.data if str(r["id"]) == str(ids["fifth_id"])]))
+        response = self.client.get(reverse("registrations-detail", args=[ids["fifth_id"]]))
         self.assertEqual(200, response.status_code)
 
     def changeattrs_update_order_helper(self, put, update_field):
@@ -2657,17 +2408,11 @@ class AlertRegistrationTestCase(TestCase):
             )
             self.assertFalse(Registration.objects.get(id=first_id).deleted)
             self.assertIsNone(Registration.objects.get(id=first_id).deleted_at)
-            self.assertFalse(
-                Registration.objects.get(id=first_id).resubscribed_to.deleted
-            )
-            self.assertIsNone(
-                Registration.objects.get(id=first_id).resubscribed_to.deleted_at
-            )
+            self.assertFalse(Registration.objects.get(id=first_id).resubscribed_to.deleted)
+            self.assertIsNone(Registration.objects.get(id=first_id).resubscribed_to.deleted_at)
             self.assertFalse(Registration.objects.get(id=first_id).auto_resubscribe)
             self.assertFalse(Registration.objects.get(id=first_id).close_notification)
-            self.assertFalse(
-                Registration.objects.get(id=first_id).resubscribed_to.auto_resubscribe
-            )
+            self.assertFalse(Registration.objects.get(id=first_id).resubscribed_to.auto_resubscribe)
         if update_field == "deleted":
             if put:
                 self.client.put(
@@ -2710,9 +2455,7 @@ class AlertRegistrationTestCase(TestCase):
         possible cases; with push notifications enabled (push_notif parameter set to True),
         or disabled (push_notif set to False).
         """
-        contact_infos = [
-            {"number": "+11234567890", "email": "j@gmail.com", "push_username": None}
-        ]
+        contact_infos = [{"number": "+19178286431", "email": "j@gmail.com", "push_username": None}]
         if push_notif:
             response = self.client.put(
                 reverse("user-view"),
@@ -2749,16 +2492,10 @@ class AlertRegistrationTestCase(TestCase):
         self.assertTrue(r.close_notification)
         self.assertTrue(r.auto_resubscribe)
         self.assertTrue(
-            r
-            in get_registrations_for_alerts(
-                "CIS-1600-001", TEST_SEMESTER, course_status="O"
-            )
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="O")
         )
         self.assertFalse(
-            r
-            in get_registrations_for_alerts(
-                "CIS-1600-001", TEST_SEMESTER, course_status="C"
-            )
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="C")
         )
         self.simulate_alert(
             self.cis1600,
@@ -2769,32 +2506,18 @@ class AlertRegistrationTestCase(TestCase):
         )
         r = Registration.objects.get(id=first_id)
         self.assertTrue(
-            r
-            in get_registrations_for_alerts(
-                "CIS-1600-001", TEST_SEMESTER, course_status="O"
-            )
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="O")
         )
         self.assertFalse(
-            r
-            in get_registrations_for_alerts(
-                "CIS-1600-001", TEST_SEMESTER, course_status="C"
-            )
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="C")
         )
-        self.simulate_alert(
-            self.cis1600, 2, should_send=True, contact_infos=contact_infos
-        )
+        self.simulate_alert(self.cis1600, 2, should_send=True, contact_infos=contact_infos)
         r = Registration.objects.get(id=first_id)
         self.assertFalse(
-            r
-            in get_registrations_for_alerts(
-                "CIS-1600-001", TEST_SEMESTER, course_status="O"
-            )
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="O")
         )
         self.assertTrue(
-            r
-            in get_registrations_for_alerts(
-                "CIS-1600-001", TEST_SEMESTER, course_status="C"
-            )
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="C")
         )
         contact_infos[0]["number"] = None
         self.simulate_alert(
@@ -2806,16 +2529,10 @@ class AlertRegistrationTestCase(TestCase):
         )
         r = Registration.objects.get(id=first_id)
         self.assertFalse(
-            r
-            in get_registrations_for_alerts(
-                "CIS-1600-001", TEST_SEMESTER, course_status="O"
-            )
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="O")
         )
         self.assertFalse(
-            r
-            in get_registrations_for_alerts(
-                "CIS-1600-001", TEST_SEMESTER, course_status="C"
-            )
+            r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="C")
         )
 
     def test_close_notification_creation(self):
@@ -2854,9 +2571,7 @@ class AlertRegistrationTestCase(TestCase):
         if put:
             self.client.put(
                 reverse("registrations-detail", args=[first_id]),
-                json.dumps(
-                    {"auto_resubscribe": auto_resub, "close_notification": True}
-                ),
+                json.dumps({"auto_resubscribe": auto_resub, "close_notification": True}),
                 content_type="application/json",
             )
         else:
@@ -2875,13 +2590,7 @@ class AlertRegistrationTestCase(TestCase):
         self.assertEquals(auto_resub, r.auto_resubscribe)
         self.assertTrue(r.close_notification)
 
-    @data(
-        *(
-            ((put, auto_resub), None)
-            for put in [True, False]
-            for auto_resub in [True, False]
-        )
-    )
+    @data(*(((put, auto_resub), None) for put in [True, False] for auto_resub in [True, False]))
     @unpack
     def test_close_notification_update(self, value, result):
         self.close_notification_update_helper(*value)
@@ -2905,11 +2614,7 @@ class AlertRegistrationTestCase(TestCase):
         Ensure that cancelling or deleting a registration also cancels a pending close notification
         """
         contact_infos = [
-            {
-                "number": "+11234567890",
-                "email": "j@gmail.com",
-                "push_username": self.user.username,
-            }
+            {"number": "+19178286431", "email": "j@gmail.com", "push_username": self.user.username}
         ]
         first_id = self.registration_cis1200.id
 
@@ -3002,13 +2707,7 @@ class AlertRegistrationTestCase(TestCase):
         self.assertTrue(response.data["close_notification"])
         self.assertEquals(auto_resub, response.data["auto_resubscribe"])
 
-    @data(
-        *(
-            ((put, auto_resub), None)
-            for put in [True, False]
-            for auto_resub in [True, False]
-        )
-    )
+    @data(*(((put, auto_resub), None) for put in [True, False] for auto_resub in [True, False]))
     @unpack
     def test_close_notification_resub(self, value, result):
         self.close_notification_resub_helper(*value)
@@ -3033,13 +2732,9 @@ class AlertRegistrationTestCase(TestCase):
             )
         self.simulate_alert(self.cis1200, 1)
         self.assertTrue(Registration.objects.get(id=first_id).notification_sent)
-        self.assertFalse(
-            Registration.objects.get(id=first_id).resubscribed_to.notification_sent
-        )
+        self.assertFalse(Registration.objects.get(id=first_id).resubscribed_to.notification_sent)
         self.assertTrue(Registration.objects.get(id=first_id).auto_resubscribe)
-        self.assertTrue(
-            Registration.objects.get(id=first_id).resubscribed_to.auto_resubscribe
-        )
+        self.assertTrue(Registration.objects.get(id=first_id).resubscribed_to.auto_resubscribe)
 
     @data((True, None), (False, None))
     @unpack
@@ -3161,33 +2856,23 @@ class AlertRegistrationTestCase(TestCase):
         ids = self.create_resubscribe_group()
         self.assertEqual(
             Registration.objects.get(id=ids["first_id"]),
-            Registration.objects.get(
-                id=ids["first_id"]
-            ).get_original_registration_iter(),
+            Registration.objects.get(id=ids["first_id"]).get_original_registration_iter(),
         )
         self.assertEqual(
             Registration.objects.get(id=ids["second_id"]),
-            Registration.objects.get(
-                id=ids["second_id"]
-            ).get_original_registration_iter(),
+            Registration.objects.get(id=ids["second_id"]).get_original_registration_iter(),
         )
         self.assertEqual(
             Registration.objects.get(id=ids["first_id"]),
-            Registration.objects.get(
-                id=ids["third_id"]
-            ).get_original_registration_iter(),
+            Registration.objects.get(id=ids["third_id"]).get_original_registration_iter(),
         )
         self.assertEqual(
             Registration.objects.get(id=ids["first_id"]),
-            Registration.objects.get(
-                id=ids["fourth_id"]
-            ).get_original_registration_iter(),
+            Registration.objects.get(id=ids["fourth_id"]).get_original_registration_iter(),
         )
         self.assertEqual(
             Registration.objects.get(id=ids["fifth_id"]),
-            Registration.objects.get(
-                id=ids["fifth_id"]
-            ).get_original_registration_iter(),
+            Registration.objects.get(id=ids["fifth_id"]).get_original_registration_iter(),
         )
 
     def test_get_resubscribe_group(self):
@@ -3224,9 +2909,7 @@ class AlertRegistrationTestCase(TestCase):
         obs = dict()
         last_notification_sent_at_vals = dict()
         for specific_ids in ["second", "fourth", "fifth"]:
-            ob_lst = [
-                ob for ob in response.data if ob.get("id") == ids[specific_ids + "_id"]
-            ]
+            ob_lst = [ob for ob in response.data if ob.get("id") == ids[specific_ids + "_id"]]
             self.assertEquals(1, len(ob_lst))
             obs[specific_ids] = ob_lst[0]
             last_notification_sent_at_vals[specific_ids] = ob_lst[0].get(
@@ -3239,18 +2922,14 @@ class AlertRegistrationTestCase(TestCase):
         # Now check registration history
         response = self.client.get(reverse("registrationhistory-list"))
         for specific_ids in ["first", "third", "fourth"]:
-            ob_lst = [
-                ob for ob in response.data if ob.get("id") == ids[specific_ids + "_id"]
-            ]
+            ob_lst = [ob for ob in response.data if ob.get("id") == ids[specific_ids + "_id"]]
             self.assertEquals(1, len(ob_lst))
             self.assertEquals(
                 last_notification_sent_at_vals["fourth"],
                 ob_lst[0].get("last_notification_sent_at"),
             )
         for specific_ids in ["second", "fifth"]:
-            ob_lst = [
-                ob for ob in response.data if ob.get("id") == ids[specific_ids + "_id"]
-            ]
+            ob_lst = [ob for ob in response.data if ob.get("id") == ids[specific_ids + "_id"]]
             self.assertEquals(1, len(ob_lst))
             self.assertIsNone(ob_lst[0].get("last_notification_sent_at"))
 

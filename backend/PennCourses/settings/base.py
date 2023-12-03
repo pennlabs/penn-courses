@@ -25,9 +25,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get(
-    "SECRET_KEY", "&3!f%)t!o$+dwu3(jao7ipi2f4(k-2ua7@28+^yge-cn7c!_14"
-)
+SECRET_KEY = os.environ.get("SECRET_KEY", "&3!f%)t!o$+dwu3(jao7ipi2f4(k-2ua7@28+^yge-cn7c!_14")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -95,6 +93,7 @@ WSGI_APPLICATION = "PennCourses.wsgi.application"
 
 DATABASES = {
     "default": dj_database_url.config(
+        # this is overriden by the DATABASE_URL env var
         default="postgres://penn-courses:postgres@localhost:5432/postgres"
     )
 }
@@ -155,9 +154,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, "static")
 # DLA Settings
 
 PLATFORM_ACCOUNTS = {
-    "REDIRECT_URI": os.environ.get(
-        "LABS_REDIRECT_URI", "http://localhost:8000/accounts/callback/"
-    ),
+    "REDIRECT_URI": os.environ.get("LABS_REDIRECT_URI", "http://localhost:8000/accounts/callback/"),
     "CLIENT_ID": "clientid",
     "CLIENT_SECRET": "supersecretclientsecret",
     "PLATFORM_URL": "https://platform-dev.pennlabs.org",
@@ -186,7 +183,7 @@ SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
 # Twilio Credentials
 TWILIO_SID = os.environ.get("TWILIO_SID", "")
 TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_TOKEN", "")
-TWILIO_NUMBER = os.environ.get("TWILIO_NUMBER", "+12153984277")
+TWILIO_NUMBER = os.environ.get("TWILIO_NUMBER", "+12157826689")
 
 # Redis
 REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/1")
@@ -216,15 +213,9 @@ XWALK_SRC = "xwalk_csre_number.txt"
 
 # Registration Metrics Settings
 
-STATUS_UPDATES_RECORDED_SINCE = (
-    "2019C"  # How far back does our valid Status Update data span?
-)
-PCA_REGISTRATIONS_RECORDED_SINCE = (
-    "2020A"  # How far back does our valid Registration data span?
-)
-WAITLIST_DEPARTMENT_CODES = (
-    []
-)  # Which departments (referenced by code) have a waitlist system
+STATUS_UPDATES_RECORDED_SINCE = "2019C"  # How far back does our valid Status Update data span?
+PCA_REGISTRATIONS_RECORDED_SINCE = "2020A"  # How far back does our valid Registration data span?
+WAITLIST_DEPARTMENT_CODES = []  # Which departments (referenced by code) have a waitlist system
 # or require permits for registration during the add/drop period?
 PRE_NGSS_PERMIT_REQ_RESTRICTION_CODES = [  # TODO: add post-NGSS list
     "PCG",
@@ -235,4 +226,10 @@ PRE_NGSS_PERMIT_REQ_RESTRICTION_CODES = [  # TODO: add post-NGSS list
     "PIN",
     "PDP",
 ]  # Which pre-NGSS restriction codes indicate registration was handled by permit issuance?
-ROUGH_MINIMUM_DEMAND_DISTRIBUTION_ESTIMATES = 200  # Aim for at least 200 demand distribution estimates over the course of a semester
+ROUGH_MINIMUM_DEMAND_DISTRIBUTION_ESTIMATES = (
+    200  # Aim for at least 200 demand distribution estimates over the course of a semester
+)
+
+# The name of the schedule that is created/verified by Penn Mobile,
+# containing the user's active course registrations from Path.
+PATH_REGISTRATION_SCHEDULE_NAME = "Path Registration"

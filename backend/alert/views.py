@@ -29,16 +29,14 @@ from courses.util import (
     translate_semester_inv,
     update_course_from_record,
 )
-from PennCourses.docs_settings import PcxAutoSchema, reverse_func
+from PennCourses.docs_settings import PcxAutoSchema
 
 
 logger = logging.getLogger(__name__)
 
 
 def alert_for_course(c_id, semester, sent_by, course_status):
-    send_course_alerts.delay(
-        c_id, course_status=course_status, semester=semester, sent_by=sent_by
-    )
+    send_course_alerts.delay(c_id, course_status=course_status, semester=semester, sent_by=sent_by)
 
 
 def extract_basic_auth(auth_header):
@@ -59,9 +57,7 @@ def extract_basic_auth(auth_header):
 
 @csrf_exempt
 def accept_webhook(request):
-    auth_header = request.META.get(
-        "Authorization", request.META.get("HTTP_AUTHORIZATION", "")
-    )
+    auth_header = request.META.get("Authorization", request.META.get("HTTP_AUTHORIZATION", ""))
 
     username, password = extract_basic_auth(auth_header)
     if username != settings.WEBHOOK_USERNAME or password != settings.WEBHOOK_PASSWORD:
@@ -85,24 +81,18 @@ def accept_webhook(request):
 
     course_id = data.get("section_id_normalized", None)
     if course_id is None:
-        return HttpResponse(
-            "Course ID could not be extracted from response", status=400
-        )
+        return HttpResponse("Course ID could not be extracted from response", status=400)
 
     course_status = data.get("status", None)
     if course_status is None:
-        return HttpResponse(
-            "Course Status could not be extracted from response", status=400
-        )
+        return HttpResponse("Course Status could not be extracted from response", status=400)
 
     prev_status = data.get("previous_status", None) or ""
 
     try:
         course_term = data.get("term", None)
         if course_term is None:
-            return HttpResponse(
-                "Course Term could not be extracted from response", status=400
-            )
+            return HttpResponse("Course Term could not be extracted from response", status=400)
         if any(course_term.endswith(s) for s in ["10", "20", "30"]):
             course_term = translate_semester_inv(course_term)
         if course_term.upper().endswith("B"):
@@ -262,7 +252,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
     schema = PcxAutoSchema(
         response_codes={
-            reverse_func("registrations-list"): {
+            "registrations-list": {
                 "POST": {
                     201: "[DESCRIBE_RESPONSE_SCHEMA]Registration successfully created.",
                     400: "Bad request (e.g. given null section).",
@@ -271,11 +261,9 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     409: "Registration for given section already exists.",
                     503: "Registration not currently open.",
                 },
-                "GET": {
-                    200: "[DESCRIBE_RESPONSE_SCHEMA]Registrations successfully listed."
-                },
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Registrations successfully listed."},
             },
-            reverse_func("registrations-detail", args=["id"]): {
+            "registrations-detail": {
                 "PUT": {
                     200: "Registration successfully updated (or no changes necessary).",
                     400: "Bad request (see route description).",
@@ -289,7 +277,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             },
         },
         override_response_schema={
-            reverse_func("registrations-list"): {
+            "registrations-list": {
                 "POST": {
                     201: {
                         "properties": {
@@ -339,8 +327,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         if res == RegStatus.SUCCESS:
             return Response(
                 {
-                    "message": "Your registration for %s was successful!"
-                    % normalized_course_code,
+                    "message": "Your registration for %s was successful!" % normalized_course_code,
                     "id": reg.pk,
                 },
                 status=status.HTTP_201_CREATED,
@@ -416,9 +403,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
             if registration.section.semester != get_current_semester():
                 return Response(
-                    {
-                        "detail": "You can only update registrations from the current semester."
-                    },
+                    {"detail": "You can only update registrations from the current semester."},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             try:
@@ -430,15 +415,10 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                         )
                     if registration.deleted:
                         return Response(
-                            {
-                                "detail": "You cannot resubscribe to a deleted registration."
-                            },
+                            {"detail": "You cannot resubscribe to a deleted registration."},
                             status=status.HTTP_400_BAD_REQUEST,
                         )
-                    if (
-                        not registration.notification_sent
-                        and not registration.cancelled
-                    ):
+                    if not registration.notification_sent and not registration.cancelled:
                         return Response(
                             {
                                 "detail": "You can only resubscribe to a registration that "
@@ -494,33 +474,21 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                             {"detail": "Registration cancelled"},
                             status=status.HTTP_200_OK,
                         )
-                elif (
-                    "auto_resubscribe" in request.data
-                    or "close_notification" in request.data
-                ):
+                elif "auto_resubscribe" in request.data or "close_notification" in request.data:
                     if registration.deleted:
                         return Response(
-                            {
-                                "detail": "You cannot make changes to a deleted registration."
-                            },
+                            {"detail": "You cannot make changes to a deleted registration."},
                             status=status.HTTP_400_BAD_REQUEST,
                         )
-                    auto_resubscribe_changed = (
-                        registration.auto_resubscribe
-                        != request.data.get(
-                            "auto_resubscribe", registration.auto_resubscribe
-                        )
+                    auto_resubscribe_changed = registration.auto_resubscribe != request.data.get(
+                        "auto_resubscribe", registration.auto_resubscribe
                     )
                     close_notification_changed = (
                         registration.close_notification
-                        != request.data.get(
-                            "close_notification", registration.close_notification
-                        )
+                        != request.data.get("close_notification", registration.close_notification)
                     )
                     if (
-                        request.data.get(
-                            "close_notification", registration.close_notification
-                        )
+                        request.data.get("close_notification", registration.close_notification)
                         and not request.user.profile.email
                         and not request.user.profile.push_notifications
                     ):
@@ -605,9 +573,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         )
 
 
-class RegistrationHistoryViewSet(
-    AutoPrefetchViewSetMixin, viewsets.ReadOnlyModelViewSet
-):
+class RegistrationHistoryViewSet(AutoPrefetchViewSetMixin, viewsets.ReadOnlyModelViewSet):
     """
     list:
     List all of the user's registrations for the current semester, regardless of whether
@@ -624,12 +590,10 @@ class RegistrationHistoryViewSet(
 
     schema = PcxAutoSchema(
         response_codes={
-            reverse_func("registrationhistory-list"): {
-                "GET": {
-                    200: "[DESCRIBE_RESPONSE_SCHEMA]Registration history successfully listed."
-                }
+            "registrationhistory-list": {
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Registration history successfully listed."}
             },
-            reverse_func("registrationhistory-detail", args=["id"]): {
+            "registrationhistory-detail": {
                 "GET": {
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Historic registration detail "
                     "successfully retrieved.",

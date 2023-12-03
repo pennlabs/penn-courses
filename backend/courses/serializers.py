@@ -6,6 +6,7 @@ from rest_framework import serializers
 from courses.models import (
     Attribute,
     Course,
+    Friendship,
     Instructor,
     Meeting,
     NGSSRestriction,
@@ -106,13 +107,9 @@ class MiniSectionSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-course_quality_help = (
-    "The average course quality rating for this section, on a scale of 0-4."
-)
+course_quality_help = "The average course quality rating for this section, on a scale of 0-4."
 difficulty_help = "The average difficult rating for this section, on a scale of 0-4."
-instructor_quality_help = (
-    "The average instructor quality for this section, on a scale of 0-4."
-)
+instructor_quality_help = "The average instructor quality for this section, on a scale of 0-4."
 work_required_help = "The average work required for this section, on a scale of 0-4."
 
 
@@ -428,6 +425,13 @@ class UserSerializer(serializers.ModelSerializer):
         read_only_fields = ["username"]
 
 
+class PublicUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = get_user_model()
+        fields = ["username", "first_name", "last_name"]
+        read_only_fields = ["username"]
+
+
 class StatusUpdateSerializer(serializers.ModelSerializer):
     section = serializers.ReadOnlyField(
         source="section__full_code",
@@ -445,3 +449,28 @@ class StatusUpdateSerializer(serializers.ModelSerializer):
         model = StatusUpdate
         fields = ["section", "old_status", "new_status", "created_at", "alert_sent"]
         read_only_fields = fields
+
+
+class FriendshipSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Friendship
+        fields = ["sender", "recipient", "status", "sent_at", "accepted_at"]
+
+    sender = PublicUserSerializer(
+        read_only=True,
+        help_text="The user that is sending the request.",
+        required=False,
+    )
+    recipient = PublicUserSerializer(
+        read_only=True,
+        help_text="The user that is recieving the request.",
+        required=False,
+    )
+
+
+class FriendshipRequestSerializer(serializers.Serializer):
+    friend_id = serializers.IntegerField()
+
+    def to_representation(self, instance):
+        print("in representation function")
+        return super().to_representation(instance)
