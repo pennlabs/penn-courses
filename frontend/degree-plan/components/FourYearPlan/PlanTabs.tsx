@@ -6,7 +6,7 @@ const planTab = {
     color: '#575757', backgroundColor:'#DBE2F5', 
     boxShadow: '0px 0px 12px 8px rgba(0, 0, 0, 0.05)',
     borderRadius: '5px',
-    padding: '5px',
+    padding: '1px',
     borderWidth: '0px'}
 
 const PlanTabs = ({plans, handleChoosePlan, setPlans, setCurrentPlan}: any) => {

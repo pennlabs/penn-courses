@@ -6,12 +6,14 @@ import { mdiTriangleSmallDown, mdiTriangleSmallUp } from '@mdi/js';
 import { useEffect, useRef, useState } from "react";
 import { useDrag, useDrop } from "react-dnd";
 import { ItemTypes } from "../dnd/constants";
+import { margin } from "@mui/system";
+import { titleStyle } from "@/pages/FourYearPlanPage";
 
 const majorTitleStyle = {
     'borderWeight': 5
 }
 
-const Major = ({major, editMode, index, moveMajor}: any) => {
+const Major = ({major, editMode, index, moveMajor, setSearchClosed}: any) => {
     const [collapsed, setCollapsed] = useState(false);
     let ref = useRef<HTMLInputElement>(null);
 
@@ -66,18 +68,18 @@ const Major = ({major, editMode, index, moveMajor}: any) => {
     drag(drop(ref))
     return(
       <>
-            <div style={{borderRadius:'12px'}}>
+            <div className="m-3">
                 <div className='col-12' ref={ref} style={{
                     opacity: opacity,
-                    backgroundColor:'#F2F2F2', 
+                    backgroundColor:'#EDF1FC', 
                     fontSize:'16px', 
                     padding:'5px', 
                     paddingLeft:'10px', 
-                    borderRadius:'12px',
+                    borderRadius:'10px',
                   }}>
                     <div>
                         <label onMouseDown={handleCollapse} className="d-flex justify-content-between">
-                            <div style={{borderWidth:'5px'}}>{major.name}</div>
+                            <div style={titleStyle}>{major.name}</div>
                             {editMode ? 
                                 <label>
                                     <Icon path={mdiTrashCanOutline} size={0.92} />
@@ -89,8 +91,8 @@ const Major = ({major, editMode, index, moveMajor}: any) => {
                     </div>
                 </div>
                 {!collapsed &&
-                <div className='m-2'>
-                    {major.requirements.map((requirement: any) => ( <Requirement key={requirement.id} requirement={requirement}/>))}
+                <div className='ms-2 mt-2'>
+                    {major.requirements.map((requirement: any) => ( <Requirement key={requirement.id} requirement={requirement} setSearchClosed={setSearchClosed}/>))}
                 </div>}
             </div>
         </>

@@ -2,12 +2,12 @@ import { Box, Button, CircularProgress, Fab, Typography } from "@mui/material";
 import React, { useState } from "react";
 
 const CircularProgressBar = ({value} : any) => {
-    const [progress, setProgress] = React.useState(0);
+    const [progress, setProgress] = React.useState(value * 25);
 
     React.useEffect(() => {
         const timer = setInterval(() => {
             setProgress((prevProgress) => (prevProgress >= value * 25 ? prevProgress : prevProgress + 5));
-        }, 90);
+        }, 0);
 
         return () => {
             clearInterval(timer);

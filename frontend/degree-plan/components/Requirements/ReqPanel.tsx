@@ -5,19 +5,18 @@ import Major from './Major';
 import { useCallback, useEffect, useState } from 'react';
 import update from 'immutability-helper'
 import { Stack } from '@mui/material';
+import { titleStyle, topBarStyle } from '@/pages/FourYearPlanPage';
+import SearchPanel from '../Search/SearchPanel';
 
-export const reqPanelContainerStyle = {
-    // backgroundColor: '#FFFFFF', 
-    boxShadow: '0px 0px 10px 6px rgba(0, 0, 0, 0.05)', 
-    borderRadius: '10px',
-    width: 400,
-    height: '100%',
-    backgroundColor: '#FFFFFF'
-  }
+const majorStackStyle = {
+  height: '90%',
+  overflow: 'auto'
+}
   
-  const ReqPanel = () => {
+  const ReqPanel = ({setSearchClosed}:any) => {
       const [editMode, setEditMode] = useState(false);
       const [majors, setMajors] = useState(majorsdata);
+
       
       useEffect(() => {
           setMajors(majorsdata);
@@ -35,26 +34,20 @@ export const reqPanelContainerStyle = {
       }, [])
 
     return(
-        <div style={reqPanelContainerStyle}>
-          <div className="" style={{backgroundColor:'#DBE2F5', paddingLeft: '15px', paddingTop: '3px', paddingBottom: '2px', paddingRight: '15px', borderTopLeftRadius: '10px', borderTopRightRadius: '10px'}}>
-              <div className='m-2 d-flex justify-content-between'>
-                <div style={{color: '#575757', fontWeight: 'bold'}}>Major/Minor/Elective</div>
+        <>
+          <div style={topBarStyle}>
+              <div className='d-flex justify-content-between'>
+                <div style={titleStyle}>Major/Minor/Elective</div>
                 <label onClick={() => setEditMode(!editMode)}>
                     <Icon path={editMode ? mdiArrowLeft : mdiNoteEditOutline } size={1}/>
                 </label>
               </div>
           </div>
-          <div style={{padding:'1rem'}}>
-              {/** header of requirements section */}
-
+          <div style={majorStackStyle}>
               {/** majors */}
-              <div className='m-1' style={{maxHeight:'570px', overflow: 'auto'}}>
-                <Stack spacing={1}>
-                  {majors.map((major, index) => <Major key={index} index={index} major={major} editMode={editMode} moveMajor={moveMajor}/>)}
-                </Stack>
-              </div>
+                  {majors.map((major, index) => <Major key={index} index={index} major={major} editMode={editMode} moveMajor={moveMajor} setSearchClosed={setSearchClosed}/>)}
           </div>
-        </div>
+        </>
     );
 }
 export default ReqPanel;
