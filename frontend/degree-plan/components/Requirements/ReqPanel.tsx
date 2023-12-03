@@ -5,7 +5,7 @@ import Major from './Major';
 import { useCallback, useEffect, useState } from 'react';
 import update from 'immutability-helper'
 import { Stack } from '@mui/material';
-import { topBarStyle } from '@/pages/FourYearPlanPage';
+import { titleStyle, topBarStyle } from '@/pages/FourYearPlanPage';
 import SearchPanel from '../Search/SearchPanel';
 
 const majorStackStyle = {
@@ -37,7 +37,7 @@ const majorStackStyle = {
         <>
           <div style={topBarStyle}>
               <div className='d-flex justify-content-between'>
-                <div style={{color: '#575757', fontWeight: 'bold'}}>Major/Minor/Elective</div>
+                <div style={titleStyle}>Major/Minor/Elective</div>
                 <label onClick={() => setEditMode(!editMode)}>
                     <Icon path={editMode ? mdiArrowLeft : mdiNoteEditOutline } size={1}/>
                 </label>

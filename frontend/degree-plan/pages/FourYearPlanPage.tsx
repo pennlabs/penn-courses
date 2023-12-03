@@ -22,6 +22,8 @@ export const topBarStyle = {
     borderTopRightRadius: '10px'
   }
 
+export const titleStyle = {color: '#575757', fontWeight: '550'}
+
 const panelContainerStyle = {
     borderRadius: '10px',
     boxShadow: '0px 0px 10px 6px rgba(0, 0, 0, 0.05)', 

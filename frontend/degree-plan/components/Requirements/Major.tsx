@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { useDrag, useDrop } from "react-dnd";
 import { ItemTypes } from "../dnd/constants";
 import { margin } from "@mui/system";
+import { titleStyle } from "@/pages/FourYearPlanPage";
 
 const majorTitleStyle = {
     'borderWeight': 5
@@ -78,7 +79,7 @@ const Major = ({major, editMode, index, moveMajor, setSearchClosed}: any) => {
                   }}>
                     <div>
                         <label onMouseDown={handleCollapse} className="d-flex justify-content-between">
-                            <div style={{borderWidth:'5px'}}>{major.name}</div>
+                            <div style={titleStyle}>{major.name}</div>
                             {editMode ? 
                                 <label>
                                     <Icon path={mdiTrashCanOutline} size={0.92} />

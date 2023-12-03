@@ -8,7 +8,7 @@ import Icon from '@mdi/react';
 import { mdiMenuRight, mdiMenuLeft, mdiPoll } from '@mdi/js';
 import PlanTabs from "./PlanTabs";
 import { Divider } from "@mui/material";
-import { topBarStyle } from "@/pages/FourYearPlanPage";
+import { titleStyle, topBarStyle } from "@/pages/FourYearPlanPage";
 
 const semesterPanelStyle = {
     paddingLeft: '20px',
@@ -104,7 +104,7 @@ const PlanPanel = () => {
             <div className="d-flex justify-content-between" style={topBarStyle}>
                 <div className="d-flex justify-content-start" >
                     <div onClick={() => setShowDropdown(!showDropdown)}>
-                        <div className="text-bold" style={{color: '#575757', fontWeight: 'bold'}}>
+                        <div className="text-bold" style={titleStyle}>
                             {currrentPlan}
                             <Icon path={showDropdown ? mdiMenuLeft : mdiMenuRight} size={1} />
                         </div>
