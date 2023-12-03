@@ -444,7 +444,7 @@ class Command(BaseCommand):
                 "The csv pointed to by this path should have 3 columns:\n"
                 "person_id, course, semester"
                 "\nThe person_id column should contain a user hash, the course column should "
-                "contain the course code (in the format DEPT-XXX, e.g. CIS-120), and "
+                "contain the course code (in the format DEPT-XXXX, e.g. CIS-1200), and "
                 "the semester column should contain  the semester in which the course was taken "
                 "by that user."
             ),
@@ -466,7 +466,7 @@ class Command(BaseCommand):
                 "The csv pointed to by this path should have 2 columns:\n"
                 "course, description"
                 "\nthe course column should "
-                "contain the course code (in the format DEPT-XXX, e.g. CIS-120) "
+                "contain the course code (in the format DEPT-XXXX, e.g. CIS-1200) "
                 "as provided in the course_data_path csv, and "
                 "the description column should contain the full text of the description "
                 "corresponding to the course."

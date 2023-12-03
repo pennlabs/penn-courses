@@ -167,7 +167,7 @@ http://spec.openapis.org/oas/v3.0.3.html#request-body-object).  An example:
                         ),
                         "items": {
                             "type": "string",
-                            "description": "A course code of the form DEPT-XXX, e.g. CIS-120"
+                            "description": "A course code of the form DEPT-XXXX, e.g. CIS-120"
                         }
                     }
                 }
@@ -198,7 +198,7 @@ An example:
                     "items": {
                         "type": "string",
                         "description": "The full code of the recommended course, in the form "
-                                       "DEPT-XXX, e.g. CIS-120"
+                                       "DEPT-XXXX, e.g. CIS-1200"
                     }
                 }
             }
@@ -569,52 +569,6 @@ def make_manual_schema_changes(data):
 
     data["info"]["x-logo"] = {"url": labs_logo_url, "altText": "Labs Logo"}
     data["info"]["contact"] = {"email": "contact@pennlabs.org"}
-
-    # Remove ID from the documented PUT request body for /api/plan/schedules/
-    # (the id field in the request body is ignored in favor of the id path parameter)
-    schedules_detail_url = get_url_by_name("schedules-detail")
-    data["paths"][schedules_detail_url]["put"] = deepcopy(
-        data["paths"][schedules_detail_url]["put"]
-    )
-    for content_ob in data["paths"][schedules_detail_url]["put"]["requestBody"]["content"].values():
-        content_ob["schema"]["properties"].pop("id", None)
-
-    # Make the name and sections fields of the PCP schedule request body required,
-    # make the id field optionally show up. Also, make the id and semester fields
-    # show up under the sections field, and make id required.
-    for path, path_ob in data["paths"].items():
-        if get_url_by_name("schedules-list") not in path:
-            continue
-        for method_ob in path_ob.values():
-            if "requestBody" not in method_ob.keys():
-                continue
-            for content_ob in method_ob["requestBody"]["content"].values():
-                properties_ob = content_ob["schema"]["properties"]
-                if "sections" in properties_ob.keys():
-                    section_ob = properties_ob["sections"]
-                    if "required" not in section_ob["items"].keys():
-                        section_ob["items"]["required"] = []
-                    required = section_ob["items"]["required"]
-                    section_ob["items"]["required"] = list(set(required + ["id", "semester"]))
-                    for field, field_ob in section_ob["items"]["properties"].items():
-                        if field == "id" or field == "semester":
-                            field_ob["readOnly"] = False
-                if "semester" in properties_ob.keys():
-                    properties_ob["semester"]["description"] = dedent(
-                        """
-                        The semester of the course (of the form YYYYx where x is A [for spring],
-                        B [summer], or C [fall]), e.g. `2019C` for fall 2019. You can omit this
-                        field and the semester of the first section in the sections list will be
-                        used instead (or if the sections list is empty, the current semester will
-                        be used). If this field differs from any of the semesters of the sections
-                        in the sections list, a 400 will be returned.
-                        """
-                    )
-                if "id" in properties_ob.keys():
-                    properties_ob["id"]["description"] = (
-                        "The id of the schedule, if you want to explicitly set this (on create) "
-                        "or update an existing schedule by id (optional)."
-                    )
 
     # Make application/json the only content type
     def delete_other_content_types_dfs(dictionary):
