@@ -20,7 +20,7 @@ from rest_framework.views import APIView
 
 from courses.models import Course, Meeting, Section
 from courses.serializers import CourseListSerializer
-from courses.util import get_course_and_section, get_current_semester
+from courses.util import get_course_and_section, get_current_semester, normalize_semester
 from courses.views import get_accepted_friends
 from PennCourses.docs_settings import PcxAutoSchema
 from PennCourses.settings.base import PATH_REGISTRATION_SCHEDULE_NAME
@@ -444,11 +444,11 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
     @staticmethod
     def get_semester(data):
-        semester = data.get("semester")
+        semester = normalize_semester(data.get("semester"))
         for s in data.get("sections", []) + data.get("meetings", []):
             id = s.get("id")
             if s.get("semester"):
-                section_sem = s["semester"]
+                section_sem = normalize_semester(s["semester"])
                 if not semester:
                     semester = section_sem
                 elif section_sem != semester:
