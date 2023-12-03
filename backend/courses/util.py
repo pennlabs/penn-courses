@@ -46,15 +46,21 @@ semester_suffix_map = {
 semester_suffix_map_inv = {v: k for k, v in semester_suffix_map.items()}
 
 
-def translate_semester(semester):
+def translate_semester(semester, ignore_error=False):
     """
     Translates a semester string (e.g. "2022C") to the format accepted by the new
     OpenData API (e.g. "202230").
     """
-    if not semester:
+    if semester is None:
         return None
+    if len(semester) != 5:
+        if ignore_error:
+            return None
+        raise ValueError(f"Invalid semester '{semester}' (should be of the form '2022C').")
     old_suffix = semester[-1].upper()
     if old_suffix not in semester_suffix_map:
+        if ignore_error:
+            return None
         raise ValueError(
             f"Invalid semester suffix {old_suffix} (semester must have "
             "suffix A, B, or C; e.g. '2022C')."
@@ -62,20 +68,35 @@ def translate_semester(semester):
     return semester[:-1] + semester_suffix_map[old_suffix]
 
 
-def translate_semester_inv(semester):
+def translate_semester_inv(semester, ignore_error=False):
     """
     Translates a semester string in the format of the new OpenData API (e.g. "202230")
     to the format used by our backend (e.g. "2022C")
     """
-    if not semester:
+    if semester is None:
         return None
+    if len(semester) != 6:
+        if ignore_error:
+            return None
+        raise ValueError(f"Invalid semester '{semester}' (should be of the form '202230').")
     new_suffix = semester[-2:]
     if new_suffix not in semester_suffix_map_inv:
+        if ignore_error:
+            return None
         raise ValueError(
             f"Invalid semester suffix {new_suffix} (semester must have "
             "suffix '10', '20', or '30'; e.g. '202230')."
         )
     return semester[:-2] + semester_suffix_map_inv[new_suffix]
+
+
+def normalize_semester(semester):
+    """
+    Translates a semester from Path format (e.g. "202230")
+    to to the format used by our backend (e.g. "2022C"),
+    or leaves the same if not in Path format.
+    """
+    return translate_semester_inv(semester, ignore_error=True) or semester
 
 
 def get_current_semester(allow_not_found=False):

@@ -20,7 +20,7 @@ from rest_framework.views import APIView
 
 from courses.models import Course, Meeting, Section
 from courses.serializers import CourseListSerializer
-from courses.util import get_course_and_section, get_current_semester
+from courses.util import get_course_and_section, get_current_semester, normalize_semester
 from courses.views import get_accepted_friends
 from PennCourses.docs_settings import PcxAutoSchema
 from PennCourses.settings.base import PATH_REGISTRATION_SCHEDULE_NAME
@@ -333,9 +333,12 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 """
                 The semester of the schedule (of the form YYYYx where x is
                 A [for spring], B [summer], or C [fall]), e.g. 2019C for fall 2019.
+                Can also be specified in Path format (YYYYxx, where xx is
+                10 [for spring], 20 [summer], or 30 [fall]), e.g. 201930 for fall 2019.
                 You can omit this field and the first semester found in the
                 sections/meetings list will be used instead (or if no semester
-                is specified in the request, the current semester will be used).
+                is specified in the request, the current semester open for registration
+                will be used).
                 """
             ),
         },
@@ -360,7 +363,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                             backend to validate that all sections have the same
                             semester as the claimed schedule semester (taking the
                             first section semester as the schedule semester if none
-                            is specified).
+                            is specified). Format is same as schedule semester.
                             """
                         ),
                     },
@@ -444,11 +447,11 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
     @staticmethod
     def get_semester(data):
-        semester = data.get("semester")
+        semester = normalize_semester(data.get("semester"))
         for s in data.get("sections", []) + data.get("meetings", []):
             id = s.get("id")
             if s.get("semester"):
-                section_sem = s["semester"]
+                section_sem = normalize_semester(s["semester"])
                 if not semester:
                     semester = section_sem
                 elif section_sem != semester:
