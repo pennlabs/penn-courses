@@ -15,6 +15,8 @@ def create_mock_data(code, semester, meeting_days="MWF", start=1100, end=1200):
     section.status = "O"
     section.activity = "LEC"
     section.save()
+    section.crn = section.id
+    section.save()
     m = [
         {
             "building_code": "LLAB",
