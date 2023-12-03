@@ -14,7 +14,8 @@ export const coursePlannedCardStyle = {
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    width: '120px',
+    width: '100%',
+    minWidth: '70px',
     height: '35px',
     margin: '7px',
     background: '#F2F3F4',
@@ -53,7 +54,13 @@ const CoursePlanned = ({course, semesterIndex, removeCourse, courseOpen, setCour
 
     return(
     <>     
-      <div style={{...coursePlannedCardStyle,backgroundColor: isDragging ? '#4B9AE7' : '#F2F3F4', position:'relative', opacity: isDragging ? 0.5 : 1}} ref={drag} onMouseOver={() => setMouseOver(true)} onMouseLeave={() => setMouseOver(false)}>
+      <div style={{...coursePlannedCardStyle, 
+            backgroundColor: isDragging ? '#4B9AE7' : '#F2F3F4', 
+            position:'relative', 
+            opacity: isDragging ? 0.5 : 1}} 
+          ref={drag} 
+          onMouseOver={() => setMouseOver(true)} 
+          onMouseLeave={() => setMouseOver(false)}>
           <div onClick={handleClickCourse}>
             {courseCode}
           </div>

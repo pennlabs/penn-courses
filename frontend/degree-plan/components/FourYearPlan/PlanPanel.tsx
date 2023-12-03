@@ -5,21 +5,18 @@ import CoursePlanned from "./CoursePlanned";
 import update from 'immutability-helper'
 import _ from "lodash";
 import Icon from '@mdi/react';
-import { mdiMenuRight, mdiMenuLeft } from '@mdi/js';
+import { mdiMenuRight, mdiMenuLeft, mdiPoll } from '@mdi/js';
 import PlanTabs from "./PlanTabs";
 import { Divider } from "@mui/material";
+import { topBarStyle } from "@/pages/FourYearPlanPage";
 
-
-const tabBarStyle = {
-    backgroundColor:'#DBE2F5', 
-    paddingLeft: '15px', 
-    paddingTop: '7px', 
-    paddingBottom: '5px', 
-    paddingRight: '15px', 
-    borderTopLeftRadius: '10px', 
-    borderTopRightRadius: '10px'
+const semesterPanelStyle = {
+    paddingLeft: '20px',
+    paddingRight: '20px',
+    paddingTop: '5px',
+    height: '90%',
+    overflow: 'auto'
 }
-
 
 // const dropdownStyle = {
 //     position: 'relative',
@@ -42,6 +39,7 @@ const PlanPanel = () => {
     const [plans, setPlans] = useState(['Degree Plan 1', 'Degree Plan 2']);
     const [currrentPlan, setCurrentPlan] = useState(plans[0]);
     const [showDropdown, setShowDropdown] = useState(false);
+    const [showStats, setShowStats] = useState(false);
 
     useEffect(() => {
         setSemesters(semesters);
@@ -103,20 +101,25 @@ const PlanPanel = () => {
     return(
     <>
             {/* <Tabs/> */}
-            <div className="d-flex justify-content-start" style={tabBarStyle}>
-                <div onClick={() => setShowDropdown(!showDropdown)}>
-                    <div className="m-1 text-bold" style={{color: '#575757', fontWeight: 'bold'}}>
-                        {currrentPlan}
-                        <Icon path={showDropdown ? mdiMenuLeft : mdiMenuRight} size={1} />
+            <div className="d-flex justify-content-between" style={topBarStyle}>
+                <div className="d-flex justify-content-start" >
+                    <div onClick={() => setShowDropdown(!showDropdown)}>
+                        <div className="text-bold" style={{color: '#575757', fontWeight: 'bold'}}>
+                            {currrentPlan}
+                            <Icon path={showDropdown ? mdiMenuLeft : mdiMenuRight} size={1} />
+                        </div>
                     </div>
+                    {showDropdown && <PlanTabs plans={plans} handleChoosePlan={handleChoosePlan} setPlans={setPlans} setCurrentPlan={setCurrentPlan}/>}
                 </div>
-                {showDropdown && <PlanTabs plans={plans} handleChoosePlan={handleChoosePlan} setPlans={setPlans} setCurrentPlan={setCurrentPlan}/>}
+                <div onClick={() => setShowStats(!showStats)}>
+                    <Icon path={mdiPoll} size={1} color={showStats ? '' : '#F2F3F4'}/>
+                </div>
             </div>
             {/** map to semesters */}
-            <div >
+            <div style={semesterPanelStyle}>
                 <div className="d-flex row justify-content-center">
                     {semesters.map((semester: any, index: number) => 
-                        <Semester semester={semester} addCourse={addCourse} index={index} removeCourseFromSem={removeCourseFromSem}/>
+                        <Semester semester={semester} addCourse={addCourse} index={index} removeCourseFromSem={removeCourseFromSem} showStats={showStats}/>
                     )}
                 </div>
 

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import courses from "../../data/courses"
 import { ICourseQ } from "@/models/Types";
+import Icon from '@mdi/react';
+import { mdiClose } from "@mdi/js";
 
 const searchPanelContainerStyle = {
     border: '1px solid rgba(0, 0, 0, 0.1)',
@@ -10,7 +12,7 @@ const searchPanelContainerStyle = {
     width: 400
   }
 
-const SearchPanel = () => {
+const SearchPanel = ({setClosed}:any) => {
     type ISearchResultCourse =  {course: ICourseQ}
     const SearchResultCourse = ({course}: ISearchResultCourse) => {
         return(<div>
@@ -35,7 +37,10 @@ const SearchPanel = () => {
     }
 
     return (
-        <div>
+        <div style={{position: 'relative'}}>
+            <div style={{position:'absolute', right:'5px', bottom:'7px'}} onClick={() => setClosed(true)}>
+              <Icon path={mdiClose} size={0.7} />
+            </div>
             <div>
                 <input value={queryString} onChange={(e) => setQueryString(e.target.value)}/>
                 <button onClick={handleSearch}>search</button>
