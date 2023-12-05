@@ -62,7 +62,6 @@ pandas = "*"
 python-dateutil = "*"
 docutils = "*"
 ics = "*"
-psycopg2-binary = "*"
 drf-nested-routers = "*"
 
 [requires]
