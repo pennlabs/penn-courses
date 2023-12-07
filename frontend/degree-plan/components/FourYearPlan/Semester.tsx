@@ -1,8 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useDrop } from "react-dnd";
 import { ItemTypes } from "../dnd/constants";
-import CoursePlanned from "./CoursePlanned";
-import { addCourseToSem } from "@/store/reducers/courses";
 import CoursesPlanned from "./CoursesPlanned";
 import Stats from "./Stats";
 
@@ -16,9 +14,20 @@ const semesterCardStyle = {
     boxShadow: '0px 0px 4px 2px rgba(0, 0, 0, 0.05)',
     borderRadius: '10px',
     borderWidth: '0px',
-    padding: '15px'
+    padding: '10px',
+    // minWidth: '200px',
+    width: '45%',
+    margin: '5px'
 }
-const Semester = ({semester, addCourse, index, removeCourseFromSem} : any) => {
+const Semester = ({semester, addCourse, index, removeCourseFromSem, showStats} : any) => {
+    const ref = useRef(null);
+    const [width, setWidth] = useState(200);
+
+    useEffect(() => {
+        console.log("width", ref.current.offsetWidth);
+        setWidth(ref.current ? ref.current.offsetWidth : 200)
+    }, [ref.current]);
+
     const [{ isOver }, drop] = useDrop(() => ({
         accept: ItemTypes.COURSE,
         drop: (item: any) => addCourse(index, item.course, item.semester),
@@ -32,17 +41,15 @@ const Semester = ({semester, addCourse, index, removeCourseFromSem} : any) => {
     }
     
     return (
-        <>
-            <div className="card col-5 m-3" style={semesterCardStyle} ref={drop}>
-                <div className="mt-1 ms-2 mb-1" style={{fontWeight:500}}>
-                    {semester.name}
-                </div>
-                <div className="d-flex">
-                    <CoursesPlanned courses={semester.courses} semesterIndex={index} removeCourse={removeCourse}/>
-                    <Stats courses={semester.courses}/>
-                </div>
+        <div className="card" style={{...semesterCardStyle, minWidth: showStats? '250px' : '150px', maxWidth: showStats ? '400px' : '190px'}} ref={drop}>
+            <div className="mt-1 ms-2 mb-1" style={{fontWeight:500}}>
+                {semester.name}
             </div>
-        </>
+            <div className="d-flex" ref={ref}>
+                <CoursesPlanned courses={semester.courses} semesterIndex={index} removeCourse={removeCourse}/>
+                {showStats && <Stats courses={semester.courses}/>}
+            </div>
+        </div>
     )
 }
 
