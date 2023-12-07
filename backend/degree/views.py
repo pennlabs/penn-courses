@@ -4,9 +4,10 @@ from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import generics, status, viewsets, mixins
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
 
 from courses.models import Course
-from degree.models import DegreePlan, UserDegreePlan
+from degree.models import DegreePlan, Rule, UserDegreePlan
 from degree.serializers import (
     DegreePlanDetailSerializer,
     DegreePlanListSerializer,
@@ -14,7 +15,6 @@ from degree.serializers import (
     UserDegreePlanListSerializer,
 )
 from PennCourses.docs_settings import PcxAutoSchema
-
 
 class DegreeList(generics.ListAPIView):
     """
@@ -76,5 +76,20 @@ class UserDegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update({"request": self.request})  # used to get the user
+        context.update({ "request": self.request }) # used to get the user
         return context
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def check_degree_plan(request, **kwargs):
+    try:
+        degree_plan = DegreePlan.objects.get(id=kwargs["degree_plan_id"])
+    except ObjectDoesNotExist:
+        return Response(
+            {"error": "Degree plan does not exist."},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+    
+    return Response(degree_plan.check(), 200)
+    

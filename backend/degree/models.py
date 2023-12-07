@@ -3,8 +3,9 @@ from typing import Iterable
 
 from django.contrib.auth import get_user_model
 from django.db import models
-from django.db.models import Count, DecimalField, Sum
+from django.db.models import Count, DecimalField, Sum, F
 from django.db.models.functions import Coalesce
+from django.utils import timezone
 
 from courses.models import Course
 from degree.utils.model_utils import q_object_parser
@@ -266,6 +267,36 @@ class Fulfillment(models.Model):
     )
 
 
+class SatisfactionStatus(models.Model):
+    user_degree_plan=models.ForeignKey(
+        UserDegreePlan,
+        on_delete=models.CASCADE,
+        db_index=True,
+        related_name="satisfactions",
+        help_text="The user degree plan that leads to the satisfaction of the rule"
+    )
+
+    rule = models.ForeignKey(
+        Rule,
+        on_delete=models.CASCADE,
+        db_index=True,
+        related_name="+",
+        help_text="The rule that is satisfied"
+    )
+
+    satisfied = models.BooleanField(
+        default=False,
+        help_text="Whether the rule is satisfied"
+    )
+
+    last_updated = models.DateTimeField(auto_now=True)
+    last_checked = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["user_degree_plan", "rule"], name="unique_satisfaction")
+        ]
+
 class DoubleCountRestriction(models.Model):
     degree_plan = models.ForeignKey(
         DegreePlan,
@@ -296,4 +327,29 @@ class DoubleCountRestriction(models.Model):
 
     rule = models.ForeignKey(Rule, on_delete=models.CASCADE, related_name="+")
 
-    other_rule = models.ForeignKey(Rule, on_delete=models.CASCADE, related_name="+")
+    other_rule = models.ForeignKey(
+        Rule,
+        on_delete=models.CASCADE,
+        related_name="+"
+    )
+
+    def check(self):    
+        """
+        Recheck the rules starting with the effected rules and moving up
+        """
+        affected_rules = list(self.satisfactions.filter(last_updated__gt=F('last_checked')))
+        fulfillments = self.fulfillments.all()
+        satisfactions = self.satisfactions.all()
+        while (len(affected_rules) > 0):
+            rule = affected_rules.pop()
+            if rule == None:
+                continue
+            evaluation = rule.evaluate(fulfillments)
+            satisfaction = satisfactions.filter(rule=rule).get()
+            if evaluation != satisfaction.satisfied: # satisfaction status changed
+                affected_rules.append(rule.parent)
+                satisfaction.satisfied = evaluation
+                satisfaction.last_checked = timezone.now()
+                satisfaction.save(update_fields=["satisfied", "last_checked"])
+            
+                
