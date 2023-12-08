@@ -8,8 +8,6 @@ const MainPage = () => {
     return (
         <>
             {/* <ToastContainer /> */}
-            <Nav />
-            <FourYearPlanPage />
         </>
     )
 }

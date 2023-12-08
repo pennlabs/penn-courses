@@ -333,7 +333,7 @@ class DoubleCountRestriction(models.Model):
         related_name="+"
     )
 
-    def check(self):    
+    def check_degree(self):    
         """
         Recheck the rules starting with the effected rules and moving up
         """

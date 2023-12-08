@@ -28,11 +28,7 @@ class DegreeList(generics.ListAPIView):
     )
 
     serializer_class = DegreePlanListSerializer
-
-    def get_queryset(self):
-        year = self.kwargs["year"]
-        queryset = DegreePlan.objects.filter(year=year)
-        return queryset
+    queryset=DegreePlan.objects.all()
 
 
 class DegreeDetail(generics.RetrieveAPIView):
@@ -91,5 +87,5 @@ def check_degree_plan(request, **kwargs):
             status=status.HTTP_404_NOT_FOUND,
         )
     
-    return Response(degree_plan.check(), 200)
+    return Response(degree_plan.check_degree(), 200)
     
