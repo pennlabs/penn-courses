@@ -32,3 +32,24 @@ class CourseArrayParserTest(TestCase):
         ]
         expected = Q(department__code="BIBB")
         self.assertEqual(expected, parse_degreeworks.parse_coursearray(course_array))
+
+    def test_empty_course(self):
+        course_array = [
+            {"discipline": "@", "number": "@"},
+        ]
+        expected = Q()
+        self.assertEqual(expected, parse_degreeworks.parse_coursearray(course_array))
+
+    def test_non_int_course(self):
+        course_array = [
+            {"discipline": "CIS", "number": "not-a-number"},
+        ]
+        expected = Q()
+        self.assertEqual(expected, parse_degreeworks.parse_coursearray(course_array))
+
+    def test_non_int_course_range(self):
+        course_array = [
+            {"discipline": "CIS", "number": "not-a-number", "numberEnd": "also-not-a-number"},
+        ]
+        expected = Q()
+        self.assertEqual(expected, parse_degreeworks.parse_coursearray(course_array))
