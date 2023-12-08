@@ -27,16 +27,14 @@ def parse_coursearray(courseArray) -> Q:
                 else:
                     print(f"WARNING: non-integer course number: {number}")
             case discipline, number, end:
-                try:
-                    int(number)
-                    int(end)
-                except ValueError:
+                if number.isdigit() and end.isdigit():
+                    course_q &= Q(
+                        department__code=discipline,
+                        code__gte=int(number),
+                        code__lte=int(end),
+                    )
+                else:
                     print("WARNING: non-integer course number or numberEnd")
-                course_q &= Q(
-                    department__code=discipline,
-                    code__gte=int(number),
-                    code__lte=end,
-                )
 
         connector = "AND"  # the connector to the next element; and by default
         if "withArray" in course:
