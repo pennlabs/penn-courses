@@ -1,9 +1,10 @@
+from collections import deque
 from textwrap import dedent
 from typing import Iterable
 
 from django.contrib.auth import get_user_model
 from django.db import models
-from django.db.models import Count, DecimalField, Sum, F
+from django.db.models import Count, DecimalField, Sum, F, Q
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
@@ -226,6 +227,45 @@ class UserDegreePlan(models.Model):
             models.UniqueConstraint(fields=["name", "person"], name="user_degreeplan_name_person")
         ]
 
+    def check_degree(self):
+        """
+        Recheck the rules starting with the affected rules and moving up
+        """
+        affected_rules = list(self.satisfactions.filter(last_updated__gt=F("last_checked")))
+        fulfillments = self.fulfillments.all()
+        satisfactions = self.satisfactions.all()
+        double_count_restrictions = self.degree_plan.double_count_restrictions.all()
+
+        updated_satisfaction = set()
+
+        for restriction in double_count_restrictions:
+            evaluation = restriction.check_double_count(self)
+            for satisfaction in satisfactions.filter(
+                Q(rule=restriction.rule) | Q(rule=restriction.other_rule)
+            ).all():
+                satisfaction.satisfied = evaluation
+                satisfaction.last_checked = timezone.now()
+                satisfaction.save(update_fields=["satisfied", "last_checked"])
+                updated_satisfaction.add(satisfaction)
+
+        while len(affected_rules) > 0:
+            rule = affected_rules.pop()
+            if rule is None:
+                continue
+            evaluation = rule.evaluate(fulfillments)
+            satisfaction = satisfactions.filter(rule=rule).get()
+            if evaluation != satisfaction.satisfied:  # satisfaction status changed
+                affected_rules.append(rule.parent)
+
+                # AND the evaluation with previous state if state changed in this check
+                if satisfaction in updated_satisfaction:
+                    satisfaction.satisfied = evaluation and satisfaction.satisfied
+                else:
+                    satisfaction.satisfied = evaluation
+
+                satisfaction.last_checked = timezone.now()
+                satisfaction.save(update_fields=["satisfied", "last_checked"])
+
 
 class Fulfillment(models.Model):
     user_degree_plan = models.ForeignKey(
@@ -268,12 +308,12 @@ class Fulfillment(models.Model):
 
 
 class SatisfactionStatus(models.Model):
-    user_degree_plan=models.ForeignKey(
+    user_degree_plan = models.ForeignKey(
         UserDegreePlan,
         on_delete=models.CASCADE,
         db_index=True,
         related_name="satisfactions",
-        help_text="The user degree plan that leads to the satisfaction of the rule"
+        help_text="The user degree plan that leads to the satisfaction of the rule",
     )
 
     rule = models.ForeignKey(
@@ -281,13 +321,10 @@ class SatisfactionStatus(models.Model):
         on_delete=models.CASCADE,
         db_index=True,
         related_name="+",
-        help_text="The rule that is satisfied"
+        help_text="The rule that is satisfied",
     )
 
-    satisfied = models.BooleanField(
-        default=False,
-        help_text="Whether the rule is satisfied"
-    )
+    satisfied = models.BooleanField(default=False, help_text="Whether the rule is satisfied")
 
     last_updated = models.DateTimeField(auto_now=True)
     last_checked = models.DateTimeField(default=timezone.now)
@@ -296,6 +333,7 @@ class SatisfactionStatus(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["user_degree_plan", "rule"], name="unique_satisfaction")
         ]
+
 
 class DoubleCountRestriction(models.Model):
     degree_plan = models.ForeignKey(
@@ -327,29 +365,38 @@ class DoubleCountRestriction(models.Model):
 
     rule = models.ForeignKey(Rule, on_delete=models.CASCADE, related_name="+")
 
-    other_rule = models.ForeignKey(
-        Rule,
-        on_delete=models.CASCADE,
-        related_name="+"
-    )
+    other_rule = models.ForeignKey(Rule, on_delete=models.CASCADE, related_name="+")
 
-    def check_degree(self):    
-        """
-        Recheck the rules starting with the effected rules and moving up
-        """
-        affected_rules = list(self.satisfactions.filter(last_updated__gt=F('last_checked')))
-        fulfillments = self.fulfillments.all()
-        satisfactions = self.satisfactions.all()
-        while (len(affected_rules) > 0):
-            rule = affected_rules.pop()
-            if rule == None:
-                continue
-            evaluation = rule.evaluate(fulfillments)
-            satisfaction = satisfactions.filter(rule=rule).get()
-            if evaluation != satisfaction.satisfied: # satisfaction status changed
-                affected_rules.append(rule.parent)
-                satisfaction.satisfied = evaluation
-                satisfaction.last_checked = timezone.now()
-                satisfaction.save(update_fields=["satisfied", "last_checked"])
-            
-                
+    @classmethod
+    def get_all_fulfillments(rule, user_degree_plan):
+        fulfillments = set()  # a Fulfillment might fulfill multiple Rules
+        queue = deque()
+        queue.append(rule)
+        while queue:
+            for child in queue.pop().children.all():
+                if child.q:
+                    fulfillments.add(child.fulfillments.filter(user_degree_plan=user_degree_plan))
+                else:
+                    queue.append(child)
+        return fulfillments
+
+    def check_double_count(self, user_degree_plan):
+        rule_fulfillments = self.get_all_fulfillments(self.rule, user_degree_plan)
+        other_rule_fulfillments = self.get_all_fulfillments(self.other_rule, user_degree_plan)
+        intersection = rule_fulfillments & other_rule_fulfillments
+
+        if self.max_courses and len(intersection) > self.max_courses:
+            return False
+
+        intersection_cus = (
+            Course.objects.filter(
+                full_code__in=[fulfillment.full_code for fulfillment in intersection]
+            )
+            .order_by("full_code", "-semester")
+            .distinct("full_code")
+            .aggregate(Sum("cus"))
+        )
+        if self.max_credits and intersection_cus > self.max_credits:
+            return False
+
+        return True

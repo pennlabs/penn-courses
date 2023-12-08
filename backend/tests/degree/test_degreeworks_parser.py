@@ -1,11 +1,9 @@
-
 from django.test import TestCase
+
 
 class ParserEvaluationTest(TestCase):
     def test_comparators(self):
-        json = {
-            
-        }
+        json = {}
 
     def test_and(self):
         pass
@@ -15,5 +13,3 @@ class ParserEvaluationTest(TestCase):
 
     def test_nested(self):
         pass
-
-

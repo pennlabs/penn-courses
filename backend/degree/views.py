@@ -16,6 +16,7 @@ from degree.serializers import (
 )
 from PennCourses.docs_settings import PcxAutoSchema
 
+
 class DegreeList(generics.ListAPIView):
     """
     Retrieve a list of (all) degrees available from a given year.
@@ -28,7 +29,7 @@ class DegreeList(generics.ListAPIView):
     )
 
     serializer_class = DegreePlanListSerializer
-    queryset=DegreePlan.objects.all()
+    queryset = DegreePlan.objects.all()
 
 
 class DegreeDetail(generics.RetrieveAPIView):
@@ -72,7 +73,7 @@ class UserDegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context.update({ "request": self.request }) # used to get the user
+        context.update({"request": self.request})  # used to get the user
         return context
 
 
@@ -86,6 +87,5 @@ def check_degree_plan(request, **kwargs):
             {"error": "Degree plan does not exist."},
             status=status.HTTP_404_NOT_FOUND,
         )
-    
+
     return Response(degree_plan.check_degree(), 200)
-    
