@@ -10,7 +10,7 @@ from courses.util import get_semesters
 from PennCourses.settings.base import S3_resource
 from review.annotations import review_averages
 from review.models import ALL_FIELD_SLUGS, Review
-from review.views import reviewbit_filters_pcr, section_filters_pcr
+from review.views import section_filters_pcr
 
 
 def average_by_dept(fields, semesters, departments=None, verbose=False):
@@ -32,8 +32,7 @@ def average_by_dept(fields, semesters, departments=None, verbose=False):
             depts_qs,
             fields=fields,
             reviewbit_subfilters=(
-                reviewbit_filters_pcr
-                & Q(review__section__course__semester=semester)
+                Q(review__section__course__semester=semester)
                 & Q(review__section__course__department_id=OuterRef("id"))
             ),
             section_subfilters=(
@@ -74,7 +73,6 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument(
             "--fields",
-            nargs="?",
             default=None,
             help=dedent(
                 """
@@ -84,7 +82,6 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--path",
-            nargs="?",
             default=None,
             type=str,
             help=dedent(
@@ -104,7 +101,6 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--semesters",
-            nargs="?",
             default="all",
             type=str,
             help=dedent(
@@ -116,7 +112,6 @@ class Command(BaseCommand):
         )
         parser.add_argument(
             "--departments",
-            nargs="?",
             default=None,
             type=str,
             help=dedent(

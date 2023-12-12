@@ -451,7 +451,7 @@ custom_tag_descriptions = {
     ),
     "[PCP] Pre-NGSS Requirements": dedent(
         """
-        These routes expose the pre-NGSS (deprecated since 2022C) academic requirements for the
+        These routes expose the pre-NGSS (deprecated since 2022B) academic requirements for the
         current semester which are stored on our backend (hopefully comprehensive).
         """
     ),

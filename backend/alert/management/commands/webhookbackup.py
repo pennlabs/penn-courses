@@ -13,9 +13,6 @@ from courses.util import get_course_and_section, get_current_semester
 class Command(BaseCommand):
     help = "Load course status for courses in the DB"
 
-    def add_arguments(self, parser):
-        parser.add_argument("--semester", nargs="?", type=str)
-
     def handle(self, *args, **kwargs):
         root_logger = logging.getLogger("")
         root_logger.setLevel(logging.DEBUG)

@@ -7,7 +7,7 @@ import zipfile
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
-from alert.management.commands.recomputestats import recompute_has_reviews
+from courses.management.commands.recompute_soft_state import recompute_has_reviews
 from courses.util import get_current_semester
 from PennCourses.settings.base import S3_client
 from review.import_utils.import_to_db import (

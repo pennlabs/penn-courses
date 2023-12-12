@@ -317,7 +317,7 @@ class CourseDetailSerializer(CourseListSerializer):
         read_only=True,
         help_text=dedent(
             """
-        A list of the pre-NGSS (deprecated since 2022C) academic requirements
+        A list of the pre-NGSS (deprecated since 2022B) academic requirements
         this course fulfills.
         """
         ),
@@ -463,5 +463,4 @@ class FriendshipRequestSerializer(serializers.Serializer):
     friend_id = serializers.IntegerField()
 
     def to_representation(self, instance):
-        print("in representation function")
         return super().to_representation(instance)

@@ -44,50 +44,47 @@ semester_suffix_map = {
     "C": "30",
 }
 semester_suffix_map_inv = {v: k for k, v in semester_suffix_map.items()}
+semester_suffix_map_hum = {"A": "Spring", "B": "Summer", "C": "Fall"}
+
+
+semester_pattern = re.compile(r"^(\d{4})([ABC])$")
+path_semester_pattern = re.compile(r"^(\d{4})(10|20|30)$")
 
 
 def translate_semester(semester, ignore_error=False):
     """
-    Translates a semester string (e.g. "2022C") to the format accepted by the new
-    OpenData API (e.g. "202230").
+    Translates a semester string (e.g., "2022C") to the format accepted by
+    the new OpenData API (e.g., "202230").
     """
     if semester is None:
         return None
-    if len(semester) != 5:
+
+    match = semester_pattern.match(semester)
+    if not match:
         if ignore_error:
-            return None
+            return semester
         raise ValueError(f"Invalid semester '{semester}' (should be of the form '2022C').")
-    old_suffix = semester[-1].upper()
-    if old_suffix not in semester_suffix_map:
-        if ignore_error:
-            return None
-        raise ValueError(
-            f"Invalid semester suffix {old_suffix} (semester must have "
-            "suffix A, B, or C; e.g. '2022C')."
-        )
-    return semester[:-1] + semester_suffix_map[old_suffix]
+
+    year, suffix = match.groups()
+    return year + semester_suffix_map[suffix]
 
 
 def translate_semester_inv(semester, ignore_error=False):
     """
-    Translates a semester string in the format of the new OpenData API (e.g. "202230")
-    to the format used by our backend (e.g. "2022C")
+    Translates a semester string in the format of Path / Banner / OpenData (e.g., "202230")
+    to the format used by our backend (e.g., "2022C")
     """
     if semester is None:
         return None
-    if len(semester) != 6:
+
+    match = path_semester_pattern.match(semester)
+    if not match:
         if ignore_error:
-            return None
-        raise ValueError(f"Invalid semester '{semester}' (should be of the form '202230').")
-    new_suffix = semester[-2:]
-    if new_suffix not in semester_suffix_map_inv:
-        if ignore_error:
-            return None
-        raise ValueError(
-            f"Invalid semester suffix {new_suffix} (semester must have "
-            "suffix '10', '20', or '30'; e.g. '202230')."
-        )
-    return semester[:-2] + semester_suffix_map_inv[new_suffix]
+            return semester
+        raise ValueError(f"Invalid semester '{semester}' (should be of the form '202210').")
+
+    year, suffix = match.groups()
+    return year + semester_suffix_map_inv[suffix]
 
 
 def normalize_semester(semester):
@@ -97,6 +94,24 @@ def normalize_semester(semester):
     or leaves the same if not in Path format.
     """
     return translate_semester_inv(semester, ignore_error=True) or semester
+
+
+def prettify_semester(semester):
+    """
+    Translates a semester in either Path format (e.g. "202230") or internal format
+    (e.g. "2022C") to human readable format (e.g. "Fall 2022").
+    """
+    if semester is None:
+        return None
+
+    semester = normalize_semester(semester)
+
+    match = semester_pattern.match(semester)
+    if not match:
+        raise ValueError(f"Invalid semester '{semester}'.")
+
+    year, suffix = match.groups()
+    return f"{semester_suffix_map_hum[suffix]} {year}"
 
 
 def get_current_semester(allow_not_found=False):
@@ -514,16 +529,16 @@ def upsert_course_from_opendata(info, semester, missing_sections=None):
 
     section.crn = info["crn"]
     section.credits = Decimal(info["credits"] or "0") if "credits" in info else None
-    section.capacity = int(info["max_enrollment"] or 0)
+    section.capacity = int(info["max_enrollment"] or 0)  # TODO: fix, get current enrollment
     section.activity = info["activity"] or "***"
 
     set_meetings(section, info["meetings"])
 
     set_instructors(section, info["instructors"])
     add_associated_sections(section, info["linked_courses"])
+    add_restrictions(section, info["course_restrictions"])
 
     add_attributes(course, info["attributes"])
-    add_restrictions(course, info["course_restrictions"])
     # add_grade_modes(section, info["grade_modes"])  # TODO: save grade modes
 
     section.save()
@@ -575,12 +590,11 @@ def identify_school(attribute_code):
     return None
 
 
-def add_restrictions(course, restrictions):
+def add_restrictions(section, restrictions):
     """
-    Add restrictions to course of section.
+    Add restrictions to section.
     Create restriction if it does not exist.
     """
-    course.ngss_restrictions.clear()
     for restriction in restrictions:
         code = restriction.get("restriction_code")
         description = restriction.get("restriction_desc")
@@ -594,7 +608,7 @@ def add_restrictions(course, restrictions):
                 "inclusive": inclusive,
             },
         )
-        res.courses.add(course)
+        section.ngss_restrictions.add(res)
 
 
 def update_course_from_record(update):
@@ -662,14 +676,16 @@ def does_object_pass_filter(obj, filter):
     return True
 
 
-def all_semesters():
+def all_semesters() -> set[str]:
     return set(Course.objects.values_list("semester", flat=True).distinct())
 
 
-def get_semesters(semesters=None, verbose=False):
+def get_semesters(semesters: str = None) -> list[str]:
     """
     Validate a given string semesters argument, and return a list of the individual string semesters
     specified by the argument.
+    Expects a comma-separated string of semesters, or "all" to return all semesters in the DB.
+    Defaults to the current semester only.
     """
     possible_semesters = all_semesters()
     if semesters is None:
@@ -681,19 +697,4 @@ def get_semesters(semesters=None, verbose=False):
         for s in semesters:
             if s not in possible_semesters:
                 raise ValueError(f"Provided semester {s} was not found in the db.")
-    if verbose:
-        if len(semesters) > 1:
-            print(
-                "This script's updates for each semester are atomic, i.e. either all the "
-                "updates for a certain semester are accepted by the database, or none of them are "
-                "(if an error is encountered). If an error is encountered during the "
-                "processing of a certain semester, any correctly completed updates for previously "
-                "processed semesters will have already been accepted by the database."
-            )
-        else:
-            print(
-                "This script's updates for the given semester are atomic, i.e. either all the "
-                "updates will be accepted by the database, or none of them will be "
-                "(if an error is encountered)."
-            )
-    return semesters
+    return sorted(semesters)

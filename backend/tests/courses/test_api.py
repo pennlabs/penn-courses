@@ -1,9 +1,7 @@
 import json
-import os
 from unittest.mock import patch
 
 from django.contrib.auth.models import User
-from django.core.management import call_command
 from django.db.models.signals import post_save
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
@@ -20,10 +18,14 @@ from courses.models import (
     PreNGSSRequirement,
 )
 from courses.search import TypedCourseSearchBackend
-from courses.util import get_or_create_course, invalidate_current_semester_cache
+from courses.util import (
+    get_or_create_course,
+    get_or_create_course_and_section,
+    invalidate_current_semester_cache,
+)
 from plan.models import Schedule
 from tests import production_CourseListSearch_get_serializer_context
-from tests.courses.util import create_mock_data, create_mock_data_with_reviews
+from tests.courses.util import create_mock_data, fill_course_soft_state
 from tests.plan.test_course_recs import CourseRecommendationsTestCase
 
 
@@ -89,7 +91,12 @@ class CourseListTestCase(TestCase):
 class CourseDetailTestCase(TestCase):
     def setUp(self):
         set_semester()
-        self.course, self.section = create_mock_data("CIS-120-001", TEST_SEMESTER)
+        self.course, self.section = create_mock_data("CIS-1200-001", TEST_SEMESTER)
+        old_course, _ = create_mock_data("CIS-120-001", "2018C")
+        self.course.parent_course = old_course
+        self.course.manually_set_parent_course = True
+        self.course.save()
+        fill_course_soft_state()
         i = Instructor(name="Test Instructor")
         i.save()
         self.section.instructors.add(i)
@@ -97,46 +104,95 @@ class CourseDetailTestCase(TestCase):
         self.client = APIClient()
 
     def test_get_course(self):
-        course, section = create_mock_data("CIS-120-201", TEST_SEMESTER)
+        course, section = create_mock_data("CIS-1200-201", TEST_SEMESTER)
         response = self.client.get(
-            reverse("courses-detail", kwargs={"semester": "all", "full_code": "CIS-120"})
+            reverse("courses-detail", kwargs={"semester": "all", "full_code": "CIS-1200"})
         )
         self.assertEqual(200, response.status_code)
-        self.assertEqual(response.data["id"], "CIS-120")
+        self.assertEqual(response.data["id"], "CIS-1200")
         self.assertEqual(len(response.data["sections"]), 2)
         self.assertEqual("Test Instructor", response.data["sections"][0]["instructors"][0]["name"])
 
+    def test_check_offered_in(self):
+        course, section = create_mock_data("CIS-1200-201", TEST_SEMESTER)
+        response = self.client.get(
+            reverse("courses-detail", kwargs={"semester": "all", "full_code": "CIS-1200"}),
+            {"check_offered_in": "CIS-120@2018C"},
+        )
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(response.data["id"], "CIS-1200")
+        self.assertEqual(len(response.data["sections"]), 2)
+        self.assertEqual("Test Instructor", response.data["sections"][0]["instructors"][0]["name"])
+
+    def test_check_offered_in_fail_code(self):
+        course, section = create_mock_data("CIS-1200-201", TEST_SEMESTER)
+        response = self.client.get(
+            reverse("courses-detail", kwargs={"semester": "all", "full_code": "CIS-1200"}),
+            {"check_offered_in": "CIS-1200@2018C"},
+        )
+        self.assertEqual(404, response.status_code)
+
+    def test_check_offered_in_fail_semester(self):
+        course, section = create_mock_data("CIS-1200-201", TEST_SEMESTER)
+        response = self.client.get(
+            reverse("courses-detail", kwargs={"semester": "all", "full_code": "CIS-1200"}),
+            {"check_offered_in": "CIS-120@2018A"},
+        )
+        self.assertEqual(404, response.status_code)
+
+    def test_check_offered_in_malformed(self):
+        response = self.client.get(
+            reverse("courses-detail", kwargs={"semester": "all", "full_code": "CIS-1200"}),
+            {"check_offered_in": "CIS-120@"},
+        )
+        self.assertEqual(404, response.status_code)
+        response = self.client.get(
+            reverse("courses-detail", kwargs={"semester": "all", "full_code": "CIS-1200"}),
+            {"check_offered_in": "@2018C"},
+        )
+        self.assertEqual(404, response.status_code)
+        response = self.client.get(
+            reverse("courses-detail", kwargs={"semester": "all", "full_code": "CIS-1200"}),
+            {"check_offered_in": "2018C"},
+        )
+        self.assertEqual(400, response.status_code)
+        response = self.client.get(
+            reverse("courses-detail", kwargs={"semester": "all", "full_code": "CIS-1200"}),
+            {"check_offered_in": "CIS-120@2018C@"},
+        )
+        self.assertEqual(400, response.status_code)
+
     def test_section_cancelled(self):
-        course, section = create_mock_data("CIS-120-201", TEST_SEMESTER)
+        course, section = create_mock_data("CIS-1200-201", TEST_SEMESTER)
         section.credits = 1
         section.status = "X"
         section.save()
         response = self.client.get(
-            reverse("courses-detail", kwargs={"semester": "all", "full_code": "CIS-120"})
+            reverse("courses-detail", kwargs={"semester": "all", "full_code": "CIS-1200"})
         )
         self.assertEqual(200, response.status_code)
-        self.assertEqual(response.data["id"], "CIS-120")
+        self.assertEqual(response.data["id"], "CIS-1200")
         self.assertEqual(len(response.data["sections"]), 1, response.data["sections"])
 
     def test_section_no_credits(self):
-        course, section = create_mock_data("CIS-120-201", TEST_SEMESTER)
+        course, section = create_mock_data("CIS-1200-201", TEST_SEMESTER)
         section.credits = None
         section.save()
         response = self.client.get(
-            reverse("courses-detail", kwargs={"semester": "all", "full_code": "CIS-120"})
+            reverse("courses-detail", kwargs={"semester": "all", "full_code": "CIS-1200"})
         )
         self.assertEqual(200, response.status_code)
-        self.assertEqual(response.data["id"], "CIS-120")
+        self.assertEqual(response.data["id"], "CIS-1200")
         self.assertEqual(len(response.data["sections"]), 1, response.data["sections"])
 
     def test_course_no_good_sections(self):
         self.section.status = "X"
         self.section.save()
         response = self.client.get(
-            reverse("courses-detail", kwargs={"semester": "all", "full_code": "CIS-120"})
+            reverse("courses-detail", kwargs={"semester": "all", "full_code": "CIS-1200"})
         )
         self.assertEqual(200, response.status_code)
-        self.assertEqual(response.data["id"], "CIS-120")
+        self.assertEqual(response.data["id"], "CIS-1200")
         self.assertEqual(len(response.data["sections"]), 0)
 
     def test_not_get_course(self):
@@ -356,7 +412,6 @@ class SectionSearchTestCase(TestCase):
             reverse("section-search", args=["current"]), {"search": "123bdfsh3wq!@#"}
         )
         self.assertEqual(res.status_code, 200)
-        print(res.data)
         self.assertEqual(0, len(res.data))
 
 
@@ -404,8 +459,8 @@ class PreNGSSRequirementListTestCase(TestCase):
 class RestrictionListTestCase(TestCase):
     def setUp(self):
         set_semester()
-        self.course, _ = get_or_create_course("CIS", "120", TEST_SEMESTER)
-        self.course2, _ = get_or_create_course("CIS", "125", TEST_SEMESTER)
+        _, self.section, _, _ = get_or_create_course_and_section("CIS-120-001", TEST_SEMESTER)
+        _, self.section2, _, _ = get_or_create_course_and_section("CIS-125-001", TEST_SEMESTER)
         self.department = Department.objects.get(code="CIS")
 
         self.restriction1 = NGSSRestriction.objects.create(
@@ -422,9 +477,9 @@ class RestrictionListTestCase(TestCase):
             inclusive=True,
         )
 
-        self.restriction1.courses.add(self.course)
-        self.restriction2.courses.add(self.course)
-        self.restriction2.courses.add(self.course2)
+        self.restriction1.sections.add(self.section)
+        self.restriction2.sections.add(self.section)
+        self.restriction2.sections.add(self.section2)
         self.client = APIClient()
 
     def test_restriction_route(self):
@@ -1263,20 +1318,3 @@ class DocumentationTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         response = self.client.get(reverse("documentation"))
         self.assertEqual(response.status_code, 200)
-
-
-class ExportTestCoursesDataTestCase(TestCase):
-    def setUp(self):
-        set_semester()
-        create_mock_data_with_reviews("CIS-121-001", TEST_SEMESTER, 2)
-        create_mock_data_with_reviews("COGS-001-001", TEST_SEMESTER, 2)
-        create_mock_data_with_reviews("STAT-430-001", TEST_SEMESTER, 3)
-
-    def test_export_script(self):
-        call_command(
-            "export_test_courses_data",
-            courses_query="C",
-            path=os.devnull,
-            upload_to_s3=False,
-            semesters=TEST_SEMESTER,
-        )

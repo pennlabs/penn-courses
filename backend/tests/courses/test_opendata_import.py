@@ -92,13 +92,13 @@ class AddNGSSRestrictionTestCase(TestCase):
         }
 
     def test_add_multiple_restrictions_multiple_times(self):
-        add_restrictions(self.MUSC_0050, [self.PHL, self.DOLLAR])
-        add_restrictions(self.ANTH_0020, [self.PHL])
+        add_restrictions(self.MUSC_0050_001, [self.PHL, self.DOLLAR])
+        add_restrictions(self.ANTH_0020_001, [self.PHL])
         PHL_obj = NGSSRestriction.objects.get(code="PHL")
         DOLLAR_obj = NGSSRestriction.objects.get(code="DOLLAR")
-        self.assertIn(self.MUSC_0050, PHL_obj.courses.all())
-        self.assertIn(self.ANTH_0020, PHL_obj.courses.all())
-        self.assertIn(self.MUSC_0050, DOLLAR_obj.courses.all())
+        self.assertIn(self.MUSC_0050_001, PHL_obj.sections.all())
+        self.assertIn(self.ANTH_0020_001, PHL_obj.sections.all())
+        self.assertIn(self.MUSC_0050_001, DOLLAR_obj.sections.all())
 
 
 class ParseOpendataResponseTestCase(TestCase):

@@ -1,9 +1,12 @@
+from textwrap import dedent
+
 from django.contrib.auth import get_user_model
 from django.db.models import Prefetch, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import generics, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -232,6 +235,27 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
         custom_path_parameter_desc={
             "courses-detail": {"GET": {"semester": SEMESTER_PARAM_DESCRIPTION}}
         },
+        custom_parameters={
+            "courses-detail": {
+                "GET": [
+                    {
+                        "name": "check_offered_in",
+                        "in": "query",
+                        "description": dedent(
+                            """
+                            Check that the desired course was offered under the specified
+                            code in the specified semester.
+                            Format is `course_code@semester`, e.g. `CIS-1210@2022A`.
+                            404 will be returned if the course
+                            does not exist, or was not offered in that semester.
+                            """
+                        ),
+                        "schema": {"type": "string"},
+                        "required": False,
+                    }
+                ]
+            }
+        },
     )
 
     serializer_class = CourseDetailSerializer
@@ -252,13 +276,32 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
                 ),
             )
         )
+        check_offered_in = self.request.query_params.get("check_offered_in")
+        if check_offered_in:
+            if "@" not in check_offered_in:
+                raise ValidationError(
+                    "check_offered_in expects an argument of the form `CIS-1210@2022C`."
+                )
+            check_offered_in = check_offered_in.split("@")
+            if len(check_offered_in) != 2:
+                raise ValidationError(
+                    "check_offered_in expects an argument of the form `CIS-1210@2022C`."
+                )
+        queryset = (
+            queryset.filter(
+                topic__courses__full_code=check_offered_in[0],
+                topic__courses__semester=check_offered_in[1],
+            )
+            if check_offered_in
+            else queryset
+        )
         queryset = self.filter_by_semester(queryset)
         return queryset
 
 
 class PreNGSSRequirementList(generics.ListAPIView, BaseCourseMixin):
     """
-    Retrieve a list of all pre-NGSS (deprecated since 2022C) academic requirements
+    Retrieve a list of all pre-NGSS (deprecated since 2022B) academic requirements
     in the database for this semester.
     """
 

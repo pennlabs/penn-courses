@@ -21,6 +21,8 @@ export class ReviewPage extends Component {
     this.state = {
       type: this.props.match.params.type,
       code: this.props.match.params.code,
+      url_code: this.props.match.params.code,
+      url_semester: this.props.match.params.semester,
       data: null,
       error: null,
       error_detail: null,
@@ -63,7 +65,8 @@ export class ReviewPage extends Component {
   componentDidUpdate(prevProps) {
     if (
       this.props.match.params.type !== prevProps.match.params.type ||
-      this.props.match.params.code !== prevProps.match.params.code
+      this.props.match.params.code !== prevProps.match.params.code ||
+      this.props.match.params.semester !== prevProps.match.params.semester
     ) {
       // TODO: Switch to functional component and use useEffect(() => {...}, [])
       // eslint-disable-next-line react/no-did-update-set-state
@@ -71,6 +74,8 @@ export class ReviewPage extends Component {
         {
           type: this.props.match.params.type,
           code: this.props.match.params.code,
+          url_code: this.props.match.params.code,
+          url_semester: this.props.match.params.semester,
           data: null,
           liveData: null,
           rowCode: null,
@@ -105,9 +110,9 @@ export class ReviewPage extends Component {
   }
 
   getReviewData() {
-    const { type, code } = this.state;
+    const { type, code, url_code, url_semester } = this.state;
     if (type && code) {
-      apiReviewData(type, code)
+      apiReviewData(type, code, url_semester)
         .then(data => {
           const { error, detail } = data;
           if (error) {
@@ -118,7 +123,7 @@ export class ReviewPage extends Component {
           } else {
             this.setState({ data });
             if (type === "course") {
-              apiLive(data.code)
+              apiLive(data.code, `${url_code}@${url_semester}`)
                 .then(result => this.setState({ liveData: result }))
                 .catch(() => undefined);
             }
@@ -226,6 +231,7 @@ export class ReviewPage extends Component {
 
     const {
       code,
+      semester,
       data,
       rowCode,
       liveData,
@@ -251,6 +257,7 @@ export class ReviewPage extends Component {
                 <InfoBox
                   type={type}
                   code={code}
+                  semester={semester}
                   data={data}
                   liveData={liveData}
                   selectedCourses={selectedCourses}
@@ -272,6 +279,7 @@ export class ReviewPage extends Component {
                   <DetailsBox
                     type={type}
                     course={code}
+                    semester={semester}
                     instructor={rowCode}
                     isCourseEval={isCourseEval}
                     ref={this.tableRef}
@@ -293,6 +301,7 @@ export class ReviewPage extends Component {
               <GraphBox
                 key={isAverage}
                 courseCode={code}
+                semester={semester}
                 isAverage={isAverage}
                 setIsAverage={this.setIsAverage}
               />

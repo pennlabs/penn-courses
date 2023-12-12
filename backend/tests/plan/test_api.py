@@ -5,8 +5,8 @@ from django.urls import reverse
 from options.models import Option
 from rest_framework.test import APIClient
 
-from alert.management.commands.recomputestats import recompute_precomputed_fields
 from alert.models import AddDropPeriod
+from courses.management.commands.recompute_soft_state import recompute_precomputed_fields
 from courses.models import Instructor, PreNGSSRequirement, Section
 from courses.util import invalidate_current_semester_cache, set_meetings
 from plan.models import Schedule
@@ -65,7 +65,6 @@ class PreNGSSRequirementFilterTestCase(TestCase):
         self.req = PreNGSSRequirement(semester=TEST_SEMESTER, code="REQ", school="SAS")
         self.req.save()
         self.req.courses.add(self.math)
-        print(self.req.satisfying_courses)
         self.client = APIClient()
         set_semester()
 
@@ -122,7 +121,6 @@ class PreNGSSRequirementFilterTestCase(TestCase):
 
 class IsOpenFilterTestCase(TestCase):
     def setUp(self):
-
         _, self.cis_160_001 = create_mock_data(
             code="CIS-160-001", semester=TEST_SEMESTER, meeting_days="TR"
         )

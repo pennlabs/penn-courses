@@ -325,7 +325,7 @@ const percentSectionChartOptions = {
   }
 };
 
-const GraphBox = ({ courseCode, isAverage, setIsAverage }) => {
+const GraphBox = ({ courseCode, semester, isAverage, setIsAverage }) => {
   const averageOrRecent = isAverage ? "average_plots" : "recent_plots";
 
   const [chartData, setChartData] = useState(null);
@@ -368,7 +368,7 @@ const GraphBox = ({ courseCode, isAverage, setIsAverage }) => {
       handlePCAChartDataResponse(cachedPCAChartDataResponse);
     } else {
       setLoaded(false);
-      apiFetchPCADemandChartData(courseCode)
+      apiFetchPCADemandChartData(courseCode, semester)
         .then(handlePCAChartDataResponse)
         .finally(() => {
           setLoaded(true);
