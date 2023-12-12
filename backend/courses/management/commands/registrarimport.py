@@ -45,7 +45,7 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--semester", default=None, type=str)
-        parser.add_argument("--query", default=None, default="")
+        parser.add_argument("--query", default="")
 
     def handle(self, *args, **kwargs):
         root_logger = logging.getLogger("")
