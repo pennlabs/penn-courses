@@ -123,7 +123,7 @@ export class ReviewPage extends Component {
           } else {
             this.setState({ data });
             if (type === "course") {
-              apiLive(data.code, `${url_code}@${url_semester}`)
+              apiLive(data.code, url_semester && `${url_code}@${url_semester}`)
                 .then(result => this.setState({ liveData: result }))
                 .catch(() => undefined);
             }
