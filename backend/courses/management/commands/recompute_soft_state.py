@@ -503,7 +503,8 @@ class Command(BaseCommand):
         root_logger.setLevel(logging.DEBUG)
 
         print(
-            "This script is atomic per step, per-semester. "
+            "Each step executed in this command is atomic per-semester "
+            "(e.g., topics are recomputed for each semester atomically). "
             "If an error is encountered, all changes from that step for that semester "
             "will be rolled back. "
             "Any changes made to previous semesters or previous steps will persist."

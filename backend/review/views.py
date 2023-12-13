@@ -325,7 +325,7 @@ def course_plots(request, course_code):
     Get all PCR plots for a given course.
     """
     try:
-        semester = request.GET.get("semester")
+        semester = request.query_params.get("semester")
         course = (
             Course.objects.filter(
                 course_filters_pcr,
