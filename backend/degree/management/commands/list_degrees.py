@@ -12,7 +12,7 @@ from courses.util import get_current_semester
 class Command(BaseCommand):
     help = dedent(
         """
-        Lists the available degreeplans for a semester.
+        Lists the available degrees for a semester.
 
         Expects PENN_ID, X_AUTH_TOKEN, REFRESH_TOKEN, NAME environment variables are set. It is
         recommended you add a .env file to the backend and let pipenv load it in for you.
@@ -24,8 +24,8 @@ class Command(BaseCommand):
             "--out-file",
             help=dedent(
                 """
-            A .json to write out the degreeplans to
-            """
+                A .json to write out the degrees to
+                """
             ),
         )
 
@@ -36,8 +36,8 @@ class Command(BaseCommand):
             default=2017,
             help=dedent(
                 """
-            The minimum year to list degreeplans from.
-            """
+                The minimum year to list degrees from.
+                """
             ),
         )
 
@@ -46,9 +46,9 @@ class Command(BaseCommand):
             type=int,
             help=dedent(
                 """
-            The max year to list degreeplans from. If this is not provided, then
-            degree plans are listed until the current year (as provided by get_current_semester).
-            """
+                The max year to list degrees from. If this is not provided, then degrees
+                are listed until the current year (as provided by get_current_semester).
+                """
             ),
         )
 
@@ -72,10 +72,10 @@ class Command(BaseCommand):
 
         for year in range(since_year, to_year + 1):
             for program in client.get_programs(year=year):
-                for degree_plan in client.degree_plans_of(program, year=year):
+                for degrees in client.degrees_of(program, year=year):
                     if out_handle is not None:
-                        out_handle.write(asdict(degree_plan))
-                    pprint(degree_plan, width=-1)
+                        out_handle.write(asdict(degrees))
+                    pprint(degrees, width=-1)
 
         if out_handle is not None:
             out_handle.close()

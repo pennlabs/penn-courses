@@ -3,7 +3,7 @@ from django.test import TestCase
 from lark.exceptions import LarkError
 
 from courses.util import get_or_create_course_and_section
-from degree.models import DegreePlan, Rule
+from degree.models import Degree, Rule
 from degree.utils.model_utils import q_object_parser
 
 
@@ -96,7 +96,7 @@ class RuleEvaluationTest(TestCase):
             "CIS-1910-001", TEST_SEMESTER, course_defaults={"credits": 0.5}
         )
 
-        self.degree_plan = DegreePlan.objects.create(
+        self.degree_plan = Degree.objects.create(
             program="EU_BSE", degree="BSE", major="CIS", year=2023
         )
         self.parent_rule = Rule.objects.create(degree_plan=self.degree_plan)

@@ -1,6 +1,6 @@
 from django.db.models import Q
 
-from degree.models import DegreePlan, Rule
+from degree.models import Degree, Rule
 from degree.utils.departments import ENG_DEPTS, SAS_DEPTS, WH_DEPTS
 
 
@@ -109,13 +109,13 @@ def parse_coursearray(courseArray) -> Q:
     return q
 
 
-def evaluate_condition(condition, degree_plan) -> bool:
+def evaluate_condition(condition, degree) -> bool:
     if "connector" in condition:
-        left = evaluate_condition(condition["leftCondition"], degree_plan)
+        left = evaluate_condition(condition["leftCondition"], degree)
         if "rightCondition" not in condition:
             return left
 
-        right = evaluate_condition(condition["rightCondition"], degree_plan)
+        right = evaluate_condition(condition["rightCondition"], degree)
         match condition["connector"]:
             case "AND":
                 return left and right
@@ -127,11 +127,11 @@ def evaluate_condition(condition, degree_plan) -> bool:
         comparator = condition["relationalOperator"]
         match comparator["left"]:
             case "MAJOR":
-                attribute = degree_plan.major
+                attribute = degree.major
             case "CONC" | "CONCENTRATION":
-                attribute = degree_plan.concentration
+                attribute = degree.concentration
             case "PROGRAM":
-                attribute = degree_plan.program
+                attribute = degree.program
             case _:
                 raise ValueError(f"Unknowable left type in ifStmt: {comparator['left']}")
         match comparator["operator"]:
@@ -150,14 +150,14 @@ def evaluate_condition(condition, degree_plan) -> bool:
 
 
 def parse_rulearray(
-    ruleArray: list[dict], degree_plan: DegreePlan, rules: list[Rule], parent: Rule = None
+    ruleArray: list[dict], degree: Degree, rules: list[Rule], parent: Rule = None
 ) -> None:
     """
     Logic to parse a single degree ruleArray in a blockArray requirement.
     A ruleArray consists of a list of rule objects that contain a requirement object.
     """
     for rule_json in ruleArray:
-        this_rule = Rule(parent=parent, degree_plan=None)
+        this_rule = Rule(parent=parent, degree=None)
         rules.append(this_rule)
 
         rule_req = rule_json["requirement"]
@@ -196,7 +196,7 @@ def parse_rulearray(
             case "IfStmt":
                 assert "rightCondition" not in rule_req
                 try:
-                    evaluation = evaluate_condition(rule_req["leftCondition"], degree_plan)
+                    evaluation = evaluate_condition(rule_req["leftCondition"], degree)
                 except ValueError as e:
                     assert e.args[0].startswith("Unknowable left type in ifStmt")
                     print("Warning: " + e.args[0])
@@ -220,19 +220,19 @@ def parse_rulearray(
                 # add if part or else part, depending on evaluation of the condition
                 if evaluation:
                     parse_rulearray(
-                        rule_req["ifPart"]["ruleArray"], degree_plan, rules, parent=parent
+                        rule_req["ifPart"]["ruleArray"], degree, rules, parent=parent
                     )
                 elif "elsePart" in rule_req:
                     parse_rulearray(
-                        rule_req["elsePart"]["ruleArray"], degree_plan, rules, parent=parent
+                        rule_req["elsePart"]["ruleArray"], degree, rules, parent=parent
                     )
             case "Subset":
                 if "ruleArray" in rule_json:
-                    parse_rulearray(rule_json["ruleArray"], degree_plan, rules, parent=parent)
+                    parse_rulearray(rule_json["ruleArray"], degree, rules, parent=parent)
                 else:
                     print("WARNING: subset has no ruleArray")
             case "Group":  # this is nested
-                parse_rulearray(rule_json["ruleArray"], degree_plan, rules, parent=this_rule)
+                parse_rulearray(rule_json["ruleArray"], degree, rules, parent=this_rule)
                 this_rule.num = int(rule_req["numberOfGroups"])
             case "Complete" | "Incomplete":
                 assert "ifElsePart" in rule_json  # this is a nested requirement
@@ -246,9 +246,9 @@ def parse_rulearray(
 
 
 # TODO: Make the function names more descriptive
-def parse_degreeworks(json: dict, degree_plan: DegreePlan) -> list[Rule]:
+def parse_degreeworks(json: dict, degree: Degree) -> list[Rule]:
     """
-    Returns a list of Rules given a DegreeWorks JSON audit and a DegreePlan.
+    Returns a list of Rules given a DegreeWorks JSON audit and a Degree.
     Note that this method creates rule objects but does not save them.
     """
     blockArray = json.get("blockArray")
@@ -260,9 +260,9 @@ def parse_degreeworks(json: dict, degree_plan: DegreePlan) -> list[Rule]:
             # TODO: use requirement code?
             credits=None,
             num=None,
-            degree_plan=degree_plan,
+            degree=degree,
         )
 
         rules.append(degree_req)
-        parse_rulearray(requirement["ruleArray"], degree_plan, rules, parent=degree_req)
+        parse_rulearray(requirement["ruleArray"], degree, rules, parent=degree_req)
     return rules

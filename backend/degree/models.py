@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 from collections import deque
 from textwrap import dedent
 from typing import Iterable
 
 from django.contrib.auth import get_user_model
 from django.db import models
-from django.db.models import Count, DecimalField, Sum, F, Q
+from django.db.models import Count, DecimalField, Q, Sum
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
@@ -22,9 +24,9 @@ program_choices = [
 program_code_to_name = dict(program_choices)
 
 
-class DegreePlan(models.Model):
+class Degree(models.Model):
     """
-    This model represents a degree plan for a specific year.
+    This model represents a degree for a specific year.
     """
 
     program = models.CharField(
@@ -32,7 +34,7 @@ class DegreePlan(models.Model):
         choices=program_choices,
         help_text=dedent(
             """
-            The program code for this degree plan, e.g., EU_BSE
+            The program code for this degree, e.g., EU_BSE
             """
         ),
     )
@@ -40,7 +42,7 @@ class DegreePlan(models.Model):
         max_length=4,
         help_text=dedent(
             """
-            The degree code for this degree plan, e.g., BSE
+            The degree code for this degree, e.g., BSE
             """
         ),
     )
@@ -48,7 +50,7 @@ class DegreePlan(models.Model):
         max_length=4,
         help_text=dedent(
             """
-            The major code for this degree plan, e.g., BIOL
+            The major code for this degree, e.g., BIOL
             """
         ),
     )
@@ -57,14 +59,14 @@ class DegreePlan(models.Model):
         null=True,
         help_text=dedent(
             """
-            The concentration code for this degree plan, e.g., BMAT
+            The concentration code for this degree, e.g., BMAT
             """
         ),
     )
     year = models.IntegerField(
         help_text=dedent(
             """
-            The effective year of this degree plan, e.g., 2023
+            The effective year of this degree, e.g., 2023
             """
         )
     )
@@ -73,7 +75,7 @@ class DegreePlan(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["program", "degree", "major", "concentration", "year"],
-                name="unique degreeplan",
+                name="unique degree",
             )
         ]
 
@@ -117,8 +119,8 @@ class Rule(models.Model):
         ),
     )
 
-    degree_plan = models.ForeignKey(
-        DegreePlan,
+    degree = models.ForeignKey(
+        Degree,
         null=True,
         on_delete=models.CASCADE,
         related_name="rules",
@@ -149,7 +151,7 @@ class Rule(models.Model):
         help_text=dedent(
             """
             This rule's parent Rule if it has one. Null if this is a top level rule
-            (i.e., degree_plan is not null)
+            (i.e., degree is not null).
             """
         ),
         related_name="children",
@@ -157,7 +159,7 @@ class Rule(models.Model):
 
     def __str__(self) -> str:
         return f"{self.title}, q={self.q}, num={self.num}, cus={self.credits}, \
-            degree_plan={self.degree_plan}, parent={self.parent.title if self.parent else None}"
+            degree={self.degree}, parent={self.parent.title if self.parent else None}"
 
     def evaluate(self, full_codes: Iterable[str]) -> bool:
         """
@@ -200,23 +202,23 @@ class Rule(models.Model):
         return True
 
 
-class UserDegreePlan(models.Model):
+class DegreePlan(models.Model):
     """
     Stores a users plan for an associated degree.
     """
 
     name = models.CharField(max_length=255, help_text="The user's nickname for the degree plan.")
 
-    degree_plan = models.ForeignKey(
-        DegreePlan,
+    degree = models.ForeignKey(
+        Degree,
         on_delete=models.CASCADE,
-        help_text="The degree plan with which this is associated.",
+        help_text="The degree this is associated with.",
     )
 
     person = models.ForeignKey(
         get_user_model(),
         on_delete=models.CASCADE,
-        help_text="The user to which the schedule belongs.",
+        help_text="The user the schedule belongs to.",
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -224,62 +226,117 @@ class UserDegreePlan(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["name", "person"], name="user_degreeplan_name_person")
+            models.UniqueConstraint(fields=["name", "person"], name="degreeplan_name_person")
         ]
 
-    def check_degree(self):
+    def get_rule_fulfillments(self, rule: Rule) -> set[Rule]:
         """
-        Recheck the rules starting with the affected rules and moving up
+        Returns a set of all Fulfillment objects that fulfill a Rule in the subtree rooted at
+        the given rule for this DegreePlan.
         """
-        affected_rules = list(self.satisfactions.filter(last_updated__gt=F("last_checked")))
-        fulfillments = self.fulfillments.all()
-        satisfactions = self.satisfactions.all()
-        double_count_restrictions = self.degree_plan.double_count_restrictions.all()
 
-        updated_satisfaction = set()
-
-        for restriction in double_count_restrictions:
-            evaluation = restriction.check_double_count(self)
-            for satisfaction in satisfactions.filter(
-                Q(rule=restriction.rule) | Q(rule=restriction.other_rule)
-            ).all():
-                satisfaction.satisfied = evaluation
-                satisfaction.last_checked = timezone.now()
-                satisfaction.save(update_fields=["satisfied", "last_checked"])
-                updated_satisfaction.add(satisfaction)
-
-        while len(affected_rules) > 0:
-            rule = affected_rules.pop()
-            if rule is None:
-                continue
-            evaluation = rule.evaluate(fulfillments)
-            satisfaction = satisfactions.filter(rule=rule).get()
-            if evaluation != satisfaction.satisfied:  # satisfaction status changed
-                affected_rules.append(rule.parent)
-
-                # AND the evaluation with previous state if state changed in this check
-                if satisfaction in updated_satisfaction:
-                    satisfaction.satisfied = evaluation and satisfaction.satisfied
+        fulfillments = set()  # a Fulfillment might fulfill multiple Rules
+        bfs_queue = deque()
+        bfs_queue.append(rule)
+        while bfs_queue:
+            for child in bfs_queue.pop().children.all():
+                if child.q:  # i.e., if this child is a leaf
+                    fulfillments.add(child.fulfillments.filter(degree_plan=self))
                 else:
-                    satisfaction.satisfied = evaluation
+                    bfs_queue.append(child)
+        return fulfillments
 
-                satisfaction.last_checked = timezone.now()
-                satisfaction.save(update_fields=["satisfied", "last_checked"])
+    def check_satisfactions(self) -> bool:
+        """
+        Returns True if for each Rule in this DegreePlan's Degree, there is a SatisfactionStatus for
+        this DegreePlan/Rule combination is satisfied.
+        """
+
+        top_level_rules = Rule.objects.filter(degree=self.degree)
+        for rule in top_level_rules:
+            status = SatisfactionStatus.objects.filter(degree_plan=self, rule=rule).first()
+            if not status.satisfied:
+                return False
+        return True
+
+    def evaluate_rules(self, rules: list[Rule]) -> tuple[set[Rule], set[DoubleCountRestriction]]:
+        """
+        Evaluates this DegreePlan with respect to the given Rules. Returns a set of satisfied Rules
+        and a list of DoubleCountRestrictions violated as a tuple.
+
+        If a Rule is a part of a violated DoubleCountRestriction, it can still be fulfilled.
+        """
+
+        satisfied_rules = set()
+        violated_dcrs = set()
+
+        relevant_dcrs = DoubleCountRestriction.objects.filter(
+            Q(rule__in=rules) | Q(other_rule__in=rules)).all()
+        for dcr in relevant_dcrs:
+            if dcr.is_double_count_violated(self):
+                violated_dcrs.add(dcr)
+
+        for rule in rules:
+            rule_fulfillments = self.get_rule_fulfillments(rule)
+            full_codes = [fulfillment.full_code for fulfillment in rule_fulfillments]
+            if rule.evaluate(full_codes):
+                satisfied_rules.add(rule)
+
+        return (satisfied_rules, violated_dcrs)
+
+    # def check_degree(self):
+    #     """
+    #     Recheck the rules starting with the affected rules and moving up
+    #     """
+    #     affected_rules = list(self.satisfactions.filter(last_updated__gt=F("last_checked")))
+    #     fulfillments = self.fulfillments.all()
+    #     satisfactions = self.satisfactions.all()
+    #     double_count_restrictions = self.degree.double_count_restrictions.all()
+
+    #     updated_satisfaction = set()
+
+    #     for restriction in double_count_restrictions:
+    #         evaluation = restriction.check_double_count(self)
+    #         for satisfaction in satisfactions.filter(
+    #             Q(rule=restriction.rule) | Q(rule=restriction.other_rule)
+    #         ).all():
+    #             satisfaction.satisfied = evaluation
+    #             satisfaction.last_checked = timezone.now()
+    #             satisfaction.save(update_fields=["satisfied", "last_checked"])
+    #             updated_satisfaction.add(satisfaction)
+
+    #     while len(affected_rules) > 0:
+    #         rule = affected_rules.pop()
+    #         if rule is None:
+    #             continue
+    #         evaluation = rule.evaluate(fulfillments)
+    #         satisfaction = satisfactions.filter(rule=rule).get()
+    #         if evaluation != satisfaction.satisfied:  # satisfaction status changed
+    #             affected_rules.append(rule.parent)
+
+    #             # AND the evaluation with previous state if state changed in this check
+    #             if satisfaction in updated_satisfaction:
+    #                 satisfaction.satisfied = evaluation and satisfaction.satisfied
+    #             else:
+    #                 satisfaction.satisfied = evaluation
+
+    #             satisfaction.last_checked = timezone.now()
+    #             satisfaction.save(update_fields=["satisfied", "last_checked"])
 
 
 class Fulfillment(models.Model):
-    user_degree_plan = models.ForeignKey(
-        UserDegreePlan,
+    degree_plan = models.ForeignKey(
+        DegreePlan,
         on_delete=models.CASCADE,
         related_name="fulfillments",
-        help_text="The user degree plan with which this fulfillment is associated",
+        help_text="The degree plan with which this fulfillment is associated",
     )
 
     full_code = models.CharField(
         max_length=16,
         blank=True,
         db_index=True,
-        help_text="The dash-joined department and code of the course, e.g. `CIS-120`",
+        help_text="The dash-joined department and code of the course, e.g., `CIS-120`",
     )
 
     semester = models.CharField(
@@ -308,12 +365,12 @@ class Fulfillment(models.Model):
 
 
 class SatisfactionStatus(models.Model):
-    user_degree_plan = models.ForeignKey(
-        UserDegreePlan,
+    degree_plan = models.ForeignKey(
+        DegreePlan,
         on_delete=models.CASCADE,
         db_index=True,
         related_name="satisfactions",
-        help_text="The user degree plan that leads to the satisfaction of the rule",
+        help_text="The degree plan that leads to the satisfaction of the rule",
     )
 
     rule = models.ForeignKey(
@@ -331,24 +388,17 @@ class SatisfactionStatus(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["user_degree_plan", "rule"], name="unique_satisfaction")
+            models.UniqueConstraint(fields=["degree_plan", "rule"], name="unique_satisfaction")
         ]
 
 
 class DoubleCountRestriction(models.Model):
-    degree_plan = models.ForeignKey(
-        DegreePlan,
-        on_delete=models.CASCADE,
-        related_name="double_count_restrictions",
-        help_text="The degree plan with which this is associated",
-    )
-
     max_courses = models.PositiveSmallIntegerField(
         null=True,
         help_text=dedent(
             """
-        The maximum number of courses you can count for both rules.
-        """
+            The maximum number of courses you can count for both rules.
+            """
         ),
     )
 
@@ -358,8 +408,8 @@ class DoubleCountRestriction(models.Model):
         null=True,
         help_text=dedent(
             """
-        The maximum number of CUs you can count for both rules.
-        """
+            The maximum number of CUs you can count for both rules.
+            """
         ),
     )
 
@@ -367,36 +417,27 @@ class DoubleCountRestriction(models.Model):
 
     other_rule = models.ForeignKey(Rule, on_delete=models.CASCADE, related_name="+")
 
-    @classmethod
-    def get_all_fulfillments(rule, user_degree_plan):
-        fulfillments = set()  # a Fulfillment might fulfill multiple Rules
-        queue = deque()
-        queue.append(rule)
-        while queue:
-            for child in queue.pop().children.all():
-                if child.q:
-                    fulfillments.add(child.fulfillments.filter(user_degree_plan=user_degree_plan))
-                else:
-                    queue.append(child)
-        return fulfillments
+    def is_double_count_violated(self, degree_plan: DegreePlan) -> bool:
+        """
+        Returns True if this DoubleCountRestriction is violated by the given DegreePlan.
+        """
 
-    def check_double_count(self, user_degree_plan):
-        rule_fulfillments = self.get_all_fulfillments(self.rule, user_degree_plan)
-        other_rule_fulfillments = self.get_all_fulfillments(self.other_rule, user_degree_plan)
-        intersection = rule_fulfillments & other_rule_fulfillments
+        rule_fulfillments = degree_plan.get_rule_fulfillments(self.rule)
+        other_rule_fulfillments = degree_plan.get_rule_fulfillments(self.other_rule)
+        shared_fulfillments = rule_fulfillments & other_rule_fulfillments
 
-        if self.max_courses and len(intersection) > self.max_courses:
-            return False
+        if self.max_courses and len(shared_fulfillments) > self.max_courses:
+            return True
 
         intersection_cus = (
             Course.objects.filter(
-                full_code__in=[fulfillment.full_code for fulfillment in intersection]
+                full_code__in=[fulfillment.full_code for fulfillment in shared_fulfillments]
             )
             .order_by("full_code", "-semester")
             .distinct("full_code")
             .aggregate(Sum("cus"))
         )
         if self.max_credits and intersection_cus > self.max_credits:
-            return False
+            return True
 
-        return True
+        return False

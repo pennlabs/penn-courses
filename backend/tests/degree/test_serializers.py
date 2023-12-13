@@ -1,16 +1,16 @@
 from django.test import TestCase
 from rest_framework.test import APIClient
 
-from degree.models import DegreePlan, Rule
+from degree.models import Degree, Rule
 
 
 class SerializerTest(TestCase):
     def setUp(self):
         # Create sample DegreePlan instances
-        self.degree_plan_1 = DegreePlan.objects.create(
+        self.degree_plan_1 = Degree.objects.create(
             program="EU_BSE", degree="BSE", major="BIOL", year=2023
         )
-        self.degree_plan_2 = DegreePlan.objects.create(
+        self.degree_plan_2 = Degree.objects.create(
             program="EU_BSE", degree="BSE", major="CSCI", year=2024
         )
 

@@ -7,10 +7,10 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 
 from courses.models import Course
-from degree.models import DegreePlan, Rule, UserDegreePlan
+from degree.models import Degree, Rule, DegreePlan
 from degree.serializers import (
     DegreePlanDetailSerializer,
-    DegreePlanListSerializer,
+    DegreeListSerializer,
     UserDegreePlanDetailSerializer,
     UserDegreePlanListSerializer,
 )
@@ -19,7 +19,7 @@ from PennCourses.docs_settings import PcxAutoSchema
 
 class DegreeList(generics.ListAPIView):
     """
-    Retrieve a list of (all) degrees available from a given year.
+    Retrieve a list of all Degree objects.
     """
 
     schema = PcxAutoSchema(
@@ -28,13 +28,13 @@ class DegreeList(generics.ListAPIView):
         },
     )
 
-    serializer_class = DegreePlanListSerializer
-    queryset = DegreePlan.objects.all()
+    serializer_class = DegreeListSerializer
+    queryset = Degree.objects.all()
 
 
 class DegreeDetail(generics.RetrieveAPIView):
     """
-    Retrieve a detailed look at a specific degree. Includes all details necessary to display degree
+    Retrieve a detailed look at a specific Degree. Includes all details necessary to display degree
     info, including degree requirements that this degree needs.
     """
 
@@ -47,7 +47,7 @@ class DegreeDetail(generics.RetrieveAPIView):
     )
 
     serializer_class = DegreePlanDetailSerializer
-    queryset = DegreePlan.objects.all()
+    queryset = Degree.objects.all()
 
 
 class UserDegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
@@ -58,7 +58,7 @@ class UserDegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        queryset = UserDegreePlan.objects.filter(person=self.request.user)
+        queryset = DegreePlan.objects.filter(person=self.request.user)
         queryset = queryset.prefetch_related(
             "fulfillments",
             "degree_plan",
@@ -81,7 +81,7 @@ class UserDegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 @permission_classes([IsAuthenticated])
 def check_degree_plan(request, **kwargs):
     try:
-        degree_plan = DegreePlan.objects.get(id=kwargs["degree_plan_id"])
+        degree_plan = Degree.objects.get(id=kwargs["degree_plan_id"])
     except ObjectDoesNotExist:
         return Response(
             {"error": "Degree plan does not exist."},

@@ -1,8 +1,8 @@
 from django.contrib import admin
 
-from degree.models import DegreePlan, Rule
+from degree.models import Degree, Rule
 
 
 # Register your models here.
-admin.site.register(DegreePlan)
+admin.site.register(Degree)
 admin.site.register(Rule)

@@ -1,9 +1,16 @@
 from textwrap import dedent
+
 from rest_framework import serializers
 
-from courses.serializers import CourseListSerializer
 from courses.models import Course
-from degree.models import DegreePlan, UserDegreePlan, Rule, Fulfillment, DoubleCountRestriction
+from courses.serializers import CourseListSerializer
+from degree.models import Degree, DegreePlan, DoubleCountRestriction, Fulfillment, Rule
+
+
+class DegreeListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Degree
+        fields = "__all__"
 
 
 class RuleSerializer(serializers.ModelSerializer):
@@ -18,17 +25,11 @@ RuleSerializer._declared_fields["rules"] = RuleSerializer(
 )
 
 
-class DegreePlanListSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DegreePlan
-        fields = "__all__"
-
-
-class DegreePlanSerializer(serializers.ModelSerializer):
+class DegreeSerializer(serializers.ModelSerializer):
     rules = RuleSerializer(many=True, read_only=True)
 
     class Meta:
-        model = DegreePlan
+        model = Degree
         fields = "__all__"
 
 
@@ -45,7 +46,7 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
     double_count_restrictions = DoubleCountRestrictionSerializer(many=True, read_only=True)
 
     class Meta:
-        model = DegreePlan
+        model = Degree
         fields = "__all__"
 
 
@@ -53,8 +54,9 @@ class FulfillmentSerializer(serializers.ModelSerializer):
     course = serializers.SerializerMethodField(
         help_text=dedent(
             """
-        The details of the fulfilling course. This is the most recent course with the full code, or null if no course exists with the full code.
-        """
+            The details of the fulfilling course. This is the most recent course with the full code,
+            or null if no course exists with the full code.
+            """
         )
     )
 
@@ -68,11 +70,11 @@ class FulfillmentSerializer(serializers.ModelSerializer):
 
 
 class UserDegreePlanListSerializer(serializers.ModelSerializer):
-    degree_plan = DegreePlanListSerializer(read_only=True)
+    degree_plan = DegreeListSerializer(read_only=True)
     id = serializers.ReadOnlyField(help_text="The id of the UserDegreePlan.")
 
     class Meta:
-        model = UserDegreePlan
+        model = DegreePlan
         fields = ["id", "name", "degree_plan"]
 
 
@@ -86,12 +88,12 @@ class UserDegreePlanDetailSerializer(serializers.ModelSerializer):
     degree_plan_id = serializers.PrimaryKeyRelatedField(
         write_only=True,
         source="degree_plan",
-        queryset=DegreePlan.objects.all(),
+        queryset=Degree.objects.all(),
         help_text="The degree plan to which this user degree plan belongs.",
     )
     id = serializers.ReadOnlyField(help_text="The id of the user degree plan.")
     person = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
-        model = UserDegreePlan
+        model = DegreePlan
         fields = "__all__"
