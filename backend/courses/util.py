@@ -29,6 +29,7 @@ from courses.models import (
     StatusUpdate,
     User,
 )
+from review.management.commands.mergeinstructors import resolve_duplicates
 
 
 logger = logging.getLogger(__name__)
@@ -362,25 +363,49 @@ def record_update(section, semester, old_status, new_status, alerted, req, creat
     return u
 
 
-def merge_instructors(user, name):
-    """
-    Merge the instructor corresponding to the given user into the
-    instructor with the given name, if both exist.
-    """
-    from review.management.commands.mergeinstructors import resolve_duplicates
-
-    def stat(key, amt=1, element=None):
-        return
-
-    try:
-        user_instructor = Instructor.objects.get(user=user)
-        name_instructor = Instructor.objects.get(name=name)
-        duplicates = {user_instructor, name_instructor}
-        if len(duplicates) == 1:
-            return
-        resolve_duplicates([duplicates], dry_run=False, stat=stat)
-    except Instructor.DoesNotExist:
-        pass
+def import_instructor(pennid, name, stat=None):
+    if not stat:
+        stat = lambda key, amt=1, element=None: None  # noqa E731
+    if not pennid:
+        instructor_ob = Instructor.objects.filter(name=name).order_by("-updated_at").first()
+        if not instructor_ob:
+            stat("instructors_created")
+            instructor_ob = Instructor.objects.create(name=name)
+    else:
+        try:
+            instructor_ob = Instructor.objects.get(user_id=pennid)
+            if instructor_ob.name != name:
+                stat("instructor_names_updated")
+                instructor_ob.name = name
+                instructor_ob.save()
+        except Instructor.DoesNotExist:
+            user, user_created = User.objects.get_or_create(
+                id=pennid, defaults={"username": uuid.uuid4()}
+            )
+            if user_created:
+                stat("users_created")
+                user.set_unusable_password()
+                user.save()
+            instructor_ob = (
+                Instructor.objects.filter(name=name, user__isnull=True)
+                .order_by("-updated_at")
+                .first()
+            )
+            if instructor_ob:
+                stat("instructor_users_updated")
+                instructor_ob.user = user
+                instructor_ob.save()
+            else:
+                stat("instructors_created")
+                instructor_ob = Instructor.objects.create(user=user, name=name)
+    dups = set(Instructor.objects.filter(name=name, user__isnull=True)) | {instructor_ob}
+    if len(dups) > 1:
+        resolve_duplicates(
+            [dups],
+            dry_run=False,
+            stat=stat,
+        )
+    return instructor_ob
 
 
 def set_instructors(section, instructors):
@@ -395,23 +420,8 @@ def set_instructors(section, instructors):
             instructor["last_name"],
         )
         name = " ".join([c for c in name_components if c])
-        penn_id = int(instructor["penn_id"])
-        try:
-            merge_instructors(User.objects.get(id=penn_id), name)
-            instructor_ob = Instructor.objects.get(user_id=penn_id)
-            instructor_ob.name = name
-            instructor_ob.save()
-        except (Instructor.DoesNotExist, User.DoesNotExist):
-            user, user_created = User.objects.get_or_create(
-                id=penn_id, defaults={"username": uuid.uuid4()}
-            )
-            if user_created:
-                user.set_unusable_password()
-                user.save()
-            instructor_ob, _ = Instructor.objects.get_or_create(name=name)
-            instructor_ob.user = user
-            instructor_ob.save()
-        instructor_obs.append(instructor_ob)
+        pennid = int(instructor["penn_id"])
+        instructor_obs.append(import_instructor(pennid, name))
     section.instructors.set(instructor_obs)
 
 
@@ -521,7 +531,6 @@ def upsert_course_from_opendata(info, semester, missing_sections=None):
     course.description = (info["course_description"] or "").strip()
     if info.get("additional_section_narrative"):
         course.description += (course.description and "\n") + info["additional_section_narrative"]
-    # course.prerequisites = "\n".join(info["prerequisite_notes"])  # TODO: get prerequisite info
     course.syllabus_url = info.get("syllabus_url") or None
 
     # set course primary listing
@@ -529,8 +538,10 @@ def upsert_course_from_opendata(info, semester, missing_sections=None):
 
     section.crn = info["crn"]
     section.credits = Decimal(info["credits"] or "0") if "credits" in info else None
-    section.capacity = int(info["max_enrollment"] or 0)  # TODO: fix, get current enrollment
-    section.activity = info["activity"] or "***"
+    section.code_specific_enrollment = int(info["section_enrollment"] or 0)
+    section.code_specific_capacity = int(info["max_enrollment"] or 0)
+    section.capacity = int(info["max_enrollment_crosslist"] or section.code_specific_capacity)
+    section.activity = info["activity"] or ""
 
     set_meetings(section, info["meetings"])
 
@@ -539,7 +550,6 @@ def upsert_course_from_opendata(info, semester, missing_sections=None):
     add_restrictions(section, info["course_restrictions"])
 
     add_attributes(course, info["attributes"])
-    # add_grade_modes(section, info["grade_modes"])  # TODO: save grade modes
 
     section.save()
     course.save()

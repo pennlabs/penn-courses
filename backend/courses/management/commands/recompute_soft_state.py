@@ -80,6 +80,25 @@ def recompute_has_status_updates():
         )
 
 
+def recompute_enrollment():
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+            UPDATE courses_section s1
+            SET enrollment = (
+                SELECT SUM(s2.code_specific_enrollment)
+                FROM courses_section AS s2
+                INNER JOIN courses_course AS c2 ON s2.course_id = c2.id
+                WHERE s1.code = s2.code AND c2.primary_listing_id = (
+                    SELECT primary_listing_id
+                    FROM courses_course
+                    WHERE id = s1.course_id
+                )
+            )
+            """
+        )
+
+
 def recompute_precomputed_fields(verbose=False):
     """
     Recomputes the following precomputed fields:
@@ -105,6 +124,9 @@ def recompute_precomputed_fields(verbose=False):
     if verbose:
         print("\tRecomputing Section.has_status_updates")
     recompute_has_status_updates()
+    if verbose:
+        print("\tRecomputing Section.enrollment")
+    recompute_enrollment()
 
     if verbose:
         print("Done recomputing precomputed fields.")

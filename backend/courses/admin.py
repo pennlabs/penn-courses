@@ -49,6 +49,7 @@ class DepartmentAdmin(admin.ModelAdmin):
 
 class InstructorAdmin(admin.ModelAdmin):
     search_fields = ("name",)
+    autocomplete_fields = ("user",)
 
 
 class AttributeAdmin(admin.ModelAdmin):

@@ -108,7 +108,7 @@ You then can make authenticated requests to the API by providing a request heade
 
 See [courses/registrar.py](https://github.com/pennlabs/penn-courses/blob/master/backend/courses/registrar.py) to understand which OpenData API endpoints are used by PCX, and how.
 
-For example, you can try out: `https://3scale-public-prod-open-data.apps.k8s.upenn.edu/api/v1/course_section_search?section_id=CIS&term=2023C&page_number=1&number_of_results_per_page=100` (remember to set the `Authorization` header).
+For example, you can try out: `https://3scale-public-prod-open-data.apps.k8s.upenn.edu/api/v1/course_section_search?section_id=CIS&term=202410&page_number=1&number_of_results_per_page=100` (remember to set the `Authorization` header).
 
 #### Registrar
 

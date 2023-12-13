@@ -51,7 +51,7 @@ class Instructor(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     name = models.CharField(
-        max_length=255, unique=True, db_index=True, help_text="The full name of the instructor."
+        max_length=255, db_index=True, help_text="The full name of the instructor."
     )
     user = models.ForeignKey(
         User,
@@ -582,7 +582,8 @@ class Section(models.Model):
         ("SEM", "Seminar"),
         ("SRT", "Senior Thesis"),
         ("STU", "Studio"),
-        ("***", "Undefined"),
+        ("FLD", "Field Work"),
+        ("", "Undefined"),
     )
 
     class Meta:
@@ -639,11 +640,47 @@ class Section(models.Model):
         + string_dict_to_html(dict(STATUS_CHOICES)),
     )
 
+    code_specific_enrollment = models.IntegerField(
+        default=0,
+        help_text=dedent(
+            """
+            The number students enrolled in this specific section as of our last registrarimport,
+            NOT including crosslisted sections. Comparable with `.code_specific_capacity`.
+            This field is not usable for courses before 2022B
+            (first semester after the Path transition).
+            """
+        ),
+    )
+    code_specific_capacity = models.IntegerField(
+        default=0,
+        help_text=dedent(
+            """
+            The max allowed enrollment for this specific section,
+            NOT including crosslisted sections.
+            This field is not usable for courses before 2022B
+            (first semester after the Path transition).
+            """
+        ),
+    )
+
+    enrollment = models.IntegerField(
+        default=0,
+        help_text=dedent(
+            """
+            The number students enrolled in all crosslistings of this section,
+            as of our last registrarimport. Comparable with `.capacity`.
+            SOFT STATE, recomputed by `recompute_soft_state` after each registrarimport as
+            the sum of `.code_specific_enrollment` across all crosslisted sections.
+            This field is not usable for courses before 2022B
+            (first semester after the Path transition).
+            """
+        ),
+    )
     capacity = models.IntegerField(
         default=0,
-        help_text="The number of allowed registrations for this section, "
-        "e.g. `220` for CIS-120-001 (2020A).",
+        help_text="The max allowed enrollment across all crosslistings of this section.",
     )
+
     activity = models.CharField(
         max_length=50,
         choices=ACTIVITY_CHOICES,
