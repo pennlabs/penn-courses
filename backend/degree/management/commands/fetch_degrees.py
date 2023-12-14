@@ -16,7 +16,7 @@ class Command(BaseCommand):
         Fetches, parses and stores degrees from degreeworks.
 
         Expects PENN_ID, X_AUTH_TOKEN, REFRESH_TOKEN, NAME environment variables are set.
-        
+
         Note: this script deletes any existing degres in the database that overlap with the
         degrees fetched from degreeworks.
         """

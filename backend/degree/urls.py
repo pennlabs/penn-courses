@@ -1,6 +1,8 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework import routers
+
 from degree.views import DegreeDetail, DegreeList, UserDegreePlanViewset, rule_courses
+
 
 router = routers.DefaultRouter()
 

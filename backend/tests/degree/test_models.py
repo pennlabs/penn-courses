@@ -84,6 +84,7 @@ class QObjectParserTest(TestCase):
         with self.assertRaises(LarkError):
             q_object_parser.parse("")
 
+
 class RuleEvaluationTest(TestCase):
     def setUp(self):
         self.cis_1200, self.cis_1200_001, _, _ = get_or_create_course_and_section(
