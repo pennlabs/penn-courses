@@ -5,7 +5,7 @@ import requests
 from django.conf import settings
 from tqdm import tqdm
 
-from courses.util import translate_semester
+from courses.util import get_current_semester, translate_semester
 
 
 logger = logging.getLogger(__name__)
@@ -30,7 +30,20 @@ def get_headers():
 
 def make_api_request(params):
     headers = get_headers()
-    url = f"{settings.OPEN_DATA_API_BASE}/v1/course_section_search"
+    url = f"{settings.OPEN_DATA_API_BASE}/v1/"
+    semester = params.get("term")
+    assert semester is not None, "make_api_request expects term param"
+    current_semester = get_current_semester()
+
+    if (
+        semester >= current_semester
+        or semester.endswith("B")
+        and (semester[:-1] + "C") >= current_semester
+    ):
+        url += "course_section_search"
+    else:
+        url += "course_section_history_search"
+
     r = requests.get(
         url,
         params=params,
