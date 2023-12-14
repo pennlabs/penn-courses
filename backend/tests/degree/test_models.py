@@ -80,6 +80,9 @@ class QObjectParserTest(TestCase):
     def test_idempotency(self):
         self.assertParsedEqual(q_object_parser.parse(repr(Q(key="\"'value"))))
 
+    def test_empty_string(self):
+        with self.assertRaises(LarkError):
+            q_object_parser.parse("")
 
 class RuleEvaluationTest(TestCase):
     def setUp(self):

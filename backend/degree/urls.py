@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework import routers
-from degree.views import DegreeDetail, DegreeList, UserDegreePlanViewset
+from degree.views import DegreeDetail, DegreeList, UserDegreePlanViewset, rule_courses
 
 router = routers.DefaultRouter()
 
@@ -13,5 +13,6 @@ urlpatterns = [
         DegreeDetail.as_view(),
         name="degree-detail",
     ),
+    path("courses/<rule_id>", rule_courses, name="rule-courses"),
     path("", include(router.urls)),
 ]

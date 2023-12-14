@@ -5,9 +5,11 @@ from rest_framework import generics, status, viewsets, mixins
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
+from courses.serializers import CourseListSerializer
 
 from courses.models import Course
 from degree.models import Degree, Rule, DegreePlan
+from degree.utils.model_utils import q_object_parser
 from degree.serializers import (
     DegreePlanDetailSerializer,
     DegreeListSerializer,
@@ -77,15 +79,24 @@ class UserDegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         return context
 
 
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def check_degree_plan(request, **kwargs):
+@api_view(["GET"])
+def rule_courses(request, rule_id: int):
+    """
+    Search for courses that fulfill a given rule.
+    """
     try:
-        degree_plan = Degree.objects.get(id=kwargs["degree_plan_id"])
+        rule = Rule.objects.get(id=rule_id)
     except ObjectDoesNotExist:
         return Response(
-            {"error": "Degree plan does not exist."},
+            data={"error": f"Rule with id {rule_id} does not exist."},
             status=status.HTTP_404_NOT_FOUND,
         )
-
-    return Response(degree_plan.check_degree(), 200)
+    
+    q = rule.get_q_object()
+    if q is None:
+        return Response(
+            data={"error": f"Rule with id {rule_id} has no query object."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    courses = Course.objects.filter(q)
+    return Response(CourseListSerializer(courses, many=True).data)
