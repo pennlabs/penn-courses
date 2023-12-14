@@ -137,7 +137,7 @@ class Rule(models.Model):
         help_text=dedent(
             """
             String representing a Q() object that returns the set of courses
-            satisfying this rule. Only non-null/non-empty if this is a Rule leaf.
+            satisfying this rule. Only non-empty if this is a Rule leaf.
             This Q object is expected to be normalized before it is serialized
             to a string.
             """
@@ -168,7 +168,7 @@ class Rule(models.Model):
         if self.q:
             assert not self.children.all().exists()
             total_courses, total_credits = (
-                Course.objects.filter(q_object_parser.parse(self.q), full_code__in=full_codes)
+                Course.objects.filter(self.get_q_object() or Q(), full_code__in=full_codes)
                 .aggregate(
                     total_courses=Count("id"),
                     total_credits=Coalesce(
@@ -200,7 +200,11 @@ class Rule(models.Model):
         if self.num is not None and count < self.num:
             return False
         return True
-
+    
+    def get_q_object(self) -> Q | None:
+        if not self.q:
+            return None
+        return q_object_parser.parse(self.q)
 
 class DegreePlan(models.Model):
     """

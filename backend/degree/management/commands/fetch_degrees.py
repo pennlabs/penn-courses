@@ -13,23 +13,16 @@ from degree.utils.parse_degreeworks import parse_degreeworks
 class Command(BaseCommand):
     help = dedent(
         """
-        Lists the available degrees for a semester.
+        Fetches, parses and stores degrees from degreeworks.
 
-        Expects PENN_ID, X_AUTH_TOKEN, REFRESH_TOKEN, NAME environment variables are set. It is
-        recommended you add a .env file to the backend and let pipenv load it in for you.
+        Expects PENN_ID, X_AUTH_TOKEN, REFRESH_TOKEN, NAME environment variables are set.
+        
+        Note: this script deletes any existing degres in the database that overlap with the
+        degrees fetched from degreeworks.
         """
     )
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            "--degreess",
-            help=dedent(
-                """
-            A .json to write out the degrees to
-            """
-            ),
-        )
-
         parser.add_argument(
             "--since-year",
             nargs="?",
@@ -54,14 +47,12 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **kwargs):
-        print(
-            dedent(
-                """
-                Note: this script does not delete any existing degrees; you may do that
-                manually using the admin panel or `manage.py shell`.
-                """
-            )
-        )
+        print(dedent(
+            """
+            Note: this script deletes any existing degres in the database that overlap with the
+            degrees fetched from degreeworks.
+            """
+        ))
 
         since_year = kwargs["since_year"]
         to_year = kwargs["to_year"] or int(get_current_semester()[:4])
@@ -96,7 +87,7 @@ class Command(BaseCommand):
                             major=degree.major,
                             concentration=degree.concentration,
                             year=degree.year,
-                        ).all().delete()
+                        ).delete()
 
                         degree.save()
                         print(f"Saving degree {degree}...")
