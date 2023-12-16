@@ -293,7 +293,11 @@ def get_course_and_section(course_code_or_crn, semester, section_manager=None):
         course = Course.objects.get(department__code=dept_code, code=course_id, semester=semester)
         section = section_manager.get(course=course, code=section_id)
     except ValueError:
-        section = section_manager.prefetch_related("course").get(crn=course_code_or_crn)
+        section = (
+            section_manager.prefetch_related("course")
+            .exclude(status="X")
+            .get(crn=course_code_or_crn, course__semester=semester)
+        )
         course = section.course
     return course, section
 
