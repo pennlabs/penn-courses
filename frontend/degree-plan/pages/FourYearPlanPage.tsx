@@ -4,6 +4,12 @@ import PlanPanel from "../components/FourYearPlan/PlanPanel";
 import SearchPanel from "@/components/Search/SearchPanel";
 import useWindowDimensions from "@/hooks/window";
 // import Plan from "../components/example/Plan";
+import { Modal } from "@mui/material";
+import Icon from '@mdi/react';
+import { mdiPlus } from '@mdi/js';
+import axios from "../services/httpServices"
+import {degreeData} from '../data/degrees';
+import FuzzySearch from 'react-fuzzy';
 
 const pageStyle = {
     backgroundColor:'#F7F9FC', 
@@ -22,7 +28,7 @@ export const topBarStyle = {
     borderTopRightRadius: '10px'
   }
 
-export const titleStyle = {color: '#575757', fontWeight: '550'}
+// export const titleStyle = {color: '#575757', fontWeight: '550'}
 
 const panelContainerStyle = {
     borderRadius: '10px',
@@ -43,6 +49,78 @@ const dividerStyle = {
 }
 
 const FourYearPlanPage = () => {
+
+    const Degree = ({degree}: any) => {
+        let name = degree.major + '-' + degree.concentration + ', ' + degree.degree;
+        if (!degree.concentration) name = degree.major + ', ' + degree.degree;
+        return (
+            <div className="p-2" style={{backgroundColor: 'white'}}>
+                <div className="d-flex justify-content-between">
+                    <div className="" >
+                        <span style={{
+                            fontSize: '13px', 
+                            clear: 'both', 
+                            display: 'inline-block',
+                            overflow: 'auto',
+                            whiteSpace: 'nowrap'
+                        }}>
+                            {name}
+                        </span>
+                    </div>
+                    <div style={{backgroundColor: '#FFFFFF'}}>
+                        {/* <div style={{backgroundColor:"#DBE2F5", borderRadius:'12px', margin: '5px', height:'30px'}}> */}
+                            <Icon path={mdiPlus} size={1} color='#DBE2F5'/>
+                        {/* </div> */}
+                    </div>
+                </div>
+            </div>
+        )
+    }
+
+    const ModalWrapper = () => {
+        const modalStyle = {
+            position: 'absolute' as 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: '30vw',
+            height: '70vh',
+            backgroundColor: 'white',
+            // bgcolor: 'background.paper',
+            // border: '2px solid #000',
+            // boxShadow: 24,
+            padding: '10px'
+          };
+
+        return (
+            <Modal open={degreeModalOpen}  onClose={() => setDegreeModalOpen(false)}
+            >
+                <div style={modalStyle}>
+                    <FuzzySearch
+                        placeholder="Search degree"
+                        list={degreeData}
+                        keys={['program', 'degree', 'major', 'concentration', 'year']}
+                        width={'100%'}
+                        // inputStyle={searchBarStyle}
+                        inputWrapperStyle={{boxShadow: '0px 0px 0px 0px rgba(0, 0, 0, 0)'}}
+                        listItemStyle={{}}
+                        listWrapperStyle={{boxShadow: '0px 0px 0px 0px rgba(0, 0, 0, 0)', borderWeight: '0px', width: '100%'}}
+                        onSelect={(newSelectedItem:any) => {
+                            setResults(newSelectedItem)
+                        }}
+                        resultsTemplate={(props: any, state: any, styles:any, clickHandler:any) => {
+                            return state.results.map((degree:any, i:any) => {
+                                return (
+                                    <Degree degree={degree}/>
+                                );
+                            });
+                        }}
+                    />
+                </div>
+            </Modal>
+        )
+    }
+
     const ref = useRef(null);
     const [totalWidth, setTotalWidth] = useState(0);
 
@@ -51,12 +129,38 @@ const FourYearPlanPage = () => {
         setTotalWidth(ref.current ? ref.current.offsetWidth : 0)
     }, [ref.current]);
 
+
+    useEffect(() => {
+        setDegrees(degreeData)
+        // const getDegrees = async () => {
+        //     const res = await axios.get('/degrees/2023');
+        //     console.log(res)
+        //     return;
+        // }
+        // getDegrees();
+
+        // fetch('http://localhost:8000/api/degree/degrees/2023', {
+        //     mode: 'cors',
+        //     headers: {
+        //       'Access-Control-Allow-Origin':'*'
+        //     }
+        //   })
+        //     .then(response => response.json())
+        //     .then(data => {
+        //         console.log(data);
+        //     });
+    }, [])
+
     const [leftWidth, setLeftWidth] = useState(800);
     // const [rightWidth, setRightWidth] = useState(0);
     const [searchClosed, setSearchClosed] = useState(true);
-
     const [drag, setDrag] = useState(false);
     const [x, setX] = useState(0);
+
+    const [degreeModalOpen, setDegreeModalOpen] = React.useState(false);
+
+    const [degrees, setDegrees] = useState([{}]);
+    const [results, setResults] = useState([]);
 
     const pauseEvent = (e: any) => {
         if(e.stopPropagation) e.stopPropagation();
@@ -99,13 +203,16 @@ const FourYearPlanPage = () => {
     
     return (
         <div style={pageStyle} ref={ref}>
+            <div>
+            <ModalWrapper/>
+            </div>
             <div onMouseMove={resizeFrame} onMouseUp={endResize} className="d-flex">
                 <div style={{...panelContainerStyle, width: leftWidth + 'px'}}>
                     <PlanPanel/>
                 </div>
                 <DragHandle/>
                 <div style={{...panelContainerStyle, width: totalWidth - leftWidth + 'px'}} className="">
-                    <ReqPanel setSearchClosed={setSearchClosed}/>
+                    <ReqPanel setSearchClosed={setSearchClosed} setDegreeModalOpen={setDegreeModalOpen}/>
                 </div>
                 {!searchClosed && <div style={panelContainerStyle} className="col-3">
                     <SearchPanel closed={searchClosed} setClosed={setSearchClosed}/>

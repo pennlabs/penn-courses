@@ -1,26 +1,29 @@
 import Icon from '@mdi/react';
-import { mdiNoteEditOutline, mdiArrowLeft } from '@mdi/js';
+import { mdiNoteEditOutline, mdiArrowLeft, mdiPlus } from '@mdi/js';
 import majorsdata from '../../data/majors';
 import Major from './Major';
 import { useCallback, useEffect, useState } from 'react';
 import update from 'immutability-helper'
 import { Stack } from '@mui/material';
-import { titleStyle, topBarStyle } from '@/pages/FourYearPlanPage';
+import { topBarStyle } from '@/pages/FourYearPlanPage';
 import SearchPanel from '../Search/SearchPanel';
+import SwitchFromList from '../FourYearPlan/SwitchFromList';
+import Requirement from './Requirement';
 
 const majorStackStyle = {
   height: '90%',
   overflow: 'auto'
 }
   
-  const ReqPanel = ({setSearchClosed}:any) => {
+  const ReqPanel = ({setSearchClosed, setDegreeModalOpen}:any) => {
       const [editMode, setEditMode] = useState(false);
-      const [majors, setMajors] = useState(majorsdata);
+      const [majors, setMajors] = useState(['Computer Science, BSE', 'English, BAS']);
+      const [currentMajorStr, setCurrentMajorStr] = useState(majors[0]);
+      const [major, setMajor] = useState({});
 
-      
       useEffect(() => {
-          setMajors(majorsdata);
-      }, []);
+        setMajor(majorsdata[0]);
+      }, [currentMajorStr])
 
       const moveMajor = useCallback((dragIndex: number, hoverIndex: number) => {
         setMajors((prevMajors) =>
@@ -37,15 +40,21 @@ const majorStackStyle = {
         <>
           <div style={topBarStyle}>
               <div className='d-flex justify-content-between'>
-                <div style={titleStyle}>Major/Minor/Elective</div>
+              <SwitchFromList
+                  current={currentMajorStr} 
+                  setCurrent={setCurrentMajorStr} 
+                  list={majors} 
+                  setList={setMajors} 
+                  addHandler={() => setDegreeModalOpen(true)}/>
                 <label onClick={() => setEditMode(!editMode)}>
                     <Icon path={editMode ? mdiArrowLeft : mdiNoteEditOutline } size={1}/>
                 </label>
               </div>
           </div>
-          <div style={majorStackStyle}>
-              {/** majors */}
-                  {majors.map((major, index) => <Major key={index} index={index} major={major} editMode={editMode} moveMajor={moveMajor} setSearchClosed={setSearchClosed}/>)}
+          <div className='m-3'>
+            {major.requirements.map((requirement: any) => ( 
+              <Requirement key={requirement.id} requirement={requirement} setSearchClosed={setSearchClosed}/>
+            ))}
           </div>
         </>
     );

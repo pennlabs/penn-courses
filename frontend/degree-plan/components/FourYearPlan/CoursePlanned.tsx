@@ -40,8 +40,8 @@ const CoursePlanned = ({course, semesterIndex, removeCourse, courseOpen, setCour
     const [open, setOpen] = useState(false);
     
     const handleClickCourse = () => {
-      setCourseOpen(courseCode);
-      console.log(courseCode);
+      setCourseOpen(true);
+      // console.log(courseCode);
     }
 
     const [{ isDragging }, drag] = useDrag(() => ({

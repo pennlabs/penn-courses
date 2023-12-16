@@ -12,7 +12,8 @@ const courseStackStyle = {
 
 const CoursesPlanned = ({courses, semesterIndex, removeCourse}: any) => {
 
-    const [courseOpen, setCourseOpen] = useState("");
+    const [courseOpen, setCourseOpen] = useState(false);
+    
     return (
         <div style={courseStackStyle}>
             {courses.map((course: any) => 

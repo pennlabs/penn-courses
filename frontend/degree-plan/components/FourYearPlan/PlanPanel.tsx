@@ -8,7 +8,8 @@ import Icon from '@mdi/react';
 import { mdiMenuRight, mdiMenuLeft, mdiPoll } from '@mdi/js';
 import PlanTabs from "./PlanTabs";
 import { Divider } from "@mui/material";
-import { titleStyle, topBarStyle } from "@/pages/FourYearPlanPage";
+import {topBarStyle } from "@/pages/FourYearPlanPage";
+import SwitchFromList from "./SwitchFromList";
 
 const semesterPanelStyle = {
     paddingLeft: '20px',
@@ -37,9 +38,9 @@ const semesterPanelStyle = {
 const PlanPanel = () => {
     const [semesters, setSemesters] = useState(semestersData);
     const [plans, setPlans] = useState(['Degree Plan 1', 'Degree Plan 2']);
-    const [currrentPlan, setCurrentPlan] = useState(plans[0]);
+    const [currentPlan, setCurrentPlan] = useState(plans[0]);
     const [showDropdown, setShowDropdown] = useState(false);
-    const [showStats, setShowStats] = useState(false);
+    const [showStats, setShowStats] = useState(true);
 
     useEffect(() => {
         setSemesters(semesters);
@@ -48,7 +49,7 @@ const PlanPanel = () => {
     useEffect(() => {
         // TODO: switch plan
 
-    }, [currrentPlan])
+    }, [currentPlan])
 
     const addCourse = (toIndex: number, course: any, fromIndex:number) => {
         if (fromIndex === toIndex) return;
@@ -103,13 +104,12 @@ const PlanPanel = () => {
             {/* <Tabs/> */}
             <div className="d-flex justify-content-between" style={topBarStyle}>
                 <div className="d-flex justify-content-start" >
-                    <div onClick={() => setShowDropdown(!showDropdown)}>
-                        <div className="text-bold" style={titleStyle}>
-                            {currrentPlan}
-                            <Icon path={showDropdown ? mdiMenuLeft : mdiMenuRight} size={1} />
-                        </div>
-                    </div>
-                    {showDropdown && <PlanTabs plans={plans} handleChoosePlan={handleChoosePlan} setPlans={setPlans} setCurrentPlan={setCurrentPlan}/>}
+                    <SwitchFromList
+                        current={currentPlan} 
+                        setCurrent={setCurrentPlan} 
+                        list={plans} 
+                        setList={setPlans} 
+                        addHandler={null}/>
                 </div>
                 <div onClick={() => setShowStats(!showStats)}>
                     <Icon path={mdiPoll} size={1} color={showStats ? '' : '#F2F3F4'}/>

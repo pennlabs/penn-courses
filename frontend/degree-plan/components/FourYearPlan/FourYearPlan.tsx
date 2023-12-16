@@ -1,10 +1,11 @@
 import React from "react";
+import {useSelector} from 'react-redux';
 import { fourYearWrapper } from "../../styles/FourYearStyles";
 import Year from "./Year";
-import { IYear } from "@/models/Types";
+import { RootState, IYear } from "../../store/configureStore";
 
 const FourYearPlan = () => {
-    const years: Array<IYear> =  []
+    const years = useSelector((store : RootState) => store.entities.fourYears);
     const fourYearPlanPrompt = "Drag a course title from cart and drop it in the areas below!";
 
     return (
