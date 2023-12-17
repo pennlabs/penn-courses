@@ -66,7 +66,7 @@ class FulfillmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Fulfillment
-        fields = "__all__"
+        fields = ["degree_plan", "full_code", "course", "semester"]
 
 
 class DegreePlanListSerializer(serializers.ModelSerializer):

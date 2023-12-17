@@ -1,18 +1,19 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django_auto_prefetching import AutoPrefetchViewSetMixin
-from rest_framework import generics, status, viewsets
+from rest_framework import generics, status, mixins, viewsets
 from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from courses.models import Course
 from courses.serializers import CourseListSerializer
-from degree.models import Degree, DegreePlan, Rule
+from degree.models import Degree, DegreePlan, Fulfillment, Rule
 from degree.serializers import (
     DegreeDetailSerializer,
     DegreeListSerializer,
     DegreePlanDetailSerializer,
     DegreePlanListSerializer,
+    FulfillmentSerializer,
 )
 from PennCourses.docs_settings import PcxAutoSchema
 
@@ -75,6 +76,17 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         context = super().get_serializer_context()
         context.update({"request": self.request})  # used to get the user
         return context
+
+
+class FulfillmentViewSet(viewsets.ModelViewSet):
+    """
+    List, retrieve, create, destroy, and update a Fulfillment.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    serializer_class = FulfillmentSerializer
+    queryset = Fulfillment.objects.all()
 
 
 @api_view(["GET"])
