@@ -1,17 +1,17 @@
 from django.urls import include, path
 from rest_framework import routers
 
-from degree.views import DegreeDetail, DegreeList, UserDegreePlanViewset, rule_courses
+from degree.views import DegreeDetail, DegreeList, DegreePlanViewset, rule_courses
 
 
 router = routers.DefaultRouter()
 
-router.register("degreeplans", UserDegreePlanViewset, basename="degreeplans")
+router.register("degreeplans", DegreePlanViewset, basename="degreeplans")
 
 urlpatterns = [
     path("degrees/", DegreeList.as_view(), name="degree-list"),
     path(
-        "degree_detail/<pk>",
+        "degree_detail/<degree_id>",
         DegreeDetail.as_view(),
         name="degree-detail",
     ),

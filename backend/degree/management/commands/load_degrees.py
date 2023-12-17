@@ -36,7 +36,8 @@ class Command(BaseCommand):
 
         for degree_file in listdir(directory):
             year, program, degree, major, concentration = re.match(
-                r"(\d+)-(\w+)-(\w+)-(\w+)(?:-(\w+))?", degree_file).groups()
+                r"(\d+)-(\w+)-(\w+)-(\w+)(?:-(\w+))?", degree_file
+            ).groups()
             if program not in program_code_to_name:
                 print(f"Skipping {degree_file} because {program} is not an applicable program code")
                 continue
@@ -47,7 +48,7 @@ class Command(BaseCommand):
                     degree=degree,
                     major=major,
                     concentration=concentration,
-                    year=year
+                    year=year,
                 ).delete()
 
                 degree = Degree(

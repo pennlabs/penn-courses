@@ -200,11 +200,12 @@ class Rule(models.Model):
         if self.num is not None and count < self.num:
             return False
         return True
-    
+
     def get_q_object(self) -> Q | None:
         if not self.q:
             return None
         return q_object_parser.parse(self.q)
+
 
 class DegreePlan(models.Model):
     """
@@ -275,7 +276,8 @@ class DegreePlan(models.Model):
         violated_dcrs = set()
 
         relevant_dcrs = DoubleCountRestriction.objects.filter(
-            Q(rule__in=rules) | Q(other_rule__in=rules)).all()
+            Q(rule__in=rules) | Q(other_rule__in=rules)
+        ).all()
         for dcr in relevant_dcrs:
             if dcr.is_double_count_violated(self):
                 violated_dcrs.add(dcr)
@@ -287,45 +289,6 @@ class DegreePlan(models.Model):
                 satisfied_rules.add(rule)
 
         return (satisfied_rules, violated_dcrs)
-
-    # def check_degree(self):
-    #     """
-    #     Recheck the rules starting with the affected rules and moving up
-    #     """
-    #     affected_rules = list(self.satisfactions.filter(last_updated__gt=F("last_checked")))
-    #     fulfillments = self.fulfillments.all()
-    #     satisfactions = self.satisfactions.all()
-    #     double_count_restrictions = self.degree.double_count_restrictions.all()
-
-    #     updated_satisfaction = set()
-
-    #     for restriction in double_count_restrictions:
-    #         evaluation = restriction.check_double_count(self)
-    #         for satisfaction in satisfactions.filter(
-    #             Q(rule=restriction.rule) | Q(rule=restriction.other_rule)
-    #         ).all():
-    #             satisfaction.satisfied = evaluation
-    #             satisfaction.last_checked = timezone.now()
-    #             satisfaction.save(update_fields=["satisfied", "last_checked"])
-    #             updated_satisfaction.add(satisfaction)
-
-    #     while len(affected_rules) > 0:
-    #         rule = affected_rules.pop()
-    #         if rule is None:
-    #             continue
-    #         evaluation = rule.evaluate(fulfillments)
-    #         satisfaction = satisfactions.filter(rule=rule).get()
-    #         if evaluation != satisfaction.satisfied:  # satisfaction status changed
-    #             affected_rules.append(rule.parent)
-
-    #             # AND the evaluation with previous state if state changed in this check
-    #             if satisfaction in updated_satisfaction:
-    #                 satisfaction.satisfied = evaluation and satisfaction.satisfied
-    #             else:
-    #                 satisfaction.satisfied = evaluation
-
-    #             satisfaction.last_checked = timezone.now()
-    #             satisfaction.save(update_fields=["satisfied", "last_checked"])
 
 
 class Fulfillment(models.Model):

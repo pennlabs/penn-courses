@@ -39,9 +39,9 @@ class DoubleCountRestrictionSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class DegreePlanDetailSerializer(serializers.ModelSerializer):
+class DegreeDetailSerializer(serializers.ModelSerializer):
 
-    # field to represent the rules related to this Degree Plan
+    # Field to represent the rules related to this Degree
     rules = RuleSerializer(many=True, read_only=True)
     double_count_restrictions = DoubleCountRestrictionSerializer(many=True, read_only=True)
 
@@ -69,29 +69,29 @@ class FulfillmentSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class UserDegreePlanListSerializer(serializers.ModelSerializer):
-    degree_plan = DegreeListSerializer(read_only=True)
-    id = serializers.ReadOnlyField(help_text="The id of the UserDegreePlan.")
+class DegreePlanListSerializer(serializers.ModelSerializer):
+    degree = DegreeListSerializer(read_only=True)
+    id = serializers.ReadOnlyField(help_text="The id of the DegreePlan.")
 
     class Meta:
         model = DegreePlan
-        fields = ["id", "name", "degree_plan"]
+        fields = ["id", "name", "degree"]
 
 
-class UserDegreePlanDetailSerializer(serializers.ModelSerializer):
+class DegreePlanDetailSerializer(serializers.ModelSerializer):
     fulfillments = FulfillmentSerializer(
         many=True,
         read_only=True,
         help_text="The courses used to fulfill degree plan.",
     )
-    degree_plan = DegreePlanDetailSerializer(read_only=True)
-    degree_plan_id = serializers.PrimaryKeyRelatedField(
+    degree = DegreeDetailSerializer(read_only=True)
+    degree_id = serializers.PrimaryKeyRelatedField(
         write_only=True,
-        source="degree_plan",
+        source="degree",
         queryset=Degree.objects.all(),
-        help_text="The degree plan to which this user degree plan belongs.",
+        help_text="The degree_id this degree plan belongs to.",
     )
-    id = serializers.ReadOnlyField(help_text="The id of the user degree plan.")
+    id = serializers.ReadOnlyField(help_text="The id of the degree plan.")
     person = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:

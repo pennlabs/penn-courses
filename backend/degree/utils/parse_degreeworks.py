@@ -219,13 +219,9 @@ def parse_rulearray(
 
                 # add if part or else part, depending on evaluation of the condition
                 if evaluation:
-                    parse_rulearray(
-                        rule_req["ifPart"]["ruleArray"], degree, rules, parent=parent
-                    )
+                    parse_rulearray(rule_req["ifPart"]["ruleArray"], degree, rules, parent=parent)
                 elif "elsePart" in rule_req:
-                    parse_rulearray(
-                        rule_req["elsePart"]["ruleArray"], degree, rules, parent=parent
-                    )
+                    parse_rulearray(rule_req["elsePart"]["ruleArray"], degree, rules, parent=parent)
             case "Subset":
                 if "ruleArray" in rule_json:
                     parse_rulearray(rule_json["ruleArray"], degree, rules, parent=parent)

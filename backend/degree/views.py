@@ -1,20 +1,18 @@
 from django.core.exceptions import ObjectDoesNotExist
-from django.db import IntegrityError
 from django_auto_prefetching import AutoPrefetchViewSetMixin
-from rest_framework import generics, status, viewsets, mixins
+from rest_framework import generics, status, viewsets
+from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.decorators import api_view, permission_classes
-from courses.serializers import CourseListSerializer
 
 from courses.models import Course
-from degree.models import Degree, Rule, DegreePlan
-from degree.utils.model_utils import q_object_parser
+from courses.serializers import CourseListSerializer
+from degree.models import Degree, DegreePlan, Rule
 from degree.serializers import (
-    DegreePlanDetailSerializer,
+    DegreeDetailSerializer,
     DegreeListSerializer,
-    UserDegreePlanDetailSerializer,
-    UserDegreePlanListSerializer,
+    DegreePlanDetailSerializer,
+    DegreePlanListSerializer,
 )
 from PennCourses.docs_settings import PcxAutoSchema
 
@@ -48,13 +46,13 @@ class DegreeDetail(generics.RetrieveAPIView):
         },
     )
 
-    serializer_class = DegreePlanDetailSerializer
+    serializer_class = DegreeDetailSerializer
     queryset = Degree.objects.all()
 
 
-class UserDegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
+class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     """
-    list, retrieve, create, destroy, and update user degree plans.
+    List, retrieve, create, destroy, and update a DegreePlan.
     """
 
     permission_classes = [IsAuthenticated]
@@ -63,15 +61,15 @@ class UserDegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         queryset = DegreePlan.objects.filter(person=self.request.user)
         queryset = queryset.prefetch_related(
             "fulfillments",
-            "degree_plan",
-            "degree_plan__rules",
+            "degree",
+            "degree__rules",
         )
         return queryset
 
     def get_serializer_class(self):
         if self.action == "list":
-            return UserDegreePlanListSerializer
-        return UserDegreePlanDetailSerializer
+            return DegreePlanListSerializer
+        return DegreePlanDetailSerializer
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -91,7 +89,7 @@ def rule_courses(request, rule_id: int):
             data={"error": f"Rule with id {rule_id} does not exist."},
             status=status.HTTP_404_NOT_FOUND,
         )
-    
+
     q = rule.get_q_object()
     if q is None:
         return Response(

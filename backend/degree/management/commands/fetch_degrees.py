@@ -47,12 +47,14 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **kwargs):
-        print(dedent(
-            """
+        print(
+            dedent(
+                """
             Note: this script deletes any existing degres in the database that overlap with the
             degrees fetched from degreeworks.
             """
-        ))
+            )
+        )
 
         since_year = kwargs["since_year"]
         to_year = kwargs["to_year"] or int(get_current_semester()[:4])
