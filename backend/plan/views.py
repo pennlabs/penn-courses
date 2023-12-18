@@ -504,14 +504,20 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         from_path = pk == "path"
         if not from_path and (not pk or not Schedule.objects.filter(id=pk).exists()):
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            semester = self.get_semester(request.data)
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             if from_path:
-                schedule, _ = self.get_queryset().get_or_create(
+                schedule, _ = self.get_queryset(semester).get_or_create(
                     name=PATH_REGISTRATION_SCHEDULE_NAME,
-                    defaults={"person": self.request.user, "semester": get_current_semester},
+                    defaults={"person": self.request.user, "semester": semester},
                 )
             else:
-                schedule = self.get_queryset().get(id=pk)
+                schedule = self.get_queryset(semester).get(id=pk)
         except Schedule.DoesNotExist:
             return Response(
                 {"detail": "You do not have access to the specified schedule."},
@@ -519,10 +525,6 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             )
 
         name = self.validate_name(request, existing_schedule=schedule, allow_path=from_path)
-        try:
-            semester = self.get_semester(request.data)
-        except ValueError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             sections = self.get_sections(request.data, semester, skip_missing=from_path)
@@ -570,14 +572,14 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             if (
                 "id" in request.data
             ):  # Also from above we know that this id does not conflict with existing schedules.
-                schedule = self.get_queryset().create(
+                schedule = self.get_queryset(semester).create(
                     person=request.user,
                     semester=semester,
                     name=name,
                     id=request.data.get("id"),
                 )
             else:
-                schedule = self.get_queryset().create(
+                schedule = self.get_queryset(semester).create(
                     person=request.user,
                     semester=semester,
                     name=name,
@@ -597,9 +599,10 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
     queryset = Schedule.objects.none()  # included redundantly for docs
 
-    def get_queryset(self):
-        sem = get_current_semester()
-        queryset = Schedule.objects.filter(person=self.request.user, semester=sem)
+    def get_queryset(self, semester=None):
+        if not semester:
+            semester = get_current_semester()
+        queryset = Schedule.objects.filter(person=self.request.user, semester=semester)
         queryset = queryset.prefetch_related(
             Prefetch("sections", Section.with_reviews.all()),
             "sections__associated_sections",
