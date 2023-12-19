@@ -12,6 +12,8 @@ def set_all_status(semester=None):
     if semester is None:
         semester = get_current_semester()
     statuses = registrar.get_all_course_status(semester)
+    if not statuses:
+        return
     for status in tqdm(statuses):
         section_code = status.get("section_id_normalized")
         if section_code is None:
