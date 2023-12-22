@@ -231,7 +231,7 @@ export class ReviewPage extends Component {
 
     const {
       code,
-      semester,
+      url_semester,
       data,
       rowCode,
       liveData,
@@ -257,7 +257,7 @@ export class ReviewPage extends Component {
                 <InfoBox
                   type={type}
                   code={code}
-                  semester={semester}
+                  url_semester={url_semester}
                   data={data}
                   liveData={liveData}
                   selectedCourses={selectedCourses}
@@ -279,7 +279,7 @@ export class ReviewPage extends Component {
                   <DetailsBox
                     type={type}
                     course={code}
-                    semester={semester}
+                    url_semester={url_semester}
                     instructor={rowCode}
                     isCourseEval={isCourseEval}
                     ref={this.tableRef}
@@ -301,7 +301,7 @@ export class ReviewPage extends Component {
               <GraphBox
                 key={isAverage}
                 courseCode={code}
-                semester={semester}
+                url_semester={url_semester}
                 isAverage={isAverage}
                 setIsAverage={this.setIsAverage}
               />
