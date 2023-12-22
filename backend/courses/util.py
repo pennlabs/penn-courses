@@ -559,7 +559,7 @@ def upsert_course_from_opendata(info, semester, missing_sections=None):
     course.save()
 
     if missing_sections:
-        missing_sections.discard(section.full_code)
+        missing_sections.discard(section.id)
 
 
 def add_attributes(course, attributes):

@@ -572,18 +572,24 @@ class Section(models.Model):
     )
 
     ACTIVITY_CHOICES = (
+        ("", "Undefined"),
         ("CLN", "Clinic"),
+        ("CRT", "Clinical Rotation"),
+        ("DAB", "Dissertation Abroad"),
         ("DIS", "Dissertation"),
+        ("DPC", "Doctoral Program Exchange"),
+        ("FLD", "Field Work"),
+        ("HYB", "Hybrid"),
         ("IND", "Independent Study"),
         ("LAB", "Lab"),
         ("LEC", "Lecture"),
         ("MST", "Masters Thesis"),
+        ("ONL", "Online"),
+        ("PRC", "Practicum"),
         ("REC", "Recitation"),
         ("SEM", "Seminar"),
         ("SRT", "Senior Thesis"),
         ("STU", "Studio"),
-        ("FLD", "Field Work"),
-        ("", "Undefined"),
     )
 
     class Meta:
