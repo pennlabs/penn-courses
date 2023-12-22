@@ -172,21 +172,24 @@ export const setPrimaryScheduleIdOnFrontend = (scheduleId) => ({
     type: SET_PRIMARY_SCHEDULE_ID_ON_FRONTEND,
 });
 
-export const checkForDefaultSchedules = (schedulesFromBackend) => (
-    dispatch
-) => {
-    if (!schedulesFromBackend.find((acc, { name }) => acc || name === "cart")) {
-        dispatch(createScheduleOnBackend("cart"));
-    }
-    // if the user doesn't have an initial schedule, create it
-    if (
-        schedulesFromBackend.length === 0 ||
-        (schedulesFromBackend.length === 1 &&
-            schedulesFromBackend[0].name === "cart")
-    ) {
-        dispatch(createScheduleOnBackend("Schedule"));
-    }
-};
+export const checkForDefaultSchedules =
+    (schedulesFromBackend) => (dispatch) => {
+        if (
+            !schedulesFromBackend.find(
+                (acc, { name }) => acc || name === "cart"
+            )
+        ) {
+            dispatch(createScheduleOnBackend("cart"));
+        }
+        // if the user doesn't have an initial schedule, create it
+        if (
+            schedulesFromBackend.length === 0 ||
+            (schedulesFromBackend.length === 1 &&
+                schedulesFromBackend[0].name === "cart")
+        ) {
+            dispatch(createScheduleOnBackend("Schedule"));
+        }
+    };
 
 export const loadRequirements = () => (dispatch) =>
     doAPIRequest("/base/current/requirements/").then(
@@ -612,65 +615,68 @@ export function fetchSectionInfo(searchData) {
  * @param sections The list of sections for the schedule
  * @returns {Function}
  */
-export const createScheduleOnBackend = (name, sections = []) => (dispatch) => {
-    const scheduleObj = {
-        name,
-        sections,
+export const createScheduleOnBackend =
+    (name, sections = []) =>
+    (dispatch) => {
+        const scheduleObj = {
+            name,
+            sections,
+        };
+        doAPIRequest("/plan/schedules/", {
+            method: "POST",
+            credentials: "include",
+            mode: "same-origin",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCsrf(),
+            },
+            body: JSON.stringify(scheduleObj),
+        })
+            .then((response) => response.json())
+            .then(({ id }) => {
+                dispatch(createScheduleOnFrontend(name, id, sections));
+            })
+            .catch((error) => {
+                console.log(error);
+            });
     };
-    doAPIRequest("/plan/schedules/", {
-        method: "POST",
-        credentials: "include",
-        mode: "same-origin",
-        headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCsrf(),
-        },
-        body: JSON.stringify(scheduleObj),
-    })
-        .then((response) => response.json())
-        .then(({ id }) => {
-            dispatch(createScheduleOnFrontend(name, id, sections));
-        })
-        .catch((error) => {
-            console.log(error);
-        });
-};
 
-export const deleteScheduleOnBackend = (user, scheduleName, scheduleId) => (
-    dispatch
-) => {
-    if (
-        scheduleName === "cart" ||
-        scheduleName === PATH_REGISTRATION_SCHEDULE_NAME
-    ) {
-        return;
-    }
+export const deleteScheduleOnBackend =
+    (user, scheduleName, scheduleId) => (dispatch) => {
+        if (
+            scheduleName === "cart" ||
+            scheduleName === PATH_REGISTRATION_SCHEDULE_NAME
+        ) {
+            return;
+        }
 
-    dispatch(deletionAttempted(scheduleName));
-    rateLimitedFetch(`/plan/schedules/${scheduleId}/`, {
-        method: "DELETE",
-        credentials: "include",
-        mode: "same-origin",
-        headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCsrf(),
-        },
-    })
-        .then(() => {
-            dispatch(deleteScheduleOnFrontend(scheduleName));
-            dispatch(findOwnPrimarySchedule(user));
-            dispatch(
-                fetchBackendSchedules((schedulesFromBackend) => {
-                    dispatch(checkForDefaultSchedules(schedulesFromBackend));
-                })
-            );
+        dispatch(deletionAttempted(scheduleName));
+        rateLimitedFetch(`/plan/schedules/${scheduleId}/`, {
+            method: "DELETE",
+            credentials: "include",
+            mode: "same-origin",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCsrf(),
+            },
         })
-        .catch((error) => {
-            console.log(error);
-        });
-};
+            .then(() => {
+                dispatch(deleteScheduleOnFrontend(scheduleName));
+                dispatch(findOwnPrimarySchedule(user));
+                dispatch(
+                    fetchBackendSchedules((schedulesFromBackend) => {
+                        dispatch(
+                            checkForDefaultSchedules(schedulesFromBackend)
+                        );
+                    })
+                );
+            })
+            .catch((error) => {
+                console.log(error);
+            });
+    };
 
 export const findOwnPrimarySchedule = (user) => (dispatch) => {
     doAPIRequest("/plan/primary-schedules/").then((res) =>
@@ -692,27 +698,26 @@ export const findOwnPrimarySchedule = (user) => (dispatch) => {
     );
 };
 
-export const setCurrentUserPrimarySchedule = (user, scheduleId) => (
-    dispatch
-) => {
-    const scheduleIdObj = {
-        schedule_id: scheduleId,
-    };
-    const init = {
-        method: "POST",
-        credentials: "include",
-        mode: "same-origin",
-        headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCsrf(),
-        },
-        body: JSON.stringify(scheduleIdObj),
-    };
+export const setCurrentUserPrimarySchedule =
+    (user, scheduleId) => (dispatch) => {
+        const scheduleIdObj = {
+            schedule_id: scheduleId,
+        };
+        const init = {
+            method: "POST",
+            credentials: "include",
+            mode: "same-origin",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCsrf(),
+            },
+            body: JSON.stringify(scheduleIdObj),
+        };
 
-    doAPIRequest("/plan/primary-schedules/", init)
-        .then(() => {
-            dispatch(findOwnPrimarySchedule(user));
-        })
-        .catch((error) => console.log(error));
-};
+        doAPIRequest("/plan/primary-schedules/", init)
+            .then(() => {
+                dispatch(findOwnPrimarySchedule(user));
+            })
+            .catch((error) => console.log(error));
+    };
