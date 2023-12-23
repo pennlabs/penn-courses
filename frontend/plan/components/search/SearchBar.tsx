@@ -43,6 +43,13 @@ interface SearchBarProps {
         WH: Attribute[];
         SAS: Attribute[];
         NURS: Attribute[];
+        LPS: Attribute[];
+        GSE: Attribute[];
+        MED: Attribute[];
+        VET: Attribute[];
+        MODE: Attribute[];
+        DSGN: Attribute[];
+        LAW: Attribute[];
     };
     filterData: FilterData;
     addSchoolAttr: (school: string) => void;
