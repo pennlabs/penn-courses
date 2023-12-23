@@ -1,8 +1,15 @@
-export enum School {
+export enum School { // TODO: need to add more here?
     SEAS = "SEAS",
     WHARTON = "WH",
     COLLEGE = "SAS",
     NURSING = "NURS",
+    LPS = "LPS",
+    DESIGN = "DSGN",
+    GSE = "GSE",
+    LAW = "LAW",
+    MEDICINE = "MED",
+    GRADE_MODE = "MODE", // this isn't really a school, but it's used for course attributes
+    VET = "VET"
 }
 
 export enum Status {
@@ -119,12 +126,10 @@ export interface Profile {
     phone: string | null;
 }
 
-export interface Requirement {
-    id: string;
+export interface Attribute {
     code: string;
     school: School;
-    semester: string;
-    name: string;
+    description: string;
 }
 
 export interface Course {
@@ -140,7 +145,7 @@ export interface Course {
     recommendation_score: number;
     work_required: number;
     crosslistings?: string[];
-    requirements?: Requirement[];
+    attributes?: Attribute[];
     num_sections: number;
 }
 
@@ -177,7 +182,7 @@ export interface Friendship {
 export interface FilterData {
     searchString: string;
     searchType: string;
-    selectedReq: { [K in string]: boolean };
+    selectedAttrs: { [K in string]: boolean };
     difficulty: [number, number];
     course_quality: [number, number]; // upper and lower bound for course_quality
     instructor_quality: [number, number];

@@ -7,20 +7,20 @@ import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicato
 import { useRouter } from "next/router";
 import { DropdownButton } from "./DropdownButton";
 import { ButtonFilter } from "./ButtonFilter";
-import { SchoolReq } from "./SchoolReq";
+import { SchoolAttrs } from "./SchoolAttrs";
 import { RangeFilter } from "./RangeFilter";
 import { CheckboxFilter } from "./CheckboxFilter";
 import { DayTimeFilter } from "./DayTimeFilter";
 import { SearchField } from "./SearchField";
 import { initialState as defaultFilters } from "../../reducers/filters";
 import initiateSync from "../syncutils";
-import { FilterData, User, Requirement } from "../../types";
+import { FilterData, User, Attribute } from "../../types";
 
 import {
     fetchCourseSearch,
-    loadRequirements,
-    addSchoolReq,
-    remSchoolReq,
+    loadAttributes,
+    addSchoolAttr,
+    remSchoolAttr,
     updateSearchText,
     updateRangeFilter,
     updateCheckboxFilter,
@@ -37,21 +37,21 @@ const DAY_TIME_ENABLED = true;
 // removed: <F, K extends keyof F, V extends keyof K>
 interface SearchBarProps {
     startSearch: (searchObj: FilterData) => void;
-    loadRequirements: () => void;
-    schoolReq: {
-        SEAS: Requirement[];
-        WH: Requirement[];
-        SAS: Requirement[];
-        NURS: Requirement[];
+    loadAttributes: () => void;
+    schoolAttrs: {
+        SEAS: Attribute[];
+        WH: Attribute[];
+        SAS: Attribute[];
+        NURS: Attribute[];
     };
     filterData: FilterData;
-    addSchoolReq: (school: string) => void;
-    remSchoolReq: (school: string) => void;
+    addSchoolAttr: (school: string) => void;
+    remSchoolAttr: (school: string) => void;
     updateSearchText: (text: string) => void;
     updateRangeFilter: (field: string) => (values: [number, number]) => void;
     clearAll: () => void;
     clearFilter: (search: string) => void;
-    defaultReqs: { [x: string]: boolean };
+    defaultAttrs: { [x: string]: boolean };
     clearSearchResults: () => void;
     isLoadingCourseInfo: boolean;
     isSearchingCourseInfo: boolean;
@@ -77,16 +77,16 @@ interface SearchBarProps {
 
 function shouldSearch(filterData: FilterData) {
     const searchString = filterData.searchString.length >= 3;
-    let selectedReq = false;
-    if (filterData.selectedReq) {
-        for (const key of Object.keys(filterData.selectedReq)) {
-            if (filterData.selectedReq[key]) {
-                selectedReq = true;
+    let selectedAttrs = false;
+    if (filterData.selectedAttrs) {
+        for (const code of Object.keys(filterData.selectedAttrs)) {
+            if (filterData.selectedAttrs[code]) {
+                selectedAttrs = true;
                 break;
             }
         }
     }
-    return searchString || selectedReq;
+    return searchString || selectedAttrs;
 }
 
 const MobileSearchBarOuterContainer = styled.div`
@@ -272,16 +272,16 @@ const DropdownContainer = styled.div`
 function SearchBar({
     /* eslint-disable no-shadow */
     startSearch, // from redux - dispatches fetch course search function (actions/index.js)
-    loadRequirements,
-    schoolReq,
+    loadAttributes,
+    schoolAttrs,
     filterData,
-    addSchoolReq,
-    remSchoolReq,
+    addSchoolAttr,
+    remSchoolAttr,
     updateSearchText,
     updateRangeFilter,
     clearAll,
     clearFilter,
-    defaultReqs,
+    defaultAttrs,
     clearSearchResults,
     isLoadingCourseInfo,
     isSearchingCourseInfo,
@@ -303,10 +303,9 @@ function SearchBar({
 SearchBarProps) {
     const router = useRouter();
 
-    //TODO: Add requirements support back
-    // useEffect(() => {
-    //     loadRequirements();
-    // }, [loadRequirements]);
+    useEffect(() => {
+        loadAttributes();
+    }, [loadAttributes]);
 
     useEffect(() => {
         // ensure that the user is logged in before initiating the sync
@@ -328,10 +327,10 @@ SearchBarProps) {
         property: V
     ) => () => {
         clearFilter(property);
-        if (property === "selectedReq") {
+        if (property === "selectedAttrs") {
             conditionalStartSearch({
                 ...filterData,
-                selectedReq: defaultReqs,
+                selectedAttrs: defaultAttrs,
             });
         } else {
             conditionalStartSearch({
@@ -368,14 +367,20 @@ SearchBarProps) {
 
     const dropDowns = (
         <DropdownContainer>
-            {/* <DropdownButton
-                title="Requirements"
-                filterData={filterData.selectedReq}
-                defaultFilter={defaultReqs}
-                    addSchoolReq={addSchoolReq}
-                    remSchoolReq={remSchoolReq}
+            <DropdownButton
+                title="Attributes"
+                filterData={filterData.selectedAttrs}
+                defaultFilter={defaultAttrs}
+                clearFilter={clearFilterSearch("selectedAttrs")}
+            >
+                <SchoolAttrs
+                    startSearch={conditionalStartSearch}
+                    filterData={filterData}
+                    schoolAttrs={schoolAttrs}
+                    addSchoolAttr={addSchoolAttr}
+                    remSchoolAttr={remSchoolAttr}
                 />
-            </DropdownButton> // TODO: re-enable */}
+            </DropdownButton>
             <DropdownButton
                 title="Difficulty"
                 filterData={filterData.difficulty}
@@ -548,7 +553,7 @@ SearchBarProps) {
                                     // TODO: remove any cast when getting rid of redux
                                     ...(defaultFilters.filterData as any),
                                     searchString: filterData.searchString,
-                                    selectedReq: defaultReqs,
+                                    selectedAttrs: defaultAttrs,
                                 });
                                 clearAll();
                             }}
@@ -624,7 +629,7 @@ SearchBarProps) {
                                     // TODO: remove any cast when getting rid of redux
                                     ...(defaultFilters.filterData as any),
                                     searchString: filterData.searchString,
-                                    selectedReq: defaultReqs,
+                                    selectedAttrs: defaultAttrs,
                                 });
                                 clearAll();
                             }}
@@ -660,9 +665,9 @@ SearchBarProps) {
 
 // @ts-ignore
 const mapStateToProps = (state) => ({
-    schoolReq: state.filters.schoolReq,
+    schoolAttrs: state.filters.schoolAttrs,
     filterData: state.filters.filterData,
-    defaultReqs: state.filters.defaultReqs,
+    defaultAttrs: state.filters.defaultAttrs,
     isLoadingCourseInfo: state.sections.courseInfoLoading,
     isSearchingCourseInfo: state.sections.searchInfoLoading,
     user: state.login.user,
@@ -674,11 +679,11 @@ const mapDispatchToProps = (dispatch) => ({
     login: (user: User) => dispatch(login(user)),
     logout: () => dispatch(logout()),
     clearAllScheduleData: () => dispatch(clearAllScheduleData()),
-    loadRequirements: () => dispatch(loadRequirements()),
+    loadAttributes: () => dispatch(loadAttributes()),
     startSearch: (filterData: FilterData) =>
         dispatch(fetchCourseSearch(filterData)),
-    addSchoolReq: (reqID: string) => dispatch(addSchoolReq(reqID)),
-    remSchoolReq: (reqID: string) => dispatch(remSchoolReq(reqID)),
+    addSchoolAttr: (reqID: string) => dispatch(addSchoolAttr(reqID)),
+    remSchoolAttr: (reqID: string) => dispatch(remSchoolAttr(reqID)),
     updateSearchText: (s: string) => dispatch(updateSearchText(s)),
     updateRangeFilter: (field: string) => (values: [number, number]) =>
         dispatch(updateRangeFilter(field, values)),
