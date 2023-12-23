@@ -71,6 +71,18 @@ const ReqList = styled.ul`
     overflow-y: auto;
 `;
 
+const AttrCount = styled.span`
+    background: #ea5a48;
+    color: #fff;
+    border-radius: 0.875rem;
+    font-size: 0.5625rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-left: 0.25rem;
+    padding: .125rem .375rem;
+    text-align: center;
+`;
+
 type SchoolDisplay = "College" | "Engineering" | "Nursing" | "Wharton" | "LPS" | "Veterinary" | "Design" | "Grade Mode" | "Medicine" | "GSE" | "Law";
 
 export function SchoolAttrs({
@@ -116,6 +128,10 @@ export function SchoolAttrs({
         setSelSchool(event.target.value as SchoolDisplay);
     };
 
+    const countSchoolAttrs = (school: SchoolDisplay) => {
+        return schoolAttrs[schoolCode[school]].filter(attr => filterData.selectedAttrs[attr.code]).length;
+    }
+
     const searchAttrs = fuzzysort.go(
         searchAttr,
         schoolAttrs[schoolCode[selSchool]]
@@ -143,7 +159,12 @@ export function SchoolAttrs({
                                 onChange={schoolHandleChange}
                             />
                             {/* eslint-disable-next-line jsx-a11y/label-has-for */}
-                            <RadioLabel htmlFor={school}>{school}</RadioLabel>
+                            <RadioLabel htmlFor={school}>
+                                {school}
+                                {countSchoolAttrs(school) > 0 &&
+                                    <AttrCount>{countSchoolAttrs(school)}</AttrCount>
+                                    }
+                            </RadioLabel>
                         </li>
                     ))}
                 </ul>
