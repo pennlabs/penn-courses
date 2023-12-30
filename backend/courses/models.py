@@ -12,7 +12,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 
-from PennCourses.settings.base import FIRST_BANNER_SEM
+from PennCourses.settings.base import FIRST_BANNER_SEM, PRE_NGSS_PERMIT_REQ_RESTRICTION_CODES
 from review.annotations import review_averages
 
 
@@ -551,6 +551,10 @@ class PreNGSSRestriction(models.Model):
         True if permission is required from the department for registration, false otherwise.
         """
         return "permission" in self.description.lower()
+
+    @staticmethod
+    def special_approval():
+        return PreNGSSRestriction.objects.filter(code__in=PRE_NGSS_PERMIT_REQ_RESTRICTION_CODES)
 
     def __str__(self):
         return f"{self.code} - {self.description}"

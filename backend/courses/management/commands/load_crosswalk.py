@@ -123,12 +123,11 @@ def load_crosswalk(print_missing=False, verbose=False):
                     for xlist_parent in root_course.crosslistings.all():
                         if xlist_parent.full_code.startswith(f"{child.department_code}-"):
                             parent_course = xlist_parent
-                if child.parent_course != parent_course or not child.manually_set_parent_course:
+                if child.parent_course != parent_course:
                     child.parent_course = parent_course
-                    child.manually_set_parent_course = True
                     to_update.append(child)
                     num_changed_parent_links += 1
-            Course.objects.bulk_update(to_update, ["parent_course", "manually_set_parent_course"])
+            Course.objects.bulk_update(to_update, ["parent_course"])
         if verbose:
             print(f"Changed {num_changed_parent_links} parent_course links.")
             print(f"{num_missing_roots}/{len(crosswalk)} roots not found in db")

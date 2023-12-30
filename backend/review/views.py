@@ -18,11 +18,7 @@ from courses.models import (
 )
 from courses.util import get_current_semester, get_or_create_add_drop_period, prettify_semester
 from PennCourses.docs_settings import PcxAutoSchema
-from PennCourses.settings.base import (
-    PRE_NGSS_PERMIT_REQ_RESTRICTION_CODES,
-    TIME_ZONE,
-    WAITLIST_DEPARTMENT_CODES,
-)
+from PennCourses.settings.base import TIME_ZONE, WAITLIST_DEPARTMENT_CODES
 from review.annotations import annotate_average_and_recent, review_averages
 from review.documentation import (
     ACTIVITY_CHOICES,
@@ -74,15 +70,8 @@ extra_metrics_section_filters = (
         id__in=Subquery(NGSSRestriction.special_approval().values("sections__id"))
     )  # Filter out sections that require permit for registration
     & ~Q(
-        id__in=Subquery(
-            PreNGSSRestriction.objects.filter(
-                code__in=PRE_NGSS_PERMIT_REQ_RESTRICTION_CODES
-            ).values("sections__id")
-        )
+        id__in=Subquery(PreNGSSRestriction.special_approval().values("sections__id"))
     )  # Filter out sections that require permit for registration (pre-NGSS)
-    & ~Q(
-        id__in=Subquery(NGSSRestriction.special_approval().values("sections__id"))
-    )  # Filter out sections that require special approval for registration
 )
 
 
