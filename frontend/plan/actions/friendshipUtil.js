@@ -70,50 +70,48 @@ export const fetchBackendFriendships = (user) => (dispatch) => {
         .catch((error) => console.log(error));
 };
 
-export const deleteFriendshipOnBackend = (user, friendPennkey) => (
-    dispatch
-) => {
-    const init = {
-        method: "DELETE",
-        credentials: "include",
-        mode: "same-origin",
-        headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCsrf(),
-        },
-        body: JSON.stringify({
-            pennkey: friendPennkey,
-        }),
+export const deleteFriendshipOnBackend =
+    (user, friendPennkey) => (dispatch) => {
+        const init = {
+            method: "DELETE",
+            credentials: "include",
+            mode: "same-origin",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCsrf(),
+            },
+            body: JSON.stringify({
+                pennkey: friendPennkey,
+            }),
+        };
+        doAPIRequest("/base/friendship/", init)
+            .then(() => {
+                dispatch(fetchBackendFriendships(user));
+            })
+            .catch((error) => console.log(error));
     };
-    doAPIRequest("/base/friendship/", init)
-        .then(() => {
-            dispatch(fetchBackendFriendships(user));
-        })
-        .catch((error) => console.log(error));
-};
 
-export const sendFriendRequest = (user, friendPennkey, onComplete) => (
-    dispatch
-) => {
-    const init = {
-        method: "POST",
-        credentials: "include",
-        mode: "same-origin",
-        headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCsrf(),
-        },
-        body: JSON.stringify({
-            pennkey: friendPennkey,
-        }),
+export const sendFriendRequest =
+    (user, friendPennkey, onComplete) => (dispatch) => {
+        const init = {
+            method: "POST",
+            credentials: "include",
+            mode: "same-origin",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCsrf(),
+            },
+            body: JSON.stringify({
+                pennkey: friendPennkey,
+            }),
+        };
+        doAPIRequest("/base/friendship/", init).then((res) => {
+            dispatch(fetchBackendFriendships(user));
+            onComplete(res);
+        });
     };
-    doAPIRequest("/base/friendship/", init).then((res) => {
-        dispatch(fetchBackendFriendships(user));
-        onComplete(res);
-    });
-};
 
 export const fetchFriendPrimarySchedule = (friend) => (dispatch) => {
     doAPIRequest("/plan/primary-schedules/")
