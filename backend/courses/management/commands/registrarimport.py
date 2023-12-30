@@ -15,6 +15,7 @@ from review.management.commands.clearcache import clear_cache
 def registrar_import(semester=None, query=""):
     if semester is None:
         semester = get_current_semester()
+    semester = semester.upper()
 
     print("Loading in courses with prefix %s from %s..." % (query, semester))
     results = registrar.get_courses(query, semester)
@@ -38,6 +39,11 @@ def registrar_import(semester=None, query=""):
 
     recompute_parent_courses(semesters=[semester], verbose=True)
     recompute_soft_state(semesters=[semester], verbose=True)
+
+    if registrar_import.endswith("C"):
+        # Make sure to load in summer course data as well
+        # (cron job only does current semester, which is either fall or spring)
+        registrar_import(semester=semester[:-1] + "B", query=query)
 
 
 class Command(BaseCommand):
