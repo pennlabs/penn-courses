@@ -1,6 +1,6 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django_auto_prefetching import AutoPrefetchViewSetMixin
-from rest_framework import generics, status, mixins, viewsets
+from rest_framework import generics, mixins, status, viewsets
 from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -84,9 +84,15 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
     """
 
     permission_classes = [IsAuthenticated]
-
     serializer_class = FulfillmentSerializer
     queryset = Fulfillment.objects.all()
+
+    def get_queryset(self):
+        queryset = Fulfillment.objects.filter(
+            degree_plan__person=self.request.user,
+            degree_plan_id=self.kwargs["degree_plan_id"],
+        )
+        return queryset
 
 
 @api_view(["GET"])
