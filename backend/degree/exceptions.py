@@ -16,7 +16,7 @@ class DoubleCountException(exceptions.APIException):
     default_code = "double_count_violation"
 
 
-class RuleFulfillmentException(exceptions.APIException):
+class RuleViolationException(exceptions.APIException):
     status_code = status.HTTP_400_BAD_REQUEST
     # Detail should contain a list of violated Rule ids
     default_detail = "Rule not fulfilled."
