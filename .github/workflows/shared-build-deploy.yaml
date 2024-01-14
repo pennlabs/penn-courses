@@ -16,6 +16,7 @@ jobs:
       flake: true
       black: true
       pythonVersion: 3.10-buster
+      dependencyManager: poetry
 
   publish-backend:
     uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@v0.1
