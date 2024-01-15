@@ -37,7 +37,7 @@ const semesterPanelStyle = {
 
 const PlanPanel = () => {
     const [semesters, setSemesters] = useState(semestersData);
-    const [plans, setPlans] = useState(['Degree Plan 1', 'Degree Plan 2']);
+    const [plans, setPlans] = useState([{id: 1, name: 'Degree Plan 1'}, {id: 1, name: 'Degree Plan 2'}]);
     const [currentPlan, setCurrentPlan] = useState(plans[0]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [showStats, setShowStats] = useState(true);

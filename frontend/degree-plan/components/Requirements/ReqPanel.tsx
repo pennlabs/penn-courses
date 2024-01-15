@@ -20,43 +20,40 @@ const requirementDropdownListStyle = {
   marginTop: '10px'
 }
   
-  const ReqPanel = ({setSearchClosed, setDegreeModalOpen, handleSearch}:any) => {
+  const ReqPanel = ({majors, currentMajor, setCurrentMajor, setMajors, setSearchClosed, setDegreeModalOpen, handleSearch}:any) => {
       const [editMode, setEditMode] = useState(false);
-      const [majorStrs, setMajorStrs] = useState([]);
-      const [currentMajorStr, setCurrentMajorStr] = useState(majorStrs[0]);
-      const [major, setMajor] = useState({});
-
+      const [majorData, setMajorData] = useState({});
       // useEffect(() => {
       //   setMajor(majorsdata[0]);
       // }, [currentMajorStr])
 
-      useEffect(() => {
-        const getAllMajors = async () => {
-          setMajorStrs(['Computer Science, BSE', 'English, BAS']);
-          setCurrentMajorStr('Computer Science, BSE');
-        }
-        getAllMajors();
-      }, [])
+      // useEffect(() => {
+      //   const getAllMajors = async () => {
+      //     setMajors([{id: 1, name: 'PPE (BSE)'}, {id: 2, name: 'Visual Studies (BAS)'}]);
+      //     setCurrentMajor({id: 1, name: 'PPE (BSE)'});
+      //   }
+      //   getAllMajors();
+      // }, [])
 
       useEffect(() => {
         const getMajor = async () => {
-            const res = await axios.get('/degree/degree_detail/1');
+            const res = await axios.get(`/degree/degree_detail/${currentMajor.id}`);
             console.log(res.data);
-            setMajor(res.data);
+            setMajorData(res.data);
             return;
         }
-        getMajor();
-      }, [currentMajorStr])
+        if (currentMajor.id) getMajor();
+      }, [currentMajor])
 
     return(
         <>
           <div style={topBarStyle}>
               <div className='d-flex justify-content-between'>
               <SwitchFromList
-                  current={currentMajorStr} 
-                  setCurrent={setCurrentMajorStr}
-                  list={majorStrs} 
-                  setList={setMajorStrs} 
+                  current={currentMajor} 
+                  setCurrent={setCurrentMajor}
+                  list={majors} 
+                  setList={setMajors} 
                   addHandler={() => setDegreeModalOpen(true)}/>
                 <label onClick={() => setEditMode(!editMode)}>
                     <Icon path={editMode ? mdiArrowLeft : mdiNoteEditOutline } size={1}/>
@@ -64,7 +61,7 @@ const requirementDropdownListStyle = {
               </div>
           </div>
           <div style={requirementDropdownListStyle}>
-            {major && major.rules && major.rules.map((requirement: any) => ( 
+            {majorData && majorData.rules && majorData.rules.map((requirement: any) => ( 
               <Requirement requirement={requirement} setSearchClosed={setSearchClosed} parent={null} handleSearch={handleSearch}/>
             ))}
           </div>

@@ -52,14 +52,58 @@ const dividerStyle = {
 }
 
 const FourYearPlanPage = () => {
+    const [leftWidth, setLeftWidth] = useState(800);
+    // const [rightWidth, setRightWidth] = useState(0);
+    const [searchClosed, setSearchClosed] = useState(true);
+    const [drag, setDrag] = useState(false);
+    const [x, setX] = useState(0);
+
+    const [degreeModalOpen, setDegreeModalOpen] = React.useState(false);
+
+    const [degrees, setDegrees] = useState([{}]);
+    const [results, setResults] = useState([]);
+    const [courseDetailOpen, setCourseDetailOpen] = useState(false);
+    const [courseDetail, setCourseDetail] = useState({});
+
+    // real version
+    // const [majors, setMajors] = useState([]);
+    // const [currentMajor, setCurrentMajor] = useState({});
+
+    // testing version
+    const [majors, setMajors] = useState([{id: 553, name: 'Computer Science, BSE'}, {id: 2, name: 'Visual Studies, BAS'}]);
+    const [currentMajor, setCurrentMajor] = useState({});
+    useEffect(() => {
+        if (majors.length !== 0) setCurrentMajor(majors[0]);
+      }, [majors]);
+
+    const ref = useRef(null);
+    const [totalWidth, setTotalWidth] = useState(0);
+
+    useEffect(() => {
+        console.log("total width: ", ref.current ? ref.current.offsetWidth : 0);
+        setTotalWidth(ref.current ? ref.current.offsetWidth : 0)
+    }, [ref.current]);
+
+
+    useEffect(() => {
+        const getDegrees = async () => {
+            const res = await axios.get('/degree/degrees/');
+            setDegrees(res.data);
+            return;
+        }
+        getDegrees();
+    }, [])
 
     const Degree = ({degree}: any) => {
         let name = degree.major + '-' + degree.concentration + ', ' + degree.degree;
         if (!degree.concentration) name = degree.major + ', ' + degree.degree;
 
-        const handleAddDegree = () => [
-
-        ]
+        const handleAddDegree = () => {
+            const addedMajor = {id: degree.id, name:name};
+            setMajors([...majors, addedMajor]);
+            setCurrentMajor(addedMajor);
+            setDegreeModalOpen(false);
+        }
 
         return (
             <div className="p-2" style={{backgroundColor: 'white'}}>
@@ -129,37 +173,6 @@ const FourYearPlanPage = () => {
         )
     }
 
-    const ref = useRef(null);
-    const [totalWidth, setTotalWidth] = useState(0);
-
-    useEffect(() => {
-        console.log("total width: ", ref.current ? ref.current.offsetWidth : 0);
-        setTotalWidth(ref.current ? ref.current.offsetWidth : 0)
-    }, [ref.current]);
-
-
-    useEffect(() => {
-        const getDegrees = async () => {
-            const res = await axios.get('/degree/degrees/');
-            setDegrees(res.data);
-            return;
-        }
-        getDegrees();
-    }, [])
-
-    const [leftWidth, setLeftWidth] = useState(800);
-    // const [rightWidth, setRightWidth] = useState(0);
-    const [searchClosed, setSearchClosed] = useState(true);
-    const [drag, setDrag] = useState(false);
-    const [x, setX] = useState(0);
-
-    const [degreeModalOpen, setDegreeModalOpen] = React.useState(false);
-
-    const [degrees, setDegrees] = useState([{}]);
-    const [results, setResults] = useState([]);
-    const [courseDetailOpen, setCourseDetailOpen] = useState(false);
-    const [courseDetail, setCourseDetail] = useState({});
-
     const pauseEvent = (e: any) => {
         if(e.stopPropagation) e.stopPropagation();
         if(e.preventDefault) e.preventDefault();
@@ -226,7 +239,7 @@ const FourYearPlanPage = () => {
                 </div>
                 <DragHandle/>
                 <div style={{...panelContainerStyle, width: totalWidth - leftWidth + 'px'}} className="">
-                    <ReqPanel setSearchClosed={setSearchClosed} setDegreeModalOpen={setDegreeModalOpen} handleSearch={handleSearch}/>
+                    <ReqPanel majors={majors} setMajors={setMajors} currentMajor={currentMajor} setCurrentMajor={setCurrentMajor} setSearchClosed={setSearchClosed} setDegreeModalOpen={setDegreeModalOpen} handleSearch={handleSearch}/>
                 </div>
                 {!searchClosed && <div style={panelContainerStyle} className="col-3">
                     <SearchPanel setClosed={setSearchClosed} courses={results} showCourseDetail={showCourseDetail}/>

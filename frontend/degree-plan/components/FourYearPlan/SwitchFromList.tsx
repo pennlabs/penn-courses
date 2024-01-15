@@ -35,7 +35,7 @@ const dropDownListStyle = {
     // padding: '10px'
   };
 
-  const ListItem = ({item, index, moveItem, setCurrent}: any) => {
+  const ListItem = ({item, index, moveItem, setCurrent, setShowDropDown}: any) => {
       let ref = useRef<HTMLInputElement>(null);
 
       const [{ opacity }, drop] = useDrop(() => ({
@@ -75,8 +75,8 @@ const dropDownListStyle = {
 
       return (
           <div className="d-flex justify-content-between" style={{...planTab, opacity: opacity}} ref={ref} >
-              <div className="ms-2" onClick={(e) => {console.log('choose clicked'); setCurrent(item)}}>
-                  {item}
+              <div className="ms-2" onClick={(e) => {setCurrent(item); setShowDropDown(false)}}>
+                  {item.name}
               </div>
               <div className="d-flex">
                   <Icon path={mdiTrashCanOutline} size={0.92} />
@@ -119,14 +119,14 @@ const dropDownListStyle = {
     return (
         <div>
             <div>
-                <div className="text-bold" style={titleStyle} onClick={() => {setShowDropDown(!showDropDown); setEditing(false);}}>
-                    {current}
+                {current && <div className="text-bold" style={titleStyle} onClick={() => {setShowDropDown(!showDropDown); setEditing(false);}}>
+                    {current.name}
                     <Icon path={showDropDown ? mdiMenuUp : mdiMenuDown} size={1} />
-                </div>
+                </div>}
                 {showDropDown && 
                     <div style={dropDownListStyle}>
                         {list.map((item:any, index: number) => 
-                            <ListItem key={index} index={index} item={item} moveItem={moveItem} setCurrent={setCurrent}/>
+                            <ListItem key={index} index={index} item={item} moveItem={moveItem} setCurrent={setCurrent} setShowDropDown={setShowDropDown}/>
                         )}
                         <div className="" style={planTab}>
                             {editing &&
