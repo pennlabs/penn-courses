@@ -35,60 +35,58 @@ const dropDownListStyle = {
     // padding: '10px'
   };
 
+  const ListItem = ({item, index, moveItem, setCurrent}: any) => {
+      let ref = useRef<HTMLInputElement>(null);
+
+      const [{ opacity }, drop] = useDrop(() => ({
+          accept: ItemTypes.MAJOR,
+          collect: (monitor) => ({
+              opacity: !!monitor.isOver() ? 0 : 1
+          }),
+          hover(item: any, monitor) {
+              if (!ref.current) {
+                  return
+              }
+              const dragIndex = item.index
+              const hoverIndex = index
+              // Don't replace items with themselves
+              if (dragIndex === hoverIndex) {
+                  return
+              }
+              // Actually perform the move action
+              moveItem(dragIndex, hoverIndex)
+              // mutate the monitor item for the sake of performance to avoid expensive index searches
+              item.index = hoverIndex
+          }
+      }), [])
+      /** React dnd */
+      const [{ isDragging}, drag] = useDrag(() => ({
+          type: ItemTypes.MAJOR,
+          item: () => {
+              return { index }
+          },
+          canDrag: true,
+          collect: (monitor) => ({
+          isDragging: !!monitor.isDragging()
+          })
+      }),[])
+      
+      drag(drop(ref));
+
+      return (
+          <div className="d-flex justify-content-between" style={{...planTab, opacity: opacity}} ref={ref} >
+              <div className="ms-2" onClick={(e) => {console.log('choose clicked'); setCurrent(item)}}>
+                  {item}
+              </div>
+              <div className="d-flex">
+                  <Icon path={mdiTrashCanOutline} size={0.92} />
+                  <Icon path={mdiReorderHorizontal} size={0.92} />
+              </div>
+          </div>
+    )
+}
   
   const SwitchFromList = ({current, setCurrent, list, setList, addHandler}:any) => {
-        const ListItem = ({item, index}: any) => {
-            let ref = useRef<HTMLInputElement>(null);
-
-            const [{ opacity }, drop] = useDrop(() => ({
-                accept: ItemTypes.MAJOR,
-                collect: (monitor) => ({
-                    opacity: !!monitor.isOver() ? 0 : 1
-                }),
-                hover(item: any, monitor) {
-                    if (!ref.current) {
-                        return
-                    }
-                    const dragIndex = item.index
-                    const hoverIndex = index
-                    // Don't replace items with themselves
-                    if (dragIndex === hoverIndex) {
-                        return
-                    }
-                    // Actually perform the move action
-                    moveItem(dragIndex, hoverIndex)
-                    // mutate the monitor item for the sake of performance to avoid expensive index searches
-                    item.index = hoverIndex
-                }
-            }), [])
-            /** React dnd */
-            const [{ isDragging}, drag] = useDrag(() => ({
-                type: ItemTypes.MAJOR,
-                item: () => {
-                    return { index }
-                },
-                canDrag: true,
-                collect: (monitor) => ({
-                isDragging: !!monitor.isDragging()
-                })
-            }),[])
-            
-            drag(drop(ref));
-
-            return (
-                <div className="d-flex justify-content-between" style={{...planTab, opacity: opacity}} ref={ref} >
-                    <div onClick={() => setCurrent(item)}>
-                        <div className="ms-2">
-                            {item}
-                        </div>
-                    </div>
-                    <div className="d-flex">
-                        <Icon path={mdiTrashCanOutline} size={0.92} />
-                        <Icon path={mdiReorderHorizontal} size={0.92} />
-                    </div>
-                </div>
-          )
-      }
     const [showDropDown, setShowDropDown] = useState(false);
     const [editing, setEditing] = useState(false);
     const [newItem, setNewItem] = useState("");
@@ -128,7 +126,7 @@ const dropDownListStyle = {
                 {showDropDown && 
                     <div style={dropDownListStyle}>
                         {list.map((item:any, index: number) => 
-                            <ListItem key={index} index={index} item={item}/>
+                            <ListItem key={index} index={index} item={item} moveItem={moveItem} setCurrent={setCurrent}/>
                         )}
                         <div className="" style={planTab}>
                             {editing &&

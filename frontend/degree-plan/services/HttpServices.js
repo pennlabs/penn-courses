@@ -1,10 +1,13 @@
 import axios from "axios";
 // import { toast } from "react-toastify";
 // https://meh-server.herokuapp.com
-export const baseURL = "http://localhost:8000/api/degree";
+export const baseURL = "http://localhost:8000/api";
 
 axios.defaults.baseURL = baseURL;
 axios.defaults.headers.post['Access-Control-Allow-Origin'] = '*';
+// axios.defaults.xsrfHeaderName = "X-CSRFTOKEN";
+// axios.defaults.xsrfCookieName = "platform";
+// axios.defaults.withCredentials = true;
 
 axios.interceptors.response.use(null, (e) => {
   const expectedError =

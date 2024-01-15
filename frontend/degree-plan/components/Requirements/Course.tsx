@@ -15,7 +15,7 @@ const courseRequiredCardStyle = {
     borderRadius: '8.51786px'
 }
 
-const Course = ({course} : any) => {
+const Course = ({course, showCourseDetail} : any) => {
     /** React dnd */
     const [{ isDragging }, drag] = useDrag(() => ({
         type: ItemTypes.COURSE,
@@ -28,19 +28,20 @@ const Course = ({course} : any) => {
     return (
         <div className="d-flex justify-content-start" >
             <div className="col-2" 
+                onClick={() => showCourseDetail(course.id)}
                 ref={drag} 
                 style={{...courseRequiredCardStyle, backgroundColor: isDragging ? '#DBE2F5' : '#FFFFFF', opacity: isDragging ? 0.7 : 1 }}>
-                    {`${course.dept} ${course.number}`}
+                    {course.id}
             </div>
-            <div className="mt-2 col-8" >
+            <div className="mt-1" style={{width: '60%'}}>
                 <span style={{
                     fontSize: '13px', 
-                    clear: 'both', 
-                    display: 'inline-block',
-                    overflow: 'auto',
-                    whiteSpace: 'nowrap'
+                    // clear: 'both', 
+                    // display: 'inline-block',
+                    // overflow: 'auto',
+                    // whiteSpace: 'nowrap'
                 }}>
-                    {course.title.slice(0, 30)}
+                    {course.title.slice(0, 25)}
                 </span>
             </div>
             <div style={{backgroundColor: '#FFFFFF'}}>

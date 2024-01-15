@@ -9,32 +9,44 @@ import { topBarStyle } from '@/pages/FourYearPlanPage';
 import SearchPanel from '../Search/SearchPanel';
 import SwitchFromList from '../FourYearPlan/SwitchFromList';
 import Requirement from './Requirement';
+import axios from 'axios';
 
-const majorStackStyle = {
-  height: '90%',
-  overflow: 'auto'
+const requirementDropdownListStyle = {
+  maxHeight: '90%',
+  width: '100%',
+  overflowY: 'scroll',
+  paddingRight: '15px',
+  paddingLeft: '15px',
+  marginTop: '10px'
 }
   
-  const ReqPanel = ({setSearchClosed, setDegreeModalOpen}:any) => {
+  const ReqPanel = ({setSearchClosed, setDegreeModalOpen, handleSearch}:any) => {
       const [editMode, setEditMode] = useState(false);
-      const [majors, setMajors] = useState(['Computer Science, BSE', 'English, BAS']);
-      const [currentMajorStr, setCurrentMajorStr] = useState(majors[0]);
+      const [majorStrs, setMajorStrs] = useState([]);
+      const [currentMajorStr, setCurrentMajorStr] = useState(majorStrs[0]);
       const [major, setMajor] = useState({});
 
-      useEffect(() => {
-        setMajor(majorsdata[0]);
-      }, [currentMajorStr])
+      // useEffect(() => {
+      //   setMajor(majorsdata[0]);
+      // }, [currentMajorStr])
 
-      const moveMajor = useCallback((dragIndex: number, hoverIndex: number) => {
-        setMajors((prevMajors) =>
-          update(prevMajors, {
-            $splice: [
-              [dragIndex, 1],
-              [hoverIndex, 0, prevMajors[dragIndex]],
-            ],
-          }),
-        )
+      useEffect(() => {
+        const getAllMajors = async () => {
+          setMajorStrs(['Computer Science, BSE', 'English, BAS']);
+          setCurrentMajorStr('Computer Science, BSE');
+        }
+        getAllMajors();
       }, [])
+
+      useEffect(() => {
+        const getMajor = async () => {
+            const res = await axios.get('/degree/degree_detail/1');
+            console.log(res.data);
+            setMajor(res.data);
+            return;
+        }
+        getMajor();
+      }, [currentMajorStr])
 
     return(
         <>
@@ -42,18 +54,18 @@ const majorStackStyle = {
               <div className='d-flex justify-content-between'>
               <SwitchFromList
                   current={currentMajorStr} 
-                  setCurrent={setCurrentMajorStr} 
-                  list={majors} 
-                  setList={setMajors} 
+                  setCurrent={setCurrentMajorStr}
+                  list={majorStrs} 
+                  setList={setMajorStrs} 
                   addHandler={() => setDegreeModalOpen(true)}/>
                 <label onClick={() => setEditMode(!editMode)}>
                     <Icon path={editMode ? mdiArrowLeft : mdiNoteEditOutline } size={1}/>
                 </label>
               </div>
           </div>
-          <div className='m-3'>
-            {major.requirements.map((requirement: any) => ( 
-              <Requirement key={requirement.id} requirement={requirement} setSearchClosed={setSearchClosed}/>
+          <div style={requirementDropdownListStyle}>
+            {major && major.rules && major.rules.map((requirement: any) => ( 
+              <Requirement requirement={requirement} setSearchClosed={setSearchClosed} parent={null} handleSearch={handleSearch}/>
             ))}
           </div>
         </>

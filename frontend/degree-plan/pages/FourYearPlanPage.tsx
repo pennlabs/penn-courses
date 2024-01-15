@@ -10,6 +10,9 @@ import { mdiPlus } from '@mdi/js';
 import axios from "../services/httpServices"
 import {degreeData} from '../data/degrees';
 import FuzzySearch from 'react-fuzzy';
+import CourseDetailPanel from "@/components/Course/CourseDetailPanel";
+
+const API_TOKEN = 'platform';
 
 const pageStyle = {
     backgroundColor:'#F7F9FC', 
@@ -53,6 +56,11 @@ const FourYearPlanPage = () => {
     const Degree = ({degree}: any) => {
         let name = degree.major + '-' + degree.concentration + ', ' + degree.degree;
         if (!degree.concentration) name = degree.major + ', ' + degree.degree;
+
+        const handleAddDegree = () => [
+
+        ]
+
         return (
             <div className="p-2" style={{backgroundColor: 'white'}}>
                 <div className="d-flex justify-content-between">
@@ -67,7 +75,7 @@ const FourYearPlanPage = () => {
                             {name}
                         </span>
                     </div>
-                    <div style={{backgroundColor: '#FFFFFF'}}>
+                    <div style={{backgroundColor: '#FFFFFF'}} onClick={handleAddDegree}>
                         {/* <div style={{backgroundColor:"#DBE2F5", borderRadius:'12px', margin: '5px', height:'30px'}}> */}
                             <Icon path={mdiPlus} size={1} color='#DBE2F5'/>
                         {/* </div> */}
@@ -98,7 +106,7 @@ const FourYearPlanPage = () => {
                 <div style={modalStyle}>
                     <FuzzySearch
                         placeholder="Search degree"
-                        list={degreeData}
+                        list={degrees}
                         keys={['program', 'degree', 'major', 'concentration', 'year']}
                         width={'100%'}
                         // inputStyle={searchBarStyle}
@@ -131,24 +139,12 @@ const FourYearPlanPage = () => {
 
 
     useEffect(() => {
-        setDegrees(degreeData)
-        // const getDegrees = async () => {
-        //     const res = await axios.get('/degrees/2023');
-        //     console.log(res)
-        //     return;
-        // }
-        // getDegrees();
-
-        // fetch('http://localhost:8000/api/degree/degrees/2023', {
-        //     mode: 'cors',
-        //     headers: {
-        //       'Access-Control-Allow-Origin':'*'
-        //     }
-        //   })
-        //     .then(response => response.json())
-        //     .then(data => {
-        //         console.log(data);
-        //     });
+        const getDegrees = async () => {
+            const res = await axios.get('/degree/degrees/');
+            setDegrees(res.data);
+            return;
+        }
+        getDegrees();
     }, [])
 
     const [leftWidth, setLeftWidth] = useState(800);
@@ -161,6 +157,8 @@ const FourYearPlanPage = () => {
 
     const [degrees, setDegrees] = useState([{}]);
     const [results, setResults] = useState([]);
+    const [courseDetailOpen, setCourseDetailOpen] = useState(false);
+    const [courseDetail, setCourseDetail] = useState({});
 
     const pauseEvent = (e: any) => {
         if(e.stopPropagation) e.stopPropagation();
@@ -200,6 +198,22 @@ const FourYearPlanPage = () => {
         return (<div onMouseDown={startResize} style={dividerStyle}>
         </div>);
     }
+
+    const handleSearch =  async (id: number) => {
+        const res = await axios.get(`/degree/courses/${id}`);
+        setResults(res.data);
+        console.log(res.data);
+    }
+
+    const getCourseDetail = async (id:string) => {
+        const {data} = await axios.get(`/base/2023A/courses/${id}`)
+        setCourseDetail(data)
+    }
+
+    const showCourseDetail = (id: any) => {
+        setCourseDetailOpen(true);
+        getCourseDetail(id);
+    }
     
     return (
         <div style={pageStyle} ref={ref}>
@@ -212,10 +226,13 @@ const FourYearPlanPage = () => {
                 </div>
                 <DragHandle/>
                 <div style={{...panelContainerStyle, width: totalWidth - leftWidth + 'px'}} className="">
-                    <ReqPanel setSearchClosed={setSearchClosed} setDegreeModalOpen={setDegreeModalOpen}/>
+                    <ReqPanel setSearchClosed={setSearchClosed} setDegreeModalOpen={setDegreeModalOpen} handleSearch={handleSearch}/>
                 </div>
                 {!searchClosed && <div style={panelContainerStyle} className="col-3">
-                    <SearchPanel closed={searchClosed} setClosed={setSearchClosed}/>
+                    <SearchPanel setClosed={setSearchClosed} courses={results} showCourseDetail={showCourseDetail}/>
+                </div>}
+                {courseDetailOpen && <div style={panelContainerStyle} className="col-3">
+                    <CourseDetailPanel setOpen={setCourseDetailOpen} courseDetail={courseDetail}/>
                 </div>}
             </div>
         </div>

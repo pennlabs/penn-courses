@@ -2,10 +2,11 @@ import { useEffect, useState } from "react";
 import courses from "../../data/courses"
 import { ICourseQ } from "@/models/Types";
 import Icon from '@mdi/react';
-import { mdiClose } from "@mdi/js";
+import { mdiClose, mdiMagnify } from "@mdi/js";
 import { titleStyle, topBarStyle } from "@/pages/FourYearPlanPage";
 import Course from "../Requirements/Course";
 import FuzzySearch from 'react-fuzzy';
+import Fuse from 'fuse.js'
 
 const searchPanelContainerStyle = {
     border: '1px solid rgba(0, 0, 0, 0.1)',
@@ -17,34 +18,45 @@ const searchPanelContainerStyle = {
 
 const searchBarStyle = {
     backgroundColor: '#F2F3F4',
-    borderRadius: '5px',
+    borderRadius: '3px',
     border: '0',
-    width: '90%',
-    margin: '10px',
-    height: '35px'
+    width: '95%',
+    marginLeft: '10px',
+    height: '30px'
 }
 
-const SearchPanel = ({setClosed}:any) => {
+const SearchPanelBodyStyle = {
+    margin: '10px',
+}
+
+const searchPanelResultStyle = {
+    marginTop: '8px',
+    paddingLeft: '15px',
+    maxHeight: '68vh',
+    overflow: 'auto'
+}
+
+const SearchPanel = ({setClosed, courses, showCourseDetail}:any) => {
     type ISearchResultCourse =  {course: ICourseQ}
-    const SearchResultCourse = ({course}: ISearchResultCourse) => {
-        return(<div>
-            <h5> {course.dept + course.number} </h5>
-        </div>)
-    }
 
     const [queryString, setQueryString] = useState("");
-    const [selectedCourses, setSelectedCourses] = useState<Array<ICourseQ>>([]);
-    const [results, setResults] = useState<Array<ICourseQ>>([]);
+    const [results, setResults] = useState([]);
+    let fuse = new Fuse(courses, {
+        keys: ['id', 'title', 'description']
+    })
 
     useEffect(() => {
-        // console.log(queryString);
-        // fetch(`/api/base/2022C/search/courses/?type=auto&search=${queryString}`)
-        // .then(res => res.json())
-        // .then(res => {
-        //     console.log(res);
-        // })
-        setSelectedCourses(courses);
-    }, [queryString]);
+        setResults(courses);
+    }, [courses]);
+
+    useEffect(() => {
+        if (!queryString) {
+            setResults(courses);
+        } else {
+            const res = fuse.search(queryString).map(course => course.item);
+            setResults(res);
+        }
+    }, [queryString])
 
     return (
         <div>
@@ -56,29 +68,14 @@ const SearchPanel = ({setClosed}:any) => {
                 </label>
               </div>
             </div>
-            {/* <div>
-                <input style={searchBarStyle} value={queryString} onChange={(e) => setQueryString(e.target.value)}/>
-            </div> */}
-            <FuzzySearch
-                list={selectedCourses}
-                keys={['dept', 'number', 'title', 'description']}
-                width={'100%'}
-                inputStyle={searchBarStyle}
-                inputWrapperStyle={{boxShadow: '0px 0px 0px 0px rgba(0, 0, 0, 0)'}}
-                listItemStyle={{}}
-                listWrapperStyle={{boxShadow: '0px 0px 0px 0px rgba(0, 0, 0, 0)', borderWeight: '0px'}}
-                onSelect={(newSelectedItem:any) => {
-                    setResults(newSelectedItem)
-                }}
-                resultsTemplate={(props: any, state: any, styles:any, clickHandler:any) => {
-                    return state.results.map((course:any, i:any) => {
-                      const style = state.selectedIndex === i ? styles.selectedResultStyle : styles.resultsStyle;
-                      return (
-                        <Course key={i} course={course}/>
-                      );
-                    });
-                  }}
-            />
+            <div style={SearchPanelBodyStyle}>
+                <div>
+                    <input style={searchBarStyle} type="text" onChange={(e) => setQueryString(e.target.value)} />
+                </div>
+                <div style={searchPanelResultStyle}>
+                    {results.map((course:any) => <Course course={course} showCourseDetail={showCourseDetail}/>)}
+                </div>
+            </div>
         </div>
     )
 }
