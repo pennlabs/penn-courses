@@ -5,11 +5,14 @@ import CoursePlanned from "./CoursePlanned";
 import update from 'immutability-helper'
 import _ from "lodash";
 import Icon from '@mdi/react';
-import { mdiMenuRight, mdiMenuLeft, mdiPoll } from '@mdi/js';
+import { mdiMenuRight, mdiMenuLeft, mdiPoll, mdiPlus } from '@mdi/js';
 import PlanTabs from "./PlanTabs";
 import { Divider } from "@mui/material";
 import {topBarStyle } from "@/pages/FourYearPlanPage";
 import SwitchFromList from "./SwitchFromList";
+import {semesterCardStyle} from './Semester';
+import AddSemesterCard from "./AddSemesterCard";
+
 
 const semesterPanelStyle = {
     paddingLeft: '20px',
@@ -35,9 +38,17 @@ const semesterPanelStyle = {
 //   }
 
 
-const PlanPanel = () => {
-    const [semesters, setSemesters] = useState(semestersData);
-    const [plans, setPlans] = useState([{id: 1, name: 'Degree Plan 1'}, {id: 1, name: 'Degree Plan 2'}]);
+const PlanPanel = ({showCourseDetail}) => {
+    const defaultSemester1 = {id: 1, name: 'Semester 1', courses:[], cu: 0};
+    const defaultSemester2 = {id: 2, name: 'Semester 2', courses:[], cu: 0};
+    const defaultSemester3 = {id: 3, name: 'Semester 3', courses:[], cu: 0};
+    const defaultSemester4 = {id: 4, name: 'Semester 4', courses:[], cu: 0};
+    const defaultSemester5 = {id: 5, name: 'Semester 5', courses:[], cu: 0};
+    const defaultSemester6 = {id: 6, name: 'Semester 6', courses:[], cu: 0};
+    const defaultSemester7 = {id: 7, name: 'Semester 7', courses:[], cu: 0};
+
+    const [semesters, setSemesters] = useState([defaultSemester1, defaultSemester2, defaultSemester3, defaultSemester4, defaultSemester5, defaultSemester6, defaultSemester7]);
+    const [plans, setPlans] = useState([{id: 1, name: 'Degree Plan 1'}, {id: 2, name: 'Degree Plan 2'}]);
     const [currentPlan, setCurrentPlan] = useState(plans[0]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [showStats, setShowStats] = useState(true);
@@ -52,9 +63,11 @@ const PlanPanel = () => {
     }, [currentPlan])
 
     const addCourse = (toIndex: number, course: any, fromIndex:number) => {
+        console.log(course);
         if (fromIndex === toIndex) return;
-        if (fromIndex !== -1) removeCourseFromSem(fromIndex, course);
-        addCourseToSem(toIndex, course);
+        // when from index is -1, the course is dragged from outside of the planning panel
+        if (fromIndex !== -1) removeCourseFromSem(fromIndex, course); // remove from originally planned semester
+        addCourseToSem(toIndex, course); // add to newly planned semester
     }
 
     const addCourseToSem = useCallback((toIndex: number, course: any) => {
@@ -63,7 +76,7 @@ const PlanPanel = () => {
                 [toIndex]: {
                     courses: {
                         /** filter the array to avoid adding the same course twice */
-                        $apply: (courses: any) => courses.filter((c: any) => c.dept !== course.dept || c.number !== course.number),
+                        $apply: (courses: any) => courses.filter((c: any) => c.id != course.id),
                         $push: [course]
                     }
                 }
@@ -76,7 +89,7 @@ const PlanPanel = () => {
             update(sems, {
                 [index]: {
                     courses: {
-                        $apply: (courses: any) => courses.filter((c: any) => c.dept !== course.dept || c.number !== course.number),
+                        $apply: (courses: any) => courses.filter((c: any) => c.id != course.id),
                     }
                 }
             })
@@ -119,8 +132,9 @@ const PlanPanel = () => {
             <div style={semesterPanelStyle}>
                 <div className="d-flex row justify-content-center">
                     {semesters.map((semester: any, index: number) => 
-                        <Semester semester={semester} addCourse={addCourse} index={index} removeCourseFromSem={removeCourseFromSem} showStats={showStats}/>
+                        <Semester semester={semester} addCourse={addCourse} index={index} removeCourseFromSem={removeCourseFromSem} showStats={showStats} showCourseDetail={showCourseDetail}/>
                     )}
+                    <AddSemesterCard semesters={semesters} setSemesters={setSemesters} showStats={showStats}/>
                 </div>
 
                 {/* <Divider variant="middle">past semesters</Divider> */}

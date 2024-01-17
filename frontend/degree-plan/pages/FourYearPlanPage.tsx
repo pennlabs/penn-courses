@@ -157,9 +157,9 @@ const FourYearPlanPage = () => {
                         inputWrapperStyle={{boxShadow: '0px 0px 0px 0px rgba(0, 0, 0, 0)'}}
                         listItemStyle={{}}
                         listWrapperStyle={{boxShadow: '0px 0px 0px 0px rgba(0, 0, 0, 0)', borderWeight: '0px', width: '100%'}}
-                        onSelect={(newSelectedItem:any) => {
-                            setResults(newSelectedItem)
-                        }}
+                        // onSelect={(newSelectedItem:any) => {
+                        //     setResults(newSelectedItem)
+                        // }}
                         resultsTemplate={(props: any, state: any, styles:any, clickHandler:any) => {
                             return state.results.map((degree:any, i:any) => {
                                 return (
@@ -212,20 +212,31 @@ const FourYearPlanPage = () => {
         </div>);
     }
 
+    // const forceUpdate = React.useCallback((newData) => setResults(newData), []);
+    const [loading, setLoading] = useState(false);
     const handleSearch =  async (id: number) => {
-        const res = await axios.get(`/degree/courses/${id}`);
-        setResults(res.data);
-        console.log(res.data);
+        setLoading(true);
+        axios.get(`/degree/courses/${id}`).then(res => {
+            let newData = [...res.data];
+            setResults(newData);
+            setLoading(false);
+    });
+        // console.log(res.data);
     }
 
-    const getCourseDetail = async (id:string) => {
-        const {data} = await axios.get(`/base/2023A/courses/${id}`)
-        setCourseDetail(data)
-    }
+    // const getCourseDetail = async (id:string) => {
+    //     const {data} = await axios.get(`/base/2023A/courses/${id}`)
+    //     return data;
+    // }
+    // const showCourseDetail = async (id: any) => {
+    //     setCourseDetailOpen(true);
+    //     const courseDetail = await getCourseDetail(id);
+    //     setCourseDetail(courseDetail);
+    // }
 
-    const showCourseDetail = (id: any) => {
+    const showCourseDetail = (course: any) => {
         setCourseDetailOpen(true);
-        getCourseDetail(id);
+        setCourseDetail(course);
     }
     
     return (
@@ -235,14 +246,14 @@ const FourYearPlanPage = () => {
             </div>
             <div onMouseMove={resizeFrame} onMouseUp={endResize} className="d-flex">
                 <div style={{...panelContainerStyle, width: leftWidth + 'px'}}>
-                    <PlanPanel/>
+                    <PlanPanel showCourseDetail={showCourseDetail}/>
                 </div>
                 <DragHandle/>
                 <div style={{...panelContainerStyle, width: totalWidth - leftWidth + 'px'}} className="">
                     <ReqPanel majors={majors} setMajors={setMajors} currentMajor={currentMajor} setCurrentMajor={setCurrentMajor} setSearchClosed={setSearchClosed} setDegreeModalOpen={setDegreeModalOpen} handleSearch={handleSearch}/>
                 </div>
                 {!searchClosed && <div style={panelContainerStyle} className="col-3">
-                    <SearchPanel setClosed={setSearchClosed} courses={results} showCourseDetail={showCourseDetail}/>
+                    <SearchPanel setClosed={setSearchClosed} courses={results} showCourseDetail={showCourseDetail} loading={loading}/>
                 </div>}
                 {courseDetailOpen && <div style={panelContainerStyle} className="col-3">
                     <CourseDetailPanel setOpen={setCourseDetailOpen} courseDetail={courseDetail}/>

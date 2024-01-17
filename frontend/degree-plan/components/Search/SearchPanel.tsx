@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import courses from "../../data/courses"
 import { ICourseQ } from "@/models/Types";
 import Icon from '@mdi/react';
@@ -7,6 +7,7 @@ import { titleStyle, topBarStyle } from "@/pages/FourYearPlanPage";
 import Course from "../Requirements/Course";
 import FuzzySearch from 'react-fuzzy';
 import Fuse from 'fuse.js'
+import update from 'immutability-helper'
 
 const searchPanelContainerStyle = {
     border: '1px solid rgba(0, 0, 0, 0.1)',
@@ -36,27 +37,33 @@ const searchPanelResultStyle = {
     overflow: 'auto'
 }
 
-const SearchPanel = ({setClosed, courses, showCourseDetail}:any) => {
+const SearchPanel = ({setClosed, courses, showCourseDetail, loading}:any) => {
     type ISearchResultCourse =  {course: ICourseQ}
 
     const [queryString, setQueryString] = useState("");
-    const [results, setResults] = useState([]);
+    // const [results, setResults] = useState([]);
     let fuse = new Fuse(courses, {
         keys: ['id', 'title', 'description']
     })
 
-    useEffect(() => {
-        setResults(courses);
-    }, [courses]);
+    // useEffect(() => {
+    //     const deepCopy = courses.map(c => ({...c}));
+    //     setResults(deepCopy);
+    //     // updateCourses(courses);
+    // }, [courses]);
 
-    useEffect(() => {
-        if (!queryString) {
-            setResults(courses);
-        } else {
-            const res = fuse.search(queryString).map(course => course.item);
-            setResults(res);
-        }
-    }, [queryString])
+    // useEffect(() => {
+    //     if (!queryString) {
+    //         setResults([...courses]);
+    //     } else {
+    //         const res = fuse.search(queryString).map(course => course.item);
+    //         setResults([...res]);
+    //     }
+    // }, [queryString])
+
+    // const updateCourses = useCallback((c) => {
+    //     setResults(c);
+    // }, []);
 
     return (
         <div>
@@ -64,7 +71,7 @@ const SearchPanel = ({setClosed, courses, showCourseDetail}:any) => {
               <div className='d-flex justify-content-between'>
                 <div style={{...titleStyle}}>Search </div>
                 <label onClick={() => setClosed(true)}>
-                    <Icon path={mdiClose } size={0.8}/>
+                    <Icon path={mdiClose} size={0.8}/>
                 </label>
               </div>
             </div>
@@ -72,9 +79,11 @@ const SearchPanel = ({setClosed, courses, showCourseDetail}:any) => {
                 <div>
                     <input style={searchBarStyle} type="text" onChange={(e) => setQueryString(e.target.value)} />
                 </div>
-                <div style={searchPanelResultStyle}>
-                    {results.map((course:any) => <Course course={course} showCourseDetail={showCourseDetail}/>)}
-                </div>
+                {loading ? 
+                    <div>loading...</div>
+                : <div style={searchPanelResultStyle}>
+                    {courses.map((course:any) => <Course course={course} showCourseDetail={showCourseDetail}/>)}
+                </div>}
             </div>
         </div>
     )

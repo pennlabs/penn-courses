@@ -3,6 +3,7 @@ import { useDrag } from "react-dnd";
 import { ItemTypes } from "../dnd/constants";
 import Icon from '@mdi/react';
 import { mdiCircleHalfFull } from '@mdi/js';
+import { useEffect, useRef, useState } from "react";
 
 const courseRequiredCardStyle = {
     display: 'flex',
@@ -19,16 +20,16 @@ const Course = ({course, showCourseDetail} : any) => {
     /** React dnd */
     const [{ isDragging }, drag] = useDrag(() => ({
         type: ItemTypes.COURSE,
-        item: {course: course, semester:-1},
+        item: {course: {...course}, semester:-1},
         collect: (monitor) => ({
-          isDragging: !!monitor.isDragging(),
+            isDragging: !!monitor.isDragging(),
         })
-      }))
+    }))
 
     return (
-        <div className="d-flex justify-content-start" >
+        <div className="d-flex justify-content-start">
             <div className="col-2" 
-                onClick={() => showCourseDetail(course.id)}
+                onClick={() => showCourseDetail(course)}
                 ref={drag} 
                 style={{...courseRequiredCardStyle, backgroundColor: isDragging ? '#DBE2F5' : '#FFFFFF', opacity: isDragging ? 0.7 : 1 }}>
                     {course.id}

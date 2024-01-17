@@ -1,7 +1,10 @@
 // <Q: (OR: (AND: ('code__gte', 0), ('code__lte', 4999), ('department__code', '@'), ('attributes__code__in', ['APPF'])), (AND: ('code__gte', 5000), ('code__lte', 9999), ('department__code', '@'), ('attributes__code__in', ['APPF'])))>
 
+import axios from "../services/httpServices";
 import CoursePlanned from "../FourYearPlan/CoursePlanned";
 import Course from "./Course";
+import { useDrag } from "react-dnd";
+import { ItemTypes } from "../dnd/constants";
 
 const termChar = '>';
 
@@ -52,7 +55,7 @@ const stripChar = (str: string, start, end?) => {
     return str;
 }
 
-const RootQObj = ({query, level}) => {
+const RootQObj = ({query}) => {
     /* OR clause */
     if (query.substring(0, 5) === '(OR: ') {
         return (
@@ -85,6 +88,14 @@ const RootQObj = ({query, level}) => {
         switch (stripChar(key, '\'')) {
             case 'full_code':
                 queryStr = `${stripChar(value, '\'')}`;
+                const [{ isDragging }, drag] = useDrag(() => ({
+                    type: ItemTypes.COURSE,
+                    item: {course: {id: queryStr}, semester:-1},
+                    collect: (monitor) => ({
+                        isDragging: !!monitor.isDragging(),
+                    })
+                }))
+                return <div style={{backgroundColor: '#DBE2F5', borderRadius: '5px', padding: '3px'}} ref={drag}>{queryStr}</div>
                 break;
             case 'code__gte':
                 queryStr = `course code is greater than or equal to ${value}`;

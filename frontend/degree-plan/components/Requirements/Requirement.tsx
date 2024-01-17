@@ -16,36 +16,42 @@ const Requirement = ({requirement, setSearchClosed, parent, handleSearch} : any)
             {parent === requirement.parent && 
             (requirement.q || requirement.title) &&
             <div>
-                <label className="mb-2 col-12 justify-content-between d-flex" style={{
+            
+                    {requirement.q ? 
+                    <label className="mb-2 col-12 justify-content-between d-flex" style={{
                         backgroundColor:'#EFEFEF', 
                         fontSize:'16px', 
                         padding:'2px', 
                         paddingLeft:'15px', 
                         borderRadius:'8px',
                     }}>
-                    {requirement.q ? 
-                    <>
                         <div style={titleStyle}>
-                            <QObj query={trimQuery(requirement.q)} level={0}/>
+                            <QObj query={trimQuery(requirement.q)}/>
                         </div>
                         <div onClick={() => {setSearchClosed(false); handleSearch(requirement.id);}}>
                             <Icon path={mdiMagnify} size={1} color='#575757'/>
                         </div>
-                    </>
+                    </label>
                     :
-                        <>
+                    <label className="mb-2 col-12 justify-content-between d-flex" style={{
+                        backgroundColor:'#EFEFEF', 
+                        fontSize:'16px', 
+                        padding:'2px', 
+                        paddingLeft:'15px', 
+                        borderRadius:'8px',
+                    }}>
+                        <div onClick={() => setCollapsed(!collapsed)} className='col-12 d-flex justify-content-between'>
                             <div style={titleStyle}>
                                 {requirement.title}
                             </div>
                             <div>
-                                {requirement.rules.length && <div onClick={() => setCollapsed(!collapsed)}>
+                                {requirement.rules.length && 
                                     <Icon path={collapsed ? mdiMenuDown : mdiMenuUp} size={1} color='#575757'/>
-                                </div>}
+                                }
                             </div>
-                        </>
-
+                        </div>
+                    </label>
                     }
-                </label>
                 {!collapsed && <div className="ms-3">
                     {requirement.rules.map((rule: any, index: number) => 
                         <Requirement requirement={rule} setSearchClosed={setSearchClosed} parent={requirement.id} handleSearch={handleSearch}/>

@@ -34,8 +34,8 @@ const detailWindowStyle : any = {
     // display: 'flex'
 }
 
-const CoursePlanned = ({course, semesterIndex, removeCourse, courseOpen, setCourseOpen} : any) => {
-    const courseCode = `${course.dept} ${course.number}`;
+const CoursePlanned = ({course, semesterIndex, removeCourse, courseOpen, setCourseOpen, showCourseDetail} : any) => {
+    // const courseCode = `${course.dept} ${course.number}`;
     const [mouseOver, setMouseOver] = useState(false);
     const [open, setOpen] = useState(false);
     
@@ -61,8 +61,8 @@ const CoursePlanned = ({course, semesterIndex, removeCourse, courseOpen, setCour
           ref={drag} 
           onMouseOver={() => setMouseOver(true)} 
           onMouseLeave={() => setMouseOver(false)}>
-          <div onClick={handleClickCourse}>
-            {courseCode}
+          <div onClick={() => showCourseDetail(course)}>
+            {course.id}
           </div>
           {mouseOver && 
             <div style={{position:'absolute', right:'5px', bottom:'7px'}} onClick={() => removeCourse(course)}>
@@ -71,10 +71,10 @@ const CoursePlanned = ({course, semesterIndex, removeCourse, courseOpen, setCour
           <div>
           </div>
       </div>
-      {courseCode === courseOpen && <div style={detailWindowStyle}>
+      {/* {courseCode === courseOpen && <div style={detailWindowStyle}>
           <h1>Course Title</h1>
           <h1>Course cntent</h1>
-      </div>}
+      </div>} */}
     </>)
 }
 

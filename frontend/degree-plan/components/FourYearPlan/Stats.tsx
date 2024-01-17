@@ -6,9 +6,27 @@ const statsStackStyle = {
     width: '60%'
 }
 
+const getAvg = (courses) => {
+    if (courses.length == 0) return [0, 0, 0, 0];
+    let courseQualitySum = 0;
+    let instructorQualitySum = 0;
+    let difficultySum = 0;
+    let workRequired = 0;
+    for (const course in courses) {
+        courseQualitySum += course.course_quality;
+        instructorQualitySum += course.instructor_quality;
+        difficultySum += course.difficulty;
+        workRequired += course.work_required;
+    }
+    return [courseQualitySum / courses.length, 
+            instructorQualitySum / courses.length, 
+            difficultySum / courses.length, 
+            workRequired / courses.length];
+}
+
 const Stats = ({courses} : any) => {
+    const [course_quality, instructor_quality, difficulty, work_required] = getAvg(courses);
     
-    const n = courses.length;
     const StatRow = ({item, score} : any) => {
         const ref = useRef(null);
         const [width, setWidth] = useState(200);
@@ -28,9 +46,10 @@ const Stats = ({courses} : any) => {
 
     return (
         <Stack direction="column" spacing={1} style={statsStackStyle}>
-            <StatRow item={'Course'} score={courses.reduce((a: any, b: any) => 3 + 3) / courses.length}/>
-            <StatRow item={'Instructor'} score={courses.reduce((a: any, b: any) => 2 + 3) / courses.length}/> 
-            <StatRow item={'Difficulty'} score={courses.reduce((a: any, b: any) => 2.5 + 2) / courses.length}/> 
+            <StatRow item={'Course'} score={course_quality}/>
+            <StatRow item={'Instructor'} score={instructor_quality}/> 
+            <StatRow item={'Difficulty'} score={difficulty}/> 
+            <StatRow item={'Work Required'} score={work_required}/> 
         </Stack>
     )
 }

@@ -67,14 +67,12 @@ const CourseDetailPanel = ({setOpen, courseDetail}:any) => {
             </div>
             <div style={CourseDetailPanelBodyStyle}>
                 {courseDetail.id &&
-                    <>
-                        <div className="" style={descriptionWrapper}>
+                        <div >
                             <DetailHeader course={courseDetail}/>
                             <DetailRatings course={courseDetail}/>
                             <h5 className="mt-3">Course Description:</h5>
                             <p>{courseDetail.description}</p>
-                        </div>
-                    </>}
+                        </div>}
             </div>
         </div>
     )

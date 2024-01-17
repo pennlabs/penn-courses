@@ -9,7 +9,7 @@ import Stats from "./Stats";
 //     semester: ISemester
 // }
 
-const semesterCardStyle = {
+export const semesterCardStyle = {
     background: 'linear-gradient(0deg, #FFFFFF, #FFFFFF), #FFFFFF',
     boxShadow: '0px 0px 4px 2px rgba(0, 0, 0, 0.05)',
     borderRadius: '10px',
@@ -17,9 +17,10 @@ const semesterCardStyle = {
     padding: '10px',
     // minWidth: '200px',
     width: '45%',
-    margin: '5px'
+    margin: '5px',
+    minHeight: '13vh'
 }
-const Semester = ({semester, addCourse, index, removeCourseFromSem, showStats} : any) => {
+const Semester = ({semester, addCourse, index, removeCourseFromSem, showStats, showCourseDetail} : any) => {
     const ref = useRef(null);
     const [width, setWidth] = useState(200);
 
@@ -30,7 +31,7 @@ const Semester = ({semester, addCourse, index, removeCourseFromSem, showStats} :
 
     const [{ isOver }, drop] = useDrop(() => ({
         accept: ItemTypes.COURSE,
-        drop: (item: any) => addCourse(index, item.course, item.semester),
+        drop: (item: any) => {addCourse(index, item.course, item.semester)},
         collect: monitor => ({
           isOver: !!monitor.isOver()
         }),
@@ -46,8 +47,8 @@ const Semester = ({semester, addCourse, index, removeCourseFromSem, showStats} :
                 {semester.name}
             </div>
             <div className="d-flex" ref={ref}>
-                <CoursesPlanned courses={semester.courses} semesterIndex={index} removeCourse={removeCourse}/>
-                {showStats && <Stats courses={semester.courses}/>}
+                <CoursesPlanned courses={semester.courses} semesterIndex={index} removeCourse={removeCourse} showCourseDetail={showCourseDetail}/>
+                {/* {showStats && <Stats courses={semester.courses}/>} */}
             </div>
         </div>
     )
