@@ -58,6 +58,8 @@ const stripChar = (str: string, start, end?) => {
 
 /** This is a recursive component */
 const RootQObj = ({query, reqId}) => {
+    /** TODO: This needs to be from parent element and from a single source of truth */
+    const [satisfiedByIds, setSatisfiedByIds] = useState([]);
 
     /* OR clause */
     if (query.substring(0, 5) === '(OR: ') {
@@ -87,49 +89,58 @@ const RootQObj = ({query, reqId}) => {
     /* Base case: Leaf clause */
     if (checkValidLeafQObj(query)) {
         let [key, value] = query.substring(1, query.length - 1).split(', ');
-        let queryStr: string;
+        let queryComponent;
         switch (stripChar(key, '\'')) {
             case 'full_code':
-                queryStr = `${stripChar(value, '\'')}`;
+                const courseId = `${stripChar(value, '\'')}`;
                 const [{ isDragging }, drag] = useDrag(() => ({
                     type: ItemTypes.COURSE,
-                    item: {course: {id: queryStr, satisfyIds:[reqId]}, semester:-1},
+                    item: {course: {id: courseId, satisfyIds:[reqId]}, semester:-1},
+                    end(item, monitor) {
+                        if (monitor.didDrop()) {
+                            setSatisfiedByIds([...satisfiedByIds, courseId]);
+                        }
+                    },
                     collect: (monitor) => ({
                         isDragging: !!monitor.isDragging(),
                     })
                 }))
-                return <div style={{backgroundColor: '#DBE2F5', borderRadius: '5px', padding: '3px'}} ref={drag}>{queryStr}</div>
+                queryComponent = 
+                    <div style={{backgroundColor: '#DBE2F5', borderRadius: '5px', padding: '3px'}} ref={drag}>
+                        {courseId}
+                    </div>
                 break;
             case 'code__gte':
-                queryStr = `course code is greater than or equal to ${value}`;
+                queryComponent = `course code is greater than or equal to ${value}`;
                 break;
             case 'code__lte':
-                queryStr = `course code is less than or equal to ${value}`;
+                queryComponent = `course code is less than or equal to ${value}`;
                 break;
             case 'semester__code':
-                queryStr = `must be from ${value} semester`;
+                queryComponent = `must be from ${value} semester`;
                 break;
             case 'department__code':
-                queryStr = `must be listed under ${value} department`;
+                queryComponent = `must be listed under ${value} department`;
                 break;
             case 'attributes__code__in':
                 const attrs = stripChar(value, '[', ']');
-                queryStr = `attribute must be one of`;
+                queryComponent = `attribute must be one of`;
                 // for (const attr in attrs) {
-                    queryStr += stripChar(attrs, '\'');
+                    queryComponent += stripChar(attrs, '\'');
                 // }
                 break;
             default:
-                queryStr = `${key}: ${value}`;
+                queryComponent = `${key}: ${value}`;
                 break;
         }
-        return (<div>
-            {queryStr}
+        //style={{backgroundColor: satisfiedByIds.length > 0 ? 'green' : 'grey'}} className="p-3"
+        return (<div >
+            {queryComponent}
         </div>)
     }
     
     /* Base case: leaf clause or uncovered cases */
-    return (<div>{query}</div>);
+    return (<div >{query}</div>);
 
 }
 
