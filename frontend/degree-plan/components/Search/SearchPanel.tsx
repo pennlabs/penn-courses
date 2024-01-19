@@ -37,7 +37,7 @@ const searchPanelResultStyle = {
     overflow: 'auto'
 }
 
-const SearchPanel = ({setClosed, courses, showCourseDetail, loading}:any) => {
+const SearchPanel = ({setClosed, courses, showCourseDetail, loading, searchReqId}:any) => {
     type ISearchResultCourse =  {course: ICourseQ}
 
     const [queryString, setQueryString] = useState("");
@@ -70,7 +70,7 @@ const SearchPanel = ({setClosed, courses, showCourseDetail, loading}:any) => {
             <div style={{...topBarStyle, backgroundColor:'#FFFFFF'}}>
               <div className='d-flex justify-content-between'>
                 <div style={{...titleStyle}}>Search </div>
-                <label onClick={() => setClosed(true)}>
+                <label onClick={setClosed}>
                     <Icon path={mdiClose} size={0.8}/>
                 </label>
               </div>
@@ -82,7 +82,7 @@ const SearchPanel = ({setClosed, courses, showCourseDetail, loading}:any) => {
                 {loading ? 
                     <div>loading...</div>
                 : <div style={searchPanelResultStyle}>
-                    {courses.map((course:any) => <Course course={course} showCourseDetail={showCourseDetail}/>)}
+                    {courses.map((course:any) => <Course course={course} showCourseDetail={showCourseDetail} searchReqId={searchReqId}/>)}
                 </div>}
             </div>
         </div>

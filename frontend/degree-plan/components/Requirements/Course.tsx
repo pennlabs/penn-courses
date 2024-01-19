@@ -16,11 +16,11 @@ const courseRequiredCardStyle = {
     borderRadius: '8.51786px'
 }
 
-const Course = ({course, showCourseDetail} : any) => {
+const Course = ({course, showCourseDetail, searchReqId} : any) => {
     /** React dnd */
     const [{ isDragging }, drag] = useDrag(() => ({
         type: ItemTypes.COURSE,
-        item: {course: {...course}, semester:-1},
+        item: {course: {...course, satisfyIds:[searchReqId]}, semester:-1},
         collect: (monitor) => ({
             isDragging: !!monitor.isDragging(),
         })

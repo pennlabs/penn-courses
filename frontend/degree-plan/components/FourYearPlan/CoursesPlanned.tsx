@@ -10,7 +10,7 @@ const courseStackStyle = {
     paddingRight: '8px'
 }
 
-const CoursesPlanned = ({courses, semesterIndex, removeCourse, showCourseDetail}: any) => {
+const CoursesPlanned = ({courses, semesterIndex, removeCourse, showCourseDetail, highlightReqId}: any) => {
 
     const [courseOpen, setCourseOpen] = useState(false);
     
@@ -21,7 +21,7 @@ const CoursesPlanned = ({courses, semesterIndex, removeCourse, showCourseDetail}
                 
             </div>
             : courses.map((course: any) => 
-                <CoursePlanned course={course} semesterIndex={semesterIndex} removeCourse={removeCourse} courseOpen={courseOpen} setCourseOpen={setCourseOpen} showCourseDetail={showCourseDetail}/>
+                <CoursePlanned course={course} highlightReqId={highlightReqId} semesterIndex={semesterIndex} removeCourse={removeCourse} courseOpen={courseOpen} setCourseOpen={setCourseOpen} showCourseDetail={showCourseDetail}/>
             )}
         </div>
     )

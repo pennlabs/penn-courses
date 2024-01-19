@@ -20,7 +20,7 @@ export const semesterCardStyle = {
     margin: '5px',
     minHeight: '13vh'
 }
-const Semester = ({semester, addCourse, index, removeCourseFromSem, showStats, showCourseDetail} : any) => {
+const Semester = ({semester, addCourse, index, highlightReqId, removeCourseFromSem, showStats, showCourseDetail} : any) => {
     const ref = useRef(null);
     const [width, setWidth] = useState(200);
 
@@ -47,7 +47,7 @@ const Semester = ({semester, addCourse, index, removeCourseFromSem, showStats, s
                 {semester.name}
             </div>
             <div className="d-flex" ref={ref}>
-                <CoursesPlanned courses={semester.courses} semesterIndex={index} removeCourse={removeCourse} showCourseDetail={showCourseDetail}/>
+                <CoursesPlanned courses={semester.courses} highlightReqId={highlightReqId} semesterIndex={index} removeCourse={removeCourse} showCourseDetail={showCourseDetail}/>
                 {/* {showStats && <Stats courses={semester.courses}/>} */}
             </div>
         </div>

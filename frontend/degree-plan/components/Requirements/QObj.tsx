@@ -5,6 +5,7 @@ import CoursePlanned from "../FourYearPlan/CoursePlanned";
 import Course from "./Course";
 import { useDrag } from "react-dnd";
 import { ItemTypes } from "../dnd/constants";
+import { useEffect, useState } from "react";
 
 const termChar = '>';
 
@@ -55,7 +56,9 @@ const stripChar = (str: string, start, end?) => {
     return str;
 }
 
-const RootQObj = ({query}) => {
+/** This is a recursive component */
+const RootQObj = ({query, reqId}) => {
+
     /* OR clause */
     if (query.substring(0, 5) === '(OR: ') {
         return (
@@ -63,7 +66,7 @@ const RootQObj = ({query}) => {
                 {splitQuery(stripChar(query, '(', ')').slice(4)).map((clause, i) => (
                     <>
                         {i !== 0 && <div>OR</div>}
-                        <RootQObj query={clause}/>
+                        <RootQObj query={clause} reqId={reqId}/>
                     </>
                 ))}
             </div>);
@@ -75,7 +78,7 @@ const RootQObj = ({query}) => {
                 {splitQuery(stripChar(query, '(', ')').slice(5)).map(clause => (
                     <div className="d-flex">
                         <div style={{backgroundColor:'green', width: '5px', marginRight: '5px'}}></div>
-                        <RootQObj query={clause}/>
+                        <RootQObj query={clause} reqId={reqId}/>
                     </div>
                 ))}
             </div>);
@@ -90,7 +93,7 @@ const RootQObj = ({query}) => {
                 queryStr = `${stripChar(value, '\'')}`;
                 const [{ isDragging }, drag] = useDrag(() => ({
                     type: ItemTypes.COURSE,
-                    item: {course: {id: queryStr}, semester:-1},
+                    item: {course: {id: queryStr, satisfyIds:[reqId]}, semester:-1},
                     collect: (monitor) => ({
                         isDragging: !!monitor.isDragging(),
                     })

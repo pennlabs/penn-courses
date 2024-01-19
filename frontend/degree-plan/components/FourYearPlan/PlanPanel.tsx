@@ -38,7 +38,7 @@ const semesterPanelStyle = {
 //   }
 
 
-const PlanPanel = ({showCourseDetail}) => {
+const PlanPanel = ({showCourseDetail, highlightReqId}) => {
     const defaultSemester1 = {id: 1, name: 'Semester 1', courses:[], cu: 0};
     const defaultSemester2 = {id: 2, name: 'Semester 2', courses:[], cu: 0};
     const defaultSemester3 = {id: 3, name: 'Semester 3', courses:[], cu: 0};
@@ -132,7 +132,7 @@ const PlanPanel = ({showCourseDetail}) => {
             <div style={semesterPanelStyle}>
                 <div className="d-flex row justify-content-center">
                     {semesters.map((semester: any, index: number) => 
-                        <Semester semester={semester} addCourse={addCourse} index={index} removeCourseFromSem={removeCourseFromSem} showStats={showStats} showCourseDetail={showCourseDetail}/>
+                        <Semester semester={semester} highlightReqId={highlightReqId} addCourse={addCourse} index={index} removeCourseFromSem={removeCourseFromSem} showStats={showStats} showCourseDetail={showCourseDetail}/>
                     )}
                     <AddSemesterCard semesters={semesters} setSemesters={setSemesters} showStats={showStats}/>
                 </div>

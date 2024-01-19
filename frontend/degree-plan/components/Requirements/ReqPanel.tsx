@@ -20,7 +20,7 @@ const requirementDropdownListStyle = {
   marginTop: '10px'
 }
   
-  const ReqPanel = ({majors, currentMajor, setCurrentMajor, setMajors, setSearchClosed, setDegreeModalOpen, handleSearch}:any) => {
+  const ReqPanel = ({majors, currentMajor, highlightReqId, setCurrentMajor, setMajors, setSearchClosed, setDegreeModalOpen, handleSearch, setHighlightReqId}:any) => {
       const [editMode, setEditMode] = useState(false);
       const [majorData, setMajorData] = useState({});
       // useEffect(() => {
@@ -62,7 +62,7 @@ const requirementDropdownListStyle = {
           </div>
           <div style={requirementDropdownListStyle}>
             {majorData && majorData.rules && majorData.rules.map((requirement: any) => ( 
-              <Requirement requirement={requirement} setSearchClosed={setSearchClosed} parent={null} handleSearch={handleSearch}/>
+              <Requirement requirement={requirement} setSearchClosed={setSearchClosed} parent={null} handleSearch={handleSearch} setHighlightReqId={setHighlightReqId} highlightReqId={highlightReqId}/>
             ))}
           </div>
         </>

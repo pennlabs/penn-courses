@@ -69,6 +69,13 @@ const FourYearPlanPage = () => {
     // const [majors, setMajors] = useState([]);
     // const [currentMajor, setCurrentMajor] = useState({});
 
+    const [highlightReqId, setHighlightReqId] = useState(-1);
+
+    const handleCloseSearchPanel = () => {
+        setHighlightReqId(-1);
+        setSearchClosed(true);
+    }
+
     // testing version
     const [majors, setMajors] = useState([{id: 553, name: 'Computer Science, BSE'}, {id: 2, name: 'Visual Studies, BAS'}]);
     const [currentMajor, setCurrentMajor] = useState({});
@@ -215,6 +222,7 @@ const FourYearPlanPage = () => {
     // const forceUpdate = React.useCallback((newData) => setResults(newData), []);
     const [loading, setLoading] = useState(false);
     const handleSearch =  async (id: number) => {
+        setHighlightReqId(id);
         setLoading(true);
         axios.get(`/degree/courses/${id}`).then(res => {
             let newData = [...res.data];
@@ -246,14 +254,14 @@ const FourYearPlanPage = () => {
             </div>
             <div onMouseMove={resizeFrame} onMouseUp={endResize} className="d-flex">
                 <div style={{...panelContainerStyle, width: leftWidth + 'px'}}>
-                    <PlanPanel showCourseDetail={showCourseDetail}/>
+                    <PlanPanel showCourseDetail={showCourseDetail} highlightReqId={highlightReqId}/>
                 </div>
                 <DragHandle/>
                 <div style={{...panelContainerStyle, width: totalWidth - leftWidth + 'px'}} className="">
-                    <ReqPanel majors={majors} setMajors={setMajors} currentMajor={currentMajor} setCurrentMajor={setCurrentMajor} setSearchClosed={setSearchClosed} setDegreeModalOpen={setDegreeModalOpen} handleSearch={handleSearch}/>
+                    <ReqPanel majors={majors} highlightReqId={highlightReqId} setHighlightReqId={setHighlightReqId} setMajors={setMajors} currentMajor={currentMajor} setCurrentMajor={setCurrentMajor} setSearchClosed={setSearchClosed} setDegreeModalOpen={setDegreeModalOpen} handleSearch={handleSearch}/>
                 </div>
                 {!searchClosed && <div style={panelContainerStyle} className="col-3">
-                    <SearchPanel setClosed={setSearchClosed} courses={results} showCourseDetail={showCourseDetail} loading={loading}/>
+                    <SearchPanel setClosed={handleCloseSearchPanel} courses={results} showCourseDetail={showCourseDetail} loading={loading} searchReqId={highlightReqId}/>
                 </div>}
                 {courseDetailOpen && <div style={panelContainerStyle} className="col-3">
                     <CourseDetailPanel setOpen={setCourseDetailOpen} courseDetail={courseDetail}/>
