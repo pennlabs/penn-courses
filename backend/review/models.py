@@ -1,6 +1,6 @@
 from django.db import models
 from django.db.models import Avg, Q
-
+from django.contrib.auth import get_user_model
 
 class Review(models.Model):
     """
@@ -119,3 +119,48 @@ class ReviewBit(models.Model):
 
     def __str__(self):
         return f"#{self.review.pk} - {self.field}: {self.average}"
+
+class Comment(models.Model):
+    """
+    A single comment associated with a topic to be displayed on PCR. Comments support replies
+    through the parent_id and path fields. The path field allows for efficient database querying
+    and can indicate levels of nesting and can make pagination simpler. Idea implemented based
+    on this guide: https://blog.miguelgrinberg.com/post/implementing-user-comments-with-sqlalchemy.
+    """
+
+    # Log base 10 value of maximum adjacent comment length.
+    _N = 5
+
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    modified_at = models.DateTimeField(auto_now=True)
+    author = models.ForeignKey(
+        get_user_model(),
+        on_delete = models.SET_NULL,
+        null=True
+    )
+    likes = models.ManyToManyField(
+        get_user_model(),
+        on_delete=models.CASCADE,
+        help_text="The number of likes a comment gets."
+    )
+
+    parent_id = models.ForeignKey("self")
+    path = models.TextField(db_index=True)
+
+    def level(self):
+        return len(self.path.split('.'))
+    def save(self, **kwargs):
+        prefix = self.parent.path + '.' if self.parent else ''
+        self.path = prefix + '{:0{}d}'.format(self.id, self._N)
+        super().save(**kwargs)
+    def delete(self, **kwargs):
+        if Comment.objects.filter(parent_id=self).exists():
+            self.text = "This comment has been removed."
+            self.likes.clear()
+            self.author = None
+            self.save()
+        else:
+            super().delete(**kwargs)
+    def __str__(self):
+        return f"{self.author}: {self.text}"
