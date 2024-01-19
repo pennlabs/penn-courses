@@ -1,14 +1,15 @@
-FROM pennlabs/django-base:f0f05216db7c23c1dbb5b95c3bc9e8a2603bf2fd
+FROM pennlabs/django-base:3993245ba40f15f88ba53f5ae2548781f392a7c6-3.10.1
 
 LABEL maintainer="Penn Labs"
 
 WORKDIR /backend
 
 # Copy project dependencies
-COPY Pipfile* ./
+COPY pyproject.toml ./
+COPY poetry.lock ./
 
 # Install backend dependencies
-RUN pipenv install --dev
+RUN poetry install --no-root
 
 # Alias runserver command
 RUN echo 'alias runserver="python manage.py runserver 0.0.0.0:8000"' >> ~/.bashrc

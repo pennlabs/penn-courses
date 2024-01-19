@@ -1,12 +1,13 @@
-FROM pennlabs/django-base:9c4f31bf1af44219d0f9019271a0033a222291c2-3.10.1
+FROM pennlabs/django-base:3993245ba40f15f88ba53f5ae2548781f392a7c6-3.10.1
 
 LABEL maintainer="Penn Labs"
 
 # Copy project dependencies
-COPY Pipfile* /app/
+COPY pyproject.toml /app/
+COPY poetry.lock /app/
 
 # Install project dependencies
-RUN pipenv install --system --deploy
+RUN poetry install --no-root
 
 # Copy project files
 COPY . /app/
