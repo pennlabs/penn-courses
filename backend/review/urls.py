@@ -8,6 +8,7 @@ from review.views import (
     department_reviews,
     instructor_for_course_reviews,
     instructor_reviews,
+    CommentList
 )
 
 
@@ -42,4 +43,9 @@ urlpatterns = [
         name="course-history",
     ),
     path("autocomplete", cache_page(MONTH_IN_SECONDS)(autocomplete), name="review-autocomplete"),
+    path(
+        "course_comments/<slug:course_code>",
+        cache_page(DAY_IN_SECONDS)(CommentList),
+        name="course-comments"
+    )
 ]
