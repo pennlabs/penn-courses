@@ -4,6 +4,7 @@ from dateutil.tz import gettz
 from django.db.models import F, Max, OuterRef, Q, Subquery, Value
 from django.http import Http404
 from django.shortcuts import get_object_or_404
+from rest_framework import generics, viewsets, status
 from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -29,7 +30,7 @@ from review.documentation import (
     instructor_for_course_reviews_response_schema,
     instructor_reviews_response_schema,
 )
-from review.models import ALL_FIELD_SLUGS, Review
+from review.models import ALL_FIELD_SLUGS, Review, Comment
 from review.util import (
     aggregate_reviews,
     avg_and_recent_demand_plots,
@@ -40,6 +41,7 @@ from review.util import (
     get_status_updates_map,
     make_subdict,
 )
+from review.serializers import CommentSerializer
 
 
 """
@@ -133,6 +135,8 @@ def course_reviews(request, course_code, semester=None):
     Get all reviews for the topic of a given course and other relevant information.
     Different aggregation views are provided, such as reviews spanning all semesters,
     only the most recent semester, and instructor-specific views.
+
+    THIS SHOULD ALSO RETURN COMMENTS.
     """
     try:
         semester = request.GET.get("semester")
@@ -818,3 +822,144 @@ def autocomplete(request):
     return Response(
         {"courses": course_set, "departments": department_set, "instructors": instructor_set}
     )
+
+# CommentsList
+class CommentList(generics.ListAPIView):
+    """
+    Retrieve a list of all comments for the provided course.
+    """
+
+    schema = PcxAutoSchema(
+        response_codes={
+            "review-coursecomments": {
+                "GET": {
+                    200: "Course comments retrieved successfully.",
+                    404: "Invalid course_code.",
+                }
+            },
+        },
+    )
+    serializer_class = CommentSerializer
+    http_method_names = ["get"]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Comment.objects.filter(course__code=self.request.get("course_code"))
+
+# CommentViewSet
+class CommentViewSet(viewsets.ModelViewSet):
+    """
+    get:
+    Get a comment by a given `id` path parameter. If the id is not valid, a 404 is returned.
+
+    create:
+    Create a comment for the authenticated user.
+    This route will return a 201 if it succeeds with a JSON in the same format as if you were
+    to get the comment you just posted. If not all fields are specified (text, parent_id), a 400 is returned.
+
+    update:
+    Send a put request to this route to update / edit a specific comment.
+    The `id` path parameter (an integer) specifies which comment you want to update. If a comment
+    with the specified id does not exist, a 404 is returned. If a comment is not owned by the
+    authenticated user, a 403 is returned. If a user edits their comment to leave a blank comment,
+    a 400 is returned. Otherwise, if the request succeeds, it will return a 200 and a JSON in the 
+    same format as if you were to get the comment you just posted.
+
+    delete:
+    Send a delete request to this route to delete a specific comment. The `id` path parameter
+    (an integer) specifies which comment you want to update.  If a comment with the specified
+    id does not exist, a 404 is returned.  If a comment is not owned by the authenticated user,
+    a 403 is returned. If the delete is successful, a 204 is returned.
+
+    Note that difference in behavior for deletion of childless comments and comments with no
+    children. If a comment X has no children comments (other comments that have parent_id = comment X),
+    it can be safely deleted from the database. If a comment X has children, the comment's author
+    and text are wiped, but the comment stays in the database to maintain indentation and response
+    logic.
+    """
+
+    # can implement a character count if desired
+    request_body = {
+        "id": {
+            "type": "integer",
+            "description": "The id of the current comment."
+        },
+        "text": {
+            "type": "string",
+            "description": "The text-content of a comment."
+        },
+        "parent_id": {
+            "type": "integer",
+            "description": "The parent id of the current comment."
+        }
+    }
+    schema = PcxAutoSchema(
+        response_codes={
+            "comments-list": {
+                "GET": {
+                    200: "Comments listed successfully."
+                }
+            },
+            "comments-detail": {
+                "GET": {
+                    200: "Comment retrieved successfully.",
+                    404: "No comment with given id found."
+                },
+                "POST": {
+                    201: "Comment created successfully.",
+                    400: "Invalid parent id."
+                },
+                "PUT": {
+                    200: "Comment updated successfully.",
+                    403: "User doesn't have permission to edit comment.",
+                    404: "No comment with given id found."
+                },
+                "DELETE": {
+                    204: "Comment deleted successfully.",
+                    403: "User doesn't have permission to delete this comment.",
+                    404: "No comment with given id found."
+                }
+            }
+        }
+    )
+
+    serializer_class = CommentSerializer
+    http_method_names = ["get", "post", "delete", "put"]
+    permission_classes = [IsAuthenticated]
+
+    # Need to specify authorization error codes.
+
+    def get(self, *args, **kwargs):
+        comment = get_object_or_404(Comment, id=kwargs["id"]) # is this use of kwargs correct
+        return Response(comment, status=status.HTTP_200_SUCCESS)
+    
+    def create(self, request, *args, **kwargs):
+        if Comment.objects.filter(id=request.data.get("id")).exists():
+            return self.update(request, request.data.get("id"))
+
+        if all(["text", "parent_id"], lambda x: x in request.data):
+            comment = Comment.objects.create(
+                text=request.data.get("text"),
+                parent_id=request.data.get("parent_id")
+            )
+
+            return Response({comment}, status=status.HTTP_201_CREATED)
+        else:
+            return Response(
+                {"message": "Insufficient fields presented."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+    def update(self, request, *args, **kwargs):
+        comment = get_object_or_404(Comment, id=request.data.get("id"))
+        if "text" in request.data:
+            comment.text = request.data.get("text")
+            comment.save()
+        else:
+            return Response(
+                {"message": "Insufficient fields presented."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
+
+    queryset = Comment.objects.none() # do I need a queryset here?
