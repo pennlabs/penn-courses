@@ -1,7 +1,6 @@
 from django.db import models
 from django.db.models import Avg, Q
 from django.contrib.auth import get_user_model
-from courses.models import Course
 from textwrap import dedent
 
 class Review(models.Model):
@@ -121,80 +120,3 @@ class ReviewBit(models.Model):
 
     def __str__(self):
         return f"#{self.review.pk} - {self.field}: {self.average}"
-
-class Comment(models.Model):
-    """
-    A single comment associated with a topic to be displayed on PCR. Comments support replies
-    through the parent_id and path fields. The path field allows for efficient database querying
-    and can indicate levels of nesting and can make pagination simpler. Idea implemented based
-    on this guide: https://blog.miguelgrinberg.com/post/implementing-user-comments-with-sqlalchemy.
-    """
-
-    # Should I use viewset or bare API view? – default to viewset if possible, otherwise do bareAPIView
-    # Course: get all comments for a course given its specific topics (GET)
-    # CommentViewSet: get, put, post, delete
-
-    # Getting comments (course_id)
-    # This should implement the same logic as the review viewset code, where you take in a course
-    # and get the comments that relate to all courses in the topic.
-
-    # Adding a comment (comment_id)
-    # Adding a comment should be allowed on any thread by any user.
-    # If a comment is made with no parent_id, it should be a top-level comment.
-    # If a comment is made with a parent_id, it will be added with a higher indentation level.
-
-    # Editing a comment (comment_id)
-    # Option to edit should only show up if the user posted the comment.
-    # On the frontend, a comment should show "(edited)" if the comment's created_at and modified_at times are more than a second apart.
-
-    # Deleting a comment (comment_id)
-    # Option to delete should only show up if the user posted the comment.
-    # If the comment has any children, the post should be wiped but still present.
-    # If the comment doesn't have any chidlren, the post should be deleted.
-
-    # Log base 10 value of maximum adjacent comment length.
-    _N = 10
-
-    text = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    modified_at = models.DateTimeField(auto_now=True)
-    author = models.ForeignKey(
-        get_user_model(),
-        on_delete = models.SET_NULL,
-        null=True
-    )
-    likes = models.ManyToManyField(
-        get_user_model(),
-        on_delete=models.CASCADE,
-        help_text="The number of likes a comment gets."
-    )
-    course = models.ForeignKey(
-        Course,
-        on_delete=models.CASCADE,
-        help_text=dedent(
-            """
-        The course with which a comment is associated. Course was chosen instead of topics for
-        hosting comments because topics are SOFT STATE and are recomputed regularly.
-        """
-        )
-    )
-
-    parent_id = models.ForeignKey("self")
-    path = models.TextField(db_index=True)
-
-    def level(self):
-        return len(self.path.split('.'))
-    def save(self, **kwargs):
-        prefix = self.parent.path + '.' if self.parent else ''
-        self.path = prefix + '{:0{}d}'.format(self.id, self._N)
-        super().save(**kwargs)
-    def delete(self, **kwargs):
-        if Comment.objects.filter(parent_id=self).exists():
-            self.text = "This comment has been removed."
-            self.likes.clear()
-            self.author = None
-            self.save()
-        else:
-            super().delete(**kwargs)
-    def __str__(self):
-        return f"{self.author}: {self.text}"

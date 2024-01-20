@@ -14,6 +14,7 @@ from courses.models import (
     Section,
     StatusUpdate,
     UserProfile,
+    Comment
 )
 from plan.management.commands.recommendcourses import cosine_similarity
 
@@ -475,3 +476,18 @@ class FriendshipRequestSerializer(serializers.Serializer):
 
     def to_representation(self, instance):
         return super().to_representation(instance)
+
+class CommentSerializer(serializers.ModelSerializer):
+    author_name = serializers.CharField(source="author.username", read_only=True)
+    likes = serializers.SerializerMethodField()
+    course = serializers.CharField(source="course.full_code", read_only=True)
+    parent_id = serializers.SerializerMethodField()
+
+    def get_likes(self, obj):
+        return len(obj.likes.values_list('id'))
+    def get_parent_id(self, obj):
+        return obj.parent_id.id
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'text', 'created_at', 'modified_at', 'author_name', 'likes', 'course', 'parent_id', 'path']

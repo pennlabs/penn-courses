@@ -1,7 +1,7 @@
 from rest_framework import serializers
 
 from courses.serializers import SectionIdSerializer
-from review.models import Review, ReviewBit, Comment
+from review.models import Review, ReviewBit
 
 
 class ReviewBitSerializer(serializers.ModelSerializer):
@@ -18,18 +18,3 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
         fields = ("section", "instructor")
-
-class CommentSerializer(serializers.ModelSerializer):
-    author_name = serializers.CharField(source="author.username", read_only=True)
-    likes = serializers.SerializerMethodField()
-    course = serializers.CharField(source="course.full_code", read_only=True)
-    parent_id = serializers.SerializerMethodField()
-
-    def get_likes(self, obj):
-        return len(obj.likes.values_list('id'))
-    def get_parent_id(self, obj):
-        return obj.parent_id.id
-
-    class Meta:
-        model = Comment
-        fields = ['id', 'text', 'created_at', 'modified_at', 'author_name', 'likes', 'course', 'parent_id', 'path']

@@ -16,6 +16,7 @@ from courses.models import (
     NGSSRestriction,
     PreNGSSRestriction,
     Section,
+    Comment
 )
 from courses.util import get_current_semester, get_or_create_add_drop_period, prettify_semester
 from PennCourses.docs_settings import PcxAutoSchema
@@ -30,7 +31,7 @@ from review.documentation import (
     instructor_for_course_reviews_response_schema,
     instructor_reviews_response_schema,
 )
-from review.models import ALL_FIELD_SLUGS, Review, Comment
+from review.models import ALL_FIELD_SLUGS, Review
 from review.util import (
     aggregate_reviews,
     avg_and_recent_demand_plots,
@@ -41,8 +42,7 @@ from review.util import (
     get_status_updates_map,
     make_subdict,
 )
-from review.serializers import CommentSerializer
-
+from courses.serializers import CommentSerializer
 
 """
 You might be wondering why these API routes are using the @api_view function decorator
