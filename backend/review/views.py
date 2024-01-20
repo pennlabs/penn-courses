@@ -926,14 +926,13 @@ class CommentViewSet(viewsets.ModelViewSet):
     serializer_class = CommentSerializer
     http_method_names = ["get", "post", "delete", "put"]
     permission_classes = [IsAuthenticated]
+    queryset = Comment.objects.all()
 
-    # Need to specify authorization error codes.
-
-    def get(self, *args, **kwargs):
-        comment = get_object_or_404(Comment, id=kwargs["id"]) # is this use of kwargs correct
+    def retrieve(self, request, pk=None):
+        comment = get_object_or_404(Comment, pk=pk)
         return Response(comment, status=status.HTTP_200_SUCCESS)
     
-    def create(self, request, *args, **kwargs):
+    def create(self, request):
         if Comment.objects.filter(id=request.data.get("id")).exists():
             return self.update(request, request.data.get("id"))
 
@@ -949,8 +948,14 @@ class CommentViewSet(viewsets.ModelViewSet):
                 {"message": "Insufficient fields presented."}, status=status.HTTP_400_BAD_REQUEST
             )
 
-    def update(self, request, *args, **kwargs):
-        comment = get_object_or_404(Comment, id=request.data.get("id"))
+    def update(self, request, pk=None):
+        comment = get_object_or_404(Comment, pk=pk)
+
+        if request.user != comment.user:
+            return Response(
+                {"message": "Not authorized to modify this comment.."}, status=status.HTTP_403_FORBIDDEN
+            )
+
         if "text" in request.data:
             comment.text = request.data.get("text")
             comment.save()
@@ -959,7 +964,14 @@ class CommentViewSet(viewsets.ModelViewSet):
                 {"message": "Insufficient fields presented."}, status=status.HTTP_400_BAD_REQUEST
             )
 
-    def destroy(self, request, *args, **kwargs):
-        return super().destroy(request, *args, **kwargs)
+    def destroy(self, request, pk=None):
+        comment = get_object_or_404(Comment, pk=pk)
 
-    queryset = Comment.objects.none() # do I need a queryset here?
+        if request.user != comment.user:
+            return Response(
+                {"message": "Not authorized to modify this comment.."}, status=status.HTTP_403_FORBIDDEN
+            )
+        
+        comment.delete()
+        return Response({"message": "Successfully deleted."}, status=status.HTTP_204_NO_CONTENT)
+    
