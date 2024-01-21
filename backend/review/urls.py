@@ -8,7 +8,8 @@ from review.views import (
     department_reviews,
     instructor_for_course_reviews,
     instructor_reviews,
-    CommentList
+    CommentList,
+    CommentViewSet
 )
 
 
@@ -46,6 +47,11 @@ urlpatterns = [
     path(
         "course_comments/<slug:course_code>",
         cache_page(DAY_IN_SECONDS)(CommentList),
+        name="course-comments"
+    ),
+    path(
+        "comments",
+        cache_page(DAY_IN_SECONDS)(CommentViewSet),
         name="course-comments"
     )
 ]

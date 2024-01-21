@@ -841,7 +841,7 @@ class CommentList(generics.ListAPIView):
     )
     serializer_class = CommentSerializer
     http_method_names = ["get"]
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         return Comment.objects.filter(course__code=self.request.get("course_code"))
@@ -925,7 +925,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     serializer_class = CommentSerializer
     http_method_names = ["get", "post", "delete", "put"]
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
     queryset = Comment.objects.all()
 
     def retrieve(self, request, pk=None):
