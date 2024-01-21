@@ -9,6 +9,7 @@ import { useOnClickOutside } from "pcx-shared-components/src/useOnClickOutside";
 import { Input } from "./Input";
 import { Section } from "../types";
 import GroupSuggestion from "./GroupSuggestion";
+import { groupByProperty } from "../util";
 
 /* A function that takes in a search term and returns a promise with both the search term and
 the search results.
@@ -137,17 +138,16 @@ interface TSuggestion {
 }
 
 interface AutoCompleteProps {
-    defaultValue: string,
-    setTimeline: React.Dispatch<React.SetStateAction<string | null>>,
-    selectedCourses: Set<Section>,
-    setSelectedCourses: React.Dispatch<React.SetStateAction<Set<Section>>>,
-    value: string,
-    setValue: React.Dispatch<React.SetStateAction<string>>,
-    inputRef: React.RefObject<HTMLInputElement>,
-    clearSelections: () => void,
-    clearInputValue: () => void,
+    defaultValue: string;
+    setTimeline: React.Dispatch<React.SetStateAction<string | null>>;
+    selectedCourses: Set<Section>;
+    setSelectedCourses: React.Dispatch<React.SetStateAction<Set<Section>>>;
+    value: string;
+    setValue: React.Dispatch<React.SetStateAction<string>>;
+    inputRef: React.RefObject<HTMLInputElement>;
+    clearSelections: () => void;
+    clearInputValue: () => void;
 }
-
 
 const AutoComplete = ({
     defaultValue = "",
@@ -187,13 +187,11 @@ const AutoComplete = ({
                 inputRef.current.value = generateCoursesValue();
             } else if (selectedCourses.size === 1) {
                 // display the one selected section
-                setValue(
-                    selectedCourses.values().next().value.section_id
-                );
+                setValue(selectedCourses.values().next().value.section_id);
                 inputRef.current.value = selectedCourses
                     .values()
                     .next().value.section_id;
-            } 
+            }
         }
     }, [selectedCourses]);
 
@@ -247,24 +245,13 @@ const AutoComplete = ({
      * Returns suggested suggestion grouped by course
      * @return suggestions
      */
-    const groupedSuggestions = suggestions
-        .sort((a, b) => a.section_id.localeCompare(b.section_id))
-        .reduce((res, obj) => {
-            const [courseName, midNum, endNum] = obj.section_id.split("-");
-            const { activity } = obj;
-
-            if (res[`${courseName}-${midNum}`]) {
-                if (res[`${courseName}-${midNum}`][activity]) {
-                    res[`${courseName}-${midNum}`][activity].push(obj);
-                } else {
-                    res[`${courseName}-${midNum}`][activity] = [obj];
-                }
-            } else {
-                res[`${courseName}-${midNum}`] = { [activity]: [obj] };
-            }
-
-            return res;
-        }, {});
+    const groupedSuggestions = groupByProperty(
+        suggestions,
+        (a, b) => a.section_id.localeCompare(b.section_id),
+        "-",
+        (obj) => obj.section_id,
+        (obj) => obj.activity
+    );
 
     return (
         <Container

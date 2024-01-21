@@ -7,6 +7,7 @@ import { AlertItem } from "./AlertItem";
 import { maxWidth, PHONE } from "../../constants";
 import { Alert, AlertAction, SectionStatus, TAlertSel } from "../../types";
 import { AlertHeader } from "./AlertHeader";
+import { groupByProperty } from "../../util";
 
 const Container = styled.div`
     background: #ffffff;
@@ -91,90 +92,7 @@ export const ManageAlert = ({
     const [searchTimeout, setSearchTimeout] = useState<number>();
     const [numSelected, setNumSelected] = useState(0);
 
-    // Alerts for testing
-    var alert1: Alert = {
-        id: 1,
-        originalCreatedAt: "2023-09-11T12:00:00Z",
-        section: "cis-1100-001",
-        alertLastSent: "2023-09-11T12:00:00Z",
-        status: SectionStatus.OPEN,
-        actions: AlertAction.ONALERT,
-        closedNotif: AlertAction.ONCLOSED,
-    };
-    var alert2: Alert = {
-        id: 2,
-        originalCreatedAt: "2023-09-11T12:00:00Z",
-        section: "cis-1100-002",
-        alertLastSent: "2023-09-11T12:00:00Z",
-        status: SectionStatus.OPEN,
-        actions: AlertAction.ONALERT,
-        closedNotif: AlertAction.ONCLOSED,
-    };
-    var alert3: Alert = {
-        id: 3,
-        originalCreatedAt: "2023-09-11T12:00:00Z",
-        section: "cis-1200-001",
-        alertLastSent: "2023-09-11T12:00:00Z",
-        status: SectionStatus.OPEN,
-        actions: AlertAction.ONALERT,
-        closedNotif: AlertAction.ONCLOSED,
-    };
-    var alert4: Alert = {
-        id: 4,
-        originalCreatedAt: "2023-09-11T12:00:00Z",
-        section: "stat-4300-002",
-        alertLastSent: "2023-09-11T12:00:00Z",
-        status: SectionStatus.OPEN,
-        actions: AlertAction.ONALERT,
-        closedNotif: AlertAction.ONCLOSED,
-    };
-    var alert5: Alert = {
-        id: 5,
-        originalCreatedAt: "2023-09-11T12:00:00Z",
-        section: "stat-4300-001",
-        alertLastSent: "2023-09-11T12:00:00Z",
-        status: SectionStatus.OPEN,
-        actions: AlertAction.ONALERT,
-        closedNotif: AlertAction.ONCLOSED,
-    };
-    var alert6: Alert = {
-        id: 6,
-        originalCreatedAt: "2023-09-11T12:00:00Z",
-        section: "math-1400-001",
-        alertLastSent: "2023-09-11T12:00:00Z",
-        status: SectionStatus.OPEN,
-        actions: AlertAction.ONALERT,
-        closedNotif: AlertAction.ONCLOSED,
-    };
-    var alert7: Alert = {
-        id: 7,
-        originalCreatedAt: "2023-09-11T12:00:00Z",
-        section: "math-1410-002",
-        alertLastSent: "2023-09-11T12:00:00Z",
-        status: SectionStatus.OPEN,
-        actions: AlertAction.ONALERT,
-        closedNotif: AlertAction.ONCLOSED,
-    };
-    var alert8: Alert = {
-        id: 8,
-        originalCreatedAt: "2023-09-11T12:00:00Z",
-        section: "stat-4100-001",
-        alertLastSent: "2023-09-11T12:00:00Z",
-        status: SectionStatus.OPEN,
-        actions: AlertAction.ONALERT,
-        closedNotif: AlertAction.ONCLOSED,
-    };
-    var testAlerts: Alert[];
-    testAlerts = [
-        alert1,
-        alert2,
-        alert3,
-        alert4,
-        alert5,
-        alert6,
-        alert7,
-        alert8,
-    ];
+    let rowNum = 0;
 
     useEffect(() => {
         setNumSelected(
@@ -195,24 +113,16 @@ export const ManageAlert = ({
         );
     };
 
-    let rowNum = 0;
-
     /**
      * Returns alerts grouped by course
      * @return grouped alerts
      */
-    const groupedAlerts = testAlerts
-        .sort((a, b) => a.section.localeCompare(b.section))
-        .reduce((res, obj) => {
-            const [courseName, midNum, endNum] = obj.section.split("-");
-            if (res[`${courseName}-${midNum}`]) {
-                res[`${courseName}-${midNum}`].push(obj);
-            } else {
-                res[`${courseName}-${midNum}`] = [obj];
-            }
-
-            return res;
-        }, {});
+    const groupedAlerts = groupByProperty(
+        alerts,
+        (a, b) => a.section.localeCompare(b.section),
+        "-",
+        (obj) => obj.section
+    );
 
     return (
         <Container>
@@ -229,18 +139,15 @@ export const ManageAlert = ({
             />
             <AlertGrid>
                 {Object.keys(groupedAlerts).map((key) => {
-                    rowNum++;
                     return (
                         <>
-                            <AlertHeader course={key} rownum={rowNum} />
+                            <AlertHeader courseCode={key} rowNum={++rowNum} />
                             {groupedAlerts[key]?.map?.((alert) => {
-                                console.log(alert);
-                                rowNum++;
                                 return (
                                     <AlertItem
                                         key={alert.id}
                                         checked={alertSel[alert.id]}
-                                        rownum={rowNum}
+                                        rowNum={++rowNum}
                                         alertLastSent={alert.alertLastSent}
                                         course={alert.section}
                                         status={alert.status}

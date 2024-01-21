@@ -16,20 +16,20 @@ const GridSubtitle = styled.div`
 
 // Component for an alert entry (renders as a row in CSS grid)
 interface AlertHeaderProps {
-    course: string;
-    rownum: number;
+    courseCode: string;
+    rowNum: number;
 }
-export const AlertHeader = ({ course, rownum }: AlertHeaderProps) => {
+export const AlertHeader = ({ courseCode, rowNum }: AlertHeaderProps) => {
     return (
         <>
             <GridCourseTitle column={1} valign border>
-                <GridSubtitle>{course.toUpperCase()}</GridSubtitle>
+                <GridSubtitle>{courseCode.toUpperCase()}</GridSubtitle>
             </GridCourseTitle>
             {/* used to make sure grid line goes to end */}
             {Array.from({ length: 7 }, (_, index) => (
                 <GridItem
                     column={index + 2}
-                    row={rownum}
+                    row={rowNum}
                     border
                     halign
                     valign
