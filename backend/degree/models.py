@@ -8,12 +8,9 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models import Count, DecimalField, Q, Sum
 from django.db.models.functions import Coalesce
-from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import serializers
 
 from courses.models import Course
-from degree.exceptions import DoubleCountError, RuleFulfillmentError
 from degree.utils.model_utils import q_object_parser
 
 
@@ -319,8 +316,6 @@ class Fulfillment(models.Model):
         help_text=dedent(
             """
             The last offering of the course with the full code, or null if there is no such historical course.
-
-            This is state that is recomputed on save.
             """
         ),
     )
@@ -350,55 +345,36 @@ class Fulfillment(models.Model):
     )
 
     def save(self, *args, **kwargs):
-        # TODO: We should probably have a smarter way of doing this using serializer validators.
-        # This is not a place of honor.
+        """
+        This overriden save method does two things to update soft-state:
+        1. Recomputes the historical course associated with this fulfillment
+        2. Updates rule statuses (i.e., whether they are satisfied)
 
-        # recompute the historical course associated with this fulfillment
-        self.historical_course = (
+        This save method should be used wherever a fulfillment is created.
+        """
+        fulfillment = super().save(*args, **kwargs)
+
+        # Recompute the historical course associated with this fulfillment
+        course = (
             Course.objects.filter(full_code=self.full_code)
+            .order_by("-semester")
             .select_related("topic__most_recent")
-            .topic.most_recent
+            .first()
         )
-
-        degree_plan = get_object_or_404(
-            DegreePlan, degree_plan_id=self.degree_plan_id
-        )  # expect that the source of the request will have been validated
-        degree = degree_plan.degree
-
-        violated_rules = []
-        for rule in self.rules.all():
-            if rule.degree is not None and rule.degree != degree:
-                raise serializers.ValidationError(
-                    f"Rule {rule} is not associated with degree {degree}"
-                )
-            # TODO: we don't check the case when rule.degree is None, which means that the rule is a subrule of a top-level rule
-            if Course.objects.filter(rule.get_q_object(), full_code=self.full_code).count() == 0:
-                violated_rules.append(rule.id)
-        if violated_rules:
-            raise RuleFulfillmentError(violated_rules)
-
-        # Check double count restrictions
-        double_count_restrictions = DoubleCountRestriction.objects.filter(
-            degree=degree,
-            rule__in=self.rules.all(),
-            other_rule__in=self.rules.all(),
-        )
-        violated_double_counts = []
-        for restriction in double_count_restrictions:
-            if restriction.is_double_count_violated(degree_plan, new_fulfillment=self):
-                violated_double_counts.append(restriction.id)
-        if violated_double_counts:
-            raise DoubleCountError(violated_double_counts)
-
-        super(Fulfillment, self).save(*args, **kwargs)
-
-        # update rule statuses
+        if course is not None:
+            course = course.topic.most_recent
+        
+        self.historical_course = course
+        
+        # Update rule statuses
         for rule in self.rules.all():
             status, _ = SatisfactionStatus.objects.get_or_create(
                 degree_plan=self.degree_plan, rule=rule
             )
             status.satisfied = rule.evaluate([self.full_code])
             status.save()
+        
+        return fulfillment
 
 
 class SatisfactionStatus(models.Model):

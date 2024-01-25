@@ -5,6 +5,7 @@ from rest_framework import serializers
 from courses.models import Course
 from courses.serializers import CourseListSerializer
 from degree.models import Degree, DegreePlan, DoubleCountRestriction, Fulfillment, Rule
+from django.db.models import Q
 
 
 class DegreeListSerializer(serializers.ModelSerializer):
@@ -51,7 +52,8 @@ class DegreeDetailSerializer(serializers.ModelSerializer):
 
 
 class FulfillmentSerializer(serializers.ModelSerializer):
-    course = serializers.SerializerMethodField(
+    course = CourseListSerializer(
+        source="historical_course",
         help_text=dedent(
             """
             The details of the fulfilling course. This is the most recent course with the full code,
@@ -60,13 +62,44 @@ class FulfillmentSerializer(serializers.ModelSerializer):
         )
     )
 
-    def get_course(self, obj):
-        course = Course.objects.filter(full_code=obj.full_code).order_by("-semester").first()
-        return course and CourseListSerializer(course).data
+    full_code = serializers.SlugRelatedField(
+        slug_field="full_code",
+        queryset=Course.objects.all(),
+        help_text="The dash-separated full code of the course that fulfills the rule.",
+    )
+    rules = serializers.PrimaryKeyRelatedField(many=True)
 
     class Meta:
         model = Fulfillment
-        fields = ["degree_plan", "full_code", "course", "semester"]
+        fields = ["degree_plan", "full_code", "course", "semester", "rules"]        
+
+    def validate(self, data):
+        data = super().validate(data)
+
+        rules = data["rules"]
+        full_code = data["full_code"]
+
+        # TODO: check that rules belong to this degree plan
+        for rule in rules:
+            if not Course.objects.filter(rule.get_q_object(), full_code=self.full_code).exists():
+                raise serializers.ValidationError(
+                    f"Course {full_code} does not satisfy rule {rule.id}"
+                )
+            
+        # Check for double count restrictions
+        double_count_restrictions = DoubleCountRestriction.objects.filter(
+            Q(rule__in=rules) | Q(other_rule__in=rules)
+        )
+        for restriction in double_count_restrictions:
+            if restriction.is_double_count_violated():
+                raise serializers.ValidationError(
+                    f"Double count restriction {restriction.id} violated"
+                )
+                
+        return data
+
+        
+        
 
 
 class DegreePlanListSerializer(serializers.ModelSerializer):
