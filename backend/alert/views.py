@@ -33,7 +33,8 @@ from PennCourses.docs_settings import PcxAutoSchema
 
 
 # logger = logging.getLogger(__name__)
-logger = logging.basicConfig(filename="pca.log", encoding='utf-8', level=logging.DEBUG)
+logger = logging.basicConfig(filename="pca.log", encoding="utf-8", level=logging.DEBUG)
+
 
 def alert_for_course(c_id, semester, sent_by, course_status):
     send_course_alerts.delay(c_id, course_status=course_status, semester=semester, sent_by=sent_by)
