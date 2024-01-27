@@ -189,7 +189,7 @@ export function SchoolAttrs({
                                 type="checkbox"
                                 value={attribute.code}
                                 checked={filterData.selectedAttrs[attribute.code]}
-                                onChange={() => {
+                                onChange={(event) => {
                                     const toggleState = !filterData.selectedAttrs[
                                         attribute.code
                                     ];
@@ -205,6 +205,9 @@ export function SchoolAttrs({
                                             [attribute.code]: toggleState,
                                         },
                                     });
+                                    
+                                    // Prevent this event from propogating and causing the modal to close
+                                    event.stopPropagation()
                                 }}
                             />
                             {/* eslint-disable-next-line jsx-a11y/label-has-for */}
@@ -220,7 +223,7 @@ export function SchoolAttrs({
                                 type="checkbox"
                                 value={attribute.code}
                                 checked={filterData.selectedAttrs[attribute.code]}
-                                onChange={() => {
+                                onChange={(event) => {
                                     const toggleState = !filterData.selectedAttrs[
                                         attribute.code
                                     ];
@@ -236,6 +239,9 @@ export function SchoolAttrs({
                                             [attribute.code]: toggleState,
                                         },
                                     });
+
+                                    // Prevent this event from propogating and causing the modal to close
+                                    event.stopPropagation()
                                 }}
                             />
                             {/* eslint-disable-next-line jsx-a11y/label-has-for */}
