@@ -1,13 +1,19 @@
 import logging
 
-from django.core.management.base import BaseCommand, CommandParser
+from django.core.management.base import BaseCommand
 from tqdm import tqdm
 
 from alert.models import Course, Section
 from alert.util import should_send_pca_alert
 from alert.views import alert_for_course
 from courses import registrar
-from courses.util import get_course_and_section, get_current_semester, record_update, update_course_from_record
+from courses.util import (
+    get_course_and_section,
+    get_current_semester,
+    record_update,
+    translate_semester_inv,
+    update_course_from_record,
+)
 
 
 class Command(BaseCommand):
@@ -44,7 +50,7 @@ class Command(BaseCommand):
                 continue
 
             course_status = data.get("status")
-            course_previous_status = data.get("previous_status")
+            course_previous_status = data.get("previous_status") or ""
             if course_status is None:
                 stats["missing_data"] += 1
                 continue
@@ -53,6 +59,8 @@ class Command(BaseCommand):
             if course_term is None:
                 stats["missing_data"] += 1
                 continue
+            if any(course_term.endswith(s) for s in ["10", "20", "30"]):
+                course_term = translate_semester_inv(course_term)
 
             # Ignore sections not in db
             try:
@@ -67,6 +75,7 @@ class Command(BaseCommand):
                 stats["duplicate_updates"] += 1
                 continue
 
+            alert_for_course_called = False
             if send_alerts and should_send_pca_alert(course_term, course_status):
                 try:
                     alert_for_course(
@@ -75,6 +84,7 @@ class Command(BaseCommand):
                         sent_by="WEB",
                         course_status=course_status,
                     )
+                    alert_for_course_called = True
                     stats["sent"] += 1
                 except ValueError:
                     stats["parse_error"] += 1
@@ -85,7 +95,7 @@ class Command(BaseCommand):
                 course_term,
                 course_previous_status,
                 course_status,
-                send_alerts,
+                alert_for_course_called,
                 data,
             )
             update_course_from_record(u)
