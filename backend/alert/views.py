@@ -6,7 +6,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from django.db.models import Max
-from django.http import HttpResponse, JsonResponse
+from django.http import JsonResponse
 from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django_auto_prefetching import AutoPrefetchViewSetMixin
@@ -61,42 +61,50 @@ def accept_webhook(request):
 
     username, password = extract_basic_auth(auth_header)
     if username != settings.WEBHOOK_USERNAME or password != settings.WEBHOOK_PASSWORD:
-        return HttpResponse(
-            """Your credentials cannot be verified.
-        They should be placed in the header as &quot;Authorization-Bearer&quot;,
-        YOUR_APP_ID and &quot;Authorization-Token&quot; , YOUR_TOKEN""",
-            status=401,
-        )
+        raise ValidationError("Credentials could not be verified.")
+        # return HttpResponse(
+        #     """Your credentials cannot be verified.
+        # They should be placed in the header as &quot;Authorization-Bearer&quot;,
+        # YOUR_APP_ID and &quot;Authorization-Token&quot; , YOUR_TOKEN""",
+        #     status=401,
+        # )
 
     if request.method != "POST":
-        return HttpResponse("Methods other than POST are not allowed", status=405)
+        raise ValidationError("Methods other than POST are not allowed")
+        # return HttpResponse("Methods other than POST are not allowed", status=405)
 
     if "json" not in request.content_type.lower():
-        return HttpResponse("Request expected in JSON", status=415)
+        raise ValidationError("Request expected in JSON")
+        # return HttpResponse("Request expected in JSON", status=415)
 
     try:
         data = json.loads(request.body)
     except json.JSONDecodeError:
-        return HttpResponse("Error decoding JSON body", status=400)
+        raise ValidationError("Error decoding JSON body")
+        # return HttpResponse("Error decoding JSON body", status=400)
 
     course_id = data.get("section_id_normalized", None)
     if course_id is None:
-        return HttpResponse("Course ID could not be extracted from response", status=400)
+        raise ValidationError("Course ID could not be extracted from response")
+        # return HttpResponse("Course ID could not be extracted from response", status=400)
 
     course_status = data.get("status", None)
     if course_status is None:
-        return HttpResponse("Course Status could not be extracted from response", status=400)
+        raise ValidationError("Course Status could not be extracted from response")
+        # return HttpResponse("Course Status could not be extracted from response", status=400)
 
     prev_status = data.get("previous_status", None) or ""
 
     try:
         course_term = data.get("term", None)
         if course_term is None:
-            return HttpResponse("Course Term could not be extracted from response", status=400)
+            raise ValidationError("Course Term could not be extracted from response")
+            # return HttpResponse("Course Term could not be extracted from response", status=400)
         if any(course_term.endswith(s) for s in ["10", "20", "30"]):
             course_term = translate_semester_inv(course_term)
         if course_term.upper().endswith("B"):
-            return JsonResponse({"message": "webhook ignored (summer class)"})
+            raise ValidationError("webhook ignored (summer class)")
+            # return JsonResponse({"message": "webhook ignored (summer class)"})
 
         _, section, _, _ = get_or_create_course_and_section(course_id, course_term)
 
@@ -119,7 +127,8 @@ def accept_webhook(request):
                 alert_for_course_called = True
                 response = JsonResponse({"message": "webhook recieved, alerts sent"})
             except ValueError:
-                response = JsonResponse({"message": "course code could not be parsed"})
+                raise ValidationError("course code could not be parsed")
+                # response = JsonResponse({"message": "course code could not be parsed"})
         else:
             response = JsonResponse({"message": "webhook recieved"})
 
