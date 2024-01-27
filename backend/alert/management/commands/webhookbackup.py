@@ -1,19 +1,27 @@
 import logging
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandParser
 from tqdm import tqdm
 
 from alert.models import Course, Section
 from alert.util import should_send_pca_alert
 from alert.views import alert_for_course
 from courses import registrar
-from courses.util import get_course_and_section, get_current_semester
+from courses.util import get_course_and_section, get_current_semester, record_update, update_course_from_record
 
 
 class Command(BaseCommand):
     help = "Load course status for courses in the DB"
 
-    def handle(self, *args, **kwargs):
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--send_alerts",
+            action="store_true",
+            help="Include this flag to send status updates"
+        )
+
+    def handle(self, *args, **options):
+        send_alerts = options["send_alerts"]
         root_logger = logging.getLogger("")
         root_logger.setLevel(logging.DEBUG)
 
@@ -36,6 +44,7 @@ class Command(BaseCommand):
                 continue
 
             course_status = data.get("status")
+            course_previous_status = data.get("previous_status")
             if course_status is None:
                 stats["missing_data"] += 1
                 continue
@@ -58,7 +67,7 @@ class Command(BaseCommand):
                 stats["duplicate_updates"] += 1
                 continue
 
-            if should_send_pca_alert(course_term, course_status):
+            if send_alerts and should_send_pca_alert(course_term, course_status):
                 try:
                     alert_for_course(
                         section_code,
@@ -71,5 +80,14 @@ class Command(BaseCommand):
                     stats["parse_error"] += 1
             else:
                 stats["skipped"] += 1
+            u = record_update(
+                section,
+                course_term,
+                course_previous_status,
+                course_status,
+                send_alerts,
+                data,
+            )
+            update_course_from_record(u)
 
         print(stats)
