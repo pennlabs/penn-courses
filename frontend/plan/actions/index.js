@@ -210,7 +210,6 @@ export const loadAttributes = () => (dispatch) =>
                     data.forEach((element) => {
                         const school =
                             element.school === "NUR" ? "NURS" : element.school;
-                        console.log("school", school);
                         if (obj[school] === undefined) {
                             return;
                         }
