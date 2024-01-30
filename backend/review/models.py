@@ -1,5 +1,27 @@
+from textwrap import dedent
 from django.db import models
 from django.db.models import Avg, Q
+
+class PrecomputedReview(models.Model):
+    instructor = models.ForeignKey("courses.Instructor", on_delete=models.CASCADE, db_index=True) 
+    course = models.ForeignKey("courses.Course", on_delete=models.CASCADE, db_index=True)
+    field = models.CharField(max_length=32, db_index=True)
+    num_sections = models.PositiveIntegerField()
+    average = models.DecimalField(max_digits=6, decimal_places=5)
+    semester = models.CharField(
+        max_length=5,
+        db_index=True,
+        help_text=dedent(
+            """
+        The semester of the course (of the form YYYYx where x is A [for spring],
+        B [summer], or C [fall]), e.g. `2019C` for fall 2019.
+        """
+        ),
+    )
+
+    class Meta:
+        unique_together = (("course", "instructor", "field"))
+        index_together = (("course", "instructor", "field"))
 
 
 class Review(models.Model):

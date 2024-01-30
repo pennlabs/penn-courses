@@ -8,6 +8,7 @@ from review.views import (
     department_reviews,
     instructor_for_course_reviews,
     instructor_reviews,
+    course_reviews_v2
 )
 
 
@@ -20,6 +21,11 @@ urlpatterns = [
         "course/<slug:course_code>",
         cache_page(MONTH_IN_SECONDS)(course_reviews),
         name="course-reviews",
+    ),
+    path(
+        "course/<slug:course_code>",
+        cache_page(MONTH_IN_SECONDS)(course_reviews),
+        name="course-reviews-v2",
     ),
     path(
         "course_plots/<slug:course_code>",

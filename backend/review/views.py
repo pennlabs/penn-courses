@@ -1,7 +1,7 @@
 from collections import Counter, defaultdict
 
 from dateutil.tz import gettz
-from django.db.models import F, Max, OuterRef, Q, Subquery, Value
+from django.db.models import F, Max, OuterRef, Q, Subquery, Value, Sum
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes, schema
@@ -29,7 +29,7 @@ from review.documentation import (
     instructor_for_course_reviews_response_schema,
     instructor_reviews_response_schema,
 )
-from review.models import ALL_FIELD_SLUGS, Review
+from review.models import ALL_FIELD_SLUGS, Review, PrecomputedReview
 from review.util import (
     aggregate_reviews,
     avg_and_recent_demand_plots,
@@ -39,6 +39,7 @@ from review.util import (
     get_single_dict_from_qs,
     get_status_updates_map,
     make_subdict,
+    to_r_camel,
 )
 
 
@@ -262,6 +263,219 @@ def course_reviews(request, course_code, semester=None):
             "instructors": instructors,
             "registration_metrics": num_registration_metrics > 0,
             **get_average_and_recent_dict_single(course),
+        }
+    )
+
+
+@api_view(["GET"])
+@schema(
+    PcxAutoSchema(
+        response_codes={
+            "course-reviews": {
+                "GET": {
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Reviews retrieved successfully.",
+                    404: "Course with given course_code not found.",
+                },
+            },
+        },
+        custom_path_parameter_desc={
+            "course-reviews": {
+                "GET": {
+                    "course_code": (
+                        "The dash-joined department and code of the course you want reviews for, e.g. `CIS-120` for CIS-120."  # noqa E501
+                    )
+                }
+            },
+        },
+        custom_parameters={
+            "course-reviews": {
+                "GET": [
+                    {
+                        "name": "semester",
+                        "in": "query",
+                        "description": "Optionally specify the semester of the desired course (defaults to most recent course with the specified course code).",  # noqa E501
+                        "schema": {"type": "string"},
+                        "required": False,
+                    },
+                ]
+            },
+        },
+        override_response_schema=course_reviews_response_schema,
+    )
+) # TODO: add back permissions class
+def course_reviews_v2(request, course_code, semester=None):
+    """
+    Get all reviews for the topic of a given course and other relevant information.
+    Different aggregation views are provided, such as reviews spanning all semesters,
+    only the most recent semester, and instructor-specific views.
+    """
+    try:
+        semester = request.GET.get("semester")
+        course = (
+            Course.objects.filter(
+                course_filters_pcr,
+                **(
+                    {"topic__courses__full_code": course_code, "topic__courses__semester": semester}
+                    if semester
+                    else {"full_code": course_code}
+                ),
+            )
+            .order_by("-semester")[:1]
+            .annotate(
+                branched_from_full_code=F("topic__branched_from__most_recent__full_code"),
+                branched_from_semester=F("topic__branched_from__most_recent__semester"),
+            )
+            .select_related("topic__most_recent")
+            .get()
+        )
+    except Course.DoesNotExist:
+        raise Http404()
+
+    topic = course.topic
+    branched_from_full_code = course.branched_from_full_code
+    branched_from_semester = course.branched_from_semester
+    course = topic.most_recent
+    course_code = course.full_code
+    aliases = course.crosslistings.values_list("full_code", flat=True)
+
+    superseded = (
+        Course.objects.filter(
+            course_filters_pcr,
+            full_code=course_code,
+        )
+        .aggregate(max_semester=Max("semester"))
+        .get("max_semester")
+        > course.semester
+        if semester
+        else False
+    )
+    last_offered_sem_if_superceded = course.semester if superseded else None
+
+    topic_codes = list(
+        topic.courses.exclude(full_code=course.full_code)
+        .values("full_code")
+        .annotate(semester=Max("semester"), branched_from=Value(False))
+        .values("full_code", "semester", "branched_from")
+    )
+    topic_branched_from = (
+        {
+            "full_code": branched_from_full_code,
+            "semester": branched_from_semester,
+            "branched_from": True,
+        }
+        if branched_from_full_code
+        else None
+    )
+    historical_codes = sorted(
+        topic_codes + ([topic_branched_from] if topic_branched_from else []),
+        key=lambda x: x["semester"],
+        reverse=True,
+    )
+
+    # instructor_reviews = review_averages(
+    #     Review.objects.filter(section__course__topic=topic),
+    #     reviewbit_subfilters=Q(review_id=OuterRef("id")),
+    #     section_subfilters=Q(id=OuterRef("section_id")),
+    #     fields=ALL_FIELD_SLUGS,
+    #     prefix="bit_",
+    #     extra_metrics=True,
+    # ).annotate(instructor_name=F("instructor__name"), semester=F("section__course__semester"))
+
+    instructor_average_reviewbits = PrecomputedReview.objects.filter(course__topic=topic) \
+        .values("field", "instructor_id", "instructor__name") \
+        .annotate(avg=Sum(F("average") * F("num_sections")) / Sum("num_sections"))
+    instructor_recent_reviewbits = PrecomputedReview.objects.filter(course__topic=topic) \
+        .order_by("field", "instructor_id", "-semester") \
+        .distinct("field", "instructor_id") \
+        .annotate(avg=F("average")) \
+        .values("field", "instructor_id", "instructor__name", "avg")
+    
+    
+    # merge together the instructor's review bits (each one has one field like 'instructor_quality', 'course_quality', etc.)
+    instructor_reviews = dict()
+    for bit in instructor_average_reviewbits:
+        instructor_id = bit["instructor_id"]
+        if instructor_id not in instructor_reviews:
+            instructor_reviews[instructor_id] = {
+                "id": instructor_id,
+                "name": bit["instructor__name"],
+                "average_reviews": dict(),
+                "recent_reviews": dict()
+            }
+        instructor_reviews[instructor_id]["average_reviews"][to_r_camel(bit["field"])] = bit["avg"]
+    for bit in instructor_recent_reviewbits:
+        instructor_reviews[bit["instructor_id"]]["recent_reviews"][to_r_camel(bit["field"])] = bit["avg"]
+    
+    all_instructors = list(
+        Instructor.objects.filter(
+            id__in=Subquery(
+                Section.objects.filter(section_filters_pcr, course__topic=topic).values(
+                    "instructors__id"
+                )
+            )
+        )
+        .distinct()
+        .annotate(
+            most_recent_sem=Subquery(
+                Section.objects.filter(instructors__id=OuterRef("id"), course__topic=topic)
+                .annotate(common=Value(1))
+                .values("common")
+                .annotate(max_sem=Max("course__semester"))
+                .values("max_sem")
+            )
+        )
+        .values(instructor_id=F("id"), instructor_name=F("name"), most_recent_semester=F("most_recent_sem"))
+    )
+
+    # Add instructors who don't have reviews and add most_recent_sem to the instructor_reviews
+    assert set(instructor_reviews.keys()) <= set(instructor["instructor_id"] for instructor in all_instructors)
+    for instructor in all_instructors:
+        instructor_id = instructor["instructor_id"]
+        if instructor_id in instructor_reviews:
+            instructor_reviews[instructor_id]["most_recent_sem"] = instructor["most_recent_semester"]
+        else:
+            instructor_reviews[instructor_id] = instructor
+
+    course_average_reviewbits = PrecomputedReview.objects.filter(course__topic=topic) \
+        .values("field") \
+        .annotate(avg=Sum(F("average") * F("num_sections")) / Sum("num_sections"))
+    course_recent_reviewbits = PrecomputedReview.objects.filter(course__topic=topic) \
+        .order_by("field", "-semester") \
+        .distinct("field") \
+        .annotate(avg=F("average")) \
+        .values("field", "avg")
+    course_average_reviews = {to_r_camel(bit["field"]): bit["avg"] for bit in course_average_reviewbits}
+    course_recent_reviews = {to_r_camel(bit["field"]): bit["avg"] for bit in course_recent_reviewbits}
+    course = Course.objects.filter(course_filters_pcr, topic_id=topic.id) \
+        .order_by("-semester") \
+        .values("full_code", "title", "description", "semester") \
+        .first()
+
+    num_registration_metrics = Section.objects.filter(
+        extra_metrics_section_filters_pcr(),
+        course__topic=topic,
+    ).count()
+
+    num_sections, num_sections_recent = get_num_sections(
+        section_filters_pcr,
+        course__topic=topic,
+    )
+
+    return Response(
+        {
+            "code": course["full_code"],
+            "last_offered_sem_if_superceded": last_offered_sem_if_superceded,
+            "name": course["title"],
+            "description": course["description"],
+            "aliases": aliases,
+            "historical_codes": historical_codes,
+            "latest_semester": course["semester"],
+            "num_sections": num_sections,
+            "num_sections_recent": num_sections_recent,
+            "instructors": instructor_reviews,
+            "registration_metrics": num_registration_metrics > 0,
+            "average_reviews": course_average_reviews,
+            "recent_reviews": course_recent_reviews,
         }
     )
 
