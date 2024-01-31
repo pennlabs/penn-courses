@@ -138,7 +138,7 @@ def course_reviews(request, course_code, semester=None):
         return manual_course_reviews(request_semester, course_code, semester)
     response = cache.get(topic_id)
     if response is None:
-        return manual_course_reviews(request_semester, course_code, semester)
+        return Response(manual_course_reviews(request_semester, course_code, semester))
 
     return Response(response)
 
@@ -262,23 +262,21 @@ def manual_course_reviews(course_code, request_semester, semester=None):
         section_filters_pcr,
         course__topic=topic,
     )
-
-    return Response(
-        {
-            "code": course["full_code"],
-            "last_offered_sem_if_superceded": last_offered_sem_if_superceded,
-            "name": course["title"],
-            "description": course["description"],
-            "aliases": aliases,
-            "historical_codes": historical_codes,
-            "latest_semester": course["semester"],
-            "num_sections": num_sections,
-            "num_sections_recent": num_sections_recent,
-            "instructors": instructors,
-            "registration_metrics": num_registration_metrics > 0,
-            **get_average_and_recent_dict_single(course),
-        }
-    )
+   
+    {
+        "code": course["full_code"],
+        "last_offered_sem_if_superceded": last_offered_sem_if_superceded,
+        "name": course["title"],
+        "description": course["description"],
+        "aliases": aliases,
+        "historical_codes": historical_codes,
+        "latest_semester": course["semester"],
+        "num_sections": num_sections,
+        "num_sections_recent": num_sections_recent,
+        "instructors": instructors,
+        "registration_metrics": num_registration_metrics > 0,
+        **get_average_and_recent_dict_single(course),
+    }
 
 
 @api_view(["GET"])

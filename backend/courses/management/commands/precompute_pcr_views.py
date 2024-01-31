@@ -16,18 +16,18 @@ def precompute_pcr_views():
     green_cache.clear()
 
     for topic in tqdm(Topic.objects.all()):
-        course_id_list, course_code_list = zip(topic.courses.values_list("id", "full_code"))
-        topic_id = ".".join(sorted(course_id_list))
+        course_id_list, course_code_list = zip(*topic.courses.values_list("id", "full_code"))
+        topic_id = ".".join([str(id) for id in sorted(course_id_list)])
         if blue_cache.get(topic_id) is None:
-            green_cache.put(
+            green_cache.set(
                 PCR_PRECOMPUTED_CACHE_PREFIX + topic_id,
-                manual_course_reviews(current_semester, course_code_list[0], current_semester),
+                manual_course_reviews(course_code_list[0], None),
             )  # placeholder semester
         else:
-            green_cache.put(PCR_PRECOMPUTED_CACHE_PREFIX + topic_id, blue_cache.get(topic_id))
+            green_cache.set(PCR_PRECOMPUTED_CACHE_PREFIX + topic_id, blue_cache.get(topic_id))
 
         for course_code in course_code_list:
-            green_cache.put(course_code, topic_id)
+            green_cache.set(course_code, topic_id)
 
     caches["blue"], caches["green"] = green_cache, blue_cache
 

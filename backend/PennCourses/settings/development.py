@@ -16,5 +16,11 @@ CSRF_TRUSTED_ORIGINS = ["http://localhost:3000"]
 CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.dummy.DummyCache",
+    },
+    "blue": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+    },
+    "green": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
     }
 }
