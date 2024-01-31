@@ -2,15 +2,17 @@ import logging
 
 import redis
 from django.conf import settings
-from django.core.cache import cache
+from django.core.cache import cache, caches
 from django.core.management import BaseCommand
 
+from backend.courses.management.commands.precompute_pcr_views import PCR_PRECOMPUTED_CACHE_PREFIX
 
-def clear_cache():
+
+def clear_cache(clear_pcr_cache=False, _cache_alias="default", _redis_delete_keys="*views.decorators.cache*"):
     # If we are not using redis as the cache backend, then we can delete everything from the cache.
     if (
         settings.CACHES is None
-        or settings.CACHES.get("default").get("BACKEND") != "django_redis.cache.RedisCache"
+        or settings.CACHES.get(_cache_alias).get("BACKEND") != "django_redis.cache.RedisCache"
     ):
         cache.clear()
         return -1
@@ -19,16 +21,27 @@ def clear_cache():
     # since celery also uses redis as a message broker backend.
     r = redis.Redis.from_url(settings.REDIS_URL)
     del_count = 0
-    for key in r.scan_iter("*views.decorators.cache*"):
+    for key in r.scan_iter(_redis_delete_keys):
         r.delete(key)
         del_count += 1
+
+    if clear_pcr_cache:
+        del_count += clear_cache(clear_pcr_cache=False, _cache_alias="green", _redis_delete_keys=f"{PCR_PRECOMPUTED_CACHE_PREFIX}*")
+        del_count += clear_cache(clear_pcr_cache=False, _cache_alias="blue", _redis_delete_keys=f"{PCR_PRECOMPUTED_CACHE_PREFIX}*")
+
     return del_count
 
 
 class Command(BaseCommand):
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--clear_pcr_cache",
+            action="store_true",
+            help="If set, will clear the PCR cache as well.",
+        )
+
     def handle(self, *args, **options):
         root_logger = logging.getLogger("")
         root_logger.setLevel(logging.DEBUG)
-
-        del_count = clear_cache()
+        del_count = clear_cache(clear_pcr_cache=options["clear_pcr_cache"])
         print(f"{del_count if del_count >=0 else 'all'} cache entries removed.")

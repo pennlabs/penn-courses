@@ -270,7 +270,7 @@ class Command(BaseCommand):
         self.close_files(files)
         # invalidate cached views
         print("Invalidating cache...")
-        del_count = clear_cache()
+        del_count = clear_cache(clear_pcr_cache=True)
         print(f"{del_count if del_count >=0 else 'all'} cache entries removed.")
 
         gc.collect()
