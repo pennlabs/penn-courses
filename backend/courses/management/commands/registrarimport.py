@@ -1,14 +1,17 @@
 import logging
 
 from django.core.management.base import BaseCommand
+from django.core.cache import caches
 from tqdm import tqdm
 
 from courses import registrar
+from courses.models import Topic, Course
 from courses.management.commands.loadstatus import set_all_status
 from courses.management.commands.recompute_parent_courses import recompute_parent_courses
 from courses.management.commands.recompute_soft_state import recompute_soft_state
 from courses.models import Department, Section
 from courses.util import get_current_semester, upsert_course_from_opendata
+from courses.views import old_course_reviews
 from review.management.commands.clearcache import clear_cache
 
 
@@ -39,6 +42,24 @@ def registrar_import(semester=None, query=""):
 
     recompute_parent_courses(semesters=[semester], verbose=True)
     recompute_soft_state(semesters=[semester], verbose=True)
+
+    current_semester = get_current_semester()
+    blue_cache = caches["blue"]
+    green_cache = caches["green"]
+    green_cache.clear()
+
+    for topic in tqdm(Topic.objects.all()):
+        course_id_list, course_code_list = zip(topic.courses.values_list("id", "full_code"))
+        topic_id = ".".join(sorted(course_id_list))
+        if blue_cache.get(topic_id) is None:
+            green_cache.put(topic_id, old_course_reviews(current_semester, course_code_list[0], current_semester))  # placeholder semester
+        else:
+            green_cache.put(topic_id, blue_cache.get(topic_id))
+        
+        for course_code in course_code_list:
+            green_cache.put(course_code, topic_id)
+
+    caches["blue"], caches["green"] = green_cache, blue_cache
 
     if semester.endswith("C"):
         # Make sure to load in summer course data as well

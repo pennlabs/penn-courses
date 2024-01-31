@@ -2,7 +2,9 @@ from collections import Counter, defaultdict
 
 from dateutil.tz import gettz
 from django.db.models import F, Max, OuterRef, Q, Subquery, Value
+from django.core.cache import cache
 from django.http import Http404
+
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
@@ -129,13 +131,24 @@ section_filters_pcr = Q(has_reviews=True) | (
 )
 @permission_classes([IsAuthenticated])
 def course_reviews(request, course_code, semester=None):
+    request_semester = request.GET.get("semester")
+    topic_id = cache.get(course_code)
+    if topic_id is None:
+        return manual_course_reviews(request_semester, course_code, semester)
+    response = cache.get(topic_id)
+    if response is None:
+        return manual_course_reviews(request_semester, course_code, semester)
+    
+    return Response(response)
+
+def manual_course_reviews(course_code, request_semester, semester=None):
     """
     Get all reviews for the topic of a given course and other relevant information.
     Different aggregation views are provided, such as reviews spanning all semesters,
     only the most recent semester, and instructor-specific views.
     """
     try:
-        semester = request.GET.get("semester")
+        semester = request_semester
         course = (
             Course.objects.filter(
                 course_filters_pcr,

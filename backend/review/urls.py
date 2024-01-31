@@ -18,7 +18,7 @@ MONTH_IN_SECONDS = DAY_IN_SECONDS * 30
 urlpatterns = [
     path(
         "course/<slug:course_code>",
-        cache_page(MONTH_IN_SECONDS)(course_reviews),
+        course_reviews,
         name="course-reviews",
     ),
     path(
