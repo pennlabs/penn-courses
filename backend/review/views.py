@@ -1,7 +1,7 @@
 from collections import Counter, defaultdict
 
 from dateutil.tz import gettz
-from django.core.cache import cache
+from django.core.cache import caches
 from django.db.models import F, Max, OuterRef, Q, Subquery, Value
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -130,16 +130,14 @@ section_filters_pcr = Q(has_reviews=True) | (
 )
 @permission_classes([IsAuthenticated])
 def course_reviews(request, course_code, semester=None):
-    # avoid circular imports
-    from courses.management.commands.precompute_pcr_views import PCR_PRECOMPUTED_CACHE_PREFIX
     request_semester = request.GET.get("semester")
-    topic_id = cache.get(PCR_PRECOMPUTED_CACHE_PREFIX + course_code)
+    cache = caches["blue"]
+    topic_id = cache.get(course_code)
     if topic_id is None:
-        return manual_course_reviews(request_semester, course_code, semester)
+        return Response(manual_course_reviews(course_code, request_semester, semester))
     response = cache.get(topic_id)
     if response is None:
-        return Response(manual_course_reviews(request_semester, course_code, semester))
-
+        return Response(manual_course_reviews(course_code, request_semester, semester))
     return Response(response)
 
 
@@ -263,7 +261,7 @@ def manual_course_reviews(course_code, request_semester, semester=None):
         course__topic=topic,
     )
    
-    {
+    return {
         "code": course["full_code"],
         "last_offered_sem_if_superceded": last_offered_sem_if_superceded,
         "name": course["title"],

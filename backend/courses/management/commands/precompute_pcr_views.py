@@ -3,14 +3,14 @@ from django.core.management.base import BaseCommand
 from tqdm import tqdm
 
 from review.views import manual_course_reviews 
-from courses.util import get_current_semester
 from courses.models import Topic
 from django.core.cache import caches
-
-PCR_PRECOMPUTED_CACHE_PREFIX = "pcr_precomputed_"
+from django.conf import settings
+from django.http import Http404
+import logging
+import redis
 
 def precompute_pcr_views():
-    current_semester = get_current_semester()
     blue_cache = caches["blue"]
     green_cache = caches["green"]
     green_cache.clear()
@@ -25,18 +25,27 @@ def precompute_pcr_views():
         course_id_list, course_code_list = zip(*topic.courses.values_list("id", "full_code"))
         topic_id = ".".join([str(id) for id in sorted(course_id_list)])
         if blue_cache.get(topic_id) is None:
-            green_cache.set(
-                PCR_PRECOMPUTED_CACHE_PREFIX + topic_id,
-                manual_course_reviews(course_code_list[0], topic.most_recent.semester),
-            )  # placeholder semester
+            try:
+                green_cache.set(
+                    topic_id,
+                    manual_course_reviews(course_code_list[0], topic.most_recent.semester),
+                )
+            except Http404:
+                logging.info(f"Topic returned 404 (topic_id {topic_id}, "
+                             f"course_code {course_code_list[0]}, semester {topic.most_recent.semester})")
         else:
-            green_cache.set(PCR_PRECOMPUTED_CACHE_PREFIX + topic_id, blue_cache.get(topic_id))
+            green_cache.set(topic_id, blue_cache.get(topic_id))
 
         for course_code in course_code_list:
             green_cache.set(course_code, topic_id)
 
-    caches["blue"], caches["green"] = green_cache, blue_cache
+    blue_redis_url, blue_redis_db = settings.CACHES.get("blue").get("LOCATION").rsplit("/", 1)
+    green_redis_url, green_redis_db = settings.CACHES.get("green").get("LOCATION").rsplit("/", 1)
+    assert blue_redis_url == green_redis_url, "Expect blue and green to use the same redis instance! Aborting blue green swap."
+    r = redis.Redis.from_url(blue_redis_url)
 
+    # swap blue and green
+    r.swapdb(int(blue_redis_db), int(green_redis_db))
 
 class Command(BaseCommand):
     help = "Precompute PCR views for all topics"
