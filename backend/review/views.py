@@ -182,7 +182,7 @@ def manual_course_reviews(course_code, request_semester, semester=None):
             full_code=course_code,
         )
         .aggregate(max_semester=Max("semester"))
-        .get("max_semester")
+        .get("max_semester", "") # default of "" handles case when no course is found
         > course.semester
         if semester
         else False
