@@ -2,8 +2,8 @@
 from django.core.management.base import BaseCommand
 from tqdm import tqdm
 
-from courses.views import old_course_reviews
-from courses.util import get_course_and_section, get_current_semester
+from review.views import manual_course_reviews 
+from courses.util import get_current_semester
 from courses.models import Topic
 from django.core.cache import caches
 
@@ -21,7 +21,7 @@ def precompute_pcr_views():
         if blue_cache.get(topic_id) is None:
             green_cache.put(
                 PCR_PRECOMPUTED_CACHE_PREFIX + topic_id,
-                old_course_reviews(current_semester, course_code_list[0], current_semester),
+                manual_course_reviews(current_semester, course_code_list[0], current_semester),
             )  # placeholder semester
         else:
             green_cache.put(PCR_PRECOMPUTED_CACHE_PREFIX + topic_id, blue_cache.get(topic_id))

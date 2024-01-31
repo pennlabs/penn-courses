@@ -2,11 +2,8 @@ import logging
 
 import redis
 from django.conf import settings
-from django.core.cache import cache, caches
+from django.core.cache import caches
 from django.core.management import BaseCommand
-
-from backend.courses.management.commands.precompute_pcr_views import PCR_PRECOMPUTED_CACHE_PREFIX
-
 
 def clear_cache(clear_pcr_cache=False, _cache_alias="default", _redis_delete_keys="*views.decorators.cache*"):
     # If we are not using redis as the cache backend, then we can delete everything from the cache.
@@ -14,7 +11,7 @@ def clear_cache(clear_pcr_cache=False, _cache_alias="default", _redis_delete_key
         settings.CACHES is None
         or settings.CACHES.get(_cache_alias).get("BACKEND") != "django_redis.cache.RedisCache"
     ):
-        cache.clear()
+        caches[_cache_alias].clear()
         return -1
 
     # If redis is the cache backend, then we need to be careful to only delete django cache entries,
@@ -26,6 +23,8 @@ def clear_cache(clear_pcr_cache=False, _cache_alias="default", _redis_delete_key
         del_count += 1
 
     if clear_pcr_cache:
+        # avoid circular import
+        from courses.management.commands.precompute_pcr_views import PCR_PRECOMPUTED_CACHE_PREFIX
         del_count += clear_cache(clear_pcr_cache=False, _cache_alias="green", _redis_delete_keys=f"{PCR_PRECOMPUTED_CACHE_PREFIX}*")
         del_count += clear_cache(clear_pcr_cache=False, _cache_alias="blue", _redis_delete_keys=f"{PCR_PRECOMPUTED_CACHE_PREFIX}*")
 

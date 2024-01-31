@@ -5,7 +5,6 @@ from django.core.cache import cache
 from django.db.models import F, Max, OuterRef, Q, Subquery, Value
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from backend.courses.management.commands.precompute_pcr_views import PCR_PRECOMPUTED_CACHE_PREFIX
 from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -131,6 +130,8 @@ section_filters_pcr = Q(has_reviews=True) | (
 )
 @permission_classes([IsAuthenticated])
 def course_reviews(request, course_code, semester=None):
+    # avoid circular imports
+    from courses.management.commands.precompute_pcr_views import PCR_PRECOMPUTED_CACHE_PREFIX
     request_semester = request.GET.get("semester")
     topic_id = cache.get(PCR_PRECOMPUTED_CACHE_PREFIX + course_code)
     if topic_id is None:
