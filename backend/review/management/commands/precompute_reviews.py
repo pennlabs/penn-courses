@@ -24,6 +24,24 @@ def precompute_reviews():
             GROUP BY review_reviewbit.field, review_review.instructor_id, courses_section.course_id, courses_course.semester;
             """
         )
+        print(f"Inserted {cursor.rowcount} rows into PrecomputedReview")
+
+        cursor.execute(
+            """
+            INSERT INTO review_precomputedreview (instructor_id, course_id, field, num_sections, average, semester)
+            SELECT
+                review_review.instructor_id as instructor_id,
+                courses_section.course_id AS course_id,
+                "final_enrollment" AS field,
+                COUNT(review_review.section_id) AS num_sections,
+                AVG(review_reviewbit.average) AS average,
+                courses_course.semester AS semester
+            FROM review_review
+            INNER JOIN courses_section ON review_review.section_id = courses_section.id
+            INNER JOIN courses_course ON courses_section.course_id = courses_course.id
+            GROUP BY review_reviewbit.field, review_review.instructor_id, courses_section.course_id, courses_course.semester;
+            """
+        )
 
 class Command(BaseCommand):
     help = """
