@@ -15,13 +15,19 @@ def precompute_pcr_views():
     green_cache = caches["green"]
     green_cache.clear()
 
-    for topic in tqdm(Topic.objects.all()):
+    # Note: we only cache the most recent topic for each full_code (any other cache entries get overwritten)
+    for topic in tqdm(
+        Topic.objects
+        .all()
+        .select_related("most_recent")
+        .order_by("most_recent__semester")
+    ):
         course_id_list, course_code_list = zip(*topic.courses.values_list("id", "full_code"))
         topic_id = ".".join([str(id) for id in sorted(course_id_list)])
         if blue_cache.get(topic_id) is None:
             green_cache.set(
                 PCR_PRECOMPUTED_CACHE_PREFIX + topic_id,
-                manual_course_reviews(course_code_list[0], None),
+                manual_course_reviews(course_code_list[0], topic.most_recent.semester),
             )  # placeholder semester
         else:
             green_cache.set(PCR_PRECOMPUTED_CACHE_PREFIX + topic_id, blue_cache.get(topic_id))
