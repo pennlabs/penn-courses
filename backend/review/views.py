@@ -1,10 +1,9 @@
 from collections import Counter, defaultdict
 
 from dateutil.tz import gettz
-from django.db.models import F, Max, OuterRef, Q, Subquery, Value
 from django.core.cache import cache
+from django.db.models import F, Max, OuterRef, Q, Subquery, Value
 from django.http import Http404
-
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
@@ -138,8 +137,9 @@ def course_reviews(request, course_code, semester=None):
     response = cache.get(topic_id)
     if response is None:
         return manual_course_reviews(request_semester, course_code, semester)
-    
+
     return Response(response)
+
 
 def manual_course_reviews(course_code, request_semester, semester=None):
     """
