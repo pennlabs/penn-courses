@@ -1,0 +1,15 @@
+app = "penn-course-review"
+primary_region = "ewr"
+
+[build]
+  image = "pennlabs/pcr-frontend"
+
+[env]
+  DOMAIN = "penn-course-review.fly.dev"
+
+[http_service]
+  internal_port = 3000
+  force_https = false # TODO: eventually true lmao
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
