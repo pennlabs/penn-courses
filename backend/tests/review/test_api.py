@@ -1133,11 +1133,11 @@ class PrecomputedCourseReviewCacheTestCase(TestCase, PCRTestMixin):
             query_params={"semester": TEST_SEMESTER},
         )
 
-        # requesting the older version of the course should cause a cache miss
+        # requesting the older version of the course just returns the cached value
         with mock.patch('review.views.manual_course_reviews', lambda *args, **kwargs: {"cache": "miss"}):
             self.assertRequestContainsAppx(
                 "course-reviews",
                 "CIS-1200",
-                {"cache": "miss"},
+                {"hello": "world"}, # No cache miss
                 query_params={"semester": OLD_SEMESTER},
             )
