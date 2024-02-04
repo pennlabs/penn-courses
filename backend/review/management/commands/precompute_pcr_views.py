@@ -10,7 +10,7 @@ from django.http import Http404
 import logging
 import redis
 
-def precompute_pcr_views():
+def precompute_pcr_views(verbose=False):
     blue_cache = caches["blue"]
     green_cache = caches["green"]
     green_cache.clear()
@@ -20,7 +20,8 @@ def precompute_pcr_views():
         Topic.objects
         .all()
         .select_related("most_recent")
-        .order_by("most_recent__semester")
+        .order_by("most_recent__semester"),
+        disable=not verbose
     ):
         course_id_list, course_code_list = zip(*topic.courses.values_list("id", "full_code"))
         topic_id = ".".join([str(id) for id in sorted(course_id_list)])
@@ -51,4 +52,4 @@ class Command(BaseCommand):
     help = "Precompute PCR views for all topics"
 
     def handle(self, *args, **kwargs):
-        precompute_pcr_views()
+        precompute_pcr_views(verbose=True)

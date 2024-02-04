@@ -181,8 +181,8 @@ def manual_course_reviews(course_code, request_semester, semester=None):
             course_filters_pcr,
             full_code=course_code,
         )
-        .aggregate(max_semester=Max("semester"))
-        .get("max_semester", "") # default of "" handles case when no course is found
+        .aggregate(max_semester=Max("semester", default="")) # default of "" handles case when no course is found
+        .get("max_semester", "")
         > course.semester
         if semester
         else False
