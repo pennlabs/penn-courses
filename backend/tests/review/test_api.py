@@ -24,6 +24,7 @@ from courses.models import Topic
 TEST_SEMESTER = "2022C"
 assert TEST_SEMESTER > "2012A"
 
+clear_cache(clear_pcr_cache=True) # Make sure cache is empty
 
 def set_semester():
     post_save.disconnect(
