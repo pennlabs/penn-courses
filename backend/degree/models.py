@@ -8,11 +8,11 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models import Count, DecimalField, Q, Sum
 from django.db.models.functions import Coalesce
+from django.db.models.signals import m2m_changed
 from django.utils import timezone
 
 from courses.models import Course
 from degree.utils.model_utils import q_object_parser
-from django.db.models.signals import m2m_changed
 
 
 program_choices = [
@@ -203,7 +203,7 @@ class Rule(models.Model):
         if self.num is not None and count < self.num:
             return False
         return True
-    
+
     def get_q_object(self) -> Q | None:
         if not self.q:
             return None
@@ -316,7 +316,8 @@ class Fulfillment(models.Model):
         related_name="+",
         help_text=dedent(
             """
-            The last offering of the course with the full code, or null if there is no such historical course.
+            The last offering of the course with the full code, or null if 
+            there is no such historical course.
             """
         ),
     )
@@ -363,10 +364,11 @@ class Fulfillment(models.Model):
         )
         if course is not None:
             course = course.topic.most_recent
-        
+
         self.historical_course = course
 
         super().save(*args, **kwargs)
+
 
 def update_satisfaction_statuses(sender, instance, action, pk_set, **kwargs):
     """
@@ -375,16 +377,18 @@ def update_satisfaction_statuses(sender, instance, action, pk_set, **kwargs):
     """
     if action == "pre_clear" or action == "pre_remove":
         instance.degree_plan.satisfactions.filter(rule__in=pk_set).delete()
-        return     
+        return
 
     if action == "post_add" or action == "post_remove" or action == "post_clear":
         degree_plan = instance.degree_plan
         for rule in degree_plan.degree.rules.all():
-            status, _ = SatisfactionStatus.objects.get_or_create(
-                degree_plan=degree_plan, rule=rule
+            status, _ = SatisfactionStatus.objects.get_or_create(degree_plan=degree_plan, rule=rule)
+            status.satisfied = rule.evaluate(
+                [fulfillment.full_code for fulfillment in degree_plan.fulfillments.all()]
             )
-            status.satisfied = rule.evaluate([fulfillment.full_code for fulfillment in degree_plan.fulfillments.all()])
             status.save()
+
+
 m2m_changed.connect(update_satisfaction_statuses, sender=Fulfillment.rules.through)
 
 

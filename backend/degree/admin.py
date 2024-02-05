@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from degree.models import Degree, Rule, DegreePlan, SatisfactionStatus, DoubleCountRestriction
+from degree.models import Degree, DegreePlan, DoubleCountRestriction, Rule, SatisfactionStatus
 
 
 # Register your models here.

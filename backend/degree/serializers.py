@@ -1,22 +1,25 @@
 from textwrap import dedent
 
+from django.db.models import Q
 from rest_framework import serializers
-from rest_framework.fields import empty
 
 from courses.models import Course
 from courses.serializers import CourseListSerializer
 from degree.models import Degree, DegreePlan, DoubleCountRestriction, Fulfillment, Rule
-from django.db.models import Q
+
 
 class DegreeListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Degree
         fields = "__all__"
 
+
 class RuleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Rule
         fields = "__all__"
+
+
 # Allow recursive serialization of rules
 RuleSerializer._declared_fields["rules"] = RuleSerializer(
     many=True, read_only=True, source="children"
@@ -39,6 +42,7 @@ class DegreeDetailSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = "__all__"
 
+
 class FulfillmentSerializer(serializers.ModelSerializer):
     course = CourseListSerializer(
         read_only=True,
@@ -48,7 +52,7 @@ class FulfillmentSerializer(serializers.ModelSerializer):
             The details of the fulfilling course. This is the most recent course with the full code,
             or null if no course exists with the full code.
             """
-        )
+        ),
     )
     # TODO: add a get_queryset method to only allow rules from the degree plan
     rules = serializers.PrimaryKeyRelatedField(many=True, queryset=Rule.objects.all())
@@ -64,12 +68,12 @@ class FulfillmentSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         data = super().validate(data)
-        rules = data.get("rules") # for patch requests without a rules field
+        rules = data.get("rules")  # for patch requests without a rules field
         full_code = data.get("full_code")
         degree_plan = data.get("degree_plan")
 
         if rules is None and full_code is None:
-            return data # Nothing to validate
+            return data  # Nothing to validate
         if rules is None:
             rules = self.instance.rules.all()
         if full_code is None:
@@ -83,7 +87,7 @@ class FulfillmentSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     f"Course {full_code} does not satisfy rule {rule.id}"
                 )
-            
+
         # Check for double count restrictions
         double_count_restrictions = DoubleCountRestriction.objects.filter(
             Q(rule__in=rules) | Q(other_rule__in=rules)
@@ -93,7 +97,7 @@ class FulfillmentSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     f"Double count restriction {restriction.id} violated"
                 )
-                
+
         return data
 
 

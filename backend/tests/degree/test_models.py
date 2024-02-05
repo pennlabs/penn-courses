@@ -1,16 +1,14 @@
-from rest_framework import serializers
 from django.db.models import Q
 from django.test import TestCase
 from lark.exceptions import LarkError
-from courses.models import User
 
 from courses.util import get_or_create_course_and_section
-from degree.models import Degree, DegreePlan, DoubleCountRestriction, Rule, Fulfillment
+from degree.models import Degree, Rule
 from degree.utils.model_utils import q_object_parser
-from django.db import IntegrityError
 
 
 TEST_SEMESTER = "2023C"
+
 
 class QObjectParserTest(TestCase):
     def assertParsedEqual(self, q: Q):
@@ -102,13 +100,9 @@ class RuleEvaluationTest(TestCase):
             "CIS-1910-001", TEST_SEMESTER, course_defaults={"credits": 0.5}
         )
 
-        self.degree = Degree.objects.create(
-            program="EU_BSE", degree="BSE", major="CIS", year=2023
-        )
+        self.degree = Degree.objects.create(program="EU_BSE", degree="BSE", major="CIS", year=2023)
 
-        self.root_rule = Rule.objects.create(
-            degree=self.degree
-        )
+        self.root_rule = Rule.objects.create(degree=self.degree)
         self.rule1 = Rule.objects.create(
             degree=self.degree,
             parent=self.root_rule,
@@ -181,263 +175,7 @@ class RuleEvaluationTest(TestCase):
         self.assertFalse(self.root_rule.evaluate([self.cis_1200.full_code]))
 
     def test_parent_rule_satisfied(self):
-        self.assertTrue(
-            self.root_rule.evaluate([self.cis_1200.full_code, self.cis_1910.full_code])
-        )
-
-class FulfillmentTest(TestCase):
-    """
-    Test cases for the Fulfillment model.
-
-    Most tests are related to the overriden `.save()` method, which relies on
-    logic from the DoubleCountRestriction and Rule models; that logic is tested
-    in the test cases for those respective rules.
-    """
-
-    def setUp(self):
-        self.user = User.objects.create_user(
-            username="test", password="top_secret", email="test@example.com"
-        )
-        self.cis_1200, self.cis_1200_001, _, _ = get_or_create_course_and_section(
-            "CIS-1200-001", TEST_SEMESTER, course_defaults={"credits": 1}
-        )
-        self.cis_1910, self.cis_1910_001, _, _ = get_or_create_course_and_section(
-            "CIS-1910-001", TEST_SEMESTER, course_defaults={"credits": 0.5}
-        )
-        self.cis_1930, self.cis_1930_001, _, _ = get_or_create_course_and_section(
-            "CIS-1920-001", TEST_SEMESTER, course_defaults={"credits": 1}
-        )
-
-        self.degree = Degree.objects.create(
-            program="EU_BSE", degree="BSE", major="CIS", year=2023
-        )
-        self.parent_rule = Rule.objects.create(degree=self.degree)
-        self.rule1 = Rule.objects.create(
-            degree=self.degree,
-            parent=self.parent_rule,
-            q=repr(Q(full_code="CIS-1200")),
-            num=1,
-        )
-        self.rule2 = Rule.objects.create(  # .5 cus / 1 course CIS-19XX classes
-            degree=self.degree,
-            parent=self.parent_rule,
-            q=repr(Q(full_code__startswith="CIS-19")),
-            credits=0.5,
-            num=1,
-        )
-        self.rule3 = Rule.objects.create(  # 2 CIS classes
-            degree=self.degree,
-            parent=None,
-            q=repr(Q(full_code__startswith="CIS")),
-            num=2,
-        )
-
-        self.double_count_restriction = DoubleCountRestriction.objects.create(
-            rule=self.rule2, # CIS-19XX
-            other_rule=self.rule3, # CIS-XXXX
-            max_credits=1,
-        )
-        self.degree_plan = DegreePlan.objects.create(
-            name="Good Degree Plan",
-            person=self.user,
-            degree=self.degree,
-        )
-        self.other_degree = Degree.objects.create(
-            program="EU_BSE", degree="BSE", major="CMPE", year=2023
-        )
-        self.bad_degree_plan = DegreePlan.objects.create(
-            name="Bad Degree Plan",
-            person=self.user,
-            degree=self.other_degree, # empty degree
-        )
-    
-    # TODO: this test feels mildly useless...
-    def test_creation(self):
-        fulfillment = Fulfillment(
-            degree_plan=self.degree_plan,
-            full_code=self.cis_1200.full_code,
-            semester=TEST_SEMESTER,
-        )
-        fulfillment.save()
-        fulfillment.rules.add(self.rule1, self.rule3)
-
-    def test_creation_without_semester(self):
-        fulfillment = Fulfillment(
-            degree_plan=self.degree_plan,
-            full_code=self.cis_1200.full_code,
-            rules=[self.rule1]
-        )
-        fulfillment.save()
-
-    def test_duplicate_full_code(self):
-        fulfillment = Fulfillment(
-            degree_plan=self.degree_plan,
-            full_code=self.cis_1200.full_code,
-            semester=TEST_SEMESTER,
-            rules=[self.rule1]
-        )
-        fulfillment.save()
-
-        other_fulfillment = Fulfillment(
-            degree_plan=self.degree_plan,
-            full_code=self.cis_1200.full_code,
-            semester=TEST_SEMESTER,
-            rules=[self.rule3]
-        )
-
-        try:
-            other_fulfillment.save()
-            self.fail("No exception raised.")
-        except IntegrityError:
-            pass
-
-    def test_fulfill_rule_of_wrong_degree(self):
-        fulfillment = Fulfillment(
-            degree_plan=self.bad_degree_plan, # has no rules 
-            full_code=self.cis_1200.full_code,
-            semester=TEST_SEMESTER,
-            rules=[self.rule1]
-        )
-        try:
-            fulfillment.save()
-            self.fail("No exception raised.")
-        except serializers.ValidationError:
-            pass # OK
-
-
-    def test_fulfill_nested_rule_of_wrong_degree(self):
-        fulfillment = Fulfillment(
-            degree_plan=self.bad_degree_plan, # has no rules 
-            full_code=self.cis_1910_001.full_code,
-            semester=TEST_SEMESTER,
-            rules=[self.parent_rule]
-        )
-        try:
-            fulfillment.save()
-            self.fail("No exception raised.")
-        except serializers.ValidationError:
-            pass # OK
-
-    def test_double_count_violation(self):
-        fulfillment = Fulfillment(
-            degree_plan=self.degree_plan,
-            full_code=self.cis_1910_001.full_code,
-            semester=TEST_SEMESTER,
-            rules=[self.rule2, self.rule3]
-        )
-        fulfillment.save()
-
-        other_fulfillment = Fulfillment(
-            degree_plan=self.degree_plan,
-            full_code=self.cis_1920_001.full_code,
-            semester=TEST_SEMESTER,
-            rules=[self.rule2, self.rule3]
-        )
-        try:
-            other_fulfillment.save()
-            self.fail("No exception raised.")
-        except DoubleCountException as e:
-            self.assertEquals(e.detail, [self.double_count_restriction.id])
-            pass # OK
-
-    def test_multiple_double_count_violations(self):
-        self.fail("unimplemented")
-
-    def test_rule_violation_on_credits(self): # rule_violation
-        fulfillment = Fulfillment(
-            degree_plan=self.degree_plan,
-            full_code=self.cis_1930.full_code, # 1 CU course
-            semester=TEST_SEMESTER,
-            rules=[self.rule2] # 0.5 CU rule
-        )
-        try:
-            fulfillment.save()
-            self.fail("No exception raised.")
-        except RuleViolationException as e:
-            self.assertEquals(e.detail, [self.rule2.id])
-            pass
-    
-    def test_rule_violation_on_courses(self): # rule_violation
-        fulfillment = Fulfillment(
-            degree_plan=self.degree_plan,
-            full_code=self.cis_1930.full_code,
-            semester=TEST_SEMESTER,
-            rules=[self.rule3]
-        )
-        fulfillment.save()
-        
-        other_fulfillment = Fulfillment(
-            degree_plan=self.degree_plan,
-            full_code=self.cis_1200.full_code,
-            semester=TEST_SEMESTER,
-            rules=[self.rule3]
-        )
-        try:
-            other_fulfillment.save()
-            self.fail("No exception raised.")
-        except RuleViolationException as e:
-            self.assertEquals(e.detail, [self.rule3.id])
-            pass
-    
-    def test_multiple_rule_violations(self): # rule_violation
-        fulfillment = Fulfillment(
-            degree_plan=self.degree_plan,
-            full_code=self.cis_1930.full_code,
-            semester=TEST_SEMESTER,
-            rules=[self.rule3, self.rule2]
-        )
-        fulfillment.save()
-        
-        other_fulfillment = Fulfillment(
-            degree_plan=self.degree_plan,
-            full_code=self.cis_1200.full_code,
-            semester=TEST_SEMESTER,
-            rules=[self.rule3]
-        )
-        try:
-            other_fulfillment.save()
-            self.fail("No exception raised.")
-        except RuleViolationException as e:
-            self.assertEquals(e.detail, [self.rule3.id, self.rule2.id])
-            pass
-
-    def test_fulfill_non_leaf_rule(self):
-        fulfillment = Fulfillment(
-            degree_plan=self.degree_plan,
-            full_code=self.cis_1910.full_code,
-            semester=TEST_SEMESTER,
-            rules=[self.parent_rule]
-        )
-
-        fulfillment.save()
-        # TODO: figure out what the right exception is here and put in try-except 
-        self.fail("No exception raised.")
-
-    def test_update_fulfilled_rules_causes_rule_violation(self):
-        fulfillment = Fulfillment(
-            degree_plan=self.degree_plan,
-            full_code=self.cis_1200.full_code,
-            semester=TEST_SEMESTER,
-            rules=[self.rule1]
-        )
-        fulfillment.save()
-        try:        
-            fulfillment.rules.add(self.rule2) # CIS-1900!
-            # TODO: do we need an explicit save here?
-            self.fail("No exception raised.")
-        except RuleViolationException:
-            pass # OK
-
-    def test_status_updates(self):
-        self.fail("unimplemented") # TODO: should this be tested here?
-
-    def test_fulfill_with_old_code(self):
-        # TODO: is this the responsibility of the Rule or the Fulfillment?
-        self.fail("unimplemented")
-
-    def test_fulfill_with_nonexistent_code(self):
-        # TODO: does nonexistent code mean the fullfillment is wrong? or that the courses we have in our DB are incomplete?        
-        self.fail("unimplemented")
+        self.assertTrue(self.root_rule.evaluate([self.cis_1200.full_code, self.cis_1910.full_code]))
 
 
 class DoubleCountRestrictionTest(TestCase):

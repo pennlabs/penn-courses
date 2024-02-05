@@ -6,7 +6,7 @@ from degree.utils import parse_degreeworks
 
 class ParserEvaluationTest(TestCase):
     def test_comparators(self):
-        json = {}
+        pass
 
     def test_and(self):
         pass

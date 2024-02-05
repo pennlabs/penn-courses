@@ -1,10 +1,10 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django_auto_prefetching import AutoPrefetchViewSetMixin
-from rest_framework import generics, mixins, status, viewsets
+from rest_framework import generics, status, viewsets
 from rest_framework.decorators import api_view
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.exceptions import ValidationError
 
 from courses.models import Course
 from courses.serializers import CourseListSerializer
