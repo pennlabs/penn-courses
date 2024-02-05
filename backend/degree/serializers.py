@@ -39,21 +39,6 @@ class DegreeDetailSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = "__all__"
 
-
-class PathParamPrimaryKeyDefault:
-    requires_context = True
-    
-    def __call__(self, serializer_field):
-        print("CALLED")
-        return DegreePlan.objects.get(
-            person=serializer_field.context['request'].user, 
-            pk=serializer_field.context['view'].get_degree_plan_id()
-        )
-
-    def __repr__(self):
-        return '%s()' % self.__class__.__name__
-
-
 class FulfillmentSerializer(serializers.ModelSerializer):
     course = CourseListSerializer(
         read_only=True,
@@ -75,14 +60,13 @@ class FulfillmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Fulfillment
-        fields = ["degree_plan", "full_code", "course", "semester", "rules"]
+        fields = ["id", "degree_plan", "full_code", "course", "semester", "rules"]
 
     def validate(self, data):
         data = super().validate(data)
         rules = data.get("rules") # for patch requests without a rules field
         full_code = data.get("full_code")
         degree_plan = data.get("degree_plan")
-        print(data)
 
         if rules is None and full_code is None:
             return data # Nothing to validate

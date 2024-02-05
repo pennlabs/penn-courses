@@ -43,6 +43,15 @@ class DegreePlanViewsetTest(TestCase):
         pass
 
 class FulfillmentViewsetTest(TestCase):
+    def assertSerializedFulfillmentEquals(self, fulfillment: dict, expected: Fulfillment):
+        self.assertEqual(len(fulfillment), 6)
+        self.assertEqual(fulfillment["id"], expected.id)
+        self.assertEqual(fulfillment["course"], CourseListSerializer(expected.historical_course).data)
+        self.assertEqual(fulfillment["rules"], [rule.id for rule in expected.rules.all()])
+        self.assertEqual(fulfillment["semester"], expected.semester)
+        self.assertEqual(fulfillment["degree_plan"], expected.degree_plan.id)
+        self.assertEqual(fulfillment["full_code"], expected.full_code)
+
     def setUp(self):
         self.user = User.objects.create_user(
             username="test", password="top_secret", email="test@example.com"
@@ -109,6 +118,8 @@ class FulfillmentViewsetTest(TestCase):
             {"full_code": "CIS-1200", "semester": TEST_SEMESTER, "rules": [self.rule1.id]}
         )
         self.assertEqual(response.status_code, 201, response.json())
+        self.assertSerializedFulfillmentEquals(response.data, Fulfillment.objects.get(full_code="CIS-1200"))
+
         fulfillment = Fulfillment.objects.get(full_code="CIS-1200")
         self.assertEqual(fulfillment.degree_plan, self.degree_plan)
         self.assertEqual(fulfillment.historical_course, self.cis_1200)
@@ -137,24 +148,10 @@ class FulfillmentViewsetTest(TestCase):
 
         response = self.client.get(reverse("degreeplan-fulfillment-list", kwargs={"degreeplan_pk": self.degree_plan.id}))
         self.assertEqual(response.status_code, 200, response.json())
-        fulfillments = sorted((dict(d) for d in response.data), key=lambda d: d["full_code"])
-        fulfillments == [
-            {
-                "degree_plan": self.degree_plan.id,
-                "full_code": "CIS-1200",
-                "course": CourseListSerializer(self.cis_1200).data,
-                "semester": TEST_SEMESTER,
-                "rules": [self.rule2.id]
-            },
-            {
+        response_a, response_b = sorted((dict(d) for d in response.data), key=lambda d: d["full_code"])
 
-                "degree_plan": self.degree_plan.id,
-                "full_code": "CIS-1910",
-                "course": dict(CourseListSerializer(self.cis_1910).data),
-                "semester": None,
-                "rules": [self.rule1.id]
-            }
-        ]
+        self.assertSerializedFulfillmentEquals(response_a, a)
+        self.assertSerializedFulfillmentEquals(response_b, b)
 
     def test_retrieve_fulfillment(self):
         a = Fulfillment(
@@ -167,15 +164,7 @@ class FulfillmentViewsetTest(TestCase):
 
         response = self.client.get(reverse("degreeplan-fulfillment-detail", kwargs={"degreeplan_pk": self.degree_plan.id, "pk": a.id}))
         self.assertEqual(response.status_code, 200, response.json())
-        fulfillment = response.data
-        print(fulfillment)
-        assert fulfillment == {
-            "full_code": "CIS-1200",
-            "degree_plan": self.degree_plan.id,
-            "course": CourseListSerializer(self.cis_1200).data,
-            "semester": TEST_SEMESTER,
-            "rules": [self.rule1]
-        }
+        self.assertSerializedFulfillmentEquals(response.data, a)
 
 
     def test_update_fulfillment_replace_rule(self):
@@ -192,11 +181,10 @@ class FulfillmentViewsetTest(TestCase):
             {"rules": [self.rule3.id]}
         )
         self.assertEqual(response.status_code, 200, response.json())
-        fulfillment = response.data
-        self.assertEquals(fulfillment["course"], CourseListSerializer(self.cis_1200).data)
-        self.assertEquals(fulfillment["rules"], [self.rule3.id])
-        self.assertEquals(fulfillment["semester"], TEST_SEMESTER) 
-        self.assertEquals(fulfillment["degree_plan"], self.degree_plan.id)
+        self.assertSerializedFulfillmentEquals(response.data, a)
+        a.refresh_from_db()
+        self.assertEqual(a.rules.count(), 1)
+        self.assertEqual(a.rules.first(), self.rule3)
     
     def test_update_semester(self):
         a = Fulfillment(
@@ -212,13 +200,9 @@ class FulfillmentViewsetTest(TestCase):
             {"semester": "2022B"}
         )
         self.assertEqual(response.status_code, 200, response.json())
-        fulfillment = response.data
-        self.assertEquals(fulfillment["course"], CourseListSerializer(self.cis_1200).data)
-        self.assertEquals(fulfillment["rules"], [self.rule1.id])
-        self.assertEquals(fulfillment["semester"], "2022B")
-        self.assertEquals(fulfillment["degree_plan"], self.degree_plan.id)
         a.refresh_from_db()
-        self.assertEquals(a.semester, "2022B")
+        self.assertSerializedFulfillmentEquals(response.data, a)
+        self.assertEqual(a.semester, "2022B")
     
     def test_update_fulfillment_full_code(self):
         a = Fulfillment(
@@ -234,13 +218,9 @@ class FulfillmentViewsetTest(TestCase):
             {"full_code": "CIS-1910"}
         )
         self.assertEqual(response.status_code, 200, response.json())
-        fulfillment = response.data
-        self.assertEquals(fulfillment["course"], CourseListSerializer(self.cis_1910).data)
-        self.assertEquals(fulfillment["rules"], [self.rule3.id])
-        self.assertEquals(fulfillment["semester"], TEST_SEMESTER)
-        self.assertEquals(fulfillment["degree_plan"], self.degree_plan.id)
         a.refresh_from_db()
-        self.assertEquals(a.full_code, "CIS-1910")
+        self.assertSerializedFulfillmentEquals(response.data, a)
+        self.assertEqual(a.full_code, "CIS-1910")
     
     def test_update_fulfillment_rule(self):
         a = Fulfillment(
@@ -256,11 +236,10 @@ class FulfillmentViewsetTest(TestCase):
             {"rules": [self.rule3.id, self.rule1.id]}
         )
         self.assertEqual(response.status_code, 200, response.json())
-        fulfillment = response.data
-        self.assertEquals(fulfillment["course"], CourseListSerializer(self.cis_1200).data)
-        self.assertEquals(fulfillment["rules"], [self.rule3.id])
-        self.assertEquals(fulfillment["semester"], TEST_SEMESTER) 
-        self.assertEquals(fulfillment["degree_plan"], self.degree_plan.id)
+        a.refresh_from_db()
+        self.assertSerializedFulfillmentEquals(response.data, a)
+        self.assertEqual(a.rules.count(), 2)
+        self.assertEqual(set(a.rules.all()), {self.rule1, self.rule3})
 
     def test_update_fulfillment_add_violated_rule(self):
         a = Fulfillment(
@@ -276,7 +255,7 @@ class FulfillmentViewsetTest(TestCase):
             {"rules": [self.rule2.id, self.rule1.id]}
         )
         self.assertEqual(response.status_code, 400, response.json())
-        self.assertEquals(
+        self.assertEqual(
             response.data["non_field_errors"][0], 
             f"Course CIS-1200 does not satisfy rule {self.rule2.id}"
         )
@@ -295,7 +274,7 @@ class FulfillmentViewsetTest(TestCase):
             {"full_code": "CIS-1910"}
         )
         self.assertEqual(response.status_code, 400, response.json())
-        self.assertEquals(
+        self.assertEqual(
             response.data["non_field_errors"][0], 
             f"Course CIS-1910 does not satisfy rule {self.rule1.id}"
         )

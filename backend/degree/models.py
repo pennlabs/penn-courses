@@ -12,6 +12,7 @@ from django.utils import timezone
 
 from courses.models import Course
 from degree.utils.model_utils import q_object_parser
+from django.db.models.signals import m2m_changed
 
 
 program_choices = [
@@ -334,7 +335,7 @@ class Fulfillment(models.Model):
 
     rules = models.ManyToManyField(
         Rule,
-        related_name="fulfillments",
+        related_name="+",
         blank=True,
         help_text=dedent(
             """
@@ -365,17 +366,26 @@ class Fulfillment(models.Model):
         
         self.historical_course = course
 
-        fulfillment = super().save(*args, **kwargs)
-        
-        # Update rule statuses
-        for rule in self.rules.all():
+        super().save(*args, **kwargs)
+
+def update_satisfaction_statuses(sender, instance, action, pk_set, **kwargs):
+    """
+    This function updates the SatisfactionStatuses associated with a DegreePlan when the rules
+    associated with a Fulfillment change.
+    """
+    if action == "pre_clear" or action == "pre_remove":
+        instance.degree_plan.satisfactions.filter(rule__in=pk_set).delete()
+        return     
+
+    if action == "post_add" or action == "post_remove" or action == "post_clear":
+        degree_plan = instance.degree_plan
+        for rule in degree_plan.degree.rules.all():
             status, _ = SatisfactionStatus.objects.get_or_create(
-                degree_plan=self.degree_plan, rule=rule
+                degree_plan=degree_plan, rule=rule
             )
-            status.satisfied = rule.evaluate([self.full_code])
+            status.satisfied = rule.evaluate([fulfillment.full_code for fulfillment in degree_plan.fulfillments.all()])
             status.save()
-        
-        return fulfillment
+m2m_changed.connect(update_satisfaction_statuses, sender=Fulfillment.rules.through)
 
 
 class SatisfactionStatus(models.Model):
@@ -386,7 +396,6 @@ class SatisfactionStatus(models.Model):
         related_name="satisfactions",
         help_text="The degree plan that leads to the satisfaction of the rule",
     )
-
     rule = models.ForeignKey(
         Rule,
         on_delete=models.CASCADE,
@@ -394,9 +403,7 @@ class SatisfactionStatus(models.Model):
         related_name="+",
         help_text="The rule that is satisfied",
     )
-
     satisfied = models.BooleanField(default=False, help_text="Whether the rule is satisfied")
-
     last_updated = models.DateTimeField(auto_now=True)
     last_checked = models.DateTimeField(default=timezone.now)
 
