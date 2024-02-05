@@ -202,7 +202,7 @@ class Rule(models.Model):
         if self.num is not None and count < self.num:
             return False
         return True
-
+    
     def get_q_object(self) -> Q | None:
         if not self.q:
             return None
@@ -352,7 +352,6 @@ class Fulfillment(models.Model):
 
         This save method should be used wherever a fulfillment is created.
         """
-        fulfillment = super().save(*args, **kwargs)
 
         # Recompute the historical course associated with this fulfillment
         course = (
@@ -365,6 +364,8 @@ class Fulfillment(models.Model):
             course = course.topic.most_recent
         
         self.historical_course = course
+
+        fulfillment = super().save(*args, **kwargs)
         
         # Update rule statuses
         for rule in self.rules.all():
@@ -447,9 +448,12 @@ class DoubleCountRestriction(models.Model):
                 full_code__in=[fulfillment.full_code for fulfillment in shared_fulfillments]
             )
             .order_by("full_code", "-semester")
-            .distinct("full_code")
-            .aggregate(Sum("cus"))
+            .aggregate(sum=Sum("credits", distinct=True))
+            .get("sum")
         )
+        if intersection_cus is None:
+            intersection_cus = 0
+
         if self.max_credits and intersection_cus > self.max_credits:
             return True
 

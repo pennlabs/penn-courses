@@ -1,19 +1,18 @@
 from django.urls import include, path
-from rest_framework import routers
-
+from rest_framework.routers import DefaultRouter
+from rest_framework_nested.routers import NestedDefaultRouter
 from degree.views import (
     DegreeDetail,
     DegreeList,
     DegreePlanViewset,
     FulfillmentViewSet,
-    rule_courses,
+    courses_for_rule,
 )
 
-
-router = routers.DefaultRouter()
-
-router.register("degreeplans", DegreePlanViewset, basename="degreeplans")
-router.register("fulfillments", FulfillmentViewSet, basename="fulfillments")
+router = DefaultRouter()
+router.register(r"degreeplans", DegreePlanViewset, basename="degreeplan")
+fulfillments_router = NestedDefaultRouter(router, r'degreeplans', lookup='degreeplan')
+fulfillments_router.register(r'fulfillments', FulfillmentViewSet, basename='degreeplan-fulfillment')
 
 urlpatterns = [
     path("degrees/", DegreeList.as_view(), name="degree-list"),
@@ -22,6 +21,7 @@ urlpatterns = [
         DegreeDetail.as_view(),
         name="degree-detail",
     ),
-    path("courses/<rule_id>", rule_courses, name="rule-courses"),
+    path("courses/<rule_id>", courses_for_rule, name="courses-for-rule"),
     path("", include(router.urls)),
+    path("", include(fulfillments_router.urls)),
 ]

@@ -7,7 +7,6 @@ from courses.models import User
 from courses.util import get_or_create_course_and_section
 from degree.models import Degree, DegreePlan, DoubleCountRestriction, Rule, Fulfillment
 from degree.utils.model_utils import q_object_parser
-from degree.exceptions import DoubleCountException, RuleViolationException
 from django.db import IntegrityError
 
 
@@ -106,31 +105,34 @@ class RuleEvaluationTest(TestCase):
         self.degree = Degree.objects.create(
             program="EU_BSE", degree="BSE", major="CIS", year=2023
         )
-        self.parent_rule = Rule.objects.create(degree_plan=self.degree_plan)
+
+        self.root_rule = Rule.objects.create(
+            degree=self.degree
+        )
         self.rule1 = Rule.objects.create(
             degree=self.degree,
-            parent=self.parent_rule,
+            parent=self.root_rule,
             q=repr(Q(full_code="CIS-1200")),
-            num_courses=1,
+            num=1,
         )
         self.rule2 = Rule.objects.create(  # Self-contradictory rule
-            degree=self.degree_plan,
+            degree=self.degree,
             parent=None,  # For now...
             q=repr(Q(full_code__startswith="CIS-12", full_code__endswith="1600")),
             credits=1,
         )
         self.rule3 = Rule.objects.create(  # .5 cus / 1 course CIS-19XX classes
-            degree=self.degree_plan,
-            parent=self.parent_rule,
+            degree=self.degree,
+            parent=self.root_rule,
             q=repr(Q(full_code__startswith="CIS-19")),
             credits=0.5,
-            num_courses=1,
+            num=1,
         )
         self.rule4 = Rule.objects.create(  # 2 CIS classes
-            degree=self.degree_plan,
+            degree=self.degree,
             parent=None,
             q=repr(Q(full_code__startswith="CIS")),
-            num_courses=2,
+            num=2,
         )
 
     def test_satisfied_rule(self):
@@ -140,7 +142,7 @@ class RuleEvaluationTest(TestCase):
         self.assertTrue(self.rule4.evaluate([self.cis_1600.full_code, self.cis_1200.full_code]))
         self.assertTrue(self.rule4.evaluate([self.cis_1910.full_code, self.cis_1200.full_code]))
 
-    def test_satisfied_rule_num_courses_credits(self):
+    def test_satisfied_rule_num_courses_and_credits(self):
         self.assertTrue(self.rule3.evaluate([self.cis_1910.full_code]))
 
     def test_surpass_rule(self):
@@ -176,11 +178,11 @@ class RuleEvaluationTest(TestCase):
         self.assertFalse(self.rule3.evaluate([self.cis_1910.full_code]))
 
     def test_parent_rule_unsatisfied(self):
-        self.assertFalse(self.parent_rule.evaluate([self.cis_1200.full_code]))
+        self.assertFalse(self.root_rule.evaluate([self.cis_1200.full_code]))
 
     def test_parent_rule_satisfied(self):
         self.assertTrue(
-            self.parent_rule.evaluate([self.cis_1200.full_code, self.cis_1910.full_code])
+            self.root_rule.evaluate([self.cis_1200.full_code, self.cis_1910.full_code])
         )
 
 class FulfillmentTest(TestCase):
@@ -214,30 +216,29 @@ class FulfillmentTest(TestCase):
             degree=self.degree,
             parent=self.parent_rule,
             q=repr(Q(full_code="CIS-1200")),
-            num_courses=1,
+            num=1,
         )
         self.rule2 = Rule.objects.create(  # .5 cus / 1 course CIS-19XX classes
             degree=self.degree,
             parent=self.parent_rule,
             q=repr(Q(full_code__startswith="CIS-19")),
             credits=0.5,
-            num_courses=1,
+            num=1,
         )
         self.rule3 = Rule.objects.create(  # 2 CIS classes
             degree=self.degree,
             parent=None,
             q=repr(Q(full_code__startswith="CIS")),
-            num_courses=2,
+            num=2,
         )
 
         self.double_count_restriction = DoubleCountRestriction.objects.create(
-            degree=self.degree,
             rule=self.rule2, # CIS-19XX
-            rule=self.rule3, # CIS-XXXX
+            other_rule=self.rule3, # CIS-XXXX
             max_credits=1,
         )
         self.degree_plan = DegreePlan.objects.create(
-            name="Good Degree Plan 😇"
+            name="Good Degree Plan",
             person=self.user,
             degree=self.degree,
         )
@@ -245,7 +246,7 @@ class FulfillmentTest(TestCase):
             program="EU_BSE", degree="BSE", major="CMPE", year=2023
         )
         self.bad_degree_plan = DegreePlan.objects.create(
-            name="Bad Degree Plan 😈"
+            name="Bad Degree Plan",
             person=self.user,
             degree=self.other_degree, # empty degree
         )
@@ -256,9 +257,9 @@ class FulfillmentTest(TestCase):
             degree_plan=self.degree_plan,
             full_code=self.cis_1200.full_code,
             semester=TEST_SEMESTER,
-            rules=[self.rule1, self.rule3]
         )
         fulfillment.save()
+        fulfillment.rules.add(self.rule1, self.rule3)
 
     def test_creation_without_semester(self):
         fulfillment = Fulfillment(

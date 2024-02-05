@@ -4,6 +4,7 @@ from rest_framework import generics, mixins, status, viewsets
 from rest_framework.decorators import api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.exceptions import ValidationError
 
 from courses.models import Course
 from courses.serializers import CourseListSerializer
@@ -87,16 +88,23 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
     serializer_class = FulfillmentSerializer
     queryset = Fulfillment.objects.all()
 
+    def get_degree_plan_id(self):
+        degreeplan_pk = self.kwargs["degreeplan_pk"]
+        try:
+            return int(degreeplan_pk)
+        except ValueError | TypeError:
+            raise ValidationError("Invalid degreeplan_pk passed in URL")
+
     def get_queryset(self):
         queryset = Fulfillment.objects.filter(
             degree_plan__person=self.request.user,
-            degree_plan_id=self.kwargs["degree_plan_id"],
+            degree_plan_id=self.get_degree_plan_id(),
         )
         return queryset
 
 
 @api_view(["GET"])
-def rule_courses(request, rule_id: int):
+def courses_for_rule(request, rule_id: int):
     """
     Search for courses that fulfill a given rule.
     """
