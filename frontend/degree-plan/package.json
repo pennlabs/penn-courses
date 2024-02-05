@@ -8,7 +8,6 @@
     "start": "next start",
     "lint": "next lint"
   },
-  "proxy": "https://penncourseplan.com",
   "dependencies": {
     "@emotion/react": "^11.10.6",
     "@emotion/styled": "^11.10.6",
@@ -16,7 +15,6 @@
     "@mdi/react": "^1.6.1",
     "@mui/material": "^5.13.4",
     "@mui/styled-engine-sc": "^5.12.0",
-    "@reduxjs/toolkit": "^1.9.3",
     "@types/node": "18.14.1",
     "@types/react": "18.0.28",
     "@types/react-dom": "18.0.11",
@@ -27,7 +25,6 @@
     "lodash": "^4.17.21",
     "lodash.clonedeep": "^4.5.0",
     "next": "13.2.1",
-    "next-redux-wrapper": "^8.1.0",
     "react": "18.2.0",
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",
@@ -36,7 +33,8 @@
     "react-resizable": "^3.0.5",
     "react-toastify": "^9.1.1",
     "styled-components": "6.0.0-rc.3",
-    "typescript": "4.9.5"
+    "typescript": "4.9.5",
+    "pcx-shared-components": "0.1.0"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.191"

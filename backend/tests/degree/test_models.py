@@ -3,7 +3,7 @@ from django.test import TestCase
 from lark.exceptions import LarkError
 
 from courses.util import get_or_create_course_and_section
-from degree.models import DegreePlan, Rule
+from degree.models import Degree, Rule
 from degree.utils.model_utils import q_object_parser
 
 
@@ -80,6 +80,10 @@ class QObjectParserTest(TestCase):
     def test_idempotency(self):
         self.assertParsedEqual(q_object_parser.parse(repr(Q(key="\"'value"))))
 
+    def test_empty_string(self):
+        with self.assertRaises(LarkError):
+            q_object_parser.parse("")
+
 
 class RuleEvaluationTest(TestCase):
     def setUp(self):
@@ -96,34 +100,33 @@ class RuleEvaluationTest(TestCase):
             "CIS-1910-001", TEST_SEMESTER, course_defaults={"credits": 0.5}
         )
 
-        self.degree_plan = DegreePlan.objects.create(
-            program="EU_BSE", degree="BSE", major="CIS", year=2023
-        )
-        self.parent_rule = Rule.objects.create(degree_plan=self.degree_plan)
+        self.degree = Degree.objects.create(program="EU_BSE", degree="BSE", major="CIS", year=2023)
+
+        self.root_rule = Rule.objects.create(degree=self.degree)
         self.rule1 = Rule.objects.create(
-            degree_plan=self.degree_plan,
-            parent=self.parent_rule,
+            degree=self.degree,
+            parent=self.root_rule,
             q=repr(Q(full_code="CIS-1200")),
-            num_courses=1,
+            num=1,
         )
         self.rule2 = Rule.objects.create(  # Self-contradictory rule
-            degree_plan=self.degree_plan,
+            degree=self.degree,
             parent=None,  # For now...
             q=repr(Q(full_code__startswith="CIS-12", full_code__endswith="1600")),
             credits=1,
         )
         self.rule3 = Rule.objects.create(  # .5 cus / 1 course CIS-19XX classes
-            degree_plan=self.degree_plan,
-            parent=self.parent_rule,
+            degree=self.degree,
+            parent=self.root_rule,
             q=repr(Q(full_code__startswith="CIS-19")),
             credits=0.5,
-            num_courses=1,
+            num=1,
         )
         self.rule4 = Rule.objects.create(  # 2 CIS classes
-            degree_plan=self.degree_plan,
+            degree=self.degree,
             parent=None,
             q=repr(Q(full_code__startswith="CIS")),
-            num_courses=2,
+            num=2,
         )
 
     def test_satisfied_rule(self):
@@ -133,7 +136,7 @@ class RuleEvaluationTest(TestCase):
         self.assertTrue(self.rule4.evaluate([self.cis_1600.full_code, self.cis_1200.full_code]))
         self.assertTrue(self.rule4.evaluate([self.cis_1910.full_code, self.cis_1200.full_code]))
 
-    def test_satisfied_rule_num_courses_credits(self):
+    def test_satisfied_rule_num_courses_and_credits(self):
         self.assertTrue(self.rule3.evaluate([self.cis_1910.full_code]))
 
     def test_surpass_rule(self):
@@ -164,14 +167,26 @@ class RuleEvaluationTest(TestCase):
 
     def test_unsatisfied_rule_num_courses_credits(self):
         self.rule3.credits = 1.5
-        self.rule3.num_courses = 2
+        self.rule3.num = 2
         self.rule3.save()
         self.assertFalse(self.rule3.evaluate([self.cis_1910.full_code]))
 
     def test_parent_rule_unsatisfied(self):
-        self.assertFalse(self.parent_rule.evaluate([self.cis_1200.full_code]))
+        self.assertFalse(self.root_rule.evaluate([self.cis_1200.full_code]))
 
     def test_parent_rule_satisfied(self):
-        self.assertTrue(
-            self.parent_rule.evaluate([self.cis_1200.full_code, self.cis_1910.full_code])
-        )
+        self.assertTrue(self.root_rule.evaluate([self.cis_1200.full_code, self.cis_1910.full_code]))
+
+
+class DoubleCountRestrictionTest(TestCase):
+    def setUp(self):
+        pass
+
+    def test_nested_rules(self):
+        pass
+
+    def test_credits_violation(self):
+        pass
+
+    def test_num_courses_violation(self):
+        pass

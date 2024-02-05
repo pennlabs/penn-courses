@@ -1,4 +1,7 @@
 .env*
+.yarn/build-state.yml
+.yarn/unplugged
+.yarn/install-state.gz
 .vscode
 .idea/
 .DS_Store

@@ -3,7 +3,7 @@ from pathlib import Path
 
 from requests import Session
 
-from degree.models import DegreePlan
+from degree.models import Degree
 
 
 BASE_URL = "https://degreeworks-prod-j.isc-seo.upenn.edu:9904"  # "128.91.225.72:9904"
@@ -28,20 +28,20 @@ class DegreeworksClient:
         self.s.cookies.update(cookies)
         self.s.headers.update(headers)
 
-    def audit(self, degree_plan: DegreePlan, timeout=30) -> dict:
+    def audit(self, degree: Degree, timeout=30) -> dict:
         payload = {
             "studentId": self.pennid,
             "isIncludeInprogress": True,
             "isIncludePreregistered": True,
             "isKeepCurriculum": False,
             "school": "UG",
-            "degree": degree_plan.degree,
-            "catalogYear": str(degree_plan.year),
+            "degree": degree.degree,
+            "catalogYear": str(degree.year),
             "goals": [
-                {"code": "MAJOR", "value": degree_plan.major},
-                {"code": "CONC", "value": degree_plan.concentration},
-                {"code": "PROGRAM", "value": degree_plan.program},
-                {"code": "COLLEGE", "value": degree_plan.program.split("_")[0]},
+                {"code": "MAJOR", "value": degree.major},
+                {"code": "CONC", "value": degree.concentration},
+                {"code": "PROGRAM", "value": degree.program},
+                {"code": "COLLEGE", "value": degree.program.split("_")[0]},
             ],
             "classes": [],
         }
@@ -56,9 +56,7 @@ class DegreeworksClient:
 
         return res.json()
 
-    def degree_plans_of(
-        self, program_code: str, year: int, undergrad_only=False
-    ) -> list[DegreePlan]:
+    def degrees_of(self, program_code: str, year: int, undergrad_only=False) -> list[Degree]:
         goals_payload = [
             {
                 "id": "programCollection",
@@ -1798,7 +1796,7 @@ class DegreeworksClient:
             },
         ]
 
-        degree_plans: list[DegreePlan] = []
+        found_degrees: list[Degree] = []
         # set program
         goals_payload[0]["goals"][1]["selectedChoices"] = [program_code]
 
@@ -1819,7 +1817,7 @@ class DegreeworksClient:
         for degree in degrees:
             degree_code = degree["key"]
             if undergrad_only:
-                assert degree_code.startswith("B")  # ie, is a bachelor's degree
+                assert degree_code.startswith("B")  # i.e., is a bachelor's degree
 
             # set degree
             goals_payload[0]["goals"][4]["selectedChoices"] = [degree_code]
@@ -1844,8 +1842,8 @@ class DegreeworksClient:
                 # CONCENTRATION
                 concentrations = res.json()[1]["goals"][1]["choices"]
                 if len(concentrations) == 0:
-                    degree_plans.append(
-                        DegreePlan(
+                    found_degrees.append(
+                        Degree(
                             program=program_code,
                             degree=degree_code,
                             major=major_code,
@@ -1856,8 +1854,8 @@ class DegreeworksClient:
                     continue
                 for concentration in concentrations:
                     concentration_code = concentration["key"]
-                    degree_plans.append(
-                        DegreePlan(
+                    found_degrees.append(
+                        Degree(
                             program=program_code,
                             degree=degree_code,
                             major=major_code,
@@ -1866,7 +1864,7 @@ class DegreeworksClient:
                         )
                     )
 
-        return degree_plans
+        return found_degrees
 
     def get_programs(self, timeout=30, year: int = 2023) -> str:
         goals_payload = [
@@ -3827,7 +3825,7 @@ class DegreeworksClient:
         return [program["key"] for program in res.json()[0]["goals"][1]["choices"]]
 
 
-def write_dp(dp: DegreePlan, audit_json: dict, dir: str | Path = "degreeplans", overwrite=False):
+def write_dp(dp: Degree, audit_json: dict, dir: str | Path = "degrees", overwrite=False):
     file_name = f"{dp.year}-{dp.program}-{dp.degree}-{dp.major}"
     if dp.concentration is not None:
         file_name += f"-{dp.concentration}"
@@ -3836,7 +3834,7 @@ def write_dp(dp: DegreePlan, audit_json: dict, dir: str | Path = "degreeplans", 
     )
     file_path = Path(dir, file_name)
     if not overwrite and file_path.exists():
-        raise FileExistsError(f"Degree plan with path `{file_name}`")
+        raise FileExistsError(f"Degree with path `{file_name}`")
 
     with open(file_path, "w") as f:
         json.dump(audit_json, f, indent=4)

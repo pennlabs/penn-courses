@@ -1,20 +1,18 @@
+from dataclasses import asdict
 from os import getenv
 from pprint import pprint
 from textwrap import dedent
 
 from django.core.management.base import BaseCommand
-from django.db import transaction
 
+from backend.degree.utils.degreeworks_client import DegreeworksClient
 from courses.util import get_current_semester
-from degree.models import DegreePlan, program_code_to_name
-from degree.utils.degreeworks_client import DegreeworksClient
-from degree.utils.parse_degreeworks import parse_degreeworks
 
 
 class Command(BaseCommand):
     help = dedent(
         """
-        Lists the available degreeplans for a semester.
+        Lists the available degrees for a semester.
 
         Expects PENN_ID, X_AUTH_TOKEN, REFRESH_TOKEN, NAME environment variables are set. It is
         recommended you add a .env file to the backend and let pipenv load it in for you.
@@ -23,11 +21,11 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--degree-plans",
+            "--out-file",
             help=dedent(
                 """
-            A .json to write out the degreeplans to
-            """
+                A .json to write out the degrees to
+                """
             ),
         )
 
@@ -38,8 +36,8 @@ class Command(BaseCommand):
             default=2017,
             help=dedent(
                 """
-            The minimum year to fetch degreeplans from.
-            """
+                The minimum year to list degrees from.
+                """
             ),
         )
 
@@ -48,13 +46,14 @@ class Command(BaseCommand):
             type=int,
             help=dedent(
                 """
-            The max year to fetch degreeplans from. If this is not provided, then
-            degree plans are listed until the current year (as provided by get_current_semester).
-            """
+                The max year to list degrees from. If this is not provided, then degrees
+                are listed until the current year (as provided by get_current_semester).
+                """
             ),
         )
 
     def handle(self, *args, **kwargs):
+        out_handle = open(kwargs["out_file"], "w") if kwargs["out_file"] is not None else None
         since_year = kwargs["since_year"]
         to_year = kwargs["to_year"] or int(get_current_semester()[:4])
 
@@ -73,19 +72,10 @@ class Command(BaseCommand):
 
         for year in range(since_year, to_year + 1):
             for program in client.get_programs(year=year):
-                if program not in program_code_to_name:
-                    continue
-                for degree_plan in client.degree_plans_of(program, year=year):
-                    with transaction.atomic():
-                        DegreePlan.objects.filter(
-                            program=degree_plan.program,
-                            degree=degree_plan.degree,
-                            major=degree_plan.major,
-                            concentration=degree_plan.concentration,
-                            year=degree_plan.year,
-                        ).all().delete()
+                for degrees in client.degrees_of(program, year=year):
+                    if out_handle is not None:
+                        out_handle.write(asdict(degrees))
+                    pprint(degrees, width=-1)
 
-                        degree_plan.save()
-                        print(f"Saving degree plan {degree_plan}...")
-                        rules = parse_degreeworks(client.audit(degree_plan), degree_plan)
-                        pprint(rules)
+        if out_handle is not None:
+            out_handle.close()
