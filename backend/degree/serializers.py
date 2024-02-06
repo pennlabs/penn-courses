@@ -7,8 +7,8 @@ from courses.models import Course
 from courses.serializers import CourseListSerializer
 from degree.models import Degree, DegreePlan, DoubleCountRestriction, Fulfillment, Rule
 
-class DegreeListSerializer(serializers.ModelSerializer):
 
+class DegreeListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Degree
         fields = "__all__"
@@ -18,6 +18,8 @@ class RuleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Rule
         fields = "__all__"
+
+
 # Allow recursive serialization of rules
 RuleSerializer._declared_fields["rules"] = RuleSerializer(
     many=True, read_only=True, source="children"
@@ -29,6 +31,7 @@ class DoubleCountRestrictionSerializer(serializers.ModelSerializer):
         model = DoubleCountRestriction
         fields = "__all__"
 
+
 class DegreeDetailSerializer(serializers.ModelSerializer):
     rules = RuleSerializer(many=True, read_only=True)
     double_count_restrictions = DoubleCountRestrictionSerializer(many=True, read_only=True)
@@ -36,6 +39,7 @@ class DegreeDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Degree
         fields = "__all__"
+
 
 class FulfillmentSerializer(serializers.ModelSerializer):
     course = CourseListSerializer(

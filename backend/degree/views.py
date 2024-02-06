@@ -1,12 +1,12 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django_auto_prefetching import AutoPrefetchViewSetMixin
-from rest_framework import generics, status, viewsets
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import status, viewsets
 from rest_framework.decorators import api_view
 from rest_framework.exceptions import ValidationError
+from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.filters import SearchFilter
 
 from courses.models import Course
 from courses.serializers import CourseListSerializer
@@ -18,8 +18,6 @@ from degree.serializers import (
     DegreePlanListSerializer,
     FulfillmentSerializer,
 )
-from PennCourses.docs_settings import PcxAutoSchema
-
 
 class DegreeViewset(viewsets.ReadOnlyModelViewSet):
     """

@@ -312,7 +312,7 @@ class Fulfillment(models.Model):
         related_name="+",
         help_text=dedent(
             """
-            The last offering of the course with the full code, or null if 
+            The last offering of the course with the full code, or null if
             there is no such historical course.
             """
         ),
@@ -383,6 +383,8 @@ def update_satisfaction_statuses(sender, instance, action, pk_set, **kwargs):
                 [fulfillment.full_code for fulfillment in degree_plan.fulfillments.all()]
             )
             status.save()
+
+
 m2m_changed.connect(update_satisfaction_statuses, sender=Fulfillment.rules.through)
 
 

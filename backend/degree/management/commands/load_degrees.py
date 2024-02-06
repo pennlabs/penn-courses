@@ -6,9 +6,10 @@ from textwrap import dedent
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
+from degree.management.commands.deduplicate_rules import deduplicate_rules
 from degree.models import Degree, program_code_to_name
 from degree.utils.parse_degreeworks import parse_and_save_degreeworks
-from degree.management.commands.deduplicate_rules import deduplicate_rules
+
 
 class Command(BaseCommand):
     help = dedent(
@@ -58,9 +59,12 @@ class Command(BaseCommand):
             ).groups()
             if program not in program_code_to_name:
                 if kwargs["verbosity"]:
-                    print(f"Skipping {degree_file} because {program} is not an applicable program code")
+                    print(
+                        f"Skipping {degree_file} because {program}"
+                        "is not an applicable program code"
+                    )
                 continue
-            
+
             if kwargs["verbosity"]:
                 print("Loading", degree_file, "...")
 
@@ -89,8 +93,7 @@ class Command(BaseCommand):
                     print(f"Parsing and saving degree {degree}...")
                 parse_and_save_degreeworks(degree_json, degree, interactive=kwargs["interactive"])
 
-        if kwargs["deduplicate_rules"]: 
+        if kwargs["deduplicate_rules"]:
             if kwargs["verbosity"]:
                 print("Deduplicating rules...")
             deduplicate_rules(verbose=kwargs["verbosity"])
-                

@@ -3,9 +3,9 @@ from textwrap import dedent
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from degree.management.commands.deduplicate_rules import deduplicate_rules
 
 from courses.util import get_current_semester
+from degree.management.commands.deduplicate_rules import deduplicate_rules
 from degree.models import Degree, program_code_to_name
 from degree.utils.degreeworks_client import DegreeworksClient
 from degree.utils.parse_degreeworks import parse_and_save_degreeworks
@@ -51,7 +51,7 @@ class Command(BaseCommand):
             "--deduplicate-rules",
             action="store_true",
         )
-        
+
         parser.add_argument(
             "--interactive",
             action="store_true",
@@ -110,9 +110,11 @@ class Command(BaseCommand):
                         degree.save()
                         if kwargs["verbosity"]:
                             print(f"Saving degree {degree}...")
-                        parse_and_save_degreeworks(client.audit(degree), degree, interactive=kwargs["interactive"])
-        
-        if kwargs["deduplicate_rules"]: 
+                        parse_and_save_degreeworks(
+                            client.audit(degree), degree, interactive=kwargs["interactive"]
+                        )
+
+        if kwargs["deduplicate_rules"]:
             if kwargs["verbosity"]:
                 print("Deduplicating rules...")
             deduplicate_rules(verbose=kwargs["verbosity"])

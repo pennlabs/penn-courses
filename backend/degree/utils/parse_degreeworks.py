@@ -1,29 +1,36 @@
+import logging
 from pprint import pprint
+
+from django.db import transaction
 from django.db.models import Q
 
 from degree.models import Degree, Rule
 from degree.serializers import RuleSerializer
 from degree.utils.departments import ENG_DEPTS, SAS_DEPTS, WH_DEPTS
-import logging
-from django.db import transaction
+
 
 @transaction.atomic
 def _prompt_for_evaluation(degree: Degree, rule_req: dict) -> bool:
     print("Unknown evaluation; please pick an option:")
     dummy1 = Rule(title="Dummy1")
     rules1 = [dummy1]
-    parse_rulearray(rule_req["ifPart"]["ruleArray"], degree, rules1, parent=dummy1, interactive=True)
+    parse_rulearray(
+        rule_req["ifPart"]["ruleArray"], degree, rules1, parent=dummy1, interactive=True
+    )
     [rule.save() for rule in rules1]
     pprint(RuleSerializer(dummy1).data)
-    print("====>") 
+    print("====>")
     dummy2 = Rule(title="Dummy2")
     rules2 = [dummy2]
-    parse_rulearray(rule_req["elsePart"]["ruleArray"], degree, rules2, parent=dummy2, interactive=True)
+    parse_rulearray(
+        rule_req["elsePart"]["ruleArray"], degree, rules2, parent=dummy2, interactive=True
+    )
     [rule.save() for rule in rules2]
     pprint(RuleSerializer(dummy2).data)
 
     # force rollback
     transaction.set_rollback(True)
+
 
 def parse_coursearray(courseArray) -> Q:
     """
@@ -55,7 +62,10 @@ def parse_coursearray(courseArray) -> Q:
                         code__lte=int(end),
                     )
                 else:
-                    logging.warn(f"Non-integer course number or numberEnd: (number) {number} (numberEnd) {end}")
+                    logging.warn(
+                        f"Non-integer course number or numberEnd: "
+                        f"(number) {number} (numberEnd) {end}"
+                    )
 
         connector = "AND"  # the connector to the next element; and by default
         if "withArray" in course:
@@ -156,12 +166,13 @@ def evaluate_condition(condition, degree) -> bool:
             case "BANNERGPA":
                 logging.info("ignoring ifStmt with BANNERGPA")
                 return True
-            case "ATTRIBUTE": # TODO: what is this?
+            case "ATTRIBUTE":  # TODO: what is this?
                 logging.info("ignoring ifStmt with ATTRIBUTE")
-                return False # Assume they don't have this ATTRIBUTE
+                return False  # Assume they don't have this ATTRIBUTE
             case "COLLEGE":
-                attribute = degree.program.split("_")[0] # e.g., WU from WU_BSE or EU from EU_BSE
-            case "ALLDEGREES" | "WUEXPTGRDTRM" | "-COURSE-" | "NUMMAJORS" | "NUMCONCS" | "MINOR" | _:
+                attribute = degree.program.split("_")[0]  # e.g., EU from EU_BSE
+            case _:
+                # e.g., "ALLDEGREES", "WUEXPTGRDTRM", "-COURSE-", "NUMMAJORS", "NUMCONCS", "MINOR"
                 logging.warn(f"Unknowable left type in ifStmt: {comparator}")
                 return None
         match comparator["operator"]:
@@ -180,11 +191,11 @@ def evaluate_condition(condition, degree) -> bool:
 
 
 def parse_rulearray(
-    ruleArray: list[dict], 
-    degree: Degree, 
-    rules: list[Rule], 
+    ruleArray: list[dict],
+    degree: Degree,
+    rules: list[Rule],
     parent: Rule = None,
-    interactive: bool = False
+    interactive: bool = False,
 ) -> None:
     """
     Logic to parse a single degree ruleArray in a blockArray requirement.
@@ -231,7 +242,7 @@ def parse_rulearray(
                 rules.pop()
                 assert "rightCondition" not in rule_req
                 evaluation = evaluate_condition(rule_req["leftCondition"], degree)
-                
+
                 match rule_json["booleanEvaluation"]:
                     case "False":
                         degreeworks_eval = False
@@ -254,30 +265,50 @@ def parse_rulearray(
                         f"Evaluation is unknown for `{rule_json['label']}` (nodeId {rule_json['nodeId']} in the degreeworks json). Defaulting to False."
                     )
 
-                
                 if evaluation:
-                    parse_rulearray(rule_req["ifPart"]["ruleArray"], degree, rules, parent=parent, interactive=interactive)
-                elif "elsePart" in rule_req: # assume unknown evaluation goes to else
-                    parse_rulearray(rule_req["elsePart"]["ruleArray"], degree, rules, parent=parent, interactive=interactive)
+                    parse_rulearray(
+                        rule_req["ifPart"]["ruleArray"],
+                        degree,
+                        rules,
+                        parent=parent,
+                        interactive=interactive,
+                    )
+                elif "elsePart" in rule_req:  # assume unknown evaluation goes to else
+                    parse_rulearray(
+                        rule_req["elsePart"]["ruleArray"],
+                        degree,
+                        rules,
+                        parent=parent,
+                        interactive=interactive,
+                    )
             case "Subset":
                 if "ruleArray" in rule_json:
-                    parse_rulearray(rule_json["ruleArray"], degree, rules, parent=parent, interactive=interactive)
+                    parse_rulearray(
+                        rule_json["ruleArray"],
+                        degree,
+                        rules,
+                        parent=parent,
+                        interactive=interactive,
+                    )
                 else:
-                    this_rule.q = repr(Q()) # General elective
+                    this_rule.q = repr(Q())  # General elective
                     logging.info("subset has no ruleArray")
             case "Group":  # this is nested
-                parse_rulearray(rule_json["ruleArray"], degree, rules, parent=this_rule, interactive=interactive)
+                parse_rulearray(
+                    rule_json["ruleArray"], degree, rules, parent=this_rule, interactive=interactive
+                )
                 this_rule.num = int(rule_req["numberOfGroups"])
             case "Complete" | "Incomplete":
                 rules.pop()
                 assert "ifElsePart" in rule_json  # this is a nested requirement
-            case "Noncourse": # this is a presentation or something else that's required
+            case "Noncourse":  # this is a presentation or something else that's required
                 rules.pop()
             case "Block" | "Blocktype":  # headings
                 rules.pop()
             case _:
                 raise LookupError(f"Unknown rule type {rule_json['ruleType']}")
-             
+
+
 # TODO: Make the function names more descriptive
 def parse_degreeworks(json: dict, degree: Degree, interactive=False) -> list[Rule]:
     """
@@ -295,8 +326,11 @@ def parse_degreeworks(json: dict, degree: Degree, interactive=False) -> list[Rul
             num=None,
         )
         rules.append(degree_req)
-        parse_rulearray(requirement["ruleArray"], degree, rules, parent=degree_req, interactive=interactive)
+        parse_rulearray(
+            requirement["ruleArray"], degree, rules, parent=degree_req, interactive=interactive
+        )
     return rules
+
 
 def parse_and_save_degreeworks(json: dict, degree: Degree, interactive=False) -> None:
     """
@@ -310,4 +344,3 @@ def parse_and_save_degreeworks(json: dict, degree: Degree, interactive=False) ->
     for rule in top_level_rules:
         rule.refresh_from_db()
         degree.rules.add(rule)
-                    
