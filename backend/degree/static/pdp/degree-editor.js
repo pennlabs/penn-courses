@@ -12,6 +12,8 @@ import dagre from "https://esm.sh/dagre@0.8.5";
 const params = new Proxy(new URLSearchParams(window.location.search), {
   get: (searchParams, prop) => searchParams.get(prop),
 });
+const nodeWidth = 172;
+const nodeHeight = 36;
 
 const dagreGraph = new dagre.graphlib.Graph();
 dagreGraph.setDefaultEdgeLabel(() => ({}));
@@ -40,7 +42,13 @@ const getLayoutedElements = (nodes, edges, direction = 'TB') => {
   dagreGraph.setGraph({ rankdir: direction });
 
   nodes.forEach((node) => {
-    dagreGraph.setNode(node.id, { width: node.__rf.width, height: node.__rf.width });
+    dagreGraph.setNode(
+      node.id, 
+      { 
+        width: nodeWidth, // node.__rf.width, 
+        height: nodeHeight // node.__rf.width 
+      }
+    );
   });
 
   edges.forEach((edge) => {
@@ -51,8 +59,8 @@ const getLayoutedElements = (nodes, edges, direction = 'TB') => {
 
   nodes.forEach((node) => {
     const nodeWithPosition = dagreGraph.node(node.id);
-    const nodeWidth = node.__rf.width;
-    const nodeHeight = node.__rf.height;
+    // const nodeWidth = node.__rf.width;
+    // const nodeHeight = node.__rf.height;
     node.targetPosition = isHorizontal ? 'left' : 'top';
     node.sourcePosition = isHorizontal ? 'right' : 'bottom';
 
@@ -72,9 +80,6 @@ const getLayoutedElements = (nodes, edges, direction = 'TB') => {
 const LayoutFlow = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [degrees, setDegrees] = useState([]);
-  const [currentDegreeIdx, setCurrentDegreeIdx] = useState(0);
-
 
   const onConnect = useCallback(
     (params) =>
@@ -96,29 +101,12 @@ const LayoutFlow = () => {
     },
     [nodes, edges]
   );
-
-  useEffect(() => {
-    const fetchDegrees = async () => {
-      const _degrees = await fetch('/api/degree/degrees/').then(response => response.json());
-      _degrees.sort((a,b) => a.id - b.id);
-      setDegrees(_degrees);
-      if (_degrees.length === 0) {
-        return;
-      }
-      console.log("Loaded degrees");
-    }
-    fetchDegrees()
-  }, [])
-
   
   useEffect(() => {
-    if (currentDegreeIdx === -1) {
-      return;
-    }
     const fetchDegree = async () => {
-      if (degrees.length === 0) return;
+      if (!params.id) return;
 
-      const degree = await fetch(`/api/degree/degrees/${degrees[currentDegreeIdx].id}/`).then(response => response.json());
+      const degree = await fetch(`/api/degree/degrees/${params.id}/`).then(response => response.json());
       
       // get the nodes: the rules + the top level node
       const group = { 
@@ -157,11 +145,9 @@ const LayoutFlow = () => {
       const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements([group, ...nodes], edges); 
       setNodes(layoutedNodes);
       setEdges(layoutedEdges);
-
-      console.log("Loaded degree")
     }
     fetchDegree();
-  }, [currentDegreeIdx, degrees])
+  }, [])
 
   return (
     <ReactFlow
