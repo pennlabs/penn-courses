@@ -3,9 +3,10 @@ import ReactDOM from "https://cdn.jsdelivr.net/npm/react-dom@18.2.0/+esm";
 import ReactFlow, {
   addEdge,
   ConnectionLineType,
-  Panel,
   useNodesState,
   useEdgesState,
+  Controls,
+  Background
 } from "https://cdn.jsdelivr.net/npm/reactflow@11.7.4/+esm";
 import dagre from "https://esm.sh/dagre@0.8.5";
 
@@ -13,27 +14,19 @@ const params = new Proxy(new URLSearchParams(window.location.search), {
   get: (searchParams, prop) => searchParams.get(prop),
 });
 const nodeWidth = 172;
-const nodeHeight = 36;
+const nodeHeight = 300;
 
 const dagreGraph = new dagre.graphlib.Graph();
 dagreGraph.setDefaultEdgeLabel(() => ({}));
 const renderRule = (rule) => {
-  const excludeKeys = ["course", "rules"]
-  const rows = Object.entries(rule)
-  .filter(([key, value]) => value && !excludeKeys.includes(key))
-  .map(([key, value]) => (
-    <tr>
-      <td style={{ fontWeight: "bold" }}>{key}</td>
-      <td>{value}</td>
-    </tr>
-  ))
-
   return (
-    <>
-      <table style={{ border: "none" }}>
-        {rows}
-      </table>
-    </>
+    <div style={{display: "flex", flexDirection: "column", gap: ".5em"}}>
+      <div>{rule.id}</div>
+      <div style={{ fontWeight: "bold" }}>{rule.title || "<No title>"}</div>
+      <div>Q: {rule.q}</div>
+      <div>Num: {rule.num}</div>
+      <div>Credits: {rule.credits}</div>
+    </div>
   )
 };
 
@@ -45,8 +38,8 @@ const getLayoutedElements = (nodes, edges, direction = 'TB') => {
     dagreGraph.setNode(
       node.id, 
       { 
-        width: nodeWidth, // node.__rf.width, 
-        height: nodeHeight // node.__rf.width 
+        width: nodeWidth, 
+        height: nodeHeight
       }
     );
   });
@@ -59,8 +52,6 @@ const getLayoutedElements = (nodes, edges, direction = 'TB') => {
 
   nodes.forEach((node) => {
     const nodeWithPosition = dagreGraph.node(node.id);
-    // const nodeWidth = node.__rf.width;
-    // const nodeHeight = node.__rf.height;
     node.targetPosition = isHorizontal ? 'left' : 'top';
     node.sourcePosition = isHorizontal ? 'right' : 'bottom';
 
@@ -82,10 +73,15 @@ const LayoutFlow = () => {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
   const onConnect = useCallback(
-    (params) =>
+    (params) => {
+      if (params.source === params.target || params.source.startsWith("d") || params.target.startsWith("d")) return;
+
+
+
       setEdges((eds) =>
         addEdge({ ...params, type: ConnectionLineType.SmoothStep, animated: true }, eds)
-      ),
+      )
+    },
     []
   );
   const onLayout = useCallback(
@@ -109,10 +105,14 @@ const LayoutFlow = () => {
       const degree = await fetch(`/api/degree/degrees/${params.id}/`).then(response => response.json());
       
       // get the nodes: the rules + the top level node
-      const group = { 
+      const root = { 
         id:  "d" + degree.id, 
-        type: "group", 
+        type: "default", 
+        width: 300,
         data: { label: `${degree.program} ${degree.degree} in ${degree.major} with conc. ${degree.concentration} (${degree.year})` },
+        style: {
+          background: "lightblue"
+        }
       };
       
       const nodes = [];
@@ -120,17 +120,17 @@ const LayoutFlow = () => {
       const stack = degree.rules.slice();
       while (stack.length > 0) {
         const rule = stack.pop();
-        const id = `r${rule.id}+${group.id}`;
+        const id = `r${rule.id}`;
         nodes.push({
           id,
           type: "default",
           data: { 
-            label: `${rule.id}`
+            label: renderRule(rule),
           },
-          parent: group.id,
-          position: { x: 0, y: 0}
+          position: { x: 0, y: 0},
+          width: 300,
         });
-        const source = rule.parent ? `r${rule.parent}+${group.id}` : null;
+        const source = rule.parent ? `r${rule.parent}` : `d${degree.id}`
         if (source) {
           edges.push({ 
             source: source, 
@@ -142,7 +142,7 @@ const LayoutFlow = () => {
         rule.rules.forEach((subrule) => stack.push(subrule));
       }
 
-      const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements([group, ...nodes], edges); 
+      const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements([root, ...nodes], edges); 
       setNodes(layoutedNodes);
       setEdges(layoutedEdges);
     }
@@ -155,14 +155,13 @@ const LayoutFlow = () => {
       edges={edges}
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
+      minZoom={0.2}
       onConnect={onConnect}
       connectionLineType={ConnectionLineType.SmoothStep}
       fitView
     >
-      <Panel position="top-right">
-        <button onClick={() => onLayout('TB')}>vertical layout</button>
-        <button onClick={() => onLayout('LR')}>horizontal layout</button>
-      </Panel>
+      <Controls />
+      <Background variant="dots" gap={50} size={1} />
     </ReactFlow>
   );
 };

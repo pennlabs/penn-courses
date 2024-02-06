@@ -158,7 +158,7 @@ class Rule(models.Model):
 
     def __str__(self) -> str:
         return f"{self.title}, q={self.q}, num={self.num}, cus={self.credits}, \
-            degree={self.degree}, parent={self.parent.title if self.parent else None}"
+            degrees={self.degrees.all()}, parent={self.parent.title if self.parent else None}"
 
     def evaluate(self, full_codes: Iterable[str]) -> bool:
         """
