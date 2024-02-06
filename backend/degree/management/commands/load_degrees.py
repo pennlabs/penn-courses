@@ -2,13 +2,13 @@ import json
 import re
 from os import listdir, path
 from textwrap import dedent
-import logging
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
+from degree.management.commands.deduplicate_rules import deduplicate_rules
 from degree.models import Degree, program_code_to_name
-from degree.utils.parse_degreeworks import parse_degreeworks
+from degree.utils.parse_degreeworks import parse_and_save_degreeworks
 
 
 class Command(BaseCommand):
@@ -32,6 +32,23 @@ class Command(BaseCommand):
             ),
         )
 
+        parser.add_argument(
+            "--deduplicate-rules",
+            action="store_true",
+        )
+
+        parser.add_argument(
+            "--interactive",
+            action="store_true",
+            help=dedent(
+                """
+                Prompt the user about parser decisions.
+                """
+            ),
+        )
+
+        super().add_arguments(parser)
+
     def handle(self, *args, **kwargs):
         directory = kwargs["directory"]
         assert path.isdir(directory), f"{directory} is not a directory"
@@ -41,9 +58,15 @@ class Command(BaseCommand):
                 r"(\d+)-(\w+)-(\w+)-(\w+)(?:-(\w+))?", degree_file
             ).groups()
             if program not in program_code_to_name:
-                print(f"Skipping {degree_file} because {program} is not an applicable program code")
+                if kwargs["verbosity"]:
+                    print(
+                        f"Skipping {degree_file} because {program}"
+                        "is not an applicable program code"
+                    )
                 continue
-            print("Loading", degree_file, "...")
+
+            if kwargs["verbosity"]:
+                print("Loading", degree_file, "...")
 
             with transaction.atomic():
                 Degree.objects.filter(
@@ -61,14 +84,16 @@ class Command(BaseCommand):
                     concentration=concentration,
                     year=year,
                 )
-
                 degree.save()
 
                 with open(path.join(directory, degree_file)) as f:
                     degree_json = json.load(f)
 
-                rules = parse_degreeworks(degree_json, degree)
-                print(f"Saving degree {degree}...")
-                for rule in rules:
-                    rule.degree = degree
-                    rule.save()
+                if kwargs["verbosity"]:
+                    print(f"Parsing and saving degree {degree}...")
+                parse_and_save_degreeworks(degree_json, degree, interactive=kwargs["interactive"])
+
+        if kwargs["deduplicate_rules"]:
+            if kwargs["verbosity"]:
+                print("Deduplicating rules...")
+            deduplicate_rules(verbose=kwargs["verbosity"])

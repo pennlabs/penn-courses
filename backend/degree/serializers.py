@@ -7,8 +7,8 @@ from courses.models import Course
 from courses.serializers import CourseListSerializer
 from degree.models import Degree, DegreePlan, DoubleCountRestriction, Fulfillment, Rule
 
-class DegreeListSerializer(serializers.ModelSerializer):
 
+class DegreeListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Degree
         fields = "__all__"
@@ -18,6 +18,8 @@ class RuleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Rule
         fields = "__all__"
+
+
 # Allow recursive serialization of rules
 RuleSerializer._declared_fields["rules"] = RuleSerializer(
     many=True, read_only=True, source="children"
@@ -29,6 +31,7 @@ class DoubleCountRestrictionSerializer(serializers.ModelSerializer):
         model = DoubleCountRestriction
         fields = "__all__"
 
+
 class DegreeDetailSerializer(serializers.ModelSerializer):
     rules = RuleSerializer(many=True, read_only=True)
     double_count_restrictions = DoubleCountRestrictionSerializer(many=True, read_only=True)
@@ -36,6 +39,7 @@ class DegreeDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Degree
         fields = "__all__"
+
 
 class FulfillmentSerializer(serializers.ModelSerializer):
     course = CourseListSerializer(
@@ -66,7 +70,7 @@ class FulfillmentSerializer(serializers.ModelSerializer):
         full_code = data.get("full_code")
         degree_plan = data.get("degree_plan")
 
-        if rules is None and full_code is None:
+        if rules is None and full_code is None and degree_plan is None:
             return data  # Nothing to validate
         if rules is None:
             rules = self.instance.rules.all()
@@ -96,12 +100,12 @@ class FulfillmentSerializer(serializers.ModelSerializer):
 
 
 class DegreePlanListSerializer(serializers.ModelSerializer):
-    degree = DegreeListSerializer(read_only=True)
+    degrees = DegreeListSerializer(read_only=True, many=True)
     id = serializers.ReadOnlyField(help_text="The id of the DegreePlan.")
 
     class Meta:
         model = DegreePlan
-        fields = ["id", "name", "degree"]
+        fields = ["id", "name", "degrees"]
 
 
 class DegreePlanDetailSerializer(serializers.ModelSerializer):
@@ -110,14 +114,13 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
         read_only=True,
         help_text="The courses used to fulfill degree plan.",
     )
-    degree = DegreeDetailSerializer(read_only=True)
-    degree_id = serializers.PrimaryKeyRelatedField(
+    degrees = DegreeDetailSerializer(read_only=True, many=True)
+    degree_ids = serializers.PrimaryKeyRelatedField(
         write_only=True,
         source="degree",
         queryset=Degree.objects.all(),
         help_text="The degree_id this degree plan belongs to.",
     )
-    id = serializers.ReadOnlyField(help_text="The id of the degree plan.")
     person = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:

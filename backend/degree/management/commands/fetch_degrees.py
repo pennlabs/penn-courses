@@ -5,9 +5,10 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from courses.util import get_current_semester
+from degree.management.commands.deduplicate_rules import deduplicate_rules
 from degree.models import Degree, program_code_to_name
 from degree.utils.degreeworks_client import DegreeworksClient
-from degree.utils.parse_degreeworks import parse_degreeworks
+from degree.utils.parse_degreeworks import parse_and_save_degreeworks
 
 
 class Command(BaseCommand):
@@ -46,6 +47,21 @@ class Command(BaseCommand):
             ),
         )
 
+        parser.add_argument(
+            "--deduplicate-rules",
+            action="store_true",
+        )
+
+        parser.add_argument(
+            "--interactive",
+            action="store_true",
+            help=dedent(
+                """
+                Prompt the user about parser decisions.
+                """
+            ),
+        )
+
     def handle(self, *args, **kwargs):
         print(
             dedent(
@@ -68,10 +84,11 @@ class Command(BaseCommand):
         name = getenv("NAME")
         assert name is not None
 
-        print("Using Penn ID:", pennid)
-        print("Using Auth Token:", auth_token)
-        print("Using Refresh Token:", refresh_token)
-        print("Using Name:", name)
+        if kwargs["verbosity"]:
+            print("Using Penn ID:", pennid)
+            print("Using Auth Token:", auth_token)
+            print("Using Refresh Token:", refresh_token)
+            print("Using Name:", name)
 
         client = DegreeworksClient(
             pennid=pennid, auth_token=auth_token, refresh_token=refresh_token, name=name
@@ -90,10 +107,14 @@ class Command(BaseCommand):
                             concentration=degree.concentration,
                             year=degree.year,
                         ).delete()
-
                         degree.save()
-                        print(f"Saving degree {degree}...")
-                        rules = parse_degreeworks(client.audit(degree), degree)
-                        for rule in rules:
-                            rule.degree = degree
-                            rule.save()
+                        if kwargs["verbosity"]:
+                            print(f"Saving degree {degree}...")
+                        parse_and_save_degreeworks(
+                            client.audit(degree), degree, interactive=kwargs["interactive"]
+                        )
+
+        if kwargs["deduplicate_rules"]:
+            if kwargs["verbosity"]:
+                print("Deduplicating rules...")
+            deduplicate_rules(verbose=kwargs["verbosity"])
