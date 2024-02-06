@@ -8,7 +8,7 @@ from django.db import transaction
 
 from degree.models import Degree, program_code_to_name
 from degree.utils.parse_degreeworks import parse_and_save_degreeworks
-
+from degree.management.commands.deduplicate_rules import deduplicate_rules
 
 class Command(BaseCommand):
     help = dedent(
@@ -31,6 +31,13 @@ class Command(BaseCommand):
             ),
         )
 
+        parser.add_argument(
+            "--deduplicate-rules",
+            action="store_true",
+        )
+
+        super().add_arguments(parser)
+
     def handle(self, *args, **kwargs):
         directory = kwargs["directory"]
         assert path.isdir(directory), f"{directory} is not a directory"
@@ -40,9 +47,12 @@ class Command(BaseCommand):
                 r"(\d+)-(\w+)-(\w+)-(\w+)(?:-(\w+))?", degree_file
             ).groups()
             if program not in program_code_to_name:
-                print(f"Skipping {degree_file} because {program} is not an applicable program code")
+                if kwargs["verbosity"]:
+                    print(f"Skipping {degree_file} because {program} is not an applicable program code")
                 continue
-            print("Loading", degree_file, "...")
+            
+            if kwargs["verbosity"]:
+                print("Loading", degree_file, "...")
 
             with transaction.atomic():
                 Degree.objects.filter(
@@ -65,6 +75,12 @@ class Command(BaseCommand):
                 with open(path.join(directory, degree_file)) as f:
                     degree_json = json.load(f)
 
-                print(f"Parsing and saving degree {degree}...")
+                if kwargs["verbosity"]:
+                    print(f"Parsing and saving degree {degree}...")
                 parse_and_save_degreeworks(degree_json, degree)
+
+        if kwargs["deduplicate_rules"]: 
+            if kwargs["verbosity"]:
+                print("Deduplicating rules...")
+            deduplicate_rules(verbose=kwargs["verbosity"])
                 

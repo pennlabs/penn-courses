@@ -3,6 +3,7 @@ from textwrap import dedent
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from degree.management.commands.deduplicate_rules import deduplicate_rules
 
 from courses.util import get_current_semester
 from degree.models import Degree, program_code_to_name
@@ -46,6 +47,11 @@ class Command(BaseCommand):
             ),
         )
 
+        parser.add_argument(
+            "--deduplicate-rules",
+            action="store_true",
+        )
+
     def handle(self, *args, **kwargs):
         print(
             dedent(
@@ -68,10 +74,11 @@ class Command(BaseCommand):
         name = getenv("NAME")
         assert name is not None
 
-        print("Using Penn ID:", pennid)
-        print("Using Auth Token:", auth_token)
-        print("Using Refresh Token:", refresh_token)
-        print("Using Name:", name)
+        if kwargs["verbosity"]:
+            print("Using Penn ID:", pennid)
+            print("Using Auth Token:", auth_token)
+            print("Using Refresh Token:", refresh_token)
+            print("Using Name:", name)
 
         client = DegreeworksClient(
             pennid=pennid, auth_token=auth_token, refresh_token=refresh_token, name=name
@@ -90,7 +97,12 @@ class Command(BaseCommand):
                             concentration=degree.concentration,
                             year=degree.year,
                         ).delete()
-
                         degree.save()
-                        print(f"Saving degree {degree}...")
+                        if kwargs["verbosity"]:
+                            print(f"Saving degree {degree}...")
                         parse_and_save_degreeworks(client.audit(degree), degree)
+        
+        if kwargs["deduplicate_rules"]: 
+            if kwargs["verbosity"]:
+                print("Deduplicating rules...")
+            deduplicate_rules(verbose=kwargs["verbosity"])
