@@ -2,13 +2,12 @@ import json
 import re
 from os import listdir, path
 from textwrap import dedent
-import logging
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from degree.models import Degree, program_code_to_name
-from degree.utils.parse_degreeworks import parse_degreeworks
+from degree.utils.parse_degreeworks import parse_and_save_degreeworks
 
 
 class Command(BaseCommand):
@@ -61,14 +60,11 @@ class Command(BaseCommand):
                     concentration=concentration,
                     year=year,
                 )
-
                 degree.save()
 
                 with open(path.join(directory, degree_file)) as f:
                     degree_json = json.load(f)
 
-                rules = parse_degreeworks(degree_json, degree)
-                print(f"Saving degree {degree}...")
-                for rule in rules:
-                    rule.degree = degree
-                    rule.save()
+                print(f"Parsing and saving degree {degree}...")
+                parse_and_save_degreeworks(degree_json, degree)
+                

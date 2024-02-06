@@ -165,7 +165,7 @@ def parse_rulearray(
     A ruleArray consists of a list of rule objects that contain a requirement object.
     """
     for rule_json in ruleArray:
-        this_rule = Rule(parent=parent, degree=None, title=rule_json["label"])
+        this_rule = Rule(parent=parent, title=rule_json["label"])
         rules.append(this_rule)
 
         rule_req = rule_json["requirement"]
@@ -264,9 +264,21 @@ def parse_degreeworks(json: dict, degree: Degree) -> list[Rule]:
             # TODO: use requirement code?
             credits=None,
             num=None,
-            degree=degree,
         )
-
         rules.append(degree_req)
         parse_rulearray(requirement["ruleArray"], degree, rules, parent=degree_req)
     return rules
+
+def parse_and_save_degreeworks(json: dict, degree: Degree) -> None:
+    """
+    Parses a DegreeWorks JSON audit and saves the rules to the database.
+    """
+    degree.save()
+    rules = parse_degreeworks(json, degree)
+    for rule in rules:
+        rule.save()
+    top_level_rules = [rule for rule in rules if rule.parent is None]
+    for rule in top_level_rules:
+        rule.refresh_from_db()
+        degree.rules.add(rule)
+                    

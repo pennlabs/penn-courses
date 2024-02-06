@@ -48,8 +48,8 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         queryset = DegreePlan.objects.filter(person=self.request.user)
         queryset = queryset.prefetch_related(
             "fulfillments",
-            "degree",
-            "degree__rules",
+            "degrees",
+            "degrees__rules",
         )
         return queryset
 

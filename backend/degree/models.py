@@ -71,6 +71,16 @@ class Degree(models.Model):
             """
         )
     )
+    rules = models.ManyToManyField(
+        "Rule",
+        related_name="degrees",
+        blank=True,
+        help_text=dedent(
+            """
+            The rules for this degree. Blank if this degree has no rules.
+            """
+        ),
+    )
 
     class Meta:
         constraints = [
@@ -120,18 +130,6 @@ class Rule(models.Model):
         ),
     )
 
-    degree = models.ForeignKey(
-        Degree,
-        null=True,
-        on_delete=models.CASCADE,
-        related_name="rules",
-        help_text=dedent(
-            """
-            The degree that has this rule. Null if this rule has a parent.
-            """
-        ),
-    )
-
     q = models.TextField(
         max_length=1000,
         blank=True,
@@ -152,7 +150,7 @@ class Rule(models.Model):
         help_text=dedent(
             """
             This rule's parent Rule if it has one. Null if this is a top level rule
-            (i.e., degree is not null).
+            (i.e., this rule belongs to some Degree's `.rules` set).
             """
         ),
         related_name="children",
@@ -217,9 +215,8 @@ class DegreePlan(models.Model):
 
     name = models.CharField(max_length=255, help_text="The user's nickname for the degree plan.")
 
-    degree = models.ForeignKey(
+    degrees = models.ManyToManyField(
         Degree,
-        on_delete=models.CASCADE,
         help_text="The degree this is associated with.",
     )
 
@@ -259,8 +256,7 @@ class DegreePlan(models.Model):
         Returns True if for each Rule in this DegreePlan's Degree, there is a SatisfactionStatus for
         this DegreePlan/Rule combination is satisfied.
         """
-
-        top_level_rules = Rule.objects.filter(degree=self.degree)
+        top_level_rules = Rule.objects.filter(degrees__in=self.degrees)
         for rule in top_level_rules:
             status = SatisfactionStatus.objects.filter(degree_plan=self, rule=rule).first()
             if not status.satisfied:
@@ -387,8 +383,6 @@ def update_satisfaction_statuses(sender, instance, action, pk_set, **kwargs):
                 [fulfillment.full_code for fulfillment in degree_plan.fulfillments.all()]
             )
             status.save()
-
-
 m2m_changed.connect(update_satisfaction_statuses, sender=Fulfillment.rules.through)
 
 

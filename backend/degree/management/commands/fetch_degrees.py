@@ -7,7 +7,7 @@ from django.db import transaction
 from courses.util import get_current_semester
 from degree.models import Degree, program_code_to_name
 from degree.utils.degreeworks_client import DegreeworksClient
-from degree.utils.parse_degreeworks import parse_degreeworks
+from degree.utils.parse_degreeworks import parse_and_save_degreeworks
 
 
 class Command(BaseCommand):
@@ -93,7 +93,4 @@ class Command(BaseCommand):
 
                         degree.save()
                         print(f"Saving degree {degree}...")
-                        rules = parse_degreeworks(client.audit(degree), degree)
-                        for rule in rules:
-                            rule.degree = degree
-                            rule.save()
+                        parse_and_save_degreeworks(client.audit(degree), degree)
