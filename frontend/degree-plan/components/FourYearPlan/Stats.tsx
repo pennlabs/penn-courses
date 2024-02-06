@@ -46,10 +46,14 @@ const Stats = ({courses} : any) => {
 
     return (
         <Stack direction="column" spacing={1} style={statsStackStyle}>
-            <StatRow item={'Course'} score={course_quality}/>
+            {/* <StatRow item={'Course'} score={course_quality}/>
             <StatRow item={'Instructor'} score={instructor_quality}/> 
             <StatRow item={'Difficulty'} score={difficulty}/> 
-            <StatRow item={'Work Required'} score={work_required}/> 
+            <StatRow item={'Work Required'} score={work_required}/>  */}
+             <StatRow item={'Course'} score={3.3}/>
+            <StatRow item={'Instructor'} score={3.2}/> 
+            <StatRow item={'Difficulty'} score={2.1}/> 
+            <StatRow item={'Work Required'} score={1.0}/> 
         </Stack>
     )
 }

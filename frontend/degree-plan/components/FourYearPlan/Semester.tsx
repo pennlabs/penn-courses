@@ -48,7 +48,7 @@ const Semester = ({semester, addCourse, index, highlightReqId, removeCourseFromS
             </div>
             <div className="d-flex" ref={ref}>
                 <CoursesPlanned courses={semester.courses} highlightReqId={highlightReqId} semesterIndex={index} removeCourse={removeCourse} showCourseDetail={showCourseDetail}/>
-                {/* {showStats && <Stats courses={semester.courses}/>} */}
+                {showStats && <Stats courses={semester.courses}/>}
             </div>
         </div>
     )

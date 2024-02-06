@@ -26,10 +26,10 @@ services:
       context: .
       dockerfile: Dockerfile.dev
     ports:
-      - "8000:8000"
+      - "8001:8001"
     volumes:
       - .:/backend
     environment:
       - REDIS_URL=redis://redis:6379/1
       - DATABASE_URL=postgres://penn-courses:postgres@db:5432/postgres
-    command: pipenv run python manage.py runserver 0.0.0.0:8000
+   # command: pipenv run python manage.py runserver 0.0.0.0:8001
