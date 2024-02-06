@@ -35,8 +35,6 @@ def deduplicate_rules(verbose=False):
     for rule in tqdm(Rule.objects.all(), disable=not verbose, desc="Hashing rules"):
         serialized = RuleSerializer(rule).data # recursively serializes the rule
         recursively_pop(serialized, keys=["id", "parent"])
-        pprint("Serialized rules:")
-        pprint(serialized)
         rule_to_hash[rule.id] = hash(json.dumps(
             serialized,
             sort_keys=True, 
@@ -51,7 +49,6 @@ def deduplicate_rules(verbose=False):
     delete_count = 0
     for rule_ids in tqdm(hash_to_rule.values(), disable=not verbose, desc="Deleting duplicates"):
         if len(rule_ids) > 1:
-            print(f"Deleting duplicate rules: {rule_ids[1:]}")
             Rule.objects.filter(parent_id__in=rule_ids[1:]).update(parent_id=rule_ids[0])
             for degree in Degree.objects.filter(rules__in=rule_ids[1:]):
                 degree.rules.add(rule_ids[0])
@@ -71,7 +68,8 @@ class Command(BaseCommand):
     @transaction.atomic
     def handle(self, *args, **kwargs):
         delete_count = deduplicate_rules(verbose=kwargs["verbosity"])
-        print(f"Deleted {delete_count} duplicate rules")
+        if kwargs["verbosity"]:
+            print(f"Deleted {delete_count} duplicate rules")
 
 
 
