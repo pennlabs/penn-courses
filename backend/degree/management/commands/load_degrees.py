@@ -2,6 +2,7 @@ import json
 import re
 from os import listdir, path
 from textwrap import dedent
+import logging
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
@@ -14,7 +15,8 @@ class Command(BaseCommand):
     help = dedent(
         """
         Load degrees from degreeworks JSONs named like year-program-degree-major-concentration
-        (without the .json extension).
+        (without the .json extension). Note that this command deletes any existing degrees that
+        overlap with the new degrees to be loaded.
         """
     )
 
@@ -41,6 +43,7 @@ class Command(BaseCommand):
             if program not in program_code_to_name:
                 print(f"Skipping {degree_file} because {program} is not an applicable program code")
                 continue
+            print("Loading", degree_file, "...")
 
             with transaction.atomic():
                 Degree.objects.filter(

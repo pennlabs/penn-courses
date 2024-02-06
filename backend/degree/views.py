@@ -5,6 +5,8 @@ from rest_framework.decorators import api_view
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import SearchFilter
 
 from courses.models import Course
 from courses.serializers import CourseListSerializer
@@ -19,37 +21,20 @@ from degree.serializers import (
 from PennCourses.docs_settings import PcxAutoSchema
 
 
-class DegreeList(generics.ListAPIView):
+class DegreeViewset(viewsets.ReadOnlyModelViewSet):
     """
     Retrieve a list of all Degree objects.
     """
 
-    schema = PcxAutoSchema(
-        response_codes={
-            "degree-list": {"GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Degrees listed successfully."}}
-        },
-    )
-
-    serializer_class = DegreeListSerializer
     queryset = Degree.objects.all()
+    filter_backends = [DjangoFilterBackend, SearchFilter]
+    search_fields = ["program", "degree", "concentration", "year"]
+    filterset_fields = search_fields
 
-
-class DegreeDetail(generics.RetrieveAPIView):
-    """
-    Retrieve a detailed look at a specific Degree. Includes all details necessary to display degree
-    info, including degree requirements that this degree needs.
-    """
-
-    schema = PcxAutoSchema(
-        response_codes={
-            "degree-detail": {
-                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Degree detail retrieved successfully."}
-            }
-        },
-    )
-
-    serializer_class = DegreeDetailSerializer
-    queryset = Degree.objects.all()
+    def get_serializer_class(self):
+        if self.action == "list":
+            return DegreeListSerializer
+        return DegreeDetailSerializer
 
 
 class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):

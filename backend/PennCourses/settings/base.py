@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "options.apps.OptionsConfig",
     "django.contrib.admindocs",
     "django_extensions",
+    "django_filters",
     "alert",
     "courses",
     "plan",

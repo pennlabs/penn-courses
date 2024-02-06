@@ -2,7 +2,7 @@ from django.db.models import Q
 
 from degree.models import Degree, Rule
 from degree.utils.departments import ENG_DEPTS, SAS_DEPTS, WH_DEPTS
-
+import logging
 
 def parse_coursearray(courseArray) -> Q:
     """
@@ -25,7 +25,7 @@ def parse_coursearray(courseArray) -> Q:
                 elif number[:-1].isdigit() and number[-1] == "@":
                     course_q &= Q(full_code__startswith=f"{discipline}-{number[:-1]}")
                 else:
-                    print(f"WARNING: non-integer course number: {number}")
+                    logging.warn(f"Non-integer course number: {number}")
             case discipline, number, end:
                 if number.isdigit() and end.isdigit():
                     course_q &= Q(
@@ -34,7 +34,7 @@ def parse_coursearray(courseArray) -> Q:
                         code__lte=int(end),
                     )
                 else:
-                    print("WARNING: non-integer course number or numberEnd")
+                    logging.warn(f"Non-integer course number or numberEnd: (number) {number} (numberEnd) {end}")
 
         connector = "AND"  # the connector to the next element; and by default
         if "withArray" in course:
@@ -69,13 +69,13 @@ def parse_coursearray(courseArray) -> Q:
                                     f"Unsupported college in withArray: {filter['valueList'][0]}"
                                 )
                     case "DWRESIDENT":
-                        print("WARNING: ignoring DWRESIDENT")
+                        logging.info("ignoring DWRESIDENT")
                         sub_q = Q()
                     case "DWGRADE":
-                        print("WARNING: ignoring DWGRADE")
+                        logging.info("ignoring DWGRADE")
                         sub_q = Q()
                     case "DWCOURSENUMBER":
-                        print("WARNING: ignoring DWCOURSENUMBER")
+                        logging.info("ignoring DWCOURSENUMBER")
                         sub_q = Q()
                     case _:
                         raise LookupError(f"Unknown filter type in withArray: {filter['code']}")
@@ -92,7 +92,7 @@ def parse_coursearray(courseArray) -> Q:
                 connector = filter["connector"]
 
         if len(course_q) == 0:
-            print("Warning: empty course query")
+            logging.warn("Empty course query")
             continue
 
         match course.get("connector"):
@@ -104,7 +104,7 @@ def parse_coursearray(courseArray) -> Q:
                 raise LookupError(f"Unknown connector type in courseArray: {course['connector']}")
 
     if len(q) == 0:
-        print("Warning: empty query")
+        logging.warn("empty query")
 
     return q
 
@@ -132,8 +132,16 @@ def evaluate_condition(condition, degree) -> bool:
                 attribute = degree.concentration
             case "PROGRAM":
                 attribute = degree.program
-            case _:
-                raise ValueError(f"Unknowable left type in ifStmt: {comparator['left']}")
+            case "BANNERGPA":
+                logging.info("ignoring ifStmt with BANNERGPA")
+                return True
+            case "ATTRIBUTE": # TODO: what is this?
+                logging.info("ignoring ifStmt with ATTRIBUTE")
+                return False # Assume they don't have this ATTRIBUTE
+            case "COLLEGE":
+                attribute = degree.program.split("_")[0] # e.g., WU from WU_BSE or EU from EU_BSE
+            case "ALLDEGREES" | "WUEXPTGRDTRM" | "-COURSE-" | "NUMMAJORS" | "NUMCONCS" | "MINOR" | _:
+                raise ValueError(f"Unknowable left type in ifStmt: {comparator}")
         match comparator["operator"]:
             case "=":
                 return attribute == comparator["right"]
@@ -157,7 +165,7 @@ def parse_rulearray(
     A ruleArray consists of a list of rule objects that contain a requirement object.
     """
     for rule_json in ruleArray:
-        this_rule = Rule(parent=parent, degree=None)
+        this_rule = Rule(parent=parent, degree=None, title=rule_json["label"])
         rules.append(this_rule)
 
         rule_req = rule_json["requirement"]
@@ -199,7 +207,7 @@ def parse_rulearray(
                     evaluation = evaluate_condition(rule_req["leftCondition"], degree)
                 except ValueError as e:
                     assert e.args[0].startswith("Unknowable left type in ifStmt")
-                    print("Warning: " + e.args[0])
+                    logging.warn(e.args[0])
                     continue  # do nothing if we can't evaluate b/c of insufficient info
 
                 match rule_json["booleanEvaluation"]:
@@ -214,7 +222,6 @@ def parse_rulearray(
                             f"Unknown boolean evaluation in ifStmt: \
                                 {rule_json['booleanEvaluation']}"
                         )
-
                 assert degreeworks_eval is None or evaluation == bool(degreeworks_eval)
 
                 # add if part or else part, depending on evaluation of the condition
@@ -226,7 +233,8 @@ def parse_rulearray(
                 if "ruleArray" in rule_json:
                     parse_rulearray(rule_json["ruleArray"], degree, rules, parent=parent)
                 else:
-                    print("WARNING: subset has no ruleArray")
+                    this_rule.q = repr(Q()) # General elective
+                    logging.info("subset has no ruleArray")
             case "Group":  # this is nested
                 parse_rulearray(rule_json["ruleArray"], degree, rules, parent=this_rule)
                 this_rule.num = int(rule_req["numberOfGroups"])
