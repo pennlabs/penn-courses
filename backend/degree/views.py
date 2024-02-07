@@ -19,6 +19,7 @@ from degree.serializers import (
     FulfillmentSerializer,
 )
 
+
 class DegreeViewset(viewsets.ReadOnlyModelViewSet):
     """
     Retrieve a list of all Degree objects.
