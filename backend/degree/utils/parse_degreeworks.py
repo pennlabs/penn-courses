@@ -262,7 +262,9 @@ def parse_rulearray(
                     evaluation = _prompt_for_evaluation(degree, rule_req)
                 elif evaluation is None:
                     logging.warn(
-                        f"Evaluation is unknown for `{rule_json['label']}` (nodeId {rule_json['nodeId']} in the degreeworks json). Defaulting to False."
+                        f"Evaluation is unknown for `{rule_json['label']}` "
+                        f"(nodeId {rule_json['nodeId']} in the degreeworks json). "
+                        "Defaulting to False."
                     )
 
                 if evaluation:

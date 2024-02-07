@@ -67,7 +67,7 @@ def deduplicate_rules(verbose=False):
 
 class Command(BaseCommand):
     help = dedent(
-        """ 
+        """
         Removes rules that are identical (based on content hash)
         """
     )

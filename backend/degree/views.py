@@ -5,20 +5,20 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import api_view
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
-from rest_framework.permissions import IsAuthenticated, IsAdminUser
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from courses.models import Course
 from courses.serializers import CourseListSerializer
-from degree.models import Degree, DegreePlan, DoubleCountRestriction, Fulfillment, Rule
+from degree.models import Degree, DegreePlan, Fulfillment, Rule
 from degree.serializers import (
     DegreeDetailSerializer,
     DegreeListSerializer,
     DegreePlanDetailSerializer,
     DegreePlanListSerializer,
-    DoubleCountRestrictionSerializer,
     FulfillmentSerializer,
 )
+
 
 class DegreeViewset(viewsets.ReadOnlyModelViewSet):
     """
@@ -85,6 +85,7 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
             degree_plan_id=self.get_degree_plan_id(),
         )
         return queryset
+
 
 @api_view(["GET"])
 def courses_for_rule(request, rule_id: int):

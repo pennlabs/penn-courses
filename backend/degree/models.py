@@ -97,6 +97,10 @@ class Degree(models.Model):
 class Rule(models.Model):
     """
     This model represents a degree requirement rule.
+
+    Rules are deduplicated, meaning that
+    a rule can belong to multiple degrees. In that case, changing a rule on one degree would
+    also change it on the other degrees.
     """
 
     title = models.CharField(
@@ -136,7 +140,7 @@ class Rule(models.Model):
         help_text=dedent(
             """
             String representing a Q() object that returns the set of courses
-            satisfying this rule. Only non-empty if this is a Rule leaf.
+            satisfying this rule. Non-empty iff this is a Rule leaf.
             This Q object is expected to be normalized before it is serialized
             to a string.
             """
@@ -217,13 +221,13 @@ class DegreePlan(models.Model):
 
     degrees = models.ManyToManyField(
         Degree,
-        help_text="The degree this is associated with.",
+        help_text="The degrees this degree plan is associated with.",
     )
 
     person = models.ForeignKey(
         get_user_model(),
         on_delete=models.CASCADE,
-        help_text="The user the schedule belongs to.",
+        help_text="The user the degree plan belongs to.",
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -414,11 +418,26 @@ class SatisfactionStatus(models.Model):
 
 
 class DoubleCountRestriction(models.Model):
+    """
+    Represents a restriction on the number of courses and credits
+    that can be double counted between two rules.
+
+    Note the following things:
+    1. this relationship is non-directional: rule and other_rule are interchangeable.
+    2. the same rule cannot be used for both rule and other_rule.
+    3. max_courses and max_credits cannot both be null.
+    4. since rules are can belong to multiple degrees, a double count restriction added
+       for one degree will affect all other degrees tje rule belongs to.
+    (2) and (3) are not enforced directly by the database, but are expected to be enforced
+    in use.
+    """
+
     max_courses = models.PositiveSmallIntegerField(
         null=True,
         help_text=dedent(
             """
             The maximum number of courses you can count for both rules.
+            If null, there is no limit, and max_credits must not be null.
             """
         ),
     )
@@ -430,11 +449,21 @@ class DoubleCountRestriction(models.Model):
         help_text=dedent(
             """
             The maximum number of CUs you can count for both rules.
+            If null, there is no limit, and max_credits must not be null.
             """
         ),
     )
 
-    rule = models.ForeignKey(Rule, on_delete=models.CASCADE, related_name="+")
+    rule = models.ForeignKey(
+        Rule,
+        on_delete=models.CASCADE,
+        related_name="+",
+        help_text=dedent(
+            """
+            A rule in the double count restriction.
+            """
+        ),
+    )
 
     other_rule = models.ForeignKey(Rule, on_delete=models.CASCADE, related_name="+")
 
