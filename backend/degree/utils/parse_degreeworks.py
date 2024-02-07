@@ -165,7 +165,8 @@ def evaluate_condition(condition, degree) -> bool:
                 attribute = degree.program
             case "BANNERGPA":
                 logging.info("ignoring ifStmt with BANNERGPA")
-                return True
+                # Assume we always have a sufficiently high GPA
+                return comparator["operator"] == ">" or comparator["operator"] == ">="
             case "ATTRIBUTE":  # TODO: what is this?
                 logging.info("ignoring ifStmt with ATTRIBUTE")
                 return False  # Assume they don't have this ATTRIBUTE
@@ -262,8 +263,8 @@ def parse_rulearray(
                     evaluation = _prompt_for_evaluation(degree, rule_req)
                 elif evaluation is None:
                     logging.warn(
-                        f"Evaluation is unknown for `{rule_json['label']}` "
-                        f"(nodeId {rule_json['nodeId']} in the degreeworks json). "
+                        f"Evaluation is unknown for `{rule_req}` "
+                        f"(in nodeId {rule_json['nodeId']} from the degreeworks json). "
                         "Defaulting to False."
                     )
 
@@ -293,7 +294,6 @@ def parse_rulearray(
                         interactive=interactive,
                     )
                 else:
-                    this_rule.q = repr(Q())  # General elective
                     logging.info("subset has no ruleArray")
             case "Group":  # this is nested
                 parse_rulearray(
@@ -331,6 +331,10 @@ def parse_degreeworks(json: dict, degree: Degree, interactive=False) -> list[Rul
         parse_rulearray(
             requirement["ruleArray"], degree, rules, parent=degree_req, interactive=interactive
         )
+
+        # check if this requirement actually has anything in it
+        if degree_req == rules[-1] and not degree_req.q:
+            rules.pop()
     return rules
 
 
@@ -341,6 +345,10 @@ def parse_and_save_degreeworks(json: dict, degree: Degree, interactive=False) ->
     degree.save()
     rules = parse_degreeworks(json, degree, interactive=interactive)
     for rule in rules:
+        if rule.q:
+            assert (
+                rule.num is not None or rule.credits is not None
+            ), "Rule has no num or credits but has a query"
         rule.save()
     top_level_rules = [rule for rule in rules if rule.parent is None]
     for rule in top_level_rules:
