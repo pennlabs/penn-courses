@@ -86,14 +86,6 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
         )
         return queryset
 
-class DoubleCountRestrictionViewset(viewsets.ModelViewSet):
-    """
-    List, retrieve, create, destroy, and update a DoubleCountRestriction.
-    """
-    permission_classes = [IsAdminUser]
-    serializer_class = DoubleCountRestrictionSerializer
-    queryset = DoubleCountRestriction.objects.all()
-
 @api_view(["GET"])
 def courses_for_rule(request, rule_id: int):
     """

@@ -5,13 +5,23 @@ from django.template.response import TemplateResponse
 from degree.models import Degree, DegreePlan, DoubleCountRestriction, Rule, SatisfactionStatus
 
 # Register your models here.
-admin.site.register(Rule)
+@admin.register(Rule)
+class RuleAdmin(admin.ModelAdmin):
+    search_fields = ["title", "id"]
+    list_display = ["title", "id", "parent"]
+    list_select_related = ["parent"]
+
 admin.site.register(DegreePlan)
 admin.site.register(SatisfactionStatus)
-admin.site.register(DoubleCountRestriction)
+
+@admin.register(DoubleCountRestriction)
+class DoubleCountRestrictionAdmin(admin.ModelAdmin):
+    autocomplete_fields = ["rule", "other_rule"]
 
 @admin.register(Degree)
 class DegreeAdmin(admin.ModelAdmin):
+    autocomplete_fields = ["rules"]
+
     def get_urls(self):
 
         # get the default urls
