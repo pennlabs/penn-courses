@@ -77,46 +77,44 @@ class FulfillmentViewsetTest(TestCase):
         )
 
         self.degree = Degree.objects.create(program="EU_BSE", degree="BSE", major="CIS", year=2023)
-        self.parent_rule = Rule.objects.create(degree=self.degree)
+        self.parent_rule = Rule.objects.create()
         self.rule1 = Rule.objects.create(
-            degree=self.degree,
             parent=self.parent_rule,
             q=repr(Q(full_code="CIS-1200")),
             num=1,
         )
         self.rule2 = Rule.objects.create(  # .5 cus / 1 course CIS-19XX classes
-            degree=self.degree,
             parent=self.parent_rule,
             q=repr(Q(full_code__startswith="CIS-19")),
             credits=0.5,
             num=1,
         )
         self.rule3 = Rule.objects.create(  # 2 CIS classes
-            degree=self.degree,
             parent=None,
             q=repr(Q(full_code__startswith="CIS")),
             num=2,
         )
-
+        self.degree.rules.add(self.parent_rule, self.rule1, self.rule2, self.rule3)
         self.double_count_restriction = DoubleCountRestriction.objects.create(
             rule=self.rule2,  # CIS-19XX
             other_rule=self.rule3,  # CIS-XXXX
             max_credits=1,
         )
-
         self.degree_plan = DegreePlan.objects.create(
             name="Good Degree Plan",
             person=self.user,
-            degree=self.degree,
         )
+        self.degree_plan.degrees.add(self.degree)
+
         self.other_degree = Degree.objects.create(
             program="EU_BSE", degree="BSE", major="CMPE", year=2023
         )
         self.bad_degree_plan = DegreePlan.objects.create(
             name="Bad Degree Plan",
             person=self.user,
-            degree=self.other_degree,  # empty degree
         )
+        self.bad_degree_plan.degrees.add(self.other_degree) # empty degree
+
         self.client = APIClient()
         self.client.force_login(self.user)
 

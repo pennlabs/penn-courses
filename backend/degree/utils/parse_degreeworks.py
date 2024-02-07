@@ -153,25 +153,23 @@ def evaluate_condition(condition, degree) -> bool:
             case "OR":
                 return right or left
             case _:
-                raise LookupError(f"Unknown connector type in ifStmt: {condition['connector']}")
+                raise LookupError(f"Unknown connector in ifStmt: {condition['connector']}")
     elif "relationalOperator" in condition:
         comparator = condition["relationalOperator"]
         match comparator["left"]:
             case "MAJOR":
                 attribute = degree.major
             case "CONC" | "CONCENTRATION":
-                attribute = degree.concentration
+                attribute = degree.concentration or "NONE"
             case "PROGRAM":
                 attribute = degree.program
             case "BANNERGPA":
-                logging.info("ignoring ifStmt with BANNERGPA")
+                logging.info("ignoring ifStmt with BANNERGPA. Assume GPA is high enough.")
                 # Assume we always have a sufficiently high GPA
                 return comparator["operator"] == ">" or comparator["operator"] == ">="
             case "ATTRIBUTE":  # TODO: what is this?
-                logging.info("ignoring ifStmt with ATTRIBUTE")
+                logging.info("ignoring ifStmt with ATTRIBUTE. Assume don't have this attribute.")
                 return False  # Assume they don't have this ATTRIBUTE
-            case "COLLEGE":
-                attribute = degree.program.split("_")[0]  # e.g., EU from EU_BSE
             case _:
                 # e.g., "ALLDEGREES", "WUEXPTGRDTRM", "-COURSE-", "NUMMAJORS", "NUMCONCS", "MINOR"
                 logging.warn(f"Unknowable left type in ifStmt: {comparator}")
@@ -188,7 +186,7 @@ def evaluate_condition(condition, degree) -> bool:
                     f"Unknown relational operator in ifStmt: {comparator['operator']}"
                 )
     else:
-        raise LookupError(f"Unknown condition type in ifStmt: {condition.keys()}")
+        raise ValueError(f"Bad condition. Keys: {condition.keys()}")
 
 
 def parse_rulearray(

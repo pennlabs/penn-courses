@@ -2,21 +2,176 @@ from django.db.models import Q
 from django.test import TestCase
 
 from degree.utils import parse_degreeworks
+from degree.models import Degree
 
 
-class ParserEvaluationTest(TestCase):
-    def test_comparators(self):
-        pass
+class EvaluateConditionTest(TestCase):
+    def setUp(self):
+        self.phys = Degree(program="AU_BA", degree="BA", major="PHYS", concentration="BSC", year=2023)
+        self.cmpe = Degree(program="EU_BSE", degree="BSE", major="CMPE", concentration=None, year=2023)
 
-    def test_and(self):
-        pass
+    @staticmethod
+    def relational_operator(left, operator, right):
+        """Helper function to create a relational operator condition."""
+        return {"relationalOperator": {"left": left, "operator": operator, "right": right}}
+
+    def test_unsupported_operator(self):
+        comparators = ["<", ">", "<=", ">=", "IS"]
+        for comparator in comparators:
+            condition = self.relational_operator("MAJOR", comparator, "PHYS")
+            with self.assertRaises(LookupError):
+                parse_degreeworks.evaluate_condition(condition, self.phys)
+    
+    def test_major(self):
+        condition = self.relational_operator("MAJOR", "=", "PHYS")
+        self.assertTrue(parse_degreeworks.evaluate_condition(condition, self.phys))
+        self.assertFalse(parse_degreeworks.evaluate_condition(condition, self.cmpe))
+        condition = self.relational_operator("MAJOR", "<>", "PHYS")
+        self.assertFalse(parse_degreeworks.evaluate_condition(condition, self.phys))
+        self.assertTrue(parse_degreeworks.evaluate_condition(condition, self.cmpe))
+    
+    def test_program(self):
+        condition = self.relational_operator("PROGRAM", "=", "AU_BA")
+        self.assertTrue(parse_degreeworks.evaluate_condition(condition, self.phys))
+        self.assertFalse(parse_degreeworks.evaluate_condition(condition, self.cmpe))
+        condition = self.relational_operator("PROGRAM", "=", "EU_BSE")
+        self.assertFalse(parse_degreeworks.evaluate_condition(condition, self.phys))
+        self.assertTrue(parse_degreeworks.evaluate_condition(condition, self.cmpe))
+    
+    def test_conc(self):
+        condition = self.relational_operator("CONC", "=", "BSC")
+        self.assertTrue(parse_degreeworks.evaluate_condition(condition, self.phys))
+        self.assertFalse(parse_degreeworks.evaluate_condition(condition, self.cmpe))
+        condition = self.relational_operator("CONC", "<>", "BSC")
+        self.assertFalse(parse_degreeworks.evaluate_condition(condition, self.phys))
+        self.assertTrue(parse_degreeworks.evaluate_condition(condition, self.cmpe))
+        
+        # concentrations have to be exact
+        condition = self.relational_operator("CONC", "=", "NONE")
+        self.assertFalse(parse_degreeworks.evaluate_condition(condition, self.phys))
+        self.assertTrue(parse_degreeworks.evaluate_condition(condition, self.cmpe))
+
+    def test_attribute(self):
+        condition = self.relational_operator("ATTRIBUTE", "=", "H")
+        self.assertFalse(parse_degreeworks.evaluate_condition(condition, self.phys))
+        self.assertFalse(parse_degreeworks.evaluate_condition(condition, self.cmpe))
+
+    def test_gpa(self):
+        # exact GPA comparisons evaluate to false
+        condition = self.relational_operator("BANNERGPA", "=", "3.0")
+        self.assertFalse(parse_degreeworks.evaluate_condition(condition, self.phys))
+        condition = self.relational_operator("BANNERGPA", "<>", "3.0")
+        self.assertFalse(parse_degreeworks.evaluate_condition(condition, self.phys))
+        
+        condition = self.relational_operator("BANNERGPA", ">=", "3.0")
+        self.assertTrue(parse_degreeworks.evaluate_condition(condition, self.phys))
+        condition = self.relational_operator("BANNERGPA", ">", "3.0")
+        self.assertTrue(parse_degreeworks.evaluate_condition(condition, self.phys))
+        condition = self.relational_operator("BANNERGPA", "<=", "3.0")
+        self.assertFalse(parse_degreeworks.evaluate_condition(condition, self.phys))
+        condition = self.relational_operator("BANNERGPA", "<", "3.0")
+        self.assertFalse(parse_degreeworks.evaluate_condition(condition, self.phys))
+
+        # should work with "NODATA", which is occasionally returned
+        condition = self.relational_operator("BANNERGPA", "<=", "NODATA")
+        self.assertFalse(parse_degreeworks.evaluate_condition(condition, self.phys))
+
+    def test_unknown_left_side(self):
+        # There are often unknown comparisons with cryptic fields like "AP48" or "LT"
+        # We can guess some of them, like AP48, but it's not worth doing 
+        condition = self.relational_operator("AP48", "=", "4")
+        self.assertIsNone(parse_degreeworks.evaluate_condition(condition, self.phys))
+        
+        condition = self.relational_operator("COLLEGE", "=","4")
+        self.assertIsNone(parse_degreeworks.evaluate_condition(condition, self.phys))
 
     def test_or(self):
-        pass
+        condition = {
+            "leftCondition": self.relational_operator("MAJOR", "=", "PHYS"),
+            "connector": "OR",
+            "rightCondition": self.relational_operator("MAJOR", "=", "CMPE"),
+        }
+        self.assertTrue(parse_degreeworks.evaluate_condition(condition, self.phys))
+        self.assertTrue(parse_degreeworks.evaluate_condition(condition, self.cmpe))
+
+    def test_and(self):
+        condition = {
+            "leftCondition": self.relational_operator("MAJOR", "=", "PHYS"),
+            "connector": "AND",
+            "rightCondition": self.relational_operator("CONC", "=", "BSC"),
+        }
+        self.assertTrue(parse_degreeworks.evaluate_condition(condition, self.phys))
+        self.phys.concentration = "NONE"
+        self.assertFalse(parse_degreeworks.evaluate_condition(condition, self.phys))
+
+    def test_or_with_unknown(self):
+        condition = {
+            "leftCondition": self.relational_operator("UNKNOWN", "=", "PHYS"),
+            "connector": "OR",
+            "rightCondition": self.relational_operator("CONC", "=", "BSC"),
+        }
+        self.assertIsNone(parse_degreeworks.evaluate_condition(condition["leftCondition"], self.phys))
+        self.assertTrue(parse_degreeworks.evaluate_condition(condition, self.phys))
+
+
+    def test_and_with_unknown(self):
+        condition = {
+            "leftCondition": self.relational_operator("UNKNOWN", "=", "PHYS"),
+            "connector": "AND",
+            "rightCondition": self.relational_operator("CONC", "=", "BSC"),
+        }
+        self.assertIsNone(parse_degreeworks.evaluate_condition(condition["leftCondition"], self.phys))
+
+        # If any part of the condition is false, we should return false (not None)
+        self.phys.concentration = "NONE"
+        self.assertFalse(parse_degreeworks.evaluate_condition(condition, self.phys))
+
+    def test_and_or_without_right_condition(self):
+        left = self.relational_operator("MAJOR", "=", "PHYS")
+        condition = {
+            "leftCondition": left,
+            "connector": "AND",
+        }
+        self.assertTrue(parse_degreeworks.evaluate_condition(condition, self.phys))
+        self.assertFalse(parse_degreeworks.evaluate_condition(condition, self.cmpe))
+        condition = {
+            "leftCondition": left,
+            "connector": "OR",
+        }
+        self.assertTrue(parse_degreeworks.evaluate_condition(condition, self.phys))
+        self.assertFalse(parse_degreeworks.evaluate_condition(condition, self.cmpe)) 
+    
+    def test_unknown_connector(self):
+        condition = {
+            "leftCondition": self.relational_operator("MAJOR", "=", "PHYS"),
+            "connector": "XOR",
+            "rightCondition": self.relational_operator("CONC", "=", "BSC"),
+        }
+        with self.assertRaises(LookupError):
+            parse_degreeworks.evaluate_condition(condition, self.phys)
+    
+    def test_bad_condition(self):
+        condition = {"a": "b"}
+        with self.assertRaises(ValueError):
+            parse_degreeworks.evaluate_condition(condition, self.phys)
 
     def test_nested(self):
-        pass
-
+        condition = {
+            "connector": "OR",
+            "leftCondition": {
+                "leftCondition": {
+                    "leftCondition": self.relational_operator("MAJOR", "=", "PHYS"),
+                    "connector": "AND",
+                    "rightCondition": self.relational_operator("CONC", "=", "BSC"),
+                },
+                "connector": "OR",
+                "rightCondition": self.relational_operator("MAJOR", "=", "CMPE"),
+            }
+        }
+        self.assertTrue(parse_degreeworks.evaluate_condition(condition, self.phys))
+        self.assertTrue(parse_degreeworks.evaluate_condition(condition, self.cmpe))
+        self.phys.concentration = "NONE"
+        self.assertFalse(parse_degreeworks.evaluate_condition(condition, self.phys))
 
 class CourseArrayParserTest(TestCase):
     def test_single_course(self):
