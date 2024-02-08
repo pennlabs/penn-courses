@@ -50,7 +50,7 @@ class Command(BaseCommand):
             if program not in program_code_to_name:
                 if kwargs["verbosity"]:
                     print(
-                        f"Skipping {degree_file} because {program}"
+                        f"Skipping {degree_file} because {program} "
                         "is not an applicable program code"
                     )
                 continue
