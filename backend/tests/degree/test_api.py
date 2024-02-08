@@ -113,7 +113,7 @@ class FulfillmentViewsetTest(TestCase):
             name="Bad Degree Plan",
             person=self.user,
         )
-        self.bad_degree_plan.degrees.add(self.other_degree) # empty degree
+        self.bad_degree_plan.degrees.add(self.other_degree)  # empty degree
 
         self.client = APIClient()
         self.client.force_login(self.user)

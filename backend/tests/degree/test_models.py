@@ -171,7 +171,9 @@ class RuleEvaluationTest(TestCase):
         self.assertFalse(self.parent_rule.evaluate([self.cis_1200.full_code]))
 
     def test_parent_rule_satisfied(self):
-        self.assertTrue(self.parent_rule.evaluate([self.cis_1200.full_code, self.cis_1910.full_code]))
+        self.assertTrue(
+            self.parent_rule.evaluate([self.cis_1200.full_code, self.cis_1910.full_code])
+        )
 
 
 class DoubleCountRestrictionTest(TestCase):

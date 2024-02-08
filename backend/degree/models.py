@@ -161,7 +161,10 @@ class Rule(models.Model):
     )
 
     def __str__(self) -> str:
-        return f"{self.title}, q={self.q}, num={self.num}, cus={self.credits}, parent={self.parent.title if self.parent else None}"
+        return (
+            f"{self.title}, q={self.q}, num={self.num}, cus={self.credits}, "
+            "parent={self.parent.title if self.parent else None}"
+        )
 
     def evaluate(self, full_codes: Iterable[str]) -> bool:
         """
@@ -383,7 +386,7 @@ def update_satisfaction_statuses(sender, instance, action, pk_set, **kwargs):
         full_codes = Fulfillment.objects.filter(degree_plan=degree_plan).values_list(
             "full_code", flat=True
         )
-    
+
         for rule in Rule.objects.filter(degrees__in=degree_plan.degrees.all()):
             status, _ = SatisfactionStatus.objects.get_or_create(degree_plan=degree_plan, rule=rule)
             status.satisfied = rule.evaluate(full_codes)

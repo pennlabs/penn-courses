@@ -1,11 +1,8 @@
 import logging
-from pprint import pprint
 
-from django.db import transaction
 from django.db.models import Q
 
 from degree.models import Degree, Rule
-from degree.serializers import RuleSerializer
 from degree.utils.departments import ENG_DEPTS, SAS_DEPTS, WH_DEPTS
 
 
@@ -233,10 +230,7 @@ def parse_rulearray(
                 assert evaluation is None or evaluation == degreeworks_eval
 
                 if evaluation is None:
-                    logging.warn(
-                        f"Evaluation is unknown for `{rule_req}`. "
-                        "Defaulting to False."
-                    )
+                    logging.warn(f"Evaluation is unknown for `{rule_req}`. " "Defaulting to False.")
                     evaluation = False
 
                 if evaluation:
@@ -265,9 +259,7 @@ def parse_rulearray(
                 else:
                     logging.info("subset has no ruleArray")
             case "Group":  # this is nested
-                parse_rulearray(
-                    rule_json["ruleArray"], degree, rules, parent=this_rule 
-                )
+                parse_rulearray(rule_json["ruleArray"], degree, rules, parent=this_rule)
                 this_rule.num = int(rule_req["numberOfGroups"])
             case "Complete" | "Incomplete":
                 rules.pop()
@@ -296,9 +288,7 @@ def parse_degreeworks(json: dict, degree: Degree) -> list[Rule]:
             num=None,
         )
         rules.append(degree_req)
-        parse_rulearray(
-            requirement["ruleArray"], degree, rules, parent=degree_req
-        )
+        parse_rulearray(requirement["ruleArray"], degree, rules, parent=degree_req)
 
         # check if this requirement actually has anything in it
         if degree_req == rules[-1] and not degree_req.q:

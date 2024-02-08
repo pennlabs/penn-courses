@@ -8,8 +8,12 @@ from degree.models import Degree, Rule
 
 class EvaluateConditionTest(TestCase):
     def setUp(self):
-        self.phys = Degree(program="AU_BA", degree="BA", major="PHYS", concentration="BSC", year=2023)
-        self.cmpe = Degree(program="EU_BSE", degree="BSE", major="CMPE", concentration=None, year=2023)
+        self.phys = Degree(
+            program="AU_BA", degree="BA", major="PHYS", concentration="BSC", year=2023
+        )
+        self.cmpe = Degree(
+            program="EU_BSE", degree="BSE", major="CMPE", concentration=None, year=2023
+        )
 
     @staticmethod
     def relational_operator(left, operator, right):
@@ -22,7 +26,7 @@ class EvaluateConditionTest(TestCase):
             condition = self.relational_operator("MAJOR", comparator, "PHYS")
             with self.assertRaises(LookupError):
                 parse_degreeworks.evaluate_condition(condition, self.phys)
-    
+
     def test_major(self):
         condition = self.relational_operator("MAJOR", "=", "PHYS")
         self.assertTrue(parse_degreeworks.evaluate_condition(condition, self.phys))
@@ -30,7 +34,7 @@ class EvaluateConditionTest(TestCase):
         condition = self.relational_operator("MAJOR", "<>", "PHYS")
         self.assertFalse(parse_degreeworks.evaluate_condition(condition, self.phys))
         self.assertTrue(parse_degreeworks.evaluate_condition(condition, self.cmpe))
-    
+
     def test_program(self):
         condition = self.relational_operator("PROGRAM", "=", "AU_BA")
         self.assertTrue(parse_degreeworks.evaluate_condition(condition, self.phys))
@@ -38,7 +42,7 @@ class EvaluateConditionTest(TestCase):
         condition = self.relational_operator("PROGRAM", "=", "EU_BSE")
         self.assertFalse(parse_degreeworks.evaluate_condition(condition, self.phys))
         self.assertTrue(parse_degreeworks.evaluate_condition(condition, self.cmpe))
-    
+
     def test_conc(self):
         condition = self.relational_operator("CONC", "=", "BSC")
         self.assertTrue(parse_degreeworks.evaluate_condition(condition, self.phys))
@@ -46,7 +50,7 @@ class EvaluateConditionTest(TestCase):
         condition = self.relational_operator("CONC", "<>", "BSC")
         self.assertFalse(parse_degreeworks.evaluate_condition(condition, self.phys))
         self.assertTrue(parse_degreeworks.evaluate_condition(condition, self.cmpe))
-        
+
         # concentrations have to be exact
         condition = self.relational_operator("CONC", "=", "NONE")
         self.assertFalse(parse_degreeworks.evaluate_condition(condition, self.phys))
@@ -63,7 +67,7 @@ class EvaluateConditionTest(TestCase):
         self.assertFalse(parse_degreeworks.evaluate_condition(condition, self.phys))
         condition = self.relational_operator("BANNERGPA", "<>", "3.0")
         self.assertFalse(parse_degreeworks.evaluate_condition(condition, self.phys))
-        
+
         condition = self.relational_operator("BANNERGPA", ">=", "3.0")
         self.assertTrue(parse_degreeworks.evaluate_condition(condition, self.phys))
         condition = self.relational_operator("BANNERGPA", ">", "3.0")
@@ -79,11 +83,11 @@ class EvaluateConditionTest(TestCase):
 
     def test_unknown_left_side(self):
         # There are often unknown comparisons with cryptic fields like "AP48" or "LT"
-        # We can guess some of them, like AP48, but it's not worth doing 
+        # We can guess some of them, like AP48, but it's not worth doing
         condition = self.relational_operator("AP48", "=", "4")
         self.assertIsNone(parse_degreeworks.evaluate_condition(condition, self.phys))
-        
-        condition = self.relational_operator("COLLEGE", "=","4")
+
+        condition = self.relational_operator("COLLEGE", "=", "4")
         self.assertIsNone(parse_degreeworks.evaluate_condition(condition, self.phys))
 
     def test_or(self):
@@ -111,9 +115,10 @@ class EvaluateConditionTest(TestCase):
             "connector": "OR",
             "rightCondition": self.relational_operator("CONC", "=", "BSC"),
         }
-        self.assertIsNone(parse_degreeworks.evaluate_condition(condition["leftCondition"], self.phys))
+        self.assertIsNone(
+            parse_degreeworks.evaluate_condition(condition["leftCondition"], self.phys)
+        )
         self.assertTrue(parse_degreeworks.evaluate_condition(condition, self.phys))
-
 
     def test_and_with_unknown(self):
         condition = {
@@ -121,7 +126,9 @@ class EvaluateConditionTest(TestCase):
             "connector": "AND",
             "rightCondition": self.relational_operator("CONC", "=", "BSC"),
         }
-        self.assertIsNone(parse_degreeworks.evaluate_condition(condition["leftCondition"], self.phys))
+        self.assertIsNone(
+            parse_degreeworks.evaluate_condition(condition["leftCondition"], self.phys)
+        )
 
         # If any part of the condition is false, we should return false (not None)
         self.phys.concentration = "NONE"
@@ -140,8 +147,8 @@ class EvaluateConditionTest(TestCase):
             "connector": "OR",
         }
         self.assertTrue(parse_degreeworks.evaluate_condition(condition, self.phys))
-        self.assertFalse(parse_degreeworks.evaluate_condition(condition, self.cmpe)) 
-    
+        self.assertFalse(parse_degreeworks.evaluate_condition(condition, self.cmpe))
+
     def test_unknown_connector(self):
         condition = {
             "leftCondition": self.relational_operator("MAJOR", "=", "PHYS"),
@@ -150,7 +157,7 @@ class EvaluateConditionTest(TestCase):
         }
         with self.assertRaises(LookupError):
             parse_degreeworks.evaluate_condition(condition, self.phys)
-    
+
     def test_bad_condition(self):
         condition = {"a": "b"}
         with self.assertRaises(ValueError):
@@ -167,12 +174,13 @@ class EvaluateConditionTest(TestCase):
                 },
                 "connector": "OR",
                 "rightCondition": self.relational_operator("MAJOR", "=", "CMPE"),
-            }
+            },
         }
         self.assertTrue(parse_degreeworks.evaluate_condition(condition, self.phys))
         self.assertTrue(parse_degreeworks.evaluate_condition(condition, self.cmpe))
         self.phys.concentration = "NONE"
         self.assertFalse(parse_degreeworks.evaluate_condition(condition, self.phys))
+
 
 class CourseArrayParserTest(TestCase):
     def test_single_course(self):
@@ -226,6 +234,8 @@ class CourseArrayParserTest(TestCase):
 
 
 PATCHED_Q = Q(test="test")
+
+
 @patch("degree.utils.parse_degreeworks.parse_coursearray", return_value=PATCHED_Q)
 @patch("degree.utils.parse_degreeworks.evaluate_condition", return_value=True)
 class RuleArrayParserTest(TestCase):
@@ -233,7 +243,7 @@ class RuleArrayParserTest(TestCase):
         """Check duck typing equality of two Django objects (using the __dict__ dunder)"""
         if a is b:
             return
-        
+
         a_dict = a.__dict__.copy()
         b_dict = b.__dict__.copy()
         a_dict.pop("_state")
@@ -242,24 +252,26 @@ class RuleArrayParserTest(TestCase):
 
     @staticmethod
     def single_rule_array(ruletype, rule_req, extra_rule_kwargs={}):
-        return [
-            {
-                "ruleType": ruletype,
-                "requirement": rule_req,
-                "label": "",
-                **extra_rule_kwargs
-            }
-        ]
-    
-    def assertParsedRulesEqual(self, ruletype: str, rule_req: dict, expected: list[Rule], extra_rule_kwargs={"label": "",}):
+        return [{"ruleType": ruletype, "requirement": rule_req, "label": "", **extra_rule_kwargs}]
+
+    def assertParsedRulesEqual(
+        self,
+        ruletype: str,
+        rule_req: dict,
+        expected: list[Rule],
+        extra_rule_kwargs={
+            "label": "",
+        },
+    ):
         rules = []
-        parse_degreeworks.parse_rulearray(self.single_rule_array(ruletype, rule_req, extra_rule_kwargs=extra_rule_kwargs), Degree(), rules)
+        parse_degreeworks.parse_rulearray(
+            self.single_rule_array(ruletype, rule_req, extra_rule_kwargs=extra_rule_kwargs),
+            Degree(),
+            rules,
+        )
         self.assertEqual(len(rules), len(expected))
         for rule, expected_rule in zip(rules, expected):
-            self.assertRuleDuckEqual(
-                rule,
-                expected_rule
-            )
+            self.assertRuleDuckEqual(rule, expected_rule)
 
     def setUp(self):
         self.course_requirement = {
@@ -267,27 +279,24 @@ class RuleArrayParserTest(TestCase):
                 {"discipline": "CIS", "number": "1200"},
             ]
         }
-        self.course_a_rulearray = self.single_rule_array("Course", {
-            **self.course_requirement,
-            "creditsBegin": "3.5",
-        })
-        self.course_b_rulearray = self.single_rule_array("Course", {
-            **self.course_requirement,
-            "classesBegin": "1",
-        })
-        self.rule_a = Rule( # corresponds to course_a_rulearray
-            num=None,
-            credits=3.5,
-            q=repr(PATCHED_Q),
-            parent=None
+        self.course_a_rulearray = self.single_rule_array(
+            "Course",
+            {
+                **self.course_requirement,
+                "creditsBegin": "3.5",
+            },
         )
-        self.rule_b = Rule(
-            num=1,
-            credits=None,
-            q=repr(PATCHED_Q),
-            parent=None
+        self.course_b_rulearray = self.single_rule_array(
+            "Course",
+            {
+                **self.course_requirement,
+                "classesBegin": "1",
+            },
         )
-
+        self.rule_a = Rule(  # corresponds to course_a_rulearray
+            num=None, credits=3.5, q=repr(PATCHED_Q), parent=None
+        )
+        self.rule_b = Rule(num=1, credits=None, q=repr(PATCHED_Q), parent=None)
 
     def test_empty_rulearray(self, *mocks):
         rules = []
@@ -302,7 +311,7 @@ class RuleArrayParserTest(TestCase):
                     "classesEnd": "2",
                     "courseArray": [
                         {"discipline": "CIS", "number": "1200"},
-                    ]
+                    ],
                 }
             }
         ]
@@ -310,23 +319,16 @@ class RuleArrayParserTest(TestCase):
         with self.assertRaises(KeyError):
             parse_degreeworks.parse_rulearray(rule_array, Degree(), [])
 
- 
     def test_course(self, *mocks):
         with self.assertRaises(ValueError):
-            parse_degreeworks.parse_rulearray(self.single_rule_array("Course", self.course_requirement), Degree(), [])
-        
+            parse_degreeworks.parse_rulearray(
+                self.single_rule_array("Course", self.course_requirement), Degree(), []
+            )
+
         self.assertParsedRulesEqual(
             "Course",
-            {
-                **self.course_requirement,
-                "classesBegin": "1"
-            },
-            [Rule(
-                num=1,
-                credits=None,
-                q=repr(PATCHED_Q),
-                parent=None
-            )]
+            {**self.course_requirement, "classesBegin": "1"},
+            [Rule(num=1, credits=None, q=repr(PATCHED_Q), parent=None)],
         )
         self.assertParsedRulesEqual(
             "Course",
@@ -334,26 +336,17 @@ class RuleArrayParserTest(TestCase):
                 **self.course_requirement,
                 "creditsBegin": "3.5",
             },
-            [Rule(
-                num=None,
-                credits=3.5,
-                q=repr(PATCHED_Q),
-                parent=None
-            )]
+            [Rule(num=None, credits=3.5, q=repr(PATCHED_Q), parent=None)],
         )
 
     def test_course_noninteger_classes(self, *mocks):
         with self.assertRaises(ValueError):
             parse_degreeworks.parse_rulearray(
                 self.single_rule_array(
-                    "Course",
-                    {
-                        **self.course_requirement,
-                        "classesBegin": "1.5"
-                    }
+                    "Course", {**self.course_requirement, "classesBegin": "1.5"}
                 ),
                 Degree(),
-                []
+                [],
             )
 
     def test_course_classesbegin_is_0(self, *mocks):
@@ -363,11 +356,11 @@ class RuleArrayParserTest(TestCase):
                 **self.course_requirement,
                 "classesBegin": "0",
                 "classesEnd": "1",
-                "creditsBegin": ".5"
+                "creditsBegin": ".5",
             },
-            []
+            [],
         )
-    
+
     def test_course_creditsbegin_is_0(self, *mocks):
         self.assertParsedRulesEqual(
             "Course",
@@ -375,113 +368,71 @@ class RuleArrayParserTest(TestCase):
                 **self.course_requirement,
                 "creditsBegin": "0",
                 "creditsEnd": "1",
-                "classesBegin": "1"
+                "classesBegin": "1",
             },
-            []
+            [],
         )
 
     def test_multiple_courses(self, *mocks):
         rules = []
         parse_degreeworks.parse_rulearray(
-            self.course_a_rulearray + self.course_b_rulearray,
-            Degree(),
-            rules
+            self.course_a_rulearray + self.course_b_rulearray, Degree(), rules
         )
         self.assertEqual(len(rules), 2)
         self.assertRuleDuckEqual(rules[0], self.rule_a)
         self.assertRuleDuckEqual(rules[1], self.rule_b)
-    
+
     def test_ifstmt(self, *mocks):
         ifstmt = {
             "leftCondition": {
-                "relationalOperator": {
-                    "left": "MAJOR",
-                    "operator": "=",
-                    "right": "PHYS"
-                }
+                "relationalOperator": {"left": "MAJOR", "operator": "=", "right": "PHYS"}
             },
-            "ifPart": {
-                "ruleArray": self.course_a_rulearray
-            }
+            "ifPart": {"ruleArray": self.course_a_rulearray},
         }
         self.assertParsedRulesEqual(
             "IfStmt",
             ifstmt,
-            [Rule(
-                num=None,
-                credits=3.5,
-                q=repr(PATCHED_Q),
-                parent=None
-            )],
-            extra_rule_kwargs={
-                "booleanEvaluation": "True"
-            }
+            [Rule(num=None, credits=3.5, q=repr(PATCHED_Q), parent=None)],
+            extra_rule_kwargs={"booleanEvaluation": "True"},
         )
 
         with patch("degree.utils.parse_degreeworks.evaluate_condition", return_value=False):
             self.assertParsedRulesEqual(
-                "IfStmt",
-                ifstmt,
-                [],
-                extra_rule_kwargs={
-                    "booleanEvaluation": "False"
-                }
+                "IfStmt", ifstmt, [], extra_rule_kwargs={"booleanEvaluation": "False"}
             )
 
     def test_ifstmt_with_else(self, *mocks):
         ifstmt = {
             "leftCondition": {
-                "relationalOperator": {
-                    "left": "MAJOR",
-                    "operator": "=",
-                    "right": "PHYS"
-                }
+                "relationalOperator": {"left": "MAJOR", "operator": "=", "right": "PHYS"}
             },
             "ifPart": {
                 "ruleArray": self.course_a_rulearray,
             },
-            "elsePart": {
-                "ruleArray": self.course_b_rulearray
-            }
+            "elsePart": {"ruleArray": self.course_b_rulearray},
         }
 
         self.assertParsedRulesEqual(
-            "IfStmt",
-            ifstmt,
-            [self.rule_a],
-            extra_rule_kwargs={
-                "booleanEvaluation": "True"
-            }
+            "IfStmt", ifstmt, [self.rule_a], extra_rule_kwargs={"booleanEvaluation": "True"}
         )
 
         with patch("degree.utils.parse_degreeworks.evaluate_condition", return_value=False):
             self.assertParsedRulesEqual(
-                "IfStmt",
-                ifstmt,
-                [self.rule_b],
-                extra_rule_kwargs={
-                    "booleanEvaluation": "False"
-                }
+                "IfStmt", ifstmt, [self.rule_b], extra_rule_kwargs={"booleanEvaluation": "False"}
             )
-        
+
     def test_ifstmt_evaluation_with_degreeworks_evaluation(self, *mocks):
         """
         Test different combinations of our evaluation and degreeworks' evaluation
         """
         ifstmt = {
             "leftCondition": {
-                "relationalOperator": {
-                    "left": "MAJOR",
-                    "operator": "=",
-                    "right": "PHYS"
-                }
+                "relationalOperator": {"left": "MAJOR", "operator": "=", "right": "PHYS"}
             },
             "ifPart": {
                 "ruleArray": self.course_a_rulearray,
             },
-            "elsePart": {
-                "ruleArray": self.course_b_rulearray
-            }
+            "elsePart": {"ruleArray": self.course_b_rulearray},
         }
 
         # When our evaluation is True
@@ -489,180 +440,103 @@ class RuleArrayParserTest(TestCase):
             self.assertParsedRulesEqual(
                 "IfStmt",
                 ifstmt,
-                [], # this is irrelevant, we just want to test the failure
-                extra_rule_kwargs={
-                    "booleanEvaluation": "False"
-                }
+                [],  # this is irrelevant, we just want to test the failure
+                extra_rule_kwargs={"booleanEvaluation": "False"},
             )
         with self.assertRaises(AssertionError):
             self.assertParsedRulesEqual(
-                "IfStmt",
-                ifstmt,
-                [],
-                extra_rule_kwargs={
-                    "booleanEvaluation": "Unknown"
-                }
+                "IfStmt", ifstmt, [], extra_rule_kwargs={"booleanEvaluation": "Unknown"}
             )
-
 
         with patch("degree.utils.parse_degreeworks.evaluate_condition", return_value=False):
             with self.assertRaises(AssertionError):
                 self.assertParsedRulesEqual(
-                    "IfStmt",
-                    ifstmt,
-                    [],
-                    extra_rule_kwargs={
-                        "booleanEvaluation": "True"
-                    }
+                    "IfStmt", ifstmt, [], extra_rule_kwargs={"booleanEvaluation": "True"}
                 )
             with self.assertRaises(AssertionError):
                 self.assertParsedRulesEqual(
-                    "IfStmt",
-                    ifstmt,
-                    [],
-                    extra_rule_kwargs={
-                        "booleanEvaluation": "Unknown"
-                    }
+                    "IfStmt", ifstmt, [], extra_rule_kwargs={"booleanEvaluation": "Unknown"}
                 )
-        
+
         with patch("degree.utils.parse_degreeworks.evaluate_condition", return_value=None):
-            assert parse_degreeworks.evaluate_condition({"relationalOperator": {"left": "MAJOR", "operator": "=", "right": "PHYS"}}, Degree()) is None
-            self.assertParsedRulesEqual(
-                "IfStmt",
-                ifstmt,
-                [self.rule_b],
-                extra_rule_kwargs={
-                    "booleanEvaluation": "False"
-                }
+            assert (
+                parse_degreeworks.evaluate_condition(
+                    {"relationalOperator": {"left": "MAJOR", "operator": "=", "right": "PHYS"}},
+                    Degree(),
+                )
+                is None
             )
             self.assertParsedRulesEqual(
-                "IfStmt",
-                ifstmt,
-                [self.rule_b],
-                extra_rule_kwargs={
-                    "booleanEvaluation": "True"
-                }
+                "IfStmt", ifstmt, [self.rule_b], extra_rule_kwargs={"booleanEvaluation": "False"}
             )
             self.assertParsedRulesEqual(
-                "IfStmt",
-                ifstmt,
-                [self.rule_b],
-                extra_rule_kwargs={
-                    "booleanEvaluation": "Unknown"
-                }
+                "IfStmt", ifstmt, [self.rule_b], extra_rule_kwargs={"booleanEvaluation": "True"}
             )
-    
+            self.assertParsedRulesEqual(
+                "IfStmt", ifstmt, [self.rule_b], extra_rule_kwargs={"booleanEvaluation": "Unknown"}
+            )
+
     def test_ifstmt_with_bad_boolean_evaluation(self, *mocks):
         with self.assertRaises(LookupError):
             self.assertParsedRulesEqual(
                 "IfStmt",
                 {
                     "leftCondition": {
-                        "relationalOperator": {
-                            "left": "MAJOR",
-                            "operator": "=",
-                            "right": "PHYS"
-                        }
+                        "relationalOperator": {"left": "MAJOR", "operator": "=", "right": "PHYS"}
                     },
                     "ifPart": {
                         "ruleArray": self.course_a_rulearray,
                     },
-                    "elsePart": {
-                        "ruleArray": self.course_b_rulearray
-                    }
+                    "elsePart": {"ruleArray": self.course_b_rulearray},
                 },
                 [Rule()],
-                extra_rule_kwargs={
-                    "booleanEvaluation": "bad"
-                }
+                extra_rule_kwargs={"booleanEvaluation": "bad"},
             )
-    
+
     def test_ifstmt_with_long_rule_array(self, *mocks):
         self.assertParsedRulesEqual(
             "IfStmt",
             {
                 "leftCondition": {
-                    "relationalOperator": {
-                        "left": "MAJOR",
-                        "operator": "=",
-                        "right": "PHYS"
-                    }
+                    "relationalOperator": {"left": "MAJOR", "operator": "=", "right": "PHYS"}
                 },
-                "ifPart": {
-                    "ruleArray": self.course_a_rulearray + self.course_b_rulearray
-                }
+                "ifPart": {"ruleArray": self.course_a_rulearray + self.course_b_rulearray},
             },
             [self.rule_a, self.rule_b],
-            extra_rule_kwargs={
-                "booleanEvaluation": "True"
-            }
+            extra_rule_kwargs={"booleanEvaluation": "True"},
         )
 
     def test_subset(self, *mocks):
-        parent_rule = Rule(
-            title="Parent",
-            num=None,
-            credits=None,
-            parent=None
-        )
-        self.rule_a.parent = parent_rule # Note: this is wiped away for the next test
+        parent_rule = Rule(title="Parent", num=None, credits=None, parent=None)
+        self.rule_a.parent = parent_rule  # Note: this is wiped away for the next test
         self.assertParsedRulesEqual(
             "Subset",
             {},
             [parent_rule, self.rule_a],
-            extra_rule_kwargs={
-                "label": "Parent",
-                "ruleArray": self.course_a_rulearray
-            },
+            extra_rule_kwargs={"label": "Parent", "ruleArray": self.course_a_rulearray},
         )
 
     def test_subset_no_rulearray(self, *mocks):
         # TODO: is this good behavior? I'm not sure
-        self.assertParsedRulesEqual(
-            "Subset",
-            {},
-            [Rule()]
-        )
+        self.assertParsedRulesEqual("Subset", {}, [Rule()])
 
     def test_unknown_ruletype(self, *mocks):
         with self.assertRaises(LookupError):
-            parse_degreeworks.parse_rulearray(
-                self.single_rule_array("Unknown", {}),
-                Degree(),
-                []
-            )
-    
+            parse_degreeworks.parse_rulearray(self.single_rule_array("Unknown", {}), Degree(), [])
+
     def test_other_ruletypes(self, *mocks):
-        self.assertParsedRulesEqual(
-            "Complete",
-            {},
-            []
-        )
-        self.assertParsedRulesEqual(
-            "Incomplete",
-            {},
-            []
-        )
-        self.assertParsedRulesEqual(
-            "Noncourse",
-            {},
-            []
-        )
-        self.assertParsedRulesEqual(
-            "Block",
-            {},
-            []
-        )
-        self.assertParsedRulesEqual(
-            "Blocktype",
-            {},
-            []
-        )
+        self.assertParsedRulesEqual("Complete", {}, [])
+        self.assertParsedRulesEqual("Incomplete", {}, [])
+        self.assertParsedRulesEqual("Noncourse", {}, [])
+        self.assertParsedRulesEqual("Block", {}, [])
+        self.assertParsedRulesEqual("Blocktype", {}, [])
+
 
 @patch("degree.utils.parse_degreeworks.parse_rulearray", return_value=None)
 class ParseDegreeWorksTest(TestCase):
     def test_empty(self, *mocks):
-        pass # TODO
+        pass  # TODO
+
 
 class ParseDegreeWorksComplexTest(TestCase):
     def test_vlst_acs(self):
@@ -673,5 +547,4 @@ class ParseDegreeWorksComplexTest(TestCase):
             concentration="ACS",
         )
 
-        pass # TODO
-        
+        pass  # TODO

@@ -100,9 +100,7 @@ class Command(BaseCommand):
                         degree.save()
                         if kwargs["verbosity"]:
                             print(f"Saving degree {degree}...")
-                        parse_and_save_degreeworks(
-                            client.audit(degree), degree 
-                        )
+                        parse_and_save_degreeworks(client.audit(degree), degree)
 
         if kwargs["deduplicate_rules"]:
             if kwargs["verbosity"]:
