@@ -9,29 +9,6 @@ from degree.serializers import RuleSerializer
 from degree.utils.departments import ENG_DEPTS, SAS_DEPTS, WH_DEPTS
 
 
-@transaction.atomic
-def _prompt_for_evaluation(degree: Degree, rule_req: dict) -> bool:
-    print("Unknown evaluation; please pick an option:")
-    dummy1 = Rule(title="Dummy1")
-    rules1 = [dummy1]
-    parse_rulearray(
-        rule_req["ifPart"]["ruleArray"], degree, rules1, parent=dummy1, interactive=True
-    )
-    [rule.save() for rule in rules1]
-    pprint(RuleSerializer(dummy1).data)
-    print("====>")
-    dummy2 = Rule(title="Dummy2")
-    rules2 = [dummy2]
-    parse_rulearray(
-        rule_req["elsePart"]["ruleArray"], degree, rules2, parent=dummy2, interactive=True
-    )
-    [rule.save() for rule in rules2]
-    pprint(RuleSerializer(dummy2).data)
-
-    # force rollback
-    transaction.set_rollback(True)
-
-
 def parse_coursearray(courseArray) -> Q:
     """
     Parses a Course rule's courseArray and returns a Q filter to find valid courses.
@@ -194,7 +171,6 @@ def parse_rulearray(
     degree: Degree,
     rules: list[Rule],
     parent: Rule = None,
-    interactive: bool = False,
 ) -> None:
     """
     Logic to parse a single degree ruleArray in a blockArray requirement.
@@ -256,10 +232,7 @@ def parse_rulearray(
                         )
                 assert evaluation is None or evaluation == degreeworks_eval
 
-                # add if part or else part, depending on evaluation of the condition
-                if evaluation is None and interactive:
-                    evaluation = _prompt_for_evaluation(degree, rule_req)
-                elif evaluation is None:
+                if evaluation is None:
                     logging.warn(
                         f"Evaluation is unknown for `{rule_req}`. "
                         "Defaulting to False."
@@ -272,7 +245,6 @@ def parse_rulearray(
                         degree,
                         rules,
                         parent=parent,
-                        interactive=interactive,
                     )
                 elif "elsePart" in rule_req:  # assume unknown evaluation goes to else
                     parse_rulearray(
@@ -280,7 +252,6 @@ def parse_rulearray(
                         degree,
                         rules,
                         parent=parent,
-                        interactive=interactive,
                     )
             case "Subset":
                 assert rule_req == {}
@@ -290,13 +261,12 @@ def parse_rulearray(
                         degree,
                         rules,
                         parent=this_rule,
-                        interactive=interactive,
                     )
                 else:
                     logging.info("subset has no ruleArray")
             case "Group":  # this is nested
                 parse_rulearray(
-                    rule_json["ruleArray"], degree, rules, parent=this_rule, interactive=interactive
+                    rule_json["ruleArray"], degree, rules, parent=this_rule 
                 )
                 this_rule.num = int(rule_req["numberOfGroups"])
             case "Complete" | "Incomplete":
@@ -310,7 +280,7 @@ def parse_rulearray(
 
 
 # TODO: Make the function names more descriptive
-def parse_degreeworks(json: dict, degree: Degree, interactive=False) -> list[Rule]:
+def parse_degreeworks(json: dict, degree: Degree) -> list[Rule]:
     """
     Returns a list of Rules given a DegreeWorks JSON audit and a Degree.
     Note that this method creates rule objects but does not save them.
@@ -327,7 +297,7 @@ def parse_degreeworks(json: dict, degree: Degree, interactive=False) -> list[Rul
         )
         rules.append(degree_req)
         parse_rulearray(
-            requirement["ruleArray"], degree, rules, parent=degree_req, interactive=interactive
+            requirement["ruleArray"], degree, rules, parent=degree_req
         )
 
         # check if this requirement actually has anything in it
@@ -336,12 +306,12 @@ def parse_degreeworks(json: dict, degree: Degree, interactive=False) -> list[Rul
     return rules
 
 
-def parse_and_save_degreeworks(json: dict, degree: Degree, interactive=False) -> None:
+def parse_and_save_degreeworks(json: dict, degree: Degree) -> None:
     """
     Parses a DegreeWorks JSON audit and saves the rules to the database.
     """
     degree.save()
-    rules = parse_degreeworks(json, degree, interactive=interactive)
+    rules = parse_degreeworks(json, degree)
     for rule in rules:
         if rule.q:
             assert (
