@@ -76,7 +76,7 @@ const FourYearPlanPage = () => {
     }
 
     // testing version
-    const [majors, setMajors] = useState([{id: 553, name: 'Computer Science, BSE'}, {id: 2, name: 'Visual Studies, BAS'}]);
+    const [majors, setMajors] = useState([{id: 1843, name: 'Computer Science, BSE'}, {id: 1744, name: 'Visual Studies, BAS'}]);
     const [currentMajor, setCurrentMajor] = useState({});
     useEffect(() => {
         if (majors.length !== 0) setCurrentMajor(majors[0]);

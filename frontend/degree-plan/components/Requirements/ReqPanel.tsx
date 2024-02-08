@@ -37,7 +37,7 @@ const requirementDropdownListStyle = {
 
       useEffect(() => {
         const getMajor = async () => {
-            const res = await axios.get(`/degree/degree_detail/${currentMajor.id}`);
+            const res = await axios.get(`/degree/degrees/${currentMajor.id}`);
             console.log(res.data);
             setMajorData(res.data);
             return;
