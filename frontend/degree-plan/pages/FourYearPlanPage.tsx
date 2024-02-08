@@ -7,8 +7,7 @@ import useWindowDimensions from "@/hooks/window";
 import { Modal } from "@mui/material";
 import Icon from '@mdi/react';
 import { mdiPlus } from '@mdi/js';
-import axios from "../services/httpServices"
-import {degreeData} from '../data/degrees';
+import axios from "../services/HttpServices"
 import FuzzySearch from 'react-fuzzy';
 import CourseDetailPanel from "@/components/Course/CourseDetailPanel";
 

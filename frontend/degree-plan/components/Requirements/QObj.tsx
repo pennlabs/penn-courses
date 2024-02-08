@@ -1,6 +1,3 @@
-// <Q: (OR: (AND: ('code__gte', 0), ('code__lte', 4999), ('department__code', '@'), ('attributes__code__in', ['APPF'])), (AND: ('code__gte', 5000), ('code__lte', 9999), ('department__code', '@'), ('attributes__code__in', ['APPF'])))>
-
-import axios from "../services/httpServices";
 import CoursePlanned from "../FourYearPlan/CoursePlanned";
 import Course from "./Course";
 import { useDrag } from "react-dnd";

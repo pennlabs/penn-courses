@@ -1,33 +1,18 @@
-import { TypedUseSelectorHook, useSelector, useDispatch} from 'react-redux';
 import React from 'react';
-import { showCartSet } from '../../store/reducers/nav';
-import { showFourYearPlanSet } from '../../store/reducers/nav';
 import { navButtonOn, navButtonOff, fourYearButtonOff } from '../../styles/NavStyles';
 import { Link } from "react-router-dom";
-import { checkOutPageSet } from '../../store/reducers/nav';
-import { AppDispatch } from '../../store/configureStore';
-import { RootState } from '../../store/configureStore';
-
-export const useAppDispatch: () => AppDispatch = useDispatch;
-export const useAppSelector: TypedUseSelectorHook<RootState> = useSelector;
 
 const StateControl = () => {
-    const toggleFourYearPlan = () => {
-        dispatch(showFourYearPlanSet(!!data && query));
-    }
-    const toggleCart = () => {
-        dispatch(showCartSet());
-    }
-    const handleBack = () => {
-        dispatch(checkOutPageSet(false));
-    }
+    const toggleFourYearPlan = () => {}
+    const toggleCart = () => {}
+    const handleBack = () => {}
     
-    const data = useSelector((store : RootState) => store.entities.courses);
-    const showCart = useSelector((store : RootState) => store.nav.showCart);
-    const onContentPage = useSelector((store : RootState) => store.nav.onContentPage);
-    const showFourYearPlan = useSelector((store : RootState) => store.nav.showFourYearPlan);
-    const query = useSelector((store : RootState) => store.search.queryString);
-    const onCheckoutPage = useSelector((store : RootState) => store.nav.onCheckoutPage);
+    const data = [];
+    const showCart = false;
+    const onContentPage = false;
+    const showFourYearPlan = false;
+    const query = "";
+    const onCheckoutPage = false;
     const cartButtonContent = showCart ? 'Hide Cart' : 'Show Cart';
     const fourYearButtonContent = !showFourYearPlan ? '4 Year Plan' : 'Back'
     const dispatch = useDispatch();
