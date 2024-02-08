@@ -1,35 +1,9 @@
 import logging
-from pprint import pprint
 
-from django.db import transaction
 from django.db.models import Q
 
 from degree.models import Degree, Rule
-from degree.serializers import RuleSerializer
 from degree.utils.departments import ENG_DEPTS, SAS_DEPTS, WH_DEPTS
-
-
-@transaction.atomic
-def _prompt_for_evaluation(degree: Degree, rule_req: dict) -> bool:
-    print("Unknown evaluation; please pick an option:")
-    dummy1 = Rule(title="Dummy1")
-    rules1 = [dummy1]
-    parse_rulearray(
-        rule_req["ifPart"]["ruleArray"], degree, rules1, parent=dummy1, interactive=True
-    )
-    [rule.save() for rule in rules1]
-    pprint(RuleSerializer(dummy1).data)
-    print("====>")
-    dummy2 = Rule(title="Dummy2")
-    rules2 = [dummy2]
-    parse_rulearray(
-        rule_req["elsePart"]["ruleArray"], degree, rules2, parent=dummy2, interactive=True
-    )
-    [rule.save() for rule in rules2]
-    pprint(RuleSerializer(dummy2).data)
-
-    # force rollback
-    transaction.set_rollback(True)
 
 
 def parse_coursearray(courseArray) -> Q:
@@ -153,25 +127,23 @@ def evaluate_condition(condition, degree) -> bool:
             case "OR":
                 return right or left
             case _:
-                raise LookupError(f"Unknown connector type in ifStmt: {condition['connector']}")
+                raise LookupError(f"Unknown connector in ifStmt: {condition['connector']}")
     elif "relationalOperator" in condition:
         comparator = condition["relationalOperator"]
         match comparator["left"]:
             case "MAJOR":
                 attribute = degree.major
             case "CONC" | "CONCENTRATION":
-                attribute = degree.concentration
+                attribute = degree.concentration or "NONE"
             case "PROGRAM":
                 attribute = degree.program
             case "BANNERGPA":
-                logging.info("ignoring ifStmt with BANNERGPA")
+                logging.info("ignoring ifStmt with BANNERGPA. Assume GPA is high enough.")
                 # Assume we always have a sufficiently high GPA
                 return comparator["operator"] == ">" or comparator["operator"] == ">="
             case "ATTRIBUTE":  # TODO: what is this?
-                logging.info("ignoring ifStmt with ATTRIBUTE")
+                logging.info("ignoring ifStmt with ATTRIBUTE. Assume don't have this attribute.")
                 return False  # Assume they don't have this ATTRIBUTE
-            case "COLLEGE":
-                attribute = degree.program.split("_")[0]  # e.g., EU from EU_BSE
             case _:
                 # e.g., "ALLDEGREES", "WUEXPTGRDTRM", "-COURSE-", "NUMMAJORS", "NUMCONCS", "MINOR"
                 logging.warn(f"Unknowable left type in ifStmt: {comparator}")
@@ -188,7 +160,7 @@ def evaluate_condition(condition, degree) -> bool:
                     f"Unknown relational operator in ifStmt: {comparator['operator']}"
                 )
     else:
-        raise LookupError(f"Unknown condition type in ifStmt: {condition.keys()}")
+        raise ValueError(f"Bad condition. Keys: {condition.keys()}")
 
 
 def parse_rulearray(
@@ -196,7 +168,6 @@ def parse_rulearray(
     degree: Degree,
     rules: list[Rule],
     parent: Rule = None,
-    interactive: bool = False,
 ) -> None:
     """
     Logic to parse a single degree ruleArray in a blockArray requirement.
@@ -231,7 +202,7 @@ def parse_rulearray(
                 if num is None and credits is None:
                     raise ValueError("No classesBegin or creditsBegin in Course requirement")
 
-                # a rule with 0 required courses/credits is not a rule
+                # a rule with 0 courses/credits is not a rule
                 if num == 0 or credits == 0:
                     rules.pop()
                 else:
@@ -258,15 +229,9 @@ def parse_rulearray(
                         )
                 assert evaluation is None or evaluation == degreeworks_eval
 
-                # add if part or else part, depending on evaluation of the condition
-                if evaluation is None and interactive:
-                    evaluation = _prompt_for_evaluation(degree, rule_req)
-                elif evaluation is None:
-                    logging.warn(
-                        f"Evaluation is unknown for `{rule_req}` "
-                        f"(in nodeId {rule_json['nodeId']} from the degreeworks json). "
-                        "Defaulting to False."
-                    )
+                if evaluation is None:
+                    logging.warn(f"Evaluation is unknown for `{rule_req}`. " "Defaulting to False.")
+                    evaluation = False
 
                 if evaluation:
                     parse_rulearray(
@@ -274,7 +239,6 @@ def parse_rulearray(
                         degree,
                         rules,
                         parent=parent,
-                        interactive=interactive,
                     )
                 elif "elsePart" in rule_req:  # assume unknown evaluation goes to else
                     parse_rulearray(
@@ -282,27 +246,23 @@ def parse_rulearray(
                         degree,
                         rules,
                         parent=parent,
-                        interactive=interactive,
                     )
             case "Subset":
+                assert rule_req == {}
                 if "ruleArray" in rule_json:
                     parse_rulearray(
                         rule_json["ruleArray"],
                         degree,
                         rules,
-                        parent=parent,
-                        interactive=interactive,
+                        parent=this_rule,
                     )
                 else:
                     logging.info("subset has no ruleArray")
             case "Group":  # this is nested
-                parse_rulearray(
-                    rule_json["ruleArray"], degree, rules, parent=this_rule, interactive=interactive
-                )
+                parse_rulearray(rule_json["ruleArray"], degree, rules, parent=this_rule)
                 this_rule.num = int(rule_req["numberOfGroups"])
             case "Complete" | "Incomplete":
                 rules.pop()
-                assert "ifElsePart" in rule_json  # this is a nested requirement
             case "Noncourse":  # this is a presentation or something else that's required
                 rules.pop()
             case "Block" | "Blocktype":  # headings
@@ -312,12 +272,12 @@ def parse_rulearray(
 
 
 # TODO: Make the function names more descriptive
-def parse_degreeworks(json: dict, degree: Degree, interactive=False) -> list[Rule]:
+def parse_degreeworks(json: dict, degree: Degree) -> list[Rule]:
     """
     Returns a list of Rules given a DegreeWorks JSON audit and a Degree.
     Note that this method creates rule objects but does not save them.
     """
-    blockArray = json.get("blockArray")
+    blockArray = json["blockArray"]
     rules = []
 
     for requirement in blockArray:
@@ -328,9 +288,7 @@ def parse_degreeworks(json: dict, degree: Degree, interactive=False) -> list[Rul
             num=None,
         )
         rules.append(degree_req)
-        parse_rulearray(
-            requirement["ruleArray"], degree, rules, parent=degree_req, interactive=interactive
-        )
+        parse_rulearray(requirement["ruleArray"], degree, rules, parent=degree_req)
 
         # check if this requirement actually has anything in it
         if degree_req == rules[-1] and not degree_req.q:
@@ -338,12 +296,12 @@ def parse_degreeworks(json: dict, degree: Degree, interactive=False) -> list[Rul
     return rules
 
 
-def parse_and_save_degreeworks(json: dict, degree: Degree, interactive=False) -> None:
+def parse_and_save_degreeworks(json: dict, degree: Degree) -> None:
     """
     Parses a DegreeWorks JSON audit and saves the rules to the database.
     """
     degree.save()
-    rules = parse_degreeworks(json, degree, interactive=interactive)
+    rules = parse_degreeworks(json, degree)
     for rule in rules:
         if rule.q:
             assert (

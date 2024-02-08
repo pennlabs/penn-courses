@@ -52,16 +52,6 @@ class Command(BaseCommand):
             action="store_true",
         )
 
-        parser.add_argument(
-            "--interactive",
-            action="store_true",
-            help=dedent(
-                """
-                Prompt the user about parser decisions.
-                """
-            ),
-        )
-
     def handle(self, *args, **kwargs):
         print(
             dedent(
@@ -110,9 +100,7 @@ class Command(BaseCommand):
                         degree.save()
                         if kwargs["verbosity"]:
                             print(f"Saving degree {degree}...")
-                        parse_and_save_degreeworks(
-                            client.audit(degree), degree, interactive=kwargs["interactive"]
-                        )
+                        parse_and_save_degreeworks(client.audit(degree), degree)
 
         if kwargs["deduplicate_rules"]:
             if kwargs["verbosity"]:

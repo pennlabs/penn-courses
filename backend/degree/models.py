@@ -100,7 +100,7 @@ class Rule(models.Model):
 
     Rules are deduplicated, meaning that
     a rule can belong to multiple degrees. In that case, changing a rule on one degree would
-    also change it on the other degrees.
+    also change it on the other degrees it is associated with.
     """
 
     title = models.CharField(
@@ -161,8 +161,10 @@ class Rule(models.Model):
     )
 
     def __str__(self) -> str:
-        return f"{self.title}, q={self.q}, num={self.num}, cus={self.credits}, \
-            degrees={self.degrees.all()}, parent={self.parent.title if self.parent else None}"
+        return (
+            f"{self.title}, q={self.q}, num={self.num}, cus={self.credits}, "
+            "parent={self.parent.title if self.parent else None}"
+        )
 
     def evaluate(self, full_codes: Iterable[str]) -> bool:
         """
@@ -381,11 +383,13 @@ def update_satisfaction_statuses(sender, instance, action, pk_set, **kwargs):
 
     if action == "post_add" or action == "post_remove" or action == "post_clear":
         degree_plan = instance.degree_plan
-        for rule in degree_plan.degree.rules.all():
+        full_codes = Fulfillment.objects.filter(degree_plan=degree_plan).values_list(
+            "full_code", flat=True
+        )
+
+        for rule in Rule.objects.filter(degrees__in=degree_plan.degrees.all()):
             status, _ = SatisfactionStatus.objects.get_or_create(degree_plan=degree_plan, rule=rule)
-            status.satisfied = rule.evaluate(
-                [fulfillment.full_code for fulfillment in degree_plan.fulfillments.all()]
-            )
+            status.satisfied = rule.evaluate(full_codes)
             status.save()
 
 
@@ -490,7 +494,4 @@ class DoubleCountRestriction(models.Model):
         if intersection_cus is None:
             intersection_cus = 0
 
-        if self.max_credits and intersection_cus > self.max_credits:
-            return True
-
-        return False
+        return self.max_credits and intersection_cus > self.max_credits
