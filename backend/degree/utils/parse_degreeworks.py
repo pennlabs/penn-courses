@@ -229,7 +229,7 @@ def parse_rulearray(
                 if num is None and credits is None:
                     raise ValueError("No classesBegin or creditsBegin in Course requirement")
 
-                # a rule with 0 required courses/credits is not a rule
+                # a rule with 0 courses/credits is not a rule
                 if num == 0 or credits == 0:
                     rules.pop()
                 else:
@@ -261,10 +261,10 @@ def parse_rulearray(
                     evaluation = _prompt_for_evaluation(degree, rule_req)
                 elif evaluation is None:
                     logging.warn(
-                        f"Evaluation is unknown for `{rule_req}` "
-                        f"(in nodeId {rule_json['nodeId']} from the degreeworks json). "
+                        f"Evaluation is unknown for `{rule_req}`. "
                         "Defaulting to False."
                     )
+                    evaluation = False
 
                 if evaluation:
                     parse_rulearray(
@@ -283,12 +283,13 @@ def parse_rulearray(
                         interactive=interactive,
                     )
             case "Subset":
+                assert rule_req == {}
                 if "ruleArray" in rule_json:
                     parse_rulearray(
                         rule_json["ruleArray"],
                         degree,
                         rules,
-                        parent=parent,
+                        parent=this_rule,
                         interactive=interactive,
                     )
                 else:
@@ -300,7 +301,6 @@ def parse_rulearray(
                 this_rule.num = int(rule_req["numberOfGroups"])
             case "Complete" | "Incomplete":
                 rules.pop()
-                assert "ifElsePart" in rule_json  # this is a nested requirement
             case "Noncourse":  # this is a presentation or something else that's required
                 rules.pop()
             case "Block" | "Blocktype":  # headings
@@ -315,7 +315,7 @@ def parse_degreeworks(json: dict, degree: Degree, interactive=False) -> list[Rul
     Returns a list of Rules given a DegreeWorks JSON audit and a Degree.
     Note that this method creates rule objects but does not save them.
     """
-    blockArray = json.get("blockArray")
+    blockArray = json["blockArray"]
     rules = []
 
     for requirement in blockArray:
