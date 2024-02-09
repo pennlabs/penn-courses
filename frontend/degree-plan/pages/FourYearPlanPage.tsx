@@ -11,8 +11,6 @@ import axios from "../services/HttpServices"
 import FuzzySearch from 'react-fuzzy';
 import CourseDetailPanel from "@/components/Course/CourseDetailPanel";
 
-const API_TOKEN = 'platform';
-
 const pageStyle = {
     backgroundColor:'#F7F9FC', 
     padding:'20px',
@@ -52,7 +50,6 @@ const dividerStyle = {
 
 const FourYearPlanPage = () => {
     const [leftWidth, setLeftWidth] = useState(800);
-    // const [rightWidth, setRightWidth] = useState(0);
     const [searchClosed, setSearchClosed] = useState(true);
     const [drag, setDrag] = useState(false);
     const [x, setX] = useState(0);
@@ -228,18 +225,7 @@ const FourYearPlanPage = () => {
             setResults(newData);
             setLoading(false);
     });
-        // console.log(res.data);
     }
-
-    // const getCourseDetail = async (id:string) => {
-    //     const {data} = await axios.get(`/base/2023A/courses/${id}`)
-    //     return data;
-    // }
-    // const showCourseDetail = async (id: any) => {
-    //     setCourseDetailOpen(true);
-    //     const courseDetail = await getCourseDetail(id);
-    //     setCourseDetail(courseDetail);
-    // }
 
     const showCourseDetail = (course: any) => {
         setCourseDetailOpen(true);

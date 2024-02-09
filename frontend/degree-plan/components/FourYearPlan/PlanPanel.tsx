@@ -1,17 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
-import semestersData from "../../data/semesters";
 import Semester from "./Semester";
-import CoursePlanned from "./CoursePlanned";
 import update from 'immutability-helper'
 import _ from "lodash";
 import Icon from '@mdi/react';
 import { mdiMenuRight, mdiMenuLeft, mdiPoll, mdiPlus } from '@mdi/js';
-import PlanTabs from "./PlanTabs";
-import { Divider } from "@mui/material";
 import {topBarStyle } from "@/pages/FourYearPlanPage";
 import SwitchFromList from "./SwitchFromList";
-import {semesterCardStyle} from './Semester';
 import AddSemesterCard from "./AddSemesterCard";
+import SelectListDropdown from "./SelectListDropdown";
 
 
 const semesterPanelStyle = {
@@ -117,6 +113,17 @@ const PlanPanel = ({showCourseDetail, highlightReqId}) => {
             {/* <Tabs/> */}
             <div className="d-flex justify-content-between" style={topBarStyle}>
                 <div className="d-flex justify-content-start" >
+                    <SelectListDropdown 
+                        activeName={'Degree Plan 1'} 
+                        allDegreePlans={[{"id": 1, "name": "Degree Plan 1"}]} 
+                        displayDegreePlan={() => void {}}
+                        schedulesMutators={{
+                        copy: () => void {},
+                        remove: () => void {},
+                        rename: () => void {},
+                        createSchedule: () => void {}
+                        }}              
+                    />
                     <SwitchFromList
                         current={currentPlan} 
                         setCurrent={setCurrentPlan} 
