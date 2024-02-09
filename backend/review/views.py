@@ -176,17 +176,18 @@ def manual_course_reviews(course_code, request_semester, semester=None):
     course_code = course.full_code
     aliases = course.crosslistings.values_list("full_code", flat=True)
 
-    superseded = (
-        Course.objects.filter(
-            course_filters_pcr,
-            full_code=course_code,
+    superseded = False
+    if semester:
+        max_semester = (
+            Course.objects.filter(
+                course_filters_pcr,
+                full_code=course_code,
+            )
+            .aggregate(max_semester=Max("semester"))
+            .get("max_semester")
         )
-        .aggregate(max_semester=Max("semester", default="")) # default of "" handles case when no course is found
-        .get("max_semester", "")
-        > course.semester
-        if semester
-        else False
-    )
+        if max_semester:
+            superseded = max_semester > course.semester
     last_offered_sem_if_superceded = course.semester if superseded else None
 
     topic_codes = list(
