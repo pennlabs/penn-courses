@@ -1,12 +1,12 @@
 'use client'
 
 import React, { useState, useEffect, useRef } from "react";
-import styled from "styled-components";
+import styled from "@emotion/styled";
 import { Icon } from "../bulma_derived_components";
 import { DegreePlan } from "../../types";
 
 
-const ButtonContainer = styled.div<{ isActive: boolean; isPrimary?: boolean }>`
+const ButtonContainer = styled.div<{ $isActive: boolean; }>`
     line-height: 1.5;
     position: relative;
     border-radius: 0 !important;
@@ -16,7 +16,7 @@ const ButtonContainer = styled.div<{ isActive: boolean; isPrimary?: boolean }>`
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-    background: ${(props) => (props.isActive ? "#F5F6F8" : "#FFF")};
+    background: ${(props) => (props.$isActive ? "#F5F6F8" : "#FFF")};
     align-items: center;
 
     &:hover {
@@ -137,8 +137,7 @@ const DropdownButton = ({
                 makeActive();
             }
         }}
-        isActive={isActive}
-        isPrimary={false}
+        $isActive={isActive}
     >
         <ButtonLabelContainer width={50}>{text}</ButtonLabelContainer>
         <ScheduleOptionsContainer>
@@ -149,7 +148,7 @@ const DropdownButton = ({
     </ButtonContainer>
 );
 
-const ScheduleDropdownContainer = styled.div<{isActive: boolean}>`
+const ScheduleDropdownContainer = styled.div<{$isActive: boolean}>`
     border-radius: 0.5rem;
     border: 0;
     outline: none;
@@ -164,12 +163,12 @@ const ScheduleDropdownContainer = styled.div<{isActive: boolean}>`
     }
 
     i.fa.fa-chevron-down::before {
-        content: ${({ isActive }: { isActive: boolean }) =>
-        isActive ? '"\f077"' : ""} !important;
+        content: ${({ $isActive }: { $isActive: boolean }) =>
+        $isActive ? '"\f077"' : ""} !important;
     }
 `;
 
-const DropdownTrigger = styled.div<{isActive: boolean}>`
+const DropdownTrigger = styled.div<{$isActive: boolean}>`
     margin-left: 1.5rem;
     height: 1.5rem;
     width: 1.5rem;
@@ -179,8 +178,8 @@ const DropdownTrigger = styled.div<{isActive: boolean}>`
     background: transparent;
 
     div {
-        background: ${({ isActive }: { isActive: boolean }) =>
-        isActive ? "rgba(162, 180, 237, 0.38) !important" : "none"};
+        background: ${({ $isActive }: { $isActive: boolean }) =>
+        $isActive ? "rgba(162, 180, 237, 0.38) !important" : "none"};
     }
 
     div:hover {
@@ -188,17 +187,17 @@ const DropdownTrigger = styled.div<{isActive: boolean}>`
     }
 `;
 
-const DropdownMenu = styled.div<{isActive: boolean}>`
+const DropdownMenu = styled.div<{$isActive: boolean}>`
     margin-top: 0.1rem !important;
-    display: ${({ isActive }: { isActive: boolean }) =>
-        isActive ? "block" : "none"};
+    display: ${({ $isActive }: { $isActive: boolean }) =>
+        $isActive ? "block" : "none"};
     left: 0;
     min-width: 15rem;
     padding-top: 4px;
     position: absolute;
     top: 100%;
     z-index: 20;
-`;
+    `;
 
 const DropdownContent = styled.div`
     background-color: #fff;
@@ -278,11 +277,11 @@ const SelectListDropdown = ({
     });
 
     return (
-        <ScheduleDropdownContainer ref={ref} isActive={isActive}>
+        <ScheduleDropdownContainer ref={ref} $isActive={isActive}>
             <ScheduleDropdownHeader>
                 <span className="selected_name">{activeName}</span>
                 <DropdownTrigger
-                    isActive={isActive}
+                    $isActive={isActive}
                     onClick={() => {
                         setIsActive(!isActive);
                     }}
@@ -295,7 +294,7 @@ const SelectListDropdown = ({
                     </div>
                 </DropdownTrigger>
             </ScheduleDropdownHeader>
-            <DropdownMenu isActive={isActive} role="menu">
+            <DropdownMenu $isActive={isActive} role="menu">
                 <DropdownContent>
                     {allDegreePlans &&
                         Object.entries(allDegreePlans)

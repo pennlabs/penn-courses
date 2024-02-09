@@ -47,7 +47,7 @@ const requirementDropdownListStyle = {
           </div>
           <div style={requirementDropdownListStyle}>
             {majorData && majorData.rules && majorData.rules.map((requirement: any) => ( 
-              <Requirement requirement={requirement} setSearchClosed={setSearchClosed} parent={null} handleSearch={handleSearch} setHighlightReqId={setHighlightReqId} highlightReqId={highlightReqId}/>
+              <Requirement requirement={requirement} setSearchClosed={setSearchClosed} parent={null} handleSearch={handleSearch} setHighlightReqId={setHighlightReqId} highlightReqId={highlightReqId} key={requirement.id}/>
             ))}
           </div>
         </>

@@ -1,5 +1,5 @@
 // TODO: this is copied from plan. we should just factor it out
-import styled from 'styled-components';
+import styled from '@emotion/styled';
 
 export const Icon = styled.span`
     align-items: center;

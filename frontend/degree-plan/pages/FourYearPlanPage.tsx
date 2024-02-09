@@ -160,9 +160,7 @@ const FourYearPlanPage = () => {
                         inputWrapperStyle={{boxShadow: '0px 0px 0px 0px rgba(0, 0, 0, 0)'}}
                         listItemStyle={{}}
                         listWrapperStyle={{boxShadow: '0px 0px 0px 0px rgba(0, 0, 0, 0)', borderWeight: '0px', width: '100%'}}
-                        // onSelect={(newSelectedItem:any) => {
-                        //     setResults(newSelectedItem)
-                        // }}
+                        onSelect={(newSelectedItem:any) => setResults(newSelectedItem)}
                         resultsTemplate={(props: any, state: any, styles:any, clickHandler:any) => {
                             return state.results.map((degree:any, i:any) => {
                                 return (
