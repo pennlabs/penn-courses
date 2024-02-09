@@ -235,27 +235,31 @@ const ScheduleDropdownHeader = styled.div`
     width: 100%;
 `
 
+const SelectedName = styled.span`
+    font-weight: 600;
+`
+
 interface SelectListDropdownProps {
     activeName: string;
     allDegreePlans: DegreePlan[];
-    displayDegreePlan: (degreePlan: string) => void;
-    schedulesMutators: {
+    selectItem: (degreePlan: string) => void;
+    mutators: {
         copy: (scheduleName: string) => void;
         remove: (scheduleName: string, scheduleId: Number) => void;
         rename: (oldName: string) => void;
-        createSchedule: () => void;
+        create: () => void;
     };
 }
 
 const SelectListDropdown = ({
     activeName,
     allDegreePlans,
-    displayDegreePlan,
-    schedulesMutators: {
+    selectItem,
+    mutators: {
         copy,
         remove,
         rename,
-        createSchedule,
+        create,
     },
 }: SelectListDropdownProps) => {
     const [isActive, setIsActive] = useState(true);
@@ -279,7 +283,7 @@ const SelectListDropdown = ({
     return (
         <ScheduleDropdownContainer ref={ref} $isActive={isActive}>
             <ScheduleDropdownHeader>
-                <span className="selected_name">{activeName}</span>
+                <SelectedName>{activeName}</SelectedName>
                 <DropdownTrigger
                     $isActive={isActive}
                     onClick={() => {
@@ -306,7 +310,7 @@ const SelectListDropdown = ({
                                         makeActive={() => {
                                             setIsActive(false);
                                         }}
-                                        onClick={() => displayDegreePlan(name)}
+                                        onClick={() => selectItem(name)}
                                         text={name}
                                         mutators={{
                                             copy: () =>
@@ -319,11 +323,11 @@ const SelectListDropdown = ({
                                     />
                                 );
                             })}
-                    <AddNew onClick={createSchedule} role="button" href="#">
+                    <AddNew onClick={create} role="button" href="#">
                         <Icon>
                             <i className="fa fa-plus" aria-hidden="true" />
                         </Icon>
-                        <span> Add new schedule </span>
+                        <span> Add new degree plan </span>
                     </AddNew>
                 </DropdownContent>
             </DropdownMenu>

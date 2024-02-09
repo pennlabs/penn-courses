@@ -66,6 +66,8 @@ const PlanPanel = ({showCourseDetail, highlightReqId}) => {
         addCourseToSem(toIndex, course); // add to newly planned semester
     }
 
+    
+
     const addCourseToSem = useCallback((toIndex: number, course: any) => {
         setSemesters((sems) =>
             update(sems, {
@@ -116,20 +118,14 @@ const PlanPanel = ({showCourseDetail, highlightReqId}) => {
                     <SelectListDropdown 
                         activeName={'Degree Plan 1'} 
                         allDegreePlans={[{"id": 1, "name": "Degree Plan 1"}]} 
-                        displayDegreePlan={() => void {}}
-                        schedulesMutators={{
+                        selectItem={() => void {}}
+                        mutators={{
                         copy: () => void {},
                         remove: () => void {},
                         rename: () => void {},
-                        createSchedule: () => void {}
+                        create: () => void {}
                         }}              
                     />
-                    <SwitchFromList
-                        current={currentPlan} 
-                        setCurrent={setCurrentPlan} 
-                        list={plans} 
-                        setList={setPlans} 
-                        addHandler={null}/>
                 </div>
                 <div onClick={() => setShowStats(!showStats)}>
                     <Icon path={mdiPoll} size={1} color={showStats ? '' : '#F2F3F4'}/>
