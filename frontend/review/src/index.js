@@ -2,7 +2,7 @@ import React from "react";
 import "react-app-polyfill/ie11";
 import "react-app-polyfill/stable";
 
-import ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client"
 import { Route, Switch, BrowserRouter as Router } from "react-router-dom";
 import {
   AboutPage,
@@ -21,7 +21,7 @@ if (window.location.hostname !== "localhost") {
 }
 
 const container = document.getElementById("root")
-const root = ReactDOM.createRoot(container);
+const root = createRoot(container);
 root.render(
   <Router>
     <Switch>
