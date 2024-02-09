@@ -20,7 +20,9 @@ if (window.location.hostname !== "localhost") {
   ).install();
 }
 
-ReactDOM.render(
+const container = document.getElementById("root")
+const root = ReactDOM.createRoot(container);
+root.render(
   <Router>
     <Switch>
       <Route exact path="/" component={ReviewPage} />
@@ -34,6 +36,5 @@ ReactDOM.render(
       <Route component={ErrorPage} />
     </Switch>
     <GoogleAnalytics />
-  </Router>,
-  document.getElementById("root")
+  </Router>
 );
