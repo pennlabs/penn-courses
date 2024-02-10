@@ -6,10 +6,10 @@ export const Img = styled.img`
 `;
 
 interface PProps {
-    size?: string;
-    weight?: number;
-    color?: string;
-    margin?: number;
+    $size?: string;
+    $weight?: number;
+    $color?: string;
+    $margin?: number;
 }
 
 function optionalRule<P>(
@@ -24,8 +24,8 @@ function optionalRule<P>(
 }
 
 export const P = styled.p<PProps>`
-    ${optionalRule("font-size", "size")}
-    ${optionalRule("font-weight", "weight")}
-    ${optionalRule("color", "color")}
-    ${optionalRule("margin", "margin")}
+    ${optionalRule("font-size", "$size")}
+    ${optionalRule("font-weight", "$weight")}
+    ${optionalRule("color", "$color")}
+    ${optionalRule("margin", "$margin")}
 `;

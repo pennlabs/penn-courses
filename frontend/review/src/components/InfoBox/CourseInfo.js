@@ -323,7 +323,9 @@ export const CourseHeader = ({
         <strong>Also:&nbsp;</strong>
         {aliases.map((cls, i) => [
           i > 0 && <div>&#44;&nbsp;</div>,
-          <Link to={`/course/${cls}/${data.latest_semester}`}>{cls}</Link>
+          <Link to={`/course/${cls}/${data.latest_semester}`} key={i}>
+            {cls}
+          </Link>
         ])}
       </CourseCodeQualifier>
     )}
