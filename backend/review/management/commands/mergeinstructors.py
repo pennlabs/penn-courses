@@ -43,7 +43,7 @@ def batch_duplicates(qs, get_prop=None, union_find=None) -> List[Set[Instructor]
 
 
 def resolve_duplicates(
-    duplicate_instructor_groups: List[Set[Instructor]], dry_run: bool, stat, force=False
+    duplicate_instructor_groups: List[Set[Instructor]], dry_run: bool, stat=None, force=False
 ):
     """
     Given a list of list of duplicate instructor groups, resolve the foreign key and many-to-many
@@ -55,6 +55,8 @@ def resolve_duplicates(
     :param stat: Function to collect statistics.
     :param force: Manually override conflicting user information.
     """
+    if not stat:
+        stat = lambda key, amt=1, element=None: None  # noqa E731
     for instructor_set in tqdm(duplicate_instructor_groups):
         # Find a primary instance in the duplicate set. This should be the instance that is most
         # "complete" -- in the case of instructors, this means that there is a linked user object.

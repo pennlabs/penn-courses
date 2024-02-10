@@ -1,14 +1,13 @@
 import gc
-import uuid
 
 from django.contrib.auth import get_user_model
 from tqdm import tqdm
 
-from courses.models import Course, Instructor
+from courses.models import Course
 from courses.util import (
     get_or_create_course,
     get_or_create_course_and_section,
-    merge_instructors,
+    import_instructor,
     separate_course_code,
 )
 from review.models import COLUMN_TO_SLUG, CONTEXT_TO_SLUG, Review, ReviewBit
@@ -33,51 +32,6 @@ User = get_user_model()
 
 def filter_by_term(rows, semesters, semester_key="TERM"):
     return [row for row in rows if row[semester_key] in semesters]
-
-
-def import_instructor(pennid, fullname, stat):
-    """
-    Given instructor info do one of a few things:
-    1. Create a new instructor and user object and link the two
-    2. Link together any existing instructors/users that should be linked together assuming the
-       given pennid and fullname belong to the same person.
-    """
-    if pennid is not None:
-        stat("instructors_with_pennid")
-
-        user, user_created = User.objects.get_or_create(
-            pk=int(pennid), defaults={"username": uuid.uuid4()}
-        )
-        if user_created:
-            stat("users_created")
-            user.set_unusable_password()
-            user.save()
-
-        try:
-            merge_instructors(user, fullname)
-            return Instructor.objects.get(user=user)
-        except Instructor.DoesNotExist:
-            pass
-
-        try:
-            inst = Instructor.objects.get(name=fullname)
-            inst.user = user
-            inst.save()
-            return inst
-        except Instructor.DoesNotExist:
-            pass
-
-        stat("instructors_created")
-        return Instructor.objects.create(user=user, name=fullname)
-
-    if fullname:
-        inst, inst_created = Instructor.objects.get_or_create(name=fullname)
-        if inst_created:
-            stat("instructors_created")
-        return inst
-
-    stat("instructors_without_info")
-    return None
 
 
 def import_course_and_section(full_course_code, semester, course_title, primary_section_code, stat):

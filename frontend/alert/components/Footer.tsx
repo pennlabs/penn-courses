@@ -25,7 +25,7 @@ const Footer = () => (
         .
         <br />
         Have feedback about Penn Course Alert? Let us know{" "}
-        <a href="https://airtable.com/shra6mktROZJzcDIS">here!</a>
+        <a href="https://airtable.com/appFRa4NQvNMEbWsA/shrzXeuiEFF8OD89P">here!</a>
     </Wrapper>
 );
 

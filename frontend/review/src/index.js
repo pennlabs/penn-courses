@@ -28,7 +28,7 @@ ReactDOM.render(
       <Route exact path="/faq" component={FAQPage} />
       <Route exact path="/cart" component={CartPage} />
       <Route
-        path="/:type(course|department|instructor)/:code"
+        path="/:type(course|department|instructor)/:code/:semester?"
         component={AuthPage}
       />
       <Route component={ErrorPage} />

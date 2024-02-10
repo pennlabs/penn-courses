@@ -13,12 +13,12 @@ from courses.models import Course, Instructor, Section
 from courses.util import (
     get_or_create_course,
     get_or_create_course_and_section,
+    import_instructor,
     invalidate_current_semester_cache,
 )
 from review.import_utils.import_to_db import (
     import_course_and_section,
     import_description_rows,
-    import_instructor,
     import_summary_row,
 )
 from review.import_utils.parse_sql import entry_regex, parse_row
@@ -210,25 +210,6 @@ class ReviewImportTestCase(TestCase):
         inst.refresh_from_db()
         self.assertEqual(inst.pk, inst2.pk)
         self.assertEqual(user.pk, inst2.user.pk)
-
-    def test_instror_name_user_pennkey_diff_users(self):
-        """
-        If one instructor has the same name as the imported instructor,
-        and the other has the same user link, merge those instructors
-        into the one with the user link.
-        """
-        user = User.objects.create(id=int("10000000"), username="ABC120")
-        user.set_unusable_password()
-        user.save()
-        Instructor.objects.create(name="Old McDonald")
-        Instructor.objects.create(name="blah", user=user)
-        inst3 = import_instructor("10000000", "Old McDonald", self.stat)
-        self.assertEqual(1, Instructor.objects.count())
-        self.assertEqual(1, User.objects.count())
-        user_inst = Instructor.objects.get(user=user)
-        self.assertEqual(user_inst.name, "blah")
-        self.assertEqual(user_inst.id, inst3.id)
-        self.assertEqual(user.id, inst3.user.id)
 
 
 class DescriptionImportTestCase(TestCase):
