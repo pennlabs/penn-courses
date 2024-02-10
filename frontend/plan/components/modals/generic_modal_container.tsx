@@ -9,16 +9,16 @@ import {
 } from "./model_content_generator";
 
 interface ModalContainerProps {
-    $title: string;
-    $close: () => void;
-    $modalProps: any;
-    $modalKey: string;
-    $isBig: boolean;
+    title: string;
+    close: () => void;
+    modalProps: any;
+    modalKey: string;
+    isBig: boolean;
 }
 
-const OuterModalContainer = styled.div<{ title: string }>`
+const OuterModalContainer = styled.div<{ $title: string }>`
     align-items: center;
-    display: ${(props) => (props.title ? "flex " : "none ")} !important;
+    display: ${(props) => (props.$title ? "flex " : "none ")} !important;
     flex-direction: column;
     justify-content: center;
     overflow: hidden;
@@ -140,14 +140,14 @@ const ModalCardBody = styled.section`
  * */
 const ModalContainer = ({
     children,
-    $title: title,
-    $close: close,
+    title,
+    close,
     dispatch,
-    $modalKey: modalKey,
-    $modalProps: modalProps,
-    $isBig: isBig,
+    modalKey,
+    modalProps,
+    isBig: isBig,
 }: PropsWithChildren<ModalContainerProps> & DispatchProp) => (
-    <OuterModalContainer title={title}>
+    <OuterModalContainer $title={title}>
         <ModalBackground />
         <ModalCard $isBig={isBig}>
             <ModalCardHead>
