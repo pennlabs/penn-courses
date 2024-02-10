@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  transpilePackages: ['pcx-shared-components'],
   reactStrictMode: true,
   compiler: {
     styledComponents: {
@@ -9,13 +10,4 @@ const nextConfig = {
   },
 }
 
-module.exports = {...nextConfig,
-  // async rewrites() {
-  //   return [
-  //     {
-  //       source: '/api/*',
-  //       destination: 'http://localhost:5000/api/*'
-  //     },
-  //   ]
-  // }
-}
+module.exports = nextConfig
