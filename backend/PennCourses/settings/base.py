@@ -162,7 +162,6 @@ PLATFORM_ACCOUNTS = {
     "CUSTOM_ADMIN": False,
 }
 
-CORS_ALLOW_ALL_ORIGINS=True
 
 # Penn OpenData API
 OPEN_DATA_CLIENT_ID = os.environ.get("OPEN_DATA_CLIENT_ID", "")
