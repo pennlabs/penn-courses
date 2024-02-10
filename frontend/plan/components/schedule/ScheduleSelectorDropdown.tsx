@@ -222,7 +222,7 @@ const DropdownButton = ({
     </ButtonContainer>
 );
 
-const ScheduleDropdownContainer = styled.div<{ $isActive: boolean }>`
+const ScheduleDropdownContainer = styled.div`
     border-radius: 0.5rem;
     border: 0;
     outline: none;
@@ -234,11 +234,6 @@ const ScheduleDropdownContainer = styled.div<{ $isActive: boolean }>`
     * {
         border: 0;
         outline: none;
-    }
-
-    i.fa.fa-chevron-down::before {
-        content: ${({ $isActive }) =>
-            $isActive ? '"\f077"' : ""} !important;
     }
 `;
 
@@ -529,7 +524,7 @@ const ScheduleSelectorDropdown = ({
                     <DropdownTrigger>
                         <div aria-haspopup={true} aria-controls="dropdown-menu">
                             <Icon>
-                                <i className="fa fa-chevron-down" aria-hidden="true" />
+                                <i className={`fa fa-chevron-${isActive ? "up" : "down"}`} aria-hidden="true"/>
                             </Icon>
                         </div>
                     </DropdownTrigger>

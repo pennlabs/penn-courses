@@ -33,10 +33,10 @@ const LoginButtonStyles = styled.a`
     &:active {
         background-color: #2366d1;
     }
-    padding: "0.5rem",
-    fontSize: "1rem!important",
-    paddingRight: "1rem",
-    paddingLeft: "1rem",
+    padding: "0.5rem";
+    font-size: "1rem!important";
+    padding-right: "1rem";
+    padding-left: "1rem";
 `;
 
 const LoginButton = ({ noMargin, pathname }) => {
