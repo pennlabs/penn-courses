@@ -2,14 +2,15 @@ from dateutil.tz import gettz
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.test import TestCase
+from django.urls import reverse
 from options.models import Option
 from rest_framework.test import APIClient
 
-from alert.management.commands.recomputestats import (
+from alert.models import AddDropPeriod, Registration
+from courses.management.commands.recompute_soft_state import (
     recompute_demand_distribution_estimates,
     recompute_precomputed_fields,
 )
-from alert.models import AddDropPeriod, Registration
 from courses.models import Instructor, Section
 from courses.util import (
     get_or_create_add_drop_period,
@@ -244,7 +245,7 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
 
         recompute_precomputed_fields()
         recompute_demand_distribution_estimates(
-            semesters=TEST_CURRENT_SEMESTER + "," + TEST_SEMESTER + "," + "2020C"
+            semesters=[TEST_CURRENT_SEMESTER, TEST_SEMESTER, "2020C"]
         )
 
         local_tz = gettz(TIME_ZONE)
@@ -442,7 +443,7 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
                     {
                         "title": "ESE-120",
                         "desc": [""],
-                        "url": "/course/ESE-120",
+                        "url": f"/course/ESE-120/{TEST_CURRENT_SEMESTER}",
                     }
                 ],
                 "departments": [{"title": "ESE", "desc": "", "url": "/department/ESE"}],
@@ -535,7 +536,7 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
         cls.enrollment = 80
 
         recompute_precomputed_fields()
-        recompute_demand_distribution_estimates(semesters=TEST_SEMESTER, verbose=True)
+        recompute_demand_distribution_estimates(semesters=[TEST_SEMESTER], verbose=True)
 
         plots = {
             "pca_demand_plot_since_semester": TEST_SEMESTER,
@@ -606,6 +607,24 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
                 **reviews_subdict,
                 "instructors": {Instructor.objects.get().pk: reviews_subdict},
             },
+        )
+
+    def test_check_offered_in(self):
+        instructor_ids = ",".join(
+            [str(id) for id in [Instructor.objects.get().pk]],
+        )
+        self.assertRequestContainsAppx(
+            "course-plots",
+            ["ESE-120"],
+            self.course_plots_subdict,
+            query_params={"instructor_ids": instructor_ids, "semester": TEST_SEMESTER},
+        )
+        self.assertEqual(
+            404,
+            self.client.get(
+                reverse("course-plots", args=["ESE-120"]),
+                {"instructor_ids": instructor_ids, "semester": "2012A"},
+            ).status_code,
         )
 
     def test_instructor(self):
@@ -685,7 +704,7 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
                     {
                         "title": "ESE-120",
                         "desc": [""],
-                        "url": "/course/ESE-120",
+                        "url": f"/course/ESE-120/{TEST_SEMESTER}",
                     }
                 ],
                 "departments": [{"title": "ESE", "desc": "", "url": "/department/ESE"}],
@@ -775,7 +794,7 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
         cls.enrollment = 80
 
         recompute_precomputed_fields()
-        recompute_demand_distribution_estimates(semesters=TEST_SEMESTER)
+        recompute_demand_distribution_estimates(semesters=[TEST_SEMESTER])
 
         plots = {
             "pca_demand_plot_since_semester": TEST_SEMESTER,
@@ -1022,7 +1041,7 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
                     {
                         "title": "ESE-120",
                         "desc": [""],
-                        "url": "/course/ESE-120",
+                        "url": f"/course/ESE-120/{TEST_SEMESTER}",
                     }
                 ],
                 "departments": [{"title": "ESE", "desc": "", "url": "/department/ESE"}],

@@ -15,7 +15,7 @@ from courses.util import get_current_semester
 class Command(BaseCommand):
     help = (
         "Get statistics on PCA, and optionally send to Slack (for analytics use only; do "
-        "not confuse this script with the recomputestats command, which actually updates "
+        "not confuse this script with the recompute_soft_state command, which actually updates "
         "cached statistics)."
     )
 

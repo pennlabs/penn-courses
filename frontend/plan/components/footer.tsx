@@ -33,7 +33,7 @@ export default function Footer() {
                 </a>
                 <br />
                 Have feedback about Penn Course Plan? Let us know{" "}
-                <a href="https://airtable.com/shra6mktROZJzcDIS">here!</a>
+                <a href="https://airtable.com/appFRa4NQvNMEbWsA/shrjygX5BhK2yuLYg">here!</a>
             </p>
         </div>
     );

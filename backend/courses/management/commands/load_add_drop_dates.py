@@ -15,7 +15,7 @@ from courses.util import get_current_semester, get_or_create_add_drop_period
 from PennCourses.settings.base import TIME_ZONE
 
 
-def fill_in_add_drop_periods(verbose=False):
+def fill_in_add_drop_periods(verbose=False) -> set[str]:
     all_semesters = set(Course.objects.values_list("semester", flat=True).distinct())
     adp_semesters = set(AddDropPeriod.objects.values_list("semester", flat=True).distinct())
     missing_semesters = set()

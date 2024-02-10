@@ -138,6 +138,10 @@ course_reviews_response_schema = {
                         "type": "string",
                         "description": "The dash-joined department and most-recent code of this course, e.g. `CIS-1200`.",  # noqa E501
                     },
+                    "last_offered_sem_if_superceded": {
+                        "type": "string",
+                        "description": "The last semester in which this course was offered, if it has been superseded by a more recent course (with the same full code).",  # noqa E501
+                    },
                     "aliases": {
                         "type": "array",
                         "description": "A list of courses that are crosslisted with this course (each represented by its dash-joined department and code).",  # noqa E501

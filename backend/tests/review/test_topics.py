@@ -4,8 +4,8 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
-from courses.models import Instructor, Section, Topic
-from tests.courses.util import create_mock_data
+from courses.models import Course, Instructor, Section, Topic
+from tests.courses.util import create_mock_data, fill_course_soft_state
 from tests.review.test_api import (
     PCRTestMixin,
     average_and_recent,
@@ -16,7 +16,7 @@ from tests.review.test_api import (
 
 
 TEST_SEMESTER = "2017C"
-assert TEST_SEMESTER > "2012A"
+assert TEST_SEMESTER > "2017A"
 
 
 class CourseCodeChangedTestCase(TestCase, PCRTestMixin):
@@ -34,15 +34,14 @@ class CourseCodeChangedTestCase(TestCase, PCRTestMixin):
         )
         create_review("CIS-371-001", "2012A", self.instructor_name, {"instructor_quality": 2})
         create_review(
-            "CIS-371-002",
-            "2007C",
+            "CIS-471-001",
+            "2017B",
             self.instructor_name,
-            {"instructor_quality": 0},
-            responses=0,
+            {"instructor_quality": 3},
         )
         create_review(
             "CIS-471-001",
-            "2007C",
+            "2017A",
             "No Responses Instructor",
             {"instructor_quality": 0},
             responses=0,
@@ -50,9 +49,13 @@ class CourseCodeChangedTestCase(TestCase, PCRTestMixin):
 
         Section.objects.all().update(activity="LEC")
 
-        topic_371 = Topic.objects.get(most_recent__full_code="CIS-371")
-        topic_471 = Topic.objects.get(most_recent__full_code="CIS-471")
-        topic_371.merge_with(topic_471)
+        fill_course_soft_state()
+        cis_371_2012A = Course.objects.get(full_code="CIS-371", semester="2012A")
+        cis_471_2017A = Course.objects.get(full_code="CIS-471", semester="2017A")
+        cis_471_2017A.parent_course = cis_371_2012A
+        cis_471_2017A.manually_set_parent_course = True
+        cis_471_2017A.save()
+        fill_course_soft_state()
 
         self.extra_course_data = {
             "code": "CIS-471",
@@ -133,15 +136,31 @@ class CourseCodeChangedTestCase(TestCase, PCRTestMixin):
         self.assertRequestContainsAppx(
             "course-history",
             ["CIS-371", Instructor.objects.get(name=self.instructor_name).pk],
-            {"sections": [rating(4), rating(2)]},
+            {"sections": [rating(4), rating(3), rating(2)]},
         )
         self.assertRequestContainsAppx(
             "course-history",
             ["CIS-471", Instructor.objects.get(name=self.instructor_name).pk],
             {
                 "sections": [
-                    {"course_code": "CIS-471", "activity": "Lecture", **rating(4)},
-                    {"course_code": "CIS-371", "activity": "Lecture", **rating(2)},
+                    {
+                        "course_code": "CIS-471",
+                        "semester": TEST_SEMESTER,
+                        "activity": "Lecture",
+                        **rating(4),
+                    },
+                    {
+                        "course_code": "CIS-471",
+                        "semester": "2017B",
+                        "activity": "Lecture",
+                        **rating(3),
+                    },
+                    {
+                        "course_code": "CIS-371",
+                        "semester": "2012A",
+                        "activity": "Lecture",
+                        **rating(2),
+                    },
                 ]
             },
         )
@@ -160,24 +179,23 @@ class CourseCodeChangedNoReviewTestCase(TestCase, PCRTestMixin):
         section.instructors.add(instructor)
 
         create_review("CIS-371-001", "2012A", self.instructor_name, {"instructor_quality": 2})
-        create_review(
-            "CIS-371-002",
-            "2007C",
-            self.instructor_name,
-            {"instructor_quality": 0},
-            responses=0,
-        )
+        create_review("CIS-471-001", "2017B", self.instructor_name, {"instructor_quality": 3})
         create_review(
             "CIS-471-001",
-            "2007C",
+            "2017A",
             "No Responses Instructor",
             {"instructor_quality": 0},
             responses=0,
         )
         Section.objects.all().update(activity="LEC")
-        topic_371 = Topic.objects.get(most_recent__full_code="CIS-371")
-        topic_471 = Topic.objects.get(most_recent__full_code="CIS-471")
-        topic_371.merge_with(topic_471)
+
+        fill_course_soft_state()
+        cis_371_2012A = Course.objects.get(full_code="CIS-371", semester="2012A")
+        cis_471_2017A = Course.objects.get(full_code="CIS-471", semester="2017A")
+        cis_471_2017A.parent_course = cis_371_2012A
+        cis_471_2017A.manually_set_parent_course = True
+        cis_471_2017A.save()
+        fill_course_soft_state()
 
         self.extra_course_data = {
             "code": "CIS-471",
@@ -192,11 +210,11 @@ class CourseCodeChangedNoReviewTestCase(TestCase, PCRTestMixin):
             "CIS-471",
             {
                 "num_semesters": 3,
-                **average_and_recent(2, 2),
+                **average_and_recent(2.5, 3),
                 **self.extra_course_data,
                 "instructors": {
                     Instructor.objects.get(name=self.instructor_name).pk: {
-                        **average_and_recent(2, 2),
+                        **average_and_recent(2.5, 3),
                         "latest_semester": TEST_SEMESTER,
                     },
                 },
@@ -209,11 +227,11 @@ class CourseCodeChangedNoReviewTestCase(TestCase, PCRTestMixin):
             "CIS-371",
             {
                 "num_semesters": 3,
-                **average_and_recent(2, 2),
+                **average_and_recent(2.5, 3),
                 **self.extra_course_data,
                 "instructors": {
                     Instructor.objects.get(name=self.instructor_name).pk: {
-                        **average_and_recent(2, 2),
+                        **average_and_recent(2.5, 3),
                         "latest_semester": TEST_SEMESTER,
                     },
                 },
@@ -225,8 +243,8 @@ class CourseCodeChangedNoReviewTestCase(TestCase, PCRTestMixin):
             "instructor-reviews",
             Instructor.objects.get(name=self.instructor_name).pk,
             {
-                **average_and_recent(2, 2),
-                "courses": {"CIS-471": average_and_recent(2, 2)},
+                **average_and_recent(2.5, 3),
+                "courses": {"CIS-471": average_and_recent(2.5, 3)},
             },
         )
 
@@ -245,7 +263,7 @@ class CourseCodeChangedNoReviewTestCase(TestCase, PCRTestMixin):
             "department-reviews",
             "CIS",
             {
-                "courses": {"CIS-471": average_and_recent(2, 2)},
+                "courses": {"CIS-471": average_and_recent(2.5, 3)},
             },
         )
 
@@ -266,6 +284,12 @@ class CourseCodeChangedNoReviewTestCase(TestCase, PCRTestMixin):
                         "semester": TEST_SEMESTER,
                         "forms_returned": None,
                         "forms_produced": None,
+                    },
+                    {
+                        "course_code": "CIS-471",
+                        "semester": "2017B",
+                        "activity": "Lecture",
+                        **rating(3),
                     },
                     {
                         "course_code": "CIS-371",
@@ -287,6 +311,12 @@ class CourseCodeChangedNoReviewTestCase(TestCase, PCRTestMixin):
                         "semester": TEST_SEMESTER,
                         "forms_returned": None,
                         "forms_produced": None,
+                    },
+                    {
+                        "course_code": "CIS-471",
+                        "semester": "2017B",
+                        "activity": "Lecture",
+                        **rating(3),
                     },
                     {
                         "course_code": "CIS-371",
@@ -312,24 +342,23 @@ class InstructorNoReviewTestCase(TestCase, PCRTestMixin):
         section.instructors.add(instructor)
 
         create_review("CIS-371-001", "2012A", self.instructor_name, {"instructor_quality": 2})
-        create_review(
-            "CIS-371-002",
-            "2007C",
-            self.instructor_name,
-            {"instructor_quality": 0},
-            responses=0,
-        )
+        create_review("CIS-471-001", "2017B", self.instructor_name, {"instructor_quality": 3})
         create_review(
             "CIS-471-001",
-            "2007C",
+            "2017A",
             "No Responses Instructor",
             {"instructor_quality": 0},
             responses=0,
         )
         Section.objects.all().update(activity="LEC")
-        topic_371 = Topic.objects.get(most_recent__full_code="CIS-371")
-        topic_471 = Topic.objects.get(most_recent__full_code="CIS-471")
-        topic_371.merge_with(topic_471)
+
+        fill_course_soft_state()
+        cis_371_2012A = Course.objects.get(full_code="CIS-371", semester="2012A")
+        cis_471_2017A = Course.objects.get(full_code="CIS-471", semester="2017A")
+        cis_471_2017A.parent_course = cis_371_2012A
+        cis_471_2017A.manually_set_parent_course = True
+        cis_471_2017A.save()
+        fill_course_soft_state()
 
         self.extra_course_data = {
             "code": "CIS-471",
@@ -344,12 +373,12 @@ class InstructorNoReviewTestCase(TestCase, PCRTestMixin):
             "CIS-471",
             {
                 "num_semesters": 3,
-                **average_and_recent(2, 2),
+                **average_and_recent(2.5, 3),
                 **self.extra_course_data,
                 "instructors": {
                     Instructor.objects.get(name=self.instructor_name).pk: {
-                        **average_and_recent(2, 2),
-                        "latest_semester": "2012A",
+                        **average_and_recent(2.5, 3),
+                        "latest_semester": "2017B",
                     },
                     Instructor.objects.get(name="Instructor Two").pk: {
                         "average_reviews": {},
@@ -366,12 +395,12 @@ class InstructorNoReviewTestCase(TestCase, PCRTestMixin):
             "CIS-371",
             {
                 "num_semesters": 3,
-                **average_and_recent(2, 2),
+                **average_and_recent(2.5, 3),
                 **self.extra_course_data,
                 "instructors": {
                     Instructor.objects.get(name=self.instructor_name).pk: {
-                        **average_and_recent(2, 2),
-                        "latest_semester": "2012A",
+                        **average_and_recent(2.5, 3),
+                        "latest_semester": "2017B",
                     },
                     Instructor.objects.get(name="Instructor Two").pk: {
                         "average_reviews": {},
@@ -387,8 +416,8 @@ class InstructorNoReviewTestCase(TestCase, PCRTestMixin):
             "instructor-reviews",
             Instructor.objects.get(name=self.instructor_name).pk,
             {
-                **average_and_recent(2, 2),
-                "courses": {"CIS-471": average_and_recent(2, 2)},
+                **average_and_recent(2.5, 3),
+                "courses": {"CIS-471": average_and_recent(2.5, 3)},
             },
         )
 
@@ -407,7 +436,7 @@ class InstructorNoReviewTestCase(TestCase, PCRTestMixin):
             "department-reviews",
             "CIS",
             {
-                "courses": {"CIS-471": average_and_recent(2, 2)},
+                "courses": {"CIS-471": average_and_recent(2.5, 3)},
             },
         )
 
@@ -423,6 +452,12 @@ class InstructorNoReviewTestCase(TestCase, PCRTestMixin):
             {
                 "sections": [
                     {
+                        "course_code": "CIS-471",
+                        "semester": "2017B",
+                        "activity": "Lecture",
+                        **rating(3),
+                    },
+                    {
                         "course_code": "CIS-371",
                         "semester": "2012A",
                         "activity": "Lecture",
@@ -436,6 +471,12 @@ class InstructorNoReviewTestCase(TestCase, PCRTestMixin):
             ["CIS-471", Instructor.objects.get(name=self.instructor_name).pk],
             {
                 "sections": [
+                    {
+                        "course_code": "CIS-471",
+                        "semester": "2017B",
+                        "activity": "Lecture",
+                        **rating(3),
+                    },
                     {
                         "course_code": "CIS-371",
                         "semester": "2012A",
@@ -504,9 +545,13 @@ class CourseCodeChangedTwoInstructorsMultipleSemestersTestCase(TestCase, PCRTest
         self.instructor2 = Instructor.objects.get(name="Instructor Two")
         self.instructor2_pk = self.instructor2.pk
 
-        topic_371 = Topic.objects.get(most_recent__full_code="CIS-371")
-        topic_471 = Topic.objects.get(most_recent__full_code="CIS-471")
-        topic_371.merge_with(topic_471)
+        fill_course_soft_state()
+        cis_371_2012A = Course.objects.get(full_code="CIS-371", semester="2012C")
+        cis_471_2017A = Course.objects.get(full_code="CIS-471", semester="2017A")
+        cis_471_2017A.parent_course = cis_371_2012A
+        cis_471_2017A.manually_set_parent_course = True
+        cis_471_2017A.save()
+        fill_course_soft_state()
 
         self.extra_course_data = {
             "code": "CIS-471",
@@ -719,4 +764,141 @@ class BranchedFromTestCase(TestCase, PCRTestMixin):
                     },
                 },
             },
+        )
+
+
+class CourseOfferedInTestCase(TestCase, PCRTestMixin):
+    def setUp(self):
+        set_semester()
+        AddDropPeriod(semester="2012A").save()
+        self.instructor_name = "Instructor One"
+        self.client = APIClient()
+        self.client.force_login(User.objects.create_user(username="test"))
+        create_review("CIS-471-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
+        create_review("CIS-371-001", "2012A", self.instructor_name, {"instructor_quality": 2})
+        create_review(
+            "CIS-471-001",
+            "2017B",
+            self.instructor_name,
+            {"instructor_quality": 3},
+        )
+        create_review(
+            "CIS-471-001",
+            "2017A",
+            "No Responses Instructor",
+            {"instructor_quality": 0},
+            responses=0,
+        )
+
+        Section.objects.all().update(activity="LEC")
+
+        fill_course_soft_state()
+        cis_371_2012A = Course.objects.get(full_code="CIS-371", semester="2012A")
+        cis_471_2017A = Course.objects.get(full_code="CIS-471", semester="2017A")
+        cis_471_2017A.parent_course = cis_371_2012A
+        cis_471_2017A.manually_set_parent_course = True
+        cis_471_2017A.save()
+        fill_course_soft_state()
+
+        self.extra_course_data = {
+            "code": "CIS-471",
+            "historical_codes": [
+                {"full_code": "CIS-371", "branched_from": False, "semester": "2012A"}
+            ],
+        }
+
+    def test_course(self):
+        self.assertRequestContainsAppx(
+            "course-reviews",
+            "CIS-471",
+            {
+                "num_semesters": 3,
+                **average_and_recent(3, 4),
+                **self.extra_course_data,
+                "instructors": {
+                    Instructor.objects.get(name=self.instructor_name).pk: {
+                        **average_and_recent(3, 4),
+                        "latest_semester": TEST_SEMESTER,
+                    },
+                },
+            },
+            query_params={"semester": "2017A"},
+        )
+        self.assertEqual(
+            404,
+            self.client.get(
+                reverse("course-reviews", args=["CIS-471"]), {"semester": "2012A"}
+            ).status_code,
+        )
+
+    def test_course_old_code(self):
+        self.assertRequestContainsAppx(
+            "course-reviews",
+            "CIS-371",
+            {
+                "num_semesters": 3,
+                **average_and_recent(3, 4),
+                **self.extra_course_data,
+                "instructors": {
+                    Instructor.objects.get(name=self.instructor_name).pk: {
+                        **average_and_recent(3, 4),
+                        "latest_semester": TEST_SEMESTER,
+                    },
+                },
+            },
+            query_params={"semester": "2012A"},
+        )
+        self.assertEqual(
+            404,
+            self.client.get(
+                reverse("course-reviews", args=["CIS-371"]), {"semester": "2017A"}
+            ).status_code,
+        )
+
+    def test_history(self):
+        instructor = Instructor.objects.get(name=self.instructor_name)
+        self.assertRequestContainsAppx(
+            "course-history",
+            ["CIS-371", instructor.pk],
+            {"sections": [rating(4), rating(3), rating(2)]},
+            query_params={"semester": "2012A"},
+        )
+        self.assertEqual(
+            404,
+            self.client.get(
+                reverse("course-history", args=["CIS-371", instructor.pk]),
+                {"semester": "2017A"},
+            ).status_code,
+        )
+        self.assertRequestContainsAppx(
+            "course-history",
+            ["CIS-471", instructor.pk],
+            {
+                "sections": [
+                    {
+                        "course_code": "CIS-471",
+                        "semester": TEST_SEMESTER,
+                        "activity": "Lecture",
+                        **rating(4),
+                    },
+                    {
+                        "course_code": "CIS-471",
+                        "semester": "2017B",
+                        "activity": "Lecture",
+                        **rating(3),
+                    },
+                    {
+                        "course_code": "CIS-371",
+                        "semester": "2012A",
+                        "activity": "Lecture",
+                        **rating(2),
+                    },
+                ]
+            },
+        )
+        self.assertEqual(
+            404,
+            self.client.get(
+                reverse("course-history", args=["CIS-471", instructor.pk]), {"semester": "2012A"}
+            ).status_code,
         )

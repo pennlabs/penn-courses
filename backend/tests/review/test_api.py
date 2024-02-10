@@ -6,16 +6,12 @@ from django.utils.http import urlencode
 from options.models import Option
 from rest_framework.test import APIClient
 
-from alert.management.commands.recomputestats import recompute_precomputed_fields
 from alert.models import AddDropPeriod
-from courses.models import Instructor, PreNGSSRestriction, Section, StatusUpdate
-from courses.util import (
-    get_or_create_course_and_section,
-    invalidate_current_semester_cache,
-)
+from courses.models import Course, Instructor, PreNGSSRestriction, Section, StatusUpdate
+from courses.util import get_or_create_course_and_section, invalidate_current_semester_cache
 from review.import_utils.import_to_db import import_review
 from review.models import Review
-from tests.courses.util import create_mock_data
+from tests.courses.util import create_mock_data, fill_course_soft_state
 
 
 TEST_SEMESTER = "2022C"
@@ -33,11 +29,11 @@ def set_semester():
 
 
 def create_review(section_code, semester, instructor_name, bits, responses=100):
-    _, section, _, _ = get_or_create_course_and_section(section_code, semester)
+    course, section, _, _ = get_or_create_course_and_section(section_code, semester)
     instructor, _ = Instructor.objects.get_or_create(name=instructor_name)
     section.instructors.add(instructor)
     import_review(section, instructor, None, responses, None, bits, lambda x, y=None: None)
-    recompute_precomputed_fields()
+    fill_course_soft_state()
 
 
 class PCRTestMixin(object):
@@ -188,7 +184,7 @@ class TestHasReview(TestCase):
         _, section, _, _ = get_or_create_course_and_section("CIS-120-001", TEST_SEMESTER)
         instructor, _ = Instructor.objects.get_or_create(name="Rajiv Gandhi")
         section.instructors.add(instructor)
-        recompute_precomputed_fields()
+        fill_course_soft_state()
         self.assertFalse(Section.objects.get(id=section.id).has_reviews)
 
     def test_has_no_responses(self):
@@ -196,16 +192,20 @@ class TestHasReview(TestCase):
         instructor, _ = Instructor.objects.get_or_create(name="Rajiv Gandhi")
         section.instructors.add(instructor)
         import_review(
-            section,
-            instructor,
-            None,
-            0,
-            None,
-            {"instructor_quality": 4},
-            lambda x, y=None: None,
+            section, instructor, None, 1, None, {"instructor_quality": 4}, lambda x, y=None: None
         )
-        recompute_precomputed_fields()
+        fill_course_soft_state()
         self.assertTrue(Section.objects.get(id=section.id).has_reviews)
+
+    def test_has_review_with_no_responses(self):
+        _, section, _, _ = get_or_create_course_and_section("CIS-120-001", TEST_SEMESTER)
+        instructor, _ = Instructor.objects.get_or_create(name="Rajiv Gandhi")
+        section.instructors.add(instructor)
+        import_review(
+            section, instructor, None, 0, None, {"instructor_quality": 4}, lambda x, y=None: None
+        )
+        fill_course_soft_state()
+        self.assertFalse(Section.objects.get(id=section.id).has_reviews)
 
     def test_has_one(self):
         _, section, _, _ = get_or_create_course_and_section("CIS-120-001", TEST_SEMESTER)
@@ -220,7 +220,7 @@ class TestHasReview(TestCase):
             {"instructor_quality": 4},
             lambda x, y=None: None,
         )
-        recompute_precomputed_fields()
+        fill_course_soft_state()
         self.assertTrue(Section.objects.get(id=section.id).has_reviews)
 
     def test_has_multiple(self):
@@ -245,7 +245,7 @@ class TestHasReview(TestCase):
             {"course_quality": 4},
             lambda x, y=None: None,
         )
-        recompute_precomputed_fields()
+        fill_course_soft_state()
         self.assertTrue(Section.objects.get(id=section.id).has_reviews)
 
 
@@ -255,12 +255,7 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
         self.instructor_name = "Instructor One"
         self.client = APIClient()
         self.client.force_login(User.objects.create_user(username="test"))
-        create_review(
-            "CIS-120-001",
-            TEST_SEMESTER,
-            self.instructor_name,
-            {"instructor_quality": 4},
-        )
+        create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
         self.instructor_pk = Instructor.objects.get(name=self.instructor_name).pk
         create_review(
             "CIS-120-002",
@@ -297,10 +292,7 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
         self.assertRequestContainsAppx(
             "instructor-reviews",
             self.instructor_pk,
-            {
-                **average_and_recent(4, 4),
-                "courses": {"CIS-120": {**average_and_recent(4, 4)}},
-            },
+            {**average_and_recent(4, 4), "courses": {"CIS-120": {**average_and_recent(4, 4)}}},
         )
         self.assertRequestContainsAppx(
             "instructor-reviews",
@@ -349,17 +341,12 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
                         "desc": "CIS",
                         "url": f"/instructor/{self.instructor_pk}",
                     },
-                    {
-                        "title": "No Responses Instructor",
-                        "desc": "CIS",
-                        "url": f"/instructor/{self.instructor_nores_pk}",
-                    },
                 ],
                 "courses": [
                     {
                         "title": "CIS-120",
                         "desc": [""],
-                        "url": "/course/CIS-120",
+                        "url": f"/course/CIS-120/{TEST_SEMESTER}",
                     }
                 ],
                 "departments": [{"title": "CIS", "desc": "", "url": "/department/CIS"}],
@@ -374,12 +361,7 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
         self.instructor_name = "Instructor One"
         self.client = APIClient()
         self.client.force_login(User.objects.create_user(username="test"))
-        create_review(
-            "CIS-120-001",
-            TEST_SEMESTER,
-            self.instructor_name,
-            {"instructor_quality": 4},
-        )
+        create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
         create_review("CIS-120-001", "2012A", self.instructor_name, {"instructor_quality": 2})
         create_review(
             "CIS-120-002",
@@ -401,7 +383,7 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
             "course-reviews",
             "CIS-120",
             {
-                "num_semesters": 3,
+                "num_semesters": 2,
                 **average_and_recent(3, 4),
                 "instructors": {
                     Instructor.objects.get(name=self.instructor_name).pk: {
@@ -534,7 +516,7 @@ class SemesterWithFutureCourseTestCase(TestCase, PCRTestMixin):
             "course-reviews",
             "CIS-120",
             {
-                "num_semesters": 3,
+                "num_semesters": 2,
                 **average_and_recent(3, 4),
                 "instructors": {
                     Instructor.objects.get(name=self.instructor_name).pk: {
@@ -564,12 +546,7 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
         self.instructor_name = "Instructor One"
         self.client = APIClient()
         self.client.force_login(User.objects.create_user(username="test"))
-        create_review(
-            "CIS-120-001",
-            TEST_SEMESTER,
-            self.instructor_name,
-            {"instructor_quality": 4},
-        )
+        create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
         create_review("CIS-120-001", TEST_SEMESTER, "Instructor Two", {"instructor_quality": 2})
         create_review(
             "CIS-120-002",
@@ -598,7 +575,7 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
                     self.instructor1.pk: average_and_recent(4, 4),
                     self.instructor2.pk: average_and_recent(2, 2),
                 },
-                "num_sections": 3,
+                "num_sections": 1,
                 "num_sections_recent": 1,
             },
         )
@@ -629,12 +606,7 @@ class TwoSectionTestCase(TestCase, PCRTestMixin):
         self.instructor_name = "Instructor One"
         self.client = APIClient()
         self.client.force_login(User.objects.create_user(username="test"))
-        create_review(
-            "CIS-120-001",
-            TEST_SEMESTER,
-            self.instructor_name,
-            {"instructor_quality": 4},
-        )
+        create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
         create_review("CIS-120-002", TEST_SEMESTER, "Instructor Two", {"instructor_quality": 2})
         create_review(
             "CIS-120-002",
@@ -695,12 +667,7 @@ class TwoInstructorsMultipleSemestersTestCase(TestCase, PCRTestMixin):
         self.instructor_name = "Instructor One"
         self.client = APIClient()
         self.client.force_login(User.objects.create_user(username="test"))
-        create_review(
-            "CIS-120-001",
-            TEST_SEMESTER,
-            self.instructor_name,
-            {"instructor_quality": 4},
-        )
+        create_review("CIS-120-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
         create_review("CIS-120-001", "2017A", "Instructor Two", {"instructor_quality": 2})
         create_review(
             "CIS-120-002",
@@ -758,7 +725,7 @@ class TwoInstructorsMultipleSemestersTestCase(TestCase, PCRTestMixin):
                         "latest_semester": TEST_SEMESTER,
                     },
                 },
-                "num_sections": 6,
+                "num_sections": 4,
                 "num_sections_recent": 1,
             },
         )
@@ -768,13 +735,6 @@ class TwoDepartmentTestCase(TestCase, PCRTestMixin):
     def setUp(self):
         set_semester()
         create_review("CIS-120-001", TEST_SEMESTER, "Instructor One", {"instructor_quality": 4})
-        create_review(
-            "CIS-120-002",
-            "2007C",
-            "Instructor One",
-            {"instructor_quality": 0},
-            responses=0,
-        )
         create_review(
             "CIS-120-001",
             "2007C",
@@ -813,7 +773,6 @@ class TwoDepartmentTestCase(TestCase, PCRTestMixin):
         )
 
     def test_autocomplete(self):
-        no_responses_instructor = Instructor.objects.get(name="No Responses Instructor")
         self.assertRequestContainsAppx(
             "review-autocomplete",
             [],
@@ -829,11 +788,6 @@ class TwoDepartmentTestCase(TestCase, PCRTestMixin):
                         "desc": "ENM,MATH",
                         "url": f"/instructor/{self.instructor2.pk}",
                     },
-                    {
-                        "title": "No Responses Instructor",
-                        "desc": "CIS",
-                        "url": f"/instructor/{no_responses_instructor.pk}",
-                    },
                 ],
             },
         )
@@ -843,13 +797,6 @@ class NoReviewForSectionTestCase(TestCase, PCRTestMixin):
     def setUp(self):
         set_semester()
         create_review("CIS-120-001", TEST_SEMESTER, "Instructor One", {"instructor_quality": 4})
-        create_review(
-            "CIS-120-002",
-            "2007C",
-            "Instructor One",
-            {"instructor_quality": 0},
-            responses=0,
-        )
         create_review(
             "CIS-120-001",
             "2007C",
@@ -1055,8 +1002,141 @@ class RecitationInstructorTestCase(TestCase, PCRTestMixin):
                     {
                         "title": "CIS-120",
                         "desc": [""],
-                        "url": "/course/CIS-120",
+                        "url": f"/course/CIS-120/{TEST_SEMESTER}",
                     }
+                ],
+                "departments": [{"title": "CIS", "desc": "", "url": "/department/CIS"}],
+            },
+        )
+        self.assertEqual(len(res["instructors"]), 1)
+
+
+class DuplicateCodeTestCase(TestCase, PCRTestMixin):
+    def setUp(self):
+        set_semester()
+        self.instructor_name = "Instructor One"
+        self.client = APIClient()
+        self.client.force_login(User.objects.create_user(username="test"))
+        create_review("CIS-120-001", "2019C", self.instructor_name, {"instructor_quality": 4})
+        create_review("CIS-120-001", "2012A", self.instructor_name, {"instructor_quality": 3})
+        create_review("CIS-120-001", "2011B", self.instructor_name, {"instructor_quality": 2})
+        create_review("CIS-120-001", "2010C", self.instructor_name, {"instructor_quality": 1})
+        # Topics:
+        # - CIS-120 2019C
+        # - CIS-120 2012A, CIS-120 2011B
+        # - CIS-120 2010C
+        new_course = Course.objects.get(full_code="CIS-120", semester="2019C")
+        new_course.parent_course = None
+        new_course.manually_set_parent_course = True
+        new_course.save()
+        old_course_b = Course.objects.get(full_code="CIS-120", semester="2011B")
+        old_course_b.parent_course = None
+        old_course_b.manually_set_parent_course = True
+        old_course_b.save()
+        old_course_c = Course.objects.get(full_code="CIS-120", semester="2010C")
+        old_course_c.parent_course = None
+        old_course_c.manually_set_parent_course = True
+        old_course_c.save()
+        fill_course_soft_state()
+
+        self.instructor_pk = Instructor.objects.get(name=self.instructor_name).pk
+
+    def test_course(self):
+        res = self.assertRequestContainsAppx(
+            "course-reviews",
+            "CIS-120",
+            {
+                "num_semesters": 1,
+                **average_and_recent(4, 4),
+                "instructors": {
+                    self.instructor_pk: {**average_and_recent(4, 4)},
+                },
+            },
+        )
+        self.assertEqual(len(res["instructors"]), 1)
+
+    def test_course_semester(self):
+        res = self.assertRequestContainsAppx(
+            "course-reviews",
+            "CIS-120",
+            {
+                "num_semesters": 1,
+                **average_and_recent(4, 4),
+                "instructors": {
+                    self.instructor_pk: {**average_and_recent(4, 4)},
+                },
+            },
+            query_params={"semester": "2019C"},
+        )
+        self.assertEqual(len(res["instructors"]), 1)
+        res = self.assertRequestContainsAppx(
+            "course-reviews",
+            "CIS-120",
+            {
+                "num_semesters": 2,
+                **average_and_recent(2.5, 3),
+                "instructors": {
+                    self.instructor_pk: {**average_and_recent(2.5, 3)},
+                },
+            },
+            query_params={"semester": "2012A"},
+        )
+        self.assertEqual(len(res["instructors"]), 1)
+        res = self.assertRequestContainsAppx(
+            "course-reviews",
+            "CIS-120",
+            {
+                "num_semesters": 2,
+                **average_and_recent(2.5, 3),
+                "instructors": {
+                    self.instructor_pk: {**average_and_recent(2.5, 3)},
+                },
+            },
+            query_params={"semester": "2011B"},
+        )
+        self.assertEqual(len(res["instructors"]), 1)
+        res = self.assertRequestContainsAppx(
+            "course-reviews",
+            "CIS-120",
+            {
+                "num_semesters": 1,
+                **average_and_recent(1, 1),
+                "instructors": {
+                    self.instructor_pk: {**average_and_recent(1, 1)},
+                },
+            },
+            query_params={"semester": "2010C"},
+        )
+        self.assertEqual(len(res["instructors"]), 1)
+
+    def test_autocomplete(self):
+        res = self.assertRequestContainsAppx(
+            "review-autocomplete",
+            [],
+            {
+                "instructors": [
+                    {
+                        "title": self.instructor_name,
+                        "desc": "CIS",
+                        "url": f"/instructor/{self.instructor_pk}",
+                    },
+                ],
+                "courses": [
+                    {
+                        "title": "(Fall 2010) CIS-120",
+                        "desc": [""],
+                        "url": "/course/CIS-120/2010C",
+                    },
+                    {
+                        "title": "(Fall 2019) CIS-120",
+                        "desc": [""],
+                        "url": "/course/CIS-120/2019C",
+                    },
+                    {
+                        "title": "(Spring 2012) CIS-120",
+                        "desc": [""],
+                        "url": "/course/CIS-120/2012A",
+                    },
                 ],
                 "departments": [{"title": "CIS", "desc": "", "url": "/department/CIS"}],
             },

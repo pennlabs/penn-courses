@@ -99,48 +99,65 @@ export function apiIsAuthenticated(func) {
   });
 }
 
-export function apiLive(code) {
+// To check that the course was offered as a certain code@semester,
+// specify it with `checkOfferedIn`.
+// Null will be returned if the course was not offered in that semester.
+export function apiLive(code, checkOfferedIn) {
   return apiFetch(
-    `${API_DOMAIN}/api/base/current/courses/${encodeURIComponent(code)}/`
+    `${API_DOMAIN}/api/base/current/courses/${encodeURIComponent(code)}/` +
+      (checkOfferedIn
+        ? `?check_offered_in=${encodeURIComponent(checkOfferedIn)}`
+        : "")
   );
 }
 
-export function apiReviewData(type, code) {
+function getSemesterQParam(semester) {
+  return semester ? `&semester=${encodeURIComponent(semester)}` : "";
+}
+
+export function apiReviewData(type, code, semester) {
   return apiFetch(
     `${API_DOMAIN}/api/review/${encodeURIComponent(type)}/${encodeURIComponent(
       code
-    )}?token=${encodeURIComponent(API_TOKEN)}`
+    )}?token=${encodeURIComponent(API_TOKEN)}` + getSemesterQParam(semester)
   );
 }
 
 export function apiContact(name) {
   return apiFetch(
     `https://api.pennlabs.org/directory/search?name=${encodeURIComponent(name)}`
-  ).then(res => {
-    if (res.result_data.length !== 1) {
-      return null;
-    }
+  )
+    .then(res => {
+      if (res.result_data.length !== 1) {
+        return null;
+      }
 
-    return {
-      email: res.result_data[0].list_email,
-      organization: res.result_data[0].list_organization,
-      title: res.result_data[0].list_title_or_major
-    };
-  });
+      return {
+        email: res.result_data[0].list_email,
+        organization: res.result_data[0].list_organization,
+        title: res.result_data[0].list_title_or_major
+      };
+    })
+    .catch(error => {
+      // TODO: refactor to avoid labs-api-server, currently not working
+      return null;
+    });
 }
 
-export function apiHistory(course, instructor) {
+export function apiHistory(course, instructor, semester) {
   return apiFetch(
     `${API_DOMAIN}/api/review/course/${encodeURIComponent(
       course
-    )}/${encodeURIComponent(instructor)}?token=${encodeURIComponent(API_TOKEN)}`
+    )}/${encodeURIComponent(instructor)}?token=${encodeURIComponent(
+      API_TOKEN
+    )}` + getSemesterQParam(semester)
   );
 }
 
-export function apiFetchPCADemandChartData(course) {
+export function apiFetchPCADemandChartData(course, semester) {
   return apiFetch(
     `${API_DOMAIN}/api/review/course_plots/${encodeURIComponent(
       course
-    )}?token=${encodeURIComponent(API_TOKEN)}`
+    )}?token=${encodeURIComponent(API_TOKEN)}` + getSemesterQParam(semester)
   );
 }
