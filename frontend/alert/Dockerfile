@@ -1,4 +1,4 @@
-FROM node:18-bookworm
+FROM node:10-buster
 
 LABEL maintainer="Penn Labs"
 

@@ -55,7 +55,6 @@ jobs:
         product: [review, plan, alert]
     with:
       path: frontend/${{ matrix.product }}
-      nodeVersion: 18.19.0
 
   publish-frontend:
     uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@v0.1
