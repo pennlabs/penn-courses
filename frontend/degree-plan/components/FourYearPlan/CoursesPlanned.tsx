@@ -1,29 +1,24 @@
 
 
 import { useEffect, useState } from "react";
-import CoursePlanned, { coursePlannedCardStyle } from "./CoursePlanned";
+import CoursePlanned, { PlannedCourseContainer } from "./CoursePlanned";
+import styled from "@emotion/styled";
 
-const courseStackStyle = {
-    maxHeight: '30vh',
-    width: '12vw',
-    overflow:'auto',
-    paddingRight: '8px'
-}
+const PlannedCoursesContainer = styled.div`
+    flex-grow: 1;
+`;
 
-const CoursesPlanned = ({courses, semesterIndex, removeCourse, showCourseDetail, highlightReqId}: any) => {
-
+const CoursesPlanned = ({courses, semesterIndex, removeCourse, showCourseDetail, highlightReqId, className}: any) => {
     const [courseOpen, setCourseOpen] = useState(false);
     
     return (
-        <div style={courseStackStyle}>
+        <PlannedCoursesContainer className={className}>
             {courses.length === 0 ? 
-            <div style={coursePlannedCardStyle}>
-                
-            </div>
+            <PlannedCourseContainer/>
             : courses.map((course: any) => 
                 <CoursePlanned course={course} highlightReqId={highlightReqId} semesterIndex={semesterIndex} removeCourse={removeCourse} courseOpen={courseOpen} setCourseOpen={setCourseOpen} showCourseDetail={showCourseDetail}/>
             )}
-        </div>
+        </PlannedCoursesContainer>
     )
 }
 

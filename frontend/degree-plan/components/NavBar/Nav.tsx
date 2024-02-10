@@ -10,8 +10,9 @@ const NavContainer = styled.nav`
   padding: 0 1rem;
   display: flex;
   flex-align: center;
-  width: 100%;
+  width: 95%;
   justify-content: space-between;
+  margin: 0 auto;
 `;
 
 const NavElt = styled.span<{ $active?: boolean }>`
@@ -30,21 +31,21 @@ interface NavProps {
 }
 
 const Nav = ({ login, logout, user }: NavProps) => (
-    <NavContainer>
-        <NavElt>
-            <AccountIndicator
-                leftAligned={true}
-                user={user}
-                backgroundColor="dark"
-                nameLength={2}
-                login={login}
-                logout={logout}
-            />
-        </NavElt>
-        <NavElt>
-          <Logo/>
-        </NavElt>
-    </NavContainer>
+  <NavContainer>
+      <NavElt>
+          <AccountIndicator
+              leftAligned={true}
+              user={user}
+              backgroundColor="dark"
+              nameLength={2}
+              login={login}
+              logout={logout}
+          />
+      </NavElt>
+      <NavElt>
+        <Logo/>
+      </NavElt>
+  </NavContainer>
 );
 
 export default Nav;

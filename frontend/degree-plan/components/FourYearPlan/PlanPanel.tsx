@@ -1,38 +1,51 @@
 import { useCallback, useEffect, useState } from "react";
-import Semester from "./Semester";
 import update from 'immutability-helper'
 import _ from "lodash";
-import Icon from '@mdi/react';
-import { mdiMenuRight, mdiMenuLeft, mdiPoll, mdiPlus } from '@mdi/js';
+import { GrayIcon } from '../bulma_derived_components';
 import {topBarStyle } from "@/pages/FourYearPlanPage";
-import SwitchFromList from "./SwitchFromList";
-import AddSemesterCard from "./AddSemesterCard";
 import SelectListDropdown from "./SelectListDropdown";
+import Semesters from "./Semesters";
+import styled from "@emotion/styled";
 
+const ShowStatsIcon = styled(GrayIcon)<{ $showStats: boolean }>`
+    width: 2rem;
+    height: 2rem;
+    color: ${props => props.$showStats ? "#76bf96" : "#c6c6c6"};
+    &:hover {
+        color: #76bf96;
+    }
+`;
 
-const semesterPanelStyle = {
-    paddingLeft: '20px',
-    paddingRight: '20px',
-    paddingTop: '5px',
-    height: '90%',
-    overflow: 'auto'
+const ShowStatsButton = ({ showStats, setShowStats }: { showStats: boolean, setShowStats: (arg0: boolean)=>void }) => {
+    return (
+        <div onClick={() => setShowStats(!showStats)}>
+            <ShowStatsIcon $showStats={showStats}>
+                <i class="fas fa-lg fa-chart-bar"></i>
+            </ShowStatsIcon>
+        </div>
+    )
 }
 
-// const dropdownStyle = {
-//     position: 'relative',
-//     display: 'inline-block'
-//   }
-  
-// const dropdownContent = {
-//     display: 'none',
-//     position: 'absolute',
-//     backgroundColor: '#f9f9f9',
-//     minWidth: '160px',
-//     boxShadow: '0px 8px 16px 0px rgba(0,0,0,0.2)',
-//     padding: '12px 16px',
-//     zIndex: 1
-//   }
+const PlanPanelHeader = styled.div`
+    display: flex;
+    justify-content: space-between;
+    background-color:'#DBE2F5'; 
+    margin: 1rem;
+    margin-bottom: 0;
+    flex-grow: 0;
+`;
 
+const OverflowSemesters = styled(Semesters)`
+    overflow-y: scroll;
+    flex-grow: 1;
+    padding: 1rem;
+`;
+
+const PlanPanelContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+`;
 
 const PlanPanel = ({showCourseDetail, highlightReqId}) => {
     const defaultSemester1 = {id: 1, name: 'Semester 1', courses:[], cu: 0};
@@ -110,45 +123,26 @@ const PlanPanel = ({showCourseDetail, highlightReqId}) => {
         return false;
     }
 
-    return(
-    <>
-            {/* <Tabs/> */}
-            <div className="d-flex justify-content-between" style={topBarStyle}>
-                <div className="d-flex justify-content-start" >
-                    <SelectListDropdown 
-                        activeName={'Degree Plan 1'} 
-                        allDegreePlans={[{"id": 1, "name": "Degree Plan 1"}]} 
-                        selectItem={() => void {}}
-                        mutators={{
-                        copy: () => void {},
-                        remove: () => void {},
-                        rename: () => void {},
-                        create: () => void {}
-                        }}              
-                    />
-                </div>
-                <div onClick={() => setShowStats(!showStats)}>
-                    <Icon path={mdiPoll} size={1} color={showStats ? '' : '#F2F3F4'}/>
-                </div>
-            </div>
+    return (
+        <PlanPanelContainer>
+            <PlanPanelHeader>
+                <SelectListDropdown 
+                    activeName={'Degree Plan 1'} 
+                    allDegreePlans={[{"id": 1, "name": "Degree Plan 1"}]} 
+                    selectItem={() => void {}}
+                    mutators={{
+                    copy: () => void {},
+                    remove: () => void {},
+                    rename: () => void {},
+                    create: () => void {}
+                    }}              
+                />
+                <ShowStatsButton showStats={showStats} setShowStats={setShowStats} />
+            </PlanPanelHeader>
             {/** map to semesters */}
-            <div style={semesterPanelStyle}>
-                <div className="d-flex row justify-content-center">
-                    {semesters.map((semester: any, index: number) => 
-                        <Semester semester={semester} highlightReqId={highlightReqId} addCourse={addCourse} index={index} removeCourseFromSem={removeCourseFromSem} showStats={showStats} showCourseDetail={showCourseDetail} key={index}/>
-                    )}
-                    <AddSemesterCard semesters={semesters} setSemesters={setSemesters} showStats={showStats}/>
-                </div>
-
-                {/* <Divider variant="middle">past semesters</Divider> */}
-{/* 
-                <div className="d-flex row justify-content-center">
-                    {semesters.filter(s => !checkPastSemester(s)).map((semester: any, index: number) => 
-                        <Semester semester={semester} addCourse={addCourse} index={index} removeCourseFromSem={removeCourseFromSem}/>
-                    )}
-                </div> */}
-            </div>
-    </>);
+            <OverflowSemesters semesters={semesters} setSemesters={setSemesters} showStats={showStats} addCourse={addCourse}/>
+        </PlanPanelContainer>
+    );
 }
 
 export default PlanPanel;

@@ -19,7 +19,6 @@ const pageStyle = {
 }
 
 export const topBarStyle = {
-    backgroundColor:'#DBE2F5', 
     paddingLeft: '15px', 
     paddingTop: '7px', 
     paddingBottom: '5px', 
@@ -213,7 +212,6 @@ const FourYearPlanPage = () => {
         </div>);
     }
 
-    // const forceUpdate = React.useCallback((newData) => setResults(newData), []);
     const [loading, setLoading] = useState(false);
     const handleSearch =  async (id: number) => {
         setHighlightReqId(id);
