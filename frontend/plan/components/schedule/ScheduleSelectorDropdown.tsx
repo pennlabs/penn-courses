@@ -222,7 +222,7 @@ const DropdownButton = ({
     </ButtonContainer>
 );
 
-const ScheduleDropdownContainer = styled.div`
+const ScheduleDropdownContainer = styled.div<{ $isActive: boolean }>`
     border-radius: 0.5rem;
     border: 0;
     outline: none;
@@ -237,8 +237,8 @@ const ScheduleDropdownContainer = styled.div`
     }
 
     i.fa.fa-chevron-down::before {
-        content: ${({ isActive }: { isActive: boolean }) =>
-        isActive ? '"\f077"' : ""} !important;
+        content: ${({ $isActive }) =>
+            $isActive ? '"\f077"' : ""} !important;
     }
 `;
 
@@ -252,10 +252,9 @@ const DropdownTrigger = styled.div`
     background: transparent;
 `;
 
-const DropdownMenu = styled.div`
+const DropdownMenu = styled.div<{ $isActive: boolean }>`
     margin-top: 0.1rem !important;
-    display: ${({ isActive }: { isActive: boolean }) =>
-        isActive ? "block" : "none"};
+    display: ${({ $isActive }) => $isActive ? "block" : "none"};
     left: 0;
     min-width: 15rem;
     padding-top: 4px;
@@ -387,8 +386,8 @@ const ReceivedRequestNotice = styled.div`
 const DropdownTriggerContainer = styled.div`
     display: flex;
 
-    background: ${({ isActive }: { isActive: boolean }) =>
-        isActive ? "rgba(162, 180, 237, 0.38) !important" : "none"};
+    background: ${({ $isActive }: { $isActive: boolean }) =>
+        $isActive ? "rgba(162, 180, 237, 0.38) !important" : "none"};
 
     :hover {
         background: rgba(175, 194, 255, 0.27);
@@ -512,10 +511,10 @@ const ScheduleSelectorDropdown = ({
     });
 
     return (
-        <ScheduleDropdownContainer ref={ref} isActive={isActive}>
+        <ScheduleDropdownContainer ref={ref} $isActive={isActive}>
             <ScheduleDropdownHeader>
                 <DropdownTriggerContainer 
-                    isActive={isActive}
+                    $isActive={isActive}
                         onClick={() => {
                             fetchBackendFriendships(
                                 user);
@@ -548,7 +547,7 @@ const ScheduleSelectorDropdown = ({
                     </ShareSchedulePromo>
                 </ShareSchedulePromoContainer>}
             </ScheduleDropdownHeader>
-            <DropdownMenu isActive={isActive} role="menu">
+            <DropdownMenu $isActive={isActive} role="menu">
                 <DropdownContent>
                     {allSchedules &&
                         Object.entries(allSchedules)

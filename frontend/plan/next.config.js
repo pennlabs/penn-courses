@@ -1,3 +1,7 @@
-const withTM = require("next-transpile-modules")(["pcx-shared-components"]);
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  transpilePackages: ['pcx-shared-components']
+};
 
-module.exports = withTM();
+module.exports = nextConfig;

@@ -54,7 +54,7 @@ export function ButtonFilter<
         <DropdownContainer ref={ref as React.RefObject<HTMLDivElement>}>
             <DropdownTrigger className="dropdown-trigger">
                 <DropdownFilterButton
-                    defaultData={!isActive}
+                    $defaultData={!isActive}
                     onClick={toggleButton}
                     type="button"
                 >

@@ -8,13 +8,13 @@ interface TimesProps {
     numRow: number;
 }
 
-const Time = styled.span<{ $startTime: number; i: number }>`
+const Time = styled.span<{ $startTime: number; $i: number }>`
     position: absolute;
     top: -9px;
     color: #84878f;
     font-size: 0.8rem;
     font-weight: 500;
-    grid-row: ${(props) => (props.i - props.$startTime) * 4 + 1};
+    grid-row: ${(props) => (props.$i - props.$startTime) * 4 + 1};
     grid-column: ${1};
 
     @media only screen and (max-width: 768px) {
@@ -62,7 +62,7 @@ export default function Times({
 
     for (let i = startTime; i <= endTime; i += 1) {
         timestamps.push(
-            <Time $startTime={startTime} i={i} key={i}>
+            <Time $startTime={startTime} $i={i} key={i}>
                 {intToTime(i)}
             </Time>
         );
