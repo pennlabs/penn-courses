@@ -33,9 +33,9 @@
     "typescript": "^3.9.5"
   },
   "scripts": {
-    "dev": "node server.js",
-    "build": "next build",
-    "start": "NODE_ENV=production node server.js",
+    "dev": "NODE_OPTIONS=--openssl-legacy-provider node server.js",
+    "build": "NODE_OPTIONS=--openssl-legacy-provider next build",
+    "start": "NODE_OPTIONS=--openssl-legacy-provider NODE_ENV=production node server.js",
     "test": "echo no tests yet",
     "codecov": "echo no codecov",
     "lint": "eslint .",
