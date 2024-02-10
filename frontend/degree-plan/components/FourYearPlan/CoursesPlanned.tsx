@@ -1,7 +1,7 @@
 
 
 import { useEffect, useState } from "react";
-import CoursePlanned from "./CoursePlanned";
+import CoursePlanned, { coursePlannedCardStyle } from "./CoursePlanned";
 
 const courseStackStyle = {
     maxHeight: '30vh',
@@ -10,13 +10,18 @@ const courseStackStyle = {
     paddingRight: '8px'
 }
 
-const CoursesPlanned = ({courses, semesterIndex, removeCourse}: any) => {
+const CoursesPlanned = ({courses, semesterIndex, removeCourse, showCourseDetail, highlightReqId}: any) => {
 
-    const [courseOpen, setCourseOpen] = useState("");
+    const [courseOpen, setCourseOpen] = useState(false);
+    
     return (
         <div style={courseStackStyle}>
-            {courses.map((course: any) => 
-                <CoursePlanned course={course} semesterIndex={semesterIndex} removeCourse={removeCourse} courseOpen={courseOpen} setCourseOpen={setCourseOpen}/>
+            {courses.length === 0 ? 
+            <div style={coursePlannedCardStyle}>
+                
+            </div>
+            : courses.map((course: any) => 
+                <CoursePlanned course={course} highlightReqId={highlightReqId} semesterIndex={semesterIndex} removeCourse={removeCourse} courseOpen={courseOpen} setCourseOpen={setCourseOpen} showCourseDetail={showCourseDetail}/>
             )}
         </div>
     )

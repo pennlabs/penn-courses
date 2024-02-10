@@ -9,6 +9,7 @@ const planTab = {
     padding: '1px',
     borderWidth: '0px'}
 
+export
 const PlanTabs = ({plans, handleChoosePlan, setPlans, setCurrentPlan}: any) => {
     const [editing, setEditing] = useState(false);
     const [newPlan, setNewPlan] = useState("");

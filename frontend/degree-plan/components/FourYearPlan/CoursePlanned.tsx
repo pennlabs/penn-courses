@@ -34,14 +34,14 @@ const detailWindowStyle : any = {
     // display: 'flex'
 }
 
-const CoursePlanned = ({course, semesterIndex, removeCourse, courseOpen, setCourseOpen} : any) => {
-    const courseCode = `${course.dept} ${course.number}`;
+const CoursePlanned = ({course, semesterIndex, removeCourse, highlightReqId, setCourseOpen, showCourseDetail} : any) => {
+    // const courseCode = `${course.dept} ${course.number}`;
     const [mouseOver, setMouseOver] = useState(false);
     const [open, setOpen] = useState(false);
     
     const handleClickCourse = () => {
-      setCourseOpen(courseCode);
-      console.log(courseCode);
+      setCourseOpen(true);
+      // console.log(courseCode);
     }
 
     const [{ isDragging }, drag] = useDrag(() => ({
@@ -52,17 +52,23 @@ const CoursePlanned = ({course, semesterIndex, removeCourse, courseOpen, setCour
       })
     }), [course, semesterIndex])
 
+    const getBackgroundColor = () => {
+      if (isDragging) return '#4B9AE7';
+      if (course.satisfyIds.includes(highlightReqId)) return 'yellow'; // the requirement the course satisfied is being highlighted
+      return '#F2F3F4'
+    }
+
     return(
     <>     
       <div style={{...coursePlannedCardStyle, 
-            backgroundColor: isDragging ? '#4B9AE7' : '#F2F3F4', 
+            backgroundColor: getBackgroundColor(),
             position:'relative', 
             opacity: isDragging ? 0.5 : 1}} 
           ref={drag} 
           onMouseOver={() => setMouseOver(true)} 
           onMouseLeave={() => setMouseOver(false)}>
-          <div onClick={handleClickCourse}>
-            {courseCode}
+          <div onClick={() => showCourseDetail(course)}>
+            {course.id}
           </div>
           {mouseOver && 
             <div style={{position:'absolute', right:'5px', bottom:'7px'}} onClick={() => removeCourse(course)}>
@@ -71,10 +77,10 @@ const CoursePlanned = ({course, semesterIndex, removeCourse, courseOpen, setCour
           <div>
           </div>
       </div>
-      {courseCode === courseOpen && <div style={detailWindowStyle}>
+      {/* {courseCode === courseOpen && <div style={detailWindowStyle}>
           <h1>Course Title</h1>
           <h1>Course cntent</h1>
-      </div>}
+      </div>} */}
     </>)
 }
 

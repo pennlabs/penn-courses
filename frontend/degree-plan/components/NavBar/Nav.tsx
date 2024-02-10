@@ -1,22 +1,30 @@
 import React from 'react';
-import { NavBar } from '../../styles/NavStyles';
 import Logo from './Logo';
-import { user } from '../../data/user';
-import { User } from '@/types';
+import { type User } from '../../types'
+import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
+import { useRouter } from "next/router";
+import styled from "@emotion/styled"
 
-interface NavProps {
-  user: User | null
-}
+const NavBarWrapper = styled.div`
+  width: 100%;
+  padding: 0 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.15);
+  display: flex;
+  justify-content: space-between;
+`;
 
-const Nav = ({ user }: NavProps) => {
-  const nameString = user ? `${user.first_name} ${user.last_name}` : ""
+const Nav = ({ user }: { user: User }) => {
+  const router = useRouter();
   return (
-    <div className="d-flex justify-content-between" style={NavBar}>
+    <NavBarWrapper>
       <Logo/>
-      {/* <Link to="" className='text-dark text-decoration-none'> */}
-        <div style={{color: '#000000', fontSize: '23px'}} className='mt-3 me-4'>{nameString}</div>
-      {/* </Link> */}
-    </div>)
+      <AccountIndicator
+      leftAligned={false}
+      user={user}
+      pathname={router.pathname}
+      />
+    </NavBarWrapper>)
 }
 
 export default Nav;

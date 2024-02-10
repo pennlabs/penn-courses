@@ -1,51 +1,54 @@
 import Icon from '@mdi/react';
-import { mdiNoteEditOutline, mdiArrowLeft } from '@mdi/js';
-import majorsdata from '../../data/majors';
-import Major from './Major';
-import { useCallback, useEffect, useState } from 'react';
-import update from 'immutability-helper'
-import { Stack } from '@mui/material';
-import { titleStyle, topBarStyle } from '@/pages/FourYearPlanPage';
-import SearchPanel from '../Search/SearchPanel';
+import { mdiNoteEditOutline, mdiArrowLeft, mdiPlus } from '@mdi/js';
+import { useEffect, useState } from 'react';
+import { topBarStyle } from '@/pages/FourYearPlanPage';
+import SelectListDropdown from '../FourYearPlan/SelectListDropdown';
+import SwitchFromList from '../FourYearPlan/SwitchFromList';
+import Requirement from './Requirement';
+import axios from 'axios';
 
-const majorStackStyle = {
-  height: '90%',
-  overflow: 'auto'
+const requirementDropdownListStyle = {
+  maxHeight: '90%',
+  width: '100%',
+  overflowY: 'scroll',
+  paddingRight: '15px',
+  paddingLeft: '15px',
+  marginTop: '10px'
 }
   
-  const ReqPanel = ({setSearchClosed}:any) => {
+  const ReqPanel = ({majors, currentMajor, highlightReqId, setCurrentMajor, setMajors, setSearchClosed, setDegreeModalOpen, handleSearch, setHighlightReqId}:any) => {
       const [editMode, setEditMode] = useState(false);
-      const [majors, setMajors] = useState(majorsdata);
+      const [majorData, setMajorData] = useState({});
 
-      
       useEffect(() => {
-          setMajors(majorsdata);
-      }, []);
-
-      const moveMajor = useCallback((dragIndex: number, hoverIndex: number) => {
-        setMajors((prevMajors) =>
-          update(prevMajors, {
-            $splice: [
-              [dragIndex, 1],
-              [hoverIndex, 0, prevMajors[dragIndex]],
-            ],
-          }),
-        )
-      }, [])
+        const getMajor = async () => {
+            const res = await axios.get(`/degree/degrees/${currentMajor.id}`);
+            console.log(res.data);
+            setMajorData(res.data);
+            return;
+        }
+        if (currentMajor.id) getMajor();
+      }, [currentMajor])
 
     return(
         <>
           <div style={topBarStyle}>
               <div className='d-flex justify-content-between'>
-                <div style={titleStyle}>Major/Minor/Elective</div>
+              <SwitchFromList
+                  current={currentMajor} 
+                  setCurrent={setCurrentMajor}
+                  list={majors} 
+                  setList={setMajors} 
+                  addHandler={() => setDegreeModalOpen(true)}/>
                 <label onClick={() => setEditMode(!editMode)}>
                     <Icon path={editMode ? mdiArrowLeft : mdiNoteEditOutline } size={1}/>
                 </label>
               </div>
           </div>
-          <div style={majorStackStyle}>
-              {/** majors */}
-                  {majors.map((major, index) => <Major key={index} index={index} major={major} editMode={editMode} moveMajor={moveMajor} setSearchClosed={setSearchClosed}/>)}
+          <div style={requirementDropdownListStyle}>
+            {majorData && majorData.rules && majorData.rules.map((requirement: any) => ( 
+              <Requirement requirement={requirement} setSearchClosed={setSearchClosed} parent={null} handleSearch={handleSearch} setHighlightReqId={setHighlightReqId} highlightReqId={highlightReqId} key={requirement.id}/>
+            ))}
           </div>
         </>
     );
