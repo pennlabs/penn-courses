@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "NODE_OPTIONS=--openssl-legacy-provider next dev",
+    "build": "NODE_OPTIONS=--openssl-legacy-provider next build",
+    "start": "NODE_OPTIONS=--openssl-legacy-provider next start",
     "lint": "next lint"
   },
   "dependencies": {
@@ -15,8 +15,8 @@
     "@mdi/react": "^1.6.1",
     "@mui/material": "^5.13.4",
     "@types/node": "18.14.1",
-    "@types/react": "18",
-    "@types/react-dom": "18",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
     "axios": "^1.6.2",
     "bootstrap": "^5.2.3",
     "eslint": "8.34.0",

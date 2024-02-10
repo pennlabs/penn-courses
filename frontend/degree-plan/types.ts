@@ -14,6 +14,7 @@ export interface DegreePlan {
   name: string;
 }
 
+// TODO: this is pulled from alert, we should move it to a shared location
 export interface Profile {
     email: string | null;
     phone: string | null;
