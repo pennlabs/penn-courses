@@ -10,7 +10,6 @@ export interface Degree {
 export interface DegreePlan {
   id: number;
   degree: Degree;
-  degree_plan_id: number;
   name: string;
 }
 

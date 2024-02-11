@@ -7,6 +7,7 @@ import FourYearPlanPage from './FourYearPlanPage';
 import React, { useState } from "react";
 import { type User } from '../types';
 import LoginModal from 'pcx-shared-components/src/accounts/LoginModal';
+import { SWRConfig } from 'swr';
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
@@ -25,18 +26,22 @@ export default function Home() {
   return (
     <>  
       <DndProvider backend={HTML5Backend}>
-        <Nav
-        login={updateUser}
-        logout={() => updateUser(null)}
-        user={user}
-        />
-        <FourYearPlanPage />
-        {showLoginModal && (
-            <LoginModal
-                pathname={window.location.pathname}
-                siteName="Penn Course Alert"
-            />
-        )}
+        <SWRConfig value={{
+          fetcher: (resource, init) => fetch(resource, init).then(res => res.json())
+        }}>
+          <Nav
+          login={updateUser}
+          logout={() => updateUser(null)}
+          user={user}
+          />
+          <FourYearPlanPage />
+          {showLoginModal && (
+              <LoginModal
+                  pathname={window.location.pathname}
+                  siteName="Penn Course Alert"
+              />
+          )}
+        </SWRConfig>
       </DndProvider>
     </>
   )

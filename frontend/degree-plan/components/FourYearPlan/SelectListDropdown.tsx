@@ -141,9 +141,9 @@ const DropdownButton = ({
     >
         <ButtonLabelContainer width={50}>{text}</ButtonLabelContainer>
         <ScheduleOptionsContainer>
-            <DropdownRenameButton rename={rename}></DropdownRenameButton>
-            <DropdownCopyButton copy={copy}></DropdownCopyButton>
-            <DropdownRemoveButton remove={remove}></DropdownRemoveButton>
+            {rename && <DropdownRenameButton rename={rename}></DropdownRenameButton>}
+            {copy && <DropdownCopyButton copy={copy}></DropdownCopyButton>}
+            {remove && <DropdownRemoveButton remove={remove}></DropdownRemoveButton>}
         </ScheduleOptionsContainer>
     </ButtonContainer>
 );
@@ -239,21 +239,28 @@ const SelectedName = styled.span`
     font-weight: 600;
 `
 
-interface SelectListDropdownProps {
+interface Item extends Object { 
+    id: Number;
+
+}
+
+interface SelectListDropdownProps<T extends Item,> {
+    itemType: string; // e.g., Degree Plan or Degree
     activeName: string;
-    allDegreePlans: DegreePlan[];
-    selectItem: (degreePlan: string) => void;
+    allItems: T[];
+    selectItem: (name: string) => void;
     mutators: {
-        copy: (scheduleName: string) => void;
-        remove: (scheduleName: string, scheduleId: Number) => void;
+        copy: (name: string) => void;
+        remove: (name: string, scheduleId: Number) => void;
         rename: (oldName: string) => void;
         create: () => void;
     };
 }
 
-const SelectListDropdown = ({
+const SelectListDropdown = <T extends Item,>({
+    itemType,
     activeName,
-    allDegreePlans,
+    allItems,
     selectItem,
     mutators: {
         copy,
@@ -261,8 +268,8 @@ const SelectListDropdown = ({
         rename,
         create,
     },
-}: SelectListDropdownProps) => {
-    const [isActive, setIsActive] = useState(true);
+}: SelectListDropdownProps<T>) => {
+    const [isActive, setIsActive] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -300,12 +307,12 @@ const SelectListDropdown = ({
             </ScheduleDropdownHeader>
             <DropdownMenu $isActive={isActive} role="menu">
                 <DropdownContent>
-                    {allDegreePlans &&
-                        Object.entries(allDegreePlans)
+                    {allItems &&
+                        Object.entries(allItems)
                             .map(([name, data]) => {
                                 return (
                                     <DropdownButton
-                                        key={data.id}
+                                        key={String(data.id)}
                                         isActive={name === activeName}
                                         makeActive={() => {
                                             setIsActive(false);
@@ -327,7 +334,7 @@ const SelectListDropdown = ({
                         <GrayIcon>
                             <i className="fa fa-plus" aria-hidden="true" />
                         </GrayIcon>
-                        <span> Add new degree plan </span>
+                        <span> Add new {itemType} </span>
                     </AddNew>
                 </DropdownContent>
             </DropdownMenu>

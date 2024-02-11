@@ -1,30 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
-import courses from "../../data/courses"
+import { useState } from "react";
 import { ICourseQ } from "@/models/Types";
 import Icon from '@mdi/react';
 import { mdiClose, mdiMagnify } from "@mdi/js";
-import { titleStyle, topBarStyle } from "@/pages/FourYearPlanPage";
+import { PanelTopBar } from "@/pages/FourYearPlanPage";
 import Course from "../Requirements/Course";
-import FuzzySearch from 'react-fuzzy';
 import Fuse from 'fuse.js'
-import update from 'immutability-helper'
-
-const searchPanelContainerStyle = {
-    border: '1px solid rgba(0, 0, 0, 0.1)',
-    padding: '1rem',
-    borderRadius: '4px',
-    height: 650,
-    width: 400
-  }
-
-const searchBarStyle = {
-    backgroundColor: '#F2F3F4',
-    borderRadius: '3px',
-    border: '0',
-    width: '95%',
-    marginLeft: '10px',
-    height: '30px'
-}
 
 const SearchPanelBodyStyle = {
     margin: '10px',
@@ -67,17 +47,17 @@ const SearchPanel = ({setClosed, courses, showCourseDetail, loading, searchReqId
 
     return (
         <div>
-            <div style={{...topBarStyle, backgroundColor:'#FFFFFF'}}>
+            <PanelTopBar>
               <div className='d-flex justify-content-between'>
-                <div style={{...titleStyle}}>Search </div>
+                <div>Search </div>
                 <label onClick={setClosed}>
                     <Icon path={mdiClose} size={0.8}/>
                 </label>
               </div>
-            </div>
+            </PanelTopBar>
             <div style={SearchPanelBodyStyle}>
                 <div>
-                    <input style={searchBarStyle} type="text" onChange={(e) => setQueryString(e.target.value)} />
+                    <input type="text" onChange={(e) => setQueryString(e.target.value)} />
                 </div>
                 {loading ? 
                     <div>loading...</div>
