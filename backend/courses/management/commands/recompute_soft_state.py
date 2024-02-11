@@ -461,6 +461,7 @@ def recompute_demand_distribution_estimates(semesters: list[str], verbose=False)
             "Finished recomputing demand distribution estimate and section registration_volume "
             f"fields for semesters {semesters}."
         )
+    
 
 
 def recompute_soft_state(semesters: list[str], verbose=False):

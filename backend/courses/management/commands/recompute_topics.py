@@ -1,9 +1,9 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.db.models import Count, OuterRef, Subquery
+from django.db.models import Count, OuterRef, Subquery, F
 
 from courses.models import Course, Topic
-from courses.util import all_semesters
+from courses.util import all_semesters, historical_year_probabilities
 
 
 def garbage_collect_topics():
@@ -153,3 +153,13 @@ class Command(BaseCommand):
             ), f"--min-semester={min_semester} is not a valid semester."
 
         recompute_topics(min_semester, verbose=True, allow_null_parent_topic=bool(min_semester))
+
+def recompute_historical_probabilities(current_semester, verbose=False):
+    """
+    Recomputes the historical probabilities for all topics.
+    """
+    if verbose:
+        print("Recomputing historical probabilities for all topics...")
+    Topic.objects.update(
+        historical_probabilties = historical_year_probabilities(current_semester, F('courses'))
+    )

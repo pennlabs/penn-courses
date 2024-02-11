@@ -670,6 +670,40 @@ def subquery_count_distinct(subquery, column):
         0,
     )
 
+def historical_year_probability(current, courses):
+    prob_distribution = [0.4, 0.3, 0.15, 0.1, 0.05]
+    def get_semester_and_course_index(semester):
+        semester_letter = semester[-1]
+        semester_number = 0
+        if semester_letter == "A":
+            semester_number = 1
+        elif semester_letter == "B":
+            semester_number = 2
+        elif semester_letter == "C":
+            semester_number = 3
+        semester_year = int(semester[:-1])
+        return (10*semester_year + semester_number)
+    current_index = get_semester_and_course_index(current)
+    min_index = current_index - 50
+    max_index = current_index - 10
+    p_A = 0
+    p_B = 0
+    p_C = 0
+    for c in courses:
+        index = get_semester_and_course_index(c.semester)
+        if index < min_index or index > max_index:
+            continue
+        diff = (max_index - index)+9//10
+        if index % 10 == 1:
+            p_A += prob_distribution[diff]
+        elif index % 10 == 2:
+            p_B += prob_distribution[diff]
+        elif index % 10 == 3:
+            p_C += prob_distribution[diff]
+    return [p_A, p_B, p_C]
+
+
+
 
 def does_object_pass_filter(obj, filter):
     """
@@ -713,26 +747,7 @@ def get_semesters(semesters: str = None) -> list[str]:
         for s in semesters:
             if s not in possible_semesters:
                 raise ValueError(f"Provided semester {s} was not found in the db.")
-<<<<<<< HEAD
     return sorted(semesters)
-=======
-    if verbose:
-        if len(semesters) > 1:
-            print(
-                "This script's updates for each semester are atomic, i.e. either all the "
-                "updates for a certain semester are accepted by the database, or none of them are "
-                "(if an error is encountered). If an error is encountered during the "
-                "processing of a certain semester, any correctly completed updates for previously "
-                "processed semesters will have already been accepted by the database."
-            )
-        else:
-            print(
-                "This script's updates for the given semester are atomic, i.e. either all the "
-                "updates will be accepted by the database, or none of them will be "
-                "(if an error is encountered)."
-            )
-    return semesters
-
 
 def find_possible_schedules(
     courses, count=None, breaks={"M": [], "T": [], "W": [], "R": [], "F": []}
@@ -1089,4 +1104,3 @@ def find_possible_schedules(
     choose = [schedule for schedule in choose if credit_count(schedule) <= count]
     choose = sorted(choose, key=lambda x: random.random())
     return choose
->>>>>>> 7e989cab (schedule-solver)

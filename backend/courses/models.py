@@ -366,6 +366,8 @@ class Topic(models.Model):
         ),
     )
 
+    historical = models.ArrayField(models.FloatField(default=0), models.FloatField(default=0), models.FloatField(default=0))
+
     branched_from = models.ForeignKey(
         "Topic",
         related_name="branched_to",
