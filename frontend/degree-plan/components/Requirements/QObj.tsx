@@ -121,7 +121,7 @@ const RootQObj = ({query, reqId}) => {
                 break;
             case 'attributes__code__in':
                 const attrs = stripChar(value, '[', ']');
-                queryComponent = `attribute must be one of`;
+                queryComponent = `attribute must be one of `;
                 // for (const attr in attrs) {
                     queryComponent += stripChar(attrs, '\'');
                 // }

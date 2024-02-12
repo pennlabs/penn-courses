@@ -1,4 +1,4 @@
-import Requirement from "./Requirement"
+import Rule from "./Requirement"
 import Icon from '@mdi/react';
 import { mdiTrashCanOutline } from '@mdi/js';
 import { mdiReorderHorizontal } from '@mdi/js';
@@ -34,7 +34,7 @@ const Major = ({major, setSearchClosed}: any) => {
                 </div>
                 {!collapsed &&
                 <div className='ms-2 mt-2'>
-                    {major.requirements.map((requirement: any) => ( <Requirement key={requirement.id} requirement={requirement} setSearchClosed={setSearchClosed}/>))}
+                    {major.requirements.map((requirement: any) => ( <Rule key={requirement.id} requirement={requirement} setSearchClosed={setSearchClosed}/>))}
                 </div>}
             </div>
     )

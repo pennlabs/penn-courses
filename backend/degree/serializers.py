@@ -116,9 +116,9 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
     )
     degrees = DegreeDetailSerializer(read_only=True, many=True)
     degree_ids = serializers.PrimaryKeyRelatedField(
+        many=True,
         required=False,    
-        write_only=True,
-        source="degree",
+        source="degrees",
         queryset=Degree.objects.all(),
         help_text="The degree_id this degree plan belongs to.",
     )
