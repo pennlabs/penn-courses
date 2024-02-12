@@ -29,7 +29,7 @@ const ShowStatsButton = ({ showStats, setShowStats }: { showStats: boolean, setS
     )
 }
 
-const PlanPanelHeader = styled.div`
+export const PanelHeader = styled.div`
     display: flex;
     justify-content: space-between;
     background-color:'#DBE2F5'; 
@@ -38,13 +38,13 @@ const PlanPanelHeader = styled.div`
     flex-grow: 0;
 `;
 
-const OverflowSemesters = styled(Semesters)`
-    overflow-y: scroll;
+export const PanelBody = styled.div`
+    overflow-y: auto;
     flex-grow: 1;
     padding: 1rem;
 `;
 
-const PlanPanelContainer = styled.div`
+export const PanelContainer = styled.div`
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -71,6 +71,7 @@ const ModalInteriorWrapper = styled.div<{ $row?: boolean }>`
     align-items: center;
     padding: 1rem;
     gap: .5rem;
+    text-align: center;
 `;
 
 const ModalInput = styled.input`
@@ -131,7 +132,10 @@ const ModalInterior = ({ modalObject, modalKey, close, create, rename, remove }:
             return (
                 <ModalInteriorWrapper>
                     <p>Are you sure you want to remove this degree plan?</p>
-                    <ModalButton onClick={() => remove(modalObject.id)}>Remove</ModalButton>
+                    <ModalButton onClick={() => {
+                        remove(modalObject.id)
+                        close();
+                    }}>Remove</ModalButton>
                 </ModalInteriorWrapper>
             );
     }
@@ -199,7 +203,7 @@ const PlanPanel = ({ setActiveDegreeplanId, activeDegreeplan, degreeplans, isLoa
 
     return (
         <>
-            <PlanPanelContainer>
+            <PanelContainer>
                 {modalKey && <ModalContainer
                         title={getModalTitle(modalKey)}
                         close={() => setModalKey(null)}
@@ -217,7 +221,7 @@ const PlanPanel = ({ setActiveDegreeplanId, activeDegreeplan, degreeplans, isLoa
                         />
                     </ModalContainer>
                     }
-                <PlanPanelHeader>
+                <PanelHeader>
                     <SelectListDropdown
                         itemType="degree plan" 
                         active={activeDegreeplan}
@@ -242,10 +246,12 @@ const PlanPanel = ({ setActiveDegreeplanId, activeDegreeplan, degreeplans, isLoa
                         }}              
                     />
                     <ShowStatsButton showStats={showStats} setShowStats={setShowStats} />
-                </PlanPanelHeader>
+                </PanelHeader>
                 {/** map to semesters */}
-                <OverflowSemesters semesters={semesters} setSemesters={setSemesters} showStats={showStats} addCourse={addCourse}/>
-            </PlanPanelContainer>
+                <PanelBody>
+                    <Semesters semesters={semesters} setSemesters={setSemesters} showStats={showStats} addCourse={addCourse}/>
+                </PanelBody>
+            </PanelContainer>
         </>
     );
 }

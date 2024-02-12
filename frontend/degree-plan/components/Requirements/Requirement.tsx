@@ -1,79 +1,87 @@
-// interface IRequirement {
-//     req: [ICourse]
-// }
-import Icon from '@mdi/react';
-import { mdiArrowDown, mdiArrowUp, mdiEye, mdiLightSwitch, mdiLightbulb, mdiLightbulbOutline, mdiMagnify, mdiMenuDown, mdiMenuUp } from '@mdi/js';
-import { titleStyle } from "@/pages/FourYearPlanPage";
-import Course from "./Course";
+import MDIcon from '@mdi/react';
+import { mdiEye, mdiMagnify, mdiMenuDown, mdiMenuUp } from '@mdi/js';
 import { useState } from 'react';
 import RootQObj , { trimQuery } from './QObj';
+import { Rule } from '@/types';
+import styled from '@emotion/styled';
+import { Icon } from '../bulma_derived_components';
 
-/* Recursive component */
-const Requirement = ({requirement, setSearchClosed, parent, handleSearch, setHighlightReqId, highlightReqId} : any) => {
-    const [collapsed, setCollapsed] = useState(true);
+const RuleTitle = styled.div`
+    font-size: 1rem;
+    font-weight: 500;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    background-color: #F5F5F5;
+    color: #575757;
+    padding: 0.25rem .5rem;
+    margin: 0.5rem 0;
+    border-radius: .5rem;
+`
+
+const CourseRequirementWrapper = styled.div`
+  margin: .5rem 0;
+  display: flex;
+  justify-content: space-between;
+`
+
+interface RuleProps {
+    rule: Rule;
+    setSearchClosed: any;
+    handleSearch: any;
+    setHighlightReqId: any;
+    highlightReqId: any;
+}
+
+/**
+ * Recursive component to represent a rule.
+ * @returns 
+ */
+const Rule = ({ rule, setSearchClosed, handleSearch, setHighlightReqId, highlightReqId } : RuleProps) => {
+    const [collapsed, setCollapsed] = useState(false);
 
     const handleShowSatisfyingCourses = () => {
         console.log(highlightReqId);
-        if (highlightReqId === requirement.id) 
+        if (highlightReqId === rule.id) 
             setHighlightReqId(-1);
         else 
-        setHighlightReqId(requirement.id);
+        setHighlightReqId(rule.id);
     }
 
     return (
-        <>
-            {parent === requirement.parent && 
-            (requirement.q || requirement.title) &&
-            <div>
-            
-                    {requirement.q ? 
-                    <label className="mb-2 col-12 justify-content-between d-flex" style={{
-                        backgroundColor:'#EFEFEF', 
-                        fontSize:'16px', 
-                        padding:'2px', 
-                        paddingLeft:'15px', 
-                        borderRadius:'8px',
-                    }}>
-                        <div style={titleStyle}>
-                            <RootQObj query={trimQuery(requirement.q)} reqId={requirement.id}/>
-                        </div>
-                        <div className='d-flex'>
-                            <div onClick={handleShowSatisfyingCourses}>
-                                <Icon path={mdiEye} size={1} color={highlightReqId === requirement.id ? 'yellow': '#575757'}/>
-                            </div>
-                            <div onClick={() => {setSearchClosed(false); handleSearch(requirement.id);}}>
-                                <Icon path={mdiMagnify} size={1} color='#575757'/>
-                            </div>
-                        </div>
-                    </label>
-                    :
-                    <label className="mb-2 col-12 justify-content-between d-flex" style={{
-                        backgroundColor:'#EFEFEF', 
-                        fontSize:'16px', 
-                        padding:'2px', 
-                        paddingLeft:'15px', 
-                        borderRadius:'8px',
-                    }}>
-                        <div onClick={() => setCollapsed(!collapsed)} className='col-12 d-flex justify-content-between'>
-                            <div style={titleStyle}>
-                                {requirement.title}
-                            </div>
-                            <div>
-                                {requirement.rules.length && 
-                                    <Icon path={collapsed ? mdiMenuDown : mdiMenuUp} size={1} color='#575757'/>
-                                }
-                            </div>
-                        </div>
-                    </label>
-                    }
-                {!collapsed && <div className="ms-3">
-                    {requirement.rules.map((rule: any, index: number) => 
-                        <Requirement requirement={rule} setSearchClosed={setSearchClosed} parent={requirement.id} handleSearch={handleSearch} setHighlightReqId={setHighlightReqId} highlightReqId={highlightReqId}/>
-                    )}
-                </div>}
-            </div>}
-        </>
+      <>
+        {rule.q ? 
+          <CourseRequirementWrapper>
+              <RootQObj query={trimQuery(rule.q)} reqId={rule.id}/>
+              <div className='d-flex'>
+                <div onClick={handleShowSatisfyingCourses}>
+                  <MDIcon path={mdiEye} size={1} color={highlightReqId === rule.id ? 'yellow': '#575757'}/>
+                </div>
+                <div onClick={() => {setSearchClosed(false); handleSearch(rule.id);}}>
+                  <MDIcon path={mdiMagnify} size={1} color='#575757'/>
+                </div>
+              </div>
+          </CourseRequirementWrapper>
+          :
+          <RuleTitle onClick={() => setCollapsed(!collapsed)}>
+            <div>{rule.title}</div>
+            {rule.rules.length && 
+                <Icon path={collapsed ? mdiMenuDown : mdiMenuUp} size={1} color='#575757'>
+                  <i class={`fas fa-chevron-${collapsed ? "up" : "down"}`}></i>
+                </Icon>
+            }
+          </RuleTitle>
+          }
+
+        {!collapsed && <div className="ms-3">
+            {rule.rules.map((rule: any, index: number) => 
+                <Rule rule={rule} setSearchClosed={setSearchClosed} handleSearch={handleSearch} setHighlightReqId={setHighlightReqId} highlightReqId={highlightReqId}/>
+            )}
+          </div>
+          }
+      </>
     )
 }
 
-export default Requirement;
+export default Rule;

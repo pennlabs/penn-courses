@@ -2,6 +2,17 @@ export interface DBObject {
   id: any;
 }
 
+export interface Rule extends DBObject {
+  id: number;
+  q: string; // could be blank
+  title: string; // could be blank
+  credits: number | null;
+  parent: Rule["id"],
+  num: number | null;
+  concentration: string;
+  rules: Rule[];
+}
+
 export interface Degree extends DBObject {
   id: number;
   year: number;
@@ -9,11 +20,13 @@ export interface Degree extends DBObject {
   degree: string;
   major: string;
   concentration: string;
+  rules: Rule[];
 }
 
 export interface DegreePlan extends DBObject {
   id: number;
-  degree: Degree;
+  degrees: Degree[];
+  degree_ids: number[]; // the ids of the degrees in the degree plan, which we use to mutate the degree plan
   name: string;
   updated_at: string;
   created_at: string;

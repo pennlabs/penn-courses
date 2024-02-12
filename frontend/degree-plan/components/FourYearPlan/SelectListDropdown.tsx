@@ -115,9 +115,9 @@ interface DropdownButton {
     onClick: () => void;
     makeActive: () => void;
     mutators: {
-        copy: () => void;
-        remove: (() => void);
-        rename: (() => void);
+        copy?: () => void;
+        remove?: (() => void);
+        rename?: (() => void);
     };
 }
 
@@ -247,9 +247,9 @@ interface SelectListDropdownProps<T extends DBObject,> {
     selectItem: (id: T["id"]) => void;
     getItemName: (item: T) => string;
     mutators: {
-        copy: (item: T) => void;
-        remove: (item: T) => void;
-        rename: (item: T) => void;
+        copy?: (item: T) => void;
+        remove?: (item: T) => void;
+        rename?: (item: T) => void;
         create: () => void;
     };
 }
@@ -318,9 +318,9 @@ const SelectListDropdown = <T extends DBObject,>({
                                         onClick={() => selectItem(data.id)}
                                         text={getItemName(data)}
                                         mutators={{
-                                            copy: () => copy(data),
-                                            remove: () => remove(data),
-                                            rename: () => rename(data)
+                                            copy: copy && (() => copy(data)),
+                                            remove: remove && (() => remove(data)),
+                                            rename: rename && (() => rename(data))
                                         }}
                                     />
                                 );
