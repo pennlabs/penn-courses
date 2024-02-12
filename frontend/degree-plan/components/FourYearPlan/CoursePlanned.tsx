@@ -55,7 +55,7 @@ const CoursePlanned = ({course, semesterIndex, removeCourse, highlightReqId, set
       <div onClick={() => showCourseDetail(course)}>
         {course.id}
       </div>
-      <RemoveCourseButton hidden={mouseOver} onClick={() => removeCourse(course)}>
+      <RemoveCourseButton hidden={!mouseOver} onClick={() => removeCourse(course)}>
         <GrayIcon><i className="fas fa-times"></i></GrayIcon>
       </RemoveCourseButton>
     </PlannedCourseContainer>

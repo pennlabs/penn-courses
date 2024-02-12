@@ -70,7 +70,7 @@ const Semester = ({semester, addCourse, index, highlightReqId, removeCourseFromS
                 {semester.name}
             </SemesterLabel>
             <SemesterContent ref={ref}>
-                <FlexCoursesPlanned courses={semester.courses} highlightReqId={highlightReqId} semesterIndex={index} removeCourse={removeCourse} showCourseDetail={showCourseDetail}/>
+                <FlexCoursesPlanned dropRef={drop} courses={semester.courses} highlightReqId={highlightReqId} semesterIndex={index} removeCourse={removeCourse} showCourseDetail={showCourseDetail}/>
                 {showStats && <FlexStats courses={semester.courses}/>}
             </SemesterContent>
             <CreditsLabel>
