@@ -64,7 +64,7 @@ const Semesters = ({semesters, addCourse, setSemesters, showStats, className }: 
     return (
         <SemestersContainer className={className}>            
             {semesters.map((semester: any, index: number) => 
-                <FlexSemester showStats={showStats} semester={semester} addCourse={addCourse} index={index}/>
+                <FlexSemester showStats={showStats} semester={semester} addCourse={addCourse} index={index} key={index}/>
                 )}
             <ModifySemesters>
             </ModifySemesters>

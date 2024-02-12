@@ -3,7 +3,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import styled from "@emotion/styled";
 import { GrayIcon } from "../bulma_derived_components";
-import { DegreePlan } from "../../types";
+import { DBObject, DegreePlan } from "../../types";
+import { getNameOfDeclaration } from "typescript";
 
 
 const ButtonContainer = styled.div<{ $isActive: boolean; }>`
@@ -239,29 +240,26 @@ const SelectedName = styled.span`
     font-weight: 600;
 `
 
-interface Item extends Object { 
-    id: Number;
-
-}
-
-interface SelectListDropdownProps<T extends Item,> {
+interface SelectListDropdownProps<T extends DBObject,> {
     itemType: string; // e.g., Degree Plan or Degree
-    activeName: string;
+    active?: T;
     allItems: T[];
-    selectItem: (name: string) => void;
+    selectItem: (id: T["id"]) => void;
+    getItemName: (item: T) => string;
     mutators: {
-        copy: (name: string) => void;
-        remove: (name: string, scheduleId: Number) => void;
-        rename: (oldName: string) => void;
+        copy: (item: T) => void;
+        remove: (item: T) => void;
+        rename: (item: T) => void;
         create: () => void;
     };
 }
 
-const SelectListDropdown = <T extends Item,>({
+const SelectListDropdown = <T extends DBObject,>({
     itemType,
-    activeName,
+    active,
     allItems,
     selectItem,
+    getItemName,
     mutators: {
         copy,
         remove,
@@ -290,7 +288,7 @@ const SelectListDropdown = <T extends Item,>({
     return (
         <ScheduleDropdownContainer ref={ref} $isActive={isActive}>
             <ScheduleDropdownHeader>
-                <SelectedName>{activeName}</SelectedName>
+                <SelectedName>{active && getItemName(active)}</SelectedName>
                 <DropdownTrigger
                     $isActive={isActive}
                     onClick={() => {
@@ -309,23 +307,20 @@ const SelectListDropdown = <T extends Item,>({
                 <DropdownContent>
                     {allItems &&
                         Object.entries(allItems)
-                            .map(([name, data]) => {
+                            .map(([idx, data]) => {
                                 return (
                                     <DropdownButton
                                         key={String(data.id)}
-                                        isActive={name === activeName}
+                                        isActive={data.id === active?.id}
                                         makeActive={() => {
                                             setIsActive(false);
                                         }}
-                                        onClick={() => selectItem(name)}
-                                        text={name}
+                                        onClick={() => selectItem(data.id)}
+                                        text={getItemName(data)}
                                         mutators={{
-                                            copy: () =>
-                                                copy(
-                                                    name + " (copy)", // TODO: make this more like PCP's function
-                                                ),
-                                            remove: () => remove(name, data.id),
-                                            rename: () => rename(name)
+                                            copy: () => copy(data),
+                                            remove: () => remove(data),
+                                            rename: () => rename(data)
                                         }}
                                     />
                                 );

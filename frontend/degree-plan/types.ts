@@ -1,4 +1,8 @@
-export interface Degree {
+export interface DBObject {
+  id: any;
+}
+
+export interface Degree extends DBObject {
   id: number;
   year: number;
   program: string;
@@ -7,10 +11,12 @@ export interface Degree {
   concentration: string;
 }
 
-export interface DegreePlan {
+export interface DegreePlan extends DBObject {
   id: number;
   degree: Degree;
   name: string;
+  updated_at: string;
+  created_at: string;
 }
 
 // TODO: this is pulled from alert, we should move it to a shared location

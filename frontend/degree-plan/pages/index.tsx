@@ -38,7 +38,7 @@ export default function Home() {
           {showLoginModal && (
               <LoginModal
                   pathname={window.location.pathname}
-                  siteName="Penn Course Alert"
+                  siteName="Penn Degree Plan"
               />
           )}
         </SWRConfig>

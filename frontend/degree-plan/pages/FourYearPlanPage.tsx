@@ -12,6 +12,7 @@ import FuzzySearch from 'react-fuzzy';
 import CourseDetailPanel from "@/components/Course/CourseDetailPanel";
 import styled from "@emotion/styled";
 import useSWR from "swr";
+import { DegreePlan } from "@/types";
 
 
 const PlanPageContainer = styled.div`
@@ -56,7 +57,18 @@ const FourYearPlanPage = () => {
 
     const [degreeModalOpen, setDegreeModalOpen] = React.useState(false);
 
-    const [degrees, setDegrees] = useState([{}]);
+    const [activeDegreeplanId, setActiveDegreeplanId] = useState<null | DegreePlan["id"]>(null);
+    const { data: degreeplans, isLoading: isLoadingDegreeplans } = useSWR<DegreePlan[]>('/api/degree/degreeplans/');
+    const { data: activeDegreePlan, isLoading: isLoadingActiveDegreePlan } = useSWR(activeDegreeplanId ? `/api/degree/degreeplans/${activeDegreeplanId}/` : null);
+    useEffect(() => {
+        // recompute the active degreeplan id on changes to the degreeplans
+        if (!degreeplans?.length) setActiveDegreeplanId(null);
+        else if (!activeDegreeplanId || !degreeplans.find(d => d.id === activeDegreeplanId)) {
+            const mostRecentUpdated = degreeplans.reduce((a,b) => a.updated_at > b.updated_at ? a : b);
+            setActiveDegreeplanId(mostRecentUpdated.id);
+        }
+    }, [degreeplans, activeDegreeplanId]);
+
     const [results, setResults] = useState([]);
     const [courseDetailOpen, setCourseDetailOpen] = useState(false);
     const [courseDetail, setCourseDetail] = useState({});
@@ -135,7 +147,7 @@ const FourYearPlanPage = () => {
         <PlanPageContainer ref={ref}>
             <div onMouseMove={resizeFrame} onMouseUp={endResize} className="d-flex">
                 <PanelContainer $width={leftWidth}>
-                    <PlanPanel showCourseDetail={showCourseDetail} highlightReqId={highlightReqId}/>
+                    <PlanPanel isLoading={isLoadingDegreeplans || isLoadingActiveDegreePlan} activeDegreeplan={activeDegreePlan} degreeplans={degreeplans} setActiveDegreeplanId={setActiveDegreeplanId}/>
                 </PanelContainer>
                 <Divider onMouseDown={startResize}/>
                 <PanelContainer $width={totalWidth - leftWidth}>

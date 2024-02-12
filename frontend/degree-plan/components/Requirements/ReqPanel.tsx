@@ -22,10 +22,10 @@ const requirementDropdownListStyle = {
 
       useEffect(() => {
         const getMajor = async () => {
-            const res = await axios.get(`/degree/degrees/${currentMajor.id}`);
-            console.log(res.data);
-            setMajorData(res.data);
-            return;
+            // const res = await axios.get(`/degree/degrees/${currentMajor.id}`);
+            // console.log(res.data);
+            // setMajorData(res.data);
+            // return;
         }
         if (currentMajor.id) getMajor();
       }, [currentMajor])
@@ -35,13 +35,13 @@ const requirementDropdownListStyle = {
           <PanelTopBar>
               <SelectListDropdown 
               allItems={[]}
-              activeName={"Hello world"}
+              active={undefined}
               selectItem={setCurrentMajor}
               itemType={"major or degree"}
               mutators={{
-                copy: (name: string) => {},
-                remove: (name: string, scheduleId: Number) => {},
-                rename: (oldName: string) => {},
+                copy: () => {},
+                remove: () => {},
+                rename: () => {},
                 create: () => {}
               }}
               />
