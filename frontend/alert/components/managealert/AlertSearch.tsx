@@ -32,8 +32,8 @@ interface AlertSearchProps {
 }
 
 export const AlertSearch = ({ value, onChange }: AlertSearchProps) => (
-    <SearchFlex valign>
-        <SearchBarFlex valign margin="0.2rem">
+    <SearchFlex $valign>
+        <SearchBarFlex $valign $margin="0.2rem">
             <Img src="/svg/search.svg" alt="" width="0.6rem" height="0.6rem" />
             <SearchInput
                 type="search"

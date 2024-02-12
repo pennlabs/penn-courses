@@ -1,18 +1,14 @@
+// TODO: this is copied from plan, we should factor out into a shared component
+
+
 import React, { PropsWithChildren } from "react";
-import styled from "styled-components";
-import { connect, DispatchProp } from "react-redux";
-import { ThunkDispatch } from "redux-thunk";
-import { closeModal } from "../../actions";
-import {
-    generateModalInterior,
-    generateModalActions,
-} from "./model_content_generator";
+import styled from "@emotion/styled";
 
 interface ModalContainerProps {
     title: string;
     close: () => void;
     modalProps: any;
-    modalKey: string;
+    modalKey: string | null;
     isBig: boolean;
 }
 
@@ -124,7 +120,6 @@ const ModalCardBody = styled.section`
     flex-grow: 1;
     flex-shrink: 1;
     overflow: auto;
-    padding: 20px;
     padding-left: 2rem;
     padding-right: 2rem;
     padding-bottom: 1.5rem;
@@ -142,11 +137,10 @@ const ModalContainer = ({
     children,
     title,
     close,
-    dispatch,
     modalKey,
     modalProps,
     isBig: isBig,
-}: PropsWithChildren<ModalContainerProps> & DispatchProp) => (
+}: PropsWithChildren<ModalContainerProps>) => (
     <OuterModalContainer $title={title}>
         <ModalBackground />
         <ModalCard $isBig={isBig}>
@@ -164,16 +158,12 @@ const ModalContainer = ({
                 </div>
             </ModalCardHead>
             <ModalCardBody>
-                {modalKey &&
+                {modalKey && 
                     React.Children.map(children, (child: React.ReactNode) =>
                         React.cloneElement(child as React.ReactElement, {
                             close,
-                            ...modalProps,
-                            ...generateModalActions(
-                                dispatch,
-                                modalKey,
-                                modalProps
-                            ),
+                            modalKey,
+                            ...modalProps
                         })
                     )}
             </ModalCardBody>
@@ -181,20 +171,4 @@ const ModalContainer = ({
     </OuterModalContainer>
 );
 
-const bigModals = { WELCOME: true };
-
-const mapStateToProps = (state: any) => ({
-    children: generateModalInterior(state),
-    title: state.modals.modalTitle,
-    modalKey: state.modals.modalKey,
-    modalProps: state.modals.modalProps,
-    // @ts-ignore
-    isBig: bigModals[state.modals.modalKey],
-});
-
-const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
-    close: () => dispatch(closeModal()),
-    dispatch,
-});
-
-export default connect(mapStateToProps, mapDispatchToProps)(ModalContainer);
+export default ModalContainer;

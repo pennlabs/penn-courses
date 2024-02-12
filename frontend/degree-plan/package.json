@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "dev": "NODE_OPTIONS=--openssl-legacy-provider next dev",
+    "build": "NODE_OPTIONS=--openssl-legacy-provider next build",
+    "start": "NODE_OPTIONS=--openssl-legacy-provider next start",
     "lint": "next lint"
   },
   "dependencies": {
@@ -15,8 +15,8 @@
     "@mdi/react": "^1.6.1",
     "@mui/material": "^5.13.4",
     "@types/node": "18.14.1",
-    "@types/react": "18",
-    "@types/react-dom": "18",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
     "axios": "^1.6.2",
     "bootstrap": "^5.2.3",
     "eslint": "8.34.0",
@@ -26,15 +26,17 @@
     "lodash": "^4.17.21",
     "lodash.clonedeep": "^4.5.0",
     "next": "13.2.1",
+    "pcx-shared-components": "0.1.0",
     "react": "^18.2.0",
+    "react-circular-progressbar": "^2.1.0",
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",
     "react-dom": "^18.2.0",
     "react-fuzzy": "^1.3.0",
     "react-resizable": "^3.0.5",
     "react-toastify": "^9.1.1",
-    "typescript": "4.9.5",
-    "pcx-shared-components": "0.1.0"
+    "swr": "^2.2.4",
+    "typescript": "4.9.5"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.191"

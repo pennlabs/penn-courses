@@ -1,7 +1,7 @@
 import Icon from '@mdi/react';
 import { mdiNoteEditOutline, mdiArrowLeft, mdiPlus } from '@mdi/js';
 import { useEffect, useState } from 'react';
-import { topBarStyle } from '@/pages/FourYearPlanPage';
+import { PanelTopBar } from '@/pages/FourYearPlanPage';
 import SelectListDropdown from '../FourYearPlan/SelectListDropdown';
 import SwitchFromList from '../FourYearPlan/SwitchFromList';
 import Requirement from './Requirement';
@@ -22,29 +22,30 @@ const requirementDropdownListStyle = {
 
       useEffect(() => {
         const getMajor = async () => {
-            const res = await axios.get(`/degree/degrees/${currentMajor.id}`);
-            console.log(res.data);
-            setMajorData(res.data);
-            return;
+            // const res = await axios.get(`/degree/degrees/${currentMajor.id}`);
+            // console.log(res.data);
+            // setMajorData(res.data);
+            // return;
         }
         if (currentMajor.id) getMajor();
       }, [currentMajor])
 
     return(
         <>
-          <div style={topBarStyle}>
-              <div className='d-flex justify-content-between'>
-              <SwitchFromList
-                  current={currentMajor} 
-                  setCurrent={setCurrentMajor}
-                  list={majors} 
-                  setList={setMajors} 
-                  addHandler={() => setDegreeModalOpen(true)}/>
-                <label onClick={() => setEditMode(!editMode)}>
-                    <Icon path={editMode ? mdiArrowLeft : mdiNoteEditOutline } size={1}/>
-                </label>
-              </div>
-          </div>
+          <PanelTopBar>
+              <SelectListDropdown 
+              allItems={[]}
+              active={undefined}
+              selectItem={setCurrentMajor}
+              itemType={"major or degree"}
+              mutators={{
+                copy: () => {},
+                remove: () => {},
+                rename: () => {},
+                create: () => {}
+              }}
+              />
+          </PanelTopBar>
           <div style={requirementDropdownListStyle}>
             {majorData && majorData.rules && majorData.rules.map((requirement: any) => ( 
               <Requirement requirement={requirement} setSearchClosed={setSearchClosed} parent={null} handleSearch={handleSearch} setHighlightReqId={setHighlightReqId} highlightReqId={highlightReqId} key={requirement.id}/>

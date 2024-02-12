@@ -1,10 +1,60 @@
-import { Stack } from '@mui/material';
 import React, { useState, useRef, useEffect } from "react";
-import CircularProgressBar from "./CircularProgressBar";
+import styled from '@emotion/styled';
+import { CircularProgressbar } from 'react-circular-progressbar';
+import 'react-circular-progressbar/dist/styles.css';
 
-const statsStackStyle = {
-    width: '60%'
+const getColor = (num: number, reverse: boolean) => {
+    if (isNaN(num)) {
+        return "#76bf96";
+    }
+    num = Number(num.toFixed(1));
+    if (num < 2) {
+        return reverse ? "#76bf96" : "#ffc107";
+    }
+    if (num < 3) {
+        return "#6274f1";
+    }
+    return reverse ? "#ffc107" : "#76bf96";
+};
+
+const ScoreCircle = styled(CircularProgressbar)`
+    aspect-ratio: 1;
+`;
+
+const ScoreLabel = styled.div`
+    font-size: 1rem;
+    line-height: 125%;
+`;
+
+const ScoreRow = ({ score, label }: { score: number, label: string }) => {
+    return (
+        <>
+            <ScoreCircle
+            value={score * 25}
+            strokeWidth={12}
+            text={score.toFixed(1)}
+            styles={{
+                path: {
+                    stroke: getColor(score, false),
+                },
+                text: {
+                    fontSize: "2rem",
+                    fill: getColor(score, false),
+                    fontWeight: "500"
+                }
+            }}
+            />
+            <ScoreLabel>{label}</ScoreLabel>
+        </>
+    )
 }
+const Stack = styled.div`
+    display: grid;
+    grid-template-columns: 2fr 3fr;
+    gap: 1rem .75rem;
+    justify-items: left;
+    align-items: center;
+`;
 
 const getAvg = (courses) => {
     if (courses.length == 0) return [0, 0, 0, 0];
@@ -24,36 +74,13 @@ const getAvg = (courses) => {
             workRequired / courses.length];
 }
 
-const Stats = ({courses} : any) => {
-    const [course_quality, instructor_quality, difficulty, work_required] = getAvg(courses);
-    
-    const StatRow = ({item, score} : any) => {
-        const ref = useRef(null);
-        const [width, setWidth] = useState(200);
-
-        useEffect(() => {
-            setWidth(ref.current.offsetWidth)
-        }, [ref.current]);
-
-        return (
-            <div className="d-flex" ref={ref}>
-                <CircularProgressBar value={score.toFixed(1)}/>
-                {/* {width > 140 && <div className="ms-3 mt-3">{item}</div>} */}
-                <div className="ms-2 mt-3">{item}</div>
-            </div>
-        )
-    }
-
+const Stats = ({ courses, className } : { courses: any, className: string }) => {
     return (
-        <Stack direction="column" spacing={1} style={statsStackStyle}>
-            {/* <StatRow item={'Course'} score={course_quality}/>
-            <StatRow item={'Instructor'} score={instructor_quality}/> 
-            <StatRow item={'Difficulty'} score={difficulty}/> 
-            <StatRow item={'Work Required'} score={work_required}/>  */}
-             <StatRow item={'Course'} score={3.3}/>
-            <StatRow item={'Instructor'} score={3.2}/> 
-            <StatRow item={'Difficulty'} score={2.1}/> 
-            <StatRow item={'Work Required'} score={1.0}/> 
+        <Stack className={className}>
+            <ScoreRow label={'Course Quality'} score={3.3}/>
+            <ScoreRow label={'Instructor Quality'} score={3.2}/> 
+            <ScoreRow label={'Difficulty'} score={2.1}/> 
+            <ScoreRow label={'Work Required'} score={1.0}/> 
         </Stack>
     )
 }

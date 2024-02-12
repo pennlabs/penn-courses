@@ -3,28 +3,49 @@ import Logo from './Logo';
 import { type User } from '../../types'
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
 import { useRouter } from "next/router";
-import styled from "@emotion/styled"
+import styled from "@emotion/styled";
+import { maxWidth, PHONE } from '../../constants';
 
-const NavBarWrapper = styled.div`
-  width: 100%;
+const NavContainer = styled.nav`    
   padding: 0 1rem;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.15);
   display: flex;
+  flex-align: center;
+  width: 95%;
   justify-content: space-between;
+  margin: 0 auto;
 `;
 
-const Nav = ({ user }: { user: User }) => {
-  const router = useRouter();
-  return (
-    <NavBarWrapper>
-      <Logo/>
-      <AccountIndicator
-      leftAligned={false}
-      user={user}
-      pathname={router.pathname}
-      />
-    </NavBarWrapper>)
+const NavElt = styled.span<{ $active?: boolean }>`
+  color: #4a4a4a;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  font-weight: ${(props) => (props.$active ? "bold" : "normal")};
+  cursor: pointer;
+`;
+
+interface NavProps {
+    login: (u: User) => void;
+    logout: () => void;
+    user: User | null;
 }
+
+const Nav = ({ login, logout, user }: NavProps) => (
+  <NavContainer>
+      <NavElt>
+          <AccountIndicator
+              leftAligned={true}
+              user={user}
+              backgroundColor="dark"
+              nameLength={2}
+              login={login}
+              logout={logout}
+          />
+      </NavElt>
+      <NavElt>
+        <Logo/>
+      </NavElt>
+  </NavContainer>
+);
 
 export default Nav;

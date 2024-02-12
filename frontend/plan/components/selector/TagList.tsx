@@ -8,10 +8,10 @@ interface TagListProps {
     onClick?: (id: string) => void;
 }
 
-const HiddenTagListContainer = styled.span<{ expanded: boolean }>`
+const HiddenTagListContainer = styled.span<{ $expanded: boolean }>`
     overflow: hidden;
     display: inline-block;
-    height: ${(props) => (props.expanded ? "auto" : 0)};
+    height: ${(props) => (props.$expanded ? "auto" : 0)};
     * {
         user-select: none;
     }
@@ -36,7 +36,7 @@ export default function TagList({
                             : `+${hiddenTags.length}`}
                     </Tag>
                 )}
-                <HiddenTagListContainer expanded={expanded}>
+                <HiddenTagListContainer $expanded={expanded}>
                     {hiddenTags.map((elt) => (
                         <Tag key={elt}>{elt}</Tag>
                     ))}

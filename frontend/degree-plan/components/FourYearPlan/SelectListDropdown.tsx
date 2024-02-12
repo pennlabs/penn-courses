@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import styled from "@emotion/styled";
-import { Icon } from "../bulma_derived_components";
-import { DegreePlan } from "../../types";
+import { GrayIcon } from "../bulma_derived_components";
+import { DBObject, DegreePlan } from "../../types";
+import { getNameOfDeclaration } from "typescript";
 
 
 const ButtonContainer = styled.div<{ $isActive: boolean; }>`
@@ -63,7 +64,7 @@ const ButtonLabelContainer = styled.div<{ width: number }>`
 `;
 
 const DropdownRemoveButton = ({ remove }: { remove: () => void }) => (
-    <Icon
+    <GrayIcon
         onClick={(e) => {
             remove();
             e.stopPropagation();
@@ -72,11 +73,11 @@ const DropdownRemoveButton = ({ remove }: { remove: () => void }) => (
         className="option-icon"
     >
         <i className="fa fa-trash" aria-hidden="true" />
-    </Icon>
+    </GrayIcon>
 );
 
 const DropdownCopyButton = ({ copy }: { copy: () => void }) => (
-    <Icon
+    <GrayIcon
         onClick={(e) => {
             copy();
             e.stopPropagation();
@@ -85,11 +86,11 @@ const DropdownCopyButton = ({ copy }: { copy: () => void }) => (
         className="option-icon"
     >
         <i className="far fa-copy" aria-hidden="true" />
-    </Icon>
+    </GrayIcon>
 );
 
 const DropdownRenameButton = ({ rename }: { rename: () => void }) => (
-    <Icon
+    <GrayIcon
         onClick={(e) => {
             rename();
             e.stopPropagation();
@@ -98,7 +99,7 @@ const DropdownRenameButton = ({ rename }: { rename: () => void }) => (
         className="option-icon"
     >
         <i className="far fa-edit" aria-hidden="true" />
-    </Icon>
+    </GrayIcon>
 )
 
 const ScheduleOptionsContainer = styled.div`
@@ -141,9 +142,9 @@ const DropdownButton = ({
     >
         <ButtonLabelContainer width={50}>{text}</ButtonLabelContainer>
         <ScheduleOptionsContainer>
-            <DropdownRenameButton rename={rename}></DropdownRenameButton>
-            <DropdownCopyButton copy={copy}></DropdownCopyButton>
-            <DropdownRemoveButton remove={remove}></DropdownRemoveButton>
+            {rename && <DropdownRenameButton rename={rename}></DropdownRenameButton>}
+            {copy && <DropdownCopyButton copy={copy}></DropdownCopyButton>}
+            {remove && <DropdownRemoveButton remove={remove}></DropdownRemoveButton>}
         </ScheduleOptionsContainer>
     </ButtonContainer>
 );
@@ -239,30 +240,34 @@ const SelectedName = styled.span`
     font-weight: 600;
 `
 
-interface SelectListDropdownProps {
-    activeName: string;
-    allDegreePlans: DegreePlan[];
-    selectItem: (degreePlan: string) => void;
+interface SelectListDropdownProps<T extends DBObject,> {
+    itemType: string; // e.g., Degree Plan or Degree
+    active?: T;
+    allItems: T[];
+    selectItem: (id: T["id"]) => void;
+    getItemName: (item: T) => string;
     mutators: {
-        copy: (scheduleName: string) => void;
-        remove: (scheduleName: string, scheduleId: Number) => void;
-        rename: (oldName: string) => void;
+        copy: (item: T) => void;
+        remove: (item: T) => void;
+        rename: (item: T) => void;
         create: () => void;
     };
 }
 
-const SelectListDropdown = ({
-    activeName,
-    allDegreePlans,
+const SelectListDropdown = <T extends DBObject,>({
+    itemType,
+    active,
+    allItems,
     selectItem,
+    getItemName,
     mutators: {
         copy,
         remove,
         rename,
         create,
     },
-}: SelectListDropdownProps) => {
-    const [isActive, setIsActive] = useState(true);
+}: SelectListDropdownProps<T>) => {
+    const [isActive, setIsActive] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -283,7 +288,7 @@ const SelectListDropdown = ({
     return (
         <ScheduleDropdownContainer ref={ref} $isActive={isActive}>
             <ScheduleDropdownHeader>
-                <SelectedName>{activeName}</SelectedName>
+                <SelectedName>{active && getItemName(active)}</SelectedName>
                 <DropdownTrigger
                     $isActive={isActive}
                     onClick={() => {
@@ -292,42 +297,39 @@ const SelectListDropdown = ({
                     role="button"
                 >
                     <div aria-haspopup={true} aria-controls="dropdown-menu">
-                        <Icon>
+                        <GrayIcon>
                             <i className="fa fa-chevron-down" aria-hidden="true" />
-                        </Icon>
+                        </GrayIcon>
                     </div>
                 </DropdownTrigger>
             </ScheduleDropdownHeader>
             <DropdownMenu $isActive={isActive} role="menu">
                 <DropdownContent>
-                    {allDegreePlans &&
-                        Object.entries(allDegreePlans)
-                            .map(([name, data]) => {
+                    {allItems &&
+                        Object.entries(allItems)
+                            .map(([idx, data]) => {
                                 return (
                                     <DropdownButton
-                                        key={data.id}
-                                        isActive={name === activeName}
+                                        key={String(data.id)}
+                                        isActive={data.id === active?.id}
                                         makeActive={() => {
                                             setIsActive(false);
                                         }}
-                                        onClick={() => selectItem(name)}
-                                        text={name}
+                                        onClick={() => selectItem(data.id)}
+                                        text={getItemName(data)}
                                         mutators={{
-                                            copy: () =>
-                                                copy(
-                                                    name + " (copy)", // TODO: make this more like PCP's function
-                                                ),
-                                            remove: () => remove(name, data.id),
-                                            rename: () => rename(name)
+                                            copy: () => copy(data),
+                                            remove: () => remove(data),
+                                            rename: () => rename(data)
                                         }}
                                     />
                                 );
                             })}
                     <AddNew onClick={create} role="button" href="#">
-                        <Icon>
+                        <GrayIcon>
                             <i className="fa fa-plus" aria-hidden="true" />
-                        </Icon>
-                        <span> Add new degree plan </span>
+                        </GrayIcon>
+                        <span> Add new {itemType} </span>
                     </AddNew>
                 </DropdownContent>
             </DropdownMenu>

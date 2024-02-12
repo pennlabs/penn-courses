@@ -223,6 +223,7 @@ class DegreePlan(models.Model):
 
     degrees = models.ManyToManyField(
         Degree,
+        blank=True,
         help_text="The degrees this degree plan is associated with.",
     )
 

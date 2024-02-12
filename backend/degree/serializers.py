@@ -100,12 +100,12 @@ class FulfillmentSerializer(serializers.ModelSerializer):
 
 
 class DegreePlanListSerializer(serializers.ModelSerializer):
-    degrees = DegreeListSerializer(read_only=True, many=True)
+    # degrees = DegreeListSerializer(read_only=True, many=True)
     id = serializers.ReadOnlyField(help_text="The id of the DegreePlan.")
 
     class Meta:
         model = DegreePlan
-        fields = ["id", "name", "degrees"]
+        fields = ["id", "name", "created_at", "updated_at"]
 
 
 class DegreePlanDetailSerializer(serializers.ModelSerializer):
@@ -116,6 +116,7 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
     )
     degrees = DegreeDetailSerializer(read_only=True, many=True)
     degree_ids = serializers.PrimaryKeyRelatedField(
+        required=False,    
         write_only=True,
         source="degree",
         queryset=Degree.objects.all(),

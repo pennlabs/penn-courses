@@ -3,24 +3,47 @@ import { useDrop } from "react-dnd";
 import { ItemTypes } from "../dnd/constants";
 import CoursesPlanned from "./CoursesPlanned";
 import Stats from "./Stats";
+import styled from '@emotion/styled';
 
-// interface SemesterProps {
-//     year: string,
-//     semester: ISemester
-// }
+export const SemesterCard = styled.div`
+    background: #FFFFFF;
+    box-shadow: 0px 0px 4px 2px rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+    border-width: 0px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+`;
 
-export const semesterCardStyle = {
-    background: 'linear-gradient(0deg, #FFFFFF, #FFFFFF), #FFFFFF',
-    boxShadow: '0px 0px 4px 2px rgba(0, 0, 0, 0.05)',
-    borderRadius: '10px',
-    borderWidth: '0px',
-    padding: '10px',
-    // minWidth: '200px',
-    width: '45%',
-    margin: '5px',
-    minHeight: '13vh'
-}
-const Semester = ({semester, addCourse, index, highlightReqId, removeCourseFromSem, showStats, showCourseDetail} : any) => {
+const SemesterLabel = styled.div`
+    font-weight: 500;
+`;
+
+const SemesterContent = styled.div`
+    margin-top: .5rem;
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+`;
+
+const FlexStats = styled(Stats)`
+    flex-basis: 7rem;
+    flex-grow: .1;
+`;
+
+const FlexCoursesPlanned = styled(CoursesPlanned)`
+    flex-grow: 1;
+`;
+
+const CreditsLabel = styled.div`
+    font-size: 1.2rem;
+    font-weight: 500;
+    margin-top: 1rem;
+    margin-left: auto;
+    margin-right: 0;
+`;
+
+const Semester = ({semester, addCourse, index, highlightReqId, removeCourseFromSem, showStats, showCourseDetail, className} : any) => {
     const ref = useRef(null);
     const [width, setWidth] = useState(200);
 
@@ -42,15 +65,18 @@ const Semester = ({semester, addCourse, index, highlightReqId, removeCourseFromS
     }
     
     return (
-        <div className="card" style={{...semesterCardStyle, minWidth: showStats? '250px' : '150px', maxWidth: showStats ? '400px' : '190px'}} ref={drop}>
-            <div className="mt-1 ms-2 mb-1" style={{fontWeight:500}}>
+        <SemesterCard $showStats={showStats} className={className}>
+            <SemesterLabel>
                 {semester.name}
-            </div>
-            <div className="d-flex" ref={ref}>
-                <CoursesPlanned courses={semester.courses} highlightReqId={highlightReqId} semesterIndex={index} removeCourse={removeCourse} showCourseDetail={showCourseDetail}/>
-                {showStats && <Stats courses={semester.courses}/>}
-            </div>
-        </div>
+            </SemesterLabel>
+            <SemesterContent ref={ref}>
+                <FlexCoursesPlanned courses={semester.courses} highlightReqId={highlightReqId} semesterIndex={index} removeCourse={removeCourse} showCourseDetail={showCourseDetail}/>
+                {showStats && <FlexStats courses={semester.courses}/>}
+            </SemesterContent>
+            <CreditsLabel>
+                6.5 CUs
+            </CreditsLabel>
+        </SemesterCard>
     )
 }
 
