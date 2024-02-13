@@ -4,9 +4,13 @@
 function id(x) { return x[0]; }
 
 const unwrapConnector = (type) => (d) => {
-	const clauses = d[3]
-	if (clauses.length == 1) return clauses[0];
-	return { type, clauses };
+	const rest = d[4];
+	let clauses = [d[3]];
+	for (let i in rest) {
+		clauses.push(rest[i][3])
+	}
+	if (clauses.length === 1) return d[3];
+	return { type, clauses }
 }
 
 const extractArray = (d) => {
@@ -139,27 +143,31 @@ var grammar = {
         },
     {"name": "q$string$1", "symbols": [{"literal":"<"}, {"literal":"Q"}, {"literal":":"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "q", "symbols": ["_", "q$string$1", "clause", {"literal":">"}, "_"], "postprocess": (d) => d[2]},
-    {"name": "clause", "symbols": ["condition"]},
-    {"name": "clause", "symbols": ["and_clause"]},
-    {"name": "clause", "symbols": ["or_clause"]},
-    {"name": "clause", "symbols": ["not_clause"]},
-    {"name": "connector_clause", "symbols": ["and_clause"]},
-    {"name": "connector_clause", "symbols": ["or_clause"]},
+    {"name": "clause", "symbols": ["condition"], "postprocess": id},
+    {"name": "clause", "symbols": ["and_clause"], "postprocess": id},
+    {"name": "clause", "symbols": ["or_clause"], "postprocess": id},
+    {"name": "clause", "symbols": ["not_clause"], "postprocess": id},
+    {"name": "connector_clause", "symbols": ["and_clause"], "postprocess": id},
+    {"name": "connector_clause", "symbols": ["or_clause"], "postprocess": id},
     {"name": "condition", "symbols": ["_", {"literal":"("}, "string", "_", {"literal":","}, "_", "value", "_", {"literal":")"}, "_"], "postprocess": (d) => ({ type: "LEAF", key: d[2], value: d[6] })},
     {"name": "and_clause$string$1", "symbols": [{"literal":"("}, {"literal":"A"}, {"literal":"N"}, {"literal":"D"}, {"literal":":"}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "and_clause", "symbols": ["_", "and_clause$string$1", "_", "clauses", "_", {"literal":")"}, "_"], "postprocess": unwrapConnector("AND")},
+    {"name": "and_clause$ebnf$1", "symbols": []},
+    {"name": "and_clause$ebnf$1$subexpression$1", "symbols": ["_", {"literal":","}, "_", "clause"]},
+    {"name": "and_clause$ebnf$1", "symbols": ["and_clause$ebnf$1", "and_clause$ebnf$1$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "and_clause", "symbols": ["_", "and_clause$string$1", "_", "clause", "and_clause$ebnf$1", "_", {"literal":")"}, "_"], "postprocess": unwrapConnector("AND")},
     {"name": "or_clause$string$1", "symbols": [{"literal":"("}, {"literal":"O"}, {"literal":"R"}, {"literal":":"}], "postprocess": function joiner(d) {return d.join('');}},
-    {"name": "or_clause", "symbols": ["_", "or_clause$string$1", "_", "clauses", "_", {"literal":")"}, "_"], "postprocess": unwrapConnector("OR")},
-    {"name": "clauses", "symbols": ["clause"], "postprocess": function (d) { return d }},
-    {"name": "clauses", "symbols": ["clauses", {"literal":","}, "clause"], "postprocess": function(d){ return d[0].concat(d[2]) }},
+    {"name": "or_clause$ebnf$1", "symbols": []},
+    {"name": "or_clause$ebnf$1$subexpression$1", "symbols": ["_", {"literal":","}, "_", "clause"]},
+    {"name": "or_clause$ebnf$1", "symbols": ["or_clause$ebnf$1", "or_clause$ebnf$1$subexpression$1"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
+    {"name": "or_clause", "symbols": ["_", "or_clause$string$1", "_", "clause", "or_clause$ebnf$1", {"literal":")"}, "_"], "postprocess": unwrapConnector("OR")},
     {"name": "not_clause$string$1", "symbols": [{"literal":"("}, {"literal":"N"}, {"literal":"O"}, {"literal":"T"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "not_clause", "symbols": ["_", "not_clause$string$1", "_", "connector_clause", "_", {"literal":")"}, "_"], "postprocess": (d) => ({ type: "NOT", clause: d[3] })},
-    {"name": "value", "symbols": ["primitive"]},
-    {"name": "value", "symbols": ["array"]},
-    {"name": "primitive", "symbols": ["string"]},
-    {"name": "primitive", "symbols": ["int"]},
-    {"name": "primitive", "symbols": ["jsonfloat"]},
-    {"name": "primitive", "symbols": ["none"]},
+    {"name": "value", "symbols": ["primitive"], "postprocess": id},
+    {"name": "value", "symbols": ["array"], "postprocess": id},
+    {"name": "primitive", "symbols": ["string"], "postprocess": id},
+    {"name": "primitive", "symbols": ["int"], "postprocess": id},
+    {"name": "primitive", "symbols": ["jsonfloat"], "postprocess": id},
+    {"name": "primitive", "symbols": ["none"], "postprocess": id},
     {"name": "array", "symbols": [{"literal":"["}, "_", {"literal":"]"}], "postprocess": (d) => []},
     {"name": "array$ebnf$1", "symbols": []},
     {"name": "array$ebnf$1$subexpression$1", "symbols": ["_", {"literal":","}, "_", "primitive"]},
@@ -167,8 +175,8 @@ var grammar = {
     {"name": "array", "symbols": [{"literal":"["}, "_", "primitive", "array$ebnf$1", "_", {"literal":"]"}], "postprocess": extractArray},
     {"name": "none$string$1", "symbols": [{"literal":"N"}, {"literal":"o"}, {"literal":"n"}, {"literal":"e"}], "postprocess": function joiner(d) {return d.join('');}},
     {"name": "none", "symbols": ["_", "none$string$1", "_"], "postprocess": (d) => null},
-    {"name": "string", "symbols": ["dqstring"]},
-    {"name": "string", "symbols": ["sqstring"]}
+    {"name": "string", "symbols": ["dqstring"], "postprocess": id},
+    {"name": "string", "symbols": ["sqstring"], "postprocess": id}
 ]
   , ParserStart: "q"
 }

@@ -45,16 +45,19 @@ const CourseOption = ({ course, chosenOption, setChosenOption }: CourseOptionsPr
 const CourseOptionsContainer = styled.div`
     display: flex;
     flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    text-wrap: nowrap;
     gap: .5em;
     border-radius: 5px;
 
 `;
 
 const CourseOptionsSeparator = styled.div`
-    font-family: 'Roboto-Mono', monospace;
     font-size: .8rem;
     text-transform: uppercase;
     color: #575757;
+    font-weight: 500;
 `;
 
 const CourseOptions = ({ courses }: { courses: Course["full_code"][]}) => {
@@ -86,13 +89,12 @@ const CourseSearch = ({ QObject }: { QObject: ParsedQObj }) => {
 const RenderQObject = ({ qObject }: { qObject: string }) => {
     const qObjParser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
     const parsed = qObjParser.feed(qObject).results[0] as ParsedQObj;
-    console.log(parsed);
     if (!parsed) return null;
     // case 1: leaf full code
     if (parsed.type === 'LEAF' && parsed.key === "full_code") return <CourseOptions courses={[parsed.value]} />;
     if (
-        (parsed.type === "AND" || parsed.type === "OR") &&
-        parsed.clauses.length <= 3 &&
+        parsed.type === "OR" &&
+        parsed.clauses.length <= 5 &&
         parsed.clauses.every((clause) => clause.type === "LEAF" && clause.key === "full_code") 
     ) return <CourseOptions courses={(parsed.clauses as Condition[]).map((leaf) => leaf.value)} />;
     return <CourseSearch QObject={parsed} />;

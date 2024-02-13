@@ -53,7 +53,7 @@ const Rule = ({ rule, setSearchClosed, handleSearch, setHighlightReqId, highligh
       <>
         {rule.q ? 
           <CourseRequirementWrapper>
-              <RootQObj query={trimQuery(rule.q)} reqId={rule.id}/>
+              <RootQObj qObject={rule.q} reqId={rule.id}/>
               <div className='d-flex'>
                 <div onClick={handleShowSatisfyingCourses}>
                   <MDIcon path={mdiEye} size={1} color={highlightReqId === rule.id ? 'yellow': '#575757'}/>
