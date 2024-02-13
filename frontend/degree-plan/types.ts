@@ -44,3 +44,10 @@ export interface User {
     last_name: string;
     profile: Profile;
 }
+
+export interface Options {
+  RECRUITING: string;
+  SEMESTER:  string;
+  REGISTRATION_OPEN: boolean;
+  SEND_FROM_WEBHOOK: boolean;
+}

@@ -12,7 +12,8 @@ import FuzzySearch from 'react-fuzzy';
 import CourseDetailPanel from "@/components/Course/CourseDetailPanel";
 import styled from "@emotion/styled";
 import useSWR from "swr";
-import { DegreePlan } from "@/types";
+import { DegreePlan, Options } from "@/types";
+import ReviewPanel from "@/components/Infobox/ReviewPanel";
 
 
 const PlanPageContainer = styled.div`
@@ -56,10 +57,12 @@ const FourYearPlanPage = () => {
     const [x, setX] = useState(0);
 
     const [degreeModalOpen, setDegreeModalOpen] = React.useState(false);
+    
+    const { data: options } = useSWR<Options>('/api/options');
 
     const [activeDegreeplanId, setActiveDegreeplanId] = useState<null | DegreePlan["id"]>(null);
-    const { data: degreeplans, isLoading: isLoadingDegreeplans } = useSWR<DegreePlan[]>('/api/degree/degreeplans/');
-    const { data: activeDegreePlan, isLoading: isLoadingActiveDegreePlan } = useSWR(activeDegreeplanId ? `/api/degree/degreeplans/${activeDegreeplanId}/` : null);
+    const { data: degreeplans, isLoading: isLoadingDegreeplans } = useSWR<DegreePlan[]>('/api/degree/degreeplans');
+    const { data: activeDegreePlan, isLoading: isLoadingActiveDegreePlan } = useSWR(activeDegreeplanId ? `/api/degree/degreeplans/${activeDegreeplanId}` : null);
     useEffect(() => {
         // recompute the active degreeplan id on changes to the degreeplans
         if (!degreeplans?.length) setActiveDegreeplanId(null);
@@ -145,6 +148,7 @@ const FourYearPlanPage = () => {
     
     return (
         <PlanPageContainer ref={ref}>
+            <ReviewPanel currentSemester={options?.SEMESTER} full_code={"CIS-1200"}/>
             <div onMouseMove={resizeFrame} onMouseUp={endResize} className="d-flex">
                 <PanelContainer $width={leftWidth}>
                     <PlanPanel isLoading={isLoadingDegreeplans || isLoadingActiveDegreePlan} activeDegreeplan={activeDegreePlan} degreeplans={degreeplans} setActiveDegreeplanId={setActiveDegreeplanId}/>

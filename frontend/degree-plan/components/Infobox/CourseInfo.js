@@ -1,11 +1,11 @@
 import React from "react";
 import reactStringReplace from "react-string-replace";
-import { Link } from "react-router-dom";
 import styled from "styled-components";
-import './base.css';
+import './base.module.css';
 
-import { CourseDetails, Popover, PopoverTitle } from "../common";
-import { toNormalizedSemester } from "../../utils/helpers";
+import { CourseDetails } from "./common/CourseDetails";
+import { Popover, PopoverTitle } from "./common/Popover";
+import { toNormalizedSemester } from "./util/helpers";
 
 import ReactTooltip from "react-tooltip";
 
@@ -164,7 +164,7 @@ const TagsWhenOffered = ({
           {prereqs.map((a, i) => [
             i > 0 && ", ",
             <span key={i}>
-              <Link to={`/course/${a}`}>{a.replace("-", " ")}</Link>
+              <a href={`https://penncoursereview.com/course/${a}`}>{a.replace("-", " ")}</a>
             </span>
           ])}
         </div>
@@ -181,7 +181,7 @@ const TagsWhenOffered = ({
             .map((item, idx) => (
               <span key={item.id}>
                 {idx > 0 && ", "}
-                <Link to={`/instructor/${item.id}`}>{item.name}</Link>
+                <a href={`https://penncoursereview.com/instructor/${item.id}`}>{item.name}</a>
               </span>
             ))}
         </div>
@@ -278,7 +278,7 @@ export const CourseHeader = ({
     </div>
     {data.last_offered_sem_if_superceded && (
       <CourseCodeQualifier>
-        <Link to={`/course/${code}`}>Superseded</Link>
+        <a href={`https://penncoursereview.com/course/${code}`}>Superseded</a>
         &nbsp;
         <span data-tip data-for="superseded-tooltip">
           <i
@@ -324,9 +324,9 @@ export const CourseHeader = ({
         <strong>Also:&nbsp;</strong>
         {aliases.map((cls, i) => [
           i > 0 && <div>&#44;&nbsp;</div>,
-          <Link to={`/course/${cls}/${data.latest_semester}`} key={i}>
+          <a href={`https://penncoursereview.com/course/${cls}/${data.latest_semester}`} key={i}>
             {cls}
-          </Link>
+          </a>
         ])}
       </CourseCodeQualifier>
     )}
@@ -336,7 +336,7 @@ export const CourseHeader = ({
         {data.historical_codes.map((obj, i) => [
           i > 0 && <div>&#44;&nbsp;</div>,
           obj.branched_from ? (
-            <Link to={`/course/${obj.full_code}/${obj.semester}`}>
+            <a href={`https://penncoursereview.com/course/${obj.full_code}/${obj.semester}`}>
               {obj.full_code}
               {data.historical_codes.some(
                 (other, otherI) =>
@@ -344,7 +344,7 @@ export const CourseHeader = ({
               )
                 ? ` (${toNormalizedSemester(obj.semester)})`
                 : ""}
-            </Link>
+            </a>
           ) : (
             <div>{obj.full_code}</div>
           )
@@ -408,9 +408,9 @@ export const CourseDescription = ({ description }) => {
     description,
     /([A-Z]{2,4}[ -]\d{3,4})/g,
     (m, i) => (
-      <Link to={`/course/${m.replace(" ", "-")}`} key={m + i}>
+      <a href={`https://penncoursereview.com/course/${m.replace(" ", "-")}`} key={m + i}>
         {m}
-      </Link>
+      </a>
     )
   );
   return <p className="desc">{content}</p>;

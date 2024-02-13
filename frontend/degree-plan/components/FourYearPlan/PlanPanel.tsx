@@ -149,7 +149,7 @@ interface PlanPanelProps {
 }
 
 const PlanPanel = ({ setActiveDegreeplanId, activeDegreeplan, degreeplans, isLoading } : PlanPanelProps) => {
-    const { create: createDegreeplan, update: updateDegreeplan, remove: deleteDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans/');
+    const { create: createDegreeplan, update: updateDegreeplan, remove: deleteDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplan/');
 
     const [modalKey, setModalKey] = useState<ModalKey>(null);
     const [modalObject, setModalObject] = useState<DegreePlan | null>(null); // object being updated using the modal
