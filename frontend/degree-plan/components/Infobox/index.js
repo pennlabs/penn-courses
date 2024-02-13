@@ -1,33 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 
 import Ratings from "./InfoRatings";
 import { CourseDescription, CourseHeader } from "./CourseInfo";
-import InstructorInfo from "./InstructorInfo";
-import { DepartmentHeader, DepartmentGraphs } from "./DepartmentInfo";
-import { apiContact } from "../../utils/api";
 
 import styled from "styled-components";
-
-const NewLabel = styled.div`
-  background: #ea5a48;
-  color: #fff;
-  border-radius: 0.875rem;
-  font-size: 0.5625rem;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-  padding: 0.1875rem 0.375rem;
-  text-align: center;
-  align-self: center;
-  margin-right: 10px;
-  justify-self: start;
-`;
-
-const StatsToggleContainer = styled.div`
-  display: flex;
-  justify-content: start;
-  margin: 20px 0px;
-  flex-direction: row;
-`;
 
 /**
  * Information box on the left most side, containing scores and descriptions
@@ -51,11 +27,7 @@ const InfoBox = ({
   },
   data,
   liveData,
-  selectedCourses,
-  isCourseEval,
-  setIsCourseEval
 }) => {
-  const [contact, setContact] = useState(null);
   const [inCourseCart, setInCourseCart] = useState(
     Boolean(localStorage.getItem(code))
   );
@@ -76,14 +48,6 @@ const InfoBox = ({
     avgCourseQuality != null ||
     avgDifficulty != null ||
     avgWorkRequired != null;
-
-  const isCourse = type === "course";
-  const isInstructor = type === "instructor";
-  const isDepartment = type === "department";
-
-  useEffect(() => {
-    if (isInstructor) apiContact(name).then(setContact);
-  }, [name, isInstructor]);
 
   const handleCartAdd = key => {
     let instructor = "Average Professor";
@@ -122,55 +86,23 @@ const InfoBox = ({
   return (
     <div className="box">
       <div id="banner-info" data-type="course">
-        {isCourse && (
-          <CourseHeader
-            aliases={aliases}
-            code={code}
-            semester={semester}
-            data={data}
-            name={name}
-            notes={notes}
-            instructors={instructors}
-            type={type}
-            inCourseCart={inCourseCart}
-            handleAdd={handleCartAdd}
-            handleRemove={handleCartRemove}
-            liveData={liveData}
-          />
-        )}
-
-        {isInstructor && (
-          <InstructorInfo name={name} contact={contact} notes={notes} />
-        )}
-
-        {isDepartment && <DepartmentHeader name={name} code={code} />}
+        <CourseHeader
+          aliases={aliases}
+          code={code}
+          semester={semester}
+          data={data}
+          name={name}
+          notes={notes}
+          instructors={instructors}
+          type={type}
+          inCourseCart={inCourseCart}
+          handleAdd={handleCartAdd}
+          handleRemove={handleCartRemove}
+          liveData={liveData}
+        />
       </div>
 
-      {data.registration_metrics && (
-        <StatsToggleContainer>
-          <NewLabel>NEW</NewLabel>
-          <div className="btn-group">
-            <button
-              onClick={() => setIsCourseEval(false)}
-              className={`btn btn-sm ${
-                isCourseEval ? "btn-sub-secondary" : "btn-sub-primary"
-              }`}
-            >
-              Student Evaluations
-            </button>
-            <button
-              onClick={() => setIsCourseEval(true)}
-              className={`btn btn-sm ${
-                isCourseEval ? "btn-sub-primary" : "btn-sub-secondary"
-              }`}
-            >
-              Registration Metrics
-            </button>
-          </div>
-        </StatsToggleContainer>
-      )}
-
-      {!isDepartment && hasReviews && (
+      {hasReviews && (
         <div id="banner-score">
           <Ratings
             value="Average"
@@ -191,15 +123,7 @@ const InfoBox = ({
           />
         </div>
       )}
-
-      {isDepartment && (
-        <DepartmentGraphs
-          courses={selectedCourses}
-          isCourseEval={isCourseEval}
-        />
-      )}
-
-      {isCourse && <CourseDescription description={description} />}
+      <CourseDescription description={description} />
     </div>
   );
 };

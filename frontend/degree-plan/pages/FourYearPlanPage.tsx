@@ -1,7 +1,7 @@
 import React, {useState, useEffect, useRef} from "react";
 import ReqPanel from "../components/Requirements/ReqPanel";
 import PlanPanel from "../components/FourYearPlan/PlanPanel";
-import SearchPanel from "@/components/FloatingPanels/SearchPanel";
+import SearchPanel from "../components/Search/SearchPanel";
 import useWindowDimensions from "@/hooks/window";
 // import Plan from "../components/example/Plan";
 import Modal from "pcx-shared-components/src/common/modal";

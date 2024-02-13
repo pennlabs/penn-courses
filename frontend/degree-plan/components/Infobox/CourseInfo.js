@@ -2,6 +2,7 @@ import React from "react";
 import reactStringReplace from "react-string-replace";
 import { Link } from "react-router-dom";
 import styled from "styled-components";
+import './base.css';
 
 import { CourseDetails, Popover, PopoverTitle } from "../common";
 import { toNormalizedSemester } from "../../utils/helpers";

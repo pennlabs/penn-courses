@@ -8,7 +8,6 @@ interface ReviewPanelProps {
 
 const ReviewPanel = ({ full_code }: ReviewPanelProps) => {
     const { data, isLoading } = useSWR(`/api/review/course/${full_code}`, { refreshInterval: 0 }); // course review data is static    
-
     return (
         <Draggable>
             <div>
