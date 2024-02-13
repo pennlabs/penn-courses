@@ -60,7 +60,7 @@ const ReqPanel = ({activeDegreePlan, isLoading, highlightReqId, setSearchClosed,
     }
   })
 
-  const { update: updateDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans/');
+  const { update: updateDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans');
   
   return(
       <PanelContainer>

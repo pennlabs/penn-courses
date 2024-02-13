@@ -23,7 +23,7 @@ const getCsrf = (): string | boolean => {
     return result;
 };
 
-const getFetcher = (resource: string) => fetch(resource, {
+export const getFetcher = (resource: string) => fetch(resource, {
     method: "GET",
     credentials: "include",
     mode: "same-origin",
@@ -33,7 +33,7 @@ const getFetcher = (resource: string) => fetch(resource, {
     } as HeadersInit, // TODO: idk if this is a good cast
 }).then(res => res.json());
 
-const postFetcher = (resource: string, body: any) => fetch(resource, {
+export const postFetcher = (resource: string, body: any) => fetch(resource, {
     method: "POST",
     credentials: "include",
     mode: "same-origin",
@@ -45,7 +45,7 @@ const postFetcher = (resource: string, body: any) => fetch(resource, {
     body: JSON.stringify(body)
 }).then(res => res.json());
 
-const patchFetcher = (resource: string, body: any) => fetch(resource, {
+export const patchFetcher = (resource: string, body: any) => fetch(resource, {
     method: "PATCH",
     credentials: "include",
     mode: "same-origin",
@@ -57,7 +57,7 @@ const patchFetcher = (resource: string, body: any) => fetch(resource, {
     body: JSON.stringify(body)
 }).then(res => res.json());
 
-const deleteFetcher = (resource: string) => fetch(resource, {
+export const deleteFetcher = (resource: string) => fetch(resource, {
     method: "DELETE",
     credentials: "include",
     mode: "same-origin",
@@ -89,7 +89,7 @@ export const useSWRCrud = <T extends DBObject,>(endpoint: string) => {
 
     const update = (updatedData: Partial<T>, id: string | Number | undefined) => {
         if (!id) return;
-        const key = normalizeFinalSlash(endpoint) + normalizeFinalSlash(String(id));
+        const key = normalizeFinalSlash(endpoint) + id;
         const updated = patchFetcher(key, updatedData);
         mutate(key, updated, {
             optimisticData: (data?: T) => ({ id: -1, ...data, ...updatedData} as T), // TODO: this is hacky
@@ -126,7 +126,7 @@ export const useSWRCrud = <T extends DBObject,>(endpoint: string) => {
 
     const remove = (id: Number | string | undefined) => {
         if (!id) return;
-        const key = normalizeFinalSlash(endpoint) + normalizeFinalSlash(String(id));
+        const key = normalizeFinalSlash(endpoint) + id;
         const removed = deleteFetcher(key);
         mutate(endpoint, removed, {
             optimisticData: (list?: Array<T>) => list ? list.filter((item: T) => String(item.id) !== id) : [],
@@ -165,7 +165,7 @@ interface SWRCrud<T> {
 
 
 /**
- * useSWR wrapper for RESTful list endpoints (e.g., /api/degree/degreeplans/)
+ * useSWR wrapper for RESTful list endpoints (e.g., /api/degree/degreeplans)
  * This function will postpend a trailing slash if it is not present.
  * @template T the type of data listed by the endpoint (i.e., DegreePlan not DegreePlan[]) 
  * @param endpoint the endpoint (e.g., /api/degree/degreeplans/)
@@ -173,7 +173,6 @@ interface SWRCrud<T> {
  * which replaces the mutate function from swr.
  */
 export const useSWRListCreate = <T extends DBObject,>(endpoint: string): SWRCreate<T> => {
-    endpoint = normalizeFinalSlash(endpoint);
     const { data, error, isLoading, isValidating, mutate } = useSWR(endpoint, getFetcher);
 
     const create = (newItem: any) => {

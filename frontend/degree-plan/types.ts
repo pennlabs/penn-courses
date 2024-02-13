@@ -45,6 +45,13 @@ export interface User {
     profile: Profile;
 }
 
+export interface Options {
+  RECRUITING: string;
+  SEMESTER:  string;
+  REGISTRATION_OPEN: boolean;
+  SEND_FROM_WEBHOOK: boolean;
+}
+
 export interface Course {
   id: number;
   name: string;
