@@ -1,7 +1,7 @@
 import MDIcon from '@mdi/react';
 import { mdiEye, mdiMagnify, mdiMenuDown, mdiMenuUp } from '@mdi/js';
 import { useState } from 'react';
-import RootQObj , { trimQuery } from './QObj';
+import QObject from './QObject';
 import { Rule } from '@/types';
 import styled from '@emotion/styled';
 import { Icon } from '../bulma_derived_components';
@@ -53,7 +53,7 @@ const Rule = ({ rule, setSearchClosed, handleSearch, setHighlightReqId, highligh
       <>
         {rule.q ? 
           <CourseRequirementWrapper>
-              <RootQObj query={trimQuery(rule.q)} reqId={rule.id}/>
+              <QObject qObject={rule.q} reqId={rule.id}/>
               <div className='d-flex'>
                 <div onClick={handleShowSatisfyingCourses}>
                   <MDIcon path={mdiEye} size={1} color={highlightReqId === rule.id ? 'yellow': '#575757'}/>

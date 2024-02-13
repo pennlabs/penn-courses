@@ -51,3 +51,10 @@ export interface Options {
   REGISTRATION_OPEN: boolean;
   SEND_FROM_WEBHOOK: boolean;
 }
+
+export interface Course {
+  id: number;
+  name: string;
+  full_code: string;
+  description: string;
+}
