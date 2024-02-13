@@ -1,5 +1,4 @@
 import React from "react";
-import './base.module.css';
 
 /**
  * Three colored boxes with numerical rating values, used in the course description box.

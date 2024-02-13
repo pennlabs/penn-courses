@@ -10,16 +10,21 @@ interface ReviewPanelProps {
     currentSemester?: string;
 }
 
-const ReviewPanelContainer = styled.div`
+const ReviewPanelWrapper = styled.div`
     position: absolute;
     z-index: 100;
-    background-color: white;
-    border-radius: 10px;
-    width: 30rem;
-    padding: 1rem;
-    max-height: 80vh;
-    overflow: auto;
+    height: 80vh;
+    width: 25rem;
+    overflow: hidden;
     box-shadow: 0px 0px 10px 6px rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+`
+
+const ReviewPanelContainer = styled.div`
+    background-color: white;
+    padding: .5rem;
+    overflow: auto;
+    height: 100%;
 `
 
 const ReviewPanel = ({ full_code, currentSemester }: ReviewPanelProps) => {
@@ -37,15 +42,17 @@ const ReviewPanel = ({ full_code, currentSemester }: ReviewPanelProps) => {
 
     return (
         <Draggable hidden={!!data}>
-            <ReviewPanelContainer>
-                {data ?
-                    <InfoBox
-                        data={data}
-                        liveData={liveData}
-                        style={{ position: 'absolute'}}
-                    />
-                    : <div></div>}
-            </ReviewPanelContainer>
+            <ReviewPanelWrapper>
+                <ReviewPanelContainer>
+                    {data ?
+                        <InfoBox
+                            data={data}
+                            liveData={liveData}
+                            style={{ position: 'absolute'}}
+                        />
+                        : <div></div>}
+                </ReviewPanelContainer>
+            </ReviewPanelWrapper>
         </Draggable>
     )
 }
