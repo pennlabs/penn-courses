@@ -5,71 +5,19 @@ import { ItemTypes } from "../dnd/constants";
 import { useEffect, useState } from "react";
 import type { Course } from "@/types";
 import styled from "@emotion/styled";
-import Nearley from "nearley";
+import nearley from "nearley";
 import grammar from "@/util/q_object_grammar" 
 
-
-const RE_UNWRAP_Q = /<Q: (\(.*\))/
-const RE_MATCH_OR_AND = /\s*\((?:(OR|AND): ?)?(.*)\)\s*/; // first group is OR or AND or undefined, second group is the rest of the query
-const RE_UNWRAP_KV = /\('(.*)',\s*'(.*)'\)/
 interface Condition {
     type: 'LEAF';
     key: string;
-    value: string;
+    value: string | number | boolean | null | string[];
 }
 interface Compound {
     type: 'OR' | 'AND';
     clauses: (Compound | Condition)[];
 }
 type ParsedQObj = Condition | Compound;
-class QObjectParser  {
-    leaves: number;
-
-    constructor () {
-        this.leaves = 0;
-    }
-
-    _parse(inner: string, ): ParsedQObj {
-        console.log("INNER")
-        console.log(inner)
-        const match = inner.match(RE_MATCH_OR_AND);
-        if (!match) throw new Error(`Could not match AND, OR or leaf type at ${inner}`);
-        const [_, type, rest] = match;
-        console.log("type")
-        console.log(type)
-        if (type === undefined) {
-            const kvMatch = rest.match(RE_UNWRAP_KV);
-            if (!kvMatch) throw new Error(`Could not split leaf into key and value at ${inner}}`);
-            const [_, key, value] = kvMatch;
-            this.leaves++;
-            return { type: 'LEAF', key, value};
-        } else if (type === 'OR' || type === 'AND') {
-            console.log("rest")
-            console.log(rest)
-            const clauses = rest.split('),').map((inner, index) => this._parse(inner));
-            if (clauses.length === 1) return clauses[0];
-            return {
-                type,
-                clauses
-            }
-        }
-        throw new Error(`Invalid query at ${inner}`); // should be impossible!
-    }
-
-    parse(qObj: string) {
-        const match = qObj.match(RE_UNWRAP_Q);
-        if (!match) return null;
-        const [_, inner] = match;
-        try {
-            const analytics = { leaves: 0, depth: 0 };
-            return this._parse(inner);
-        } catch (e) {
-            console.error(`Error parsing q object: ${(e as Error).message}; Here's the entire q: ${qObj}`);
-            return null;
-        }
-    }
-}
-
 
 interface CourseOptionsProps {
     course: Course["full_code"];
@@ -136,11 +84,10 @@ const CourseSearch = ({ QObject }: { QObject: ParsedQObj }) => {
 }
 
 const RenderQObject = ({ qObject }: { qObject: string }) => {
-    const parser = new QObjectParser();
-    const parsed = parser.parse(qObject);
-    const count = parser.leaves;
+    const qObjParser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
+    const parsed = qObjParser.feed(qObject).results[0] as ParsedQObj;
+    console.log(parsed);
     if (!parsed) return null;
-
     // case 1: leaf full code
     if (parsed.type === 'LEAF' && parsed.key === "full_code") return <CourseOptions courses={[parsed.value]} />;
     if (
