@@ -4,18 +4,24 @@ import { ItemTypes } from "../dnd/constants";
 import { GrayIcon } from '../bulma_derived_components';
 import styled from '@emotion/styled';
 
-export const PlannedCourseContainer = styled.div<{ $isDragging: boolean, $isHighlighted: boolean}>`
+export const BaseCourseContainer = styled.div<{ $isDragging: boolean }>`
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 100%;
   min-width: 70px;
   height: 35px;
   background: #F2F3F4;
-  border-radius: 8.51786px;
+  border-radius: 10px;
+  padding: .5rem;
+  text-wrap: nowrap;
+  opacity: ${props => props.$isDragging ? 0.5 : 1};
+  background-color: ${props => props.$isDragging ? "#4B9AE7" : "#F2F3F4"};
+`;
+
+export const PlannedCourseContainer = styled(BaseCourseContainer)`
+  width: 100%;
   position: relative;
   opacity: ${props => props.$isDragging ? 0.5 : 1};
-  background-color: ${props => props.$isDragging ? "#4B9AE7" : props.$isHighlighted ? "yellow" : "#F2F3F4" };
 `;
 
 const RemoveCourseButton = styled.div<{ isDragging: boolean }>`
@@ -33,7 +39,7 @@ interface CoursePlannedProps {
   showCourseDetail: (course: any) => void
 }
 
-const CoursePlanned = ({course, semesterIndex, removeCourse, highlightReqId, setCourseOpen, showCourseDetail} : CoursePlannedProps) => {
+const CoursePlanned = ({course, semesterIndex, removeCourse, showCourseDetail} : CoursePlannedProps) => {
   const [mouseOver, setMouseOver] = useState(false);
 
   const [{ isDragging }, drag] = useDrag(() => ({
@@ -47,7 +53,6 @@ const CoursePlanned = ({course, semesterIndex, removeCourse, highlightReqId, set
   return (   
     <PlannedCourseContainer
     $isDragging={isDragging}
-    $isHighlighted={course.satisfyIds.includes(highlightReqId)}
     ref={drag} 
     onMouseOver={() => setMouseOver(true)} 
     onMouseLeave={() => setMouseOver(false)}

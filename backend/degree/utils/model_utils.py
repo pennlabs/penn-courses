@@ -14,6 +14,12 @@ parser re-builds the Q object correctly.
 
 Note that when you manually test this parser against strings, you'll want to use
 raw strings (ie, q_object_parser.parse(r"..."))
+
+IMPORTANT NOTE: we use the equivalent parser in Nearley.js on the frontend
+in frontend/degree-plan/util/q_object_parser.ne.
+Make sure to keep the two in sync; when you change this one, generate a
+new parser for the frontend using the nearley compiler and update the 
+the q_object_parser.js file in frontend/degree-plan/util.
 """
 
 
@@ -23,7 +29,7 @@ class QObjectTransformer(Transformer):
     into a usable Python object.
     """
 
-    def list(self, n):
+    def array(self, n):
         """
         List of values should just be a Python list.
         """
@@ -81,11 +87,15 @@ q_object_parser = Lark(
     or_clause: "(OR:" [clause ("," clause)*] ")"
     not_clause: "(NOT" connector_clause ")"
 
-    ?value: string
-          | SIGNED_INT -> sint
-          | SIGNED_FLOAT -> sfloat
-          | none
+    ?value: primitive
+          | array
 
+    ?primitive: string
+             | SIGNED_INT -> sint
+             | SIGNED_FLOAT -> sfloat
+             | none
+
+    array: "[" [primitive ("," primitive)*] "]"
     none: "None"
     string: /'.*?(?<!\\)(\\\\)*?'/ // escapable strings
           | /".*?(?<!\\)(\\\\)*?"/

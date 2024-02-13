@@ -44,3 +44,10 @@ export interface User {
     last_name: string;
     profile: Profile;
 }
+
+export interface Course {
+  id: number;
+  name: string;
+  full_code: string;
+  description: string;
+}
