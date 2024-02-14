@@ -12,7 +12,7 @@ import FuzzySearch from 'react-fuzzy';
 import CourseDetailPanel from "@/components/Course/CourseDetailPanel";
 import styled from "@emotion/styled";
 import useSWR from "swr";
-import { DegreePlan, Options } from "@/types";
+import { Course, DegreePlan, Options } from "@/types";
 import ReviewPanel from "@/components/Infobox/ReviewPanel";
 
 
@@ -130,15 +130,20 @@ const FourYearPlanPage = () => {
         setX(e.clientX);
     }
 
+    const [reqId, setReqId] = useState<undefined | number>(undefined);
     const [loading, setLoading] = useState(false);
     const handleSearch =  async (id: number) => {
-        setHighlightReqId(id);
+        // setHighlightReqId(id);
+        console.log(id);
+        setSearchClosed(false);
         setLoading(true);
-        axios.get(`/degree/courses/${id}`).then(res => {
-            let newData = [...res.data];
-            setResults(newData);
-            setLoading(false);
-        });
+        if (id != undefined) setReqId(id);
+        
+        // axios.get(`/degree/courses/${id}`).then(res => {
+        //     let newData = [...res.data];
+        //     setResults(newData);
+        //     setLoading(false);
+        // });
     }
 
     const showCourseDetail = (course: any) => {
@@ -148,7 +153,7 @@ const FourYearPlanPage = () => {
     
     return (
         <PlanPageContainer ref={ref}>
-            <ReviewPanel currentSemester={options?.SEMESTER} full_code={"CIS-1200"}/>
+            {/* <ReviewPanel currentSemester={options?.SEMESTER} full_code={"CIS-1200"}/> */}
             <div onMouseMove={resizeFrame} onMouseUp={endResize} className="d-flex">
                 <PanelContainer $width={leftWidth}>
                     <PlanPanel isLoading={isLoadingDegreeplans || isLoadingActiveDegreePlan} activeDegreeplan={activeDegreePlan} degreeplans={degreeplans} setActiveDegreeplanId={setActiveDegreeplanId}/>
@@ -157,8 +162,8 @@ const FourYearPlanPage = () => {
                 <PanelContainer $width={totalWidth - leftWidth}>
                     <ReqPanel activeDegreePlan={activeDegreePlan} highlightReqId={highlightReqId} setHighlightReqId={setHighlightReqId} setMajors={setMajors} currentMajor={currentMajor} setCurrentMajor={setCurrentMajor} setSearchClosed={setSearchClosed} setDegreeModalOpen={setDegreeModalOpen} handleSearch={handleSearch}/>
                 </PanelContainer>
-                <PanelContainer hidden={searchClosed}>
-                    <SearchPanel setClosed={handleCloseSearchPanel} courses={results} showCourseDetail={showCourseDetail} loading={loading} searchReqId={highlightReqId}/>
+                <PanelContainer hidden={searchClosed} $width={400}>
+                    <SearchPanel setClosed={handleCloseSearchPanel} reqId={reqId} showCourseDetail={showCourseDetail} loading={loading} searchReqId={highlightReqId}/>
                 </PanelContainer>
                 <PanelContainer hidden={!courseDetailOpen}>
                     <CourseDetailPanel setOpen={setCourseDetailOpen} courseDetail={courseDetail}/>

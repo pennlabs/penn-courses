@@ -1,10 +1,13 @@
-import { useState } from "react";
+import React from "react";
 import { ICourseQ } from "@/models/Types";
 import Icon from '@mdi/react';
 import { mdiClose, mdiMagnify } from "@mdi/js";
 import { PanelTopBar } from "@/pages/FourYearPlanPage";
 import Course from "../Requirements/Course";
 import Fuse from 'fuse.js'
+import useSWR from "swr";
+import ResultsList from "./ResultsList";
+import styled from "@emotion/styled";
 
 const SearchPanelBodyStyle = {
     margin: '10px',
@@ -12,41 +15,52 @@ const SearchPanelBodyStyle = {
 
 const searchPanelResultStyle = {
     marginTop: '8px',
-    paddingLeft: '15px',
-    maxHeight: '68vh',
-    overflow: 'auto'
 }
 
-const SearchPanel = ({setClosed, courses, showCourseDetail, loading, searchReqId}:any) => {
+const SearchContainer = styled.div`
+    label {
+        font-size: 0.75rem;
+    };
+`;
+
+const SearchField = styled.input`
+    min-width: 17rem;
+    background-color: #f4f4f4;
+    padding-left: 1em;
+    border-radius: 5px;
+    border-width: 0.8px;
+`;
+
+const SearchPanel = ({setClosed, reqId, showCourseDetail, searchReqId}:any) => {
+    const { data: courses, isLoading: isLoadingCourses } = useSWR(`api/degree/courses/${reqId}`, { refreshInterval: 0, fallbackData: [] }); 
+
     type ISearchResultCourse =  {course: ICourseQ}
 
-    const [queryString, setQueryString] = useState("");
-    // const [results, setResults] = useState([]);
+    const [queryString, setQueryString] = React.useState("");
+    const [results, setResults] = React.useState([]);
+
+    const [scrollPos, setScrollPos] = React.useState<number>(0);
+
     let fuse = new Fuse(courses, {
         keys: ['id', 'title', 'description']
     })
 
-    // useEffect(() => {
-    //     const deepCopy = courses.map(c => ({...c}));
-    //     setResults(deepCopy);
-    //     // updateCourses(courses);
-    // }, [courses]);
-
-    // useEffect(() => {
-    //     if (!queryString) {
-    //         setResults([...courses]);
-    //     } else {
-    //         const res = fuse.search(queryString).map(course => course.item);
-    //         setResults([...res]);
-    //     }
-    // }, [queryString])
-
-    // const updateCourses = useCallback((c) => {
-    //     setResults(c);
-    // }, []);
+    React.useEffect(() => {
+        if (!queryString) {
+            setResults([]);
+            let timer = setTimeout(() => setResults([...courses]), 0.01);
+            return () => {clearTimeout(timer);};
+        } else {
+            const res = fuse.search(queryString).map(course => course.item);
+            setResults([]);
+            let timer = setTimeout(() => setResults([...res]), 0.01);
+            // this will clear Timeout when component unmount like in willComponentUnmount
+            return () => {clearTimeout(timer);};
+        }
+    }, [queryString, courses])
 
     return (
-        <div>
+        <>
             <PanelTopBar>
               <div className='d-flex justify-content-between'>
                 <div>Search </div>
@@ -56,16 +70,31 @@ const SearchPanel = ({setClosed, courses, showCourseDetail, loading, searchReqId
               </div>
             </PanelTopBar>
             <div style={SearchPanelBodyStyle}>
-                <div>
-                    <input type="text" onChange={(e) => setQueryString(e.target.value)} />
-                </div>
-                {loading ? 
+                <SearchContainer
+                    role="button"
+                    // onClick={() => (mobileView && setTab ? setTab(0) : null)}
+                    className="control has-icons-left"
+                >
+                    <SearchField
+                        type="text"
+                        value={queryString}
+                        onChange={(e) => setQueryString(e.target.value)}
+                        autoComplete="off"
+                        placeholder="Search"
+                        // disabled={isDisabled}
+                    />
+                </SearchContainer>
+                {isLoadingCourses ? 
                     <div>loading...</div>
                 : <div style={searchPanelResultStyle}>
-                    {courses.map((course:any) => <Course course={course} showCourseDetail={showCourseDetail} searchReqId={searchReqId}/>)}
+                    {results.length ? 
+                        <ResultsList courses={results} scrollPos={scrollPos} setScrollPos={setScrollPos}/>
+                    :
+                        <div></div>
+                    }
                 </div>}
             </div>
-        </div>
+        </>
     )
 }
 

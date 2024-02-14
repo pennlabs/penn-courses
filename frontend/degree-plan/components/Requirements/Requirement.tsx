@@ -53,7 +53,7 @@ const Rule = ({ rule, setSearchClosed, handleSearch, setHighlightReqId, highligh
       <>
         {rule.q ? 
           <CourseRequirementWrapper>
-              <QObject q={rule.q} reqId={rule.id}/>
+              <QObject q={rule.q} reqId={rule.id} handleSearch={handleSearch}/>
           </CourseRequirementWrapper>
           :
           <RuleTitle onClick={() => setCollapsed(!collapsed)}>
