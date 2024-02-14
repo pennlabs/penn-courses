@@ -18,7 +18,7 @@ import ReviewPanel from "@/components/Infobox/ReviewPanel";
 
 const PlanPageContainer = styled.div`
     background-color: #F7F9FC;
-    padding: 1rem
+    padding: 1rem;
 `;
 
 export const PanelTopBar = styled.div`

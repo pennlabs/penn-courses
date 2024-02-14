@@ -64,11 +64,11 @@ def parse_coursearray(courseArray) -> Q:
                         assert len(filter["valueList"]) == 1
                         match filter["valueList"][0]:
                             case "E" | "EU":
-                                sub_q = Q(course__department__code__in=ENG_DEPTS)
+                                sub_q = Q(department__code__in=ENG_DEPTS)
                             case "A" | "AU":
-                                sub_q = Q(course__department__code__in=SAS_DEPTS)
+                                sub_q = Q(department__code__in=SAS_DEPTS)
                             case "W" | "WU":
-                                sub_q = Q(course__department__code__in=WH_DEPTS)
+                                sub_q = Q(department__code__in=WH_DEPTS)
                             case _:
                                 raise ValueError(
                                     f"Unsupported college in withArray: {filter['valueList'][0]}"
