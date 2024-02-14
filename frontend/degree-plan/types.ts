@@ -57,4 +57,5 @@ export interface Course {
   name: string;
   full_code: string;
   description: string;
+  semester: string;
 }

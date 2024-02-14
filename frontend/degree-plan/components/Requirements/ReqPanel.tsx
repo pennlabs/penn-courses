@@ -5,8 +5,6 @@ import { Degree, DegreePlan } from '@/types';
 import styled from '@emotion/styled';
 import { PanelBody, PanelContainer, PanelHeader } from '@/components/FourYearPlan/PlanPanel'
 import { useSWRCrud } from '@/hooks/swrcrud';
-import { set, update } from 'lodash';
-import { useSWRConfig } from 'swr';
 
 const requirementDropdownListStyle = {
   maxHeight: '90%',

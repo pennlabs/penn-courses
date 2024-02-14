@@ -4,12 +4,12 @@ import { ItemTypes } from "../dnd/constants";
 import { GrayIcon } from '../bulma_derived_components';
 import styled from '@emotion/styled';
 
-export const BaseCourseContainer = styled.div<{ $isDragging: boolean }>`
+export const BaseCourseContainer = styled.span<{ $isDragging: boolean }>`
   display: flex;
   justify-content: center;
   align-items: center;
   min-width: 70px;
-  height: 35px;
+  min-height: 35px;
   background: #F2F3F4;
   border-radius: 10px;
   padding: .5rem;

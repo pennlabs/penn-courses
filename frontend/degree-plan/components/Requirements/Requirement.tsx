@@ -53,15 +53,7 @@ const Rule = ({ rule, setSearchClosed, handleSearch, setHighlightReqId, highligh
       <>
         {rule.q ? 
           <CourseRequirementWrapper>
-              <QObject qObject={rule.q} reqId={rule.id}/>
-              <div className='d-flex'>
-                <div onClick={handleShowSatisfyingCourses}>
-                  <MDIcon path={mdiEye} size={1} color={highlightReqId === rule.id ? 'yellow': '#575757'}/>
-                </div>
-                <div onClick={() => {setSearchClosed(false); handleSearch(rule.id);}}>
-                  <MDIcon path={mdiMagnify} size={1} color='#575757'/>
-                </div>
-              </div>
+              <QObject q={rule.q} reqId={rule.id}/>
           </CourseRequirementWrapper>
           :
           <RuleTitle onClick={() => setCollapsed(!collapsed)}>
