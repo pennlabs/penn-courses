@@ -2,11 +2,12 @@
 import Semester from "./Semester"
 import styled from "@emotion/styled";
 import { Icon } from "../bulma_derived_components";
-import { DegreePlan, Fulfillment } from "@/types";
+import { Course, DegreePlan, Fulfillment } from "@/types";
 import useSWR from "swr";
 import { useEffect, useState } from "react";
 import assert from "assert";
 import { mdiConsoleLine } from "@mdi/js";
+import useStickyState from "@/hooks/stickystate";
 
 const getNextSemester = (semester: string) => {
     console.log("GET NEXT SEMESTER")
@@ -53,16 +54,17 @@ const EditSemester = styled(AddSemester)`
 
 // TODO: get a consistent color palette across PCx
 interface ModifySemestersProps {
-    setEmptySemesters: (emptySemesters: string[]) => void;
-    emptySemesters: string[];
+    addSemester: (semester: Course["semester"]) => void;
     className: string;
+    semesters: { [semester: string]: Fulfillment[] };
 }
 
-const ModifySemesters = ({ setEmptySemesters, emptySemesters, className }: ModifySemestersProps) => {
+const ModifySemesters = ({ addSemester, semesters, className }: ModifySemestersProps) => {
+    const semesterKeys = Object.keys(semesters).sort();
     return (
         // TODO: add a modal for this
         <AddSemesterContainer className={className}>
-            <AddSemester role="button" onClick={() => setEmptySemesters([...emptySemesters, getNextSemester(emptySemesters[emptySemesters.length-1] || "2023C")])}>
+            <AddSemester role="button" onClick={() => addSemester(getNextSemester(semesterKeys[semesterKeys.length - 1] || "2023C"))}>
                 <Icon>
                     <i className="fas fa-plus"></i>
                 </Icon>
@@ -89,38 +91,30 @@ interface SemestersProps {
 }
 
 const Semesters = ({ activeDegreeplan, showStats, className }: SemestersProps) => {
-    const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null);
-    
-    // Empty semesters is expected to be kept in sorted order
-    const [emptySemesters, setEmptySemesters] = useState<string[]>(["2021C", "2021C", "2022A", "2022C", "2023A", "2023C", "2024A", "2024C", "2025A"]);
-    
-    // semesters is state derived from fulfillments (we don't set it directly)
-    const [semesters, setSemesters] = useState<{ [semester: string]: Fulfillment[] }>({});
-    useMemo(() => {
+    const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null);    
+    // semesters is state mostly derived from fulfillments
+    const [semesters, setSemesters] = useStickyState<{[semester: string]: Fulfillment[]}>({}, `PDP-${activeDegreeplan?.id}-semesters`);
+    const addSemester = (semester: string) => { if (!semesters[semester]) setSemesters({...semesters, [semester]: []}) };
+    useEffect(() => {
         if (!fulfillments) return; // TODO: need more logic in this case
-        assert(activeDegreeplan)
-        const _semesters = fulfillments.reduce((semesters, fulfillment) => {
-            if (!semesters[fulfillment.semester]) {
-                semesters[fulfillment.semester] = [];
+        const _semesters = {} as { [semester: string]: Fulfillment[] };
+        Object.keys(semesters).forEach(semester => { _semesters[semester] = [] });
+        fulfillments.forEach(fulfillment => {
+            if (!fulfillment.semester) return;
+            if (!_semesters[fulfillment.semester]) {
+                _semesters[fulfillment.semester] = [];
             }
-            semesters[fulfillment.semester].push(fulfillment);
-            return semesters;
-        }, {} as { [semester: string]: Fulfillment[] });
-        const _emptySemesters = emptySemesters.filter(semester => !_semesters[semester]?.length);
-        Object.entries(semesters).forEach(([semester, values]) => { if (!values.length) _emptySemesters.push(semester) });
-        _emptySemesters.forEach(semester => _semesters[semester] = []);
-        _emptySemesters.sort()
-        console.log("EMPTY SEMESTERS", _emptySemesters)
-        setSemesters(_semesters);
-        setEmptySemesters(_emptySemesters);
-    }, [fulfillments, semesters, emptySemesters]);
+            _semesters[fulfillment.semester].push(fulfillment);
+        });
+        setSemesters(_semesters)
+    }, [fulfillments, semesters]);
 
     return (
         <SemestersContainer className={className}>            
             {Object.keys(semesters).sort().map((semester: any, index: number) =>
                 <FlexSemester activeDegreeplanId={(activeDegreeplan as DegreePlan).id} showStats={showStats} semester={semester} fulfillments={semesters[semester]} key={semester}/>
                 )}
-            <ModifySemesters emptySemesters={emptySemesters} setEmptySemesters={setEmptySemesters}/>
+            <ModifySemesters addSemester={addSemester} semesters={semesters} />
         </SemestersContainer>
     )
 }

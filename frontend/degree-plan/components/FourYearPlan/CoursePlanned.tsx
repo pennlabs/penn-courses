@@ -32,21 +32,21 @@ const RemoveCourseButton = styled.div<{ isDragging: boolean }>`
 `
 
 interface CoursePlannedProps {
-  course: Course["full_code"],
+  full_code: Course["full_code"],
   removeCourse: (course: Course["full_code"]) => void,
   semester: Course["semester"]
 }
 
-const CoursePlanned = ({course, semester, removeCourse} : CoursePlannedProps) => {
+const CoursePlanned = ({full_code, semester, removeCourse} : CoursePlannedProps) => {
   const [mouseOver, setMouseOver] = useState(false);
 
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ItemTypes.COURSE,
-    item: {course: course, semester },
+    item: {full_code: full_code, semester },
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging()
     })
-  }), [course, semester])
+  }), [full_code, semester])
 
   return (   
     <PlannedCourseContainer
@@ -56,9 +56,9 @@ const CoursePlanned = ({course, semester, removeCourse} : CoursePlannedProps) =>
     onMouseLeave={() => setMouseOver(false)}
     >
       <div>
-        {course}
+        {full_code}
       </div>
-      <RemoveCourseButton hidden={!mouseOver} onClick={() => removeCourse(course)}>
+      <RemoveCourseButton hidden={!mouseOver} onClick={() => removeCourse(full_code)}>
         <GrayIcon><i className="fas fa-times"></i></GrayIcon>
       </RemoveCourseButton>
     </PlannedCourseContainer>

@@ -1,5 +1,3 @@
-import CoursePlanned, { BaseCourseContainer } from "../FourYearPlan/CoursePlanned";
-import CourseComp from "./Course";
 import { useDrag } from "react-dnd";
 import { ItemTypes } from "../dnd/constants";
 import { useEffect, useState } from "react";
@@ -8,6 +6,7 @@ import styled from "@emotion/styled";
 import nearley from "nearley";
 import grammar from "@/util/q_object_grammar" 
 import { Icon } from "../bulma_derived_components";
+import { BaseCourseContainer } from "../FourYearPlan/CoursePlanned";
 import assert from "assert";
 
 type ConditionKey = "full_code" | "semester" | "attributes__code__in" | "department__code" | "full_code__startswith" | "code__gte" | "code__lte" | "department__code__in" 
@@ -31,7 +30,7 @@ interface CourseOptionProps {
 const CourseOption = ({ course, chosenOptions, setChosenOptions, semester }: CourseOptionProps) => {
     const [{ isDragging }, drag] = useDrag(() => ({
         type: ItemTypes.COURSE,
-        item: {course: {id: course}, semester:-1},
+        item: {full_code: course, semester:-1},
         end: (item, monitor) => {
             if (monitor.didDrop()) setChosenOptions(course);
         },

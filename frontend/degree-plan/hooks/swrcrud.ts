@@ -73,11 +73,21 @@ const normalizeFinalSlash = (resource: string) => {
 }
 
 
-export const useSWRCrud = <T extends DBObject,>(endpoint: string) => {
+export const useSWRCrud = <T extends DBObject,>(
+    endpoint: string, 
+    config = {}
+) => {
+    const { createFetcher, updateFetcher, removeFetcher } = {
+        createFetcher: postFetcher, 
+        updateFetcher: patchFetcher, 
+        removeFetcher: deleteFetcher, 
+        ...config
+    }
+
     const { mutate } = useSWRConfig();
 
     const create = (newItem: any) => {
-        const new_ = postFetcher(endpoint, newItem);
+        const new_ = createFetcher(endpoint, newItem);
         mutate(endpoint, new_, {
             optimisticData: (list?: Array<T>) => list ? [...list, newItem] : [newItem],
             populateCache: (new_: T, list?: Array<T>) => list ? [...list, new_] : [new_],
@@ -90,7 +100,7 @@ export const useSWRCrud = <T extends DBObject,>(endpoint: string) => {
     const update = (updatedData: Partial<T>, id: string | Number | undefined) => {
         if (!id) return;
         const key = normalizeFinalSlash(endpoint) + id;
-        const updated = patchFetcher(key, updatedData);
+        const updated = updateFetcher(key, updatedData);
         mutate(key, updated, {
             optimisticData: (data?: T) => ({ id: -1, ...data, ...updatedData} as T), // TODO: this is hacky
             revalidate: false
@@ -127,7 +137,7 @@ export const useSWRCrud = <T extends DBObject,>(endpoint: string) => {
     const remove = (id: Number | string | undefined) => {
         if (!id) return;
         const key = normalizeFinalSlash(endpoint) + id;
-        const removed = deleteFetcher(key);
+        const removed = removeFetcher(key);
         mutate(endpoint, removed, {
             optimisticData: (list?: Array<T>) => list ? list.filter((item: T) => String(item.id) !== id) : [],
             populateCache: (_, list?: Array<T>) => list ? list.filter((item: any) => item.id !== id) : [],

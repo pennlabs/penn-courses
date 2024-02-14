@@ -5,7 +5,7 @@ import CoursesPlanned from "./CoursesPlanned";
 import Stats from "./Stats";
 import styled from '@emotion/styled';
 import { Course, DegreePlan, Fulfillment } from "@/types";
-import { useSWRCrud } from "@/hooks/swrcrud";
+import { postFetcher, useSWRCrud } from "@/hooks/swrcrud";
 import { update } from "lodash";
 import { NodeNextRequest } from "next/dist/server/base-http/node";
 
@@ -63,19 +63,18 @@ interface SemesterProps {
 
 const Semester = ({ showStats, semester, fulfillments, activeDegreeplanId, className} : SemesterProps) => {
     const ref = useRef(null);
-    const [width, setWidth] = useState(200);
 
     // the fulfillments api uses the update method for creates (it creates if it doesn't exist, and updates if it does)
-    const { update } = useSWRCrud<Fulfillment>(`/api/degree/degreeplan/${activeDegreeplanId}/fulfillments`);
-
-    useEffect(() => {
-        console.log("width", ref.current.offsetWidth);
-        setWidth(ref.current ? ref.current.offsetWidth : 200)
-    }, [ref.current]);
+    const { update } = useSWRCrud<Fulfillment>(`/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`, { 
+        updateFetcher: postFetcher
+     });
 
     const [{ isOver }, drop] = useDrop(() => ({
         accept: ItemTypes.COURSE,
-        drop: (course: Course) => update({ full_code: course.full_code, semester }, course.full_code),
+        drop: (course: Course) => {
+            console.log("DROPPED", course.full_code, semester);
+            update({ full_code: course.full_code, semester }, course.full_code);
+        },
         collect: monitor => ({
           isOver: !!monitor.isOver()
         }),
@@ -87,7 +86,7 @@ const Semester = ({ showStats, semester, fulfillments, activeDegreeplanId, class
                 {translateSemester(semester)}
             </SemesterLabel>
             <SemesterContent ref={ref}>
-                <FlexCoursesPlanned semester={semester} dropRef={drop} courses={fulfillments.map(fulfillment => fulfillment.full_code)} removeCourse={(course: Course["full_code"]) => update({ semester: null }, course)}/>
+                <FlexCoursesPlanned semester={semester} dropRef={drop} full_codes={fulfillments.map(fulfillment => fulfillment.full_code)} removeCourse={(course: Course["full_code"]) => update({ semester: null }, course)}/>
                 {showStats && <FlexStats courses={fulfillments}/>}
             </SemesterContent>
             <CreditsLabel>

@@ -4,7 +4,7 @@ from django.db.models import Q
 from rest_framework import serializers
 
 from courses.models import Course
-from courses.serializers import CourseListSerializer
+from courses.serializers import CourseListSerializer, CourseDetailSerializer
 from degree.models import Degree, DegreePlan, DoubleCountRestriction, Fulfillment, Rule
 
 
@@ -98,7 +98,7 @@ class FulfillmentSerializer(serializers.ModelSerializer):
 
         return data
 
-    def update(self, validated_data):
+    def create(self, validated_data):
         rules = validated_data.pop("rules", None)
         try:
             fulfillment = Fulfillment.objects.get(

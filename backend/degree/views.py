@@ -70,7 +70,7 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
 
     permission_classes = [IsAuthenticated]
     serializer_class = FulfillmentSerializer
-    http_method_names = ["get", "patch", "put", "delete"]
+    http_method_names = ["get", "post", "head", "delete"]
     queryset = Fulfillment.objects.all()
     lookup_field = "full_code"
 

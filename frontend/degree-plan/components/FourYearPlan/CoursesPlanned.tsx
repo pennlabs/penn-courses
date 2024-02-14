@@ -13,18 +13,18 @@ const PlannedCoursesContainer = styled.div`
 `;
 
 interface CoursesPlannedProps {
-    courses: Course["full_code"][];
+    full_codes: Course["full_code"][];
     removeCourse: (course: Course["full_code"]) => void;
     semester: Course["full_code"],
     className: string;
     dropRef: Ref<React.ReactNode>;
 }
 
-const CoursesPlanned = ({courses, removeCourse, className, semester, dropRef}: CoursesPlannedProps) => {    
+const CoursesPlanned = ({full_codes, removeCourse, className, semester, dropRef}: CoursesPlannedProps) => {    
     return (
         <PlannedCoursesContainer className={className}>
-            {courses.map((course: any) => 
-                <CoursePlanned key={course} semester={semester} course={course} removeCourse={removeCourse}/>
+            {full_codes.map((full_code: Course["full_code"]) => 
+                <CoursePlanned key={full_code} semester={semester} full_code={full_code} removeCourse={removeCourse}/>
             )}
             <PlannedCourseContainer ref={dropRef}/>
         </PlannedCoursesContainer>
