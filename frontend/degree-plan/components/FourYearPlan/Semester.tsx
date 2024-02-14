@@ -4,6 +4,16 @@ import { ItemTypes } from "../dnd/constants";
 import CoursesPlanned from "./CoursesPlanned";
 import Stats from "./Stats";
 import styled from '@emotion/styled';
+import { Course, DegreePlan, Fulfillment } from "@/types";
+import { useSWRCrud } from "@/hooks/swrcrud";
+import { update } from "lodash";
+import { NodeNextRequest } from "next/dist/server/base-http/node";
+
+const translateSemester = (semester: Course["semester"]) => {
+    const year = semester.slice(0, 4);
+    const term = semester.slice(4);
+    return `${term === "A" ? "Spring" : term === "B" ? "Summer" : "Fall"} ${year}`
+}
 
 export const SemesterCard = styled.div`
     background: #FFFFFF;
@@ -43,9 +53,20 @@ const CreditsLabel = styled.div`
     margin-right: 0;
 `;
 
-const Semester = ({semester, addCourse, index, highlightReqId, removeCourseFromSem, showStats, showCourseDetail, className} : any) => {
+interface SemesterProps {
+    showStats: boolean;
+    semester: string;
+    fulfillments: Fulfillment[];
+    activeDegreeplanId: DegreePlan["id"];
+    className: string;
+}
+
+const Semester = ({ showStats, semester, fulfillments, activeDegreeplanId, className} : SemesterProps) => {
     const ref = useRef(null);
     const [width, setWidth] = useState(200);
+
+    // the fulfillments api uses the update method for creates (it creates if it doesn't exist, and updates if it does)
+    const { update } = useSWRCrud<Fulfillment>(`/api/degree/degreeplan/${activeDegreeplanId}/fulfillments`);
 
     useEffect(() => {
         console.log("width", ref.current.offsetWidth);
@@ -54,24 +75,20 @@ const Semester = ({semester, addCourse, index, highlightReqId, removeCourseFromS
 
     const [{ isOver }, drop] = useDrop(() => ({
         accept: ItemTypes.COURSE,
-        drop: (item: any) => {addCourse(index, item.course, item.semester)},
+        drop: (course: Course) => update({ full_code: course.full_code, semester }, course.full_code),
         collect: monitor => ({
           isOver: !!monitor.isOver()
         }),
-      }), [])
-
-    const removeCourse = (course: any) => {
-        removeCourseFromSem(index, course);
-    }
+      }), []);
     
     return (
         <SemesterCard $showStats={showStats} className={className}>
             <SemesterLabel>
-                {semester.name}
+                {translateSemester(semester)}
             </SemesterLabel>
             <SemesterContent ref={ref}>
-                <FlexCoursesPlanned dropRef={drop} courses={semester.courses} highlightReqId={highlightReqId} semesterIndex={index} removeCourse={removeCourse} showCourseDetail={showCourseDetail}/>
-                {showStats && <FlexStats courses={semester.courses}/>}
+                <FlexCoursesPlanned semester={semester} dropRef={drop} courses={fulfillments.map(fulfillment => fulfillment.full_code)} removeCourse={(course: Course["full_code"]) => update({ semester: null }, course)}/>
+                {showStats && <FlexStats courses={fulfillments}/>}
             </SemesterContent>
             <CreditsLabel>
                 6.5 CUs

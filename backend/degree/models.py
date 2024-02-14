@@ -349,11 +349,13 @@ class Fulfillment(models.Model):
         ),
     )
 
+    class Meta:
+        unique_together = ("degree_plan", "full_code")
+
     def save(self, *args, **kwargs):
         """
         This overriden save method does two things to update soft-state:
         1. Recomputes the historical course associated with this fulfillment
-        2. Updates rule statuses (i.e., whether they are satisfied)
 
         This save method should be used wherever a fulfillment is created.
         """

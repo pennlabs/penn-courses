@@ -70,7 +70,9 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
 
     permission_classes = [IsAuthenticated]
     serializer_class = FulfillmentSerializer
+    http_method_names = ["get", "patch", "put", "delete"]
     queryset = Fulfillment.objects.all()
+    lookup_field = "full_code"
 
     def get_degree_plan_id(self):
         degreeplan_pk = self.kwargs["degreeplan_pk"]

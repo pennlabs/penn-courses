@@ -78,9 +78,9 @@ const ReqPanel = ({activeDegreePlan, isLoading, highlightReqId, setSearchClosed,
                 if (degree.id === activeDegreeId) setActiveDegreeId(undefined);
               },
               create: () => updateDegreeplan(
-                {degree_ids: [...(activeDegreePlan?.degree_ids || []), 1867]}, // TODO: this is a placeholder, we need to add a new degree
+                {degree_ids: [...(activeDegreePlan?.degree_ids || []), 520]}, // TODO: this is a placeholder, we need to add a new degree
                 activeDegreePlan?.id
-              )?.then(() => setActiveDegreeId(1867)),
+              )?.then(() => setActiveDegreeId(520)),
             }}
             />
         </PanelHeader>

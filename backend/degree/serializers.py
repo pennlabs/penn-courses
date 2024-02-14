@@ -98,6 +98,26 @@ class FulfillmentSerializer(serializers.ModelSerializer):
 
         return data
 
+    def update(self, validated_data):
+        rules = validated_data.pop("rules", None)
+        try:
+            fulfillment = Fulfillment.objects.get(
+                degree_plan=validated_data.get("degree_plan"),
+                full_code=validated_data.get("full_code"),
+            )
+            if fulfillment.semester != validated_data.get("semester"):
+                raise serializers.ValidationError({"full_code": "This field cannot be updated after creation"})
+            if fulfillment.degree_plan != validated_data.get("degree_plan"):
+                raise serializers.ValidationError({"degree_plan": "This field cannot be updated after creation"})
+            fulfillment.semester = validated_data.get("semester")
+        except Fulfillment.DoesNotExist:
+            fulfillment = Fulfillment(**validated_data)
+        fulfillment.save()
+
+        if rules is not None:
+            fulfillment.rules.set(rules)
+        return fulfillment
+
 
 class DegreePlanListSerializer(serializers.ModelSerializer):
     # degrees = DegreeListSerializer(read_only=True, many=True)

@@ -184,7 +184,6 @@ const CourseOptionsSeparator = styled.div`
 `;
 
 const QObject = ({ q }: { q: string }) => {
-    console.log(q);
     const qObjParser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
     let parsed = qObjParser.feed(q).results[0] as ParsedQObj;
     const [chosenOptions, setChosenOptions] = useState<Course["full_code"][]>([]);

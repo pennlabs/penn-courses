@@ -52,10 +52,26 @@ export interface Options {
   SEND_FROM_WEBHOOK: boolean;
 }
 
+// TODO: differentiate between course and course detail
 export interface Course {
   id: number;
   name: string;
   full_code: string;
   description: string;
   semester: string;
+}
+
+export interface Fulfillment extends DBObject {
+  id: number;
+  degree_plan: number; // id
+  full_code: string;
+  historical_course: Course; // id
+  semester: string | null;
+  rules: number[]; // ids
+}
+
+// Internal representation of a plan (this is derived from fulfillments)
+export interface Semester {
+  semester: string;
+  courses: string[];
 }

@@ -1,10 +1,9 @@
 import update from 'immutability-helper'
-import _, { create, get } from "lodash";
 import { GrayIcon } from '../bulma_derived_components';
 import SelectListDropdown from "./SelectListDropdown";
 import Semesters from "./Semesters";
 import styled from "@emotion/styled";
-import type { Degree, DegreePlan } from "@/types";
+import type { DegreePlan } from "@/types";
 import { useState } from "react";
 import ModalContainer from "@/components/common/ModalContainer";
 import { useEffect, useCallback } from "react";
@@ -149,57 +148,11 @@ interface PlanPanelProps {
 }
 
 const PlanPanel = ({ setActiveDegreeplanId, activeDegreeplan, degreeplans, isLoading } : PlanPanelProps) => {
-    const { create: createDegreeplan, update: updateDegreeplan, remove: deleteDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplan/');
+    const { create: createDegreeplan, update: updateDegreeplan, remove: deleteDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans');
 
     const [modalKey, setModalKey] = useState<ModalKey>(null);
-    const [modalObject, setModalObject] = useState<DegreePlan | null>(null); // object being updated using the modal
-    const defaultSemester1 = {id: 1, name: 'Semester 1', courses:[], cu: 0};
-    const defaultSemester2 = {id: 2, name: 'Semester 2', courses:[], cu: 0};
-    const defaultSemester3 = {id: 3, name: 'Semester 3', courses:[], cu: 0};
-    const defaultSemester4 = {id: 4, name: 'Semester 4', courses:[], cu: 0};
-    const defaultSemester5 = {id: 5, name: 'Semester 5', courses:[], cu: 0};
-    const defaultSemester6 = {id: 6, name: 'Semester 6', courses:[], cu: 0};
-    const defaultSemester7 = {id: 7, name: 'Semester 7', courses:[], cu: 0};
-
-    const [semesters, setSemesters] = useState([defaultSemester1, defaultSemester2, defaultSemester3, defaultSemester4, defaultSemester5, defaultSemester6, defaultSemester7]);
+    const [modalObject, setModalObject] = useState<DegreePlan | null>(null); // stores the which degreeplan is being updated using the modal
     const [showStats, setShowStats] = useState(true);
-
-    useEffect(() => {
-        setSemesters(semesters);
-    }, [semesters])
-
-    const addCourse = (toIndex: number, course: any, fromIndex:number) => {
-        if (fromIndex === toIndex) return;
-        // when from index is -1, the course is dragged from outside of the planning panel
-        if (fromIndex !== -1) removeCourseFromSem(fromIndex, course); // remove from originally planned semester
-        addCourseToSem(toIndex, course); // add to newly planned semester
-    }
-
-    const addCourseToSem = useCallback((toIndex: number, course: any) => {
-        setSemesters((sems) =>
-            update(sems, {
-                [toIndex]: {
-                    courses: {
-                        /** filter the array to avoid adding the same course twice */
-                        $apply: (courses: any) => courses.filter((c: any) => c.id != course.id),
-                        $push: [course]
-                    }
-                }
-            })
-        )
-    }, []);
-
-    const removeCourseFromSem = (index: number, course: any) => {
-        setSemesters((sems) =>
-            update(sems, {
-                [index]: {
-                    courses: {
-                        $apply: (courses: any) => courses.filter((c: any) => c.id != course.id),
-                    }
-                }
-            })
-        )
-    };
 
     return (
         <>
@@ -249,7 +202,7 @@ const PlanPanel = ({ setActiveDegreeplanId, activeDegreeplan, degreeplans, isLoa
                 </PanelHeader>
                 {/** map to semesters */}
                 <PanelBody>
-                    <Semesters semesters={semesters} setSemesters={setSemesters} showStats={showStats} addCourse={addCourse}/>
+                    <Semesters activeDegreeplan={activeDegreeplan} showStats={showStats} />
                 </PanelBody>
             </PanelContainer>
         </>
