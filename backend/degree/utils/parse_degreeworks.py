@@ -13,10 +13,11 @@ def parse_coursearray(courseArray) -> Q:
     q = Q()
     for course in courseArray:
         course_q = Q()
-        match course["discipline"], course["number"], course.get("numberEnd"):
+        match (course["discipline"], course["number"], course.get("numberEnd")):
             # an @ is a placeholder meaning any
             case ("@", "@", end) | ("PSEUDO@", "@", end):
                 assert end is None
+                logging.info("ignoring @ course")
                 pass
             case discipline, "@", end:
                 assert end is None
