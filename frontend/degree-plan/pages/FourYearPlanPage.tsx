@@ -44,7 +44,7 @@ const Divider = styled.div`
     width: 10px;
     height: 20vh;
     border-radius: 10px;
-    background-color: #C5D2F6;
+    background-color: var(--primary-color-dark);
     margin-left: 3px;
     margin-right: 3px;
     margin-top: 30vh;
@@ -76,6 +76,7 @@ const FourYearPlanPage = () => {
     const [courseDetailOpen, setCourseDetailOpen] = useState(false);
     const [courseDetail, setCourseDetail] = useState({});
 
+    const [reqQuery, setReqQuery] = useState("");
 
     const [highlightReqId, setHighlightReqId] = useState(-1);
 
@@ -132,18 +133,13 @@ const FourYearPlanPage = () => {
 
     const [reqId, setReqId] = useState<undefined | number>(undefined);
     const [loading, setLoading] = useState(false);
-    const handleSearch =  async (id: number) => {
+    const handleSearch =  async (id: number, query: string) => {
         // setHighlightReqId(id);
-        console.log(id);
         setSearchClosed(false);
+        console.log(query);
         setLoading(true);
+        setReqQuery(query);
         if (id != undefined) setReqId(id);
-        
-        // axios.get(`/degree/courses/${id}`).then(res => {
-        //     let newData = [...res.data];
-        //     setResults(newData);
-        //     setLoading(false);
-        // });
     }
 
     const showCourseDetail = (course: any) => {
@@ -163,7 +159,7 @@ const FourYearPlanPage = () => {
                     <ReqPanel activeDegreePlan={activeDegreePlan} highlightReqId={highlightReqId} setHighlightReqId={setHighlightReqId} setMajors={setMajors} currentMajor={currentMajor} setCurrentMajor={setCurrentMajor} setSearchClosed={setSearchClosed} setDegreeModalOpen={setDegreeModalOpen} handleSearch={handleSearch}/>
                 </PanelContainer>
                 <PanelContainer hidden={searchClosed} $width={400}>
-                    <SearchPanel setClosed={handleCloseSearchPanel} reqId={reqId} showCourseDetail={showCourseDetail} loading={loading} searchReqId={highlightReqId}/>
+                    <SearchPanel setClosed={handleCloseSearchPanel} reqQuery={reqQuery} reqId={reqId} showCourseDetail={showCourseDetail} loading={loading} searchReqId={highlightReqId}/>
                 </PanelContainer>
                 <PanelContainer hidden={!courseDetailOpen}>
                     <CourseDetailPanel setOpen={setCourseDetailOpen} courseDetail={courseDetail}/>

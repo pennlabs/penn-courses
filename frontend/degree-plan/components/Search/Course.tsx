@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 import styled from "styled-components";
+import { useDrag } from "react-dnd";
+import { ItemTypes } from "../dnd/constants";
 
 import Badge from "./Badge";
 // import { Course as CourseType } from "../../types";
@@ -62,13 +64,17 @@ const CourseTitle = styled.span`
     color: #888888;
 `;
 
-const CourseQualityContainer = styled.div<{ $isRecCourse: boolean }>`
-    margin-right: 2px;
-    width: ${({ $isRecCourse: isRecCourse }) => (isRecCourse ? "20.75%" : "20%")};
+const CourseQualityContainer = styled.div`
+    margin-right: 1.5px;
+    width: 20%;
+    padding-left: 7px;
+    padding-top: 5px;
 `;
 
-const CourseDifficultyContainer = styled.div<{ $isRecCourse: boolean }>`
-    width: ${({ $isRecCourse: isRecCourse }) => (isRecCourse ? "20.75%" : "20%")};
+const CourseDifficultyContainer = styled.div`
+    width: 20%;
+    padding-left: 7px;
+    padding-top: 5px;
 `;
 
 const InfoPopup = styled.div<{ $show: boolean }>`
@@ -106,8 +112,15 @@ export default function Course({
     onClickDelete,
     isStar,
 }: CourseProps) {
-    const existIsRecCourse = isRecCourse ?? false;
-    const [showInfo, setShowInfo] = useState(false);
+    /** React dnd */
+    const [{ isDragging, color }, drag, dragPreview] = useDrag(() => ({
+        type: ItemTypes.COURSE,
+        item: {course: {...course, satisfyIds:[]}, semester:-1},
+        collect: (monitor) => ({
+            isDragging: !!monitor.isDragging(),
+            color: monitor.isDragging() ? 'none' : 'none'
+        })
+    }))
 
     return (
         // eslint-disable-next-line
@@ -119,16 +132,16 @@ export default function Course({
                 >
                     <CourseIdentityContainer>
                         <CourseIDContainer>
-                            <CourseID>{course.id.replace(/-/g, " ")}</CourseID>
+                                <CourseID ref={drag} style={{color}}>{course.id.replace(/-/g, " ")}</CourseID>
                         </CourseIDContainer>
 
                         <CourseTitle>{course.title}</CourseTitle>
                     </CourseIdentityContainer>
                     <CourseQualityContainer>
-                        <Badge value={course.course_quality} />
+                        <Badge value={3.3} /> {/*course.course_quality*/}
                     </CourseQualityContainer>
                     <CourseDifficultyContainer>
-                        <Badge value={course.difficulty} />
+                        <Badge value={2.1} /> {/*course.difficulty*/}
                     </CourseDifficultyContainer>
                 </CourseInfoContainer>
             </CourseContainer>

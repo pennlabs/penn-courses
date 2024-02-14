@@ -21,17 +21,21 @@ const SearchContainer = styled.div`
     label {
         font-size: 0.75rem;
     };
+    padding-left: 0.6em;
+    padding-right: 0.5em;
 `;
 
 const SearchField = styled.input`
-    min-width: 17rem;
-    background-color: #f4f4f4;
-    padding-left: 1em;
+    width: 100%;
+    min-width: 10rem;
+    background-color: var(--background-grey);
+    padding-left: 0.5em;
     border-radius: 5px;
     border-width: 0.8px;
+    outline: transparent !important;
 `;
 
-const SearchPanel = ({setClosed, reqId, showCourseDetail, searchReqId}:any) => {
+const SearchPanel = ({setClosed, reqId, reqQuery, showCourseDetail, searchReqId}:any) => {
     const { data: courses, isLoading: isLoadingCourses } = useSWR(`api/degree/courses/${reqId}`, { refreshInterval: 0, fallbackData: [] }); 
 
     type ISearchResultCourse =  {course: ICourseQ}
@@ -80,7 +84,7 @@ const SearchPanel = ({setClosed, reqId, showCourseDetail, searchReqId}:any) => {
                         value={queryString}
                         onChange={(e) => setQueryString(e.target.value)}
                         autoComplete="off"
-                        placeholder="Search"
+                        placeholder={reqQuery}
                         // disabled={isDisabled}
                     />
                 </SearchContainer>

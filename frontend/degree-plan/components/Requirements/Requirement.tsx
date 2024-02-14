@@ -13,7 +13,7 @@ const RuleTitle = styled.div`
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    background-color: #F5F5F5;
+    background-color: var(--primary-color-light);
     color: #575757;
     padding: 0.25rem .5rem;
     margin: 0.5rem 0;
