@@ -2,19 +2,19 @@ import React, {useState, useEffect, useRef} from "react";
 import ReqPanel from "../components/Requirements/ReqPanel";
 import PlanPanel from "../components/FourYearPlan/PlanPanel";
 import SearchPanel from "../components/Search/SearchPanel";
-import useWindowDimensions from "@/hooks/window";
 // import Plan from "../components/example/Plan";
-import Modal from "pcx-shared-components/src/common/modal";
-import Icon from '@mdi/react';
-import { mdiPlus } from '@mdi/js';
 import axios from "../services/HttpServices"
-import FuzzySearch from 'react-fuzzy';
 import CourseDetailPanel from "@/components/Course/CourseDetailPanel";
 import styled from "@emotion/styled";
 import useSWR from "swr";
-import { DegreePlan, Options } from "@/types";
+import { Course, DegreePlan, Options } from "@/types";
 import ReviewPanel from "@/components/Infobox/ReviewPanel";
+import { ReviewPanelContext } from '@/components/Infobox/ReviewPanel';
 
+const Row = styled.div`
+    display: flex;
+    flex-direction: row;
+`;
 
 const PlanPageContainer = styled.div`
     background-color: #F7F9FC;
@@ -52,15 +52,14 @@ const Divider = styled.div`
 `;
 
 const FourYearPlanPage = () => {
+    // resizeable panels
     const [leftWidth, setLeftWidth] = useState(800);
-    const [searchClosed, setSearchClosed] = useState(true);
     const [drag, setDrag] = useState(false);
     const [x, setX] = useState(0);
 
     const [degreeModalOpen, setDegreeModalOpen] = React.useState(false);
-    
-    const { data: options } = useSWR<Options>('/api/options');
 
+    // active degree plan
     const [activeDegreeplanId, setActiveDegreeplanId] = useState<null | DegreePlan["id"]>(null);
     const { data: degreeplans, isLoading: isLoadingDegreeplans } = useSWR<DegreePlan[]>('/api/degree/degreeplans');
     const { data: activeDegreePlan, isLoading: isLoadingActiveDegreePlan } = useSWR(activeDegreeplanId ? `/api/degree/degreeplans/${activeDegreeplanId}` : null);
@@ -72,6 +71,14 @@ const FourYearPlanPage = () => {
             setActiveDegreeplanId(mostRecentUpdated.id);
         }
     }, [degreeplans, activeDegreeplanId]);
+
+    // review panel
+    const { data: options } = useSWR<Options>('/api/options');
+    const [reviewPanelCoords, setReviewPanelCoords] = useState<{x: number, y: number}>({ x: 0, y: 0 });
+    const [reviewPanelFullCode, setReviewPanelFullCode] = useState<Course["full_code"]|null>("CIS-120");
+    const [reviewPanelIsPermanent, setReviewPanelIsPermanent] = useState(false);
+    
+    const [searchClosed, setSearchClosed] = useState(true);
 
     const [results, setResults] = useState([]);
     const [courseDetailOpen, setCourseDetailOpen] = useState(false);
@@ -149,22 +156,40 @@ const FourYearPlanPage = () => {
     
     return (
         <PlanPageContainer ref={ref}>
-            <ReviewPanel currentSemester={options?.SEMESTER} full_code={"CIS-1200"}/>
-            <div onMouseMove={resizeFrame} onMouseUp={endResize} className="d-flex">
-                <PanelContainer $width={leftWidth}>
-                    <PlanPanel isLoading={isLoadingDegreeplans || isLoadingActiveDegreePlan} activeDegreeplan={activeDegreePlan} degreeplans={degreeplans} setActiveDegreeplanId={setActiveDegreeplanId}/>
-                </PanelContainer>
-                <Divider onMouseDown={startResize}/>
-                <PanelContainer $width={totalWidth - leftWidth}>
-                    <ReqPanel activeDegreePlan={activeDegreePlan} highlightReqId={highlightReqId} setHighlightReqId={setHighlightReqId} setMajors={setMajors} currentMajor={currentMajor} setCurrentMajor={setCurrentMajor} setSearchClosed={setSearchClosed} setDegreeModalOpen={setDegreeModalOpen} handleSearch={handleSearch}/>
-                </PanelContainer>
-                <PanelContainer hidden={searchClosed}>
-                    <SearchPanel setClosed={handleCloseSearchPanel} courses={results} showCourseDetail={showCourseDetail} loading={loading} searchReqId={highlightReqId}/>
-                </PanelContainer>
-                <PanelContainer hidden={!courseDetailOpen}>
-                    <CourseDetailPanel setOpen={setCourseDetailOpen} courseDetail={courseDetail}/>
-                </PanelContainer>
-            </div>
+            <ReviewPanelContext.Provider value={{ 
+            full_code: reviewPanelFullCode, 
+            set_full_code: setReviewPanelFullCode, 
+            isPermanent: reviewPanelIsPermanent, 
+            setIsPermanent: setReviewPanelIsPermanent,
+            position: reviewPanelCoords,
+            setPosition: setReviewPanelCoords
+            }}>
+                {reviewPanelFullCode && 
+                    <ReviewPanel 
+                    currentSemester={options?.SEMESTER}
+                    full_code={reviewPanelFullCode} 
+                    set_full_code={setReviewPanelFullCode}
+                    isPermanent={reviewPanelIsPermanent}
+                    setIsPermanent={setReviewPanelIsPermanent}
+                    position={reviewPanelCoords}
+                    setPosition={setReviewPanelCoords}
+                    />}
+                <Row onMouseMove={resizeFrame} onMouseUp={endResize}>
+                    <PanelContainer $width={leftWidth}>
+                        <PlanPanel isLoading={isLoadingDegreeplans || isLoadingActiveDegreePlan} activeDegreeplan={activeDegreePlan} degreeplans={degreeplans} setActiveDegreeplanId={setActiveDegreeplanId}/>
+                    </PanelContainer>
+                    <Divider onMouseDown={startResize}/>
+                    <PanelContainer $width={totalWidth - leftWidth}>
+                        <ReqPanel activeDegreePlan={activeDegreePlan} highlightReqId={highlightReqId} setHighlightReqId={setHighlightReqId} setMajors={setMajors} currentMajor={currentMajor} setCurrentMajor={setCurrentMajor} setSearchClosed={setSearchClosed} setDegreeModalOpen={setDegreeModalOpen} handleSearch={handleSearch}/>
+                    </PanelContainer>
+                    <PanelContainer hidden={searchClosed}>
+                        <SearchPanel setClosed={handleCloseSearchPanel} courses={results} showCourseDetail={showCourseDetail} loading={loading} searchReqId={highlightReqId}/>
+                    </PanelContainer>
+                    <PanelContainer hidden={!courseDetailOpen}>
+                        <CourseDetailPanel setOpen={setCourseDetailOpen} courseDetail={courseDetail} setReviewPanelCoords={setReviewPanelCoords} />
+                    </PanelContainer>
+                </Row>
+            </ReviewPanelContext.Provider>
         </PlanPageContainer>
     )
 }

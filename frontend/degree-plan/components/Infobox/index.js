@@ -247,6 +247,7 @@ const InfoBox = ({
   },
   data,
   liveData,
+  close
 }) => {
   const {
     rInstructorQuality: avgInstructorQuality,
@@ -275,6 +276,7 @@ const InfoBox = ({
       <div className="box">
         <div id="banner-info" data-type="course">
           <CourseHeader
+            close={close}
             aliases={aliases}
             code={code}
             data={data}

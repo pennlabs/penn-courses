@@ -7,6 +7,7 @@ import { Popover, PopoverTitle } from "./common/Popover";
 import { toNormalizedSemester } from "./util/helpers";
 
 import ReactTooltip from "react-tooltip";
+import { GrayIcon } from "../bulma_derived_components";
 
 const activityMap = {
   REC: "Recitation",
@@ -197,38 +198,48 @@ const CourseCodeQualifier = styled.div`
   flex-wrap: wrap;
 `;
 
+const Actions = styled.div`
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  float: right;
+  gap: 0.5rem;
+`
+
+const PCRLogo = styled.img`
+  height: 2.5rem;
+  display: block;
+`;
+
 const Spacer = styled.div`
   height: 0.6rem;
 `;
 
+const CloseIcon = styled(GrayIcon)`
+  pointer-events: auto;
+  margin-left: 0.5rem;
+
+  & :hover {
+    color: #707070;
+  }
+`
+
 export const CourseHeader = ({
+  close,
   aliases,
   code,
-  inCourseCart,
   instructors,
   name,
   notes,
-  handleAdd,
-  handleRemove,
   liveData,
-  data
+  data,
 }) => (
   <div className="course">
     <div className="title">
       {code.replace("-", " ")}
 
-      {/* TODO: check this doesn't result in PCR logo not being shown sometimes */}
-      {!data?.last_offered_sem_if_superceded && (
-        <span className="float-right">
-          <a
-            target="_blank"
-            rel="noopener noreferrer"
-            title="View in Penn Course Review"
-            href={`https://penncoursereview.com/course/${code}/`}
-            style={{ marginRight: "0.5rem" }}
-          >
-            <img src="/images/pcr-logo.png" style={{ height: "2.5rem" }} />
-          </a>
+      <Actions>
+        {!data?.last_offered_sem_if_superceded && (
           <a
             target="_blank"
             rel="noopener noreferrer"
@@ -238,8 +249,19 @@ export const CourseHeader = ({
           >
             <i className="fas fa-fw fa-bell" />
           </a>
-        </span>
-      )}
+        )}
+        <a
+          target="_blank"
+          rel="noopener noreferrer"
+          title="View in Penn Course Review"
+          href={`https://penncoursereview.com/course/${code}/`}
+        >
+          <PCRLogo src="/images/pcr-logo.png" />
+        </a>
+        <CloseIcon onClick={close}>
+          <i class="fas fa-times fa-md"></i>
+        </CloseIcon>
+      </Actions>
     </div>
     {data.last_offered_sem_if_superceded && (
       <CourseCodeQualifier>
