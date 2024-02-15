@@ -6,8 +6,9 @@ import Stats from "./Stats";
 import styled from '@emotion/styled';
 import { Course, DegreePlan, Fulfillment } from "@/types";
 import { postFetcher, useSWRCrud } from "@/hooks/swrcrud";
-import { update } from "lodash";
-import { NodeNextRequest } from "next/dist/server/base-http/node";
+import { useSWRConfig } from "swr";
+import courses from "@/data/courses";
+
 
 const translateSemester = (semester: Course["semester"]) => {
     const year = semester.slice(0, 4);
@@ -57,28 +58,26 @@ interface SemesterProps {
     showStats: boolean;
     semester: string;
     fulfillments: Fulfillment[];
-    activeDegreeplanId: DegreePlan["id"];
+    activeDegreeplanId: DegreePlan["id"] | undefined;
     className: string;
 }
 
 const Semester = ({ showStats, semester, fulfillments, activeDegreeplanId, className} : SemesterProps) => {
     const ref = useRef(null);
 
-    // the fulfillments api uses the update method for creates (it creates if it doesn't exist, and updates if it does)
-    const { update } = useSWRCrud<Fulfillment>(`/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`, { 
-        updateFetcher: postFetcher
-     });
+    // the fulfillments api uses the POST method for updates (it creates if it doesn't exist, and updates if it does)
+    const { createOrUpdate } = useSWRCrud<Fulfillment>(`/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`, { idKey: "full_code" });
 
     const [{ isOver }, drop] = useDrop(() => ({
         accept: ItemTypes.COURSE,
         drop: (course: Course) => {
             console.log("DROPPED", course.full_code, semester);
-            update({ full_code: course.full_code, semester }, course.full_code);
+            createOrUpdate({ semester }, course.full_code);
         },
         collect: monitor => ({
           isOver: !!monitor.isOver()
         }),
-      }), []);
+    }), []);
     
     return (
         <SemesterCard $showStats={showStats} className={className}>
@@ -86,7 +85,11 @@ const Semester = ({ showStats, semester, fulfillments, activeDegreeplanId, class
                 {translateSemester(semester)}
             </SemesterLabel>
             <SemesterContent ref={ref}>
-                <FlexCoursesPlanned semester={semester} dropRef={drop} full_codes={fulfillments.map(fulfillment => fulfillment.full_code)} removeCourse={(course: Course["full_code"]) => update({ semester: null }, course)}/>
+                <FlexCoursesPlanned 
+                semester={semester} 
+                dropRef={drop} 
+                full_codes={fulfillments.map(fulfillment => fulfillment.full_code)} 
+                removeCourse={(full_code: Course["full_code"]) => createOrUpdate({ semester: null }, full_code)}/>
                 {showStats && <FlexStats courses={fulfillments}/>}
             </SemesterContent>
             <CreditsLabel>

@@ -5,9 +5,6 @@ import { Icon } from "../bulma_derived_components";
 import { Course, DegreePlan, Fulfillment } from "@/types";
 import useSWR from "swr";
 import { useEffect, useState } from "react";
-import assert from "assert";
-import { mdiConsoleLine } from "@mdi/js";
-import useStickyState from "@/hooks/stickystate";
 
 const getNextSemester = (semester: string) => {
     console.log("GET NEXT SEMESTER")
@@ -19,6 +16,8 @@ const getNextSemester = (semester: string) => {
         return `${year+1}A`;
     }
 }
+
+const getLocalSemestersKey = (degreeplanId: DegreePlan["id"]) => `PDP-${degreeplanId}-semesters`;
 
 const SemestersContainer = styled.div`
     display: flex;
@@ -93,10 +92,21 @@ interface SemestersProps {
 const Semesters = ({ activeDegreeplan, showStats, className }: SemestersProps) => {
     const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null);    
     // semesters is state mostly derived from fulfillments
-    const [semesters, setSemesters] = useStickyState<{[semester: string]: Fulfillment[]}>({}, `PDP-${activeDegreeplan?.id}-semesters`);
+    const [semesters, setSemesters] = useState<{[semester: string]: Fulfillment[]}>({});
     const addSemester = (semester: string) => { if (!semesters[semester]) setSemesters({...semesters, [semester]: []}) };
+    const defaultSemesters = {} as { [semester: string]: Fulfillment[] };
     useEffect(() => {
-        if (!fulfillments) return; // TODO: need more logic in this case
+        if (!activeDegreeplan) return;
+        if (typeof window === "undefined") return setSemesters(defaultSemesters); // default state
+        const stickyValue = localStorage.getItem(getLocalSemestersKey(activeDegreeplan.id));
+        setSemesters(
+            stickyValue !== null
+            ? JSON.parse(stickyValue)
+            : defaultSemesters
+        );
+    }, [activeDegreeplan])
+    useEffect(() => {
+        if (!activeDegreeplan || !fulfillments) return; // TODO: need more logic in this case
         const _semesters = {} as { [semester: string]: Fulfillment[] };
         Object.keys(semesters).forEach(semester => { _semesters[semester] = [] });
         fulfillments.forEach(fulfillment => {
@@ -106,13 +116,16 @@ const Semesters = ({ activeDegreeplan, showStats, className }: SemestersProps) =
             }
             _semesters[fulfillment.semester].push(fulfillment);
         });
+        if (typeof window !== undefined) {
+            localStorage.setItem(getLocalSemestersKey(activeDegreeplan.id), JSON.stringify(_semesters));
+        }
         setSemesters(_semesters)
-    }, [fulfillments, semesters]);
+    }, [fulfillments, semesters, activeDegreeplan]);
 
     return (
         <SemestersContainer className={className}>            
             {Object.keys(semesters).sort().map((semester: any, index: number) =>
-                <FlexSemester activeDegreeplanId={(activeDegreeplan as DegreePlan).id} showStats={showStats} semester={semester} fulfillments={semesters[semester]} key={semester}/>
+                <FlexSemester activeDegreeplanId={activeDegreeplan?.id} showStats={showStats} semester={semester} fulfillments={semesters[semester]} key={semester}/>
                 )}
             <ModifySemesters addSemester={addSemester} semesters={semesters} />
         </SemestersContainer>

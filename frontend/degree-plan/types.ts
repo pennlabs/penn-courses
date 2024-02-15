@@ -75,3 +75,9 @@ export interface Semester {
   semester: string;
   courses: string[];
 }
+
+export function assertValueType<T, K extends keyof T>(obj: T, idKey: K, value: any): asserts value is T[K] {
+    if (obj[idKey] !== value) {
+        throw new Error(`Value ${value} is not of type ${typeof obj[idKey]}`);
+    }
+}

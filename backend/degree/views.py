@@ -1,6 +1,7 @@
 from django.core.exceptions import ObjectDoesNotExist
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from django_filters.rest_framework import DjangoFilterBackend
+from django.http import Http404
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view
 from rest_framework.exceptions import ValidationError
@@ -87,6 +88,16 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
             degree_plan_id=self.get_degree_plan_id(),
         )
         return queryset
+
+    def create(self, request, *args, **kwargs):
+        if request.data.get("full_code") is None:
+            raise ValidationError({ "full_code": "This field is required." })
+        self.kwargs["full_code"] = request.data["full_code"]
+        try:
+            return self.partial_update(request, *args, **kwargs)
+        except Http404:
+            return super().create(request, *args, **kwargs)
+    
 
 
 @api_view(["GET"])

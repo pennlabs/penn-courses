@@ -53,7 +53,7 @@ class FulfillmentSerializer(serializers.ModelSerializer):
         ),
     )
     # TODO: add a get_queryset method to only allow rules from the degree plan
-    rules = serializers.PrimaryKeyRelatedField(many=True, queryset=Rule.objects.all())
+    rules = serializers.PrimaryKeyRelatedField(many=True, queryset=Rule.objects.all(), required=False)
 
     def to_internal_value(self, data):
         data = data.copy()
@@ -72,8 +72,10 @@ class FulfillmentSerializer(serializers.ModelSerializer):
 
         if rules is None and full_code is None and degree_plan is None:
             return data  # Nothing to validate
-        if rules is None:
+        if rules is None and self.instance is not None:
             rules = self.instance.rules.all()
+        elif rules is None:
+            rules = []
         if full_code is None:
             full_code = self.instance.full_code
         if degree_plan is None:
@@ -97,26 +99,6 @@ class FulfillmentSerializer(serializers.ModelSerializer):
                 )
 
         return data
-
-    def create(self, validated_data):
-        rules = validated_data.pop("rules", None)
-        try:
-            fulfillment = Fulfillment.objects.get(
-                degree_plan=validated_data.get("degree_plan"),
-                full_code=validated_data.get("full_code"),
-            )
-            if fulfillment.semester != validated_data.get("semester"):
-                raise serializers.ValidationError({"full_code": "This field cannot be updated after creation"})
-            if fulfillment.degree_plan != validated_data.get("degree_plan"):
-                raise serializers.ValidationError({"degree_plan": "This field cannot be updated after creation"})
-            fulfillment.semester = validated_data.get("semester")
-        except Fulfillment.DoesNotExist:
-            fulfillment = Fulfillment(**validated_data)
-        fulfillment.save()
-
-        if rules is not None:
-            fulfillment.rules.set(rules)
-        return fulfillment
 
 
 class DegreePlanListSerializer(serializers.ModelSerializer):
