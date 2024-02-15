@@ -73,7 +73,7 @@ const SearchConditionWrapper = styled(BaseCourseContainer)`
     margin: .5 rem 0;
     background-color: #EDF1FC;
 `
-const DarkGrayIcon = styled(Icon)`
+export const DarkGrayIcon = styled(Icon)`
     color: #575757;
 `
 

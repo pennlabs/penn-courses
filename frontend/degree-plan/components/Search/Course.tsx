@@ -134,9 +134,9 @@ export default function Course({
                         <CourseIDContainer>
                                 <CourseID ref={drag} style={{color}}>{course.id.replace(/-/g, " ")}</CourseID>
                         </CourseIDContainer>
-
                         <CourseTitle>{course.title}</CourseTitle>
                     </CourseIdentityContainer>
+                    
                     <CourseQualityContainer>
                         <Badge value={3.3} /> {/*course.course_quality*/}
                     </CourseQualityContainer>

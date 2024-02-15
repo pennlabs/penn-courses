@@ -50,9 +50,8 @@ const Divider = styled.div`
     margin-top: 30vh;
 `;
 
-const FourYearPlanPage = () => {
+const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any) => {
     const [leftWidth, setLeftWidth] = useState(800);
-    const [searchClosed, setSearchClosed] = useState(true);
     const [drag, setDrag] = useState(false);
     const [x, setX] = useState(0);
 
@@ -81,7 +80,7 @@ const FourYearPlanPage = () => {
     const [highlightReqId, setHighlightReqId] = useState(-1);
 
     const handleCloseSearchPanel = () => {
-        setHighlightReqId(-1);
+        // setHighlightReqId(-1);
         setSearchClosed(true);
     }
 
@@ -131,7 +130,6 @@ const FourYearPlanPage = () => {
         setX(e.clientX);
     }
 
-    const [reqId, setReqId] = useState<undefined | number>(undefined);
     const [loading, setLoading] = useState(false);
     const handleSearch =  async (id: number, query: string) => {
         // setHighlightReqId(id);

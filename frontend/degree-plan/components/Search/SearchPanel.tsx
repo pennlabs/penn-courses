@@ -36,6 +36,9 @@ const SearchField = styled.input`
 `;
 
 const SearchPanel = ({setClosed, reqId, reqQuery, showCourseDetail, searchReqId}:any) => {
+    if (reqId == -1) {
+        
+    }
     const { data: courses, isLoading: isLoadingCourses } = useSWR(`api/degree/courses/${reqId}`, { refreshInterval: 0, fallbackData: [] }); 
 
     type ISearchResultCourse =  {course: ICourseQ}
