@@ -42,7 +42,7 @@ const CourseOption = ({ course, chosenOptions, setChosenOptions, semester }: Cou
     }))
 
     return (
-        <ReviewPanelTrigger>
+        <ReviewPanelTrigger full_code={course}>
             <BaseCourseContainer ref={drag} $isDepressed={chosenOptions.includes(course)}>
                 {course.split("-").join(" ")}{semester ? ` (${semester})` : ""}
             </BaseCourseContainer>
@@ -114,7 +114,7 @@ const SearchCondition = ({ compound, chosenOptions, setChosenOptions }: SearchCo
     if ('department__code__in' in compoundCondition) {
         const departments = compoundCondition['department__code__in'] as string[];
         display.push(<Row>in {
-            departments.map((dept) => <div>{dept}</div>)
+            departments.map((dept) => <div key={dept}>{dept}</div>)
             .flatMap((elem, index) => index < departments.length - 1 ? [elem, <CourseOptionsSeparator>or</CourseOptionsSeparator>] : [elem])
         }</Row>);
     }
@@ -199,10 +199,10 @@ const QObject = ({ q }: { q: string }) => {
         return (
             <Row>
                 {parsed.clauses
-                .map((clause) => <Terminal q={clause} chosenOptions={chosenOptions} setChosenOptions={setChosenOptions}/>)
-                .flatMap((elem, index) => (
-                    index < parsed.clauses.length - 1 ? 
-                    [elem, <CourseOptionsSeparator>or</CourseOptionsSeparator>] : 
+                .map((clause, idx) => <Terminal key={idx} q={clause} chosenOptions={chosenOptions} setChosenOptions={setChosenOptions}/>)
+                .flatMap((elem, idx) => (
+                    idx < parsed.clauses.length - 1 ? 
+                    [elem, <CourseOptionsSeparator key={`${idx}-separator`}>or</CourseOptionsSeparator>] : 
                     [elem]
                 ))}
             </Row>

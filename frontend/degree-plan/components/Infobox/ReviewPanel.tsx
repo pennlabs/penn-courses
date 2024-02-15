@@ -14,10 +14,11 @@ export const ReviewPanelTrigger = ({ full_code, children }: PropsWithChildren<{f
         <div
             ref={ref}
             onDoubleClick={() => {
+                console.log("FULLCODE", full_code)
                 set_full_code(full_code)
                 if (!ref.current) return;
-                const { x, y } = ref.current.getBoundingClientRect();
-                if (!isPermanent) setPosition({ x, y});
+                const { x } = ref.current.getBoundingClientRect();
+                if (!isPermanent) setPosition({ y: 0, x });
             }}
             className="review-panel-trigger"
         >
@@ -80,10 +81,6 @@ const ReviewPanel = ({
             : null
         , { refreshInterval: 0 }
     );
-    
-    if (!data) {
-        return <div></div>;
-    }
 
     return (
         <Draggable defaultPosition={position}>

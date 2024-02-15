@@ -250,7 +250,6 @@ const InfoBox = ({
     code = "",
     aliases,
     description,
-    instructors,
     name,
     notes,
     num_sections: numSections,
@@ -296,7 +295,6 @@ const InfoBox = ({
               data={data}
               name={name}
               notes={notes}
-              instructors={instructors}
               liveData={liveData}
             />
           </div>

@@ -18,7 +18,6 @@ const activityMap = {
 
 const TagsNotOffered = ({ data }) => {
   let {
-    instructors: instructorData = {},
     latest_semester: mostRecent,
     code = ""
   } = data;
@@ -47,7 +46,6 @@ const TagsNotOffered = ({ data }) => {
 const TagsWhenOffered = ({
   liveData = null,
   data = {},
-  existingInstructors
 }) => {
   const { instructors: instructorData = {}, code = "" } = data;
   const courseName = code.replace("-", " ");
@@ -219,7 +217,6 @@ export const CourseHeader = ({
   close,
   aliases,
   code,
-  instructors,
   name,
   notes,
   liveData,
@@ -249,7 +246,7 @@ export const CourseHeader = ({
         >
           <PCRLogo src="/images/pcr-logo.png" />
         </a>
-        <CloseButton />
+        {/*<CloseButton close={close} />*/}
       </Actions>
     </div>
     {data.last_offered_sem_if_superceded && (
@@ -371,7 +368,6 @@ export const CourseHeader = ({
       <TagsWhenOffered
         liveData={liveData}
         data={data}
-        existingInstructors={Object.values(instructors).map(a => a.name)}
       />
     ) : (
       <TagsNotOffered data={data} />

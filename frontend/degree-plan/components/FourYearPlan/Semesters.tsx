@@ -105,22 +105,29 @@ const Semesters = ({ activeDegreeplan, showStats, className }: SemestersProps) =
             : defaultSemesters
         );
     }, [activeDegreeplan])
+
     useEffect(() => {
         if (!activeDegreeplan || !fulfillments) return; // TODO: need more logic in this case
-        const _semesters = {} as { [semester: string]: Fulfillment[] };
-        Object.keys(semesters).forEach(semester => { _semesters[semester] = [] });
-        fulfillments.forEach(fulfillment => {
-            if (!fulfillment.semester) return;
-            if (!_semesters[fulfillment.semester]) {
-                _semesters[fulfillment.semester] = [];
-            }
-            _semesters[fulfillment.semester].push(fulfillment);
-        });
+        setSemesters(currentSemesters => {
+            const semesters = {} as { [semester: string]: Fulfillment[] };
+            Object.keys(currentSemesters).forEach(semester => { semesters[semester] = [] });
+            fulfillments.forEach(fulfillment => {
+                if (!fulfillment.semester) return;
+                if (!semesters[fulfillment.semester]) {
+                    semesters[fulfillment.semester] = [];
+                }
+                semesters[fulfillment.semester].push(fulfillment);
+            });
+            return semesters
+        })
+    }, [fulfillments, activeDegreeplan]);
+
+    useEffect(() => {
+        if (!activeDegreeplan) return;
         if (typeof window !== undefined) {
-            localStorage.setItem(getLocalSemestersKey(activeDegreeplan.id), JSON.stringify(_semesters));
+            localStorage.setItem(getLocalSemestersKey(activeDegreeplan.id), JSON.stringify(semesters));
         }
-        setSemesters(_semesters)
-    }, [fulfillments, semesters, activeDegreeplan]);
+    }, [semesters, activeDegreeplan])
 
     return (
         <SemestersContainer className={className}>            

@@ -70,7 +70,7 @@ const Rule = ({ rule, setSearchClosed, handleSearch, setHighlightReqId, highligh
 
         {!collapsed && <div className="ms-3">
             {rule.rules.map((rule: any, index: number) => 
-                <Rule rule={rule} setSearchClosed={setSearchClosed} handleSearch={handleSearch} setHighlightReqId={setHighlightReqId} highlightReqId={highlightReqId}/>
+                <Rule key={rule.id} rule={rule} setSearchClosed={setSearchClosed} handleSearch={handleSearch} setHighlightReqId={setHighlightReqId} highlightReqId={highlightReqId}/>
             )}
           </div>
           }

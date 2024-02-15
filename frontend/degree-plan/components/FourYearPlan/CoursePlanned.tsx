@@ -20,7 +20,7 @@ export const BaseCourseContainer = styled.span<{ $isDragging: boolean, $isDepres
   background-color: ${props => props.$isDragging ? "#4B9AE7" : "#F2F3F4"};
   box-shadow: ${props => props.$isDepressed ? 
     "0 0 6px #DEDEDE inset" 
-    : "0 0 3px 1px #C8C8C8"};
+    : ""};
 `;
 
 export const PlannedCourseContainer = styled(BaseCourseContainer)`
