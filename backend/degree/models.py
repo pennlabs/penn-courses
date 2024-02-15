@@ -296,6 +296,24 @@ class DegreePlan(models.Model):
 
         return (satisfied_rules, violated_dcrs)
 
+    def copy(self, new_name: str) -> DegreePlan:
+        """
+        Returns a new DegreePlan that is a copy of this DegreePlan.
+        """
+        new_degree_plan = DegreePlan(name=new_name, person=self.person)
+        new_degree_plan.save()
+
+        for degree in self.degrees.all():
+            new_degree_plan.degrees.add(degree)
+
+        # this also handles updating satisfaction statuses
+        for fulfillment in self.fulfillments.all():
+            fulfillment.pk = None
+            fulfillment.degree_plan = new_degree_plan
+            fulfillment.save()
+
+        return new_degree_plan
+
 
 class Fulfillment(models.Model):
     degree_plan = models.ForeignKey(

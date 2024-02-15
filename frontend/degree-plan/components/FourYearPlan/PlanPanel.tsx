@@ -8,6 +8,7 @@ import { useState } from "react";
 import ModalContainer from "@/components/common/ModalContainer";
 import { useEffect, useCallback } from "react";
 import { useSWRCrud } from '@/hooks/swrcrud';
+import { mutate } from 'swr';
 
 const ShowStatsIcon = styled(GrayIcon)<{ $showStats: boolean }>`
     width: 2rem;
@@ -148,7 +149,7 @@ interface PlanPanelProps {
 }
 
 const PlanPanel = ({ setActiveDegreeplanId, activeDegreeplan, degreeplans, isLoading } : PlanPanelProps) => {
-    const { create: createDegreeplan, update: updateDegreeplan, remove: deleteDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans');
+    const { create: createDegreeplan, update: updateDegreeplan, remove: deleteDegreeplan, copy: copyDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans');
 
     const [modalKey, setModalKey] = useState<ModalKey>(null);
     const [modalObject, setModalObject] = useState<DegreePlan | null>(null); // stores the which degreeplan is being updated using the modal
@@ -170,7 +171,14 @@ const PlanPanel = ({ setActiveDegreeplanId, activeDegreeplan, degreeplans, isLoa
                             .then((new_) => new_ && setActiveDegreeplanId(new_.id))
                         }} 
                         rename={(name, id) => void updateDegreeplan({ name }, id)}
-                        remove={(id) => void deleteDegreeplan(id)}
+                        remove={(id) => {
+                            deleteDegreeplan(id)
+                            mutate(
+                                key => key.startsWith(`/api/degree/degreeplans/${id}`),
+                                undefined,
+                                { revalidate: false }
+                            )
+                        }}
                         />
                     </ModalContainer>
                     }
@@ -183,9 +191,8 @@ const PlanPanel = ({ setActiveDegreeplanId, activeDegreeplan, degreeplans, isLoa
                         selectItem={(id: DegreePlan["id"]) => setActiveDegreeplanId(id)}
                         mutators={{
                             copy: (item: DegreePlan) => {
-                                // TODO: something like
-                                // copyDegreeplan(item.id)
-                                // .then((copied) => copied && setActiveDegreeplanId(copied.id))
+                                (copyDegreeplan({...item, name: `${item.name} (copy)`}, item.id) as Promise<any>)
+                                .then((copied) => copied && setActiveDegreeplanId(copied.id))
                             },
                             remove: (item: DegreePlan) => {
                                 setModalKey("remove")

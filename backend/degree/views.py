@@ -3,7 +3,7 @@ from django_auto_prefetching import AutoPrefetchViewSetMixin
 from django_filters.rest_framework import DjangoFilterBackend
 from django.http import Http404
 from rest_framework import status, viewsets
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, action
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
@@ -62,7 +62,18 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         context = super().get_serializer_context()
         context.update({"request": self.request})  # used to get the user
         return context
-
+    
+    @action(detail=True, methods=["post"])
+    def copy(self, request, pk=None):
+        """
+        Copy a degree plan.
+        """
+        if request.data.get("name") is None:
+            raise ValidationError({ "name": "This field is required." })
+        degree_plan = self.get_object()
+        new_degree_plan = degree_plan.copy(request.data["name"])
+        serializer = self.get_serializer(new_degree_plan)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 class FulfillmentViewSet(viewsets.ModelViewSet):
     """

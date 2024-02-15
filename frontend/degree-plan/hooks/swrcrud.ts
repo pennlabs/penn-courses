@@ -30,14 +30,14 @@ const getCsrf = (): string | boolean => {
     return result;
 };
 
-export const baseFetcher = (init: RequestInit) => async (resource: string, body?: any) => {
+export const baseFetcher = (init: RequestInit, jsonify: boolean = true) => async (resource: string, body?: any) => {
     const res = await fetch(resource, {
         credentials: "include",
         mode: "same-origin",
         headers: {
             "Accept": "application/json",
             "X-CSRFToken": getCsrf(),
-            "Content-Type": "application/json"
+            "Content-Type": jsonify ? "application/json" : undefined
         } as HeadersInit,
         ...init,
         body: body === undefined ? undefined : JSON.stringify(body)
@@ -50,16 +50,14 @@ export const baseFetcher = (init: RequestInit) => async (resource: string, body?
         // TODO: need to figure out how to catch these errors
         throw Promise.reject(error);
     }
-    return res.json()
+    return jsonify ? res.json() : res;
 }
 
-type FetcherWithoutBody = (resource: string) => Promise<any>;
-type FetcherWithBody = (resource: string, body: any) => Promise<any>;
-
-export const getFetcher: FetcherWithoutBody = baseFetcher({ method: "GET" })
-export const postFetcher: FetcherWithBody = baseFetcher({ method: "POST" })
-export const patchFetcher: FetcherWithBody = baseFetcher({ method: "PATCH" })
-export const deleteFetcher: FetcherWithoutBody = baseFetcher({ method: "DELETE" });
+export const getFetcher = baseFetcher({ method: "GET" })
+export const postFetcher = baseFetcher({ method: "POST" })
+export const patchFetcher = baseFetcher({ method: "PATCH" })
+export const putFetcher = baseFetcher({ method: "PUT" })
+export const deleteFetcher = baseFetcher({ method: "DELETE" }, false);
 
 const normalizeFinalSlash = (resource: string) => {
     if (!resource.endsWith("/")) resource += "/";
@@ -70,8 +68,9 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
     endpoint: string, 
     config = {}
 ) => {
-    const { createFetcher, updateFetcher, removeFetcher, createOrUpdateFetcher, idKey } = {
+    const { createFetcher, updateFetcher, removeFetcher, createOrUpdateFetcher, copyFetcher, idKey } = {
         createFetcher: postFetcher, 
+        copyFetcher: postFetcher,
         updateFetcher: patchFetcher, 
         removeFetcher: deleteFetcher, 
         createOrUpdateFetcher: postFetcher,
@@ -90,6 +89,22 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
         })
 
         return created;
+    }
+
+    const copy = (optimisticData: T, id: idType) => {
+        if (!id) return;
+        const key = normalizeFinalSlash(endpoint) + id + "/copy"; // assume copy endpoint is `${listEndpoint}/${id}/copy`
+        const copied = copyFetcher(key, optimisticData); // the copy endpoint will pull out whatever data it needs
+        mutate(endpoint, copied, {
+            optimisticData: (list?: Array<T>) => list ? [...list, optimisticData] : [optimisticData],
+            populateCache: (copied: T, list?: Array<T>) => { 
+                if (!copied) return list || [];
+                return list ? [...list, copied] : [copied]
+            },
+            throwOnError: false,
+            revalidate: false
+        })
+        return copied;
     }
 
     const update = (updatedData: Partial<T>, id: idType) => {
@@ -184,54 +199,5 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
         )
     }
     
-    return { create, update, remove, createOrUpdate };
-}
-
-const useSWRCreateOrUpdate = <T extends DBObject>(endpoint: string, config = {}) => {
-}
-
-interface SWRCreate<T> {
-    data: T[] | undefined;
-    error: any;
-    create: (newItem: Partial<T>) => void; 
-    isLoading: boolean;
-    isValidating: boolean;
-}
-
-interface SWRCrud<T> {
-    data: T | undefined;
-    error: any;
-    isLoading: boolean;
-    isValidating: boolean;
-    create: (newItem: Partial<T>) => void;
-    update: (updatedData: Partial<T>) => void;
-    remove: () => void;
-}
-
-
-/**
- * useSWR wrapper for RESTful list endpoints (e.g., /api/degree/degreeplans)
- * This function will postpend a trailing slash if it is not present.
- * @template T the type of data listed by the endpoint (i.e., DegreePlan not DegreePlan[]) 
- * @param endpoint the endpoint (e.g., /api/degree/degreeplans/)
- * @returns the typical data and error swr returns, plus a create function
- * which replaces the mutate function from swr.
- */
-export const useSWRListCreate = <T extends DBObject,>(endpoint: string): SWRCreate<T> => {
-    const { data, error, isLoading, isValidating, mutate } = useSWR(endpoint, getFetcher);
-
-    const create = (newItem: any) => {
-        const new_ = postFetcher(endpoint, newItem);
-        mutate(new_, {
-            optimisticData: (list: Array<T>) => list ? [...list, newItem] : [newItem],
-            populateCache: (new_: T, list: Array<T>) => [...list, new_],
-            rollbackOnError: (e) => {
-                console.error(e);
-                return true;
-            },
-            revalidate: false,
-        })
-    }
-
-    return { data, error, create, isLoading, isValidating };
+    return { create, copy, update, remove, createOrUpdate };
 }
