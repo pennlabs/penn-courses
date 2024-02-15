@@ -7,7 +7,7 @@ import { Popover, PopoverTitle } from "./common/Popover";
 import { toNormalizedSemester } from "./util/helpers";
 
 import ReactTooltip from "react-tooltip";
-import { GrayIcon } from "../bulma_derived_components";
+import { CloseButton } from "./common/CloseButton";
 
 const activityMap = {
   REC: "Recitation",
@@ -215,15 +215,6 @@ const Spacer = styled.div`
   height: 0.6rem;
 `;
 
-const CloseIcon = styled(GrayIcon)`
-  pointer-events: auto;
-  margin-left: 0.5rem;
-
-  & :hover {
-    color: #707070;
-  }
-`
-
 export const CourseHeader = ({
   close,
   aliases,
@@ -258,9 +249,7 @@ export const CourseHeader = ({
         >
           <PCRLogo src="/images/pcr-logo.png" />
         </a>
-        <CloseIcon onClick={close}>
-          <i class="fas fa-times fa-md"></i>
-        </CloseIcon>
+        <CloseButton />
       </Actions>
     </div>
     {data.last_offered_sem_if_superceded && (

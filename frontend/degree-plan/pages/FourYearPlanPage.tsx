@@ -75,7 +75,7 @@ const FourYearPlanPage = () => {
     // review panel
     const { data: options } = useSWR<Options>('/api/options');
     const [reviewPanelCoords, setReviewPanelCoords] = useState<{x: number, y: number}>({ x: 0, y: 0 });
-    const [reviewPanelFullCode, setReviewPanelFullCode] = useState<Course["full_code"]|null>("CIS-120");
+    const [reviewPanelFullCode, setReviewPanelFullCode] = useState<Course["full_code"]|null>(null);
     const [reviewPanelIsPermanent, setReviewPanelIsPermanent] = useState(false);
     
     const [searchClosed, setSearchClosed] = useState(true);

@@ -26,7 +26,7 @@ const EmptyPanelContainer = styled.div`
 `;
 
 const EmptyPanelImage = styled.img`
-    max-width: min(60%, 40vw);
+    max-width: min(60%, 20rem);
 `;
 
 const EmptyPanel = () => {
@@ -78,9 +78,9 @@ const ReqPanel = ({activeDegreePlan, isLoading, highlightReqId, setSearchClosed,
                 if (degree.id === activeDegreeId) setActiveDegreeId(undefined);
               },
               create: () => updateDegreeplan(
-                {degree_ids: [...(activeDegreePlan?.degree_ids || []), 520]}, // TODO: this is a placeholder, we need to add a new degree
+                {degree_ids: [...(activeDegreePlan?.degree_ids || []), 1900 ]}, // TODO: this is a placeholder, we need to add a new degree
                 activeDegreePlan?.id
-              )?.then(() => setActiveDegreeId(520)),
+              )?.then((res) => { if (res?.id) setActiveDegreeId(res.id); }),
             }}
             />
         </PanelHeader>

@@ -1,6 +1,12 @@
 import { DBObject, assertValueType } from "@/types";
 import { assert } from "console";
 import useSWR, { useSWRConfig } from "swr";
+import { updateDecorator } from "typescript";
+
+interface SWRCrudError extends Error {
+    info: any;
+    status: number;
+}
 
 // TODO: this is copied from alert and plan, we should move it to a shared location
 /**
@@ -24,49 +30,36 @@ const getCsrf = (): string | boolean => {
     return result;
 };
 
-export const getFetcher = (resource: string) => fetch(resource, {
-    method: "GET",
-    credentials: "include",
-    mode: "same-origin",
-    headers: {
-        "Accept": "application/json",
-        "X-CSRFToken": getCsrf(),
-    } as HeadersInit, // TODO: idk if this is a good cast
-}).then(res => res.json());
+export const baseFetcher = (init: RequestInit) => async (resource: string, body?: any) => {
+    const res = await fetch(resource, {
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            "Accept": "application/json",
+            "X-CSRFToken": getCsrf(),
+            "Content-Type": "application/json"
+        } as HeadersInit,
+        ...init,
+        body: body === undefined ? undefined : JSON.stringify(body)
+    });
+    if (!res.ok) {
+        const error = new Error('An error occurred while fetching the data.') as SWRCrudError;
+        // Attach extra info to the error object.
+        error.info = await res.json()
+        error.status = res.status
+        // TODO: need to figure out how to catch these errors
+        throw Promise.reject(error);
+    }
+    return res.json()
+}
 
-export const postFetcher = (resource: string, body: any) => fetch(resource, {
-    method: "POST",
-    credentials: "include",
-    mode: "same-origin",
-    headers: {
-        "Accept": "application/json",
-        "X-CSRFToken": getCsrf(),
-        "Content-Type": "application/json"
-    } as HeadersInit,
-    body: JSON.stringify(body)
-}).then(res => res.json());
+type FetcherWithoutBody = (resource: string) => Promise<any>;
+type FetcherWithBody = (resource: string, body: any) => Promise<any>;
 
-export const patchFetcher = (resource: string, body: any) => fetch(resource, {
-    method: "PATCH",
-    credentials: "include",
-    mode: "same-origin",
-    headers: {
-        "Accept": "application/json",
-        "X-CSRFToken": getCsrf(),
-        "Content-Type": "application/json"
-    } as HeadersInit,
-    body: JSON.stringify(body)
-}).then(res => res.json());
-
-export const deleteFetcher = (resource: string) => fetch(resource, {
-    method: "DELETE",
-    credentials: "include",
-    mode: "same-origin",
-    headers: {
-        "Accept": "application/json",
-        "X-CSRFToken": getCsrf(),
-    } as HeadersInit,
-});
+export const getFetcher: FetcherWithoutBody = baseFetcher({ method: "GET" })
+export const postFetcher: FetcherWithBody = baseFetcher({ method: "POST" })
+export const patchFetcher: FetcherWithBody = baseFetcher({ method: "PATCH" })
+export const deleteFetcher: FetcherWithoutBody = baseFetcher({ method: "DELETE" });
 
 const normalizeFinalSlash = (resource: string) => {
     if (!resource.endsWith("/")) resource += "/";
@@ -82,7 +75,7 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
         updateFetcher: patchFetcher, 
         removeFetcher: deleteFetcher, 
         createOrUpdateFetcher: postFetcher,
-        idKey: "id" as keyof T ,
+        idKey: "id" as keyof T,
         ...config
     }
 
@@ -110,7 +103,8 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
                 optimistic[idKey] = id;
                 return ({ id, ...data, ...updatedData} as T)
             },
-            revalidate: false
+            revalidate: false,
+            throwOnError: false
         })
 
         mutate(endpoint, updated, {
@@ -125,7 +119,9 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
                 return list;
             },
             populateCache: (updated: T, list?: Array<T>) => {
+                console.log("swrcrud: update: populateCache", updated, list)
                 if (!list) return [];
+                if (!updated) return list;
                 const index = list.findIndex((item: T) => item[idKey] === updated[idKey]);
                 if (index === -1) {
                     console.warn("swrcrud: update: updated element not found in list view");
@@ -136,6 +132,7 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
                 return list
             },
             revalidate: false,
+            throwOnError: false
         })
 
         return updated;
@@ -147,7 +144,11 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
         const removed = removeFetcher(key);
         mutate(endpoint, removed, {
             optimisticData: (list?: Array<T>) => list ? list.filter((item: T) => String(item[idKey]) !== id) : [],
-            populateCache: (_, list?: Array<T>) => list ? list.filter((item: any) => item[idKey] !== id) : [],
+            populateCache: (_, list?: Array<T>) => {
+                if (!list) return []
+                if (!removed) return list;
+                return list.filter((item: any) => item[idKey] !== id)
+            },
             revalidate: false
         })
         mutate(key, removed, {
@@ -174,6 +175,7 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
                     return [...list.filter((item: T) => item[idKey] !== id), optimistic]
                 },
                 populateCache: (updated: T, list: Array<T> | undefined) => {
+                    if (!updated) return list || [];
                     if (!list) return [updated];
                     return [...list.filter((item: T) => item[idKey] !== id), updated]
                 },

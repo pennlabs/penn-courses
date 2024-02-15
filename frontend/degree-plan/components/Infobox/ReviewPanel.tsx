@@ -3,21 +3,22 @@ import Draggable from 'react-draggable';
 import useSWR from 'swr';
 import styled from '@emotion/styled';
 import InfoBox from './index'
-import { PropsWithChildren, useContext, useEffect, useState } from 'react';
+import { PropsWithChildren, useContext, useEffect, useRef, useState } from 'react';
 import { createContext } from 'react';
 
 export const ReviewPanelTrigger = ({ full_code, children }: PropsWithChildren<{full_code: Course["full_code"]}>) => {
+    const ref = useRef<HTMLDivElement>(null);
     const { setPosition, set_full_code, isPermanent, setIsPermanent } = useContext(ReviewPanelContext);
-    const [isHovered, setIsHovered] = useState(false);
-    useEffect(() => {
-        if (isHovered) set_full_code(full_code);
-        else setTimeout(() => { if (!isHovered) close()}, 300);
-    }, [isHovered])
 
     return (
         <div
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
+            ref={ref}
+            onDoubleClick={() => {
+                set_full_code(full_code)
+                if (!ref.current) return;
+                const { x, y } = ref.current.getBoundingClientRect();
+                if (!isPermanent) setPosition({ x, y});
+            }}
             className="review-panel-trigger"
         >
             {children}
@@ -35,7 +36,7 @@ interface ReviewPanelContextType {
 
 export const ReviewPanelContext = createContext<ReviewPanelContextType>({
     position: {x: 0, y: 0},
-    setPosition: ([x, y]) => {}, // placeholder
+    setPosition: ({x, y}) => {}, // placeholder
     full_code: null,
     set_full_code: (course) => {}, // placeholder
     isPermanent: false,

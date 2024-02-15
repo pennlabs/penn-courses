@@ -59,13 +59,17 @@ export interface Course {
   full_code: string;
   description: string;
   semester: string;
+  instructor_quality: number;
+  course_quality: number;
+  work_required: number;
+  difficulty: number;
 }
 
 export interface Fulfillment extends DBObject {
   id: number;
   degree_plan: number; // id
   full_code: string;
-  historical_course: Course; // id
+  course: Course; // id
   semester: string | null;
   rules: number[]; // ids
 }

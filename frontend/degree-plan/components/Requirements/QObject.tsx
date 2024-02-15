@@ -8,6 +8,7 @@ import grammar from "@/util/q_object_grammar"
 import { Icon } from "../bulma_derived_components";
 import { BaseCourseContainer } from "../FourYearPlan/CoursePlanned";
 import assert from "assert";
+import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
 
 type ConditionKey = "full_code" | "semester" | "attributes__code__in" | "department__code" | "full_code__startswith" | "code__gte" | "code__lte" | "department__code__in" 
 interface Condition {
@@ -39,9 +40,11 @@ const CourseOption = ({ course, chosenOptions, setChosenOptions, semester }: Cou
     }))
 
     return (
-        <BaseCourseContainer ref={drag}>
-            {course.split("-").join(" ")}{semester ? ` (${semester})` : ""}
-        </BaseCourseContainer>
+        <ReviewPanelTrigger>
+            <BaseCourseContainer ref={drag}>
+                {course.split("-").join(" ")}{semester ? ` (${semester})` : ""}
+            </BaseCourseContainer>
+        </ReviewPanelTrigger>
     )
 }
 
