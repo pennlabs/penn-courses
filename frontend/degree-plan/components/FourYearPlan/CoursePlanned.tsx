@@ -4,6 +4,7 @@ import { ItemTypes } from "../dnd/constants";
 import { GrayIcon } from '../bulma_derived_components';
 import styled from '@emotion/styled';
 import { Course } from "@/types";
+import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
 
 export const BaseCourseContainer = styled.span<{ $isDragging: boolean }>`
   display: flex;
@@ -55,12 +56,14 @@ const CoursePlanned = ({full_code, semester, removeCourse} : CoursePlannedProps)
     onMouseOver={() => setMouseOver(true)} 
     onMouseLeave={() => setMouseOver(false)}
     >
-      <div>
-        {full_code}
-      </div>
-      <RemoveCourseButton hidden={!mouseOver} onClick={() => removeCourse(full_code)}>
-        <GrayIcon><i className="fas fa-times"></i></GrayIcon>
-      </RemoveCourseButton>
+      <ReviewPanelTrigger full_code={full_code}>
+        <div>
+          {full_code}
+        </div>
+        <RemoveCourseButton hidden={!mouseOver} onClick={() => removeCourse(full_code)}>
+          <GrayIcon><i className="fas fa-times"></i></GrayIcon>
+        </RemoveCourseButton>
+      </ReviewPanelTrigger>
     </PlannedCourseContainer>
   )
 }

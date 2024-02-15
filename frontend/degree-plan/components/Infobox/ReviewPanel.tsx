@@ -3,9 +3,27 @@ import Draggable from 'react-draggable';
 import useSWR from 'swr';
 import styled from '@emotion/styled';
 import InfoBox from './index'
-import { useEffect } from 'react';
+import { PropsWithChildren, useContext, useEffect, useState } from 'react';
 import { createContext } from 'react';
 
+export const ReviewPanelTrigger = ({ full_code, children }: PropsWithChildren<{full_code: Course["full_code"]}>) => {
+    const { setPosition, set_full_code, isPermanent, setIsPermanent } = useContext(ReviewPanelContext);
+    const [isHovered, setIsHovered] = useState(false);
+    useEffect(() => {
+        if (isHovered) set_full_code(full_code);
+        else setTimeout(() => { if (!isHovered) close()}, 300);
+    }, [isHovered])
+
+    return (
+        <div
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+            className="review-panel-trigger"
+        >
+            {children}
+        </div>
+    )
+}
 interface ReviewPanelContextType {
     position: {x: number, y: number};
     setPosition: (arg0: ReviewPanelContextType["position"]) => void;
@@ -72,7 +90,10 @@ const ReviewPanel = ({
                 <ReviewPanelContainer>
                     {data ?
                         <InfoBox
-                            close={() => set_full_code(null)}
+                            close={() => { 
+                                set_full_code(null)
+                                setIsPermanent(false)
+                            }}
                             data={data}
                             liveData={liveData}
                             style={{ position: 'absolute'}}
