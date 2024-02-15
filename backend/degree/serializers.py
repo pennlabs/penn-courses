@@ -4,7 +4,7 @@ from django.db.models import Q
 from rest_framework import serializers
 
 from courses.models import Course
-from courses.serializers import CourseListSerializer
+from courses.serializers import CourseListSerializer, CourseDetailSerializer
 from degree.models import Degree, DegreePlan, DoubleCountRestriction, Fulfillment, Rule
 
 
@@ -53,7 +53,7 @@ class FulfillmentSerializer(serializers.ModelSerializer):
         ),
     )
     # TODO: add a get_queryset method to only allow rules from the degree plan
-    rules = serializers.PrimaryKeyRelatedField(many=True, queryset=Rule.objects.all())
+    rules = serializers.PrimaryKeyRelatedField(many=True, queryset=Rule.objects.all(), required=False)
 
     def to_internal_value(self, data):
         data = data.copy()
@@ -72,8 +72,10 @@ class FulfillmentSerializer(serializers.ModelSerializer):
 
         if rules is None and full_code is None and degree_plan is None:
             return data  # Nothing to validate
-        if rules is None:
+        if rules is None and self.instance is not None:
             rules = self.instance.rules.all()
+        elif rules is None:
+            rules = []
         if full_code is None:
             full_code = self.instance.full_code
         if degree_plan is None:

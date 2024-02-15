@@ -8,7 +8,7 @@ from degree.views import DegreePlanViewset, DegreeViewset, FulfillmentViewSet, c
 router = DefaultRouter(trailing_slash=False)
 router.register(r"degreeplans", DegreePlanViewset, basename="degreeplan")
 router.register(r"degrees", DegreeViewset, basename="degree")
-fulfillments_router = NestedDefaultRouter(router, r"degreeplans", lookup="degreeplan")
+fulfillments_router = NestedDefaultRouter(router, r"degreeplans", lookup="degreeplan", trailing_slash=False)
 fulfillments_router.register(r"fulfillments", FulfillmentViewSet, basename="degreeplan-fulfillment")
 
 urlpatterns = [

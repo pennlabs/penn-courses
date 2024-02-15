@@ -1,4 +1,5 @@
-import { DBObject } from "@/types";
+import { DBObject, assertValueType } from "@/types";
+import { assert } from "console";
 import useSWR, { useSWRConfig } from "swr";
 
 // TODO: this is copied from alert and plan, we should move it to a shared location
@@ -72,34 +73,50 @@ const normalizeFinalSlash = (resource: string) => {
     return resource
 }
 
+export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
+    endpoint: string, 
+    config = {}
+) => {
+    const { createFetcher, updateFetcher, removeFetcher, createOrUpdateFetcher, idKey } = {
+        createFetcher: postFetcher, 
+        updateFetcher: patchFetcher, 
+        removeFetcher: deleteFetcher, 
+        createOrUpdateFetcher: postFetcher,
+        idKey: "id" as keyof T ,
+        ...config
+    }
 
-export const useSWRCrud = <T extends DBObject,>(endpoint: string) => {
     const { mutate } = useSWRConfig();
 
     const create = (newItem: any) => {
-        const new_ = postFetcher(endpoint, newItem);
-        mutate(endpoint, new_, {
+        const created = createFetcher(endpoint, newItem);
+        mutate(endpoint, created, {
             optimisticData: (list?: Array<T>) => list ? [...list, newItem] : [newItem],
-            populateCache: (new_: T, list?: Array<T>) => list ? [...list, new_] : [new_],
+            populateCache: (created: T, list?: Array<T>) => list ? [...list, created] : [created],
             revalidate: false
         })
 
-        return new_;
+        return created;
     }
 
-    const update = (updatedData: Partial<T>, id: string | Number | undefined) => {
+    const update = (updatedData: Partial<T>, id: idType) => {
         if (!id) return;
         const key = normalizeFinalSlash(endpoint) + id;
-        const updated = patchFetcher(key, updatedData);
+        const updated = updateFetcher(key, updatedData);
         mutate(key, updated, {
-            optimisticData: (data?: T) => ({ id: -1, ...data, ...updatedData} as T), // TODO: this is hacky
+            optimisticData: (data?: T) => {
+                const optimistic = {...data, ...updatedData} as T;
+                assertValueType(optimistic, idKey, id)
+                optimistic[idKey] = id;
+                return ({ id, ...data, ...updatedData} as T)
+            },
             revalidate: false
         })
 
         mutate(endpoint, updated, {
             optimisticData: (list?: Array<T>) => {
                 if (!list) return [];
-                const index = list.findIndex((item: T) => String(item.id) === id);
+                const index = list.findIndex((item: T) => String(item[idKey]) === id);
                 if (index === -1) {
                     mutate(endpoint) // trigger revalidation
                     return list;
@@ -109,9 +126,9 @@ export const useSWRCrud = <T extends DBObject,>(endpoint: string) => {
             },
             populateCache: (updated: T, list?: Array<T>) => {
                 if (!list) return [];
-                const index = list.findIndex((item: T) => item.id === updated.id);
+                const index = list.findIndex((item: T) => item[idKey] === updated[idKey]);
                 if (index === -1) {
-                    console.error("swrcrud: update: updated element not found in list view");
+                    console.warn("swrcrud: update: updated element not found in list view");
                     mutate(endpoint); // trigger revalidation
                     return list;
                 }
@@ -124,13 +141,13 @@ export const useSWRCrud = <T extends DBObject,>(endpoint: string) => {
         return updated;
     }
 
-    const remove = (id: Number | string | undefined) => {
+    const remove = (id: idType) => {
         if (!id) return;
         const key = normalizeFinalSlash(endpoint) + id;
-        const removed = deleteFetcher(key);
+        const removed = removeFetcher(key);
         mutate(endpoint, removed, {
-            optimisticData: (list?: Array<T>) => list ? list.filter((item: T) => String(item.id) !== id) : [],
-            populateCache: (_, list?: Array<T>) => list ? list.filter((item: any) => item.id !== id) : [],
+            optimisticData: (list?: Array<T>) => list ? list.filter((item: T) => String(item[idKey]) !== id) : [],
+            populateCache: (_, list?: Array<T>) => list ? list.filter((item: any) => item[idKey] !== id) : [],
             revalidate: false
         })
         mutate(key, removed, {
@@ -142,7 +159,33 @@ export const useSWRCrud = <T extends DBObject,>(endpoint: string) => {
         return removed;
     }
 
-    return { create, update, remove };
+    const createOrUpdate = (data: Partial<T>, id: any) => {
+        if (!id) return;
+        const updated: Partial<T> = {...data}
+        updated[idKey] = id;
+        mutate(
+            endpoint,
+            postFetcher(endpoint, updated), 
+            {
+                optimisticData: (list: Array<T> | undefined) => {
+                    if (!list) return [];
+                    const old = list.find((item: T) => item[idKey] === id) || {};
+                    const optimistic = {...old, ...updated} as T;
+                    return [...list.filter((item: T) => item[idKey] !== id), optimistic]
+                },
+                populateCache: (updated: T, list: Array<T> | undefined) => {
+                    if (!list) return [updated];
+                    return [...list.filter((item: T) => item[idKey] !== id), updated]
+                },
+                revalidate: false,
+            }
+        )
+    }
+    
+    return { create, update, remove, createOrUpdate };
+}
+
+const useSWRCreateOrUpdate = <T extends DBObject>(endpoint: string, config = {}) => {
 }
 
 interface SWRCreate<T> {

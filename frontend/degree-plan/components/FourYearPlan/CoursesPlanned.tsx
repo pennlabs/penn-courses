@@ -1,8 +1,9 @@
 
 
-import { Ref, useEffect, useState } from "react";
+import { Ref } from "react";
 import CoursePlanned, { PlannedCourseContainer } from "./CoursePlanned";
 import styled from "@emotion/styled";
+import { Course } from "@/types";
 
 const PlannedCoursesContainer = styled.div`
     flex-grow: 1;
@@ -12,22 +13,18 @@ const PlannedCoursesContainer = styled.div`
 `;
 
 interface CoursesPlannedProps {
-    courses: any;
-    semesterIndex: number;
-    removeCourse: any;
-    showCourseDetail: any;
-    highlightReqId: any; // TODO: should not be anys
+    full_codes: Course["full_code"][];
+    removeCourse: (course: Course["full_code"]) => void;
+    semester: Course["full_code"],
     className: string;
     dropRef: Ref<React.ReactNode>;
 }
 
-const CoursesPlanned = ({courses, semesterIndex, removeCourse, showCourseDetail, highlightReqId, className, dropRef}: any) => {
-    const [courseOpen, setCourseOpen] = useState(false);
-    
+const CoursesPlanned = ({full_codes, removeCourse, className, semester, dropRef}: CoursesPlannedProps) => {    
     return (
         <PlannedCoursesContainer className={className}>
-            {courses.map((course: any) => 
-                <CoursePlanned course={course} highlightReqId={highlightReqId} semesterIndex={semesterIndex} removeCourse={removeCourse} setCourseOpen={setCourseOpen} showCourseDetail={showCourseDetail}/>
+            {full_codes.map((full_code: Course["full_code"]) => 
+                <CoursePlanned key={full_code} semester={semester} full_code={full_code} removeCourse={removeCourse}/>
             )}
             <PlannedCourseContainer ref={dropRef}/>
         </PlannedCoursesContainer>

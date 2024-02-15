@@ -38,6 +38,7 @@ const PanelContainer = styled.div<{$width?: Number}>`
     margin: 10px;
     height: 82vh;
     width: ${props => props.$width ? props.$width + "px" : ""};
+    overflow: hidden; /* Hide scrollbars */
 `;
 
 const Divider = styled.div`

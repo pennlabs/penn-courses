@@ -2,6 +2,22 @@
 import Semester from "./Semester"
 import styled from "@emotion/styled";
 import { Icon } from "../bulma_derived_components";
+import { Course, DegreePlan, Fulfillment } from "@/types";
+import useSWR from "swr";
+import { useEffect, useState } from "react";
+
+const getNextSemester = (semester: string) => {
+    console.log("GET NEXT SEMESTER")
+    const year = parseInt(semester.slice(0, 4));
+    const season = semester.slice(4);
+    if (season === "A") {
+        return `${year}C`;
+    } else {
+        return `${year+1}A`;
+    }
+}
+
+const getLocalSemestersKey = (degreeplanId: DegreePlan["id"]) => `PDP-${degreeplanId}-semesters`;
 
 const SemestersContainer = styled.div`
     display: flex;
@@ -36,11 +52,18 @@ const EditSemester = styled(AddSemester)`
 `
 
 // TODO: get a consistent color palette across PCx
+interface ModifySemestersProps {
+    addSemester: (semester: Course["semester"]) => void;
+    className: string;
+    semesters: { [semester: string]: Fulfillment[] };
+}
 
-const ModifySemesters = ({ setSemesters, semesters, showStats, className }: any) => {
+const ModifySemesters = ({ addSemester, semesters, className }: ModifySemestersProps) => {
+    const semesterKeys = Object.keys(semesters).sort();
     return (
+        // TODO: add a modal for this
         <AddSemesterContainer className={className}>
-            <AddSemester role="button">
+            <AddSemester role="button" onClick={() => addSemester(getNextSemester(semesterKeys[semesterKeys.length - 1] || "2023C"))}>
                 <Icon>
                     <i className="fas fa-plus"></i>
                 </Icon>
@@ -60,14 +83,51 @@ const ModifySemesters = ({ setSemesters, semesters, showStats, className }: any)
     )
 }
 
-const Semesters = ({semesters, addCourse, setSemesters, showStats, className }: any) => {
+interface SemestersProps {
+    activeDegreeplan: DegreePlan | undefined;
+    showStats: any;
+    className: string
+}
+
+const Semesters = ({ activeDegreeplan, showStats, className }: SemestersProps) => {
+    const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null);    
+    // semesters is state mostly derived from fulfillments
+    const [semesters, setSemesters] = useState<{[semester: string]: Fulfillment[]}>({});
+    const addSemester = (semester: string) => { if (!semesters[semester]) setSemesters({...semesters, [semester]: []}) };
+    const defaultSemesters = {} as { [semester: string]: Fulfillment[] };
+    useEffect(() => {
+        if (!activeDegreeplan) return;
+        if (typeof window === "undefined") return setSemesters(defaultSemesters); // default state
+        const stickyValue = localStorage.getItem(getLocalSemestersKey(activeDegreeplan.id));
+        setSemesters(
+            stickyValue !== null
+            ? JSON.parse(stickyValue)
+            : defaultSemesters
+        );
+    }, [activeDegreeplan])
+    useEffect(() => {
+        if (!activeDegreeplan || !fulfillments) return; // TODO: need more logic in this case
+        const _semesters = {} as { [semester: string]: Fulfillment[] };
+        Object.keys(semesters).forEach(semester => { _semesters[semester] = [] });
+        fulfillments.forEach(fulfillment => {
+            if (!fulfillment.semester) return;
+            if (!_semesters[fulfillment.semester]) {
+                _semesters[fulfillment.semester] = [];
+            }
+            _semesters[fulfillment.semester].push(fulfillment);
+        });
+        if (typeof window !== undefined) {
+            localStorage.setItem(getLocalSemestersKey(activeDegreeplan.id), JSON.stringify(_semesters));
+        }
+        setSemesters(_semesters)
+    }, [fulfillments, semesters, activeDegreeplan]);
+
     return (
         <SemestersContainer className={className}>            
-            {semesters.map((semester: any, index: number) => 
-                <FlexSemester showStats={showStats} semester={semester} addCourse={addCourse} index={index} key={index}/>
+            {Object.keys(semesters).sort().map((semester: any, index: number) =>
+                <FlexSemester activeDegreeplanId={activeDegreeplan?.id} showStats={showStats} semester={semester} fulfillments={semesters[semester]} key={semester}/>
                 )}
-            <ModifySemesters>
-            </ModifySemesters>
+            <ModifySemesters addSemester={addSemester} semesters={semesters} />
         </SemestersContainer>
     )
 }

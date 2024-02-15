@@ -3,6 +3,7 @@ import { useDrag } from "react-dnd";
 import { ItemTypes } from "../dnd/constants";
 import { GrayIcon } from '../bulma_derived_components';
 import styled from '@emotion/styled';
+import { Course } from "@/types";
 
 export const BaseCourseContainer = styled.span<{ $isDragging: boolean }>`
   display: flex;
@@ -31,24 +32,21 @@ const RemoveCourseButton = styled.div<{ isDragging: boolean }>`
 `
 
 interface CoursePlannedProps {
-  course: any,
-  semesterIndex: number,
-  removeCourse: (course: any) => void,
-  highlightReqId: string,
-  setCourseOpen: (course: any) => void,
-  showCourseDetail: (course: any) => void
+  full_code: Course["full_code"],
+  removeCourse: (course: Course["full_code"]) => void,
+  semester: Course["semester"]
 }
 
-const CoursePlanned = ({course, semesterIndex, removeCourse, showCourseDetail} : CoursePlannedProps) => {
+const CoursePlanned = ({full_code, semester, removeCourse} : CoursePlannedProps) => {
   const [mouseOver, setMouseOver] = useState(false);
 
   const [{ isDragging }, drag] = useDrag(() => ({
     type: ItemTypes.COURSE,
-    item: {course: course, semester:semesterIndex},
+    item: {full_code: full_code, semester },
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging()
     })
-  }), [course, semesterIndex])
+  }), [full_code, semester])
 
   return (   
     <PlannedCourseContainer
@@ -57,10 +55,10 @@ const CoursePlanned = ({course, semesterIndex, removeCourse, showCourseDetail} :
     onMouseOver={() => setMouseOver(true)} 
     onMouseLeave={() => setMouseOver(false)}
     >
-      <div onClick={() => showCourseDetail(course)}>
-        {course.id}
+      <div>
+        {full_code}
       </div>
-      <RemoveCourseButton hidden={!mouseOver} onClick={() => removeCourse(course)}>
+      <RemoveCourseButton hidden={!mouseOver} onClick={() => removeCourse(full_code)}>
         <GrayIcon><i className="fas fa-times"></i></GrayIcon>
       </RemoveCourseButton>
     </PlannedCourseContainer>

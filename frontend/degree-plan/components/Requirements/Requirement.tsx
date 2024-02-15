@@ -21,9 +21,18 @@ const RuleTitle = styled.div`
 `
 
 const CourseRequirementWrapper = styled.div`
-  margin: .5rem 0;
+  margin: .5rem;
+  margin-left: 0;
   display: flex;
   justify-content: space-between;
+  gap: .5rem;
+  align-items: center;
+`
+
+const CusCourses = styled.div`
+  font-weight: 500;
+  font-size: .9rem;
+  white-space: nowrap;
 `
 
 interface RuleProps {
@@ -40,20 +49,13 @@ interface RuleProps {
  */
 const Rule = ({ rule, setSearchClosed, handleSearch, setHighlightReqId, highlightReqId } : RuleProps) => {
     const [collapsed, setCollapsed] = useState(false);
-
-    const handleShowSatisfyingCourses = () => {
-        console.log(highlightReqId);
-        if (highlightReqId === rule.id) 
-            setHighlightReqId(-1);
-        else 
-        setHighlightReqId(rule.id);
-    }
-
     return (
       <>
         {rule.q ? 
           <CourseRequirementWrapper>
               <QObject q={rule.q} reqId={rule.id}/>
+              {rule.credits && <CusCourses>{rule.credits} cus</CusCourses>}
+              {rule.num && <CusCourses>{rule.num} courses</CusCourses>}
           </CourseRequirementWrapper>
           :
           <RuleTitle onClick={() => setCollapsed(!collapsed)}>

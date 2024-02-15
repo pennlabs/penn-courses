@@ -4,6 +4,17 @@ import { ItemTypes } from "../dnd/constants";
 import CoursesPlanned from "./CoursesPlanned";
 import Stats from "./Stats";
 import styled from '@emotion/styled';
+import { Course, DegreePlan, Fulfillment } from "@/types";
+import { postFetcher, useSWRCrud } from "@/hooks/swrcrud";
+import { useSWRConfig } from "swr";
+import courses from "@/data/courses";
+
+
+const translateSemester = (semester: Course["semester"]) => {
+    const year = semester.slice(0, 4);
+    const term = semester.slice(4);
+    return `${term === "A" ? "Spring" : term === "B" ? "Summer" : "Fall"} ${year}`
+}
 
 export const SemesterCard = styled.div`
     background: #FFFFFF;
@@ -43,35 +54,43 @@ const CreditsLabel = styled.div`
     margin-right: 0;
 `;
 
-const Semester = ({semester, addCourse, index, highlightReqId, removeCourseFromSem, showStats, showCourseDetail, className} : any) => {
-    const ref = useRef(null);
-    const [width, setWidth] = useState(200);
+interface SemesterProps {
+    showStats: boolean;
+    semester: string;
+    fulfillments: Fulfillment[];
+    activeDegreeplanId: DegreePlan["id"] | undefined;
+    className: string;
+}
 
-    useEffect(() => {
-        console.log("width", ref.current.offsetWidth);
-        setWidth(ref.current ? ref.current.offsetWidth : 200)
-    }, [ref.current]);
+const Semester = ({ showStats, semester, fulfillments, activeDegreeplanId, className} : SemesterProps) => {
+    const ref = useRef(null);
+
+    // the fulfillments api uses the POST method for updates (it creates if it doesn't exist, and updates if it does)
+    const { createOrUpdate } = useSWRCrud<Fulfillment>(`/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`, { idKey: "full_code" });
 
     const [{ isOver }, drop] = useDrop(() => ({
         accept: ItemTypes.COURSE,
-        drop: (item: any) => {addCourse(index, item.course, item.semester)},
+        drop: (course: Course) => {
+            console.log("DROPPED", course.full_code, semester);
+            createOrUpdate({ semester }, course.full_code);
+        },
         collect: monitor => ({
           isOver: !!monitor.isOver()
         }),
-      }), [])
-
-    const removeCourse = (course: any) => {
-        removeCourseFromSem(index, course);
-    }
+    }), []);
     
     return (
         <SemesterCard $showStats={showStats} className={className}>
             <SemesterLabel>
-                {semester.name}
+                {translateSemester(semester)}
             </SemesterLabel>
             <SemesterContent ref={ref}>
-                <FlexCoursesPlanned dropRef={drop} courses={semester.courses} highlightReqId={highlightReqId} semesterIndex={index} removeCourse={removeCourse} showCourseDetail={showCourseDetail}/>
-                {showStats && <FlexStats courses={semester.courses}/>}
+                <FlexCoursesPlanned 
+                semester={semester} 
+                dropRef={drop} 
+                full_codes={fulfillments.map(fulfillment => fulfillment.full_code)} 
+                removeCourse={(full_code: Course["full_code"]) => createOrUpdate({ semester: null }, full_code)}/>
+                {showStats && <FlexStats courses={fulfillments}/>}
             </SemesterContent>
             <CreditsLabel>
                 6.5 CUs
