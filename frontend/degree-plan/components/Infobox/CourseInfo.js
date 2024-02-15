@@ -217,8 +217,18 @@ export const CourseHeader = ({
     <div className="title">
       {code.replace("-", " ")}
 
+      {/* TODO: check this doesn't result in PCR logo not being shown sometimes */}
       {!data?.last_offered_sem_if_superceded && (
         <span className="float-right">
+          <a
+            target="_blank"
+            rel="noopener noreferrer"
+            title="View in Penn Course Review"
+            href={`https://penncoursereview.com/course/${code}/`}
+            style={{ marginRight: "0.5rem" }}
+          >
+            <img src="/images/pcr-logo.png" style={{ height: "2.5rem" }} />
+          </a>
           <a
             target="_blank"
             rel="noopener noreferrer"
