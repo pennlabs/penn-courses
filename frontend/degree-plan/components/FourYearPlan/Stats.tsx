@@ -64,8 +64,8 @@ const getAverages = (fulfillments: Fulfillment[]) => {
     const sums = { course_quality: 0, instructor_quality: 0, difficulty: 0, work_required: 0 };
     for (const f of fulfillments) {
         for (const key of StatsKeys) {
-            sums[key] += f.course[key] || 0;
-            counts[key] += f.course[key] ? 1 : 0;
+            sums[key] += f.course?.[key] || 0;
+            counts[key] += f.course?.[key] ? 1 : 0;
         }
     }
     const avgs = {} as Record<StatsType, number>;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import SelectListDropdown from '../FourYearPlan/SelectListDropdown';
-import Rule from './Requirement';
+import Rule from './Rule';
 import { Degree, DegreePlan } from '@/types';
 import styled from '@emotion/styled';
 import { PanelBody, PanelContainer, PanelHeader } from '@/components/FourYearPlan/PlanPanel'
@@ -78,7 +78,7 @@ const ReqPanel = ({activeDegreePlan, isLoading, highlightReqId, setSearchClosed,
                 if (degree.id === activeDegreeId) setActiveDegreeId(undefined);
               },
               create: () => updateDegreeplan(
-                {degree_ids: [...(activeDegreePlan?.degree_ids || []), 1900 ]}, // TODO: this is a placeholder, we need to add a new degree
+                {degree_ids: [...(activeDegreePlan?.degree_ids || []), 520 ]}, // TODO: this is a placeholder, we need to add a new degree
                 activeDegreePlan?.id
               )?.then((res) => { if (res?.id) setActiveDegreeId(res.id); }),
             }}

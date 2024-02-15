@@ -31,9 +31,11 @@ interface CourseOptionProps {
 const CourseOption = ({ course, chosenOptions, setChosenOptions, semester }: CourseOptionProps) => {
     const [{ isDragging }, drag] = useDrag(() => ({
         type: ItemTypes.COURSE,
-        item: {full_code: course, semester:-1},
+        item: {full_code: course, semester: null},
         end: (item, monitor) => {
-            if (monitor.didDrop()) setChosenOptions(course);
+            if (monitor.didDrop()) {
+                setChosenOptions([...chosenOptions, course])
+            };
         },
         collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
         canDrag: () => !chosenOptions.length // if another hasn't already been chosen
@@ -41,7 +43,7 @@ const CourseOption = ({ course, chosenOptions, setChosenOptions, semester }: Cou
 
     return (
         <ReviewPanelTrigger>
-            <BaseCourseContainer ref={drag}>
+            <BaseCourseContainer ref={drag} $isDepressed={chosenOptions.includes(course)}>
                 {course.split("-").join(" ")}{semester ? ` (${semester})` : ""}
             </BaseCourseContainer>
         </ReviewPanelTrigger>

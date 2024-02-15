@@ -1,4 +1,4 @@
-import Rule from "./Requirement"
+import Rule from "./Rule"
 import Icon from '@mdi/react';
 import { mdiTrashCanOutline } from '@mdi/js';
 import { mdiReorderHorizontal } from '@mdi/js';

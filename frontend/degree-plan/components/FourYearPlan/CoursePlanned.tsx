@@ -6,7 +6,7 @@ import styled from '@emotion/styled';
 import { Course } from "@/types";
 import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
 
-export const BaseCourseContainer = styled.span<{ $isDragging: boolean }>`
+export const BaseCourseContainer = styled.span<{ $isDragging: boolean, $isDepressed: boolean }>`
   display: flex;
   justify-content: center;
   align-items: center;
@@ -18,6 +18,9 @@ export const BaseCourseContainer = styled.span<{ $isDragging: boolean }>`
   text-wrap: nowrap;
   opacity: ${props => props.$isDragging ? 0.5 : 1};
   background-color: ${props => props.$isDragging ? "#4B9AE7" : "#F2F3F4"};
+  box-shadow: ${props => props.$isDepressed ? 
+    "0 0 6px #DEDEDE inset" 
+    : "0 0 3px 1px #C8C8C8"};
 `;
 
 export const PlannedCourseContainer = styled(BaseCourseContainer)`
