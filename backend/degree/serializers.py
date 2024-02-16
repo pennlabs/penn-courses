@@ -6,6 +6,7 @@ from rest_framework import serializers
 from courses.models import Course
 from courses.serializers import CourseListSerializer, CourseDetailSerializer
 from degree.models import Degree, DegreePlan, DoubleCountRestriction, Fulfillment, Rule
+from courses.util import get_current_semester
 
 
 class DegreeListSerializer(serializers.ModelSerializer):
@@ -42,16 +43,13 @@ class DegreeDetailSerializer(serializers.ModelSerializer):
 
 
 class FulfillmentSerializer(serializers.ModelSerializer):
-    course = CourseListSerializer(
-        read_only=True,
-        source="historical_course",
-        help_text=dedent(
-            """
-            The details of the fulfilling course. This is the most recent course with the full code,
-            or null if no course exists with the full code.
-            """
-        ),
-    )
+    course = serializers.SerializerMethodField()
+    def get_course(self, obj):
+        course = Course.with_reviews.filter(full_code=obj.full_code, semester__lte=get_current_semester()).order_by("-semester").first()
+        if course is not None:
+            return CourseDetailSerializer(course).data
+        return None
+    
     # TODO: add a get_queryset method to only allow rules from the degree plan
     rules = serializers.PrimaryKeyRelatedField(many=True, queryset=Rule.objects.all(), required=False)
 

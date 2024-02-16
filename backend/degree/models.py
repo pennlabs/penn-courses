@@ -330,19 +330,6 @@ class Fulfillment(models.Model):
         help_text="The dash-joined department and code of the course, e.g., `CIS-120`",
     )
 
-    historical_course = models.ForeignKey(
-        Course,
-        null=True,
-        on_delete=models.CASCADE,
-        related_name="+",
-        help_text=dedent(
-            """
-            The last offering of the course with the full code, or null if
-            there is no such historical course.
-            """
-        ),
-    )
-
     semester = models.CharField(
         max_length=5,
         null=True,
@@ -369,29 +356,6 @@ class Fulfillment(models.Model):
 
     class Meta:
         unique_together = ("degree_plan", "full_code")
-
-    def save(self, *args, **kwargs):
-        """
-        This overriden save method does two things to update soft-state:
-        1. Recomputes the historical course associated with this fulfillment
-
-        This save method should be used wherever a fulfillment is created.
-        """
-
-        # Recompute the historical course associated with this fulfillment
-        course = (
-            Course.objects.filter(full_code=self.full_code)
-            .order_by("-semester")
-            .select_related("topic__most_recent")
-            .first()
-        )
-        if course is not None:
-            course = course.topic.most_recent
-
-        self.historical_course = course
-
-        super().save(*args, **kwargs)
-
 
 def update_satisfaction_statuses(sender, instance, action, pk_set, **kwargs):
     """
