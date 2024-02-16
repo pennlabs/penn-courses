@@ -204,6 +204,15 @@ class Course(models.Model):
         help_text="The dash-joined department and code of the course, e.g. `CIS-120` for CIS-120.",
     )
 
+    credits = models.DecimalField(
+        max_digits=4,  # some course for 2019C is 14 CR...
+        decimal_places=2,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="The number of credits this course takes. This is precomputed for efficiency.",
+    )
+    
     prerequisites = models.TextField(
         blank=True,
         help_text="Text describing the prereqs for a course, e.g. 'CIS 120, 160' for CIS-121.",
