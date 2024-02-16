@@ -36,7 +36,8 @@ const AddSemesterContainer = styled.div`
     flex-direction: column;
     gap: .5rem;
 `;
-const AddSemester = styled.div`
+
+export const AddButton = styled.div`
     width: 100%;
     display: flex;
     justify-content: space-between;
@@ -47,7 +48,7 @@ const AddSemester = styled.div`
     color: white;
 `
 
-const EditSemester = styled(AddSemester)`
+const EditButton = styled(AddButton)`
     background-color: rgb(255, 193, 7);
 `
 
@@ -63,22 +64,22 @@ const ModifySemesters = ({ addSemester, semesters, className }: ModifySemestersP
     return (
         // TODO: add a modal for this
         <AddSemesterContainer className={className}>
-            <AddSemester role="button" onClick={() => addSemester(getNextSemester(semesterKeys[semesterKeys.length - 1] || "2023C"))}>
+            <AddButton role="button" onClick={() => addSemester(getNextSemester(semesterKeys[semesterKeys.length - 1] || "2023C"))}>
                 <Icon>
                     <i className="fas fa-plus"></i>
                 </Icon>
                 <div>
                     Add Semester
                 </div>
-            </AddSemester>
-            <EditSemester role="button">
+            </AddButton>
+            <EditButton role="button">
                 <Icon>
                     <i className="fas fa-edit"></i>
                 </Icon>
                 <div>
                     Edit Semesters
                 </div>
-            </EditSemester>
+            </EditButton>
         </AddSemesterContainer>
     )
 }

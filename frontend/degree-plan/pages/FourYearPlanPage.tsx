@@ -10,6 +10,7 @@ import useSWR from "swr";
 import { Course, DegreePlan, Options } from "@/types";
 import ReviewPanel from "@/components/Infobox/ReviewPanel";
 import { ReviewPanelContext } from '@/components/Infobox/ReviewPanel';
+import DegreeModal, { ModalKey } from "@/components/FourYearPlan/DegreeModal";
 
 const Row = styled.div`
     display: flex;
@@ -58,6 +59,10 @@ const FourYearPlanPage = () => {
     const [x, setX] = useState(0);
 
     const [degreeModalOpen, setDegreeModalOpen] = React.useState(false);
+
+    // edit modals for degree and degree plan
+    const [modalKey, setModalKey] = useState<ModalKey>(null);
+    const [modalObject, setModalObject] = useState<DegreePlan | null>(null); // stores the which degreeplan is being updated using the modal
 
     // active degree plan
     const [activeDegreeplanId, setActiveDegreeplanId] = useState<null | DegreePlan["id"]>(null);
@@ -174,19 +179,43 @@ const FourYearPlanPage = () => {
                     position={reviewPanelCoords}
                     setPosition={setReviewPanelCoords}
                     />}
+                {modalKey && 
+                    <DegreeModal 
+                    setModalKey={setModalKey} 
+                    modalKey={modalKey} 
+                    modalObject={modalObject} 
+                    setActiveDegreeplanId={setActiveDegreeplanId}
+                    /> 
+                    }
                 <Row onMouseMove={resizeFrame} onMouseUp={endResize}>
                     <PanelContainer $width={leftWidth}>
-                        <PlanPanel isLoading={isLoadingDegreeplans || isLoadingActiveDegreePlan} activeDegreeplan={activeDegreePlan} degreeplans={degreeplans} setActiveDegreeplanId={setActiveDegreeplanId}/>
+                        <PlanPanel 
+                        setModalKey={setModalKey}
+                        modalKey={modalKey}
+                        setModalObject={setModalObject}
+                        isLoading={isLoadingDegreeplans || isLoadingActiveDegreePlan} 
+                        activeDegreeplan={activeDegreePlan} degreeplans={degreeplans} 
+                        setActiveDegreeplanId={setActiveDegreeplanId}
+                        />
                     </PanelContainer>
                     <Divider onMouseDown={startResize}/>
                     <PanelContainer $width={totalWidth - leftWidth}>
-                        <ReqPanel activeDegreePlan={activeDegreePlan} highlightReqId={highlightReqId} setHighlightReqId={setHighlightReqId} setMajors={setMajors} currentMajor={currentMajor} setCurrentMajor={setCurrentMajor} setSearchClosed={setSearchClosed} setDegreeModalOpen={setDegreeModalOpen} handleSearch={handleSearch}/>
+                        <ReqPanel 
+                        setModalKey={setModalKey}
+                        setModalObject={setModalObject}
+                        activeDegreeplan={activeDegreePlan} 
+                        highlightReqId={highlightReqId} 
+                        setHighlightReqId={setHighlightReqId} 
+                        setMajors={setMajors} 
+                        currentMajor={currentMajor} 
+                        setCurrentMajor={setCurrentMajor} 
+                        setSearchClosed={setSearchClosed} 
+                        setDegreeModalOpen={setDegreeModalOpen} 
+                        handleSearch={handleSearch}
+                        />
                     </PanelContainer>
                     <PanelContainer hidden={searchClosed}>
                         <SearchPanel setClosed={handleCloseSearchPanel} courses={results} showCourseDetail={showCourseDetail} loading={loading} searchReqId={highlightReqId}/>
-                    </PanelContainer>
-                    <PanelContainer hidden={!courseDetailOpen}>
-                        <CourseDetailPanel setOpen={setCourseDetailOpen} courseDetail={courseDetail} setReviewPanelCoords={setReviewPanelCoords} />
                     </PanelContainer>
                 </Row>
             </ReviewPanelContext.Provider>

@@ -1,10 +1,12 @@
-import { useEffect, useState } from 'react';
-import SelectListDropdown from '../FourYearPlan/SelectListDropdown';
+import { useMemo } from 'react';
 import Rule from './Rule';
-import { Degree, DegreePlan } from '@/types';
+import { Degree, DegreePlan, Fulfillment } from '@/types';
 import styled from '@emotion/styled';
 import { PanelBody, PanelContainer, PanelHeader } from '@/components/FourYearPlan/PlanPanel'
 import { useSWRCrud } from '@/hooks/swrcrud';
+import useSWR from 'swr';
+import { GrayIcon } from '../bulma_derived_components';
+import { AddButton } from '../FourYearPlan/Semesters';
 
 const requirementDropdownListStyle = {
   maxHeight: '90%',
@@ -19,8 +21,8 @@ const EmptyPanelContainer = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: center;
+  height: 80%;
   align-items: center;
-  height: 100%;
   padding: 2rem;
   text-align: center;
 `;
@@ -38,58 +40,100 @@ const EmptyPanel = () => {
   )
 }
 
+const DegreeHeaderContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.5rem;
+  font-weight: 500;
+`
+const DegreeYear = styled.div`
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #575757;
+`
+const DegreeTitleWrapper = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: .5rem;
+`
+const TrashIcon = styled(GrayIcon)`
+  pointer-events: auto;
+  color: #b2b2b2;
+  &:hover {
+    color: #7E7E7E;
+  }
+`
+
+const AddDegree = styled(AddButton)`
+  margin-top: 1rem;
+`
+
+const DegreeHeader = ({ degree, remove }: { degree: Degree, remove: (degreeId: Degree["id"]) => void}) => {
+  const degreeName = `${degree.degree} in ${degree.major} ${degree.concentration ? `(${degree.concentration})` : ''}`
+  return (
+    <DegreeHeaderContainer>
+      <DegreeTitleWrapper>
+        <div>
+          {degreeName}
+        </div>
+        <DegreeYear>
+          {degree.year}
+        </DegreeYear>
+      </DegreeTitleWrapper>
+      <TrashIcon role="button" onClick={() => remove(degree.id)}>
+        <i className="fa fa-trash fa-xs"/>
+      </TrashIcon>
+    </DegreeHeaderContainer>
+  )
+}
+
 interface ReqPanelProps {
-  activeDegreePlan: DegreePlan | null;
+  setModalKey: (arg0: string) => void;
+  setModalObject: (arg0: DegreePlan | null) => void;
+  activeDegreeplan: DegreePlan | null;
   isLoading: boolean;
 }
-const ReqPanel = ({activeDegreePlan, isLoading, highlightReqId, setSearchClosed, handleSearch, setHighlightReqId}: ReqPanelProps) => {
-  const degrees = activeDegreePlan?.degrees;
-  const [activeDegreeId, setActiveDegreeId] = useState<Degree["id"] | undefined>(undefined);
-  const [activeDegree, setActiveDegree] = useState<Degree | undefined>(undefined);
-  useEffect(() => {
-    if (!activeDegreeId && degrees?.length) {
-      setActiveDegreeId(degrees[0].id);
-    }
-  }, [activeDegreeId, activeDegreePlan])
-
-  useEffect(() => {
-    if (activeDegreeId && degrees) {
-      setActiveDegree(degrees.find(degree => degree.id === activeDegreeId));
-    }
-  })
-
+const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, setSearchClosed, handleSearch}: ReqPanelProps) => {
+  const degrees = activeDegreeplan?.degrees;
   const { update: updateDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans');
   
+  const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null); 
+  const plannedCourses = useMemo(() => {
+    if (!fulfillments) return {}
+  }, [fulfillments])
+
   return(
       <PanelContainer>
-        <PanelHeader>
-            <SelectListDropdown 
-            allItems={degrees || []}
-            active={activeDegree}
-            selectItem={(id: Degree["id"]) => setActiveDegreeId(id)}
-            getItemName={(degree: Degree) => `${degree.major}, ${degree.degree}`}
-            itemType={"major or degree"}
-            mutators={{
-              remove: (degree) => {
-                updateDegreeplan(
-                  {degree_ids: activeDegreePlan?.degree_ids?.filter(id => id !== degree.id) || []},
-                  activeDegreePlan?.id
-                )
-                if (degree.id === activeDegreeId) setActiveDegreeId(undefined);
-              },
-              create: () => updateDegreeplan(
-                {degree_ids: [...(activeDegreePlan?.degree_ids || []), 520 ]}, // TODO: this is a placeholder, we need to add a new degree
-                activeDegreePlan?.id
-              )?.then((res) => { if (res?.id) setActiveDegreeId(res.id); }),
-            }}
-            />
-        </PanelHeader>
         <PanelBody>
-          {activeDegree?.rules?.map((rule: any) => ( 
-              <Rule rule={rule} setSearchClosed={setSearchClosed} handleSearch={handleSearch} setHighlightReqId={setHighlightReqId} highlightReqId={highlightReqId} key={rule.id}/>
-            ))
-            || <EmptyPanel />
+            {!activeDegreeplan ? <EmptyPanel /> :
+              activeDegreeplan.degrees.map(degree => (
+                <>
+                  <DegreeHeader degree={degree} key={degree.id} remove={(id) => {
+                    setModalKey("degree-remove")
+                    // TODO
+                  }}/>
+                  {degree.rules.map((rule: any) => (
+                    <Rule 
+                    rule={rule} 
+                    setSearchClosed={setSearchClosed} 
+                    handleSearch={handleSearch} 
+                    key={rule.id}
+                    />
+                  ))}
+                </>
+              )) 
             }
+            <AddDegree role="button" onClick={() => {
+              setModalObject(activeDegreeplan);
+              setModalKey("degree-add");
+            }}>
+              <i className="fa fa-plus" />
+              <div>
+                Add Degree
+              </div>
+            </AddDegree>
         </PanelBody>
       </PanelContainer>
   );
