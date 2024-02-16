@@ -26,8 +26,13 @@ const ScoreLabel = styled.div`
     font-size: 1rem;
     line-height: 125%;
 `;
-
-const ScoreRow = ({ score, label }: { score: number, label: string }) => {
+interface ScoreRowProps { 
+    score: number;
+    label: string;
+    reverse: boolean; 
+}
+const ScoreRow = ({ score, label, reverse = false }: ScoreRowProps) => {
+    const color = getColor(score, reverse);
     return (
         <>
             <ScoreCircle
@@ -35,12 +40,10 @@ const ScoreRow = ({ score, label }: { score: number, label: string }) => {
             strokeWidth={12}
             text={isNaN(score) ? "N/A" : score.toFixed(1)}
             styles={{
-                path: {
-                    stroke: getColor(score, false),
-                },
+                path: { stroke: color },
                 text: {
                     fontSize: "2rem",
-                    fill: getColor(score, false),
+                    fill: color,
                     fontWeight: "500"
                 }
             }}
@@ -78,14 +81,15 @@ const getAverages = (fulfillments: Fulfillment[]) => {
 
 
 const Stats = ({ courses, className } : { courses: Fulfillment[], className: string }) => {
+    console.log(courses)
     const { course_quality, instructor_quality, difficulty, work_required } = getAverages(courses) as Record<StatsType, number>;
 
     return (
         <Stack className={className}>
             <ScoreRow label={'Course Quality'} score={course_quality}/>
             <ScoreRow label={'Instructor Quality'} score={instructor_quality}/> 
-            <ScoreRow label={'Difficulty'} score={difficulty}/> 
-            <ScoreRow label={'Work Required'} score={work_required}/> 
+            <ScoreRow label={'Difficulty'} score={difficulty} reverse /> 
+            <ScoreRow label={'Work Required'} score={work_required} reverse/> 
         </Stack>
     )
 }

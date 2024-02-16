@@ -90,7 +90,7 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
         degreeplan_pk = self.kwargs["degreeplan_pk"]
         try:
             return int(degreeplan_pk)
-        except ValueError | TypeError:
+        except (ValueError, TypeError):
             raise ValidationError("Invalid degreeplan_pk passed in URL")
 
     def get_queryset(self):

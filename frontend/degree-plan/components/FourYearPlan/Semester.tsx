@@ -57,13 +57,14 @@ const CreditsLabel = styled.div`
 interface SemesterProps {
     showStats: boolean;
     semester: string;
-    fulfillments: Fulfillment[];
+    fulfillments: Fulfillment[]; // fulfillments of this semester
     activeDegreeplanId: DegreePlan["id"] | undefined;
     className: string;
 }
 
 const Semester = ({ showStats, semester, fulfillments, activeDegreeplanId, className} : SemesterProps) => {
     const ref = useRef(null);
+    const credits = fulfillments.reduce((acc, curr) => acc + (curr.course?.credits || 1), 0)
 
     // the fulfillments api uses the POST method for updates (it creates if it doesn't exist, and updates if it does)
     const { createOrUpdate } = useSWRCrud<Fulfillment>(`/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`, { idKey: "full_code" });
@@ -93,7 +94,7 @@ const Semester = ({ showStats, semester, fulfillments, activeDegreeplanId, class
                 {showStats && <FlexStats courses={fulfillments}/>}
             </SemesterContent>
             <CreditsLabel>
-                6.5 CUs
+                {credits} CUs
             </CreditsLabel>
         </SemesterCard>
     )

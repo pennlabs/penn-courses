@@ -131,7 +131,7 @@ const Semesters = ({ activeDegreeplan, showStats, className }: SemestersProps) =
 
     return (
         <SemestersContainer className={className}>            
-            {Object.keys(semesters).sort().map((semester: any, index: number) =>
+            {Object.keys(semesters).sort().map((semester: any) =>
                 <FlexSemester activeDegreeplanId={activeDegreeplan?.id} showStats={showStats} semester={semester} fulfillments={semesters[semester]} key={semester}/>
                 )}
             <ModifySemesters addSemester={addSemester} semesters={semesters} />

@@ -299,6 +299,7 @@ class CourseListSerializer(serializers.ModelSerializer):
             "difficulty",
             "work_required",
             "recommendation_score",
+            "credits",
         ]
         read_only_fields = fields
 
@@ -381,6 +382,7 @@ class CourseDetailSerializer(CourseListSerializer):
             "instructor_quality",
             "difficulty",
             "work_required",
+            "credits",
         ] + [
             "crosslistings",
             "pre_ngss_requirements",
