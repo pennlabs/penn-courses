@@ -112,11 +112,11 @@ const ReqPanel = ({activeDegreePlan, isLoading, highlightReqId, setSearchClosed,
   const [activeDegreeId, setActiveDegreeId] = useState<Degree["id"] | undefined>(undefined);
   const [activeDegree, setActiveDegree] = useState<Degree | undefined>(undefined);
   
-  // useEffect(() => {
-  //   if (!activeDegreeId && degrees?.length) {
-  //     setActiveDegreeId(degrees[0].id);
-  //   }
-  // }, [activeDegreeId, activeDegreePlan])
+  useEffect(() => {
+    if (!activeDegreeId && degrees?.length) {
+      setActiveDegreeId(degrees[0].id);
+    }
+  }, [activeDegreeId, activeDegreePlan])
 
   useEffect(() => {
     if (activeDegreeId && degrees) {

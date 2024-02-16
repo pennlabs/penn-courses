@@ -116,7 +116,7 @@ const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any)
     const resizeFrame = (e:any) => {
         const criticalRatio = 0.3;
         if (drag) {
-            const xDiff = Math.abs(x - e.clientX) * 1.1;
+            const xDiff = Math.abs(x - e.clientX) * 1;
             let newLeftW = x > e.clientX ? leftWidth - xDiff : leftWidth + xDiff;            
             if (totalWidth - newLeftW < totalWidth * criticalRatio) newLeftW = totalWidth * (1 - criticalRatio);
             if (newLeftW < totalWidth * criticalRatio) newLeftW = totalWidth * criticalRatio;
@@ -134,7 +134,7 @@ const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any)
     const handleSearch =  async (id: number, query: string) => {
         // setHighlightReqId(id);
         setSearchClosed(false);
-        console.log(query);
+        // console.log(query);
         setLoading(true);
         setReqQuery(query);
         if (id != undefined) setReqId(id);
