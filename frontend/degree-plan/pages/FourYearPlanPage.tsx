@@ -13,13 +13,20 @@ import DegreeModal, { ModalKey } from "@/components/FourYearPlan/DegreeModal";
 import SplitPane, { Pane } from 'react-split-pane';
 
 const Row = styled.div`
-    display: flex;
-    flex-direction: row;
+    position: relative;
+    height: 100%;
+    width: 100%;
 `;
 
+// display: flex;
+//     flex-direction: row;
+//     position: relative;
 const PlanPageContainer = styled.div`
     background-color: #F7F9FC;
     padding: 1rem;
+    position: absolute;
+    width: 100%;
+    height: 89%;
 `;
 
 export const PanelTopBar = styled.div`
@@ -32,13 +39,16 @@ export const PanelTopBar = styled.div`
     width: 100%;
 `;
 
-const PanelContainer = styled.div`
+const PanelContainer = styled.div<{$maxWidth: string, $minWidth: string}>`
     border-radius: 10px;
     box-shadow: 0px 0px 10px 6px rgba(0, 0, 0, 0.05);
     background-color: #FFFFFF;
     margin: 10px;
     height: 82vh;
     overflow: hidden; /* Hide scrollbars */
+    width: ${props => props.$maxWidth || props.$maxWidth ? 'auto' : '100%'};
+    max-width: ${props => props.$maxWidth ? props.$maxWidth : '70vw'};
+    min-width: ${props => props.$minWidth ? props.$minWidth : '25vw'};
 `;
 
 const Divider = styled.div`
@@ -185,46 +195,47 @@ const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any)
                     setActiveDegreeplanId={setActiveDegreeplanId}
                     /> 
                     }
-                <Row onMouseMove={resizeFrame} onMouseUp={endResize}>
-                    <SplitPane split="vertical" minSize={'30%'}>
-                        <Pane>
+                <Row>
+                    {/* <SplitPane split="vertical" minSize={'80%'} allowResize={false} > */}
+                    <SplitPane split="vertical" minSize={'40%'} >
                             <PanelContainer>
-                                <PlanPanel 
-                                setModalKey={setModalKey}
-                                modalKey={modalKey}
-                                setModalObject={setModalObject}
-                                isLoading={isLoadingDegreeplans || isLoadingActiveDegreePlan} 
-                                activeDegreeplan={activeDegreePlan} degreeplans={degreeplans} 
-                                setActiveDegreeplanId={setActiveDegreeplanId}
+                                    <PlanPanel 
+                                    setModalKey={setModalKey}
+                                    modalKey={modalKey}
+                                    setModalObject={setModalObject}
+                                    isLoading={isLoadingDegreeplans || isLoadingActiveDegreePlan} 
+                                    activeDegreeplan={activeDegreePlan} degreeplans={degreeplans} 
+                                    setActiveDegreeplanId={setActiveDegreeplanId}
                                 />
                             </PanelContainer>
-                        </Pane>
-                        <Pane>
-                            <PanelContainer>
-                                <ReqPanel 
-                                setModalKey={setModalKey}
-                                setModalObject={setModalObject}
-                                activeDegreeplan={activeDegreePlan} 
-                                highlightReqId={highlightReqId} 
-                                setHighlightReqId={setHighlightReqId} 
-                                setMajors={setMajors} 
-                                currentMajor={currentMajor} 
-                                setCurrentMajor={setCurrentMajor} 
-                                setSearchClosed={setSearchClosed} 
-                                setDegreeModalOpen={setDegreeModalOpen} 
-                                handleSearch={handleSearch}
-                                />
-                            </PanelContainer>
-                        </Pane>
+                            <Pane style={{display: 'flex', flexDirection: 'row'}}>
+                                <PanelContainer>
+                                    <ReqPanel 
+                                    setModalKey={setModalKey}
+                                    setModalObject={setModalObject}
+                                    activeDegreeplan={activeDegreePlan} 
+                                    highlightReqId={highlightReqId} 
+                                    setHighlightReqId={setHighlightReqId} 
+                                    setMajors={setMajors} 
+                                    currentMajor={currentMajor} 
+                                    setCurrentMajor={setCurrentMajor} 
+                                    setSearchClosed={setSearchClosed} 
+                                    setDegreeModalOpen={setDegreeModalOpen} 
+                                    handleSearch={handleSearch}
+                                    />
+                                </PanelContainer>
+                                <PanelContainer hidden={searchClosed} $maxWidth={'300px'} $minWidth={'270px'}>
+                                    <SearchPanel 
+                                        setClosed={handleCloseSearchPanel} 
+                                        courses={results} 
+                                        reqId={reqId}
+                                        loading={loading} />
+                                </PanelContainer>
+                            </Pane>
                     </SplitPane>
-                    <PanelContainer hidden={searchClosed} $width={400}>
-                        <SearchPanel 
-                            setClosed={handleCloseSearchPanel} 
-                            courses={results} 
-                            reqId={reqId}
-                            loading={loading} />
-                    </PanelContainer>
-                </Row>
+                {/* </SplitPane> */}
+                        
+                </Row>             
             </ReviewPanelContext.Provider>
         </PlanPageContainer>
     )

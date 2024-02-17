@@ -45,6 +45,16 @@ const LoadingComponent = styled.div`
     text-align: center; 
     transform: translate(0, 90%)
 `
+const PanelContainer = styled.div`
+    border-radius: 10px;
+    box-shadow: 0px 0px 10px 6px rgba(0, 0, 0, 0.05);
+    background-color: #FFFFFF;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+`;
+
 type ISearchResultCourse =  {course: ICourseQ};
 
 const SearchPanel = ({setClosed, reqId, reqQuery}:any) => {
@@ -110,7 +120,7 @@ const SearchPanel = ({setClosed, reqId, reqQuery}:any) => {
 
 
     return (
-        <>
+        <PanelContainer>
             <PanelTopBar>
               <div className='d-flex justify-content-between'>
                 <div>Search </div>
@@ -149,7 +159,7 @@ const SearchPanel = ({setClosed, reqId, reqQuery}:any) => {
                     }
                 </SearchPanelResult>}
             </SearchPanelBody>
-        </>
+        </PanelContainer>
     )
 }
 
