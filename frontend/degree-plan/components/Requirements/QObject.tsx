@@ -63,7 +63,7 @@ const Row = styled.div`
 
 const Attributes = ({ attributes }: { attributes: string[] }) => {
     return <Row>
-        <DarkGrayIcon><i class="fas fa-at fa-sm"></i></DarkGrayIcon> {/*TODO: add a tooltip */}
+        <DarkGrayIcon><i className="fas fa-at fa-sm"></i></DarkGrayIcon> {/*TODO: add a tooltip */}
         <div>{attributes.join(', ')}</div>
     </Row>
 }
@@ -146,7 +146,7 @@ const SearchCondition = ({ compound, chosenOptions, setChosenOptions }: SearchCo
                     : [elem]
             )}
             <DarkGrayIcon>
-                <i class="fas fa-search fa-sm"></i>
+                <i className="fas fa-search fa-sm"></i>
             </DarkGrayIcon>
         </SearchConditionWrapper>
     )

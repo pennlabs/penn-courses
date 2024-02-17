@@ -1,7 +1,7 @@
 import styled from "@emotion/styled";
 import type { DegreePlan } from "@/types";
 import { useState } from "react";
-import { useSWRCrud } from "@/hooks/swrcrud";
+import { deleteFetcher, postFetcher, useSWRCrud } from "@/hooks/swrcrud";
 import { useSWRConfig } from "swr";
 import ModalContainer from "../common/ModalContainer";
 
@@ -16,8 +16,14 @@ const getModalTitle = (modalState: ModalKey) => {
             return "Rename degree plan";
         case "plan-remove":
             return "Remove degree plan";
-        default:
+        case "degree-add":
+            return "Add degree";
+        case "degree-remove":
+            return "Remove degree";
+        case null:
             return "";
+        default:
+            throw Error("Invalid modal key: ");
     }
 }
 
@@ -49,9 +55,11 @@ interface ModalInteriorProps {
     setActiveDegreeplanId: (arg0: DegreePlan["id"]) => void;
     close: () => void;
 }
-const ModalInterior = ({ modalObject, modalKey, setActiveDegreeplanId }: ModalInteriorProps) => {
+const ModalInterior = ({ modalObject, modalKey, setActiveDegreeplanId, close }: ModalInteriorProps) => {
     const { create: createDegreeplan, update: updateDegreeplan, remove: deleteDegreeplan, copy: copyDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans');
     const { mutate } = useSWRConfig();
+
+    console.log("FIRED")
 
     const create_degreeplan = (name: string) => { 
         createDegreeplan({ name: name })
@@ -88,11 +96,13 @@ const ModalInterior = ({ modalObject, modalKey, setActiveDegreeplanId }: ModalIn
         )
     }
     const add_degree = (degreeplanId, degreeId) => {
-        updateDegreeplan({ degrees_ids: [...modalObject.degree_ids, degreeId] }, modalObject.id)
+        const updated = postFetcher(`/api/degree/degreeplans/${degreeplanId}/degrees`, { degree_ids: [degreeId] }) // add degree
+        mutate(`api/degree/degreeplans/${degreeplanId}`, updated, { populateCache: true, revalidate: false }) // use updated degree plan returned
         mutate(key => key && key.startsWith(`/api/degree/degreeplans/${degreeplanId}/fulfillments`)) // refetch the fulfillments   
     }
     const remove_degree = (degreeplanId, degreeId) => {
-        updateDegreeplan({ degrees: modalObject.degrees.filter(id => id !== degreeId) }, modalObject.id)
+        const updated = deleteFetcher(`/api/degree/degreeplans/${degreeplanId}/degrees`, { degree_ids: [degreeId] }) // remove degree
+        mutate(`api/degree/degreeplans/${degreeplanId}`, updated, { populateCache: true, revalidate: false }) // use updated degree plan returned
         mutate(key => key && key.startsWith(`/api/degree/degreeplans/${degreeplanId}/fulfillments`)) // refetch the fulfillments   
     }
 

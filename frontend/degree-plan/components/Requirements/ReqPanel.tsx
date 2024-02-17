@@ -66,8 +66,8 @@ const TrashIcon = styled(GrayIcon)`
   }
 `
 
-const AddDegree = styled(AddButton)`
-  margin-top: 1rem;
+const DegreeWrapper = styled.div`
+  margin-bottom: 1rem;
 `
 
 const DegreeHeader = ({ degree, remove }: { degree: Degree, remove: (degreeId: Degree["id"]) => void}) => {
@@ -109,7 +109,7 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
         <PanelBody>
             {!activeDegreeplan ? <EmptyPanel /> :
               activeDegreeplan.degrees.map(degree => (
-                <>
+                <DegreeWrapper>
                   <DegreeHeader degree={degree} key={degree.id} remove={(id) => {
                     setModalKey("degree-remove")
                     // TODO
@@ -122,10 +122,10 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
                     key={rule.id}
                     />
                   ))}
-                </>
+                </DegreeWrapper>
               )) 
             }
-            <AddDegree role="button" onClick={() => {
+            <AddButton role="button" onClick={() => {
               setModalObject(activeDegreeplan);
               setModalKey("degree-add");
             }}>
@@ -133,7 +133,7 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
               <div>
                 Add Degree
               </div>
-            </AddDegree>
+            </AddButton>
         </PanelBody>
       </PanelContainer>
   );

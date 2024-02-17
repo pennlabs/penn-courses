@@ -2,6 +2,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from django_filters.rest_framework import DjangoFilterBackend
 from django.http import Http404
+from django.db import IntegrityError
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, action
 from rest_framework.exceptions import ValidationError
@@ -74,6 +75,30 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         new_degree_plan = degree_plan.copy(request.data["name"])
         serializer = self.get_serializer(new_degree_plan)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=True, methods=["post", "delete"])
+    def degrees(self, request, pk=None):
+        degree_ids = request.data.get("degree_ids")
+        if degree_ids is None:
+            raise ValidationError({ "degree_ids": "This field is required." })
+        if not isinstance(degree_ids, list):
+            raise ValidationError({ "degree_ids": "This field must be a list." })
+        degree_plan = self.get_object()
+
+        try:
+            if request.method == "POST":
+                degree_plan.degrees.add(*degree_ids)
+            elif request.method == "DELETE":
+                degree_plan.degrees.remove(*degree_ids)
+        except IntegrityError:
+            return Response(
+                data={"error": "One or more of the degrees does not exist."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = self.get_serializer(degree_plan)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class FulfillmentViewSet(viewsets.ModelViewSet):
     """

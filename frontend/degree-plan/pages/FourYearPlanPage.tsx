@@ -63,6 +63,7 @@ const FourYearPlanPage = () => {
     // edit modals for degree and degree plan
     const [modalKey, setModalKey] = useState<ModalKey>(null);
     const [modalObject, setModalObject] = useState<DegreePlan | null>(null); // stores the which degreeplan is being updated using the modal
+    useEffect(() => console.log(modalKey), [modalKey])
 
     // active degree plan
     const [activeDegreeplanId, setActiveDegreeplanId] = useState<null | DegreePlan["id"]>(null);
