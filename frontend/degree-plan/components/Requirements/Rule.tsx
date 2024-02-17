@@ -1,5 +1,3 @@
-import MDIcon from '@mdi/react';
-import { mdiEye, mdiMagnify, mdiMenuDown, mdiMenuUp } from '@mdi/js';
 import { useState } from 'react';
 import QObject from './QObject';
 import { Rule } from '@/types';
@@ -39,15 +37,13 @@ interface RuleProps {
     rule: Rule;
     setSearchClosed: any;
     handleSearch: any;
-    setHighlightReqId: any;
-    highlightReqId: any;
 }
 
 /**
  * Recursive component to represent a rule.
  * @returns 
  */
-const Rule = ({ rule, setSearchClosed, handleSearch, setHighlightReqId, highlightReqId } : RuleProps) => {
+const Rule = ({ rule, setSearchClosed, handleSearch } : RuleProps) => {
     const [collapsed, setCollapsed] = useState(false);
     return (
       <>
@@ -61,8 +57,8 @@ const Rule = ({ rule, setSearchClosed, handleSearch, setHighlightReqId, highligh
           <RuleTitle onClick={() => setCollapsed(!collapsed)}>
             <div>{rule.title}</div>
             {rule.rules.length && 
-                <Icon path={collapsed ? mdiMenuDown : mdiMenuUp} size={1} color='#575757'>
-                  <i class={`fas fa-chevron-${collapsed ? "up" : "down"}`}></i>
+                <Icon>
+                  <i className={`fas fa-chevron-${collapsed ? "up" : "down"}`}></i>
                 </Icon>
             }
           </RuleTitle>
@@ -70,7 +66,7 @@ const Rule = ({ rule, setSearchClosed, handleSearch, setHighlightReqId, highligh
 
         {!collapsed && <div className="ms-3">
             {rule.rules.map((rule: any, index: number) => 
-                <Rule rule={rule} setSearchClosed={setSearchClosed} handleSearch={handleSearch} setHighlightReqId={setHighlightReqId} highlightReqId={highlightReqId}/>
+                <Rule key={rule.id} rule={rule} setSearchClosed={setSearchClosed} handleSearch={handleSearch} />
             )}
           </div>
           }

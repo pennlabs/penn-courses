@@ -2,10 +2,11 @@ import React, { useState, useRef, useEffect } from "react";
 import styled from '@emotion/styled';
 import { CircularProgressbar } from 'react-circular-progressbar';
 import 'react-circular-progressbar/dist/styles.css';
+import { Fulfillment } from "@/types";
 
 const getColor = (num: number, reverse: boolean) => {
     if (isNaN(num)) {
-        return "#76bf96";
+        return "#d6d6d6";
     }
     num = Number(num.toFixed(1));
     if (num < 2) {
@@ -25,21 +26,24 @@ const ScoreLabel = styled.div`
     font-size: 1rem;
     line-height: 125%;
 `;
-
-const ScoreRow = ({ score, label }: { score: number, label: string }) => {
+interface ScoreRowProps { 
+    score: number;
+    label: string;
+    reverse: boolean; 
+}
+const ScoreRow = ({ score, label, reverse = false }: ScoreRowProps) => {
+    const color = getColor(score, reverse);
     return (
         <>
             <ScoreCircle
-            value={score * 25}
+            value={isNaN(score) ? 0 : score * 25}
             strokeWidth={12}
-            text={score.toFixed(1)}
+            text={isNaN(score) ? "N/A" : score.toFixed(1)}
             styles={{
-                path: {
-                    stroke: getColor(score, false),
-                },
+                path: { stroke: color },
                 text: {
                     fontSize: "2rem",
-                    fill: getColor(score, false),
+                    fill: color,
                     fontWeight: "500"
                 }
             }}
@@ -56,31 +60,36 @@ const Stack = styled.div`
     align-items: center;
 `;
 
-const getAvg = (courses) => {
-    if (courses.length == 0) return [0, 0, 0, 0];
-    let courseQualitySum = 0;
-    let instructorQualitySum = 0;
-    let difficultySum = 0;
-    let workRequired = 0;
-    for (const course in courses) {
-        courseQualitySum += course.course_quality;
-        instructorQualitySum += course.instructor_quality;
-        difficultySum += course.difficulty;
-        workRequired += course.work_required;
+type StatsType = "course_quality" | "instructor_quality" | "difficulty" | "work_required";
+const StatsKeys: StatsType[] = ["course_quality", "instructor_quality", "difficulty", "work_required"];
+const getAverages = (fulfillments: Fulfillment[]) => {
+    const counts = { course_quality: 0, instructor_quality: 0, difficulty: 0, work_required: 0 };
+    const sums = { course_quality: 0, instructor_quality: 0, difficulty: 0, work_required: 0 };
+    for (const f of fulfillments) {
+        for (const key of StatsKeys) {
+            sums[key] += f.course?.[key] || 0;
+            counts[key] += f.course?.[key] ? 1 : 0;
+        }
     }
-    return [courseQualitySum / courses.length, 
-            instructorQualitySum / courses.length, 
-            difficultySum / courses.length, 
-            workRequired / courses.length];
+    const avgs = {} as Record<StatsType, number>;
+    for (const key of StatsKeys) {
+        if (counts[key] == 0) avgs[key] = NaN;
+        else avgs[key] = sums[key] / counts[key];
+    }
+    return avgs;
 }
 
-const Stats = ({ courses, className } : { courses: any, className: string }) => {
+
+const Stats = ({ courses, className } : { courses: Fulfillment[], className: string }) => {
+    console.log(courses)
+    const { course_quality, instructor_quality, difficulty, work_required } = getAverages(courses) as Record<StatsType, number>;
+
     return (
         <Stack className={className}>
-            <ScoreRow label={'Course Quality'} score={3.3}/>
-            <ScoreRow label={'Instructor Quality'} score={3.2}/> 
-            <ScoreRow label={'Difficulty'} score={2.1}/> 
-            <ScoreRow label={'Work Required'} score={1.0}/> 
+            <ScoreRow label={'Course Quality'} score={course_quality}/>
+            <ScoreRow label={'Instructor Quality'} score={instructor_quality}/> 
+            <ScoreRow label={'Difficulty'} score={difficulty} reverse /> 
+            <ScoreRow label={'Work Required'} score={work_required} reverse/> 
         </Stack>
     )
 }

@@ -21,7 +21,6 @@ admin.site.register(SatisfactionStatus)
 @admin.register(Fulfillment)
 class FulfillmentAdmin(admin.ModelAdmin):
     autocomplete_fields = ["rules"]
-    readonly_fields = ["historical_course"]
 
 @admin.register(DoubleCountRestriction)
 class DoubleCountRestrictionAdmin(admin.ModelAdmin):

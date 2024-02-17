@@ -2,8 +2,9 @@ from django.core.exceptions import ObjectDoesNotExist
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from django_filters.rest_framework import DjangoFilterBackend
 from django.http import Http404
+from django.db import IntegrityError
 from rest_framework import status, viewsets
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, action
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import IsAuthenticated
@@ -62,6 +63,41 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         context = super().get_serializer_context()
         context.update({"request": self.request})  # used to get the user
         return context
+    
+    @action(detail=True, methods=["post"])
+    def copy(self, request, pk=None):
+        """
+        Copy a degree plan.
+        """
+        if request.data.get("name") is None:
+            raise ValidationError({ "name": "This field is required." })
+        degree_plan = self.get_object()
+        new_degree_plan = degree_plan.copy(request.data["name"])
+        serializer = self.get_serializer(new_degree_plan)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
+    @action(detail=True, methods=["post", "delete"])
+    def degrees(self, request, pk=None):
+        degree_ids = request.data.get("degree_ids")
+        if degree_ids is None:
+            raise ValidationError({ "degree_ids": "This field is required." })
+        if not isinstance(degree_ids, list):
+            raise ValidationError({ "degree_ids": "This field must be a list." })
+        degree_plan = self.get_object()
+
+        try:
+            if request.method == "POST":
+                degree_plan.degrees.add(*degree_ids)
+            elif request.method == "DELETE":
+                degree_plan.degrees.remove(*degree_ids)
+        except IntegrityError:
+            return Response(
+                data={"error": "One or more of the degrees does not exist."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = self.get_serializer(degree_plan)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class FulfillmentViewSet(viewsets.ModelViewSet):
@@ -79,7 +115,7 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
         degreeplan_pk = self.kwargs["degreeplan_pk"]
         try:
             return int(degreeplan_pk)
-        except ValueError | TypeError:
+        except (ValueError, TypeError):
             raise ValidationError("Invalid degreeplan_pk passed in URL")
 
     def get_queryset(self):

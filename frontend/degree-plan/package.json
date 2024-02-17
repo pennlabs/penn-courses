@@ -37,6 +37,7 @@
     "react-fuzzy": "^1.3.0",
     "react-resizable": "^3.0.5",
     "react-string-replace": "^1.1.1",
+    "react-tiny-popover": "^8.0.4",
     "react-toastify": "^9.1.1",
     "swr": "^2.2.4",
     "typescript": "4.9.5"

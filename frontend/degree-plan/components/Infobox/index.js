@@ -3,9 +3,12 @@ import styled from "styled-components";
 import { lato } from "@/fonts";
 import Ratings from "./InfoRatings";
 import { CourseDescription, CourseHeader } from "./CourseInfo";
+import { ErrorBox } from "./common/ErrorBox";
 
 
 const InfoBoxCSS = styled.div`
+height: 100%;
+
 .box {
   font-size: 15px;
   margin: 0px;
@@ -227,6 +230,14 @@ const InfoBoxCSS = styled.div`
 }
 `
 
+const ErrorWrapper = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+  flex-direction: column;
+`
+
 /**
  * Information box on the left most side, containing scores and descriptions
  * of course or professor.
@@ -239,7 +250,6 @@ const InfoBox = ({
     code = "",
     aliases,
     description,
-    instructors,
     name,
     notes,
     num_sections: numSections,
@@ -247,6 +257,7 @@ const InfoBox = ({
   },
   data,
   liveData,
+  close
 }) => {
   const {
     rInstructorQuality: avgInstructorQuality,
@@ -266,48 +277,55 @@ const InfoBox = ({
     avgDifficulty != null ||
     avgWorkRequired != null;
 
+  console.log("data", data)
+
   if (!data) {
     return <h1>Loading data...</h1>;
   }
 
   return (
     <InfoBoxCSS className={lato.className}>
-      <div className="box">
-        <div id="banner-info" data-type="course">
-          <CourseHeader
-            aliases={aliases}
-            code={code}
-            data={data}
-            name={name}
-            notes={notes}
-            instructors={instructors}
-            liveData={liveData}
-          />
-        </div>
-
-        {hasReviews && (
-          <div id="banner-score">
-            <Ratings
-              value="Average"
-              instructor={avgInstructorQuality}
-              course={avgCourseQuality}
-              difficulty={avgDifficulty}
-              work={avgWorkRequired}
-              num_sections={numSections}
-            />
-
-            <Ratings
-              value="Recent"
-              instructor={recentInstructorQuality}
-              course={recentCourseQuality}
-              difficulty={recentDifficulty}
-              work={recentWorkRequired}
-              num_sections={numSectionsRecent}
+      {code ?
+        <div className="box">
+          <div id="banner-info" data-type="course">
+            <CourseHeader
+              close={close}
+              aliases={aliases}
+              code={code}
+              data={data}
+              name={name}
+              notes={notes}
+              liveData={liveData}
             />
           </div>
-        )}
-        <CourseDescription description={description} />
-      </div>
+
+          {hasReviews && (
+            <div id="banner-score">
+              <Ratings
+                value="Average"
+                instructor={avgInstructorQuality}
+                course={avgCourseQuality}
+                difficulty={avgDifficulty}
+                work={avgWorkRequired}
+                num_sections={numSections}
+              />
+
+              <Ratings
+                value="Recent"
+                instructor={recentInstructorQuality}
+                course={recentCourseQuality}
+                difficulty={recentDifficulty}
+                work={recentWorkRequired}
+                num_sections={numSectionsRecent}
+              />
+            </div>
+          )}
+          <CourseDescription description={description} />
+        </div>
+        : <ErrorWrapper>
+            <ErrorBox style={{ marginTop: "auto", marginBottom: "auto" }}>Course not found</ErrorBox>
+          </ErrorWrapper>
+        }
     </InfoBoxCSS>
   );
 };

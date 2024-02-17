@@ -26,7 +26,7 @@ const CoursesPlanned = ({full_codes, removeCourse, className, semester, dropRef}
             {full_codes.map((full_code: Course["full_code"]) => 
                 <CoursePlanned key={full_code} semester={semester} full_code={full_code} removeCourse={removeCourse}/>
             )}
-            <PlannedCourseContainer ref={dropRef}/>
+            <PlannedCourseContainer ref={dropRef} $isDepressed={true}/>
         </PlannedCoursesContainer>
     )
 }

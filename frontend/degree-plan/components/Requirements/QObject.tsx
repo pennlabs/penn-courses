@@ -8,6 +8,7 @@ import grammar from "@/util/q_object_grammar"
 import { Icon } from "../bulma_derived_components";
 import { BaseCourseContainer } from "../FourYearPlan/CoursePlanned";
 import assert from "assert";
+import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
 
 type ConditionKey = "full_code" | "semester" | "attributes__code__in" | "department__code" | "full_code__startswith" | "code__gte" | "code__lte" | "department__code__in" 
 interface Condition {
@@ -30,18 +31,22 @@ interface CourseOptionProps {
 const CourseOption = ({ course, chosenOptions, setChosenOptions, semester }: CourseOptionProps) => {
     const [{ isDragging }, drag] = useDrag(() => ({
         type: ItemTypes.COURSE,
-        item: {full_code: course, semester:-1},
+        item: {full_code: course, semester: null},
         end: (item, monitor) => {
-            if (monitor.didDrop()) setChosenOptions(course);
+            if (monitor.didDrop()) {
+                setChosenOptions([...chosenOptions, course])
+            };
         },
         collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
         canDrag: () => !chosenOptions.length // if another hasn't already been chosen
     }))
 
     return (
-        <BaseCourseContainer ref={drag}>
-            {course.split("-").join(" ")}{semester ? ` (${semester})` : ""}
-        </BaseCourseContainer>
+        <ReviewPanelTrigger full_code={course}>
+            <BaseCourseContainer ref={drag} $isDepressed={chosenOptions.includes(course)}>
+                {course.split("-").join(" ")}{semester ? ` (${semester})` : ""}
+            </BaseCourseContainer>
+        </ReviewPanelTrigger>
     )
 }
 
@@ -58,7 +63,7 @@ const Row = styled.div`
 
 const Attributes = ({ attributes }: { attributes: string[] }) => {
     return <Row>
-        <DarkGrayIcon><i class="fas fa-at fa-sm"></i></DarkGrayIcon> {/*TODO: add a tooltip */}
+        <DarkGrayIcon><i className="fas fa-at fa-sm"></i></DarkGrayIcon> {/*TODO: add a tooltip */}
         <div>{attributes.join(', ')}</div>
     </Row>
 }
@@ -109,7 +114,7 @@ const SearchCondition = ({ compound, chosenOptions, setChosenOptions }: SearchCo
     if ('department__code__in' in compoundCondition) {
         const departments = compoundCondition['department__code__in'] as string[];
         display.push(<Row>in {
-            departments.map((dept) => <div>{dept}</div>)
+            departments.map((dept) => <div key={dept}>{dept}</div>)
             .flatMap((elem, index) => index < departments.length - 1 ? [elem, <CourseOptionsSeparator>or</CourseOptionsSeparator>] : [elem])
         }</Row>);
     }
@@ -141,7 +146,7 @@ const SearchCondition = ({ compound, chosenOptions, setChosenOptions }: SearchCo
                     : [elem]
             )}
             <DarkGrayIcon>
-                <i class="fas fa-search fa-sm"></i>
+                <i className="fas fa-search fa-sm"></i>
             </DarkGrayIcon>
         </SearchConditionWrapper>
     )
@@ -194,10 +199,10 @@ const QObject = ({ q }: { q: string }) => {
         return (
             <Row>
                 {parsed.clauses
-                .map((clause) => <Terminal q={clause} chosenOptions={chosenOptions} setChosenOptions={setChosenOptions}/>)
-                .flatMap((elem, index) => (
-                    index < parsed.clauses.length - 1 ? 
-                    [elem, <CourseOptionsSeparator>or</CourseOptionsSeparator>] : 
+                .map((clause, idx) => <Terminal key={idx} q={clause} chosenOptions={chosenOptions} setChosenOptions={setChosenOptions}/>)
+                .flatMap((elem, idx) => (
+                    idx < parsed.clauses.length - 1 ? 
+                    [elem, <CourseOptionsSeparator key={`${idx}-separator`}>or</CourseOptionsSeparator>] : 
                     [elem]
                 ))}
             </Row>

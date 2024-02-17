@@ -36,7 +36,8 @@ const AddSemesterContainer = styled.div`
     flex-direction: column;
     gap: .5rem;
 `;
-const AddSemester = styled.div`
+
+export const AddButton = styled.div`
     width: 100%;
     display: flex;
     justify-content: space-between;
@@ -47,7 +48,7 @@ const AddSemester = styled.div`
     color: white;
 `
 
-const EditSemester = styled(AddSemester)`
+const EditButton = styled(AddButton)`
     background-color: rgb(255, 193, 7);
 `
 
@@ -63,22 +64,22 @@ const ModifySemesters = ({ addSemester, semesters, className }: ModifySemestersP
     return (
         // TODO: add a modal for this
         <AddSemesterContainer className={className}>
-            <AddSemester role="button" onClick={() => addSemester(getNextSemester(semesterKeys[semesterKeys.length - 1] || "2023C"))}>
+            <AddButton role="button" onClick={() => addSemester(getNextSemester(semesterKeys[semesterKeys.length - 1] || "2023C"))}>
                 <Icon>
                     <i className="fas fa-plus"></i>
                 </Icon>
                 <div>
                     Add Semester
                 </div>
-            </AddSemester>
-            <EditSemester role="button">
+            </AddButton>
+            <EditButton role="button">
                 <Icon>
                     <i className="fas fa-edit"></i>
                 </Icon>
                 <div>
                     Edit Semesters
                 </div>
-            </EditSemester>
+            </EditButton>
         </AddSemesterContainer>
     )
 }
@@ -105,26 +106,33 @@ const Semesters = ({ activeDegreeplan, showStats, className }: SemestersProps) =
             : defaultSemesters
         );
     }, [activeDegreeplan])
+
     useEffect(() => {
         if (!activeDegreeplan || !fulfillments) return; // TODO: need more logic in this case
-        const _semesters = {} as { [semester: string]: Fulfillment[] };
-        Object.keys(semesters).forEach(semester => { _semesters[semester] = [] });
-        fulfillments.forEach(fulfillment => {
-            if (!fulfillment.semester) return;
-            if (!_semesters[fulfillment.semester]) {
-                _semesters[fulfillment.semester] = [];
-            }
-            _semesters[fulfillment.semester].push(fulfillment);
-        });
+        setSemesters(currentSemesters => {
+            const semesters = {} as { [semester: string]: Fulfillment[] };
+            Object.keys(currentSemesters).forEach(semester => { semesters[semester] = [] });
+            fulfillments.forEach(fulfillment => {
+                if (!fulfillment.semester) return;
+                if (!semesters[fulfillment.semester]) {
+                    semesters[fulfillment.semester] = [];
+                }
+                semesters[fulfillment.semester].push(fulfillment);
+            });
+            return semesters
+        })
+    }, [fulfillments, activeDegreeplan]);
+
+    useEffect(() => {
+        if (!activeDegreeplan) return;
         if (typeof window !== undefined) {
-            localStorage.setItem(getLocalSemestersKey(activeDegreeplan.id), JSON.stringify(_semesters));
+            localStorage.setItem(getLocalSemestersKey(activeDegreeplan.id), JSON.stringify(semesters));
         }
-        setSemesters(_semesters)
-    }, [fulfillments, semesters, activeDegreeplan]);
+    }, [semesters, activeDegreeplan])
 
     return (
         <SemestersContainer className={className}>            
-            {Object.keys(semesters).sort().map((semester: any, index: number) =>
+            {Object.keys(semesters).sort().map((semester: any) =>
                 <FlexSemester activeDegreeplanId={activeDegreeplan?.id} showStats={showStats} semester={semester} fulfillments={semesters[semester]} key={semester}/>
                 )}
             <ModifySemesters addSemester={addSemester} semesters={semesters} />
