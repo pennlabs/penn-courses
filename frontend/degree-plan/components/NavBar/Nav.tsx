@@ -11,9 +11,10 @@ const NavContainer = styled.nav`
   padding: 0 1rem;
   display: flex;
   flex-align: center;
-  width: 95%;
+  width: 100%;
   justify-content: space-between;
-  margin: 0 auto;
+  margin: 0 0;
+  background-color: var(--background-grey);
 `;
 
 const NavElt = styled.span<{ $active?: boolean }>`
@@ -36,11 +37,9 @@ interface NavProps {
     login: (u: User) => void;
     logout: () => void;
     user: User | null;
-    setSearchClosed: (status: boolean) => void;
-    setReqId: (id: number) => void;
 }
 
-const Nav = ({ login, logout, user, setSearchClosed, setReqId }: NavProps) => (
+const Nav = ({ login, logout, user}: NavProps) => (
   <NavContainer>
     <NavEltList>
       <NavElt>
@@ -52,11 +51,6 @@ const Nav = ({ login, logout, user, setSearchClosed, setReqId }: NavProps) => (
               login={login}
               logout={logout}
               />
-      </NavElt>
-        <NavElt onClick={() => {setSearchClosed(false); setReqId(-1);}}>
-          <DarkGrayIcon>
-              <i class="fas fa-search fa-lg"/>
-          </DarkGrayIcon>
       </NavElt>
     </NavEltList>
     <NavElt>

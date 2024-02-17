@@ -11,6 +11,7 @@ import ReviewPanel from "@/components/Infobox/ReviewPanel";
 import { ReviewPanelContext } from '@/components/Infobox/ReviewPanel';
 import DegreeModal, { ModalKey } from "@/components/FourYearPlan/DegreeModal";
 import SplitPane, { Pane } from 'react-split-pane';
+import Dock from "@/components/Dock/Dock";
 
 const Row = styled.div`
     position: relative;
@@ -23,11 +24,10 @@ const Row = styled.div`
 //     position: relative;
 const PlanPageContainer = styled.div`
     background-color: #F7F9FC;
-    padding: 1rem;
+    padding: 0rem 3rem;
     position: absolute;
     width: 100%;
     height: 89%;
-    flex: 1 1 auto; 
 `;
 
 export const PanelTopBar = styled.div`
@@ -44,7 +44,7 @@ const PanelContainer = styled.div<{$maxWidth: string, $minWidth: string}>`
     border-radius: 10px;
     box-shadow: 0px 0px 10px 6px rgba(0, 0, 0, 0.05);
     background-color: #FFFFFF;
-    margin: 10px;
+    margin: 1em;
     height: 82vh;
     overflow: hidden; /* Hide scrollbars */
     width: ${props => props.$maxWidth || props.$maxWidth ? 'auto' : '100%'};
@@ -179,6 +179,7 @@ const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any)
             position: reviewPanelCoords,
             setPosition: setReviewPanelCoords
             }}>
+                <Dock setSearchClosed={setSearchClosed} setReqId={setReqId}/>
                 {reviewPanelFullCode && 
                     <ReviewPanel 
                     currentSemester={options?.SEMESTER}
@@ -198,7 +199,7 @@ const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any)
                     /> 
                     }
                 <Row>
-                    <SplitPane split="vertical" minSize={0} defaultSize={650} maxSize={900}>
+                    <SplitPane split="vertical" minSize={0} maxSize={900} defaultSize='50%'>
                             <Pane>
                                 <PanelContainer >
                                         <PlanPanel 
@@ -213,20 +214,24 @@ const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any)
                             </Pane>
                             <Pane style={{display: 'flex', flexDirection: 'row'}}>
                                 <PanelContainer>
-
-                                    <ReqPanel 
-                                    setModalKey={setModalKey}
-                                    setModalObject={setModalObject}
-                                    activeDegreeplan={activeDegreePlan} 
-                                    highlightReqId={highlightReqId} 
-                                    setHighlightReqId={setHighlightReqId} 
-                                    setMajors={setMajors} 
-                                    currentMajor={currentMajor} 
-                                    setCurrentMajor={setCurrentMajor} 
-                                    setSearchClosed={setSearchClosed} 
-                                    setDegreeModalOpen={setDegreeModalOpen} 
-                                    handleSearch={handleSearch}
-                                    />
+                                    {/* <SplitPane split="horizontal" minSize='80%'> */}
+                                        <ReqPanel 
+                                        setModalKey={setModalKey}
+                                        setModalObject={setModalObject}
+                                        activeDegreeplan={activeDegreePlan} 
+                                        highlightReqId={highlightReqId} 
+                                        setHighlightReqId={setHighlightReqId} 
+                                        setMajors={setMajors} 
+                                        currentMajor={currentMajor} 
+                                        setCurrentMajor={setCurrentMajor} 
+                                        setSearchClosed={setSearchClosed} 
+                                        setDegreeModalOpen={setDegreeModalOpen} 
+                                        handleSearch={handleSearch}
+                                        />
+                                        {/* <div>
+                                            load area
+                                        </div>
+                                    </SplitPane> */}
                                 </PanelContainer>
                                 <PanelContainer hidden={searchClosed} $minWidth={'40%'} $maxWidth={'45%'} >
                                     <SearchPanel 

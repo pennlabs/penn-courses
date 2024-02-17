@@ -138,10 +138,10 @@ export default function Course({
                     </CourseIdentityContainer>
                     
                     <CourseQualityContainer>
-                        <Badge value={3.3} /> {/*course.course_quality*/}
+                        <Badge value={course.course_quality} />
                     </CourseQualityContainer>
                     <CourseDifficultyContainer>
-                        <Badge value={2.1} /> {/*course.difficulty*/}
+                        <Badge value={course.difficulty} />
                     </CourseDifficultyContainer>
                 </CourseInfoContainer>
             </CourseContainer>
