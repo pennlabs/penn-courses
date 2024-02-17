@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "export NODE_OPTIONS=--openssl-legacy-provider && node server.js",
-    "build": "next build",
-    "start": "NODE_ENV=production node server.js",
+    "build": "NODE_OPTIONS=--openssl-legacy-provider next build",
+    "start": "NODE_OPTIONS=--openssl-legacy-provider NODE_ENV=production node server.js",
     "test": "echo no tests yet",
     "codecov": "echo no codecov",
     "lint": "eslint . && tsc --noemit",
