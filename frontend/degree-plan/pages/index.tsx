@@ -12,6 +12,9 @@ import { SWRConfig } from 'swr';
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [searchClosed, setSearchClosed] = useState(true);
+  const [reqId, setReqId] = useState<undefined | number>(undefined);
+
   const updateUser = (newUserVal: User | null) => {
       if (!newUserVal) {
           // the user has logged out; show the login modal
@@ -30,11 +33,13 @@ export default function Home() {
           fetcher: (resource, init) => fetch(resource, init).then(res => res.json())
         }}>
           <Nav
-          login={updateUser}
-          logout={() => updateUser(null)}
-          user={user}
+            login={updateUser}
+            logout={() => updateUser(null)}
+            user={user}
+            setSearchClosed={setSearchClosed}
+            setReqId={setReqId}
           />
-          <FourYearPlanPage />
+          <FourYearPlanPage searchClosed={searchClosed} setSearchClosed={setSearchClosed} reqId={reqId} setReqId={setReqId}/>
           {showLoginModal && (
               <LoginModal
                   pathname={window.location.pathname}

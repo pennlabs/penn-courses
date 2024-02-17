@@ -5,6 +5,7 @@ import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicato
 import { useRouter } from "next/router";
 import styled from "@emotion/styled";
 import { maxWidth, PHONE } from '../../constants';
+import { DarkGrayIcon } from '../Requirements/QObject';
 
 const NavContainer = styled.nav`    
   padding: 0 1rem;
@@ -22,16 +23,26 @@ const NavElt = styled.span<{ $active?: boolean }>`
   justify-content: center;
   font-weight: ${(props) => (props.$active ? "bold" : "normal")};
   cursor: pointer;
+  padding-left: 5px;
+  padding-right: 5px;
 `;
+
+const NavEltList = styled.div`
+  display: flex;
+  justify-content: left;
+`
 
 interface NavProps {
     login: (u: User) => void;
     logout: () => void;
     user: User | null;
+    setSearchClosed: (status: boolean) => void;
+    setReqId: (id: number) => void;
 }
 
-const Nav = ({ login, logout, user }: NavProps) => (
+const Nav = ({ login, logout, user, setSearchClosed, setReqId }: NavProps) => (
   <NavContainer>
+    <NavEltList>
       <NavElt>
           <AccountIndicator
               leftAligned={true}
@@ -40,11 +51,17 @@ const Nav = ({ login, logout, user }: NavProps) => (
               nameLength={2}
               login={login}
               logout={logout}
-          />
+              />
       </NavElt>
-      <NavElt>
-        <Logo/>
+        <NavElt onClick={() => {setSearchClosed(false); setReqId(-1);}}>
+          <DarkGrayIcon>
+              <i class="fas fa-search fa-lg"/>
+          </DarkGrayIcon>
       </NavElt>
+    </NavEltList>
+    <NavElt>
+      <Logo/>
+    </NavElt>
   </NavContainer>
 );
 

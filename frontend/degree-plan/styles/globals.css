@@ -9,6 +9,12 @@
   --background-start-rgb: 214, 219, 220;
   --background-end-rgb: 255, 255, 255;
 
+  /* lavender */
+  --primary-color-dark: #C5D2F6;
+  --primary-color-light: #F5F5F5;
+  --background-white: #F7F9FC;
+  --background-grey:#F4F4F4;
+
   --primary-glow: conic-gradient(
     from 180deg at 50% 50%,
     #16abff33 0deg,
@@ -104,4 +110,13 @@ a {
   html {
     color-scheme: dark;
   }
+}
+
+.tag {
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+.is-rounded {
+  border-radius: 15px;
 }

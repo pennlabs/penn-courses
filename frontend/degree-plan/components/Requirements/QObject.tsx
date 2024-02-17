@@ -77,7 +77,7 @@ const SearchConditionWrapper = styled(BaseCourseContainer)`
     margin: .5 rem 0;
     background-color: #EDF1FC;
 `
-const DarkGrayIcon = styled(Icon)`
+export const DarkGrayIcon = styled(Icon)`
     color: #575757;
 `
 
@@ -85,8 +85,12 @@ interface SearchConditionProps {
     compound: Compound;
     chosenOptions: Course["full_code"][];
     setChosenOptions: (arg0: Course["full_code"][]) => void;
+    setSearchClosed: (status: boolean) => void;
+    handleSearch: (reqId: number, reqQuery: string) => void;
+    reqId: number;
+    reqQuery: string;
 }
-const SearchCondition = ({ compound, chosenOptions, setChosenOptions }: SearchConditionProps) => {
+const SearchCondition = ({ compound, chosenOptions, setChosenOptions, setSearchClosed, handleSearch, reqId, reqQuery}: SearchConditionProps) => {
     const conditions = compound.clauses.filter((clause) => clause.type === "LEAF") as Condition[];
     const compounds = compound.clauses.filter((clause) => clause.type !== "LEAF") as Compound[];
 
@@ -129,7 +133,7 @@ const SearchCondition = ({ compound, chosenOptions, setChosenOptions }: SearchCo
     compounds.forEach((compound) => display.push(
         <Row>
             <CourseOptionsSeparator id="parens">{'('}asnd</CourseOptionsSeparator>
-            <SearchCondition compound={compound} />
+            <SearchCondition compound={compound} reqId={reqId} reqQuery={reqQuery} handleSearch={handleSearch} />
             <CourseOptionsSeparator>{')'}asdf</CourseOptionsSeparator>
         </Row>
     ));
@@ -139,15 +143,17 @@ const SearchCondition = ({ compound, chosenOptions, setChosenOptions }: SearchCo
     }
 
     return (
-        <SearchConditionWrapper>
+        <SearchConditionWrapper >
             {display.flatMap(
                 (elem, index) => index < display.length - 1 ? 
                     [elem, <CourseOptionsSeparator>and</CourseOptionsSeparator>] 
                     : [elem]
             )}
-            <DarkGrayIcon>
-                <i className="fas fa-search fa-sm"></i>
-            </DarkGrayIcon>
+            <div onClick={() => {handleSearch(reqId, reqQuery);}}>
+                <DarkGrayIcon>
+                    <i class="fas fa-search fa-sm"></i>
+                </DarkGrayIcon>
+            </div>
         </SearchConditionWrapper>
     )
 }
@@ -156,14 +162,17 @@ interface TerminalProps {
     q: ParsedQObj;
     chosenOptions: Course["full_code"][];
     setChosenOptions: (arg0: Course["full_code"][]) => void;
+    reqId: number;
+    reqQuery: string;
+    handleSearch: (reqId: number, reqQuery: string) => void;
 }
-const Terminal = ({ q, chosenOptions, setChosenOptions }: TerminalProps) => {
+const Terminal = ({ q, chosenOptions, setChosenOptions, handleSearch, reqId, reqQuery }: TerminalProps) => {
     assert(q.type !== "OR");
     if (q.type === 'LEAF' && q.key === "full_code") return (
         <CourseOption course={q.value as string} chosenOptions={chosenOptions} setChosenOptions={setChosenOptions} />
     );
     if (q.type === 'LEAF') return (
-        <SearchCondition compound={{type: "AND", clauses: [q]}} chosenOptions={chosenOptions} setChosenOptions={setChosenOptions} />
+        <SearchCondition compound={{type: "AND", clauses: [q]}} chosenOptions={chosenOptions} setChosenOptions={setChosenOptions} reqId={reqId} reqQuery={reqQuery} handleSearch={handleSearch}/>
     );
     if (q.type === 'AND' && q.clauses.length == 2) {
         const semester = q.clauses.find((clause) => clause.type === "LEAF" && clause.key === "semester")
@@ -177,7 +186,7 @@ const Terminal = ({ q, chosenOptions, setChosenOptions }: TerminalProps) => {
             />
         );
     }
-    return  <SearchCondition compound={q} />;
+    return  <SearchCondition compound={q} reqId={reqId} reqQuery={reqQuery} handleSearch={handleSearch}/>;
 }
 
 const CourseOptionsSeparator = styled.div`
@@ -187,7 +196,7 @@ const CourseOptionsSeparator = styled.div`
     font-weight: 500;
 `;
 
-const QObject = ({ q }: { q: string }) => {
+const QObject = ({ q, reqId, handleSearch }: { q: string; reqId: number; handleSearch: (reqId: number, reqQuery: string) => void; }) => {
     const qObjParser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
     let parsed = qObjParser.feed(q).results[0] as ParsedQObj;
     const [chosenOptions, setChosenOptions] = useState<Course["full_code"][]>([]);
@@ -199,7 +208,7 @@ const QObject = ({ q }: { q: string }) => {
         return (
             <Row>
                 {parsed.clauses
-                .map((clause, idx) => <Terminal key={idx} q={clause} chosenOptions={chosenOptions} setChosenOptions={setChosenOptions}/>)
+                .map((clause, idx) => <Terminal key={idx} q={clause} chosenOptions={chosenOptions} setChosenOptions={setChosenOptions} reqId={reqId} reqQuery={q} handleSearch={handleSearch}/>)
                 .flatMap((elem, idx) => (
                     idx < parsed.clauses.length - 1 ? 
                     [elem, <CourseOptionsSeparator key={`${idx}-separator`}>or</CourseOptionsSeparator>] : 
@@ -213,6 +222,8 @@ const QObject = ({ q }: { q: string }) => {
         q={parsed}
         chosenOptions={chosenOptions}
         setChosenOptions={setChosenOptions}  
+        reqId={reqId} 
+        handleSearch={handleSearch}
         />
     )
 }

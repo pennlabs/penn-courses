@@ -46,14 +46,13 @@ const Divider = styled.div`
     width: 10px;
     height: 20vh;
     border-radius: 10px;
-    background-color: #C5D2F6;
+    background-color: var(--primary-color-dark);
     margin-left: 3px;
     margin-right: 3px;
     margin-top: 30vh;
 `;
 
-const FourYearPlanPage = () => {
-    // resizeable panels
+const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any) => {
     const [leftWidth, setLeftWidth] = useState(800);
     const [drag, setDrag] = useState(false);
     const [x, setX] = useState(0);
@@ -83,18 +82,17 @@ const FourYearPlanPage = () => {
     const [reviewPanelCoords, setReviewPanelCoords] = useState<{x: number, y: number}>({ x: 0, y: 0 });
     const [reviewPanelFullCode, setReviewPanelFullCode] = useState<Course["full_code"]|null>(null);
     const [reviewPanelIsPermanent, setReviewPanelIsPermanent] = useState(false);
-    
-    const [searchClosed, setSearchClosed] = useState(true);
 
     const [results, setResults] = useState([]);
     const [courseDetailOpen, setCourseDetailOpen] = useState(false);
     const [courseDetail, setCourseDetail] = useState({});
 
+    const [reqQuery, setReqQuery] = useState("");
 
     const [highlightReqId, setHighlightReqId] = useState(-1);
 
     const handleCloseSearchPanel = () => {
-        setHighlightReqId(-1);
+        // setHighlightReqId(-1);
         setSearchClosed(true);
     }
 
@@ -130,7 +128,7 @@ const FourYearPlanPage = () => {
     const resizeFrame = (e:any) => {
         const criticalRatio = 0.3;
         if (drag) {
-            const xDiff = Math.abs(x - e.clientX) * 1.1;
+            const xDiff = Math.abs(x - e.clientX) * 1;
             let newLeftW = x > e.clientX ? leftWidth - xDiff : leftWidth + xDiff;            
             if (totalWidth - newLeftW < totalWidth * criticalRatio) newLeftW = totalWidth * (1 - criticalRatio);
             if (newLeftW < totalWidth * criticalRatio) newLeftW = totalWidth * criticalRatio;
@@ -145,14 +143,13 @@ const FourYearPlanPage = () => {
     }
 
     const [loading, setLoading] = useState(false);
-    const handleSearch =  async (id: number) => {
-        setHighlightReqId(id);
+    const handleSearch =  async (id: number, query: string) => {
+        // setHighlightReqId(id);
+        setSearchClosed(false);
+        // console.log(query);
         setLoading(true);
-        axios.get(`/degree/courses/${id}`).then(res => {
-            let newData = [...res.data];
-            setResults(newData);
-            setLoading(false);
-        });
+        setReqQuery(query);
+        if (id != undefined) setReqId(id);
     }
 
     const showCourseDetail = (course: any) => {
