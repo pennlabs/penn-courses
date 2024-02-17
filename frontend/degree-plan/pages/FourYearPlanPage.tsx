@@ -27,6 +27,7 @@ const PlanPageContainer = styled.div`
     position: absolute;
     width: 100%;
     height: 89%;
+    flex: 1 1 auto; 
 `;
 
 export const PanelTopBar = styled.div`
@@ -47,8 +48,9 @@ const PanelContainer = styled.div<{$maxWidth: string, $minWidth: string}>`
     height: 82vh;
     overflow: hidden; /* Hide scrollbars */
     width: ${props => props.$maxWidth || props.$maxWidth ? 'auto' : '100%'};
-    max-width: ${props => props.$maxWidth ? props.$maxWidth : '70vw'};
-    min-width: ${props => props.$minWidth ? props.$minWidth : '25vw'};
+    max-width: ${props => props.$maxWidth ? props.$maxWidth : 'auto'};
+    min-width: ${props => props.$minWidth ? props.$minWidth : 'auto'};
+    position: relative;
 `;
 
 const Divider = styled.div`
@@ -196,20 +198,22 @@ const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any)
                     /> 
                     }
                 <Row>
-                    {/* <SplitPane split="vertical" minSize={'80%'} allowResize={false} > */}
-                    <SplitPane split="vertical" minSize={'40%'} >
-                            <PanelContainer>
-                                    <PlanPanel 
-                                    setModalKey={setModalKey}
-                                    modalKey={modalKey}
-                                    setModalObject={setModalObject}
-                                    isLoading={isLoadingDegreeplans || isLoadingActiveDegreePlan} 
-                                    activeDegreeplan={activeDegreePlan} degreeplans={degreeplans} 
-                                    setActiveDegreeplanId={setActiveDegreeplanId}
-                                />
-                            </PanelContainer>
+                    <SplitPane split="vertical" minSize={0} defaultSize={650} maxSize={900}>
+                            <Pane>
+                                <PanelContainer >
+                                        <PlanPanel 
+                                        setModalKey={setModalKey}
+                                        modalKey={modalKey}
+                                        setModalObject={setModalObject}
+                                        isLoading={isLoadingDegreeplans || isLoadingActiveDegreePlan} 
+                                        activeDegreeplan={activeDegreePlan} degreeplans={degreeplans} 
+                                        setActiveDegreeplanId={setActiveDegreeplanId}
+                                    />
+                                </PanelContainer>
+                            </Pane>
                             <Pane style={{display: 'flex', flexDirection: 'row'}}>
                                 <PanelContainer>
+
                                     <ReqPanel 
                                     setModalKey={setModalKey}
                                     setModalObject={setModalObject}
@@ -224,7 +228,7 @@ const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any)
                                     handleSearch={handleSearch}
                                     />
                                 </PanelContainer>
-                                <PanelContainer hidden={searchClosed} $maxWidth={'300px'} $minWidth={'270px'}>
+                                <PanelContainer hidden={searchClosed} $minWidth={'40%'} $maxWidth={'45%'} >
                                     <SearchPanel 
                                         setClosed={handleCloseSearchPanel} 
                                         courses={results} 
@@ -233,7 +237,6 @@ const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any)
                                 </PanelContainer>
                             </Pane>
                     </SplitPane>
-                {/* </SplitPane> */}
                         
                 </Row>             
             </ReviewPanelContext.Provider>
