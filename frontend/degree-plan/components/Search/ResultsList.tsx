@@ -108,6 +108,8 @@ const ResultsList = ({
         return () => setScrollPos(listRef.current?.scrollTop || 0);
     }, [scrollPos, setScrollPos]);
 
+    // if (!courses.length) return <div>{`No results:((`}</div>
+
     return (
         <CourseListContainer>
             <HeaderContainer>

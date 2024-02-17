@@ -3,7 +3,6 @@ import ReqPanel from "../components/Requirements/ReqPanel";
 import PlanPanel from "../components/FourYearPlan/PlanPanel";
 import SearchPanel from "../components/Search/SearchPanel";
 // import Plan from "../components/example/Plan";
-import axios from "../services/HttpServices"
 import CourseDetailPanel from "@/components/Course/CourseDetailPanel";
 import styled from "@emotion/styled";
 import useSWR from "swr";
@@ -62,7 +61,7 @@ const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any)
     // edit modals for degree and degree plan
     const [modalKey, setModalKey] = useState<ModalKey>(null);
     const [modalObject, setModalObject] = useState<DegreePlan | null>(null); // stores the which degreeplan is being updated using the modal
-    useEffect(() => console.log(modalKey), [modalKey])
+    // useEffect(() => console.log(modalKey), [modalKey])
 
     // active degree plan
     const [activeDegreeplanId, setActiveDegreeplanId] = useState<null | DegreePlan["id"]>(null);
@@ -145,6 +144,7 @@ const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any)
     const [loading, setLoading] = useState(false);
     const handleSearch =  async (id: number, query: string) => {
         // setHighlightReqId(id);
+        console.log("id is", id);
         setSearchClosed(false);
         // console.log(query);
         setLoading(true);
@@ -212,8 +212,12 @@ const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any)
                         handleSearch={handleSearch}
                         />
                     </PanelContainer>
-                    <PanelContainer hidden={searchClosed}>
-                        <SearchPanel setClosed={handleCloseSearchPanel} courses={results} showCourseDetail={showCourseDetail} loading={loading} searchReqId={highlightReqId}/>
+                    <PanelContainer hidden={searchClosed} $width={400}>
+                        <SearchPanel 
+                            setClosed={handleCloseSearchPanel} 
+                            courses={results} 
+                            reqId={reqId}
+                            loading={loading} />
                     </PanelContainer>
                 </Row>
             </ReviewPanelContext.Provider>

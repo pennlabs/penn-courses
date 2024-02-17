@@ -81,7 +81,6 @@ const getAverages = (fulfillments: Fulfillment[]) => {
 
 
 const Stats = ({ courses, className } : { courses: Fulfillment[], className: string }) => {
-    console.log(courses)
     const { course_quality, instructor_quality, difficulty, work_required } = getAverages(courses) as Record<StatsType, number>;
 
     return (

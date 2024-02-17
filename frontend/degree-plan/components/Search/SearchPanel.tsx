@@ -8,7 +8,6 @@ import Fuse from 'fuse.js'
 import useSWR from "swr";
 import ResultsList from "./ResultsList";
 import styled from "@emotion/styled";
-import { dummy_courses } from "@/data/courses";
 
 const SearchPanelBody = styled.div`
     margin: 10px;
@@ -48,44 +47,64 @@ const LoadingComponent = styled.div`
 `
 type ISearchResultCourse =  {course: ICourseQ};
 
-const SearchPanel = ({setClosed, reqId, reqQuery, showCourseDetail, searchReqId}:any) => {
+const SearchPanel = ({setClosed, reqId, reqQuery}:any) => {
     const [queryString, setQueryString] = React.useState<string>("");
+    const [querySubmit, setQuerySubmit] = React.useState<string>("");
     const [results, setResults] = React.useState<ISearchResultCourse[]>([]);
     const [scrollPos, setScrollPos] = React.useState<number>(0);
     const [url, setUrl] = React.useState<string>("");
-    const { data: courses, isLoading: isLoadingCourses, error } = useSWR(url, { refreshInterval: 0, fallbackData: [] }); 
+    const { data: courses, isLoading: isLoadingCourses, error } = 
+        useSWR(reqId != -1 && reqId !== undefined ? `api/degree/courses/${reqId}` : "", { refreshInterval: 0, fallbackData: [] }); 
+
+    const { data: generalCourses, isLoading: isLoadingGeneralCourses } = 
+        useSWR(reqId == -1 && querySubmit ? `api/base/current/search/courses/?search=${querySubmit}` : "", { refreshInterval: 2000, fallbackData: [] }); 
 
     React.useEffect(() => {
-        if (reqId === undefined) {
-            setUrl("");
-        } else if (reqId != -1) {
-            setUrl(`api/degree/courses/${reqId}`);
-        }
-    }, [reqId]);
+        setTimeout(() => {
+            setQuerySubmit(queryString);
+        }, 1000);
+    }, [queryString]);
+
+    // React.useEffect(() => {
+    //     if (reqId === undefined) {
+    //         setResults([]);
+    //     } else if (reqId != -1) {
+    //         setResults(courses);
+    //     } else {
+    //         setResults(generalCourses);
+    //     }
+    // }, [queryString]);
 
     React.useEffect(() => {
-        /** Filtering courses satisfying a requirement */
-        if (reqId == -1) {
-            // delay search to 'debounce' the input box
-            setTimeout(() => {
-                if (!queryString) setUrl("");  // prevent calling search with "" as search param
-                else {
-                    setUrl(`api/base/current/search/courses/?search=${queryString}`);
-                    setResults([...dummy_courses]); // CHANGE THIS TO courses 
-            }}, 400);
-        } else {
-            if (error) setResults(dummy_courses); // ERROR handling
+        if (reqId !== -1) {
+            if (!queryString) setResults(courses);
             else {
                 setResults([]);
-                setTimeout(() => {
-                    const res = queryString && courses.length ? [...courses] : fuse.search(queryString).map(course => course.item);
-                    setResults([...res])
-                }, 1);
+                    setTimeout(() => {
+                        const res = fuse.search(queryString).map(course => course.item);
+                        setResults([...res]);
+                    }, 0.01);
             }
         }
-    }, [queryString])
+    }, [courses, queryString])
 
-    let fuse = new Fuse(dummy_courses, {  // CHANGE TO courses
+    // React.useEffect(() => {
+    //     /** Filtering courses satisfying a requirement */
+    //     if (reqId == -1) {
+    //         setResults(generalCourses);
+    //     } else {
+    //         if (error) {alert(error)} // TODO: ERROR handling
+    //         else {
+    //             setResults([]);
+    //             // setTimeout(() => {
+    //                 const res = fuse.search(queryString).map(course => course.item);
+    //                 setResults([...res])
+    //             // }, 0.01);
+    //         }
+    //     }
+    // }, [queryString])
+
+    let fuse = new Fuse(courses, {  // CHANGE TO courses
         keys: ['id', 'title', 'description']
     })
 
@@ -109,23 +128,24 @@ const SearchPanel = ({setClosed, reqId, reqQuery, showCourseDetail, searchReqId}
                     <SearchField
                         type="text"
                         value={queryString}
-                        onChange={(e) => setQueryString(e.target.value)}
+                        onChange={(e) => {setQueryString(e.target.value)}}
                         autoComplete="off"
                         placeholder={reqId == -1 ? "General Search!" : `Filtering for ${reqQuery ? reqQuery : 'requirement'}`}
                         // disabled={isDisabled}
                     />
                 </SearchContainer>
-                {isLoadingCourses ? 
+                {isLoadingCourses || isLoadingGeneralCourses ? 
                     <LoadingComponentContainer>
                         <LoadingComponent>
                             loading courses...
                         </LoadingComponent>
                     </LoadingComponentContainer>
                 : <SearchPanelResult>
-                    {results.length ? 
+                    {reqId == -1 && 
+                        <ResultsList courses={generalCourses} scrollPos={scrollPos} setScrollPos={setScrollPos}/>
+                    }
+                    {reqId != -1 && 
                         <ResultsList courses={results} scrollPos={scrollPos} setScrollPos={setScrollPos}/>
-                    :
-                        <div></div>
                     }
                 </SearchPanelResult>}
             </SearchPanelBody>
