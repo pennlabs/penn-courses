@@ -62,7 +62,6 @@ const SearchPanel = ({setClosed, reqId, reqQuery}:any) => {
     const [querySubmit, setQuerySubmit] = React.useState<string>("");
     const [results, setResults] = React.useState<ISearchResultCourse[]>([]);
     const [scrollPos, setScrollPos] = React.useState<number>(0);
-    const [url, setUrl] = React.useState<string>("");
     const { data: courses, isLoading: isLoadingCourses, error } = 
         useSWR(reqId != -1 && reqId !== undefined ? `api/degree/courses/${reqId}` : "", { refreshInterval: 0, fallbackData: [] }); 
 
@@ -96,7 +95,7 @@ const SearchPanel = ({setClosed, reqId, reqQuery}:any) => {
                     }, 0.01);
             }
         }
-    }, [courses, queryString])
+    }, [queryString])
 
     // React.useEffect(() => {
     //     /** Filtering courses satisfying a requirement */
