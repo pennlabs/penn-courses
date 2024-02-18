@@ -4,6 +4,7 @@ import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import Nav from "../components/NavBar/Nav";
 import FourYearPlanPage from "./FourYearPlanPage";
+import OnboardingPage from "./OnboardingPage";
 import React, { useState } from "react";
 import { type User } from "../types";
 import LoginModal from "pcx-shared-components/src/accounts/LoginModal";
@@ -35,7 +36,8 @@ export default function Home() {
               fetch(resource, init).then((res) => res.json()),
           }}
         >
-          <Nav
+          <OnboardingPage />
+          {/* <Nav
             login={updateUser}
             logout={() => updateUser(null)}
             user={user}
@@ -53,7 +55,7 @@ export default function Home() {
               pathname={window.location.pathname}
               siteName="Penn Degree Plan"
             />
-          )}
+          )} */}
         </SWRConfig>
       </DndProvider>
     </>
