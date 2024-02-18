@@ -2,7 +2,7 @@ import { useState } from 'react';
 import QObject from './QObject';
 import { Rule } from '@/types';
 import styled from '@emotion/styled';
-import { Icon } from '../bulma_derived_components';
+import { Icon } from '../common/bulma_derived_components';
 
 const RuleTitle = styled.div`
     font-size: 1rem;

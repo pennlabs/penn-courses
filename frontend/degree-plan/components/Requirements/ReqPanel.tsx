@@ -5,7 +5,7 @@ import styled from '@emotion/styled';
 import { PanelBody, PanelContainer, PanelHeader } from '@/components/FourYearPlan/PlanPanel'
 import { useSWRCrud } from '@/hooks/swrcrud';
 import useSWR from 'swr';
-import { GrayIcon } from '../bulma_derived_components';
+import { GrayIcon } from '../common/bulma_derived_components';
 import { AddButton } from '../FourYearPlan/Semesters';
 
 const requirementDropdownListStyle = {
@@ -100,8 +100,15 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
   const { update: updateDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans');
   
   const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null); 
-  const plannedCourses = useMemo(() => {
+  const rulesToFulfillments = useMemo(() => {
     if (!fulfillments) return {}
+    const rulesToCourses: { [semester: string]: Fulfillment[] } = {};
+    fulfillments.forEach(fulfillment => {
+      if (!rulesToCourses[fulfillment.rules.id]) {
+        rulesToCourses[fulfillment.rules.id] = [];
+      }
+      rulesToCourses[fulfillment.rules.id].push(fulfillment);
+    });
   }, [fulfillments])
 
   return(

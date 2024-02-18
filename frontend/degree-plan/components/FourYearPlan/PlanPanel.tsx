@@ -1,5 +1,5 @@
 import update from 'immutability-helper'
-import { GrayIcon } from '../bulma_derived_components';
+import { GrayIcon } from '../common/bulma_derived_components';
 import SelectListDropdown from "./SelectListDropdown";
 import Semesters from "./Semesters";
 import styled from "@emotion/styled";

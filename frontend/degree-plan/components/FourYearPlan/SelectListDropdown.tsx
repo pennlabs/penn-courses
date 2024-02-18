@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import styled from "@emotion/styled";
-import { GrayIcon } from "../bulma_derived_components";
+import { GrayIcon } from "../common/bulma_derived_components";
 import { DBObject, DegreePlan } from "../../types";
 import { getNameOfDeclaration } from "typescript";
 

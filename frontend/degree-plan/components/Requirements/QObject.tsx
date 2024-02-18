@@ -5,7 +5,7 @@ import type { Course } from "@/types";
 import styled from "@emotion/styled";
 import nearley from "nearley";
 import grammar from "@/util/q_object_grammar" 
-import { Icon } from "../bulma_derived_components";
+import { Icon } from "../common/bulma_derived_components";
 import { BaseCourseContainer } from "../FourYearPlan/CoursePlanned";
 import assert from "assert";
 import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";

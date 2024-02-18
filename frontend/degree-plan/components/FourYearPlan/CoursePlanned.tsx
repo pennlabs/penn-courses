@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useDrag } from "react-dnd";
 import { ItemTypes } from "../dnd/constants";
-import { GrayIcon } from '../bulma_derived_components';
+import { GrayIcon } from '../common/bulma_derived_components';
 import styled from '@emotion/styled';
 import { Course } from "@/types";
 import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";

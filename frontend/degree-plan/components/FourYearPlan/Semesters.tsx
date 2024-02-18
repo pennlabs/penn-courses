@@ -1,7 +1,7 @@
 
 import Semester from "./Semester"
 import styled from "@emotion/styled";
-import { Icon } from "../bulma_derived_components";
+import { Icon } from "../common/bulma_derived_components";
 import { Course, DegreePlan, Fulfillment } from "@/types";
 import useSWR from "swr";
 import { useEffect, useState } from "react";
