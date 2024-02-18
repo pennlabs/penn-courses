@@ -29,7 +29,7 @@ export const PlannedCourseContainer = styled(BaseCourseContainer)`
   opacity: ${props => props.$isDragging ? 0.5 : 1};
 `;
 
-const RemoveCourseButton = styled.div<{ isDragging: boolean }>`
+export const RemoveCourseButton = styled.div<{ isDragging: boolean }>`
   position: absolute;
   right: 5px;
   bottom: 7px;

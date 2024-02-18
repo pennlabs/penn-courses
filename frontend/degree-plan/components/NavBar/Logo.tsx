@@ -7,7 +7,7 @@ const Logo = () => {
     return (
         <label>
             <h2 className=""> 
-                <img src='logo.png' width='45' height='60'/>
+                <img src='logo.png' width='30' height='45'/>
                 {title} 
             </h2>
         </label>

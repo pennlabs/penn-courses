@@ -72,7 +72,7 @@ const Semester = ({ showStats, semester, fulfillments, activeDegreeplanId, class
     const [{ isOver }, drop] = useDrop(() => ({
         accept: ItemTypes.COURSE,
         drop: (course: Course) => {
-            console.log("DROPPED", course.full_code, semester);
+            console.log("DROPPED", course.full_code, 'from', course.semester, 'to', semester);
             createOrUpdate({ semester }, course.full_code);
         },
         collect: monitor => ({
@@ -87,11 +87,11 @@ const Semester = ({ showStats, semester, fulfillments, activeDegreeplanId, class
             </SemesterLabel>
             <SemesterContent ref={ref}>
                 <FlexCoursesPlanned 
-                semester={semester} 
-                dropRef={drop} 
-                full_codes={fulfillments.map(fulfillment => fulfillment.full_code)} 
-                removeCourse={(full_code: Course["full_code"]) => createOrUpdate({ semester: null }, full_code)}/>
-                {showStats && <FlexStats courses={fulfillments}/>}
+                    semester={semester} 
+                    dropRef={drop} 
+                    full_codes={fulfillments.map(fulfillment => fulfillment.full_code)} 
+                    removeCourse={(full_code: Course["full_code"]) => createOrUpdate({ semester: null }, full_code)}/>
+                    {showStats && <FlexStats courses={fulfillments}/>}
             </SemesterContent>
             <CreditsLabel>
                 {credits} CUs

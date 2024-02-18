@@ -23,7 +23,7 @@ const Row = styled.div`
 //     flex-direction: row;
 //     position: relative;
 const PlanPageContainer = styled.div`
-    background-color: #F7F9FC;
+    background-color: var(--background-grey);
     padding: 0rem 3rem;
     position: absolute;
     width: 100%;
@@ -51,16 +51,6 @@ const PanelContainer = styled.div<{$maxWidth: string, $minWidth: string}>`
     max-width: ${props => props.$maxWidth ? props.$maxWidth : 'auto'};
     min-width: ${props => props.$minWidth ? props.$minWidth : 'auto'};
     position: relative;
-`;
-
-const Divider = styled.div`
-    width: 10px;
-    height: 20vh;
-    border-radius: 10px;
-    background-color: var(--primary-color-dark);
-    margin-left: 3px;
-    margin-right: 3px;
-    margin-top: 30vh;
 `;
 
 const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any) => {
@@ -95,8 +85,6 @@ const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any)
     const [reviewPanelIsPermanent, setReviewPanelIsPermanent] = useState(false);
 
     const [results, setResults] = useState([]);
-    const [courseDetailOpen, setCourseDetailOpen] = useState(false);
-    const [courseDetail, setCourseDetail] = useState({});
 
     const [reqQuery, setReqQuery] = useState("");
 
@@ -122,51 +110,13 @@ const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any)
         setTotalWidth(ref.current ? ref.current.offsetWidth : 0)
     }, [ref.current]);
 
-    const pauseEvent = (e: any) => {
-        if(e.stopPropagation) e.stopPropagation();
-        if(e.preventDefault) e.preventDefault();
-        e.cancelBubble=true;
-        e.returnValue=false;
-        return false;
-    }
-
-    const startResize = (e:any) => {
-        setDrag(true);
-        setX(e.clientX);
-        pauseEvent(e)
-    }
-
-    const resizeFrame = (e:any) => {
-        const criticalRatio = 0.3;
-        if (drag) {
-            const xDiff = Math.abs(x - e.clientX) * 1;
-            let newLeftW = x > e.clientX ? leftWidth - xDiff : leftWidth + xDiff;            
-            if (totalWidth - newLeftW < totalWidth * criticalRatio) newLeftW = totalWidth * (1 - criticalRatio);
-            if (newLeftW < totalWidth * criticalRatio) newLeftW = totalWidth * criticalRatio;
-            setX(e.clientX);
-            setLeftWidth(newLeftW);
-        }
-    };
-
-    const endResize = (e:any) => {
-        setDrag(false);
-        setX(e.clientX);
-    }
 
     const [loading, setLoading] = useState(false);
     const handleSearch =  async (id: number, query: string) => {
-        // setHighlightReqId(id);
-        console.log("id is", id);
         setSearchClosed(false);
-        // console.log(query);
         setLoading(true);
         setReqQuery(query);
         if (id != undefined) setReqId(id);
-    }
-
-    const showCourseDetail = (course: any) => {
-        setCourseDetailOpen(true);
-        setCourseDetail(course);
     }
     
     return (

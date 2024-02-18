@@ -13,7 +13,7 @@ const NavContainer = styled.nav`
   flex-align: center;
   width: 100%;
   justify-content: space-between;
-  margin: 0 0;
+  margin: 0 auto;
   background-color: var(--background-grey);
 `;
 

@@ -42,7 +42,7 @@ const CourseIdentityContainer = styled.div<{ $isRecCourse: boolean }>`
 `;
 
 // Bulma: title is-6
-const CourseID = styled.h3`
+export const CourseID = styled.h3`
     font-size: 1rem;
     color: #363636;
     font-weight: 600;
@@ -51,7 +51,7 @@ const CourseID = styled.h3`
     margin-bottom: 0;
 `;
 
-const CourseIDContainer = styled.div`
+export const CourseIDContainer = styled.div`
     display: flex;
     align-content: center;
     flex-direction: row;
@@ -115,7 +115,7 @@ export default function Course({
     /** React dnd */
     const [{ isDragging, color }, drag, dragPreview] = useDrag(() => ({
         type: ItemTypes.COURSE,
-        item: {course: {...course, satisfyIds:[]}, semester:-1},
+        item: {full_code: course.id, semester:-1},
         collect: (monitor) => ({
             isDragging: !!monitor.isDragging(),
             color: monitor.isDragging() ? 'none' : 'none'

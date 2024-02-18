@@ -116,10 +116,10 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
                   }}/>
                   {degree.rules.map((rule: any) => (
                     <Rule 
-                    rule={rule} 
-                    setSearchClosed={setSearchClosed} 
-                    handleSearch={handleSearch} 
-                    key={rule.id}
+                      rule={rule} 
+                      setSearchClosed={setSearchClosed} 
+                      handleSearch={handleSearch} 
+                      key={rule.id}
                     />
                   ))}
                 </DegreeWrapper>
