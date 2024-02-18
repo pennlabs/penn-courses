@@ -44,7 +44,7 @@ const PanelContainer = styled.div<{$maxWidth: string, $minWidth: string}>`
     border-radius: 10px;
     box-shadow: 0px 0px 10px 6px rgba(0, 0, 0, 0.05);
     background-color: #FFFFFF;
-    margin: 1em;
+    margin: 9px;
     height: 82vh;
     overflow: hidden; /* Hide scrollbars */
     width: ${props => props.$maxWidth || props.$maxWidth ? 'auto' : '100%'};
@@ -199,23 +199,23 @@ const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any)
                     /> 
                     }
                 <Row>
-                    <SplitPane split="vertical" minSize={0} maxSize={900} defaultSize='50%'>
-                            <Pane>
-                                <PanelContainer >
-                                        <PlanPanel 
+                    <SplitPane split="vertical" minSize={0} maxSize={750} defaultSize='50%'>
+                        <Pane>
+                            <PanelContainer>
+                                    <PlanPanel 
                                         setModalKey={setModalKey}
                                         modalKey={modalKey}
                                         setModalObject={setModalObject}
                                         isLoading={isLoadingDegreeplans || isLoadingActiveDegreePlan} 
                                         activeDegreeplan={activeDegreePlan} degreeplans={degreeplans} 
                                         setActiveDegreeplanId={setActiveDegreeplanId}
-                                    />
-                                </PanelContainer>
-                            </Pane>
-                            <Pane style={{display: 'flex', flexDirection: 'row'}}>
-                                <PanelContainer>
-                                    {/* <SplitPane split="horizontal" minSize='80%'> */}
-                                        <ReqPanel 
+                                />
+                            </PanelContainer>
+                        </Pane>
+                        <Pane style={{display: 'flex', flexDirection: 'row'}}>
+                            <PanelContainer>
+                                {/* <SplitPane split="horizontal" minSize='80%'> */}
+                                    <ReqPanel
                                         setModalKey={setModalKey}
                                         setModalObject={setModalObject}
                                         activeDegreeplan={activeDegreePlan} 
@@ -227,20 +227,20 @@ const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any)
                                         setSearchClosed={setSearchClosed} 
                                         setDegreeModalOpen={setDegreeModalOpen} 
                                         handleSearch={handleSearch}
-                                        />
-                                        {/* <div>
-                                            load area
-                                        </div>
-                                    </SplitPane> */}
-                                </PanelContainer>
-                                <PanelContainer hidden={searchClosed} $minWidth={'40%'} $maxWidth={'45%'} >
-                                    <SearchPanel 
-                                        setClosed={handleCloseSearchPanel} 
-                                        courses={results} 
-                                        reqId={reqId}
-                                        loading={loading} />
-                                </PanelContainer>
-                            </Pane>
+                                    />
+                                    {/* <div>
+                                        load area
+                                    </div>
+                                </SplitPane> */}
+                            </PanelContainer>
+                            <PanelContainer hidden={searchClosed} $minWidth={'40%'} $maxWidth={'45%'} >
+                                <SearchPanel 
+                                    setClosed={handleCloseSearchPanel} 
+                                    courses={results} 
+                                    reqId={reqId}
+                                    loading={loading} />
+                            </PanelContainer>
+                        </Pane>
                     </SplitPane>
                         
                 </Row>             

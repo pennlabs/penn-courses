@@ -67,7 +67,6 @@ const PlanPanel = ({ setModalKey, modalKey, setModalObject, setActiveDegreeplanI
     const [showStats, setShowStats] = useState(true);
 
     return (
-        <>
             <PanelContainer>
                 <PanelHeader>
                     <SelectListDropdown
@@ -99,7 +98,6 @@ const PlanPanel = ({ setModalKey, modalKey, setModalObject, setActiveDegreeplanI
                     <Semesters activeDegreeplan={activeDegreeplan} showStats={showStats} />
                 </PanelBody>
             </PanelContainer>
-        </>
     );
 }
 
