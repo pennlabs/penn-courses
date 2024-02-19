@@ -9,6 +9,7 @@ import { Icon } from "../bulma_derived_components";
 import { BaseCourseContainer } from "../FourYearPlan/CoursePlanned";
 import assert from "assert";
 import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
+import { Draggable } from "../common/DnD";
 
 type ConditionKey = "full_code" | "semester" | "attributes__code__in" | "department__code" | "full_code__startswith" | "code__gte" | "code__lte" | "department__code__in" 
 interface Condition {
@@ -43,9 +44,11 @@ const CourseOption = ({ course, chosenOptions, setChosenOptions, semester }: Cou
 
     return (
         <ReviewPanelTrigger full_code={course}>
-            <BaseCourseContainer ref={drag} $isDepressed={chosenOptions.includes(course)}>
-                {course.split("-").join(" ")}{semester ? ` (${semester})` : ""}
-            </BaseCourseContainer>
+            <Draggable isDragging={isDragging}>
+                <BaseCourseContainer ref={drag} $isDepressed={chosenOptions.includes(course)}>
+                    {course.split("-").join(" ")}{semester ? ` (${semester})` : ""}
+                </BaseCourseContainer>
+            </Draggable>
         </ReviewPanelTrigger>
     )
 }

@@ -2,12 +2,10 @@
 import styled from '@emotion/styled';
 import { DarkGrayIcon } from '../Requirements/QObject';
 import React from "react";
-import { useDrop } from "react-dnd";
+import { useDrag, useDrop } from "react-dnd";
 import { Course } from "@/types";
 import { ItemTypes } from "../dnd/constants";
-import { CourseID, CourseIDContainer } from '../Search/Course';
-import { BaseCourseContainer, RemoveCourseButton } from '../FourYearPlan/CoursePlanned';
-import { GrayIcon } from '../bulma_derived_components';
+import DockedCourse from './DockedCourse';
 
 
 const DockWrapper = styled.div`
@@ -20,9 +18,10 @@ const DockWrapper = styled.div`
     justify-content: center;
 `
 
-const DockContainer = styled.div`
+const DockContainer = styled.div<{$isDroppable:boolean, $isOver: boolean}>`
     border-radius: 15px;
-    background-color: var(--primary-color-dark);
+    box-shadow: 0px 0px 4px 2px ${props => props.$isOver ? 'var(--selected-color);' : props.$isDroppable ? 'var(--primary-color-dark);' : 'rgba(0, 0, 0, 0.05);'}
+    background-color: var(--primary-color-light);
     height: 5vh;
     min-width: 28vw;
     display: flex;
@@ -57,11 +56,6 @@ const DockedCourses = styled.div`
     flex-direction: row;
 `
 
-const DockedCourse = styled.div`
-    margin: 1px;
-    position: relative;
-`
-
 interface IDock {
     setSearchClosed: (status: boolean) => void;
     setReqId: (id: number) => void;
@@ -70,27 +64,28 @@ interface IDock {
 const Dock = ({setSearchClosed, setReqId}: IDock) => {
     // const ref = React.useRef(null);
     const [dockedCourses, setDockedCourses] = React.useState<string[]>([]);
-    const [mouseOver, setMouseOver] = React.useState(false);
 
-    const removeCourse = (full_code: string) => {
+    const removeDockedCourse = (full_code: string) => {
         setDockedCourses((dockedCourses) => dockedCourses.filter(c => c !== full_code));
     }
 
-    const [{ isOver }, drop] = useDrop(() => ({
+    const [{ isOver, canDrop }, drop] = useDrop(() => ({
         accept: ItemTypes.COURSE,
         drop: (course: Course) => {
             console.log("DROPPED", course.full_code, 'from', course.semester);
             setDockedCourses((dockedCourses) => dockedCourses.filter(c => c !== course.full_code)); // to prevent duplicates
             setDockedCourses((dockedCourses) => [...dockedCourses, course.full_code]);
         },
+        canDrop: () => {return true},
         collect: monitor => ({
-          isOver: !!monitor.isOver()
+          isOver: !!monitor.isOver(),
+          canDrop: !!monitor.canDrop()
         }),
     }), []);
 
     return (
-        <DockWrapper>
-            <DockContainer>
+        <DockWrapper ref={drop} >
+            <DockContainer $isDroppable={canDrop} $isOver={isOver}>
                 <DockerElm>
                     <SearchIconContainer onClick={() => {setSearchClosed(false); setReqId(-1);}}>
                         <DarkGrayIcon>
@@ -99,23 +94,13 @@ const Dock = ({setSearchClosed, setReqId}: IDock) => {
                     </SearchIconContainer>
                 </DockerElm>
                 <Divider/>
-                <DockedCoursesWrapper ref={drop}>
-                    <DockedCourses >
-                        {dockedCourses.map((full_code, i) => 
-                            <DockedCourse 
-                                key={i}     
-                                onMouseOver={() => setMouseOver(true)} 
-                                onMouseLeave={() => setMouseOver(false)}>
-                                <BaseCourseContainer>
-                                    <span>{full_code.replace(/-/g, " ")}</span>
-                                    <RemoveCourseButton hidden={!mouseOver} onClick={() => removeCourse(full_code)}>
-                                        <GrayIcon><i className="fas fa-times"></i></GrayIcon>
-                                    </RemoveCourseButton>
-                                </BaseCourseContainer>
-                            </DockedCourse>
-                        )}
-                    </DockedCourses>
-                </DockedCoursesWrapper>
+                    <DockedCoursesWrapper>
+                        <DockedCourses >
+                            {dockedCourses.map((full_code, i) => 
+                                <DockedCourse removeDockedCourse={removeDockedCourse} full_code={full_code}/>
+                            )}
+                        </DockedCourses>
+                    </DockedCoursesWrapper>
             </DockContainer>
         </DockWrapper>
     )

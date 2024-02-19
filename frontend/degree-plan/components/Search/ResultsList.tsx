@@ -53,11 +53,10 @@ export interface CourseListProps {
 const CourseListContainer = styled.div`
     box-sizing: border-box;
     border-radius: 0.375em;
-    height: 100%;
+    max-height: 78vh;
     display: flex;
     flex-direction: column;
     min-height: 0;
-    max-height: 72vh;
     overflow: auto;
 `;
 

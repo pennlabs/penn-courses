@@ -4,6 +4,7 @@ import { useDrag } from "react-dnd";
 import { ItemTypes } from "../dnd/constants";
 
 import Badge from "./Badge";
+import { Draggable } from "../common/DnD";
 // import { Course as CourseType } from "../../types";
 // import { Icon } from "../bulma_derived_components";
 
@@ -129,12 +130,14 @@ export default function Course({
                 <CourseInfoContainer
                     onClick={onClick}
                     role="button"
-                >
-                    <CourseIdentityContainer>
-                        <CourseIDContainer>
-                                <CourseID ref={drag} style={{color}}>{course.id.replace(/-/g, " ")}</CourseID>
-                        </CourseIDContainer>
-                        <CourseTitle>{course.title}</CourseTitle>
+                >   
+                    <CourseIdentityContainer ref={drag}>
+                        <Draggable isDragging={isDragging}>
+                            <CourseIDContainer>
+                                    <CourseID style={{color}}>{course.id.replace(/-/g, " ")}</CourseID>
+                            </CourseIDContainer>
+                            <CourseTitle>{course.title}</CourseTitle>
+                        </Draggable>
                     </CourseIdentityContainer>
                     
                     <CourseQualityContainer>

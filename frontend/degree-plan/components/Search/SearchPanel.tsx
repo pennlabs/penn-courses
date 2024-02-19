@@ -61,6 +61,10 @@ type ISearchResultCourse =  {course: ICourseQ};
 export const SearchPanel = ({setClosed, reqId, reqQuery}:any) => {
     const [queryString, setQueryString] = React.useState<string>("");
 
+    React.useEffect(() => {
+        setQueryString("");
+    }, [reqId])
+
     return (
         <PanelContainer>
             <PanelTopBar>
@@ -114,7 +118,6 @@ const GeneralSearchResult = ({setClosed, reqId, reqQuery, queryString, setQueryS
     // const debouncedSearchTerm = useDebounce(queryString, 1000)
     const [scrollPos, setScrollPos] = React.useState<number>(0);
 
-    
     // const { data: courses = [], isLoading: isLoadingCourses, error } = useSWR(debouncedSearchTerm ? `api/base/current/search/courses/?search=${debouncedSearchTerm}`: null, fetcher); 
     const [courses, setCourses] = React.useState<ISearchResultCourse[]>([]);
     const [isLoadingCourses, setIsLoadingCourses] = React.useState(false);
@@ -177,15 +180,15 @@ const ReqSearchResult = ({setClosed, reqId, reqQuery, queryString, setQueryStrin
     const [scrollPos, setScrollPos] = React.useState<number>(0);
 
     const [url, setUrl] = React.useState<string>("");
-    const { data: courses, isLoading: isLoadingCourses, error } = useSWR(url, { refreshInterval: 0, fallbackData: [] }); 
+    const { data: courses = [], isLoading: isLoadingCourses, error } = useSWR(`api/degree/courses/${reqId}`, { refreshInterval: 0, fallbackData: [] }); 
 
-    React.useEffect(() => {
-        if (reqId === undefined) {
-            setUrl("");
-        } else {
-            setUrl(`api/degree/courses/${reqId}`);
-        }
-    }, [reqId]);
+    // React.useEffect(() => {
+    //     if (reqId === undefined) {
+    //         setUrl("");
+    //     } else {
+    //         setUrl(`api/degree/courses/${reqId}`);
+    //     }
+    // }, [reqId]);
 
     React.useEffect(() => {
         if (error) console.log(error); // ERROR handling
@@ -196,7 +199,7 @@ const ReqSearchResult = ({setClosed, reqId, reqQuery, queryString, setQueryStrin
                 setResults([...res])
             }, 0.01);
         }
-    }, [queryString, reqId])
+    }, [queryString, isLoadingCourses])
 
     let fuse = new Fuse(courses, {  // CHANGE TO courses
         keys: ['id', 'title', 'description']
