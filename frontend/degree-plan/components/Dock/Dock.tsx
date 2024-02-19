@@ -58,7 +58,7 @@ const DockedCourses = styled.div`
 `
 
 const DockedCourse = styled.div`
-    margin: 5px;
+    margin: 1px;
     position: relative;
 `
 

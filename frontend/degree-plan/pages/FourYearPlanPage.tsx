@@ -1,7 +1,7 @@
 import React, {useState, useEffect, useRef} from "react";
 import ReqPanel from "../components/Requirements/ReqPanel";
 import PlanPanel from "../components/FourYearPlan/PlanPanel";
-import SearchPanel from "../components/Search/SearchPanel";
+import {ReqSearchPanel, GeneralSearchPanel, SearchPanel} from "../components/Search/SearchPanel";
 // import Plan from "../components/example/Plan";
 import CourseDetailPanel from "@/components/Course/CourseDetailPanel";
 import styled from "@emotion/styled";
@@ -184,7 +184,7 @@ const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any)
                                 </SplitPane> */}
                             </PanelContainer>
                             <PanelContainer hidden={searchClosed} $minWidth={'40%'} $maxWidth={'45%'} >
-                                <SearchPanel 
+                                <SearchPanel
                                     setClosed={handleCloseSearchPanel} 
                                     courses={results} 
                                     reqId={reqId}
