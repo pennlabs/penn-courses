@@ -32,4 +32,4 @@ services:
     environment:
       - REDIS_URL=redis://redis:6379/1
       - DATABASE_URL=postgres://penn-courses:postgres@db:5432/postgres
-    command: pipenv run python manage.py runserver 0.0.0.0:8000
+    command: poetry run python manage.py runserver 0.0.0.0:8000

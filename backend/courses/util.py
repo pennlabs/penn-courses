@@ -138,7 +138,7 @@ def get_current_semester(allow_not_found=False):
             "option by running the command "
             "'python manage.py setoption SEMESTER 2020C', "
             "replacing 2020C with the current semester, in the backend directory (remember "
-            "to run 'pipenv shell' before running this command, though)."
+            "to run 'poetry shell' before running this command, though)."
         )
     cache.set("SEMESTER", retrieved_val, timeout=90000)  # cache expires every 25 hours
     return retrieved_val

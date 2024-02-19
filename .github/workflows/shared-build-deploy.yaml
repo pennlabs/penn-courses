@@ -9,13 +9,14 @@ on: push
 jobs:
   backend-check:
     name: "Backend Check"
-    uses: pennlabs/shared-actions/.github/workflows/django.yaml@8785a7d7b9158d8d5705a0202f5695db2c0beb97
+    uses: pennlabs/shared-actions/.github/workflows/django.yaml@7b67c73ced6fa70043451f6816c706a003642828
     with:
       projectName: PennCourses
       path: backend
       flake: true
       black: true
       pythonVersion: 3.10-buster
+      dependencyManager: poetry
 
   publish-backend:
     uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@v0.1

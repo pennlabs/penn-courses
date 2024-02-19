@@ -22,13 +22,13 @@ cd backend
 2. Run shell inside the container
 ```sh
 [sudo] docker-compose run --service-ports development /bin/bash # launch shell inside container
-pipenv shell # activate shell with python packages
+poetry shell # activate shell with python packages
 python manage.py makemigrations
 python manage.py migrate # database migrations
 python manage.py test # run tests
 python manage.py test tests.review.test_api.OneReviewTestCase.test_course # re-run a specific test
 runserver # optionally, run the server from within the shell
-exit # leave pipenv shell 
+exit # leave poetry shell 
 exit # leave docker shell
 ```
 3. Run the server on `127.0.0.1:8000` (use `CTRL+C` to stop running this)
@@ -58,14 +58,14 @@ If you are in Penn Labs, reach out to a Penn Courses team lead for a .env file t
 put in your `backend` directory. This will contain some sensitive credentials (which is why the file contents are not
 pasted in this public README). If you are not in Penn Labs, see the "Loading Course Data on Demand" section below for instructions on how to get your own credentials.
 
-NOTE: when using `pipenv`, environment variables are only refreshed when you exit your shell and rerun `pipenv shell` (this is a common source of confusing behavior, so it's good to know about).
+NOTE: when using `poetry`, environment variables are only refreshed when you exit your shell and rerun `poetry shell` (this is a common source of confusing behavior, so it's good to know about).
 
 ## Linting
 
 We use `black`, `flake8`, and 'isort' to lint our code. Once you are in the `backend` directory, you can run the following commands to lint:
-1. `pipenv run black`
-2. `pipenv run isort`
-3. `pipenv run flake8`
+1. `poetry run black`
+2. `poetry run isort`
+3. `poetry run flake8`
 
 ## Loading Courses Data 
 
@@ -115,7 +115,7 @@ For example, you can try out: `https://3scale-public-prod-open-data.apps.k8s.upe
 To load in course data for a certain semester, set the environment variables
 `OPEN_DATA_CLIENT_ID` and `OPEN_DATA_OIDC_SECRET` to the corresponding credentials you
 receive from the OpenData API. These credentials are already included in the .env file you should receive from a team lead if you are in Labs. Otherwise, you can register for prod OpenData API credentials [here](https://hosted.apps.upenn.edu/PennOpenshiftCommandCenter_UI/PublicRestAccounts.aspx).
-After your environment variables have been set (remember to refresh your pipenv shell), run
+After your environment variables have been set (remember to refresh your poetry shell), run
 
 `python manage.py registrarimport --semester=<semester> --query=<query>`
 
@@ -147,7 +147,7 @@ If you don't want to use docker alone, you can also set up and run the dev envir
 
 ### Prerequisites
 - Python 3.10 ([`pyenv`](https://github.com/pyenv/pyenv) is recommended)
-- [`pipenv`](https://pipenv.pypa.io/en/latest/)
+- [`poetry`](https://python-poetry.org/docs/)
 - [`docker` and `docker-compose`](https://docs.docker.com/get-docker/)
 
 `psql` is required to load data into the db, but it should be installed when you install `postgres`/`psycopg2`.
@@ -178,8 +178,8 @@ If you don't want to use docker alone, you can also set up and run the dev envir
 
 4. Setting up your Penn Courses development environment
 
-   1. `pipenv install --dev`
-   2. `pipenv shell`
+   1. `poetry install --no-root`
+   2. `poetry shell`
    3. `python manage.py migrate`
 
 5. Loading test data (if you are a member of Penn Labs). If you are not a member of Penn Labs, you can skip this section and load in course data from the registrar, as explained below.
