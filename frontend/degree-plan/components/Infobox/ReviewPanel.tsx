@@ -14,8 +14,7 @@ export const ReviewPanelTrigger = ({ full_code, children }: PropsWithChildren<{f
         <div
             ref={ref}
             onDoubleClick={() => {
-                console.log("FULLCODE", full_code)
-                set_full_code(full_code)
+                set_full_code(full_code);
                 if (!ref.current) return;
                 const { x } = ref.current.getBoundingClientRect();
                 if (!isPermanent) setPosition({ y: 0, x });

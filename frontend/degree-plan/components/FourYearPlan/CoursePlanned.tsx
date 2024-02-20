@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useDrag } from "react-dnd";
 import { ItemTypes } from "../dnd/constants";
-import { GrayIcon } from '../bulma_derived_components';
+import { GrayIcon } from '../common/bulma_derived_components';
 import styled from '@emotion/styled';
-import { Course } from "@/types";
+import { Course, DnDFulfillment, Fulfillment } from "@/types";
 import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
 import { Draggable } from "../common/DnD";
 
-export const BaseCourseContainer = styled.span<{ $isDragging: boolean, $isDepressed: boolean }>`
+export const BaseCourseContainer = styled.span<{ $isDragging?: boolean, $isDepressed: boolean, $isDisabled: boolean }>`
   display: flex;
   justify-content: center;
   align-items: center;
@@ -17,6 +17,8 @@ export const BaseCourseContainer = styled.span<{ $isDragging: boolean, $isDepres
   border-radius: 10px;
   padding: .5rem;
   text-wrap: nowrap;
+  color: ${props => props.$isDisabled ? "rgba(0, 0, 0, .6)" : "#000"};
+  cursor: ${props => props.$isDisabled || props.$isDepressed ? "not-allowed" : "grab"};
   opacity: ${props => props.$isDragging ? 0.5 : 1};
   background-color: ${props => props.$isDragging ? "#4B9AE7" : "#F2F3F4"};
   box-shadow: ${props => props.$isDepressed ? 
@@ -28,46 +30,55 @@ export const PlannedCourseContainer = styled(BaseCourseContainer)`
   width: 100%;
   position: relative;
   opacity: ${props => props.$isDragging ? 0.5 : 1};
+
+  .close-button {
+    display: none;
+    position: absolute;
+    right: 5px;
+    top: 0; 
+    bottom: 0; 
+    margin-top: auto; 
+    margin-bottom: auto;
+    height: 1.5rem;
+  }
+
+  &:hover {
+    .close-button {
+      display: unset;
+    }
+  }
 `;
 
-export const RemoveCourseButton = styled.div<{ isDragging: boolean }>`
-  position: absolute;
-  right: 5px;
-  bottom: 7px;
-`
-
 interface CoursePlannedProps {
-  full_code: Course["full_code"],
+  fulfillment: Fulfillment,
   removeCourse: (course: Course["full_code"]) => void,
   semester: Course["semester"]
 }
 
-const CoursePlanned = ({full_code, semester, removeCourse} : CoursePlannedProps) => {
-  const [mouseOver, setMouseOver] = useState(false);
-
-  const [{ isDragging }, drag] = useDrag(() => ({
+const CoursePlanned = ({ fulfillment, semester, removeCourse } : CoursePlannedProps) => {
+  const [{ isDragging }, drag] = useDrag<DnDFulfillment, never, { isDragging: boolean }>(() => ({
     type: ItemTypes.COURSE,
-    item: {full_code: full_code, semester },
+    item: fulfillment,
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging()
     })
-  }), [full_code, semester])
+  }), [fulfillment, semester])
 
   return (   
     <Draggable isDragging={isDragging}>
       <PlannedCourseContainer
       $isDragging={isDragging}
+      $isDepressed={false}
+      $isDisabled={false}
       ref={drag} 
-      onMouseOver={() => setMouseOver(true)} 
-      onMouseLeave={() => setMouseOver(false)}
       >
-        <ReviewPanelTrigger full_code={full_code}>
+        <ReviewPanelTrigger full_code={fulfillment.full_code}>
           <div>
-            {full_code}
+            {fulfillment.full_code}
           </div>
-          <RemoveCourseButton hidden={!mouseOver} onClick={() => removeCourse(full_code)}>
-            <GrayIcon><i className="fas fa-times"></i></GrayIcon>
-          </RemoveCourseButton>
+          <GrayIcon className="close-button" onClick={() => removeCourse(fulfillment.full_code)}>
+            <i className="fas fa-times"></i>
+          </GrayIcon>
         </ReviewPanelTrigger>
       </PlannedCourseContainer>
     </Draggable>

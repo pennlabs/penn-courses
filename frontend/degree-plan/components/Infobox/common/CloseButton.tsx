@@ -1,4 +1,4 @@
-import { GrayIcon } from '@/components/bulma_derived_components';
+import { GrayIcon } from '@/components/common/bulma_derived_components';
 import styled from '@emotion/styled'
 
 const CloseIcon = styled(GrayIcon)`

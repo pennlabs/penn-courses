@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import QObject from './QObject';
-import { Rule } from '@/types';
+import RuleLeaf from './QObject';
+import { Fulfillment, Rule as RuleComponent } from '@/types';
 import styled from '@emotion/styled';
-import { Icon } from '../bulma_derived_components';
+import { Icon } from '../common/bulma_derived_components';
 
 const RuleTitle = styled.div`
     font-size: 1rem;
@@ -18,7 +18,7 @@ const RuleTitle = styled.div`
     border-radius: .5rem;
 `
 
-const CourseRequirementWrapper = styled.div`
+const RuleLeafWrapper = styled.div`
   margin: .5rem;
   margin-left: 0;
   display: flex;
@@ -34,25 +34,35 @@ const CusCourses = styled.div`
 `
 
 interface RuleProps {
-    rule: Rule;
-    setSearchClosed: any;
+    rule: RuleComponent;
+    setSearchClosed: (closed: boolean) => void;
     handleSearch: any;
+    rulesToFulfillments: { [ruleId: string]: Fulfillment[] };
 }
 
 /**
  * Recursive component to represent a rule.
  * @returns 
  */
-const Rule = ({ rule, setSearchClosed, handleSearch } : RuleProps) => {
+const RuleComponent = ({ rule, setSearchClosed, handleSearch, rulesToFulfillments } : RuleProps) => {
     const [collapsed, setCollapsed] = useState(false);
+  
+    // this is only used when we have a rule leaf
+    // TODO: this logic should be moved to the rule leaf
+    const fulfillmentsForRule: Fulfillment[] = rulesToFulfillments[rule.id] || [];
+    const cus = fulfillmentsForRule.reduce((acc, f) => acc + (f.course?.credits || 1), 0); // default to 1 cu 
+    const num = fulfillmentsForRule.length;
+    const satisfied = (rule.credits ? cus >= rule.credits : true) && (rule.num ? num >= rule.num : true);
+
     return (
       <>
         {rule.q ? 
-          <CourseRequirementWrapper>
-              <QObject q={rule.q} reqId={rule.id} handleSearch={handleSearch}/>
-              {rule.credits && <CusCourses>{rule.credits} cus</CusCourses>}
-              {rule.num && <CusCourses>{rule.num} courses</CusCourses>}
-          </CourseRequirementWrapper>
+          <RuleLeafWrapper>
+              <RuleLeaf q={rule.q} rule={rule} fulfillmentsForRule={fulfillmentsForRule} satisfied={satisfied} handleSearch={handleSearch}/>
+              {rule.credits && <CusCourses>{cus} / {rule.credits} cus</CusCourses>}
+              {" "}
+              {rule.num && <CusCourses>{num} / {rule.num}</CusCourses>}
+          </RuleLeafWrapper>
           :
           <RuleTitle onClick={() => setCollapsed(!collapsed)}>
             <div>{rule.title}</div>
@@ -66,7 +76,7 @@ const Rule = ({ rule, setSearchClosed, handleSearch } : RuleProps) => {
 
         {!collapsed && <div className="ms-3">
             {rule.rules.map((rule: any, index: number) => 
-                <Rule key={rule.id} rule={rule} setSearchClosed={setSearchClosed} handleSearch={handleSearch} />
+                <RuleComponent key={rule.id} rule={rule} setSearchClosed={setSearchClosed} handleSearch={handleSearch} rulesToFulfillments={rulesToFulfillments} />
             )}
           </div>
           }
@@ -74,4 +84,4 @@ const Rule = ({ rule, setSearchClosed, handleSearch } : RuleProps) => {
     )
 }
 
-export default Rule;
+export default RuleComponent;

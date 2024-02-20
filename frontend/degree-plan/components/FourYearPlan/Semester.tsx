@@ -4,7 +4,7 @@ import { ItemTypes } from "../dnd/constants";
 import CoursesPlanned from "./CoursesPlanned";
 import Stats from "./Stats";
 import styled from '@emotion/styled';
-import { Course, DegreePlan, Fulfillment } from "@/types";
+import { Course, DegreePlan, DnDFulfillment, Fulfillment } from "@/types";
 import { postFetcher, useSWRCrud } from "@/hooks/swrcrud";
 import { useSWRConfig } from "swr";
 
@@ -68,34 +68,33 @@ const FlexSemester = ({ showStats, semester, fulfillments, activeDegreeplanId} :
     // the fulfillments api uses the POST method for updates (it creates if it doesn't exist, and updates if it does)
     const { createOrUpdate } = useSWRCrud<Fulfillment>(`/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`, { idKey: "full_code" });
 
-    const [{ isOver, canDrop }, drop] = useDrop(() => ({
+    const [{ isOver, canDrop }, drop] = useDrop<DnDFulfillment, never, { isOver: boolean, canDrop: boolean }>(() => ({
         accept: ItemTypes.COURSE,
-        drop: (course: Course) => {
-            console.log("DROPPED", course.full_code, 'from', course.semester, 'to', semester);
-            createOrUpdate({ semester }, course.full_code);
+        drop: (fulfillment: DnDFulfillment) => {
+            createOrUpdate({ semester, rules: fulfillment.rules }, fulfillment.full_code);
         },
         collect: monitor => ({
           isOver: !!monitor.isOver(),
           canDrop: !!monitor.canDrop()
         }),
-    }), []);
+    }), [createOrUpdate, semester]);
     
     return (
         <SemesterCard $showStats={showStats} $isDroppable={canDrop} $isOver={isOver} ref={drop} >
-                <SemesterLabel>
-                    {translateSemester(semester)}
-                </SemesterLabel>
-                <SemesterContent> 
-                        <FlexCoursesPlanned 
-                            semester={semester} 
-                            full_codes={fulfillments.map(fulfillment => fulfillment.full_code)} 
-                            removeCourse={(full_code: Course["full_code"]) => createOrUpdate({ semester: null }, full_code)}/>
+            <SemesterLabel>
+                {translateSemester(semester)}
+            </SemesterLabel>
+            <SemesterContent> 
+                    <FlexCoursesPlanned 
+                        semester={semester} 
+                        fulfillments={fulfillments} 
+                        removeCourse={(full_code: Course["full_code"]) => createOrUpdate({ semester: null }, full_code)}/>
 
-                    {showStats && <FlexStats courses={fulfillments}/>}
-                </SemesterContent>
-                <CreditsLabel>
-                    {credits} CUs
-                </CreditsLabel>
+                {showStats && <FlexStats fulfillments={fulfillments}/>}
+            </SemesterContent>
+            <CreditsLabel>
+                {credits} CUs
+            </CreditsLabel>
         </SemesterCard>
     )
 }

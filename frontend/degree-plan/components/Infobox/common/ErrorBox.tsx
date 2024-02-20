@@ -1,5 +1,5 @@
 import { PropsWithChildren } from "react";
-import { GrayIcon } from "@/components/bulma_derived_components";
+import { GrayIcon } from "@/components/common/bulma_derived_components";
 
 interface ErrorBoxProps {
     detail?: string;

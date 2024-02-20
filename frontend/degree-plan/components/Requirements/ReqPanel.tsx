@@ -1,11 +1,11 @@
 import { useMemo } from 'react';
-import Rule from './Rule';
+import RuleComponent from './Rule';
 import { Degree, DegreePlan, Fulfillment } from '@/types';
 import styled from '@emotion/styled';
 import { PanelBody, PanelContainer, PanelHeader } from '@/components/FourYearPlan/PlanPanel'
 import { useSWRCrud } from '@/hooks/swrcrud';
 import useSWR from 'swr';
-import { GrayIcon } from '../bulma_derived_components';
+import { GrayIcon } from '../common/bulma_derived_components';
 import { AddButton } from '../FourYearPlan/Semesters';
 
 const requirementDropdownListStyle = {
@@ -100,8 +100,18 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
   const { update: updateDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans');
   
   const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null); 
-  const plannedCourses = useMemo(() => {
+  const rulesToFulfillments = useMemo(() => {
     if (!fulfillments) return {}
+    const rulesToCourses: { [semester: string]: Fulfillment[] } = {};
+    fulfillments.forEach(fulfillment => {
+      fulfillment.rules.forEach(rule => {
+        if (!(rule in rulesToCourses)) {
+          rulesToCourses[rule] = [];
+        }
+        rulesToCourses[rule].push(fulfillment);
+      });
+    });
+    return rulesToCourses;
   }, [fulfillments])
 
   return(
@@ -115,11 +125,12 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
                     // TODO
                   }}/>
                   {degree.rules.map((rule: any) => (
-                    <Rule 
-                      rule={rule} 
-                      setSearchClosed={setSearchClosed} 
-                      handleSearch={handleSearch} 
-                      key={rule.id}
+                    <RuleComponent 
+                    rulesToFulfillments={rulesToFulfillments}
+                    rule={rule} 
+                    setSearchClosed={setSearchClosed} 
+                    handleSearch={handleSearch} 
+                    key={rule.id}
                     />
                   ))}
                 </DegreeWrapper>
