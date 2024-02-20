@@ -124,7 +124,7 @@ const GeneralSearchResult = ({setClosed, reqId, reqQuery, queryString, setQueryS
     
     React.useEffect(() => {
         setIsLoadingCourses(true);
-        fetch(`api/base/2023A/search/courses/?search=${queryString}`)
+        fetch(`/api/base/current/courses/search?search=${queryString}`)
             .then(r => r.json())
             .then((courses) => {
                 setCourses([...courses]);
