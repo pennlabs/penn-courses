@@ -2,7 +2,7 @@
 
 import React from "react";
 import { BaseCourseContainer, RemoveCourseButton } from '../FourYearPlan/CoursePlanned';
-import { GrayIcon } from '../bulma_derived_components';
+import { GrayIcon } from '@/components/common/bulma_derived_components';
 import { useDrag } from 'react-dnd';
 import styled from '@emotion/styled';
 import { ItemTypes } from '../dnd/constants';
