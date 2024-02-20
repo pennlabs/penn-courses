@@ -3,7 +3,7 @@ import { useDrag } from "react-dnd";
 import { ItemTypes } from "../dnd/constants";
 import { GrayIcon } from '../common/bulma_derived_components';
 import styled from '@emotion/styled';
-import { Course, Fulfillment } from "@/types";
+import { Course, DnDFulfillment, Fulfillment } from "@/types";
 import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
 
 export const BaseCourseContainer = styled.span<{ $isDragging?: boolean, $isDepressed: boolean, $isDisabled: boolean }>`
@@ -55,7 +55,7 @@ interface CoursePlannedProps {
 }
 
 const CoursePlanned = ({ fulfillment, semester, removeCourse } : CoursePlannedProps) => {
-  const [{ isDragging }, drag] = useDrag(() => ({
+  const [{ isDragging }, drag] = useDrag<DnDFulfillment, never, { isDragging: boolean }>(() => ({
     type: ItemTypes.COURSE,
     item: fulfillment,
     collect: (monitor) => ({

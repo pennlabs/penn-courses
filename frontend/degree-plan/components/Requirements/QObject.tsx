@@ -1,7 +1,6 @@
 import { useDrag } from "react-dnd";
 import { ItemTypes } from "../dnd/constants";
-import { useEffect, useState } from "react";
-import type { Fulfillment, Rule } from "@/types";
+import type { DnDFulfillment, Fulfillment, Rule } from "@/types";
 import styled from "@emotion/styled";
 import nearley from "nearley";
 import grammar from "@/util/q_object_grammar" 
@@ -9,7 +8,6 @@ import { Icon } from "../common/bulma_derived_components";
 import { BaseCourseContainer } from "../FourYearPlan/CoursePlanned";
 import assert from "assert";
 import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
-import { parseCommandLine } from "typescript";
 
 const interpolate = <T,>(arr: T[], separator: T) => arr.flatMap(
     (elem, index) => index < arr.length - 1 ? 
@@ -59,10 +57,10 @@ interface CourseOptionProps {
     ruleId: Rule["id"];
 }
 const CourseOption = ({ full_code, semester, isChosen = false, ruleIsSatisfied = false, ruleId }: CourseOptionProps) => {
-    const [{ isDragging }, drag] = useDrag(() => ({
+    const [{ isDragging }, drag] = useDrag<DnDFulfillment, never, { isDragging: boolean }>(() => ({
         type: ItemTypes.COURSE,
         item: {full_code: full_code, semester: null, rules: [ruleId], course: null },
-        collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
+collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
         canDrag: !isChosen && !ruleIsSatisfied
     }), [isChosen, ruleIsSatisfied])
 

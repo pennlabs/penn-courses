@@ -4,7 +4,7 @@ import { ItemTypes } from "../dnd/constants";
 import CoursesPlanned from "./CoursesPlanned";
 import Stats from "./Stats";
 import styled from '@emotion/styled';
-import { Course, DegreePlan, Fulfillment } from "@/types";
+import { Course, DegreePlan, DnDFulfillment, Fulfillment } from "@/types";
 import { postFetcher, useSWRCrud } from "@/hooks/swrcrud";
 import { useSWRConfig } from "swr";
 import courses from "@/data/courses";
@@ -69,15 +69,12 @@ const Semester = ({ showStats, semester, fulfillments, activeDegreeplanId, class
     // the fulfillments api uses the POST method for updates (it creates if it doesn't exist, and updates if it does)
     const { createOrUpdate } = useSWRCrud<Fulfillment>(`/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`, { idKey: "full_code" });
 
-    const [{ isOver }, drop] = useDrop(() => ({
+    const [_, drop] = useDrop<DnDFulfillment, never, never>(() => ({
         accept: ItemTypes.COURSE,
-        drop: (fulfillment: Fulfillment) => {
+        drop: (fulfillment: DnDFulfillment) => {
             createOrUpdate({ semester, rules: fulfillment.rules }, fulfillment.full_code);
-        },
-        collect: monitor => ({
-          isOver: !!monitor.isOver()
-        }),
-    }), []);
+        }
+    }), [createOrUpdate, semester]);
     
     return (
         <SemesterCard $showStats={showStats} className={className}>
