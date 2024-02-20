@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import Rule from './Rule';
+import RuleComponent from './Rule';
 import { Degree, DegreePlan, Fulfillment } from '@/types';
 import styled from '@emotion/styled';
 import { PanelBody, PanelContainer, PanelHeader } from '@/components/FourYearPlan/PlanPanel'
@@ -104,11 +104,14 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
     if (!fulfillments) return {}
     const rulesToCourses: { [semester: string]: Fulfillment[] } = {};
     fulfillments.forEach(fulfillment => {
-      if (!rulesToCourses[fulfillment.rules.id]) {
-        rulesToCourses[fulfillment.rules.id] = [];
-      }
-      rulesToCourses[fulfillment.rules.id].push(fulfillment);
+      fulfillment.rules.forEach(rule => {
+        if (!(rule in rulesToCourses)) {
+          rulesToCourses[rule] = [];
+        }
+        rulesToCourses[rule].push(fulfillment);
+      });
     });
+    return rulesToCourses;
   }, [fulfillments])
 
   return(
@@ -122,7 +125,8 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
                     // TODO
                   }}/>
                   {degree.rules.map((rule: any) => (
-                    <Rule 
+                    <RuleComponent 
+                    rulesToFulfillments={rulesToFulfillments}
                     rule={rule} 
                     setSearchClosed={setSearchClosed} 
                     handleSearch={handleSearch} 

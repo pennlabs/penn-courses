@@ -1,7 +1,7 @@
 import { useDrag } from "react-dnd";
 import { ItemTypes } from "../dnd/constants";
 import { useEffect, useState } from "react";
-import type { Course } from "@/types";
+import type { Fulfillment, Rule } from "@/types";
 import styled from "@emotion/styled";
 import nearley from "nearley";
 import grammar from "@/util/q_object_grammar" 
@@ -9,6 +9,14 @@ import { Icon } from "../common/bulma_derived_components";
 import { BaseCourseContainer } from "../FourYearPlan/CoursePlanned";
 import assert from "assert";
 import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
+import { parseCommandLine } from "typescript";
+
+const interpolate = <T,>(arr: T[], separator: T) => arr.flatMap(
+    (elem, index) => index < arr.length - 1 ? 
+    [elem, separator] 
+    : [elem]
+)
+
 
 type ConditionKey = "full_code" | "semester" | "attributes__code__in" | "department__code" | "full_code__startswith" | "code__gte" | "code__lte" | "department__code__in" 
 interface Condition {
@@ -16,35 +24,52 @@ interface Condition {
     key: ConditionKey;
     value: string | number | boolean | null | string[];
 }
-interface Compound {
-    type: 'OR' | 'AND';
-    clauses: (Compound | Condition)[];
+
+// represents a course requirement
+interface QCourse {
+    type: 'COURSE';
+    full_code: string;
+    semester?: string;
 }
-type ParsedQObj = Condition | Compound;
+interface Search {
+    type: 'SEARCH';
+    q: ParsedQObj
+} 
+interface And {
+    type: 'AND';
+    clauses: (Compound | Condition | QCourse | Search)[];
+}
+
+interface Or {
+    type: 'OR';
+    clauses: (Compound | Condition | QCourse | Search)[];
+}
+type Compound = Or | And;
+
+type ParsedQObj = Condition | Compound | QCourse | Search;
+type TransformedQObject = QCourse | Search | Or;
+
+
 
 interface CourseOptionProps {
-    course: Course["full_code"];
-    chosenOptions: Course["full_code"][];
-    setChosenOptions: (arg0: Course["full_code"][]) => void;
-    semester?: Course["semester"];
+    full_code: QCourse["full_code"];
+    semester?: QCourse["semester"];
+    isChosen: boolean;
+    ruleIsSatisfied: boolean;
+    ruleId: Rule["id"];
 }
-const CourseOption = ({ course, chosenOptions, setChosenOptions, semester }: CourseOptionProps) => {
+const CourseOption = ({ full_code, semester, isChosen = false, ruleIsSatisfied = false, ruleId }: CourseOptionProps) => {
     const [{ isDragging }, drag] = useDrag(() => ({
         type: ItemTypes.COURSE,
-        item: {full_code: course, semester: null},
-        end: (item, monitor) => {
-            if (monitor.didDrop()) {
-                setChosenOptions([...chosenOptions, course])
-            };
-        },
+        item: {full_code: full_code, semester: null, rules: [ruleId], course: null },
         collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
-        canDrag: () => !chosenOptions.length // if another hasn't already been chosen
-    }))
+        canDrag: !isChosen && !ruleIsSatisfied
+    }), [isChosen, ruleIsSatisfied])
 
     return (
-        <ReviewPanelTrigger full_code={course}>
-            <BaseCourseContainer ref={drag} $isDepressed={chosenOptions.includes(course)}>
-                {course.split("-").join(" ")}{semester ? ` (${semester})` : ""}
+        <ReviewPanelTrigger full_code={full_code}>
+            <BaseCourseContainer ref={drag} $isDepressed={isChosen} $isDisabled={!isChosen && ruleIsSatisfied}>
+                {semester ? `${full_code} (${semester})` : full_code}
             </BaseCourseContainer>
         </ReviewPanelTrigger>
     )
@@ -82,16 +107,23 @@ const DarkGrayIcon = styled(Icon)`
 `
 
 interface SearchConditionProps {
-    compound: Compound;
-    chosenOptions: Course["full_code"][];
-    setChosenOptions: (arg0: Course["full_code"][]) => void;
+    q: ParsedQObj;
+    fulfillments: Fulfillment[]
+    ruleIsSatisfied: boolean,
+    ruleId: Rule["id"];
 }
-const SearchCondition = ({ compound, chosenOptions, setChosenOptions }: SearchConditionProps) => {
-    const conditions = compound.clauses.filter((clause) => clause.type === "LEAF") as Condition[];
-    const compounds = compound.clauses.filter((clause) => clause.type !== "LEAF") as Compound[];
+const SearchCondition = ({ q, fulfillments, ruleIsSatisfied, ruleId }: SearchConditionProps) => {
+    if (q.type === "LEAF") {
+        q = { type: "AND", clauses: [q] }
+    } else if (q.type === "COURSE" || q.type === "SEARCH") {
+        throw Error("Course inside search condition"); // TODO: this is inelegant
+    }
+
+    const conditions = q.clauses.filter((clause) => clause.type === "LEAF") as Condition[];
+    const compounds = q.clauses.filter((clause) => clause.type === "OR" || clause.type === "AND") as Compound[];
 
     const display = [];
-    const compoundCondition: { [key: ConditionKey]: any } = {};
+    const compoundCondition: Record<ConditionKey, any | undefined> = {};
     conditions.forEach((leaf) => compoundCondition[leaf.key] = leaf.value); 
     if ('attributes__code__in' in compoundCondition) {
         display.push(<Attributes attributes={compoundCondition['attributes__code__in'] as string[]} />);
@@ -113,9 +145,8 @@ const SearchCondition = ({ compound, chosenOptions, setChosenOptions }: SearchCo
     }
     if ('department__code__in' in compoundCondition) {
         const departments = compoundCondition['department__code__in'] as string[];
-        display.push(<Row>in {
-            departments.map((dept) => <div key={dept}>{dept}</div>)
-            .flatMap((elem, index) => index < departments.length - 1 ? [elem, <CourseOptionsSeparator>or</CourseOptionsSeparator>] : [elem])
+        display.push(<Row> in {
+            interpolate(departments.map((dept) => <div key={dept}>{dept}</div>), <CourseOptionsSeparator>or</CourseOptionsSeparator>)
         }</Row>);
     }
     if ('full_code__startswith' in compoundCondition) {
@@ -128,56 +159,32 @@ const SearchCondition = ({ compound, chosenOptions, setChosenOptions }: SearchCo
 
     compounds.forEach((compound) => display.push(
         <Row>
-            <CourseOptionsSeparator id="parens">{'('}asnd</CourseOptionsSeparator>
-            <SearchCondition compound={compound} />
-            <CourseOptionsSeparator>{')'}asdf</CourseOptionsSeparator>
+            <CourseOptionsSeparator>{'('}</CourseOptionsSeparator>
+            <SearchCondition q={compound}  />
+            <CourseOptionsSeparator>{')'}</CourseOptionsSeparator>
         </Row>
     ));
 
     if (display.length == 0) {
-        console.error("Empty display in SearchCondition: ", compound)
+        console.error("Empty display in SearchCondition: ", q)
     }
 
     return (
         <SearchConditionWrapper>
-            {display.flatMap(
-                (elem, index) => index < display.length - 1 ? 
-                    [elem, <CourseOptionsSeparator>and</CourseOptionsSeparator>] 
-                    : [elem]
-            )}
+            {interpolate(display, <CourseOptionsSeparator>{q.type}</CourseOptionsSeparator>)}
             <DarkGrayIcon>
                 <i className="fas fa-search fa-sm"></i>
             </DarkGrayIcon>
+            {fulfillments.map(fulfillment => (
+                <CourseOption 
+                full_code={fulfillment.full_code} 
+                isChosen 
+                ruleIsSatisfied={ruleIsSatisfied} 
+                ruleId={ruleId}
+                />
+            ))}
         </SearchConditionWrapper>
     )
-}
-
-interface TerminalProps {
-    q: ParsedQObj;
-    chosenOptions: Course["full_code"][];
-    setChosenOptions: (arg0: Course["full_code"][]) => void;
-}
-const Terminal = ({ q, chosenOptions, setChosenOptions }: TerminalProps) => {
-    assert(q.type !== "OR");
-    if (q.type === 'LEAF' && q.key === "full_code") return (
-        <CourseOption course={q.value as string} chosenOptions={chosenOptions} setChosenOptions={setChosenOptions} />
-    );
-    if (q.type === 'LEAF') return (
-        <SearchCondition compound={{type: "AND", clauses: [q]}} chosenOptions={chosenOptions} setChosenOptions={setChosenOptions} />
-    );
-    if (q.type === 'AND' && q.clauses.length == 2) {
-        const semester = q.clauses.find((clause) => clause.type === "LEAF" && clause.key === "semester")
-        const full_code = q.clauses.find((clause) => clause.type === "LEAF" && clause.key === "full_code")
-        if (semester && full_code) return (
-            <CourseOption 
-            course={(full_code as Condition).value as string} 
-            semester={(semester as Condition).value as string} 
-            chosenOptions={chosenOptions}
-            setChosenOptions={setChosenOptions}
-            />
-        );
-    }
-    return  <SearchCondition compound={q} />;
 }
 
 const CourseOptionsSeparator = styled.div`
@@ -187,34 +194,123 @@ const CourseOptionsSeparator = styled.div`
     font-weight: 500;
 `;
 
-const QObject = ({ q }: { q: string }) => {
-    const qObjParser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
-    let parsed = qObjParser.feed(q).results[0] as ParsedQObj;
-    const [chosenOptions, setChosenOptions] = useState<Course["full_code"][]>([]);
-    if (!parsed) return null;
-    if (parsed.type == "OR" && parsed.clauses.every((clause) => clause.type === "LEAF" && clause.key === "department__code")) {
-        parsed = {type: "LEAF", key: "department__code__in", value: parsed.clauses.map((clause) => (clause as Condition).value) as string[]} as Condition;
+const transformCourseClauses = (q: ParsedQObj): ParsedQObj => {
+    if (q.type === "LEAF" && q.key === "full_code") return { type: "COURSE", full_code: q.value };
+    if (q.type === "AND" && q.clauses.length == 2) {
+        const semester = (q.clauses.find((clause) => clause.type === "LEAF" && clause.key === "semester") as Condition | undefined)?.value as string | undefined;
+        const full_code = (q.clauses.find((clause) => clause.type === "LEAF" && clause.key === "full_code") as Condition | undefined)?.value as string | undefined;
+        if (full_code) return { type: "COURSE", semester, full_code };
     }
-    if (parsed.type == "OR") {
-        return (
-            <Row>
-                {parsed.clauses
-                .map((clause, idx) => <Terminal key={idx} q={clause} chosenOptions={chosenOptions} setChosenOptions={setChosenOptions}/>)
-                .flatMap((elem, idx) => (
-                    idx < parsed.clauses.length - 1 ? 
-                    [elem, <CourseOptionsSeparator key={`${idx}-separator`}>or</CourseOptionsSeparator>] : 
-                    [elem]
-                ))}
-            </Row>
-        )
-    }
-    return (
-        <Terminal 
-        q={parsed}
-        chosenOptions={chosenOptions}
-        setChosenOptions={setChosenOptions}  
-        />
-    )
+    // parse recursively
+    if (q.type === "AND" || q.type === "OR") return {...q, clauses: q.clauses.map(transformCourseClauses)}
+    return q;
+}
+const transformDepartmentInClauses = (q: ParsedQObj): ParsedQObj => {
+    if (q.type === "LEAF" && q.key === "department__code__in") return {
+        type: "OR", 
+        clauses: (q.value as string[]).map(dept => ({ type: "LEAF", key: "department__code", value: dept })) 
+    }; 
+    if (q.type === "AND" || q.type === "OR") return {...q, clauses: q.clauses.map(transformDepartmentInClauses)}
+    return q;
+}
+const transformSearchConditions = (q: ParsedQObj): ParsedQObj => {
+    if (q.type === "COURSE") return q;
+    if (q.type !== "OR") return { type: "SEARCH", q };
+
+    // combine together search conditions
+    let clauses = q.clauses.map(transformSearchConditions);
+    const searchConditions = clauses.filter((clause) => clause.type === "SEARCH") as Search[];
+    clauses = clauses.filter((clause) => clause.type !== "SEARCH")
+
+    if (searchConditions.length === 1) clauses.push(searchConditions[0]);
+    else if (searchConditions.length > 1) clauses.push({
+        type: "SEARCH",
+        q: {
+            type: "OR",
+            clauses: searchConditions.map(searchCondition => searchCondition.q)
+        }
+    })
+    if (clauses.length === 1) return clauses[0];
+    return {...q, clauses }
 }
 
-export default QObject;
+interface QObjectProps { 
+    q: TransformedQObject, 
+    fulfillments: Fulfillment[], // fulfillments for this rule 
+    rule: Rule,
+    satisfied: boolean
+}
+const QObject = ({ q, fulfillments, rule, satisfied }: QObjectProps) => {
+    // recursively render
+    switch (q.type) {
+        case "OR":
+            const courses: QCourse[] = [];
+            const coursesWithSemester: QCourse[] = [];
+            const searchConditions: Search[] = [];
+            q.clauses.forEach(clause => {
+                if (clause.type === "COURSE" && clause.semester) coursesWithSemester.push(clause);
+                else if (clause.type === "COURSE") courses.push(clause)
+                else if (clause.type === "SEARCH") searchConditions.push(clause)
+                else throw Error(`Non search or course clause in transformed Q object: ${JSON.stringify(clause)}`);
+            })
+            const fulfillmentsMap = new Map(fulfillments.map(fulfillment => [fulfillment.full_code, fulfillment]))
+            const displayCoursesWithSemesters = coursesWithSemester.map(course => {
+                assert(typeof course.semester === "string")
+                const fulfillment = fulfillmentsMap.get(course.full_code);
+                const isChosen = !!(fulfillment && fulfillment.semester === course.semester);
+                
+                // we've already used this course, so delete it 
+                if (isChosen) fulfillmentsMap.delete(course.full_code);
+                return <CourseOption full_code={course.full_code} semester={course.semester} isChosen={isChosen} ruleIsSatisfied={satisfied} ruleId={rule.id} />;
+            });
+            const displayCoursesWithoutSemesters = courses.map(course => {
+                assert(typeof course.semester === "undefined")
+                const fulfillment = fulfillmentsMap.get(course.full_code);
+                const isChosen = !!fulfillment;
+
+                // we've already used this course, so delete it
+                if (isChosen) fulfillmentsMap.delete(course.full_code); 
+                return <CourseOption full_code={course.full_code} isChosen={isChosen} ruleIsSatisfied={satisfied} ruleId={rule.id} />;
+            });
+
+            // transformations applied to parse tree should guarantee that searchConditions is a singleton
+            assert(searchConditions.length <= 1, "Expected search conditions to be merged")
+            const displaySearchConditions = searchConditions.map(search => {
+                const courses = Array.from(fulfillmentsMap.values())
+                fulfillmentsMap.clear()
+                return <SearchCondition fulfillments={courses} q={search.q} ruleIsSatisfied={satisfied} ruleId={rule.id}/>
+            })
+
+            return interpolate(
+                [...displayCoursesWithSemesters, ...displayCoursesWithoutSemesters, ...displaySearchConditions], 
+                <CourseOptionsSeparator>or</CourseOptionsSeparator>
+            );
+        case "SEARCH":
+            return <SearchCondition q={q.q} ruleIsSatisfied={satisfied} fulfillments={fulfillments} ruleId={rule.id}/>;
+        case "COURSE":
+            const isChosen = !!fulfillments.find(fulfillment => fulfillment.full_code == q.full_code && (!q.semester || q.semester === fulfillment.semester))
+            return <CourseOption full_code={q.full_code} semester={q.semester} isChosen={isChosen} ruleIsSatisfied={satisfied} ruleId={rule.id} />
+    }
+}
+
+
+interface RuleLeafProps { 
+    q: string, 
+    fulfillmentsForRule: Fulfillment[], // fulfillments for this rule 
+    rule: Rule,
+    satisfied: boolean
+}
+const RuleLeaf = ({ q, fulfillmentsForRule, rule, satisfied }: RuleLeafProps) => {
+    const qObjParser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
+    let parsed = qObjParser.feed(q).results[0] as ParsedQObj;
+    if (!parsed) return null;
+
+    // apply some transformations to parse tree
+    const t1 = transformDepartmentInClauses(parsed);
+    const t2 = transformCourseClauses(t1);
+    const t3 = transformSearchConditions(t2)
+    parsed = t3 as TransformedQObject;
+    return <QObject q={parsed} fulfillments={fulfillmentsForRule} rule={rule} satisfied={satisfied}/>
+}
+
+export default RuleLeaf;
