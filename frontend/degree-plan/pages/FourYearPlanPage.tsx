@@ -149,7 +149,7 @@ const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any)
                     /> 
                     }
                 <Row>
-                    <SplitPane split="vertical" minSize={0} maxSize={750} defaultSize='50%'>
+                    <SplitPane split="vertical" minSize={0} maxSize={900} defaultSize={750}>
                         <Pane>
                             <PanelContainer>
                                     <PlanPanel 

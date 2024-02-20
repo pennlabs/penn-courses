@@ -8,6 +8,7 @@ import Fuse from 'fuse.js'
 import useSWR from "swr";
 import ResultsList from "./ResultsList";
 import styled from "@emotion/styled";
+import { useDebounce } from "@/hooks/debounce";
 
 const SearchPanelBody = styled.div`
     margin: 10px;
@@ -98,24 +99,10 @@ export const SearchPanel = ({setClosed, reqId, reqQuery}:any) => {
     )
 }
 
-export const useDebounce = (value: any, delay: number) => {
-  const [debouncedValue, setDebouncedValue] = React.useState(value);
 
-  React.useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-
-  return debouncedValue;
-}
 
 const GeneralSearchResult = ({setClosed, reqId, reqQuery, queryString, setQueryString}:any) => {
-    // const debouncedSearchTerm = useDebounce(queryString, 1000)
+    const debouncedSearchTerm = useDebounce(queryString, 1000)
     const [scrollPos, setScrollPos] = React.useState<number>(0);
 
     // const { data: courses = [], isLoading: isLoadingCourses, error } = useSWR(debouncedSearchTerm ? `api/base/current/search/courses/?search=${debouncedSearchTerm}`: null, fetcher); 
@@ -180,7 +167,7 @@ const ReqSearchResult = ({setClosed, reqId, reqQuery, queryString, setQueryStrin
     const [scrollPos, setScrollPos] = React.useState<number>(0);
 
     const [url, setUrl] = React.useState<string>("");
-    const { data: courses = [], isLoading: isLoadingCourses, error } = useSWR(`api/degree/courses/${reqId}`, { refreshInterval: 0, fallbackData: [] }); 
+    const { data: courses = [], isLoading: isLoadingCourses, error } = useSWR(reqId ? `api/degree/courses/${reqId}` : null, { refreshInterval: 0, fallbackData: [] }); 
 
     // React.useEffect(() => {
     //     if (reqId === undefined) {
