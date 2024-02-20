@@ -5,6 +5,7 @@ import { GrayIcon } from '../common/bulma_derived_components';
 import styled from '@emotion/styled';
 import { Course, DnDFulfillment, Fulfillment } from "@/types";
 import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
+import { Draggable } from "../common/DnD";
 
 export const BaseCourseContainer = styled.span<{ $isDragging?: boolean, $isDepressed: boolean, $isDisabled: boolean }>`
   display: flex;
@@ -64,21 +65,23 @@ const CoursePlanned = ({ fulfillment, semester, removeCourse } : CoursePlannedPr
   }), [fulfillment, semester])
 
   return (   
-    <PlannedCourseContainer
-    $isDragging={isDragging}
-    $isDepressed={false}
-    $isDisabled={false}
-    ref={drag} 
-    >
-      <ReviewPanelTrigger full_code={fulfillment.full_code}>
-        <div>
-          {fulfillment.full_code}
-        </div>
-        <GrayIcon className="close-button" onClick={() => removeCourse(fulfillment.full_code)}>
-          <i className="fas fa-times"></i>
-        </GrayIcon>
-      </ReviewPanelTrigger>
-    </PlannedCourseContainer>
+    <Draggable isDragging={isDragging}>
+      <PlannedCourseContainer
+      $isDragging={isDragging}
+      $isDepressed={false}
+      $isDisabled={false}
+      ref={drag} 
+      >
+        <ReviewPanelTrigger full_code={fulfillment.full_code}>
+          <div>
+            {fulfillment.full_code}
+          </div>
+          <GrayIcon className="close-button" onClick={() => removeCourse(fulfillment.full_code)}>
+            <i className="fas fa-times"></i>
+          </GrayIcon>
+        </ReviewPanelTrigger>
+      </PlannedCourseContainer>
+    </Draggable>
   )
 }
 

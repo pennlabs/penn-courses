@@ -7,7 +7,6 @@ import styled from '@emotion/styled';
 import { Course, DegreePlan, DnDFulfillment, Fulfillment } from "@/types";
 import { postFetcher, useSWRCrud } from "@/hooks/swrcrud";
 import { useSWRConfig } from "swr";
-import courses from "@/data/courses";
 
 
 const translateSemester = (semester: Course["semester"]) => {
@@ -16,14 +15,15 @@ const translateSemester = (semester: Course["semester"]) => {
     return `${term === "A" ? "Spring" : term === "B" ? "Summer" : "Fall"} ${year}`
 }
 
-export const SemesterCard = styled.div`
+export const SemesterCard = styled.div<{$isDroppable:boolean, $isOver: boolean}>`
     background: #FFFFFF;
-    box-shadow: 0px 0px 4px 2px rgba(0, 0, 0, 0.05);
+    box-shadow: 0px 0px 4px 2px ${props => props.$isOver ? 'var(--selected-color);' : props.$isDroppable ? 'var(--primary-color-dark);' : 'rgba(0, 0, 0, 0.05);'}
     border-radius: 10px;
     border-width: 0px;
     padding: 1rem;
     display: flex;
     flex-direction: column;
+    flex: 1 1 15rem;
 `;
 
 const SemesterLabel = styled.div`
@@ -62,31 +62,34 @@ interface SemesterProps {
     className: string;
 }
 
-const Semester = ({ showStats, semester, fulfillments, activeDegreeplanId, className} : SemesterProps) => {
-    const ref = useRef(null);
+const FlexSemester = ({ showStats, semester, fulfillments, activeDegreeplanId} : SemesterProps) => {
     const credits = fulfillments.reduce((acc, curr) => acc + (curr.course?.credits || 1), 0)
 
     // the fulfillments api uses the POST method for updates (it creates if it doesn't exist, and updates if it does)
     const { createOrUpdate } = useSWRCrud<Fulfillment>(`/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`, { idKey: "full_code" });
 
-    const [_, drop] = useDrop<DnDFulfillment, never, never>(() => ({
+    const [{ isOver, canDrop }, drop] = useDrop<DnDFulfillment, never, { isOver: boolean, canDrop: boolean }>(() => ({
         accept: ItemTypes.COURSE,
         drop: (fulfillment: DnDFulfillment) => {
             createOrUpdate({ semester, rules: fulfillment.rules }, fulfillment.full_code);
-        }
+        },
+        collect: monitor => ({
+          isOver: !!monitor.isOver(),
+          canDrop: !!monitor.canDrop()
+        }),
     }), [createOrUpdate, semester]);
     
     return (
-        <SemesterCard $showStats={showStats} className={className}>
+        <SemesterCard $showStats={showStats} $isDroppable={canDrop} $isOver={isOver} ref={drop} >
             <SemesterLabel>
                 {translateSemester(semester)}
             </SemesterLabel>
-            <SemesterContent ref={ref}>
-                <FlexCoursesPlanned 
-                semester={semester} 
-                dropRef={drop} 
-                fulfillments={fulfillments}
-                removeCourse={(full_code: Course["full_code"]) => createOrUpdate({ semester: null }, full_code)}/>
+            <SemesterContent> 
+                    <FlexCoursesPlanned 
+                        semester={semester} 
+                        fulfillments={fulfillments} 
+                        removeCourse={(full_code: Course["full_code"]) => createOrUpdate({ semester: null }, full_code)}/>
+
                 {showStats && <FlexStats fulfillments={fulfillments}/>}
             </SemesterContent>
             <CreditsLabel>
@@ -96,4 +99,4 @@ const Semester = ({ showStats, semester, fulfillments, activeDegreeplanId, class
     )
 }
 
-export default Semester;
+export default FlexSemester;

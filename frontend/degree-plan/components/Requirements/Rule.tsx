@@ -11,7 +11,7 @@ const RuleTitle = styled.div`
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    background-color: #F5F5F5;
+    background-color: var(--primary-color-light);
     color: #575757;
     padding: 0.25rem .5rem;
     margin: 0.5rem 0;
@@ -58,7 +58,7 @@ const RuleComponent = ({ rule, setSearchClosed, handleSearch, rulesToFulfillment
       <>
         {rule.q ? 
           <RuleLeafWrapper>
-              <RuleLeaf q={rule.q} rule={rule} fulfillmentsForRule={fulfillmentsForRule} satisfied={satisfied}/>
+              <RuleLeaf q={rule.q} rule={rule} fulfillmentsForRule={fulfillmentsForRule} satisfied={satisfied} handleSearch={handleSearch}/>
               {rule.credits && <CusCourses>{cus} / {rule.credits} cus</CusCourses>}
               {" "}
               {rule.num && <CusCourses>{num} / {rule.num}</CusCourses>}

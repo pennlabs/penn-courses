@@ -1,4 +1,5 @@
 import '@/styles/globals.css'
+import '@/styles/SplitPane.css'
 import { inter } from "@/fonts";
 import type { AppProps } from 'next/app'
 import React from 'react';

@@ -9,6 +9,14 @@
   --background-start-rgb: 214, 219, 220;
   --background-end-rgb: 255, 255, 255;
 
+  /* lavender */
+  --primary-color-dark: #C5D2F6;
+  --primary-color-light: #EDF1FC;
+  --background-white: #F7F9FC;
+  --background-grey:#F7F9FC;
+
+  --selected-color: #967BB6;
+
   --primary-glow: conic-gradient(
     from 180deg at 50% 50%,
     #16abff33 0deg,
@@ -104,4 +112,27 @@ a {
   html {
     color-scheme: dark;
   }
+}
+
+.tag {
+  padding-left: 5px;
+  padding-right: 5px;
+}
+
+.is-rounded {
+  border-radius: 15px;
+}
+
+.draggable {
+  cursor: grab;
+}
+
+.dragging {
+  cursor: grabbing;
+}
+
+.droppable {
+  box-shadow: 0 0 50px;
+  transition: 0.3s var(--primary-color-dark);
+
 }

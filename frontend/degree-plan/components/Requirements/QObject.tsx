@@ -8,6 +8,7 @@ import { Icon } from "../common/bulma_derived_components";
 import { BaseCourseContainer } from "../FourYearPlan/CoursePlanned";
 import assert from "assert";
 import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
+import { Draggable } from "../common/DnD";
 
 const interpolate = <T,>(arr: T[], separator: T) => arr.flatMap(
     (elem, index) => index < arr.length - 1 ? 
@@ -66,9 +67,11 @@ collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
 
     return (
         <ReviewPanelTrigger full_code={full_code}>
-            <BaseCourseContainer ref={drag} $isDepressed={isChosen} $isDisabled={!isChosen && ruleIsSatisfied}>
-                {semester ? `${full_code} (${semester})` : full_code}
-            </BaseCourseContainer>
+            <Draggable isDragging={isDragging}>
+                <BaseCourseContainer ref={drag} $isDepressed={isChosen} $isDisabled={!isChosen && ruleIsSatisfied}>
+                    {semester ? `${full_code} (${semester})` : full_code.replace("-", " ")}
+                </BaseCourseContainer>
+            </Draggable>
         </ReviewPanelTrigger>
     )
 }
@@ -100,7 +103,7 @@ const SearchConditionWrapper = styled(BaseCourseContainer)`
     margin: .5 rem 0;
     background-color: #EDF1FC;
 `
-const DarkGrayIcon = styled(Icon)`
+export const DarkGrayIcon = styled(Icon)`
     color: #575757;
 `
 
@@ -109,8 +112,11 @@ interface SearchConditionProps {
     fulfillments: Fulfillment[]
     ruleIsSatisfied: boolean,
     ruleId: Rule["id"];
+    setSearchClosed: (status: boolean) => void;
+    handleSearch: (reqId: number, reqQuery: string) => void;
+    ruleQuery: string;
 }
-const SearchCondition = ({ q, fulfillments, ruleIsSatisfied, ruleId }: SearchConditionProps) => {
+const SearchCondition = ({ q, fulfillments, ruleIsSatisfied, ruleId, setSearchClosed, handleSearch, ruleQuery}: SearchConditionProps) => {
     if (q.type === "LEAF") {
         q = { type: "AND", clauses: [q] }
     } else if (q.type === "COURSE" || q.type === "SEARCH") {
@@ -158,7 +164,7 @@ const SearchCondition = ({ q, fulfillments, ruleIsSatisfied, ruleId }: SearchCon
     compounds.forEach((compound) => display.push(
         <Row>
             <CourseOptionsSeparator>{'('}</CourseOptionsSeparator>
-            <SearchCondition q={compound}  />
+            <SearchCondition q={compound} ruleId={ruleId} ruleQuery={ruleQuery} handleSearch={handleSearch} />
             <CourseOptionsSeparator>{')'}</CourseOptionsSeparator>
         </Row>
     ));
@@ -170,9 +176,11 @@ const SearchCondition = ({ q, fulfillments, ruleIsSatisfied, ruleId }: SearchCon
     return (
         <SearchConditionWrapper>
             {interpolate(display, <CourseOptionsSeparator>{q.type}</CourseOptionsSeparator>)}
-            <DarkGrayIcon>
-                <i className="fas fa-search fa-sm"></i>
-            </DarkGrayIcon>
+            <div onClick={() => {handleSearch(ruleId, ruleQuery);}}>
+                <DarkGrayIcon>
+                    <i class="fas fa-search fa-sm"></i>
+                </DarkGrayIcon>
+            </div>
             {fulfillments.map(fulfillment => (
                 <CourseOption 
                 full_code={fulfillment.full_code} 
@@ -233,12 +241,13 @@ const transformSearchConditions = (q: ParsedQObj): ParsedQObj => {
 }
 
 interface QObjectProps { 
-    q: TransformedQObject, 
-    fulfillments: Fulfillment[], // fulfillments for this rule 
-    rule: Rule,
-    satisfied: boolean
+    q: TransformedQObject; 
+    fulfillments: Fulfillment[]; // fulfillments for this rule 
+    rule: Rule;
+    satisfied: boolean;
+    handleSearch: (ruleId: Rule["id"], ruleQuery: Rule["q"]) => void;
 }
-const QObject = ({ q, fulfillments, rule, satisfied }: QObjectProps) => {
+const QObject = ({ q, fulfillments, rule, satisfied, handleSearch }: QObjectProps) => {
     // recursively render
     switch (q.type) {
         case "OR":
@@ -276,7 +285,7 @@ const QObject = ({ q, fulfillments, rule, satisfied }: QObjectProps) => {
             const displaySearchConditions = searchConditions.map(search => {
                 const courses = Array.from(fulfillmentsMap.values())
                 fulfillmentsMap.clear()
-                return <SearchCondition fulfillments={courses} q={search.q} ruleIsSatisfied={satisfied} ruleId={rule.id}/>
+                return <SearchCondition fulfillments={courses} q={search.q} ruleIsSatisfied={satisfied} ruleId={rule.id} ruleQuery={rule.q} handleSearch={handleSearch}/>
             })
 
             return interpolate(
@@ -284,7 +293,7 @@ const QObject = ({ q, fulfillments, rule, satisfied }: QObjectProps) => {
                 <CourseOptionsSeparator>or</CourseOptionsSeparator>
             );
         case "SEARCH":
-            return <SearchCondition q={q.q} ruleIsSatisfied={satisfied} fulfillments={fulfillments} ruleId={rule.id}/>;
+            return <SearchCondition q={q.q} ruleIsSatisfied={satisfied} fulfillments={fulfillments} ruleId={rule.id} ruleQuery={rule.q} />;
         case "COURSE":
             const isChosen = !!fulfillments.find(fulfillment => fulfillment.full_code == q.full_code && (!q.semester || q.semester === fulfillment.semester))
             return <CourseOption full_code={q.full_code} semester={q.semester} isChosen={isChosen} ruleIsSatisfied={satisfied} ruleId={rule.id} />
@@ -293,12 +302,13 @@ const QObject = ({ q, fulfillments, rule, satisfied }: QObjectProps) => {
 
 
 interface RuleLeafProps { 
-    q: string, 
-    fulfillmentsForRule: Fulfillment[], // fulfillments for this rule 
-    rule: Rule,
-    satisfied: boolean
+    q: string;
+    fulfillmentsForRule: Fulfillment[]; // fulfillments for this rule 
+    rule: Rule;
+    satisfied: boolean;
+    handleSearch: (ruleId: Rule["id"], ruleQuery: Rule["q"]) => void;
 }
-const RuleLeaf = ({ q, fulfillmentsForRule, rule, satisfied }: RuleLeafProps) => {
+const RuleLeaf = ({ q, fulfillmentsForRule, rule, satisfied, handleSearch }: RuleLeafProps) => {
     const qObjParser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
     let parsed = qObjParser.feed(q).results[0] as ParsedQObj;
     if (!parsed) return null;
@@ -308,7 +318,7 @@ const RuleLeaf = ({ q, fulfillmentsForRule, rule, satisfied }: RuleLeafProps) =>
     const t2 = transformCourseClauses(t1);
     const t3 = transformSearchConditions(t2)
     parsed = t3 as TransformedQObject;
-    return <QObject q={parsed} fulfillments={fulfillmentsForRule} rule={rule} satisfied={satisfied}/>
+    return <QObject q={parsed} fulfillments={fulfillmentsForRule} rule={rule} satisfied={satisfied} handleSearch={handleSearch}/>
 }
 
 export default RuleLeaf;

@@ -1,5 +1,5 @@
 
-import Semester from "./Semester"
+import FlexSemester from "./Semester"
 import styled from "@emotion/styled";
 import { Icon } from "../common/bulma_derived_components";
 import { Course, DegreePlan, Fulfillment } from "@/types";
@@ -25,10 +25,6 @@ const SemestersContainer = styled.div`
     gap: 1rem;
     flex-wrap: wrap;
 ;`
-
-const FlexSemester = styled(Semester)`
-    flex: 1 1 15rem;
-`;
 
 const AddSemesterContainer = styled.div`
     flex: 1 1 15rem;
