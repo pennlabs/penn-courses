@@ -277,8 +277,6 @@ const InfoBox = ({
     avgDifficulty != null ||
     avgWorkRequired != null;
 
-  console.log("data", data)
-
   if (!data) {
     return <h1>Loading data...</h1>;
   }

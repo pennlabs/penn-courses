@@ -134,7 +134,6 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
                 return list;
             },
             populateCache: (updated: T, list?: Array<T>) => {
-                console.log("swrcrud: update: populateCache", updated, list)
                 if (!list) return [];
                 if (!updated) return list;
                 const index = list.findIndex((item: T) => item[idKey] === updated[idKey]);

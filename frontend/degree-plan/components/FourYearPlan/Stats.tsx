@@ -80,8 +80,8 @@ const getAverages = (fulfillments: Fulfillment[]) => {
 }
 
 
-const Stats = ({ courses, className } : { courses: Fulfillment[], className: string }) => {
-    const { course_quality, instructor_quality, difficulty, work_required } = getAverages(courses) as Record<StatsType, number>;
+const Stats = ({ fulfillments, className } : { fulfillments: Fulfillment[], className: string }) => {
+    const { course_quality, instructor_quality, difficulty, work_required } = getAverages(fulfillments) as Record<StatsType, number>;
 
     return (
         <Stack className={className}>
