@@ -94,6 +94,8 @@ interface ReqPanelProps {
   setModalObject: (arg0: DegreePlan | null) => void;
   activeDegreeplan: DegreePlan | null;
   isLoading: boolean;
+  setSearchClosed: any;
+  handleSearch: any;
 }
 const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, setSearchClosed, handleSearch}: ReqPanelProps) => {
   const degrees = activeDegreeplan?.degrees;
