@@ -272,16 +272,22 @@ def parse_rulearray(
                 raise LookupError(f"Unknown rule type {rule_json['ruleType']}")
 
 
-# TODO: Make the function names more descriptive
-def parse_degreeworks(json: dict, degree: Degree) -> list[Rule]:
+def parse_degreeworks(json: dict, degree: Degree) -> list[Rule] | None:
     """
     Returns a list of Rules given a DegreeWorks JSON audit and a Degree.
-    Note that this method creates rule objects but does not save them.
+    Note that this method creates rule objects but does not save them. If it returns null,
+    it indicated that this json could not be parsed, meaning that the degree is invalid and
+    should not be saved.
     """
     blockArray = json["blockArray"]
     rules = []
-
     for requirement in blockArray:
+        # get total credits requirement for the degree
+        if requirement["requirementType"] == "DEGREE":
+            for qualifier in requirement["header"]["qualifierArray"]:
+                if qualifier.get("label") == "Minimum Total Credits Required":
+                    degree.credits = float(qualifier["credits"])
+
         degree_req = Rule(
             title=requirement["title"],
             # TODO: use requirement code?
@@ -294,15 +300,26 @@ def parse_degreeworks(json: dict, degree: Degree) -> list[Rule]:
         # check if this requirement actually has anything in it
         if degree_req == rules[-1] and not degree_req.q:
             rules.pop()
+    
+    # special case for Additional majors
+    if degree.credits is None:
+        logging.error("Skipped degree because it has not total credits requirement.")
+        return None
+
     return rules
 
 
-def parse_and_save_degreeworks(json: dict, degree: Degree) -> None:
+def parse_and_save_degreeworks(json: dict, degree: Degree) -> bool:
     """
     Parses a DegreeWorks JSON audit and saves the rules to the database.
+
+    Returns true if the degree was saved, and false if it was not.
     """
-    degree.save()
     rules = parse_degreeworks(json, degree)
+    if rules is None:
+        return False
+
+    degree.save()
     for rule in rules:
         if rule.q:
             assert (
@@ -313,3 +330,5 @@ def parse_and_save_degreeworks(json: dict, degree: Degree) -> None:
     for rule in top_level_rules:
         rule.refresh_from_db()
         degree.rules.add(rule)
+
+    return True

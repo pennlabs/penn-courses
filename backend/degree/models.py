@@ -81,6 +81,16 @@ class Degree(models.Model):
             """
         ),
     )
+    
+    credits = models.DecimalField(
+        decimal_places=2,
+        max_digits=4,
+        help_text=dedent(
+            """
+            The minimum number of CUs required for this degree.
+            """
+        ),
+    )
 
     class Meta:
         constraints = [
