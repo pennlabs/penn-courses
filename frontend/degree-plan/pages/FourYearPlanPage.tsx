@@ -3,7 +3,6 @@ import ReqPanel from "../components/Requirements/ReqPanel";
 import PlanPanel from "../components/FourYearPlan/PlanPanel";
 import {SearchPanel, SearchPanelContext} from "../components/Search/SearchPanel";
 // import Plan from "../components/example/Plan";
-import CourseDetailPanel from "@/components/Course/CourseDetailPanel";
 import styled from "@emotion/styled";
 import useSWR from "swr";
 import { Course, DegreePlan, Options, Rule } from "@/types";
@@ -11,7 +10,6 @@ import ReviewPanel from "@/components/Infobox/ReviewPanel";
 import { ReviewPanelContext } from '@/components/Infobox/ReviewPanel';
 import DegreeModal, { ModalKey } from "@/components/FourYearPlan/DegreeModal";
 import SplitPane, { Pane } from 'react-split-pane';
-import Dock from "@/components/Dock/Dock";
 import Nav from "@/components/NavBar/Nav";
 
 const Row = styled.div`
@@ -124,12 +122,12 @@ const FourYearPlanPage = ({searchClosed, updateUser, user}: any) => {
                                 <Pane>
                                     <PanelContainer>
                                         <PlanPanel 
-                                            setModalKey={setModalKey}
-                                            modalKey={modalKey}
-                                            setModalObject={setModalObject}
-                                            isLoading={isLoadingDegreeplans || isLoadingActiveDegreePlan} 
-                                            activeDegreeplan={activeDegreePlan} degreeplans={degreeplans} 
-                                            setActiveDegreeplanId={setActiveDegreeplanId}
+                                        setModalKey={setModalKey}
+                                        modalKey={modalKey}
+                                        setModalObject={setModalObject}
+                                        isLoading={isLoadingDegreeplans || isLoadingActiveDegreePlan} 
+                                        activeDegreeplan={activeDegreePlan} degreeplans={degreeplans} 
+                                        setActiveDegreeplanId={setActiveDegreeplanId}
                                         />
                                     </PanelContainer>
                                 </Pane>
@@ -146,9 +144,10 @@ const FourYearPlanPage = ({searchClosed, updateUser, user}: any) => {
                                             </div>
                                         </SplitPane> */}
                                     </PanelContainer>
-                                    <PanelContainer hidden={!searchPanelOpen} $minWidth={'40%'} $maxWidth={'45%'} >
+                                    {searchPanelOpen && <PanelContainer $minWidth={'40%'} $maxWidth={'45%'} >
                                         <SearchPanel />
                                     </PanelContainer>
+                                    }
                                 </Pane>
                             </SplitPane>
                                 

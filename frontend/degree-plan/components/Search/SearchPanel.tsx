@@ -1,10 +1,6 @@
 import React, { createContext, useContext } from "react";
 import { ICourseQ } from "@/models/Types";
-import Icon from '@mdi/react';
-import { mdiClose, mdiMagnify } from "@mdi/js";
 import { PanelTopBar } from "@/pages/FourYearPlanPage";
-import Course from "../Requirements/Course";
-import Fuse from 'fuse.js'
 import useSWR from "swr";
 import ResultsList from "./ResultsList";
 import styled from "@emotion/styled";
@@ -52,7 +48,7 @@ const SearchField = styled.input`
     padding-left: 0.5em;
     border-radius: 5px;
     border-width: 0.8px;
-    outline: transparent !important;
+    color: black;
 `;
 
 const LoadingComponentContainer = styled.div`
@@ -75,6 +71,10 @@ const PanelContainer = styled.div`
     height: 100%;
 `;
 
+const PanelTitle = styled.div`
+    font-weight: 500;
+`
+
 type ISearchResultCourse =  {course: ICourseQ};
 
 
@@ -93,9 +93,9 @@ export const SearchPanel = () => {
         <PanelContainer>
             <PanelTopBar>
               <div className='d-flex justify-content-between'>
-                <div>Search </div>
+                <PanelTitle>Search </PanelTitle>
                 <label onClick={() => {setQueryString(""); setSearchPanelOpen(false);}}>
-                    <Icon path={mdiClose} size={0.8}/>
+                    <i className="fa fa-times" />
                 </label>
               </div>
             </PanelTopBar>
@@ -105,6 +105,8 @@ export const SearchPanel = () => {
                     className="control has-icons-left"
                 >
                     <SearchField
+                        aria-label="search for a course"
+                        autoFocus
                         type="text"
                         value={queryString}
                         onChange={(e) => {setQueryString(e.target.value)}}
