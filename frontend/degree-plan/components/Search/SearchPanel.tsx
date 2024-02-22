@@ -179,8 +179,7 @@ const ReqSearchResult = ({setClosed, reqId, reqQuery, queryString, setQueryStrin
     const [results, setResults] = React.useState<ISearchResultCourse[]>([]);
     const [scrollPos, setScrollPos] = React.useState<number>(0);
 
-    const [url, setUrl] = React.useState<string>("");
-    const { data: courses = [], isLoading: isLoadingCourses, error } = useSWR(`api/degree/courses/${reqId}`, { refreshInterval: 0, fallbackData: [] }); 
+    const { data: courses = [], isLoading: isLoadingCourses, error } = useSWR(reqId ? `api/degree/courses/${reqId}` : null, { refreshInterval: 0, fallbackData: [] }); 
 
     // React.useEffect(() => {
     //     if (reqId === undefined) {

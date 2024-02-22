@@ -1,6 +1,6 @@
-import { useDrag } from "react-dnd";
+import { useDrag, useDrop } from "react-dnd";
 import { ItemTypes } from "../dnd/constants";
-import type { DnDFulfillment, Fulfillment, Rule } from "@/types";
+import type { Course, DnDFulfillment, Fulfillment, Rule } from "@/types";
 import styled from "@emotion/styled";
 import nearley from "nearley";
 import grammar from "@/util/q_object_grammar" 
@@ -300,6 +300,9 @@ const QObject = ({ q, fulfillments, rule, satisfied, handleSearch }: QObjectProp
     }
 }
 
+const QObjectWrapper = styled.div<{$isDroppable:boolean, $isOver: boolean}>`
+    box-shadow: ${props => props.$isOver ? '0px 0px 4px 2px var(--selected-color);' : props.$isDroppable ? '0px 0px 4px 2px var(--primary-color-dark);' : 'rgba(0, 0, 0, 0.05);'}
+`
 
 interface RuleLeafProps { 
     q: string;
@@ -313,12 +316,29 @@ const RuleLeaf = ({ q, fulfillmentsForRule, rule, satisfied, handleSearch }: Rul
     let parsed = qObjParser.feed(q).results[0] as ParsedQObj;
     if (!parsed) return null;
 
+    const [{ isOver, canDrop }, drop] = useDrop(() => ({
+        accept: ItemTypes.COURSE,
+        drop: (course: Course) => {
+            console.log("DROPPED", course.full_code, 'from', course.semester);
+        },
+        canDrop: () => {return true},
+        collect: monitor => ({
+          isOver: !!monitor.isOver(),
+          canDrop: !!monitor.canDrop()
+        }),
+    }), []);
+
     // apply some transformations to parse tree
     const t1 = transformDepartmentInClauses(parsed);
     const t2 = transformCourseClauses(t1);
     const t3 = transformSearchConditions(t2)
     parsed = t3 as TransformedQObject;
-    return <QObject q={parsed} fulfillments={fulfillmentsForRule} rule={rule} satisfied={satisfied} handleSearch={handleSearch}/>
+    return (
+        <QObjectWrapper $isDroppable={canDrop} $isOver={isOver} ref={drop}>
+            <QObject q={parsed} fulfillments={fulfillmentsForRule} rule={rule} satisfied={satisfied} handleSearch={handleSearch}/>
+        </QObjectWrapper>
+    )
+    
 }
 
 export default RuleLeaf;
