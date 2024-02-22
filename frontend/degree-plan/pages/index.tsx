@@ -30,12 +30,7 @@ export default function Home() {
         <SWRConfig value={{
           fetcher: (resource, init) => fetch(resource, init).then(res => res.json())
         }}>
-          <Nav
-            login={updateUser}
-            logout={() => updateUser(null)}
-            user={user}
-          />
-          <FourYearPlanPage/>
+          <FourYearPlanPage user={user} updateUser={updateUser}/>
           {showLoginModal && (
               <LoginModal
                   pathname={window.location.pathname}

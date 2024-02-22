@@ -2,10 +2,8 @@ import React from 'react';
 import Logo from './Logo';
 import { type User } from '../../types'
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
-import { useRouter } from "next/router";
 import styled from "@emotion/styled";
-import { maxWidth, PHONE } from '../../constants';
-import { DarkGrayIcon } from '../Requirements/QObject';
+import Dock from '../Dock/Dock';
 
 const NavContainer = styled.nav`    
   padding: 0 1rem;
@@ -14,7 +12,7 @@ const NavContainer = styled.nav`
   width: 100%;
   justify-content: space-between;
   margin: 0 auto;
-  background-color: var(--background-grey);
+  background-color: #E3E8F4;
 `;
 
 const NavElt = styled.span<{ $active?: boolean }>`
@@ -46,13 +44,14 @@ const Nav = ({ login, logout, user}: NavProps) => (
           <AccountIndicator
               leftAligned={true}
               user={user}
-              backgroundColor="dark"
+              backgroundColor="light"
               nameLength={2}
               login={login}
               logout={logout}
               />
       </NavElt>
     </NavEltList>
+    <Dock/>
     <NavElt>
       <Logo/>
     </NavElt>

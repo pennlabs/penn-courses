@@ -10,11 +10,8 @@ import { SearchPanelContext } from '../Search/SearchPanel';
 
 
 const DockWrapper = styled.div`
-    z-index: 1;
     opacity: 0.9;
-    position: fixed;
     width: 100%;
-    bottom: 2%;
     display: flex;
     justify-content: center;
 `
