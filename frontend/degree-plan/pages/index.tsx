@@ -12,8 +12,6 @@ import { SWRConfig } from 'swr';
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [searchClosed, setSearchClosed] = useState(true);
-  const [reqId, setReqId] = useState<undefined | number>(undefined);
 
   const updateUser = (newUserVal: User | null) => {
       if (!newUserVal) {
@@ -36,10 +34,8 @@ export default function Home() {
             login={updateUser}
             logout={() => updateUser(null)}
             user={user}
-            setSearchClosed={setSearchClosed}
-            setReqId={setReqId}
           />
-          <FourYearPlanPage searchClosed={searchClosed} setSearchClosed={setSearchClosed} reqId={reqId} setReqId={setReqId}/>
+          <FourYearPlanPage/>
           {showLoginModal && (
               <LoginModal
                   pathname={window.location.pathname}

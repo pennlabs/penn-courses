@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useDrag } from "react-dnd";
 import { ItemTypes } from "../dnd/constants";
 import { GrayIcon } from '../common/bulma_derived_components';

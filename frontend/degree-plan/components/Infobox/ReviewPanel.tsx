@@ -89,7 +89,7 @@ const ReviewPanel = ({
     setPosition,
     currentSemester 
 }: ReviewPanelProps) => {
-    const { data } = useSWR(`/api/base/current/courses/${full_code}`, { refreshInterval: 0 }); // data is largely static  
+    const { data } = useSWR(`/api/base/all/courses/${full_code}`, { refreshInterval: 0 }); // data is largely static  
     let { left, right, top, bottom } = position;
     if (!left && !right) left = 0;
     if (!top && !bottom) right = 0;

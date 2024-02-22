@@ -119,7 +119,7 @@ const ResultsList = ({
             <CoursesContainer ref={listRef}>
                 {courses.map((course) => 
                 <Course
-                    key={course.id}
+                    key={course.id + course.semester}
                     course={course}
                     onClick={() => {/*getCourse(course.id)*/}}
                     isStar={false}
