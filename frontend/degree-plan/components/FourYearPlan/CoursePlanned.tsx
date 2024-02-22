@@ -17,9 +17,8 @@ export const BaseCourseContainer = styled.span<{ $isDragging?: boolean, $isDepre
   border-radius: 10px;
   padding: .5rem;
   text-wrap: nowrap;
-  color: ${props => props.$isDisabled ? "rgba(0, 0, 0, .6)" : "#000"};
   cursor: ${props => props.$isDisabled || props.$isDepressed ? "not-allowed" : "grab"};
-  opacity: ${props => props.$isDragging ? 0.5 : 1};
+  opacity: ${props => props.$isDisabled || props.$isDragging ? 0.7 : 1};
   background-color: ${props => props.$isDragging ? "#4B9AE7" : "#F2F3F4"};
   box-shadow: ${props => props.$isDepressed ? 
     "0 0 6px #DEDEDE inset" 
