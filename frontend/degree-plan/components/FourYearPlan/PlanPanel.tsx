@@ -32,16 +32,18 @@ const ShowStatsButton = ({ showStats, setShowStats }: { showStats: boolean, setS
 export const PanelHeader = styled.div`
     display: flex;
     justify-content: space-between;
-    background-color:'#DBE2F5'; 
-    margin: 1rem;
-    margin-bottom: 0;
+    background-color: var(--primary-color);
+    padding: 0.5rem 1rem;
     flex-grow: 0;
+    font-size: 1.5rem;
+    font-weight: 300;
 `;
 
 export const PanelBody = styled.div`
     overflow-y: auto;
     flex-grow: 1;
-    padding: 1rem;
+    padding: 0.5rem 1rem;
+    height: 90%;
 `;
 
 export const PanelContainer = styled.div`

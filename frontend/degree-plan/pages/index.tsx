@@ -30,7 +30,12 @@ export default function Home() {
     <>  
       <DndProvider backend={HTML5Backend}>
         <SWRConfig value={{
-          fetcher: (resource, init) => fetch(resource, init).then(res => res.json())
+          fetcher: (resource, init) => fetch(resource, init).then(res => res.json()),
+          onError: (error, key) => {
+            if (error.status !== 403 && error.status !== 404) {
+              alert(error);
+            }
+          }
         }}>
           <Nav
             login={updateUser}

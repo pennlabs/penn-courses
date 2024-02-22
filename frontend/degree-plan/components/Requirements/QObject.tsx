@@ -9,6 +9,7 @@ import { BaseCourseContainer } from "../FourYearPlan/CoursePlanned";
 import assert from "assert";
 import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
 import { Draggable } from "../common/DnD";
+import { useSWRCrud } from "@/hooks/swrcrud";
 
 const interpolate = <T,>(arr: T[], separator: T) => arr.flatMap(
     (elem, index) => index < arr.length - 1 ? 
@@ -93,15 +94,18 @@ const Attributes = ({ attributes }: { attributes: string[] }) => {
         <div>{attributes.join(', ')}</div>
     </Row>
 }
-
+    // display: inline-flex;
+    // align-items: center;
+    // align-content: flex-end;
+    // gap: .25rem;
+    // flex-wrap: wrap;
 const SearchConditionWrapper = styled(BaseCourseContainer)`
-    display: inline-flex;
-    align-items: center;
-    align-content: flex-end;
-    gap: .25rem;
-    flex-wrap: wrap;
+    display: flex;
+    flex-direction: row;
     margin: .5 rem 0;
     background-color: #EDF1FC;
+    
+    box-shadow: 0px 0px 14px 2px rgba(0, 0, 0, 0.05);
 `
 export const DarkGrayIcon = styled(Icon)`
     color: #575757;
@@ -300,33 +304,22 @@ const QObject = ({ q, fulfillments, rule, satisfied, handleSearch }: QObjectProp
     }
 }
 
-const QObjectWrapper = styled.div<{$isDroppable:boolean, $isOver: boolean}>`
-    box-shadow: ${props => props.$isOver ? '0px 0px 4px 2px var(--selected-color);' : props.$isDroppable ? '0px 0px 4px 2px var(--primary-color-dark);' : 'rgba(0, 0, 0, 0.05);'}
+const QObjectWrapper = styled.div`
+
 `
 
 interface RuleLeafProps { 
     q: string;
+    activeDegreePlanId: number, 
     fulfillmentsForRule: Fulfillment[]; // fulfillments for this rule 
     rule: Rule;
     satisfied: boolean;
     handleSearch: (ruleId: Rule["id"], ruleQuery: Rule["q"]) => void;
 }
-const RuleLeaf = ({ q, fulfillmentsForRule, rule, satisfied, handleSearch }: RuleLeafProps) => {
+const RuleLeaf = ({ q, activeDegreePlanId, fulfillmentsForRule, rule, satisfied, handleSearch }: RuleLeafProps) => {
     const qObjParser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
     let parsed = qObjParser.feed(q).results[0] as ParsedQObj;
     if (!parsed) return null;
-
-    const [{ isOver, canDrop }, drop] = useDrop(() => ({
-        accept: ItemTypes.COURSE,
-        drop: (course: Course) => {
-            console.log("DROPPED", course.full_code, 'from', course.semester);
-        },
-        canDrop: () => {return true},
-        collect: monitor => ({
-          isOver: !!monitor.isOver(),
-          canDrop: !!monitor.canDrop()
-        }),
-    }), []);
 
     // apply some transformations to parse tree
     const t1 = transformDepartmentInClauses(parsed);
@@ -334,7 +327,7 @@ const RuleLeaf = ({ q, fulfillmentsForRule, rule, satisfied, handleSearch }: Rul
     const t3 = transformSearchConditions(t2)
     parsed = t3 as TransformedQObject;
     return (
-        <QObjectWrapper $isDroppable={canDrop} $isOver={isOver} ref={drop}>
+        <QObjectWrapper>
             <QObject q={parsed} fulfillments={fulfillmentsForRule} rule={rule} satisfied={satisfied} handleSearch={handleSearch}/>
         </QObjectWrapper>
     )

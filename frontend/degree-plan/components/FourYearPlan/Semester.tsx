@@ -71,6 +71,7 @@ const FlexSemester = ({ showStats, semester, fulfillments, activeDegreeplanId} :
     const [{ isOver, canDrop }, drop] = useDrop<DnDFulfillment, never, { isOver: boolean, canDrop: boolean }>(() => ({
         accept: ItemTypes.COURSE,
         drop: (fulfillment: DnDFulfillment) => {
+            console.log(semester, fulfillment)
             createOrUpdate({ semester, rules: fulfillment.rules }, fulfillment.full_code);
         },
         collect: monitor => ({

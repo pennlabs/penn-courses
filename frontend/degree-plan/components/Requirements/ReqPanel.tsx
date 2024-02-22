@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import RuleComponent from './Rule';
 import { Degree, DegreePlan, Fulfillment } from '@/types';
 import styled from '@emotion/styled';
@@ -7,6 +7,7 @@ import { useSWRCrud } from '@/hooks/swrcrud';
 import useSWR from 'swr';
 import { GrayIcon } from '../common/bulma_derived_components';
 import { AddButton } from '../FourYearPlan/Semesters';
+import React from 'react';
 
 const requirementDropdownListStyle = {
   maxHeight: '90%',
@@ -46,7 +47,13 @@ const DegreeHeaderContainer = styled.div`
   align-items: center;
   font-size: 1.5rem;
   font-weight: 500;
+  background-color: var(--primary-color);
+  padding: 0.5rem 1rem;
 `
+const DegreeBody = styled.div`
+  padding: 0.5rem 1rem;
+`
+
 const DegreeYear = styled.div`
   font-size: 1.25rem;
   font-weight: 500;
@@ -67,7 +74,7 @@ const TrashIcon = styled(GrayIcon)`
 `
 
 const DegreeWrapper = styled.div`
-  margin-bottom: 1rem;
+  height: 100%;
 `
 
 const DegreeHeader = ({ degree, remove }: { degree: Degree, remove: (degreeId: Degree["id"]) => void}) => {
@@ -102,9 +109,19 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
   const { update: updateDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans');
   
   const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null); 
+
+  const calculateProgress = (rulesToCourses: any) => {
+    let ret = [];
+    for (let [rule, courses] of rulesToCourses) {
+      
+    }
+  }
+
+  // const rulesToCUs = useMemo(() => )
+
   const rulesToFulfillments = useMemo(() => {
     if (!fulfillments) return {}
-    const rulesToCourses: { [semester: string]: Fulfillment[] } = {};
+    const rulesToCourses: { [rule: string]: Fulfillment[] } = {};
     fulfillments.forEach(fulfillment => {
       fulfillment.rules.forEach(rule => {
         if (!(rule in rulesToCourses)) {
@@ -113,32 +130,32 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
         rulesToCourses[rule].push(fulfillment);
       });
     });
+    console.log(rulesToCourses)
     return rulesToCourses;
   }, [fulfillments])
 
+  const [activeDegreePlanWithProgress, setActiveDegreePlanWithProgress] = React.useState({});
+
+  // useEffect(() => {
+  //   let temp = activeDegreeplan;
+
+  // }, [rulesToFulfillments, activeDegreeplan])
+
+  const getProgress = (rule: any) => {
+    if (rule.q) {
+      return [rulesToFulfillments[rule.id].length, rule.num] // rule.num is not the most accurate rep of number of reqs
+    }
+    let satisfied = 0, total = 0;
+    for (let i = 0; i < rule.rules.length; i++) {
+      const [satisfiedByRule, totalByRule] = getProgress(rule.rules[i]);
+      satisfied += satisfiedByRule; total += totalByRule;
+    }
+    return [satisfied, total];
+  } 
+
   return(
       <PanelContainer>
-        <PanelBody>
-            {!activeDegreeplan ? <EmptyPanel /> :
-              activeDegreeplan.degrees.map(degree => (
-                <DegreeWrapper>
-                  <DegreeHeader degree={degree} key={degree.id} remove={(id) => {
-                    setModalKey("degree-remove")
-                    // TODO
-                  }}/>
-                  {degree.rules.map((rule: any) => (
-                    <RuleComponent 
-                    rulesToFulfillments={rulesToFulfillments}
-                    rule={rule} 
-                    setSearchClosed={setSearchClosed} 
-                    handleSearch={handleSearch} 
-                    key={rule.id}
-                    />
-                  ))}
-                </DegreeWrapper>
-              )) 
-            }
-            <AddButton role="button" onClick={() => {
+            {/* <AddButton role="button" onClick={() => {
               setModalObject(activeDegreeplan);
               setModalKey("degree-add");
             }}>
@@ -146,8 +163,29 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
               <div>
                 Add Degree
               </div>
-            </AddButton>
-        </PanelBody>
+            </AddButton> */}
+            {!activeDegreeplan ? <EmptyPanel /> :
+              activeDegreeplan.degrees.map(degree => (
+                <DegreeWrapper>
+                    <DegreeHeader degree={degree} key={degree.id} remove={(id) => {
+                      setModalKey("degree-remove")
+                      // TODO
+                    }}/>
+                    <PanelBody>
+                    {degree.rules.map((rule: any) => (
+                      <RuleComponent 
+                      rulesToFulfillments={rulesToFulfillments}
+                      activeDegreePlanId={activeDegreeplan.id}
+                      rule={rule} 
+                      setSearchClosed={setSearchClosed} 
+                      handleSearch={handleSearch} 
+                      key={rule.id}
+                      />
+                    ))}
+                    </PanelBody>
+                </DegreeWrapper>
+              )) 
+            }
       </PanelContainer>
   );
 }
