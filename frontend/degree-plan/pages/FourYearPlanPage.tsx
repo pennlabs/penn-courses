@@ -80,9 +80,8 @@ const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any)
 
     // review panel
     const { data: options } = useSWR<Options>('/api/options');
-    const [reviewPanelCoords, setReviewPanelCoords] = useState<{x: number, y: number}>({ x: 0, y: 0 });
+    const [reviewPanelCoords, setReviewPanelCoords] = useState<{ top?: number, left?:number, right?: number, bottom?: number }>({ top: 0, left: 0 });
     const [reviewPanelFullCode, setReviewPanelFullCode] = useState<Course["full_code"]|null>(null);
-    const [reviewPanelIsPermanent, setReviewPanelIsPermanent] = useState(false);
 
     const [results, setResults] = useState([]);
 
@@ -124,8 +123,6 @@ const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any)
             <ReviewPanelContext.Provider value={{ 
             full_code: reviewPanelFullCode, 
             set_full_code: setReviewPanelFullCode, 
-            isPermanent: reviewPanelIsPermanent, 
-            setIsPermanent: setReviewPanelIsPermanent,
             position: reviewPanelCoords,
             setPosition: setReviewPanelCoords
             }}>
@@ -135,8 +132,6 @@ const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any)
                     currentSemester={options?.SEMESTER}
                     full_code={reviewPanelFullCode} 
                     set_full_code={setReviewPanelFullCode}
-                    isPermanent={reviewPanelIsPermanent}
-                    setIsPermanent={setReviewPanelIsPermanent}
                     position={reviewPanelCoords}
                     setPosition={setReviewPanelCoords}
                     />}

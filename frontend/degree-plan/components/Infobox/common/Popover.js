@@ -15,6 +15,16 @@ const Popover = ({ hover, button, style, children }) => {
     isOpen={isShown} 
     positions={["left", "bottom", "right", "up"]}
     content={
+      <div
+        className="msg"
+        style={{
+          ...style,
+        }}
+      >
+        {children}
+      </div>
+    }
+    >
       <span
         ref="button"
         style={{ cursor: "pointer" }}
@@ -24,16 +34,6 @@ const Popover = ({ hover, button, style, children }) => {
       >
         {button || <button>Toggle</button>}
       </span>
-    }
-    >
-      <div
-        className="msg"
-        style={{
-          ...style,
-        }}
-      >
-        {children}
-      </div>
     </Popover_>
   )
 }

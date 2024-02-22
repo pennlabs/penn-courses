@@ -148,7 +148,7 @@ const SearchConditionInner = ({ q }: SearchConditionInnerProps) => {
     } else if ('department__code' in compoundCondition && 'code__lte' in compoundCondition) {
         display.push(<Wrap>{compoundCondition['department__code']} 0000-{compoundCondition['code__lte']}</Wrap>);
     } else if ('department__code' in compoundCondition) {
-        display.push(<Wtsp>in {compoundCondition['department__code']}</Wtsp>);
+        display.push(<Wrap>in {compoundCondition['department__code']}</Wrap>);
     } else if ('code__lte' in compoundCondition && 'code__gte' in compoundCondition) {
         display.push(<div>course number {compoundCondition['code__lte']}-{compoundCondition['code__gte']}</div>);
     } else if ('code__lte' in compoundCondition) {

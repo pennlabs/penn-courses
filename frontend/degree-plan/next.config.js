@@ -18,7 +18,11 @@ const nextConfig = {
       },
       {
         source: '/api/base/current/courses/search',
-        destination: 'http://127.0.0.1:8000/api/base/current/courses/search/'
+        destination: 'http://127.0.0.1:8000/api/base/2023C/courses/search/' // TODO: remove 2023C
+      },
+      {
+        source: '/api/base/current/courses/:course*',
+        destination: 'http://127.0.0.1:8000/api/base/2023C/courses/:course*/' // TODO: remove 2023C
       },
       {
         source: '/api/:apipath*',
