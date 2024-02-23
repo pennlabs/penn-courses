@@ -2,11 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import RuleComponent from './Rule';
 import { Degree, DegreePlan, Fulfillment } from '@/types';
 import styled from '@emotion/styled';
-import { PanelBody, PanelContainer, PanelHeader, PanelTopBarIcon, TopBarIcon } from '@/components/FourYearPlan/PlanPanel'
+import { EditButton, PanelBody, PanelContainer, PanelHeader, PanelTopBarIcon, PanelTopBarIconList, TopBarIcon } from '@/components/FourYearPlan/PlanPanel'
 import { useSWRCrud } from '@/hooks/swrcrud';
 import useSWR from 'swr';
 import { GrayIcon, Icon } from '../common/bulma_derived_components';
-import { AddButton } from '../FourYearPlan/Semesters';
 import React from 'react';
 
 const requirementDropdownListStyle = {
@@ -73,7 +72,7 @@ const DegreeTitleWrapper = styled.div`
   align-items: center;
   gap: .5rem;
 `
-const TrashIcon = styled(GrayIcon)`
+export const TrashIcon = styled(GrayIcon)`
   pointer-events: auto;
   color: #b2b2b2;
   &:hover {
@@ -83,6 +82,19 @@ const TrashIcon = styled(GrayIcon)`
 
 const DegreeWrapper = styled.div`
 
+`
+
+const AddButton = styled.div`
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  justify-content: center;
+  background-color: var(--plus-button-color);
+  padding: 1rem;
+  border-radius: var(--req-item-radius);
+  align-items: center;
+  color: white;
 `
 
 const DegreeHeader = ({ degree, remove, setCollapsed, collapsed, editMode }: { degree: Degree, remove: (degreeId: Degree["id"]) => void, setCollapsed: (status: boolean) => void, collapsed: boolean, editMode: boolean}) => {
@@ -100,7 +112,7 @@ const DegreeHeader = ({ degree, remove, setCollapsed, collapsed, editMode }: { d
       <span>
         {!!editMode ? 
         <TrashIcon role="button" onClick={() => remove(degree.id)}>
-          <i className="fa fa-trash fa-xs"/>
+          <i className="fa fa-trash fa-md"/>
         </TrashIcon>
         :
         <Icon>
@@ -174,8 +186,6 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
     return rulesToCourses;
   }, [fulfillments])
 
-  const [activeDegreePlanWithProgress, setActiveDegreePlanWithProgress] = React.useState({});
-
   const getProgress = (rule: any) => {
     if (rule.q) {
       return [rulesToFulfillments[rule.id].length, rule.num] // rule.num is not the most accurate rep of number of reqs
@@ -192,9 +202,9 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
       <PanelContainer>
             <PanelHeader>
               <ReqPanelTitle>Requirements</ReqPanelTitle>
-              <PanelTopBarIcon $active={editMode} onClick={() => setEditMode(!editMode)}>
-                <i className="fas fa-lg fa-edit"></i>
-              </PanelTopBarIcon>
+              <PanelTopBarIconList>
+                <EditButton editMode={editMode} setEditMode={setEditMode} />
+              </PanelTopBarIconList>
             </PanelHeader>
             {!activeDegreeplan ? <EmptyPanel /> :
               <PanelBody>

@@ -150,7 +150,7 @@ const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any)
                     }
                 <Row>
                     <SplitPane split="vertical" minSize={0} maxSize={useWindowDimensions()['width'] * 0.6} defaultSize={'50%'} paneStyle={{height: '90%'}} >
-                        <Pane style={{display: 'flex', height: '100%', }}>
+                        <Pane style={{display: 'flex', height: '100%'}}>
                             <PanelContainer>
                                 <PlanPanel 
                                     setModalKey={setModalKey}

@@ -29,6 +29,16 @@ const ShowStatsButton = ({ showStats, setShowStats }: { showStats: boolean, setS
     )
 }
 
+export const EditButton = ({ editMode, setEditMode }: { editMode: boolean, setEditMode: (arg0: boolean)=>void }) => {
+    return (
+        <div onClick={() => setEditMode(!editMode)}>
+            <PanelTopBarIcon $active={editMode}>
+                <i className="fas fa-lg fa-edit"></i>
+            </PanelTopBarIcon>
+        </div>
+    )
+}
+
 export const PanelHeader = styled.div`
     display: flex;
     justify-content: space-between;
@@ -58,6 +68,11 @@ export const PanelContainer = styled.div`
     height: 100%;
 `;
 
+export const PanelTopBarIconList = styled.div`
+    display: flex;
+    flex-direction: row;
+    gap: 0.8rem;
+`
 
 interface PlanPanelProps {
     setModalKey: (arg0: string) => void;
@@ -72,6 +87,7 @@ interface PlanPanelProps {
 const PlanPanel = ({ setModalKey, modalKey, setModalObject, setActiveDegreeplanId, activeDegreeplan, degreeplans } : PlanPanelProps) => {
     const { copy: copyDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans');
     const [showStats, setShowStats] = useState(true);
+    const [editMode, setEditMode] = useState(false);
 
     return (
             <PanelContainer>
@@ -98,11 +114,20 @@ const PlanPanel = ({ setModalKey, modalKey, setModalObject, setActiveDegreeplanI
                             create: () => setModalKey("plan-create")
                         }}              
                     />
-                    <ShowStatsButton showStats={showStats} setShowStats={setShowStats} />
+                    <PanelTopBarIconList>
+                        <ShowStatsButton showStats={showStats} setShowStats={setShowStats} />
+                        <EditButton editMode={editMode} setEditMode={setEditMode} />
+                    </PanelTopBarIconList>
                 </PanelHeader>
                 {/** map to semesters */}
                 <PanelBody>
-                    <Semesters activeDegreeplan={activeDegreeplan} showStats={showStats}/>
+                    <Semesters 
+                        activeDegreeplan={activeDegreeplan} 
+                        showStats={showStats} 
+                        editMode={editMode}
+                        setModalKey={setModalKey}
+                        setModalObject={setModalObject}
+                        />
                 </PanelBody>
             </PanelContainer>
     );
