@@ -70,7 +70,7 @@ const CoursePlanned = ({ fulfillment, semester, removeCourse } : CoursePlannedPr
       >
       <Draggable isDragging={isDragging} >
           <ReviewPanelTrigger full_code={fulfillment.full_code}>
-            <div> {fulfillment.full_code}</div>
+            <div> {fulfillment.full_code}</div> 
           </ReviewPanelTrigger>
       </Draggable>
       <GrayIcon className="close-button" onClick={() => {removeCourse(fulfillment.full_code);}}>

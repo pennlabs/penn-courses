@@ -12,11 +12,14 @@ import { Draggable } from "../common/DnD";
 import { useSWRCrud } from "@/hooks/swrcrud";
 import useSWR from "swr";
 
-const interpolate = <T,>(arr: T[], separator: T) => arr.flatMap(
-    (elem, index) => index < arr.length - 1 ? 
-    [elem, separator] 
-    : [elem]
-)
+const interpolate = <T,>(arr: T[], separator: T) => 
+    <QObjectWrapper>
+    {arr.flatMap(
+        (elem, index) => index < arr.length - 1 ? 
+        [elem, separator] 
+        : [elem]
+    )}
+    </QObjectWrapper>
 
 
 type ConditionKey = "full_code" | "semester" | "attributes__code__in" | "department__code" | "full_code__startswith" | "code__gte" | "code__lte" | "department__code__in" 
@@ -199,10 +202,11 @@ const SearchCondition = ({ q, fulfillments, ruleIsSatisfied, ruleId, setSearchCl
 }
 
 const CourseOptionsSeparator = styled.div`
-    font-size: .8rem;
+    font-size: 1rem;
     text-transform: uppercase;
     color: #575757;
     font-weight: 500;
+    margin: 8px 0px;
 `;
 
 const transformCourseClauses = (q: ParsedQObj): ParsedQObj => {
@@ -306,7 +310,9 @@ const QObject = ({ q, fulfillments, rule, satisfied, handleSearch }: QObjectProp
 }
 
 const QObjectWrapper = styled.div`
-
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
 `
 
 interface RuleLeafProps { 
@@ -327,10 +333,7 @@ const RuleLeaf = ({ q, activeDegreePlanId, fulfillmentsForRule, rule, satisfied,
     const t2 = transformCourseClauses(t1);
     const t3 = transformSearchConditions(t2)
     parsed = t3 as TransformedQObject;
-    return (
-        <QObjectWrapper>
-            <QObject q={parsed} fulfillments={fulfillmentsForRule} rule={rule} satisfied={satisfied} handleSearch={handleSearch}/>
-        </QObjectWrapper>
+    return (<QObject q={parsed} fulfillments={fulfillmentsForRule} rule={rule} satisfied={satisfied} handleSearch={handleSearch}/>
     )
     
 }

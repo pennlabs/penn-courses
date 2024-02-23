@@ -26,6 +26,7 @@ const DockContainer = styled.div<{$isDroppable:boolean, $isOver: boolean}>`
     width: 100%;
     display: flex;
     justify-content: left;
+    padding: 1rem 1rem;
 `
 
 const Divider = styled.div`
@@ -51,8 +52,11 @@ const DockedCoursesWrapper = styled.div`
 // border-color: grey;
 
 const DockedCourses = styled.div`
+    height: 100%;
     display: flex;
     flex-direction: row;
+    gap: 1rem;
+    padding: 0.1rem;
 `
 
 interface IDock {
@@ -88,18 +92,18 @@ const Dock = ({setSearchClosed, setReqId}: IDock) => {
                 <DockerElm>
                     <SearchIconContainer onClick={() => {setSearchClosed(false); setReqId(-1);}}>
                         <DarkGrayIcon>
-                        <i class="fas fa-search fa-lg"/>
+                        <i className="fas fa-search fa-lg"/>
                         </DarkGrayIcon>
                     </SearchIconContainer>
                 </DockerElm>
                 <Divider/>
-                    <DockedCoursesWrapper>
-                        <DockedCourses >
-                            {dockedCourses.map((full_code, i) => 
-                                <DockedCourse removeDockedCourse={removeDockedCourse} full_code={full_code}/>
-                            )}
-                        </DockedCourses>
-                    </DockedCoursesWrapper>
+                <DockedCoursesWrapper>
+                    <DockedCourses>
+                        {dockedCourses.map((full_code, i) => 
+                            <DockedCourse removeDockedCourse={removeDockedCourse} full_code={full_code}/>
+                        )}
+                    </DockedCourses>
+                </DockedCoursesWrapper>
             </DockContainer>
         </DockWrapper>
     )

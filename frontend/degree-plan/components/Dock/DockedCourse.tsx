@@ -1,17 +1,53 @@
 
 
 import React from "react";
-import { BaseCourseContainer, RemoveCourseButton } from '../FourYearPlan/CoursePlanned';
 import { GrayIcon } from '@/components/common/bulma_derived_components';
 import { useDrag } from 'react-dnd';
 import styled from '@emotion/styled';
 import { ItemTypes } from '../dnd/constants';
 import { Draggable } from "../common/DnD";
+import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
 
-const DockedCourseContainer = styled.div`
-    margin: 1px;
-    position: relative;
-`
+const BaseCourseContainer = styled.span<{ $isDragging?: boolean, $isDepressed: boolean, $isDisabled: boolean }>`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 70px;
+  background: #F2F3F4;
+  margin: 0px 6px;
+  border-radius: 0px;
+  padding: 0rem 2rem;
+  text-wrap: nowrap;
+  color: ${props => props.$isDisabled ? "rgba(0, 0, 0, .6)" : "#000"};
+  cursor: ${props => props.$isDisabled || props.$isDepressed ? "not-allowed" : "grab"};
+  opacity: ${props => props.$isDragging ? 0.5 : 1};
+  background-color: ${props => props.$isDragging ? "#4B9AE7" : props.$isDepressed ? "var(--primary-color)" : "#F2F3F4"};
+`;
+
+const DockedCourseContainer = styled(BaseCourseContainer)`
+    height: 100%;
+  position: relative;
+  opacity: ${props => props.$isDragging ? 0.5 : 1};
+
+  .close-button {
+    display: none;
+    position: absolute;
+    right: 5px;
+    top: 0; 
+    bottom: 0; 
+    margin-top: auto; 
+    margin-bottom: auto;
+    height: 1.5rem;
+  }
+
+  &:hover {
+    .close-button {
+      display: unset;
+    }
+  }
+`;
+
+
 const DockedCourse = ({removeDockedCourse, full_code}: any) => {
     const [mouseOver, setMouseOver] = React.useState(false);
 
@@ -26,20 +62,21 @@ const DockedCourse = ({removeDockedCourse, full_code}: any) => {
     }))
 
     return (
-        <Draggable isDragging={isDragging}>
-            <DockedCourseContainer
-                key={full_code}     
-                ref={drag}
-                onMouseOver={() => setMouseOver(true)} 
-                onMouseLeave={() => setMouseOver(false)}>
-                <BaseCourseContainer>
-                    <span>{full_code.replace(/-/g, " ")}</span>
-                    <RemoveCourseButton hidden={!mouseOver} onClick={() => removeDockedCourse(full_code)}>
-                        <GrayIcon><i className="fas fa-times"></i></GrayIcon>
-                    </RemoveCourseButton>
-                </BaseCourseContainer>
-            </DockedCourseContainer>
-        </Draggable>
+        <DockedCourseContainer
+        $isDragging={isDragging}
+        $isDepressed={false}
+        $isDisabled={false}
+        ref={drag} 
+        >
+            <Draggable isDragging={isDragging} >
+                <ReviewPanelTrigger full_code={full_code}>
+                <div> {full_code.replace(/-/g, " ")}</div>
+                </ReviewPanelTrigger>
+            </Draggable>
+            <GrayIcon className="close-button" onClick={() => removeDockedCourse(full_code)}>
+                <i className="fas fa-times"></i>
+            </GrayIcon>
+        </DockedCourseContainer>
     )
 }
 

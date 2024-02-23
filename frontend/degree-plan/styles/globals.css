@@ -23,7 +23,7 @@
   --selected-color: #967BB6;
 
   /* Requirement */
-  --req-item-radius: 4px;
+  --req-item-radius: 5px;
 
   --primary-glow: conic-gradient(
     from 180deg at 50% 50%,
