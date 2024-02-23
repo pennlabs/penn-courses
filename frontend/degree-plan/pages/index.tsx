@@ -49,8 +49,8 @@ export default function Home() {
             setSearchClosed={setSearchClosed}
             reqId={reqId}
             setReqId={setReqId}
-          />
-          {showLoginModal && (
+          /> */}
+          {/* {showLoginModal && (
             <LoginModal
               pathname={window.location.pathname}
               siteName="Penn Degree Plan"
