@@ -82,7 +82,9 @@ const RuleComponent = ({ rule, setSearchClosed, handleSearch, rulesToFulfillment
         accept: ItemTypes.COURSE,
         drop: (course: Course) => {
             console.log("DROPPED", course.full_code, 'from', course.semester);
-            createOrUpdate({ semester: course.semester, rules: [rule.id] }, course.full_code);
+            if (!!course.semester) {
+              createOrUpdate({ semester: course.semester, rules: [rule.id] }, course.full_code);
+            }
         },
         canDrop: () => {return !satisfied && !!rule.q},  // has to be a rule leaf and unsatisfied to drop
         collect: monitor => ({

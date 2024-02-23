@@ -110,13 +110,6 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
   
   const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null); 
 
-  const calculateProgress = (rulesToCourses: any) => {
-    let ret = [];
-    for (let [rule, courses] of rulesToCourses) {
-      
-    }
-  }
-
   // const rulesToCUs = useMemo(() => )
 
   const rulesToFulfillments = useMemo(() => {
@@ -130,7 +123,7 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
         rulesToCourses[rule].push(fulfillment);
       });
     });
-    console.log(rulesToCourses)
+    // console.log(rulesToCourses)
     return rulesToCourses;
   }, [fulfillments])
 

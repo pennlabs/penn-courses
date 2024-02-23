@@ -79,7 +79,13 @@ const FlexSemester = ({ showStats, semester, fulfillments, activeDegreeplanId} :
           canDrop: !!monitor.canDrop()
         }),
     }), [createOrUpdate, semester]);
-    
+
+    const handleRemove = (full_code: Course["full_code"]) => {
+        createOrUpdate({ semester: null }, full_code);
+        /** API: add to dock */
+        // setDockedCourses((dockedCourses:string[]) => [...dockedCourses, full_code]);
+    }
+
     return (
         <SemesterCard $showStats={showStats} $isDroppable={canDrop} $isOver={isOver} ref={drop} >
             <SemesterLabel>
@@ -89,8 +95,7 @@ const FlexSemester = ({ showStats, semester, fulfillments, activeDegreeplanId} :
                     <FlexCoursesPlanned 
                         semester={semester} 
                         fulfillments={fulfillments} 
-                        removeCourse={(full_code: Course["full_code"]) => createOrUpdate({ semester: null }, full_code)}/>
-
+                        removeCourse={handleRemove}/>
                 {showStats && <FlexStats fulfillments={fulfillments}/>}
             </SemesterContent>
             <CreditsLabel>

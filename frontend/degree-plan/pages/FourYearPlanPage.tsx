@@ -12,6 +12,7 @@ import { ReviewPanelContext } from '@/components/Infobox/ReviewPanel';
 import DegreeModal, { ModalKey } from "@/components/FourYearPlan/DegreeModal";
 import SplitPane, { Pane } from 'react-split-pane';
 import Dock from "@/components/Dock/Dock";
+import useWindowDimensions from "@/hooks/window";
 
 const Row = styled.div`
     position: relative;
@@ -62,7 +63,7 @@ const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any)
 
     // edit modals for degree and degree plan
     const [modalKey, setModalKey] = useState<ModalKey>(null);
-    const [modalObject, setModalObject] = useState<DegreePlan | null>(null); // stores the which degreeplan is being updated using the modal
+    const [cdmodalObject, setModalObject] = useState<DegreePlan | null>(null); // stores the which degreeplan is being updated using the modal
     // useEffect(() => console.log(modalKey), [modalKey])
 
     // active degree plan
@@ -98,6 +99,7 @@ const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any)
     // testing version
     const [majors, setMajors] = useState([{id: 1843, name: 'Computer Science, BSE'}, {id: 1744, name: 'Visual Studies, BAS'}]);
     const [currentMajor, setCurrentMajor] = useState({});
+
     useEffect(() => {
         if (majors.length !== 0) setCurrentMajor(majors[0]);
       }, [majors]);
@@ -118,7 +120,7 @@ const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any)
         setReqQuery(query);
         if (id != undefined) setReqId(id);
     }
-    
+
     return (
         <PlanPageContainer ref={ref}>
             <ReviewPanelContext.Provider value={{ 
@@ -149,7 +151,7 @@ const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any)
                     /> 
                     }
                 <Row>
-                    <SplitPane split="vertical" minSize={0} maxSize={750} defaultSize='50%'>
+                    <SplitPane split="vertical" minSize={0} maxSize={useWindowDimensions()['width'] * 0.6} defaultSize={'50%'}>
                         <Pane>
                             <PanelContainer>
                                     <PlanPanel 

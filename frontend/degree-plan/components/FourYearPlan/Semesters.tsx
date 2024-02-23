@@ -83,10 +83,10 @@ const ModifySemesters = ({ addSemester, semesters, className }: ModifySemestersP
 interface SemestersProps {
     activeDegreeplan: DegreePlan | undefined;
     showStats: any;
-    className: string
+    className: string;
 }
 
-const Semesters = ({ activeDegreeplan, showStats, className }: SemestersProps) => {
+const Semesters = ({ activeDegreeplan, showStats, className}: SemestersProps) => {
     const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null);    
     // semesters is state mostly derived from fulfillments
     const [semesters, setSemesters] = useState<{[semester: string]: Fulfillment[]}>({});

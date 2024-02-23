@@ -64,7 +64,7 @@ interface PlanPanelProps {
     isLoading: boolean;
 }
 
-const PlanPanel = ({ setModalKey, modalKey, setModalObject, setActiveDegreeplanId, activeDegreeplan, degreeplans, isLoading } : PlanPanelProps) => {
+const PlanPanel = ({ setModalKey, modalKey, setModalObject, setActiveDegreeplanId, activeDegreeplan, degreeplans } : PlanPanelProps) => {
     const { copy: copyDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans');
     const [showStats, setShowStats] = useState(true);
 
@@ -97,7 +97,7 @@ const PlanPanel = ({ setModalKey, modalKey, setModalObject, setActiveDegreeplanI
                 </PanelHeader>
                 {/** map to semesters */}
                 <PanelBody>
-                    <Semesters activeDegreeplan={activeDegreeplan} showStats={showStats} />
+                    <Semesters activeDegreeplan={activeDegreeplan} showStats={showStats}/>
                 </PanelBody>
             </PanelContainer>
     );

@@ -62,23 +62,21 @@ const CoursePlanned = ({ fulfillment, semester, removeCourse } : CoursePlannedPr
   }), [fulfillment, semester])
 
   return (   
-    <Draggable isDragging={isDragging}>
-      <PlannedCourseContainer
+    <PlannedCourseContainer
       $isDragging={isDragging}
       $isDepressed={false}
       $isDisabled={false}
       ref={drag} 
       >
-        <ReviewPanelTrigger full_code={fulfillment.full_code}>
-          <div>
-            {fulfillment.full_code}
-          </div>
-          <GrayIcon className="close-button" onClick={() => removeCourse(fulfillment.full_code)}>
-            <i className="fas fa-times"></i>
-          </GrayIcon>
-        </ReviewPanelTrigger>
-      </PlannedCourseContainer>
-    </Draggable>
+      <Draggable isDragging={isDragging} >
+          <ReviewPanelTrigger full_code={fulfillment.full_code}>
+            <div> {fulfillment.full_code}</div>
+          </ReviewPanelTrigger>
+      </Draggable>
+      <GrayIcon className="close-button" onClick={() => {removeCourse(fulfillment.full_code);}}>
+        <i className="fas fa-times"></i>
+      </GrayIcon>
+    </PlannedCourseContainer>
   )
 }
 

@@ -33,7 +33,7 @@ export default function Home() {
           fetcher: (resource, init) => fetch(resource, init).then(res => res.json()),
           onError: (error, key) => {
             if (error.status !== 403 && error.status !== 404) {
-              alert(error);
+              // error handling
             }
           }
         }}>
