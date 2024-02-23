@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import RuleComponent from './Rule';
 import { Degree, DegreePlan, Fulfillment } from '@/types';
 import styled from '@emotion/styled';
-import { PanelBody, PanelContainer, PanelHeader } from '@/components/FourYearPlan/PlanPanel'
+import { PanelBody, PanelContainer, PanelHeader, PanelTopBarIcon, TopBarIcon } from '@/components/FourYearPlan/PlanPanel'
 import { useSWRCrud } from '@/hooks/swrcrud';
 import useSWR from 'swr';
 import { GrayIcon, Icon } from '../common/bulma_derived_components';
@@ -49,7 +49,7 @@ const DegreeHeaderContainer = styled.div`
   font-weight: 500;
   background-color: var(--primary-color);
   padding: 0.5rem 1rem;
-  border-radius: 10px;
+  border-radius: var(--req-item-radius);
 `
 
 const ReqPanelTitle = styled.div`
@@ -85,7 +85,7 @@ const DegreeWrapper = styled.div`
 
 `
 
-const DegreeHeader = ({ degree, remove, setCollapsed, collapsed }: { degree: Degree, remove: (degreeId: Degree["id"]) => void, setCollapsed: (status: boolean) => void, collapsed: boolean}) => {
+const DegreeHeader = ({ degree, remove, setCollapsed, collapsed, editMode }: { degree: Degree, remove: (degreeId: Degree["id"]) => void, setCollapsed: (status: boolean) => void, collapsed: boolean, editMode: boolean}) => {
   const degreeName = `${degree.degree} in ${degree.major} ${degree.concentration ? `(${degree.concentration})` : ''}`
   return (
     <DegreeHeaderContainer onClick={() => setCollapsed(!collapsed)}>
@@ -98,18 +98,20 @@ const DegreeHeader = ({ degree, remove, setCollapsed, collapsed }: { degree: Deg
         </DegreeYear>
       </DegreeTitleWrapper>
       <span>
+        {!!editMode ? 
         <TrashIcon role="button" onClick={() => remove(degree.id)}>
           <i className="fa fa-trash fa-xs"/>
         </TrashIcon>
+        :
         <Icon>
           <i className={`fas fa-chevron-${collapsed ? "up" : "down"}`}></i>
-        </Icon>
+        </Icon>}
       </span>
     </DegreeHeaderContainer>
   )
 }
 
-const Degree = ({degree, rulesToFulfillments, activeDegreeplan, setSearchClosed, handleSearch}: any) => {
+const Degree = ({degree, rulesToFulfillments, activeDegreeplan, setSearchClosed, handleSearch, editMode, setModalKey, setModalObject}: any) => {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -118,12 +120,14 @@ const Degree = ({degree, rulesToFulfillments, activeDegreeplan, setSearchClosed,
         degree={degree} 
         key={degree.id} 
         remove={(id) => {
-          setModalKey("degree-remove")
-          // TODO
+          setModalObject(activeDegreeplan);
+          setModalKey("degree-remove");
         }} 
         setCollapsed={setCollapsed}
-        collapsed={collapsed}/>
-      {!collapsed && 
+        collapsed={collapsed || editMode} // Collapse degree view in edit mode
+        editMode={editMode}
+        />
+      {!collapsed && !editMode &&
       <DegreeBody>
         {degree.rules.map((rule: any) => (
           <RuleComponent 
@@ -149,12 +153,11 @@ interface ReqPanelProps {
   handleSearch: any;
 }
 const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, setSearchClosed, handleSearch}: ReqPanelProps) => {
-  const degrees = activeDegreeplan?.degrees;
-  const { update: updateDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans');
+  // const degrees = activeDegreeplan?.degrees;
+  // const { update: updateDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans');
+  const [editMode, setEditMode] = React.useState(false);
 
   const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null); 
-
-  // const rulesToCUs = useMemo(() => )
 
   const rulesToFulfillments = useMemo(() => {
     if (!fulfillments) return {}
@@ -187,17 +190,11 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
 
   return(
       <PanelContainer>
-            {/* <AddButton role="button" onClick={() => {
-              setModalObject(activeDegreeplan);
-              setModalKey("degree-add");
-            }}>
-              <i className="fa fa-plus" />
-              <div>
-                Add Degree
-              </div>
-            </AddButton> */}
             <PanelHeader>
-              <ReqPanelTitle>Degree Requirements</ReqPanelTitle>
+              <ReqPanelTitle>Requirements</ReqPanelTitle>
+              <PanelTopBarIcon $active={editMode} onClick={() => setEditMode(!editMode)}>
+                <i className="fas fa-lg fa-edit"></i>
+              </PanelTopBarIcon>
             </PanelHeader>
             {!activeDegreeplan ? <EmptyPanel /> :
               <PanelBody>
@@ -207,8 +204,22 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
                     rulesToFulfillments={rulesToFulfillments} 
                     activeDegreeplan={activeDegreeplan} 
                     setSearchClosed={setSearchClosed} 
-                    handleSearch={handleSearch}/>
+                    handleSearch={handleSearch}
+                    editMode={editMode}
+                    setModalKey={setModalKey}
+                    setModalObject={setModalObject}
+                    />
                 ))}
+                {editMode && 
+                <AddButton role="button" onClick={() => {
+                  setModalObject(activeDegreeplan);
+                  setModalKey("degree-add");
+                }}>
+                  <i className="fa fa-plus" />
+                  <div>
+                    Add Degree
+                  </div>
+                </AddButton>}
             </PanelBody>
             }
       </PanelContainer>

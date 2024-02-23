@@ -16,7 +16,14 @@
   --background-white: #F7F9FC;
   --background-grey:#F7F9FC;
 
+  /* Edit mode */
+  --plus-button-color: #9FB5EF;
+
+  /* DnD */
   --selected-color: #967BB6;
+
+  /* Requirement */
+  --req-item-radius: 4px;
 
   --primary-glow: conic-gradient(
     from 180deg at 50% 50%,

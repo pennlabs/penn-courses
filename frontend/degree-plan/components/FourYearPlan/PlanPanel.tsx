@@ -10,10 +10,10 @@ import { useEffect, useCallback } from "react";
 import { useSWRCrud } from '@/hooks/swrcrud';
 import { mutate } from 'swr';
 
-const ShowStatsIcon = styled(GrayIcon)<{ $showStats: boolean }>`
+export const PanelTopBarIcon = styled(GrayIcon)<{ $active: boolean }>`
     width: 2rem;
     height: 2rem;
-    color: ${props => props.$showStats ? "#76bf96" : "#c6c6c6"};
+    color: ${props => props.$active ? "#76bf96" : "#c6c6c6"};
     &:hover {
         color: #76bf96;
     }
@@ -22,9 +22,9 @@ const ShowStatsIcon = styled(GrayIcon)<{ $showStats: boolean }>`
 const ShowStatsButton = ({ showStats, setShowStats }: { showStats: boolean, setShowStats: (arg0: boolean)=>void }) => {
     return (
         <div onClick={() => setShowStats(!showStats)}>
-            <ShowStatsIcon $showStats={showStats}>
+            <PanelTopBarIcon $active={showStats}>
                 <i className="fas fa-lg fa-chart-bar"></i>
-            </ShowStatsIcon>
+            </PanelTopBarIcon>
         </div>
     )
 }
@@ -40,6 +40,9 @@ export const PanelHeader = styled.div`
 `;
 
 export const PanelBody = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
     padding: 10px;
     height: 100%;
     overflow: auto;

@@ -62,7 +62,7 @@ const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any)
 
     // edit modals for degree and degree plan
     const [modalKey, setModalKey] = useState<ModalKey>(null);
-    const [cdmodalObject, setModalObject] = useState<DegreePlan | null>(null); // stores the which degreeplan is being updated using the modal
+    const [modalObject, setModalObject] = useState<DegreePlan | null>(null); // stores the which degreeplan is being updated using the modal
     // useEffect(() => console.log(modalKey), [modalKey])
 
     // active degree plan
@@ -142,11 +142,11 @@ const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any)
                     />}
                 {modalKey && 
                     <DegreeModal 
-                    setModalKey={setModalKey} 
-                    modalKey={modalKey} 
-                    modalObject={modalObject} 
-                    setActiveDegreeplanId={setActiveDegreeplanId}
-                    /> 
+                        setModalKey={setModalKey} 
+                        modalKey={modalKey} 
+                        modalObject={modalObject} 
+                        setActiveDegreeplanId={setActiveDegreeplanId}
+                        /> 
                     }
                 <Row>
                     <SplitPane split="vertical" minSize={0} maxSize={useWindowDimensions()['width'] * 0.6} defaultSize={'50%'} paneStyle={{height: '90%'}} >

@@ -10,7 +10,7 @@ import { ItemTypes } from '../dnd/constants';
 const RuleTitleWrapper = styled.div`
     background-color: var(--primary-color-light);
     position: relative;
-    border-radius: .3rem;
+    border-radius: var(--req-item-radius);
 `
 
 const ProgressBar = styled.div<{$progress: number}>`

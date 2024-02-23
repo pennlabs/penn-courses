@@ -37,9 +37,9 @@ export const AddButton = styled.div`
     width: 100%;
     display: flex;
     justify-content: space-between;
-    background-color: rgba(32, 156, 238, .9);
+    background-color: var(--plus-button-color);
     padding: 1rem;
-    border-radius: 10px;
+    border-radius: var(--req-item-radius);
     align-items: center;
     color: white;
 `
