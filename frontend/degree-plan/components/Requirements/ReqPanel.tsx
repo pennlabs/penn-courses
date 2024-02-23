@@ -5,7 +5,7 @@ import styled from '@emotion/styled';
 import { PanelBody, PanelContainer, PanelHeader } from '@/components/FourYearPlan/PlanPanel'
 import { useSWRCrud } from '@/hooks/swrcrud';
 import useSWR from 'swr';
-import { GrayIcon } from '../common/bulma_derived_components';
+import { GrayIcon, Icon } from '../common/bulma_derived_components';
 import { AddButton } from '../FourYearPlan/Semesters';
 import React from 'react';
 
@@ -45,15 +45,21 @@ const DegreeHeaderContainer = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 1.5rem;
+  font-size: 1rem;
   font-weight: 500;
   background-color: var(--primary-color);
   padding: 0.5rem 1rem;
+  border-radius: 10px;
 `
+
+const ReqPanelTitle = styled.div`
+  font-size: 1.5rem;
+  font-weight: 500;
+`
+
 const DegreeBody = styled.div`
   padding: 0.5rem 1rem;
-
-  overflow: auto;
+  overflow-y: auto;
 `
 
 const DegreeYear = styled.div`
@@ -79,10 +85,10 @@ const DegreeWrapper = styled.div`
 
 `
 
-const DegreeHeader = ({ degree, remove }: { degree: Degree, remove: (degreeId: Degree["id"]) => void}) => {
+const DegreeHeader = ({ degree, remove, setCollapsed, collapsed }: { degree: Degree, remove: (degreeId: Degree["id"]) => void, setCollapsed: (status: boolean) => void, collapsed: boolean}) => {
   const degreeName = `${degree.degree} in ${degree.major} ${degree.concentration ? `(${degree.concentration})` : ''}`
   return (
-    <DegreeHeaderContainer>
+    <DegreeHeaderContainer onClick={() => setCollapsed(!collapsed)}>
       <DegreeTitleWrapper>
         <div>
           {degreeName}
@@ -91,10 +97,46 @@ const DegreeHeader = ({ degree, remove }: { degree: Degree, remove: (degreeId: D
           {degree.year}
         </DegreeYear>
       </DegreeTitleWrapper>
-      <TrashIcon role="button" onClick={() => remove(degree.id)}>
-        <i className="fa fa-trash fa-xs"/>
-      </TrashIcon>
+      <span>
+        <TrashIcon role="button" onClick={() => remove(degree.id)}>
+          <i className="fa fa-trash fa-xs"/>
+        </TrashIcon>
+        <Icon>
+          <i className={`fas fa-chevron-${collapsed ? "up" : "down"}`}></i>
+        </Icon>
+      </span>
     </DegreeHeaderContainer>
+  )
+}
+
+const Degree = ({degree, rulesToFulfillments, activeDegreeplan, setSearchClosed, handleSearch}: any) => {
+  const [collapsed, setCollapsed] = useState(false);
+
+  return (
+    <DegreeWrapper>
+      <DegreeHeader 
+        degree={degree} 
+        key={degree.id} 
+        remove={(id) => {
+          setModalKey("degree-remove")
+          // TODO
+        }} 
+        setCollapsed={setCollapsed}
+        collapsed={collapsed}/>
+      {!collapsed && 
+      <DegreeBody>
+        {degree.rules.map((rule: any) => (
+          <RuleComponent 
+            rulesToFulfillments={rulesToFulfillments}
+            activeDegreePlanId={activeDegreeplan.id}
+            rule={rule} 
+            setSearchClosed={setSearchClosed} 
+            handleSearch={handleSearch} 
+            key={rule.id}
+          />
+        ))}
+      </DegreeBody>}
+    </DegreeWrapper>
   )
 }
 
@@ -109,7 +151,7 @@ interface ReqPanelProps {
 const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, setSearchClosed, handleSearch}: ReqPanelProps) => {
   const degrees = activeDegreeplan?.degrees;
   const { update: updateDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans');
-  
+
   const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null); 
 
   // const rulesToCUs = useMemo(() => )
@@ -154,27 +196,18 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
                 Add Degree
               </div>
             </AddButton> */}
+            <PanelHeader>
+              <ReqPanelTitle>Degree Requirements</ReqPanelTitle>
+            </PanelHeader>
             {!activeDegreeplan ? <EmptyPanel /> :
               <PanelBody>
                 {activeDegreeplan.degrees.map(degree => (
-                  <DegreeWrapper>
-                    <DegreeHeader degree={degree} key={degree.id} remove={(id) => {
-                      setModalKey("degree-remove")
-                      // TODO
-                    }}/>
-                    <DegreeBody>
-                    {degree.rules.map((rule: any) => (
-                      <RuleComponent 
-                      rulesToFulfillments={rulesToFulfillments}
-                      activeDegreePlanId={activeDegreeplan.id}
-                      rule={rule} 
-                      setSearchClosed={setSearchClosed} 
-                      handleSearch={handleSearch} 
-                      key={rule.id}
-                      />
-                    ))}
-                    </DegreeBody>
-                  </DegreeWrapper>
+                  <Degree 
+                    degree={degree} 
+                    rulesToFulfillments={rulesToFulfillments} 
+                    activeDegreeplan={activeDegreeplan} 
+                    setSearchClosed={setSearchClosed} 
+                    handleSearch={handleSearch}/>
                 ))}
             </PanelBody>
             }

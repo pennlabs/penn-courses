@@ -42,6 +42,7 @@ export const PanelHeader = styled.div`
 export const PanelBody = styled.div`
     padding: 10px;
     height: 100%;
+    overflow: auto;
 `;
 
 export const PanelContainer = styled.div`
