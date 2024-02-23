@@ -1,13 +1,13 @@
 import React from "react";
 import reactStringReplace from "react-string-replace";
-import styled from "styled-components";
+import { GrayIcon } from '@/components/common/bulma_derived_components';
+import styled from '@emotion/styled'
 
 import { CourseDetails } from "./common/CourseDetails";
 import { Popover, PopoverTitle } from "./common/Popover";
 import { toNormalizedSemester } from "./util/helpers";
 
 import ReactTooltip from "react-tooltip";
-import { CloseButton } from "./common/CloseButton";
 
 const activityMap = {
   REC: "Recitation",
@@ -15,6 +15,15 @@ const activityMap = {
   SEM: "Seminar",
   LAB: "Laboratory"
 };
+
+const CloseIcon = styled(GrayIcon)`
+  pointer-events: auto;
+  margin-left: 0.5rem;
+
+  & :hover {
+    color: #707070;
+  }
+`
 
 const TagsNotOffered = ({ data }) => {
   let {
@@ -246,7 +255,9 @@ export const CourseHeader = ({
         >
           <PCRLogo src="/images/pcr-logo.png" />
         </a>
-        {/*<CloseButton close={close} />*/}
+        <CloseIcon onClick={close}>
+          <i className="fas fa-times fa-md"></i>
+      </CloseIcon>
       </Actions>
     </div>
     {data.last_offered_sem_if_superceded && (

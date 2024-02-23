@@ -10,6 +10,7 @@ import assert from "assert";
 import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
 import { Draggable } from "../common/DnD";
 import { useSWRCrud } from "@/hooks/swrcrud";
+import useSWR from "swr";
 
 const interpolate = <T,>(arr: T[], separator: T) => arr.flatMap(
     (elem, index) => index < arr.length - 1 ? 

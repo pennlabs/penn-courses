@@ -85,17 +85,16 @@ const ReviewPanel = ({
         <Draggable defaultPosition={position}>
             <ReviewPanelWrapper onFocus={() => setIsPermanent(true)}>
                 <ReviewPanelContainer>
-                    {data ?
+                    {!!data &&
                         <InfoBox
                             close={() => { 
-                                set_full_code(null)
-                                setIsPermanent(false)
+                                set_full_code(null);
+                                setIsPermanent(false);
                             }}
                             data={data}
                             liveData={liveData}
                             style={{ position: 'absolute'}}
-                        />
-                        : <div></div>}
+                        />}
                 </ReviewPanelContainer>
             </ReviewPanelWrapper>
         </Draggable>
