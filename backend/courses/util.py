@@ -712,3 +712,62 @@ def get_semesters(semesters: str = None) -> list[str]:
             if s not in possible_semesters:
                 raise ValueError(f"Provided semester {s} was not found in the db.")
     return sorted(semesters)
+
+def historical_year_probability(current, courses):
+    prob_distribution = [0.4, 0.3, 0.15, 0.1, 0.05]
+
+    def normalize_and_round(prob, i):
+        truncate = prob_distribution[:i]
+        total = sum(truncate)
+        return list(map(lambda x: round(x / total,3), truncate))
+
+    def get_semester_and_course_index(semester):
+        semester_letter = semester[-1]
+        semester_number = 0
+        if semester_letter == "A":
+            semester_number = 1
+        elif semester_letter == "B":
+            semester_number = 2
+        elif semester_letter == "C":
+            semester_number = 3
+        semester_year = int(semester[:-1])
+        return (10 * semester_year + semester_number)
+
+    current_index = get_semester_and_course_index(current)
+    min_index = current_index - 50
+    max_index = current_index - 10
+    if courses == []:
+        return [0, 0, 0]
+    else:
+        last_index = get_semester_and_course_index(courses[0].semester)
+        print(last_index)
+        if last_index > min_index:
+            prob_distribution = normalize_and_round(
+                prob_distribution,
+                ((current_index - last_index) + 9) // 10
+            )
+    print(max_index)
+    print(prob_distribution)
+    p_A = 0
+    p_B = 0
+    p_C = 0
+    for c in courses:
+        print(c)
+        index = get_semester_and_course_index(c.semester)
+        if index < min_index or index > max_index:
+            continue
+        diff = (current_index - index) // 10 - 1
+        print(c, diff)
+        if diff >= len(prob_distribution):
+            diff = len(prob_distribution) - 1
+        if index % 10 == 1:
+            p_A += prob_distribution[diff]
+        elif index % 10 == 2:
+            p_B += prob_distribution[diff]
+        elif index % 10 == 3:
+            p_C += prob_distribution[diff]
+    return [
+        min(round(p_A,2),1.00),
+        min(round(p_B,2),1.00),
+        min(round(p_C,2),1.00)
+    ]
