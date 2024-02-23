@@ -40,13 +40,14 @@ export const PanelHeader = styled.div`
 `;
 
 export const PanelBody = styled.div`
-    overflow-y: auto;
-    flex-grow: 1;
-    padding: 0.5rem 1rem;
-    height: 90%;
+    padding: 10px;
+    height: 100%;
 `;
 
 export const PanelContainer = styled.div`
+    border-radius: 10px;
+    box-shadow: 0px 0px 10px 6px rgba(0, 0, 0, 0.05);
+    background-color: #FFFFFF;
     display: flex;
     flex-direction: column;
     width: 100%;

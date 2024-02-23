@@ -52,6 +52,8 @@ const DegreeHeaderContainer = styled.div`
 `
 const DegreeBody = styled.div`
   padding: 0.5rem 1rem;
+
+  overflow: auto;
 `
 
 const DegreeYear = styled.div`
@@ -74,7 +76,7 @@ const TrashIcon = styled(GrayIcon)`
 `
 
 const DegreeWrapper = styled.div`
-  height: 100%;
+
 `
 
 const DegreeHeader = ({ degree, remove }: { degree: Degree, remove: (degreeId: Degree["id"]) => void}) => {
@@ -129,11 +131,6 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
 
   const [activeDegreePlanWithProgress, setActiveDegreePlanWithProgress] = React.useState({});
 
-  // useEffect(() => {
-  //   let temp = activeDegreeplan;
-
-  // }, [rulesToFulfillments, activeDegreeplan])
-
   const getProgress = (rule: any) => {
     if (rule.q) {
       return [rulesToFulfillments[rule.id].length, rule.num] // rule.num is not the most accurate rep of number of reqs
@@ -158,13 +155,14 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
               </div>
             </AddButton> */}
             {!activeDegreeplan ? <EmptyPanel /> :
-              activeDegreeplan.degrees.map(degree => (
-                <DegreeWrapper>
+              <PanelBody>
+                {activeDegreeplan.degrees.map(degree => (
+                  <DegreeWrapper>
                     <DegreeHeader degree={degree} key={degree.id} remove={(id) => {
                       setModalKey("degree-remove")
                       // TODO
                     }}/>
-                    <PanelBody>
+                    <DegreeBody>
                     {degree.rules.map((rule: any) => (
                       <RuleComponent 
                       rulesToFulfillments={rulesToFulfillments}
@@ -175,9 +173,10 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
                       key={rule.id}
                       />
                     ))}
-                    </PanelBody>
-                </DegreeWrapper>
-              )) 
+                    </DegreeBody>
+                  </DegreeWrapper>
+                ))}
+            </PanelBody>
             }
       </PanelContainer>
   );

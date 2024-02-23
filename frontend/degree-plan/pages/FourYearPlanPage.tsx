@@ -28,7 +28,7 @@ const PlanPageContainer = styled.div`
     padding: 0rem 3rem;
     position: absolute;
     width: 100%;
-    height: 89%;
+    height: 95%;
 `;
 
 export const PanelTopBar = styled.div`
@@ -43,10 +43,9 @@ export const PanelTopBar = styled.div`
 
 const PanelContainer = styled.div<{$maxWidth: string, $minWidth: string}>`
     border-radius: 10px;
-    box-shadow: 0px 0px 10px 6px rgba(0, 0, 0, 0.05);
+    box-shadow: 0px 0px 5px 2px rgba(0, 0, 0, 0.05);
     background-color: #FFFFFF;
-    margin: 9px;
-    height: 82vh;
+    margin: 1px 9px;
     overflow: hidden; /* Hide scrollbars */
     width: ${props => props.$maxWidth || props.$maxWidth ? 'auto' : '100%'};
     max-width: ${props => props.$maxWidth ? props.$maxWidth : 'auto'};
@@ -131,9 +130,8 @@ const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any)
             position: reviewPanelCoords,
             setPosition: setReviewPanelCoords
             }}>
-                <Dock setSearchClosed={setSearchClosed} setReqId={setReqId}/>
                 {reviewPanelFullCode && 
-                    <ReviewPanel 
+                    <ReviewPanel
                     currentSemester={options?.SEMESTER}
                     full_code={reviewPanelFullCode} 
                     set_full_code={setReviewPanelFullCode}
@@ -151,20 +149,20 @@ const FourYearPlanPage = ({searchClosed, setSearchClosed, reqId, setReqId}: any)
                     /> 
                     }
                 <Row>
-                    <SplitPane split="vertical" minSize={0} maxSize={useWindowDimensions()['width'] * 0.6} defaultSize={'50%'}>
-                        <Pane>
+                    <SplitPane split="vertical" minSize={0} maxSize={useWindowDimensions()['width'] * 0.6} defaultSize={'50%'} paneStyle={{height: '90%'}} >
+                        <Pane style={{display: 'flex', height: '100%', }}>
                             <PanelContainer>
-                                    <PlanPanel 
-                                        setModalKey={setModalKey}
-                                        modalKey={modalKey}
-                                        setModalObject={setModalObject}
-                                        isLoading={isLoadingDegreeplans || isLoadingActiveDegreePlan} 
-                                        activeDegreeplan={activeDegreePlan} degreeplans={degreeplans} 
-                                        setActiveDegreeplanId={setActiveDegreeplanId}
+                                <PlanPanel 
+                                    setModalKey={setModalKey}
+                                    modalKey={modalKey}
+                                    setModalObject={setModalObject}
+                                    isLoading={isLoadingDegreeplans || isLoadingActiveDegreePlan} 
+                                    activeDegreeplan={activeDegreePlan} degreeplans={degreeplans} 
+                                    setActiveDegreeplanId={setActiveDegreeplanId}
                                 />
                             </PanelContainer>
                         </Pane>
-                        <Pane style={{display: 'flex', flexDirection: 'row'}}>
+                        <Pane style={{display: 'flex', flexDirection: 'row', height: '100%'}}>
                             <PanelContainer>
                                 {/* <SplitPane split="horizontal" minSize='80%'> */}
                                     <ReqPanel

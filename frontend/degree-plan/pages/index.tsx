@@ -8,6 +8,7 @@ import React, { useState } from "react";
 import { type User } from '../types';
 import LoginModal from 'pcx-shared-components/src/accounts/LoginModal';
 import { SWRConfig } from 'swr';
+import Dock from '@/components/Dock/Dock'
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
@@ -51,6 +52,7 @@ export default function Home() {
                   siteName="Penn Degree Plan"
               />
           )}
+          <Dock setSearchClosed={setSearchClosed} setReqId={setReqId}/>
         </SWRConfig>
       </DndProvider>
     </>

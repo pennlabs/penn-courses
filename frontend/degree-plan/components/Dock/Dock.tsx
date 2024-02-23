@@ -10,23 +10,22 @@ import DockedCourse from './DockedCourse';
 
 const DockWrapper = styled.div`
     z-index: 1;
-    opacity: 0.9;
+    opacity: 1;
     position: fixed;
     width: 100%;
-    bottom: 2%;
+    bottom: 0;
     display: flex;
     justify-content: center;
 `
 
 const DockContainer = styled.div<{$isDroppable:boolean, $isOver: boolean}>`
-    border-radius: 15px;
+    border-radius: 0px;
     box-shadow: 0px 0px 4px 2px ${props => props.$isOver ? 'var(--selected-color);' : props.$isDroppable ? 'var(--primary-color-dark);' : 'rgba(0, 0, 0, 0.05);'}
-    background-color: var(--primary-color-light);
-    height: 5vh;
-    min-width: 28vw;
+    background-color: var(--primary-color);
+    height: 6vh;
+    width: 100%;
     display: flex;
     justify-content: left;
-    padding: 5px 10px;
 `
 
 const Divider = styled.div`
