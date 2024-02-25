@@ -198,7 +198,7 @@ const SearchCondition = ({ ruleId, ruleQuery, fulfillments, ruleIsSatisfied, q}:
             <div onClick={() => { 
                 setSearchRuleQuery(ruleQuery);
                 setSearchRuleId(ruleId);
-                setSearchRuleQuery(ruleQuery);
+                setSearchPanelOpen(true);
             }}>
                 <DarkGrayIcon>
                     <i className="fas fa-search fa-sm"/>

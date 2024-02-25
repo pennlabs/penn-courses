@@ -145,7 +145,7 @@ const FourYearPlanPage = ({searchClosed, updateUser, user}: any) => {
                                         </SplitPane> */}
                                     </PanelContainer>
                                     {searchPanelOpen && <PanelContainer $minWidth={'40%'} $maxWidth={'45%'} >
-                                        <SearchPanel />
+                                        <SearchPanel activeDegreeplanId={activeDegreeplanId} />
                                     </PanelContainer>
                                     }
                                 </Pane>

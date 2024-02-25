@@ -4,7 +4,7 @@ import { PanelTopBar } from "@/pages/FourYearPlanPage";
 import useSWR from "swr";
 import ResultsList from "./ResultsList";
 import styled from "@emotion/styled";
-import { Rule } from "@/types";
+import { DegreePlan, Rule } from "@/types";
 
 interface SearchPanelContextType {
     setSearchPanelOpen: (arg0: boolean) => void;
@@ -78,7 +78,7 @@ const PanelTitle = styled.div`
 type ISearchResultCourse =  {course: ICourseQ};
 
 
-export const SearchPanel = () => {
+export const SearchPanel = ({ activeDegreeplanId }: { activeDegreeplanId: DegreePlan["id"] | null }) => {
     const { setSearchPanelOpen, searchRuleId: ruleId, searchRuleQuery: ruleQuery }= useContext(SearchPanelContext); 
 
     // queryString and searchRuleQuery are different (queryString is the actual query e.g., "World Civ",
@@ -114,7 +114,7 @@ export const SearchPanel = () => {
                         placeholder={ruleId == -1 ? "General Search!" : `Filtering for ${ruleQuery ? ruleQuery : 'requirement'}`}
                     />
                 </SearchContainer>
-                <SearchResult ruleId={ruleId} query={queryString}/> 
+                <SearchResult ruleId={ruleId} query={queryString} activeDegreeplanId={activeDegreeplanId}/> 
             </SearchPanelBody>
         </PanelContainer>
     )
@@ -140,7 +140,7 @@ const buildSearchKey = (ruleId: Rule["id"] | null, query: string): string | null
     return query.length >= 3 || ruleId !== null ? `api/base/all/search/courses?search=${query}${ruleId ? `&rule_ids=${ruleId}` : ""}` : null
 }
 
-const SearchResult = ({ ruleId, query}: any) => {
+const SearchResult = ({ ruleId, query, activeDegreeplanId }: any) => {
     const debouncedQuery = useDebounce(query, 400)
     const [scrollPos, setScrollPos] = React.useState<number>(0);
     const { data: courses = [], isLoading: isLoadingCourses, error } = useSWR(buildSearchKey(ruleId, debouncedQuery)); 
@@ -153,7 +153,13 @@ const SearchResult = ({ ruleId, query}: any) => {
                     </LoadingComponent>
                 </LoadingComponentContainer>
             : <SearchPanelResult>
-                    <ResultsList courses={courses} scrollPos={scrollPos} setScrollPos={setScrollPos}/>
+                    <ResultsList 
+                    activeDegreeplanId={activeDegreeplanId} 
+                    ruleId={ruleId} 
+                    courses={courses} 
+                    scrollPos={scrollPos} 
+                    setScrollPos={setScrollPos}
+                    />
             </SearchPanelResult>}
         </>
     )
