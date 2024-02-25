@@ -1,12 +1,12 @@
 import styled from "@emotion/styled";
-import type { DegreePlan } from "@/types";
+import type { DegreePlan, Fulfillment, Semester } from "@/types";
 import { useState } from "react";
 import { deleteFetcher, postFetcher, useSWRCrud } from "@/hooks/swrcrud";
 import { useSWRConfig } from "swr";
 import ModalContainer from "../common/ModalContainer";
 
 
-export type ModalKey = "plan-create" | "plan-rename" | "plan-remove" | "degree-add" | "degree-remove" | null; // null is closed
+export type ModalKey = "plan-create" | "plan-rename" | "plan-remove" | "degree-add" | "degree-remove" | "semester-remove" | null; // null is closed
 
 const getModalTitle = (modalState: ModalKey) => {
     switch (modalState) {
@@ -20,6 +20,8 @@ const getModalTitle = (modalState: ModalKey) => {
             return "Add degree";
         case "degree-remove":
             return "Remove degree";
+        case "semester-remove": 
+            return "Remove semester";
         case null:
             return "";
         default:
@@ -51,7 +53,7 @@ const ModalButton = styled.button`
 
 interface ModalInteriorProps {
     modalKey: ModalKey;
-    modalObject: DegreePlan | null;
+    modalObject: DegreePlan | null | Fulfillment[];
     setActiveDegreeplanId: (arg0: DegreePlan["id"]) => void;
     close: () => void;
 }
@@ -106,6 +108,9 @@ const ModalInterior = ({ modalObject, modalKey, setActiveDegreeplanId, close }: 
         mutate(key => key && key.startsWith(`/api/degree/degreeplans/${degreeplanId}/fulfillments`)) // refetch the fulfillments   
     }
 
+    const remove_semester = (fulfillments:Fulfillment[]) => {
+        console.log('clear fulfillments: ', fulfillments);
+    }
 
     switch (modalKey) {
         case "plan-rename":
@@ -147,6 +152,16 @@ const ModalInterior = ({ modalObject, modalKey, setActiveDegreeplanId, close }: 
                     <p>Are you sure you want to remove this degree? All of your planning for this degree will be lost</p>
                     <ModalButton onClick={() => {
                         remove_degree(modalObject.id, modalObject.id)
+                        close();
+                    }}>Remove</ModalButton>
+                </ModalInteriorWrapper>
+            );
+        case "semester-remove":
+            return (
+                <ModalInteriorWrapper>
+                    <p>Are you sure you want to remove this semester? All of your planning for this semester will be lost</p>
+                    <ModalButton onClick={() => {
+                        remove_semester(modalObject);
                         close();
                     }}>Remove</ModalButton>
                 </ModalInteriorWrapper>

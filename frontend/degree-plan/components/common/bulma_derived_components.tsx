@@ -7,7 +7,7 @@ export const Icon = styled.span`
     justify-content: center;
     height: 1rem;
     width: 1rem;
-    pointer-events: none;
+    cursor: pointer;
 `
 
 export const GrayIcon = styled(Icon)`

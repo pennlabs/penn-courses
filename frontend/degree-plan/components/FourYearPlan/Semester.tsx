@@ -7,6 +7,7 @@ import styled from '@emotion/styled';
 import { Course, DegreePlan, DnDFulfillment, Fulfillment } from "@/types";
 import { postFetcher, useSWRCrud } from "@/hooks/swrcrud";
 import { useSWRConfig } from "swr";
+import { TrashIcon } from "../Requirements/ReqPanel";
 
 
 const translateSemester = (semester: Course["semester"]) => {
@@ -25,6 +26,13 @@ export const SemesterCard = styled.div<{$isDroppable:boolean, $isOver: boolean}>
     flex-direction: column;
     flex: 1 1 15rem;
 `;
+
+const SemesterHeader = styled.div`
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+`
 
 const SemesterLabel = styled.div`
     font-weight: 500;
@@ -60,9 +68,13 @@ interface SemesterProps {
     fulfillments: Fulfillment[]; // fulfillments of this semester
     activeDegreeplanId: DegreePlan["id"] | undefined;
     className: string;
+    editMode: boolean;
+    setModalKey: (arg0: string) => void;
+    setModalObject: (obj: any) => void;
+    removeSemester: (sem: string) => void;
 }
 
-const FlexSemester = ({ showStats, semester, fulfillments, activeDegreeplanId} : SemesterProps) => {
+const FlexSemester = ({ showStats, semester, fulfillments, activeDegreeplanId, editMode, setModalKey, setModalObject, removeSemester} : SemesterProps) => {
     const credits = fulfillments.reduce((acc, curr) => acc + (curr.course?.credits || 1), 0)
 
     // the fulfillments api uses the POST method for updates (it creates if it doesn't exist, and updates if it does)
@@ -71,6 +83,7 @@ const FlexSemester = ({ showStats, semester, fulfillments, activeDegreeplanId} :
     const [{ isOver, canDrop }, drop] = useDrop<DnDFulfillment, never, { isOver: boolean, canDrop: boolean }>(() => ({
         accept: ItemTypes.COURSE,
         drop: (fulfillment: DnDFulfillment) => {
+            console.log(semester, fulfillment)
             createOrUpdate({ semester, rules: fulfillment.rules }, fulfillment.full_code);
         },
         collect: monitor => ({
@@ -78,19 +91,36 @@ const FlexSemester = ({ showStats, semester, fulfillments, activeDegreeplanId} :
           canDrop: !!monitor.canDrop()
         }),
     }), [createOrUpdate, semester]);
-    
+
+    const handleRemoveCourse = (full_code: Course["full_code"]) => {
+        createOrUpdate({ semester: null }, full_code);
+        /** API: add to dock */
+        // setDockedCourses((dockedCourses:string[]) => [...dockedCourses, full_code]);
+    }
+
+    const handleRemoveSemester = () => {
+        removeSemester(semester);
+        setModalKey('semester-remove');
+        setModalObject(fulfillments);
+    }
+
     return (
         <SemesterCard $showStats={showStats} $isDroppable={canDrop} $isOver={isOver} ref={drop} >
-            <SemesterLabel>
-                {translateSemester(semester)}
-            </SemesterLabel>
+            <SemesterHeader>
+                <SemesterLabel>
+                    {translateSemester(semester)}
+                </SemesterLabel>
+                {!!editMode &&         
+                <TrashIcon role="button" onClick={handleRemoveSemester}>
+                    <i className="fa fa-trash fa-md"/>
+                </TrashIcon>}
+            </SemesterHeader>
             <SemesterContent> 
-                    <FlexCoursesPlanned 
-                        semester={semester} 
-                        fulfillments={fulfillments} 
-                        removeCourse={(full_code: Course["full_code"]) => createOrUpdate({ semester: null }, full_code)}/>
-
-                {showStats && <FlexStats fulfillments={fulfillments}/>}
+                <FlexCoursesPlanned 
+                    semester={semester} 
+                    fulfillments={fulfillments} 
+                    removeCourse={handleRemoveCourse}/>
+                {!!showStats && <FlexStats fulfillments={fulfillments}/>}
             </SemesterContent>
             <CreditsLabel>
                 {credits} CUs

@@ -3,7 +3,6 @@ import Logo from './Logo';
 import { type User } from '../../types'
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
 import styled from "@emotion/styled";
-import Dock from '../Dock/Dock';
 
 const NavContainer = styled.nav`    
   padding: 0 1rem;
@@ -13,6 +12,7 @@ const NavContainer = styled.nav`
   justify-content: space-between;
   margin: 0 auto;
   background-color: #E3E8F4;
+  flex-grow: 0;
 `;
 
 const NavElt = styled.span<{ $active?: boolean }>`
@@ -42,16 +42,15 @@ const Nav = ({ login, logout, user}: NavProps) => (
     <NavEltList>
       <NavElt>
           <AccountIndicator
-              leftAligned={true}
-              user={user}
-              backgroundColor="light"
-              nameLength={2}
-              login={login}
-              logout={logout}
-              />
+          leftAligned={true}
+          user={user}
+          backgroundColor="light"
+          nameLength={2}
+          login={login}
+          logout={logout}
+          />
       </NavElt>
     </NavEltList>
-    <Dock/>
     <NavElt>
       <Logo/>
     </NavElt>

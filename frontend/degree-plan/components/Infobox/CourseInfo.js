@@ -1,6 +1,7 @@
 import React from "react";
 import reactStringReplace from "react-string-replace";
-import styled from "styled-components";
+import { GrayIcon } from '@/components/common/bulma_derived_components';
+import styled from '@emotion/styled'
 
 import { CourseDetails } from "./common/CourseDetails";
 import { Popover, PopoverTitle } from "./common/Popover";
@@ -14,6 +15,15 @@ const activityMap = {
   SEM: "Seminar",
   LAB: "Laboratory"
 };
+
+const CloseIcon = styled(GrayIcon)`
+  pointer-events: auto;
+  margin-left: 0.5rem;
+
+  & :hover {
+    color: #707070;
+  }
+`
 
 const TagsNotOffered = ({ data }) => {
   let {

@@ -97,17 +97,15 @@ const ReviewPanel = ({
     bottom = top === undefined ? bottom : undefined;
 
     return (
-        <ReviewPanelWrapper onFocus={() => setIsPermanent(true)} $right={right} $left={left} $top={top} $bottom={bottom}>
+        <ReviewPanelWrapper $right={right} $left={left} $top={top} $bottom={bottom}>
             <ReviewPanelContainer>
-                {data ?
+                {data &&
                     <InfoBox
                         close={() => { 
                             set_full_code(null)
-                            setIsPermanent(false)
                         }}
                         data={data}
-                    />
-                    : <div></div>}
+                    />}
             </ReviewPanelContainer>
         </ReviewPanelWrapper>
     )

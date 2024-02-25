@@ -8,6 +8,7 @@ import React, { useState } from "react";
 import { type User } from '../types';
 import LoginModal from 'pcx-shared-components/src/accounts/LoginModal';
 import { SWRConfig } from 'swr';
+import Dock from '@/components/Dock/Dock'
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
@@ -28,7 +29,12 @@ export default function Home() {
     <>  
       <DndProvider backend={HTML5Backend}>
         <SWRConfig value={{
-          fetcher: (resource, init) => fetch(resource, init).then(res => res.json())
+          fetcher: (resource, init) => fetch(resource, init).then(res => res.json()),
+          onError: (error, key) => {
+            if (error.status !== 403 && error.status !== 404) {
+              // error handling
+            }
+          }
         }}>
           <FourYearPlanPage user={user} updateUser={updateUser}/>
           {showLoginModal && (
@@ -37,6 +43,7 @@ export default function Home() {
                   siteName="Penn Degree Plan"
               />
           )}
+          {/* <Dock/> */}
         </SWRConfig>
       </DndProvider>
     </>
