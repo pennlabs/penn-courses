@@ -119,30 +119,30 @@ const DegreeHeader = ({ degree, remove, setCollapsed, collapsed, editMode }: { d
   )
 }
 
-const Degree = ({degree, rulesToFulfillments, activeDegreeplan, setSearchClosed, handleSearch, editMode, setModalKey, setModalObject}: any) => {
+const Degree = ({degree, rulesToFulfillments, activeDegreeplan, editMode, setModalKey, setModalObject}: any) => {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
     <div>
       <DegreeHeader 
-        degree={degree} 
-        key={degree.id} 
-        remove={(id) => {
-          setModalObject(activeDegreeplan);
-          setModalKey("degree-remove");
-        }} 
-        setCollapsed={setCollapsed}
-        collapsed={collapsed || editMode} // Collapse degree view in edit mode
-        editMode={editMode}
-        />
+      degree={degree} 
+      key={degree.id} 
+      remove={() => {
+        setModalObject(activeDegreeplan);
+        setModalKey("degree-remove");
+      }} 
+      setCollapsed={setCollapsed}
+      collapsed={collapsed || editMode} // Collapse degree view in edit mode
+      editMode={editMode}
+      />
       {!collapsed && !editMode &&
       <DegreeBody>
         {degree.rules.map((rule: any) => (
           <RuleComponent 
-            rulesToFulfillments={rulesToFulfillments}
-            activeDegreePlanId={activeDegreeplan.id}
-            rule={rule} 
-            key={rule.id}
+          rulesToFulfillments={rulesToFulfillments}
+          activeDegreePlanId={activeDegreeplan.id}
+          rule={rule} 
+          key={rule.id}
           />
         ))}
       </DegreeBody>}

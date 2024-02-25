@@ -46,10 +46,13 @@ export const PanelHeader = styled.div`
 `;
 
 export const PanelBody = styled.div`
-    padding: 10px;
+    padding: .5rem;
     height: 100%;
     overflow-y: auto;
     flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
 `;
 
 export const PanelContainer = styled.div`
