@@ -26,7 +26,7 @@ const CoursesPlanned = ({fulfillments, removeCourse, className, semester, dropRe
             {fulfillments.map(fulfillment => 
                 <CoursePlanned key={fulfillment.full_code} semester={semester} fulfillment={fulfillment} removeCourse={removeCourse}/>
             )}
-            <PlannedCourseContainer $isDepressed={true}/>
+            {/* <PlannedCourseContainer $isDepressed={true}/> */}
         </PlannedCoursesContainer>
     )
 }

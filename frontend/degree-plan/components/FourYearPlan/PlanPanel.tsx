@@ -1,19 +1,15 @@
-import update from 'immutability-helper'
 import { GrayIcon } from '../common/bulma_derived_components';
 import SelectListDropdown from "./SelectListDropdown";
 import Semesters from "./Semesters";
 import styled from "@emotion/styled";
 import type { DegreePlan } from "@/types";
 import { useState } from "react";
-import ModalContainer from "@/components/common/ModalContainer";
-import { useEffect, useCallback } from "react";
 import { useSWRCrud } from '@/hooks/swrcrud';
-import { mutate } from 'swr';
 
-const ShowStatsIcon = styled(GrayIcon)<{ $showStats: boolean }>`
+export const PanelTopBarIcon = styled(GrayIcon)<{ $active: boolean }>`
     width: 2rem;
     height: 2rem;
-    color: ${props => props.$showStats ? "#76bf96" : "#c6c6c6"};
+    color: ${props => props.$active ? "#76bf96" : "#c6c6c6"};
     &:hover {
         color: #76bf96;
     }
@@ -22,9 +18,19 @@ const ShowStatsIcon = styled(GrayIcon)<{ $showStats: boolean }>`
 const ShowStatsButton = ({ showStats, setShowStats }: { showStats: boolean, setShowStats: (arg0: boolean)=>void }) => {
     return (
         <div onClick={() => setShowStats(!showStats)}>
-            <ShowStatsIcon $showStats={showStats}>
+            <PanelTopBarIcon $active={showStats}>
                 <i className="fas fa-lg fa-chart-bar"></i>
-            </ShowStatsIcon>
+            </PanelTopBarIcon>
+        </div>
+    )
+}
+
+export const EditButton = ({ editMode, setEditMode }: { editMode: boolean, setEditMode: (arg0: boolean)=>void }) => {
+    return (
+        <div onClick={() => setEditMode(!editMode)}>
+            <PanelTopBarIcon $active={editMode}>
+                <i className="fas fa-lg fa-edit"></i>
+            </PanelTopBarIcon>
         </div>
     )
 }
@@ -32,25 +38,38 @@ const ShowStatsButton = ({ showStats, setShowStats }: { showStats: boolean, setS
 export const PanelHeader = styled.div`
     display: flex;
     justify-content: space-between;
-    background-color:'#DBE2F5'; 
-    margin: 1rem;
-    margin-bottom: 0;
+    background-color: var(--primary-color);
+    padding: 0.5rem 1rem;
     flex-grow: 0;
+    font-size: 1.5rem;
+    font-weight: 300;
 `;
 
 export const PanelBody = styled.div`
+    padding: .5rem;
+    height: 100%;
     overflow-y: auto;
     flex-grow: 1;
-    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
 `;
 
 export const PanelContainer = styled.div`
+    border-radius: 10px;
+    box-shadow: 0px 0px 10px 6px rgba(0, 0, 0, 0.05);
+    background-color: #FFFFFF;
     display: flex;
     flex-direction: column;
     width: 100%;
     height: 100%;
 `;
 
+export const PanelTopBarIconList = styled.div`
+    display: flex;
+    flex-direction: row;
+    gap: 0.8rem;
+`
 
 interface PlanPanelProps {
     setModalKey: (arg0: string) => void;
@@ -62,9 +81,10 @@ interface PlanPanelProps {
     isLoading: boolean;
 }
 
-const PlanPanel = ({ setModalKey, modalKey, setModalObject, setActiveDegreeplanId, activeDegreeplan, degreeplans, isLoading } : PlanPanelProps) => {
+const PlanPanel = ({ setModalKey, modalKey, setModalObject, setActiveDegreeplanId, activeDegreeplan, degreeplans } : PlanPanelProps) => {
     const { copy: copyDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans');
     const [showStats, setShowStats] = useState(true);
+    const [editMode, setEditMode] = useState(false);
 
     return (
             <PanelContainer>
@@ -91,11 +111,20 @@ const PlanPanel = ({ setModalKey, modalKey, setModalObject, setActiveDegreeplanI
                             create: () => setModalKey("plan-create")
                         }}              
                     />
-                    <ShowStatsButton showStats={showStats} setShowStats={setShowStats} />
+                    <PanelTopBarIconList>
+                        <ShowStatsButton showStats={showStats} setShowStats={setShowStats} />
+                        <EditButton editMode={editMode} setEditMode={setEditMode} />
+                    </PanelTopBarIconList>
                 </PanelHeader>
                 {/** map to semesters */}
                 <PanelBody>
-                    <Semesters activeDegreeplan={activeDegreeplan} showStats={showStats} />
+                    <Semesters 
+                    activeDegreeplan={activeDegreeplan} 
+                    showStats={showStats} 
+                    editMode={editMode}
+                    setModalKey={setModalKey}
+                    setModalObject={setModalObject}
+                    />
                 </PanelBody>
             </PanelContainer>
     );

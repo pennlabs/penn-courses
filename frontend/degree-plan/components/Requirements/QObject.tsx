@@ -1,6 +1,6 @@
-import { useDrag } from "react-dnd";
+import { useDrag, useDrop } from "react-dnd";
 import { ItemTypes } from "../dnd/constants";
-import type { DnDFulfillment, Fulfillment, Rule } from "@/types";
+import type { Course, DnDFulfillment, Fulfillment, Rule } from "@/types";
 import styled from "@emotion/styled";
 import nearley from "nearley";
 import grammar from "@/util/q_object_grammar" 
@@ -9,14 +9,19 @@ import { BaseCourseContainer } from "../FourYearPlan/CoursePlanned";
 import assert from "assert";
 import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
 import { Draggable } from "../common/DnD";
+import { useSWRCrud } from "@/hooks/swrcrud";
+import useSWR from "swr";
 import { useContext } from "react";
 import { SearchPanelContext } from "../Search/SearchPanel";
 
-const interpolate = <T,>(arr: T[], separator: T) => arr.flatMap(
-    (elem, index) => index < arr.length - 1 ? 
-    [elem, separator] 
-    : [elem]
-)
+const interpolate = <T,>(arr: T[], separator: T) => 
+    <QObjectWrapper>
+    {arr.flatMap(
+        (elem, index) => index < arr.length - 1 ? 
+        [elem, separator] 
+        : [elem]
+    )}
+    </QObjectWrapper>
 
 
 type ConditionKey = "full_code" | "semester" | "attributes__code__in" | "department__code" | "full_code__startswith" | "code__gte" | "code__lte" | "department__code__in" 
@@ -95,15 +100,17 @@ const Attributes = ({ attributes }: { attributes: string[] }) => {
         <Wrap>{attributes.join(', ')}</Wrap>
     </Row>
 }
-
+    // display: inline-flex;
+    // align-items: center;
+    // align-content: flex-end;
+    // gap: .25rem;
+    // flex-wrap: wrap;
 const SearchConditionWrapper = styled(BaseCourseContainer)`
-    display: inline-flex;
-    align-items: center;
-    align-content: flex-end;
-    gap: .25rem;
-    flex-wrap: wrap;
+    display: flex;
+    flex-direction: row;
     margin: .5 rem 0;
     background-color: #EDF1FC;
+    box-shadow: 0px 0px 14px 2px rgba(0, 0, 0, 0.05);
     text-wrap: none;
     cursor: pointer;
 `
@@ -216,11 +223,12 @@ const SearchCondition = ({ ruleId, ruleQuery, fulfillments, ruleIsSatisfied, q}:
     )
 }
 
-const CourseOptionsSeparator = styled.span`
-    font-size: .8rem;
+const CourseOptionsSeparator = styled.div`
+    font-size: 1rem;
     text-transform: uppercase;
     color: #575757;
     font-weight: 500;
+    margin: 8px 0px;
 `;
 
 const transformCourseClauses = (q: ParsedQObj): ParsedQObj => {
@@ -323,9 +331,15 @@ const QObject = ({ q, fulfillments, rule, satisfied }: QObjectProps) => {
     }
 }
 
+const QObjectWrapper = styled.div`
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+`
 
 interface RuleLeafProps { 
     q: string;
+    activeDegreePlanId: number, 
     fulfillmentsForRule: Fulfillment[]; // fulfillments for this rule 
     rule: Rule;
     satisfied: boolean;

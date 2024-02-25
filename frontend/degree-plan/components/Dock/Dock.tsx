@@ -10,21 +10,22 @@ import { SearchPanelContext } from '../Search/SearchPanel';
 
 
 const DockWrapper = styled.div`
-    opacity: 0.9;
+    z-index: 1;
     width: 100%;
     display: flex;
     justify-content: center;
+    flex-grow: 0;
 `
 
 const DockContainer = styled.div<{$isDroppable:boolean, $isOver: boolean}>`
-    border-radius: 15px;
+    border-radius: 0px;
     box-shadow: 0px 0px 4px 2px ${props => props.$isOver ? 'var(--selected-color);' : props.$isDroppable ? 'var(--primary-color-dark);' : 'rgba(0, 0, 0, 0.05);'}
-    background-color: var(--primary-color-light);
-    height: 5vh;
-    min-width: 28vw;
+    background-color: var(--primary-color);
+    height: 6vh;
+    width: 100%;
     display: flex;
     justify-content: left;
-    padding: 5px 10px;
+    padding: 1rem 1rem;
 `
 
 const Divider = styled.div`
@@ -46,12 +47,13 @@ const DockedCoursesWrapper = styled.div`
     width: 100%;
     border-radius: 8px;
 `
-// border-style: solid;
-// border-color: grey;
 
 const DockedCourses = styled.div`
+    height: 100%;
     display: flex;
     flex-direction: row;
+    gap: 1rem;
+    padding: 0.1rem;
 `
 const Dock = () => {
     const { setSearchPanelOpen, setSearchRuleQuery, setSearchRuleId } = useContext(SearchPanelContext)
@@ -85,18 +87,18 @@ const Dock = () => {
                         setSearchPanelOpen(true);
                     }}>
                         <DarkGrayIcon>
-                        <i className="fas fa-search fa-lg" />
+                        <i className="fas fa-search fa-lg"/>
                         </DarkGrayIcon>
                     </SearchIconContainer>
                 </DockerElm>
                 <Divider/>
-                    <DockedCoursesWrapper>
-                        <DockedCourses >
-                            {dockedCourses.map((full_code, i) => 
-                                <DockedCourse removeDockedCourse={removeDockedCourse} full_code={full_code}/>
-                            )}
-                        </DockedCourses>
-                    </DockedCoursesWrapper>
+                <DockedCoursesWrapper>
+                    <DockedCourses>
+                        {dockedCourses.map((full_code, i) => 
+                            <DockedCourse removeDockedCourse={removeDockedCourse} full_code={full_code}/>
+                        )}
+                    </DockedCourses>
+                </DockedCoursesWrapper>
             </DockContainer>
         </DockWrapper>
     )
