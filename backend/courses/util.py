@@ -718,14 +718,14 @@ def historical_year_probability(current, courses):
     prob_distribution = [0.4, 0.3, 0.15, 0.1, 0.05]
 
     def normalize_and_round(prob, i):
-        ''' Modifies the probability distribution to account for the 
-        fact that the last course was taken i semesters ago. '''
+        """Modifies the probability distribution to account for the
+        fact that the last course was taken i semesters ago."""
         truncate = prob_distribution[:i]
         total = sum(truncate)
         return list(map(lambda x: round(x / total, 3), truncate))
 
     def get_semester_and_course_index(semester):
-        ''' Returns an integer representing the semester. '''
+        """Returns an integer representing the semester."""
         semester_letter = semester[-1]
         semester_number = 0
         if semester_letter == "A":
@@ -752,7 +752,7 @@ def historical_year_probability(current, courses):
     p_B = 0
     p_C = 0
     for c in courses:
-        '''Provides calculation'''
+        """Provides calculation"""
         index = get_semester_and_course_index(c.semester)
         if index < min_index or index > max_index:
             continue
