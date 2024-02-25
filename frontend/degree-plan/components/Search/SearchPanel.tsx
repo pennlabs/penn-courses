@@ -4,9 +4,6 @@ import { PanelTopBar } from "@/pages/FourYearPlanPage";
 import useSWR from "swr";
 import ResultsList from "./ResultsList";
 import styled from "@emotion/styled";
-<<<<<<< HEAD
-import { useDebounce } from "@/hooks/debounce";
-=======
 import { DegreePlan, Rule } from "@/types";
 
 interface SearchPanelContextType {
@@ -27,7 +24,6 @@ export const SearchPanelContext = createContext<SearchPanelContextType>({
     searchRuleQuery: ""
 });
 
->>>>>>> 1357c6d979f305e372488b486a0f21e500b7d67f
 
 const SearchPanelBody = styled.div`
     margin: 10px;
@@ -124,7 +120,21 @@ export const SearchPanel = ({ activeDegreeplanId }: { activeDegreeplanId: Degree
     )
 }
 
+export const useDebounce = (value: any, delay: number) => {
+  const [debouncedValue, setDebouncedValue] = React.useState(value);
 
+  React.useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
 
 const buildSearchKey = (ruleId: Rule["id"] | null, query: string): string | null => {
     return query.length >= 3 || ruleId !== null ? `api/base/all/search/courses?search=${query}${ruleId ? `&rule_ids=${ruleId}` : ""}` : null
@@ -154,53 +164,3 @@ const SearchResult = ({ ruleId, query, activeDegreeplanId }: any) => {
         </>
     )
 }
-
-<<<<<<< HEAD
-
-const ReqSearchResult = ({setClosed, reqId, reqQuery, queryString, setQueryString}:any) => {
-    const [results, setResults] = React.useState<ISearchResultCourse[]>([]);
-    const [scrollPos, setScrollPos] = React.useState<number>(0);
-
-    const [url, setUrl] = React.useState<string>("");
-    const { data: courses = [], isLoading: isLoadingCourses, error } = useSWR(reqId ? `api/degree/courses/${reqId}` : null, { refreshInterval: 0, fallbackData: [] }); 
-
-    // React.useEffect(() => {
-    //     if (reqId === undefined) {
-    //         setUrl("");
-    //     } else {
-    //         setUrl(`api/degree/courses/${reqId}`);
-    //     }
-    // }, [reqId]);
-
-    React.useEffect(() => {
-        if (error) console.log(error); // ERROR handling
-        else {
-            setResults([]);
-            setTimeout(() => {
-                const res = !queryString ? [...courses] : fuse.search(queryString).map(course => course.item);
-                setResults([...res])
-            }, 0.01);
-        }
-    }, [queryString, isLoadingCourses])
-
-    let fuse = new Fuse(courses, {  // CHANGE TO courses
-        keys: ['id', 'title', 'description']
-    })
-
-    return (
-        <>
-        {isLoadingCourses  ? 
-            <LoadingComponentContainer>
-                <LoadingComponent>
-                    loading courses...
-                </LoadingComponent>
-            </LoadingComponentContainer>
-        : <SearchPanelResult>
-                <ResultsList courses={results} scrollPos={scrollPos} setScrollPos={setScrollPos}/>
-        </SearchPanelResult>}
-        </>
-    )
-}
-
-=======
->>>>>>> 1357c6d979f305e372488b486a0f21e500b7d67f

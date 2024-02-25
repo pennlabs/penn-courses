@@ -21,7 +21,6 @@ const DockContainer = styled.div<{$isDroppable:boolean, $isOver: boolean}>`
     border-radius: 0px;
     box-shadow: 0px 0px 4px 2px ${props => props.$isOver ? 'var(--selected-color);' : props.$isDroppable ? 'var(--primary-color-dark);' : 'rgba(0, 0, 0, 0.05);'}
     background-color: var(--primary-color);
-    height: 6vh;
     width: 100%;
     display: flex;
     justify-content: left;

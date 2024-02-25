@@ -12,6 +12,7 @@ import DegreeModal, { ModalKey } from "@/components/FourYearPlan/DegreeModal";
 import SplitPane, { Pane } from 'react-split-pane';
 import Nav from "@/components/NavBar/Nav";
 import Dock from "@/components/Dock/Dock";
+import useWindowDimensions from "@/hooks/window";
 
 const PageContainer = styled.div`
     height: 100vh;
@@ -124,7 +125,7 @@ const FourYearPlanPage = ({ updateUser, user}: any) => {
                     />
                     <BodyContainer ref={ref}>
                         <Row>
-                            <SplitPane split="vertical" minSize={0} maxSize={750} defaultSize='50%'>
+                            <SplitPane split="vertical" minSize={0} maxSize={useWindowDimensions()['width'] * 0.65} defaultSize='50%'>
                                 <PanelWrapper>
                                     <PlanPanel 
                                     setModalKey={setModalKey}
@@ -135,7 +136,7 @@ const FourYearPlanPage = ({ updateUser, user}: any) => {
                                     setActiveDegreeplanId={setActiveDegreeplanId}
                                     />
                                 </PanelWrapper>
-                                <div style={{display: 'flex', flexDirection: 'row'}}>
+                                <div style={{display: 'flex', flexDirection: 'row', height: '100%'}}>
                                     <PanelWrapper>
                                         {/* <SplitPane split="horizontal" minSize='80%'> */}
                                         <ReqPanel
