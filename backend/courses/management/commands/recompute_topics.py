@@ -166,7 +166,6 @@ def recompute_historical_probabilities(current_semester, verbose=False):
     for topic in topics:
         # Calculate historical_year_probability for the current topic
         test = topic.courses.order_by("semester").all()
-        print(test)
         historical_prob = historical_year_probability(current_semester, test)
         # Update the historical_probabilities field for the current topic
         topic.historical_probabilities_spring = historical_prob[0]
