@@ -1,14 +1,10 @@
-import update from 'immutability-helper'
 import { GrayIcon } from '../common/bulma_derived_components';
 import SelectListDropdown from "./SelectListDropdown";
 import Semesters from "./Semesters";
 import styled from "@emotion/styled";
 import type { DegreePlan } from "@/types";
 import { useState } from "react";
-import ModalContainer from "@/components/common/ModalContainer";
-import { useEffect, useCallback } from "react";
 import { useSWRCrud } from '@/hooks/swrcrud';
-import { mutate } from 'swr';
 
 export const PanelTopBarIcon = styled(GrayIcon)<{ $active: boolean }>`
     width: 2rem;
@@ -50,12 +46,10 @@ export const PanelHeader = styled.div`
 `;
 
 export const PanelBody = styled.div`
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
     padding: 10px;
     height: 100%;
-    overflow: auto;
+    overflow-y: auto;
+    flex-grow: 1;
 `;
 
 export const PanelContainer = styled.div`
@@ -122,12 +116,12 @@ const PlanPanel = ({ setModalKey, modalKey, setModalObject, setActiveDegreeplanI
                 {/** map to semesters */}
                 <PanelBody>
                     <Semesters 
-                        activeDegreeplan={activeDegreeplan} 
-                        showStats={showStats} 
-                        editMode={editMode}
-                        setModalKey={setModalKey}
-                        setModalObject={setModalObject}
-                        />
+                    activeDegreeplan={activeDegreeplan} 
+                    showStats={showStats} 
+                    editMode={editMode}
+                    setModalKey={setModalKey}
+                    setModalObject={setModalObject}
+                    />
                 </PanelBody>
             </PanelContainer>
     );

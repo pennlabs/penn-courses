@@ -11,11 +11,10 @@ import { SearchPanelContext } from '../Search/SearchPanel';
 
 const DockWrapper = styled.div`
     z-index: 1;
-    position: fixed;
     width: 100%;
-    bottom: 0;
     display: flex;
     justify-content: center;
+    flex-grow: 0;
 `
 
 const DockContainer = styled.div<{$isDroppable:boolean, $isOver: boolean}>`

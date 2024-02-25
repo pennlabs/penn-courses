@@ -11,7 +11,14 @@ import { ReviewPanelContext } from '@/components/Infobox/ReviewPanel';
 import DegreeModal, { ModalKey } from "@/components/FourYearPlan/DegreeModal";
 import SplitPane, { Pane } from 'react-split-pane';
 import Nav from "@/components/NavBar/Nav";
-import useWindowDimensions from "@/hooks/window";
+import Dock from "@/components/Dock/Dock";
+
+const PageContainer = styled.div`
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+`
 
 const Row = styled.div`
     position: relative;
@@ -19,12 +26,11 @@ const Row = styled.div`
     width: 100%;
 `;
 
-const PlanPageContainer = styled.div`
+const BodyContainer = styled.div`
     background-color: var(--background-grey);
-    padding: 0rem .5rem;
-    position: absolute;
+    padding: .5rem;
     width: 100%;
-    height: 95%; /* TODO: this is hacky*/
+    flex-grow: 1;
 `;
 
 export const PanelTopBar = styled.div`
@@ -37,19 +43,19 @@ export const PanelTopBar = styled.div`
     width: 100%;
 `;
 
-const PanelContainer = styled.div<{$maxWidth: string, $minWidth: string}>`
+const PanelWrapper = styled.div<{$maxWidth: string, $minWidth: string}>`
     border-radius: 10px;
     box-shadow: 0px 0px 5px 2px rgba(0, 0, 0, 0.05);
     background-color: #FFFFFF;
-    margin: 1px 9px;
     overflow: hidden; /* Hide scrollbars */
     width: ${props => props.$maxWidth || props.$maxWidth ? 'auto' : '100%'};
     max-width: ${props => props.$maxWidth ? props.$maxWidth : 'auto'};
     min-width: ${props => props.$minWidth ? props.$minWidth : 'auto'};
     position: relative;
+    height: 100%;
 `;
 
-const FourYearPlanPage = ({searchClosed, updateUser, user}: any) => {
+const FourYearPlanPage = ({ updateUser, user}: any) => {
     // edit modals for degree and degree plan
     const [modalKey, setModalKey] = useState<ModalKey>(null);
     const [modalObject, setModalObject] = useState<DegreePlan | null>(null); // stores the which degreeplan is being updated using the modal
@@ -89,71 +95,70 @@ const FourYearPlanPage = ({searchClosed, updateUser, user}: any) => {
             setSearchRuleQuery: setSearchRuleQuery,
             searchRuleQuery: searchRuleQuery
         }}>
-            <Nav
-            login={updateUser}
-            logout={() => updateUser(null)}
-            user={user}
-            />
-            <PlanPageContainer ref={ref}>
-                    <ReviewPanelContext.Provider value={{ 
-                    full_code: reviewPanelFullCode, 
-                    set_full_code: setReviewPanelFullCode, 
-                    position: reviewPanelCoords,
-                    setPosition: setReviewPanelCoords
-                    }}>
-                        {reviewPanelFullCode && 
-                            <ReviewPanel 
-                            currentSemester={options?.SEMESTER}
-                            full_code={reviewPanelFullCode} 
-                            set_full_code={setReviewPanelFullCode}
-                            position={reviewPanelCoords}
-                            setPosition={setReviewPanelCoords}
-                            />}
-                        {modalKey && 
-                            <DegreeModal 
-                            setModalKey={setModalKey} 
-                            modalKey={modalKey} 
-                            modalObject={modalObject} 
-                            setActiveDegreeplanId={setActiveDegreeplanId}
-                            /> 
-                            }
+            <ReviewPanelContext.Provider value={{ 
+            full_code: reviewPanelFullCode, 
+            set_full_code: setReviewPanelFullCode, 
+            position: reviewPanelCoords,
+            setPosition: setReviewPanelCoords
+            }}>
+                {reviewPanelFullCode && 
+                    <ReviewPanel 
+                    currentSemester={options?.SEMESTER}
+                    full_code={reviewPanelFullCode} 
+                    set_full_code={setReviewPanelFullCode}
+                    position={reviewPanelCoords}
+                    setPosition={setReviewPanelCoords}
+                    />}
+                {modalKey && 
+                    <DegreeModal 
+                    setModalKey={setModalKey} 
+                    modalKey={modalKey} 
+                    modalObject={modalObject} 
+                    setActiveDegreeplanId={setActiveDegreeplanId}
+                    />}
+                <PageContainer>
+                    <Nav
+                    login={updateUser}
+                    logout={() => updateUser(null)}
+                    user={user}
+                    />
+                    <BodyContainer ref={ref}>
                         <Row>
                             <SplitPane split="vertical" minSize={0} maxSize={750} defaultSize='50%'>
-                                <Pane>
-                                    <PanelContainer>
-                                        <PlanPanel 
-                                        setModalKey={setModalKey}
-                                        modalKey={modalKey}
-                                        setModalObject={setModalObject}
-                                        isLoading={isLoadingDegreeplans || isLoadingActiveDegreePlan} 
-                                        activeDegreeplan={activeDegreePlan} degreeplans={degreeplans} 
-                                        setActiveDegreeplanId={setActiveDegreeplanId}
-                                        />
-                                    </PanelContainer>
-                                </Pane>
-                                <Pane style={{display: 'flex', flexDirection: 'row'}}>
-                                    <PanelContainer>
+                                <PanelWrapper>
+                                    <PlanPanel 
+                                    setModalKey={setModalKey}
+                                    modalKey={modalKey}
+                                    setModalObject={setModalObject}
+                                    isLoading={isLoadingDegreeplans || isLoadingActiveDegreePlan} 
+                                    activeDegreeplan={activeDegreePlan} degreeplans={degreeplans} 
+                                    setActiveDegreeplanId={setActiveDegreeplanId}
+                                    />
+                                </PanelWrapper>
+                                <div style={{display: 'flex', flexDirection: 'row'}}>
+                                    <PanelWrapper>
                                         {/* <SplitPane split="horizontal" minSize='80%'> */}
-                                            <ReqPanel
-                                                setModalKey={setModalKey}
-                                                setModalObject={setModalObject}
-                                                activeDegreeplan={activeDegreePlan} 
-                                            />
+                                        <ReqPanel
+                                        setModalKey={setModalKey}
+                                        setModalObject={setModalObject}
+                                        activeDegreeplan={activeDegreePlan} 
+                                        />
                                             {/* <div>
                                                 load area
                                             </div>
                                         </SplitPane> */}
-                                    </PanelContainer>
-                                    {searchPanelOpen && <PanelContainer $minWidth={'40%'} $maxWidth={'45%'} >
+                                    </PanelWrapper>
+                                    {searchPanelOpen && <PanelWrapper $minWidth={'40%'} $maxWidth={'45%'} >
                                         <SearchPanel activeDegreeplanId={activeDegreeplanId} />
-                                    </PanelContainer>
+                                    </PanelWrapper>
                                     }
-                                </Pane>
-                            </SplitPane>
-                                
+                                </div>
+                            </SplitPane>        
                         </Row>             
-                    </ReviewPanelContext.Provider>
-            </PlanPageContainer>
+                    </BodyContainer>
+                    <Dock/>
+                </PageContainer>
+            </ReviewPanelContext.Provider>
         </SearchPanelContext.Provider>
     )
 }

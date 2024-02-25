@@ -43,7 +43,7 @@ export default function Home() {
                   siteName="Penn Degree Plan"
               />
           )}
-          <Dock setSearchClosed={setSearchClosed} setReqId={setReqId}/>
+          {/* <Dock/> */}
         </SWRConfig>
       </DndProvider>
     </>

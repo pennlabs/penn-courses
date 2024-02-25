@@ -80,10 +80,6 @@ export const TrashIcon = styled(GrayIcon)`
   }
 `
 
-const DegreeWrapper = styled.div`
-
-`
-
 const AddButton = styled.div`
   width: 100%;
   display: flex;
@@ -127,7 +123,7 @@ const Degree = ({degree, rulesToFulfillments, activeDegreeplan, setSearchClosed,
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <DegreeWrapper>
+    <div>
       <DegreeHeader 
         degree={degree} 
         key={degree.id} 
@@ -146,13 +142,11 @@ const Degree = ({degree, rulesToFulfillments, activeDegreeplan, setSearchClosed,
             rulesToFulfillments={rulesToFulfillments}
             activeDegreePlanId={activeDegreeplan.id}
             rule={rule} 
-            setSearchClosed={setSearchClosed} 
-            handleSearch={handleSearch} 
             key={rule.id}
           />
         ))}
       </DegreeBody>}
-    </DegreeWrapper>
+    </div>
   )
 }
 
@@ -165,8 +159,6 @@ interface ReqPanelProps {
   handleSearch: any;
 }
 const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, setSearchClosed, handleSearch}: ReqPanelProps) => {
-  // const degrees = activeDegreeplan?.degrees;
-  // const { update: updateDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans');
   const [editMode, setEditMode] = React.useState(false);
 
   const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null); 
@@ -200,38 +192,38 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
 
   return(
       <PanelContainer>
-            <PanelHeader>
-              <ReqPanelTitle>Requirements</ReqPanelTitle>
-              <PanelTopBarIconList>
-                <EditButton editMode={editMode} setEditMode={setEditMode} />
-              </PanelTopBarIconList>
-            </PanelHeader>
-            {!activeDegreeplan ? <EmptyPanel /> :
-              <PanelBody>
-                {activeDegreeplan.degrees.map(degree => (
-                  <Degree 
-                    degree={degree} 
-                    rulesToFulfillments={rulesToFulfillments} 
-                    activeDegreeplan={activeDegreeplan} 
-                    setSearchClosed={setSearchClosed} 
-                    handleSearch={handleSearch}
-                    editMode={editMode}
-                    setModalKey={setModalKey}
-                    setModalObject={setModalObject}
-                    />
-                ))}
-                {editMode && 
-                <AddButton role="button" onClick={() => {
-                  setModalObject(activeDegreeplan);
-                  setModalKey("degree-add");
-                }}>
-                  <i className="fa fa-plus" />
-                  <div>
-                    Add Degree
-                  </div>
-                </AddButton>}
-            </PanelBody>
-            }
+        <PanelHeader>
+          <ReqPanelTitle>Requirements</ReqPanelTitle>
+          <PanelTopBarIconList>
+            <EditButton editMode={editMode} setEditMode={setEditMode} />
+          </PanelTopBarIconList>
+        </PanelHeader>
+        {!activeDegreeplan ? <EmptyPanel /> :
+          <PanelBody>
+            {activeDegreeplan.degrees.map(degree => (
+              <Degree 
+              degree={degree} 
+              rulesToFulfillments={rulesToFulfillments} 
+              activeDegreeplan={activeDegreeplan} 
+              setSearchClosed={setSearchClosed} 
+              handleSearch={handleSearch}
+              editMode={editMode}
+              setModalKey={setModalKey}
+              setModalObject={setModalObject}
+              />
+            ))}
+            {editMode && 
+            <AddButton role="button" onClick={() => {
+              setModalObject(activeDegreeplan);
+              setModalKey("degree-add");
+            }}>
+              <i className="fa fa-plus" />
+              <div>
+                Add Degree
+              </div>
+            </AddButton>}
+        </PanelBody>
+        }
       </PanelContainer>
   );
 }

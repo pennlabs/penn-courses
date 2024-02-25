@@ -61,7 +61,7 @@ interface RuleProps {
  * Recursive component to represent a rule.
  * @returns 
  */
-const RuleComponent = ({ rule, rulesToFulfillments} : RuleProps) => {
+const RuleComponent = ({ activeDegreePlanId, rule, rulesToFulfillments} : RuleProps) => {
     const [collapsed, setCollapsed] = useState(false);
   
     // this is only used when we have a rule leaf

@@ -324,7 +324,7 @@ const QObject = ({ q, fulfillments, rule, satisfied }: QObjectProps) => {
                     <CourseOptionsSeparator>or</CourseOptionsSeparator>
                 )}</Row>
         case "SEARCH":
-            return <SearchCondition q={q.q} ruleIsSatisfied={satisfied} fulfillments={fulfillments} ruleId={rule.id} ruleQuery={rule.q} handleSearch={handleSearch}/>;
+            return <SearchCondition q={q.q} ruleIsSatisfied={satisfied} fulfillments={fulfillments} ruleId={rule.id} ruleQuery={rule.q} />;
         case "COURSE":
             const isChosen = !!fulfillments.find(fulfillment => fulfillment.full_code == q.full_code && (!q.semester || q.semester === fulfillment.semester))
             return <CourseOption full_code={q.full_code} semester={q.semester} isChosen={isChosen} ruleIsSatisfied={satisfied} ruleId={rule.id} />
