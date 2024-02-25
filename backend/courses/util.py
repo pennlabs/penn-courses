@@ -713,13 +713,14 @@ def get_semesters(semesters: str = None) -> list[str]:
                 raise ValueError(f"Provided semester {s} was not found in the db.")
     return sorted(semesters)
 
+
 def historical_year_probability(current, courses):
     prob_distribution = [0.4, 0.3, 0.15, 0.1, 0.05]
 
     def normalize_and_round(prob, i):
         truncate = prob_distribution[:i]
         total = sum(truncate)
-        return list(map(lambda x: round(x / total,3), truncate))
+        return list(map(lambda x: round(x / total, 3), truncate))
 
     def get_semester_and_course_index(semester):
         semester_letter = semester[-1]
@@ -731,7 +732,7 @@ def historical_year_probability(current, courses):
         elif semester_letter == "C":
             semester_number = 3
         semester_year = int(semester[:-1])
-        return (10 * semester_year + semester_number)
+        return 10 * semester_year + semester_number
 
     current_index = get_semester_and_course_index(current)
     min_index = current_index - 50
@@ -743,8 +744,7 @@ def historical_year_probability(current, courses):
         print(last_index)
         if last_index > min_index:
             prob_distribution = normalize_and_round(
-                prob_distribution,
-                ((current_index - last_index) + 9) // 10
+                prob_distribution, ((current_index - last_index) + 9) // 10
             )
     print(max_index)
     print(prob_distribution)
@@ -766,8 +766,4 @@ def historical_year_probability(current, courses):
             p_B += prob_distribution[diff]
         elif index % 10 == 3:
             p_C += prob_distribution[diff]
-    return [
-        min(round(p_A,2),1.00),
-        min(round(p_B,2),1.00),
-        min(round(p_C,2),1.00)
-    ]
+    return [min(round(p_A, 2), 1.00), min(round(p_B, 2), 1.00), min(round(p_C, 2), 1.00)]

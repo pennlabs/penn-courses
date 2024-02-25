@@ -3,7 +3,7 @@ from django.db import transaction
 from django.db.models import Count, OuterRef, Subquery
 
 from courses.models import Course, Topic
-from courses.util import all_semesters
+from courses.util import all_semesters, historical_year_probability
 
 
 def garbage_collect_topics():
@@ -167,10 +167,7 @@ def recompute_historical_probabilities(current_semester, verbose=False):
         # Calculate historical_year_probability for the current topic
         test = topic.courses.order_by("semester").all()
         print(test)
-        historical_prob = historical_year_probability(
-            current_semester,
-            test
-        )
+        historical_prob = historical_year_probability(current_semester, test)
         # Update the historical_probabilities field for the current topic
         topic.historical_probabilities_spring = historical_prob[0]
         topic.historical_probabilities_summer = historical_prob[1]
