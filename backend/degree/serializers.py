@@ -100,7 +100,6 @@ class FulfillmentSerializer(serializers.ModelSerializer):
 
 
 class DegreePlanListSerializer(serializers.ModelSerializer):
-    degrees = DegreeListSerializer(read_only=True, many=True)
     id = serializers.ReadOnlyField(help_text="The id of the DegreePlan.")
 
     class Meta:

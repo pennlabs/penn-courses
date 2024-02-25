@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import RuleComponent from './Rule';
-import { Degree, DegreePlan, Fulfillment } from '@/types';
+import { Degree, DegreePlan, Fulfillment, Rule } from '@/types';
 import styled from '@emotion/styled';
 import { PanelBody, PanelContainer, PanelHeader } from '@/components/FourYearPlan/PlanPanel'
 import { useSWRCrud } from '@/hooks/swrcrud';
@@ -95,10 +95,7 @@ interface ReqPanelProps {
   activeDegreeplan: DegreePlan | null;
   isLoading: boolean;
 }
-const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, setSearchClosed, handleSearch}: ReqPanelProps) => {
-  const degrees = activeDegreeplan?.degrees;
-  const { update: updateDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans');
-  
+const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading}: ReqPanelProps) => {
   const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null); 
   const rulesToFulfillments = useMemo(() => {
     if (!fulfillments) return {}
@@ -128,8 +125,6 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
                     <RuleComponent 
                     rulesToFulfillments={rulesToFulfillments}
                     rule={rule} 
-                    setSearchClosed={setSearchClosed} 
-                    handleSearch={handleSearch} 
                     key={rule.id}
                     />
                   ))}

@@ -7,7 +7,6 @@ import { Popover, PopoverTitle } from "./common/Popover";
 import { toNormalizedSemester } from "./util/helpers";
 
 import ReactTooltip from "react-tooltip";
-import { CloseButton } from "./common/CloseButton";
 
 const activityMap = {
   REC: "Recitation",
@@ -18,31 +17,20 @@ const activityMap = {
 
 const TagsNotOffered = ({ data }) => {
   let {
-    latest_semester: mostRecent,
-    code = ""
+    semester: mostRecent,
   } = data;
-  const courseName = code.replace("-", " ");
   if (!mostRecent) {
     return <div />;
   }
   mostRecent = toNormalizedSemester(mostRecent);
   return (
-    <div>
-      <div id="live">
-        <PopoverTitle
-          title={
-            <span>
-              {courseName} was last taught in <b>{mostRecent}</b>.
-            </span>
-          }
-        >
-          <span className="badge badge-secondary">{mostRecent}</span>
-        </PopoverTitle>
-      </div>
+    <div id="live">
+      <span className="badge badge-success">{mostRecent}</span>
     </div>
   );
 };
 
+// TODO: clean up and remove this (maybe move some tags)
 const TagsWhenOffered = ({
   liveData = null,
   data = {},
@@ -196,17 +184,9 @@ const CourseCodeQualifier = styled.div`
   flex-wrap: wrap;
 `;
 
-const Actions = styled.div`
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
+const PCRLink = styled.a`
   float: right;
-  gap: 0.5rem;
-`
-
-const PCRLogo = styled.img`
-  height: 2.5rem;
-  display: block;
+  font-size: .5rem;
 `;
 
 const Spacer = styled.div`
@@ -226,28 +206,16 @@ export const CourseHeader = ({
     <div className="title">
       {code.replace("-", " ")}
 
-      <Actions>
-        {!data?.last_offered_sem_if_superceded && (
-          <a
-            target="_blank"
-            rel="noopener noreferrer"
-            title="Get Alerted"
-            href={`https://penncoursealert.com/?course=${code}&source=pcr`}
-            className="btn btn-action"
-          >
-            <i className="fas fa-fw fa-bell" />
-          </a>
-        )}
-        <a
-          target="_blank"
-          rel="noopener noreferrer"
-          title="View in Penn Course Review"
-          href={`https://penncoursereview.com/course/${code}/`}
-        >
-          <PCRLogo src="/images/pcr-logo.png" />
-        </a>
-        {/*<CloseButton close={close} />*/}
-      </Actions>
+      <PCRLink
+      target="_blank"
+      rel="noopener noreferrer"
+      title="View in Penn Course Review"
+      href={`https://penncoursereview.com/course/${code}/`}
+      className="btn btn-action btn-row"
+      >
+          <i className="fas fa-link fa-xs" />
+          <div>view in PCR</div>
+      </PCRLink>
     </div>
     {data.last_offered_sem_if_superceded && (
       <CourseCodeQualifier>
@@ -356,7 +324,6 @@ export const CourseHeader = ({
         </ReactTooltip>
       </CourseCodeQualifier>
     )}
-    <Spacer />
     <p className="subtitle">{name}</p>
     {notes &&
       notes.map(note => (
@@ -364,14 +331,7 @@ export const CourseHeader = ({
           <i className="fa fa-thumbtack" /> {note}
         </div>
       ))}
-    {liveData && liveData.sections && liveData.sections.length > 0 ? (
-      <TagsWhenOffered
-        liveData={liveData}
-        data={data}
-      />
-    ) : (
-      <TagsNotOffered data={data} />
-    )}
+    <TagsNotOffered data={data} />
   </div>
 );
 
