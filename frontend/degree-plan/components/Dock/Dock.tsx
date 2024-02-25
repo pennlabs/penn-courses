@@ -1,19 +1,17 @@
 
 import styled from '@emotion/styled';
 import { DarkGrayIcon } from '../Requirements/QObject';
-import React from "react";
+import React, { useContext } from "react";
 import { useDrag, useDrop } from "react-dnd";
 import { Course } from "@/types";
 import { ItemTypes } from "../dnd/constants";
 import DockedCourse from './DockedCourse';
+import { SearchPanelContext } from '../Search/SearchPanel';
 
 
 const DockWrapper = styled.div`
-    z-index: 1;
     opacity: 0.9;
-    position: fixed;
     width: 100%;
-    bottom: 2%;
     display: flex;
     justify-content: center;
 `
@@ -55,14 +53,8 @@ const DockedCourses = styled.div`
     display: flex;
     flex-direction: row;
 `
-
-interface IDock {
-    setSearchClosed: (status: boolean) => void;
-    setReqId: (id: number) => void;
-}
-
-const Dock = ({setSearchClosed, setReqId}: IDock) => {
-    // const ref = React.useRef(null);
+const Dock = () => {
+    const { setSearchPanelOpen, setSearchRuleQuery, setSearchRuleId } = useContext(SearchPanelContext)
     const [dockedCourses, setDockedCourses] = React.useState<string[]>([]);
 
     const removeDockedCourse = (full_code: string) => {
@@ -87,9 +79,13 @@ const Dock = ({setSearchClosed, setReqId}: IDock) => {
         <DockWrapper ref={drop} >
             <DockContainer $isDroppable={canDrop} $isOver={isOver}>
                 <DockerElm>
-                    <SearchIconContainer onClick={() => {setSearchClosed(false); setReqId(-1);}}>
+                    <SearchIconContainer onClick={() => {
+                        setSearchRuleQuery(""); // TODO: should this reset the search?
+                        setSearchRuleId(null);
+                        setSearchPanelOpen(true);
+                    }}>
                         <DarkGrayIcon>
-                        <i class="fas fa-search fa-lg"/>
+                        <i className="fas fa-search fa-lg" />
                         </DarkGrayIcon>
                     </SearchIconContainer>
                 </DockerElm>

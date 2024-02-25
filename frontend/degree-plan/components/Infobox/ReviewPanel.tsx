@@ -5,19 +5,38 @@ import styled from '@emotion/styled';
 import InfoBox from './index'
 import { PropsWithChildren, useContext, useEffect, useRef, useState } from 'react';
 import { createContext } from 'react';
+import { RightCurriedFunction1 } from 'lodash';
+
+const REVIEWPANEL_TRIGGER_TIME = 300 // in ms, how long you have to hover for review panel to open
 
 export const ReviewPanelTrigger = ({ full_code, children }: PropsWithChildren<{full_code: Course["full_code"]}>) => {
     const ref = useRef<HTMLDivElement>(null);
-    const { setPosition, set_full_code, isPermanent, setIsPermanent } = useContext(ReviewPanelContext);
-
+    const { setPosition, set_full_code } = useContext(ReviewPanelContext);
+    const timer = useRef<NodeJS.Timeout | null>(null);
     return (
         <div
             ref={ref}
-            onDoubleClick={() => {
-                set_full_code(full_code);
-                if (!ref.current) return;
-                const { x } = ref.current.getBoundingClientRect();
-                if (!isPermanent) setPosition({ y: 0, x });
+            onMouseEnter={() => {
+                timer.current = setTimeout(() => {
+                    set_full_code(full_code)
+                    if (!ref.current) return;
+                    const position: ReviewPanelContextType["position"] = {}
+                    const { left, top, right, bottom } = ref.current.getBoundingClientRect();
+                    
+                    // calculate the optimal position
+                    let vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0)
+                    let vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0)
+                    if (left > (vw - right)) position["right"] = vw - left; // set the right edge of the review panel to left edge of trigger
+                    else position["left"] = right;
+                    if (top > (vh - bottom)) position["bottom"] = vh - top;
+                    else position["top"] = bottom;
+                    
+                    setPosition(position);
+                }, REVIEWPANEL_TRIGGER_TIME)
+            }}
+            onMouseLeave={() => {
+                set_full_code(null)
+                if (timer.current) clearTimeout(timer.current);
             }}
             className="review-panel-trigger"
         >
@@ -26,40 +45,39 @@ export const ReviewPanelTrigger = ({ full_code, children }: PropsWithChildren<{f
     )
 }
 interface ReviewPanelContextType {
-    position: {x: number, y: number};
+    position: { top?: number, bottom?: number, left?: number, right?: number };
     setPosition: (arg0: ReviewPanelContextType["position"]) => void;
     full_code: Course["full_code"] | null;
     set_full_code: (arg0: Course["full_code"] | null) => void;
-    isPermanent: boolean; // if the review panel is permanent (ie., because the user focused it at some point)
-    setIsPermanent: (arg0: boolean) => void;
 }
 
 export const ReviewPanelContext = createContext<ReviewPanelContextType>({
-    position: {x: 0, y: 0},
-    setPosition: ({x, y}) => {}, // placeholder
+    position: { top: 0, left: 0 },
+    setPosition: (arg0) => {}, // placeholder
     full_code: null,
     set_full_code: (course) => {}, // placeholder
-    isPermanent: false,
-    setIsPermanent: (isPermanent: boolean) => {} // placeholder
 });
 
 interface ReviewPanelProps extends ReviewPanelContextType {
     currentSemester?: string;
 }
 
-const ReviewPanelWrapper = styled.div`
+const ReviewPanelWrapper = styled.div<{ $left?: number, $right?: number, $top?: number, $bottom?: number }>`
     position: absolute;
     z-index: 100;
-    height: 80vh;
-    width: 25rem;
+    height: 35vh;
+    width: 20rem;
     overflow: hidden;
     box-shadow: 0px 0px 10px 6px rgba(0, 0, 0, 0.05);
     border-radius: 10px;
+    ${props => props.$left ? `left: ${props.$left}px;` : ""}
+    ${props => props.$right ? `right: ${props.$right}px;` : ""}
+    ${props => props.$top ? `top: ${props.$top}px;` : ""}
+    ${props => props.$bottom ? `bottom: ${props.$bottom}px;` : ""}
 `
 
 const ReviewPanelContainer = styled.div`
     background-color: white;
-    padding: .5rem;
     overflow: auto;
     height: 100%;
 `
@@ -69,36 +87,29 @@ const ReviewPanel = ({
     set_full_code,
     position,
     setPosition,
-    isPermanent,
-    setIsPermanent,
     currentSemester 
 }: ReviewPanelProps) => {
-    const { data } = useSWR(`/api/review/course/${full_code}`, { refreshInterval: 0 }); // course review data is static    
-    const { data: liveData } = useSWR(
-        full_code && currentSemester ?
-            `/api/base/course/${full_code}?check_offered_in=${encodeURIComponent(currentSemester)}` 
-            : null
-        , { refreshInterval: 0 }
-    );
+    const { data } = useSWR(`/api/base/all/courses/${full_code}`, { refreshInterval: 0 }); // data is largely static  
+    let { left, right, top, bottom } = position;
+    if (!left && !right) left = 0;
+    if (!top && !bottom) right = 0;
+    right = left === undefined ? right : undefined;
+    bottom = top === undefined ? bottom : undefined;
 
     return (
-        <Draggable defaultPosition={position}>
-            <ReviewPanelWrapper onFocus={() => setIsPermanent(true)}>
-                <ReviewPanelContainer>
-                    {data ?
-                        <InfoBox
-                            close={() => { 
-                                set_full_code(null)
-                                setIsPermanent(false)
-                            }}
-                            data={data}
-                            liveData={liveData}
-                            style={{ position: 'absolute'}}
-                        />
-                        : <div></div>}
-                </ReviewPanelContainer>
-            </ReviewPanelWrapper>
-        </Draggable>
+        <ReviewPanelWrapper onFocus={() => setIsPermanent(true)} $right={right} $left={left} $top={top} $bottom={bottom}>
+            <ReviewPanelContainer>
+                {data ?
+                    <InfoBox
+                        close={() => { 
+                            set_full_code(null)
+                            setIsPermanent(false)
+                        }}
+                        data={data}
+                    />
+                    : <div></div>}
+            </ReviewPanelContainer>
+        </ReviewPanelWrapper>
     )
 }
 

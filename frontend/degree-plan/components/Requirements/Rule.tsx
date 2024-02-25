@@ -35,8 +35,6 @@ const CusCourses = styled.div`
 
 interface RuleProps {
     rule: RuleComponent;
-    setSearchClosed: (closed: boolean) => void;
-    handleSearch: any;
     rulesToFulfillments: { [ruleId: string]: Fulfillment[] };
 }
 
@@ -44,7 +42,7 @@ interface RuleProps {
  * Recursive component to represent a rule.
  * @returns 
  */
-const RuleComponent = ({ rule, setSearchClosed, handleSearch, rulesToFulfillments } : RuleProps) => {
+const RuleComponent = ({ rule, rulesToFulfillments } : RuleProps) => {
     const [collapsed, setCollapsed] = useState(false);
   
     // this is only used when we have a rule leaf
@@ -58,7 +56,7 @@ const RuleComponent = ({ rule, setSearchClosed, handleSearch, rulesToFulfillment
       <>
         {rule.q ? 
           <RuleLeafWrapper>
-              <RuleLeaf q={rule.q} rule={rule} fulfillmentsForRule={fulfillmentsForRule} satisfied={satisfied} handleSearch={handleSearch}/>
+              <RuleLeaf q={rule.q} rule={rule} fulfillmentsForRule={fulfillmentsForRule} satisfied={satisfied} />
               {rule.credits && <CusCourses>{cus} / {rule.credits} cus</CusCourses>}
               {" "}
               {rule.num && <CusCourses>{num} / {rule.num}</CusCourses>}
@@ -76,7 +74,7 @@ const RuleComponent = ({ rule, setSearchClosed, handleSearch, rulesToFulfillment
 
         {!collapsed && <div className="ms-3">
             {rule.rules.map((rule: any, index: number) => 
-                <RuleComponent key={rule.id} rule={rule} setSearchClosed={setSearchClosed} handleSearch={handleSearch} rulesToFulfillments={rulesToFulfillments} />
+                <RuleComponent key={rule.id} rule={rule} rulesToFulfillments={rulesToFulfillments} />
             )}
           </div>
           }
