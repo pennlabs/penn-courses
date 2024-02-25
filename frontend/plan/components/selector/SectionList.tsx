@@ -4,7 +4,7 @@ import { connect } from "react-redux";
 
 import Section from "./Section";
 import { Section as SectionType } from "../../types";
-import { addCartItem, removeCartItem } from "../../actions";
+import { addAlertItem, addCartItem, removeAlertItem, removeCartItem, updateContactInfo } from "../../actions";
 
 interface SectionListProps {
     sections: SectionType[];
@@ -21,14 +21,25 @@ function SectionList({
     sections,
     cartSections,
     manageCart,
+    alertedSections,
+    manageAlerts,
+    setContactInfo,
+    contactInfo,
     view,
 }: SectionListProps & {
     manageCart: (
         section: SectionType
     ) => { add: () => void; remove: () => void };
     cartSections: string[];
+    manageAlerts: (
+        section: SectionType
+    ) => { add: () => void; remove: () => void };
+    alertedSections: string[];
+    setContactInfo: (email: string, phone: string) => void;
+    contactInfo: { email: string; phone: string };
 }) {
     const isInCart = ({ id }: SectionType) => cartSections.indexOf(id) !== -1;
+    const isInAlerts = ({ id }: SectionType) => alertedSections.indexOf(id) !== -1;
     return (
         <ResultsContainer>
             <ul>
@@ -38,6 +49,10 @@ function SectionList({
                         section={s}
                         cart={manageCart(s)}
                         inCart={isInCart(s)}
+                        alerts={manageAlerts(s)}
+                        inAlerts={isInAlerts(s)}
+                        setContactInfo={setContactInfo}
+                        contactInfo={contactInfo}
                     />
                 ))}
             </ul>
@@ -48,6 +63,8 @@ function SectionList({
 const mapStateToProps = (state: any, ownProps: SectionListProps) => ({
     ...ownProps,
     cartSections: state.schedule.cartSections.map((sec: SectionType) => sec.id),
+    alertedSections: state.alerts.alertedCourses.map((sec: SectionType) => sec.id),
+    contactInfo: state.alerts.contactInfo,
 });
 
 const mapDispatchToProps = (dispatch: (payload: any) => void) => ({
@@ -55,6 +72,13 @@ const mapDispatchToProps = (dispatch: (payload: any) => void) => ({
         add: () => dispatch(addCartItem(section)),
         remove: () => dispatch(removeCartItem(section.id)),
     }),
+    manageAlerts: (section: SectionType) => ({
+        add: () => dispatch(addAlertItem(section)), // TODO:
+        remove: () => dispatch(removeAlertItem(section.id)),
+    }),
+    setContactInfo: (email: string, phone: string) => {
+        dispatch(updateContactInfo({ email, phone }));
+    }
 });
 
 // @ts-ignore

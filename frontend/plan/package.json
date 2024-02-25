@@ -30,6 +30,7 @@
     "express": "^4.17.1",
     "http-proxy-middleware": "^1.0.4",
     "ics": "^2.37.0",
+    "libphonenumber-js": "^1.10.57",
     "next": "9.4.2",
     "next-transpile-modules": "^3.3.0",
     "pcx-shared-components": "0.1.0",

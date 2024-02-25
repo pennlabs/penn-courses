@@ -7,6 +7,7 @@ import Badge from "../Badge";
 
 import { getTimeString, meetingSetsIntersect } from "../meetUtil";
 import { Section as SectionType } from "../../types";
+import AlertButton from "../alert/AlertButton";
 
 interface SectionProps {
     section: SectionType;
@@ -15,6 +16,13 @@ interface SectionProps {
         remove: () => void;
     };
     inCart: boolean;
+    alerts: {
+        add: () => void;
+        remove: () => void;
+    }
+    inAlerts: boolean;
+    setContactInfo: (email: string, phone: string) => void;
+    contactInfo: { email: string; phone: string };
 }
 
 const SectionContainer = styled.div`
@@ -109,13 +117,6 @@ const AddRemoveButton = styled.div`
     }
 `;
 
-const Bell = styled.a`
-    color: gray;
-    &:hover {
-        color: #669afb;
-    }
-`;
-
 const HoverSwitch = styled.div`
     .fa-check {
         color: #3daa6d;
@@ -131,7 +132,7 @@ const HoverSwitch = styled.div`
     }
 `;
 
-export default function Section({ section, cart, inCart }: SectionProps) {
+export default function Section({ section, cart, inCart, alerts, inAlerts, setContactInfo, contactInfo }: SectionProps) {
     const { instructors, meetings, status } = section;
 
     const { schedules, scheduleSelected } = useSelector(
@@ -246,26 +247,12 @@ export default function Section({ section, cart, inCart }: SectionProps) {
                         )}
                     </div>
                     {status === "C" ? (
-                        <div className="popover is-popover-left">
-                            <Bell
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                href={`https://penncoursealert.com/?course=${section.id}`}
-                                onClick={(event) => {
-                                    event.stopPropagation();
-                                }}
-                            >
-                                <i
-                                    style={{ fontSize: "1rem" }}
-                                    className="far fa-bell"
-                                />
-                            </Bell>
-
-                            <span className="popover-content">
-                                {" "}
-                                Course is closed. Sign up for an alert!{" "}
-                            </span>
-                        </div>
+                        <AlertButton 
+                            alerts={alerts} 
+                            inAlerts={inAlerts} 
+                            setContactInfo={setContactInfo} 
+                            contactInfo={contactInfo} 
+                        />
                     ) : (
                         <div />
                     )}

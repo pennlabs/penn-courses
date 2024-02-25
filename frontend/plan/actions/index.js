@@ -4,6 +4,7 @@ import { batch } from "react-redux";
 import getCsrf from "../components/csrf";
 import { MIN_FETCH_INTERVAL } from "../constants/sync_constants";
 import { PATH_REGISTRATION_SCHEDULE_NAME } from "../constants/constants";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
 
 export const UPDATE_SEARCH = "UPDATE_SEARCH";
 export const UPDATE_SEARCH_REQUEST = "UPDATE_SEARCH_REQUEST";
@@ -41,6 +42,13 @@ export const SECTION_INFO_SEARCH_SUCCESS = "SECTION_INFO_SEARCH_SUCCESS";
 export const ADD_CART_ITEM = "ADD_CART_ITEM";
 export const REMOVE_CART_ITEM = "REMOVE_CART_ITEM";
 export const CHANGE_SORT_TYPE = "CHANGE_SORT_TYPE";
+
+export const ADD_ALERT_ITEM = "ADD_ALERT_ITEM";
+export const REMOVE_ALERT_ITEM = "REMOVE_ALERT_ITEM";
+
+export const UPDATE_CONTACT_INFO = "UPDATE_CONTACT_INFO";
+
+export const MARK_ALERTS_SYNCED = "MARK_ALERTS_SYNCED";
 
 export const TOGGLE_CHECK = "TOGGLE_CHECK";
 export const REMOVE_SCHED_ITEM = "REMOVE_SCHED_ITEM";
@@ -493,6 +501,25 @@ export const removeCartItem = (sectionId) => ({
     sectionId,
 });
 
+export const addAlertItem = (section) => ({
+    type: ADD_ALERT_ITEM,
+    section,
+});
+
+export const removeAlertItem = (sectionId) => ({
+    type: REMOVE_ALERT_ITEM,
+    sectionId,
+});
+
+export const updateContactInfo = (contactInfo) => ({
+    type: UPDATE_CONTACT_INFO,
+    contactInfo,
+});
+
+export const markAlertsSynced = () => ({
+    type: MARK_ALERTS_SYNCED,
+});
+
 export const changeSortType = (sortMode) => ({
     type: CHANGE_SORT_TYPE,
     sortMode,
@@ -633,7 +660,7 @@ export const createScheduleOnBackend = (name, sections = []) => (dispatch) => {
             dispatch(createScheduleOnFrontend(name, id, sections));
         })
         .catch((error) => {
-            console.log(error);
+            return error.json();
         });
 };
 
@@ -668,7 +695,7 @@ export const deleteScheduleOnBackend = (user, scheduleName, scheduleId) => (
             );
         })
         .catch((error) => {
-            console.log(error);
+            return error.json();
         });
 };
 
@@ -687,7 +714,7 @@ export const findOwnPrimarySchedule = (user) => (dispatch) => {
                 );
             })
             .catch((error) => {
-                console.log(error);
+                return error.json();
             })
     );
 };
@@ -714,5 +741,64 @@ export const setCurrentUserPrimarySchedule = (user, scheduleId) => (
         .then(() => {
             dispatch(findOwnPrimarySchedule(user));
         })
-        .catch((error) => console.log(error));
+        .catch((error) => error.json());
 };
+
+export const addAlertOnBackend = (sectionId) => (dispatch) => {
+    /*
+    const postRegistration = (section_id: string) =>
+        doAPIRequest("/api/alert/registrations/", "POST", {
+            section: section_id,
+            auto_resubscribe: true,
+            close_notification: email !== "" && closedNotif,
+        });
+
+            isCourseOpen(section).then((isOpen) => {
+                postRegistration(section)
+                    .then((res) => {
+                        if (res.ok) {
+                            clearInputValue();
+                            setClosedNotif(false);
+                        }
+                        setResponse(res);
+                    })
+                    .catch(handleError);
+            });
+            return;
+    */
+}
+
+export const deleteAlertOnBackend = (sectionId) => (dispatch) => {
+    // TODO
+}
+
+export const fetchAlerts = () => (dispatch) => {
+}
+
+export const fetchContactInfo = () => (dispatch) => {
+    doAPIRequest("/accounts/me/")
+        .then((res) => {
+            if (res.ok) {
+                return res.json();
+            }
+            throw new Error(JSON.stringify(res));
+        })
+        .catch((error) => error.json());
+}
+
+export const updateContactInfoOnBackend = (contactInfo) => (dispatch) => {
+    doAPIRequest("/accounts/me/", "PATCH", {
+        profile: { 
+            email: contactInfo.email,
+            phone: parsePhoneNumberFromString(contactInfo.phone, "US")?.number ?? ""
+        },
+    })
+        .then((res) => {
+            if (!res.ok) {
+                throw new Error(JSON.stringify(res));
+            } else {
+                // return submitRegistration();
+            }
+        })
+        .catch((error) => error.json());
+}
