@@ -95,7 +95,7 @@ const LayoutFlow = () => {
   useEffect(() => {
     const fetchDegree = async () => {
       if (!id) return;
-      const degree = await fetch(`/api/degree/degrees/${id}/`).then(
+      const degree = await fetch(`/api/degree/degrees/${id}`).then(
         (response) => response.json()
       );
 

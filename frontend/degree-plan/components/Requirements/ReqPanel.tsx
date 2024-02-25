@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import RuleComponent from './Rule';
-import { Degree, DegreePlan, Fulfillment } from '@/types';
+import { Degree, DegreePlan, Fulfillment, Rule } from '@/types';
 import styled from '@emotion/styled';
 import { EditButton, PanelBody, PanelContainer, PanelHeader, PanelTopBarIcon, PanelTopBarIconList, TopBarIcon } from '@/components/FourYearPlan/PlanPanel'
 import { useSWRCrud } from '@/hooks/swrcrud';

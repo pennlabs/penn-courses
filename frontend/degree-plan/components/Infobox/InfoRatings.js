@@ -5,7 +5,6 @@ import React from "react";
  */
 const RatingRow = ({
   value,
-  num_sections: numSections,
   course,
   instructor,
   difficulty,
@@ -27,15 +26,10 @@ const RatingRow = ({
     return reverse ? "rating-bad" : "rating-good";
   };
 
-  const hasSingleSection = numSections === 1;
-
   return (
     <div className="scorebox-desc-row">
       <div className="scoredesc">
         <p className="title">{value}</p>{" "}
-        <p className="subtitle">
-          {numSections} {hasSingleSection ? "Section" : "Sections"}
-        </p>
       </div>
       <div className="scoreboxrow">
         <div className={`scorebox course ${getColor(course, false)}`}>

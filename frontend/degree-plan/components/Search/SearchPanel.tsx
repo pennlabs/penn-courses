@@ -1,13 +1,29 @@
-import React from "react";
+import React, { createContext, useContext } from "react";
 import { ICourseQ } from "@/models/Types";
-import Icon from '@mdi/react';
-import { mdiClose, mdiMagnify } from "@mdi/js";
 import { PanelTopBar } from "@/pages/FourYearPlanPage";
-import Course from "../Requirements/Course";
-import Fuse from 'fuse.js'
 import useSWR from "swr";
 import ResultsList from "./ResultsList";
 import styled from "@emotion/styled";
+import { DegreePlan, Rule } from "@/types";
+
+interface SearchPanelContextType {
+    setSearchPanelOpen: (arg0: boolean) => void;
+    searchPanelOpen: boolean;
+    setSearchRuleId: (arg0: Rule["id"] | null) => void;
+    searchRuleId: Rule["id"] | null;
+    setSearchRuleQuery: (arg0: string | null) => void;
+    searchRuleQuery: string | null; // the q string associated with the rule
+}
+
+export const SearchPanelContext = createContext<SearchPanelContextType>({
+    setSearchPanelOpen: (arg0) => {},
+    searchPanelOpen: false,
+    setSearchRuleId: (arg0) => {},
+    searchRuleId: null,
+    setSearchRuleQuery: (arg0) => {},
+    searchRuleQuery: ""
+});
+
 
 const SearchPanelBody = styled.div`
     margin: 10px;
@@ -32,7 +48,7 @@ const SearchField = styled.input`
     padding-left: 0.5em;
     border-radius: 5px;
     border-width: 0.8px;
-    outline: transparent !important;
+    color: black;
 `;
 
 const LoadingComponentContainer = styled.div`
@@ -55,44 +71,50 @@ const PanelContainer = styled.div`
     height: 100%;
 `;
 
+const PanelTitle = styled.div`
+    font-weight: 500;
+`
+
 type ISearchResultCourse =  {course: ICourseQ};
 
 
-export const SearchPanel = ({setClosed, reqId, reqQuery}:any) => {
+export const SearchPanel = ({ activeDegreeplanId }: { activeDegreeplanId: DegreePlan["id"] | null }) => {
+    const { setSearchPanelOpen, searchRuleId: ruleId, searchRuleQuery: ruleQuery }= useContext(SearchPanelContext); 
+
+    // queryString and searchRuleQuery are different (queryString is the actual query e.g., "World Civ",
+    // and searchRuleQuery is a q object)
     const [queryString, setQueryString] = React.useState<string>("");
 
     React.useEffect(() => {
         setQueryString("");
-    }, [reqId])
+    }, [ruleId])
 
     return (
         <PanelContainer>
             <PanelTopBar>
               <div className='d-flex justify-content-between'>
-                <div>Search </div>
-                <label onClick={() => {setQueryString(""); setClosed();}}>
-                    <Icon path={mdiClose} size={0.8}/>
+                <PanelTitle>Search </PanelTitle>
+                <label onClick={() => {setQueryString(""); setSearchPanelOpen(false);}}>
+                    <i className="fa fa-times" />
                 </label>
               </div>
             </PanelTopBar>
             <SearchPanelBody>
                 <SearchContainer
                     role="button"
-                    // onClick={() => (mobileView && setTab ? setTab(0) : null)}
                     className="control has-icons-left"
                 >
                     <SearchField
+                        aria-label="search for a course"
+                        autoFocus
                         type="text"
                         value={queryString}
                         onChange={(e) => {setQueryString(e.target.value)}}
                         autoComplete="off"
-                        placeholder={reqId == -1 ? "General Search!" : `Filtering for ${reqQuery ? reqQuery : 'requirement'}`}
-                        // disabled={isDisabled}
+                        placeholder={ruleId == -1 ? "General Search!" : `Filtering for ${ruleQuery ? ruleQuery : 'requirement'}`}
                     />
                 </SearchContainer>
-                {reqId === -1 ? 
-                    <GeneralSearchResult reqId={reqId} queryString={queryString}/> 
-                    : <ReqSearchResult reqId={reqId} queryString={queryString}/>}
+                <SearchResult ruleId={ruleId} query={queryString} activeDegreeplanId={activeDegreeplanId}/> 
             </SearchPanelBody>
         </PanelContainer>
     )
@@ -114,51 +136,14 @@ export const useDebounce = (value: any, delay: number) => {
   return debouncedValue;
 }
 
-const GeneralSearchResult = ({setClosed, reqId, reqQuery, queryString, setQueryString}:any) => {
-    // const debouncedSearchTerm = useDebounce(queryString, 1000)
+const buildSearchKey = (ruleId: Rule["id"] | null, query: string): string | null => {
+    return query.length >= 3 || ruleId !== null ? `api/base/all/search/courses?search=${query}${ruleId ? `&rule_ids=${ruleId}` : ""}` : null
+}
+
+const SearchResult = ({ ruleId, query, activeDegreeplanId }: any) => {
+    const debouncedQuery = useDebounce(query, 400)
     const [scrollPos, setScrollPos] = React.useState<number>(0);
-
-    // const { data: courses = [], isLoading: isLoadingCourses, error } = useSWR(debouncedSearchTerm ? `api/base/current/search/courses/?search=${debouncedSearchTerm}`: null, fetcher); 
-    const [courses, setCourses] = React.useState<ISearchResultCourse[]>([]);
-    const [isLoadingCourses, setIsLoadingCourses] = React.useState(false);
-    
-    React.useEffect(() => {
-        setIsLoadingCourses(true);
-        fetch(`/api/base/current/courses/search?search=${queryString}`)
-            .then(r => r.json())
-            .then((courses) => {
-                setCourses([...courses]);
-                setIsLoadingCourses(false);
-            });
-    }, [queryString]);
-
-
-    // React.useEffect(() => {
-    //     if (reqId === undefined) {
-    //         setResults([]);
-    //     } else if (reqId != -1) {
-    //         setResults(courses);
-    //     } else {
-    //         setResults(generalCourses);
-    //     }
-    // }, [queryString]);
-
-    // React.useEffect(() => {
-    //     /** Filtering courses satisfying a requirement */
-    //     if (reqId == -1) {
-    //         setResults(generalCourses);
-    //     } else {
-    //         if (error) {alert(error)} // TODO: ERROR handling
-    //         else {
-    //             setResults([]);
-    //             // setTimeout(() => {
-    //                 const res = fuse.search(queryString).map(course => course.item);
-    //                 setResults([...res])
-    //             // }, 0.01);
-    //         }
-    //     }
-    // }, [queryString])
-
+    const { data: courses = [], isLoading: isLoadingCourses, error } = useSWR(buildSearchKey(ruleId, debouncedQuery)); 
     return (
         <>
             {isLoadingCourses  ? 
@@ -168,53 +153,14 @@ const GeneralSearchResult = ({setClosed, reqId, reqQuery, queryString, setQueryS
                     </LoadingComponent>
                 </LoadingComponentContainer>
             : <SearchPanelResult>
-                    <ResultsList courses={courses} scrollPos={scrollPos} setScrollPos={setScrollPos}/>
+                    <ResultsList 
+                    activeDegreeplanId={activeDegreeplanId} 
+                    ruleId={ruleId} 
+                    courses={courses} 
+                    scrollPos={scrollPos} 
+                    setScrollPos={setScrollPos}
+                    />
             </SearchPanelResult>}
-        </>
-    )
-}
-
-
-const ReqSearchResult = ({setClosed, reqId, reqQuery, queryString, setQueryString}:any) => {
-    const [results, setResults] = React.useState<ISearchResultCourse[]>([]);
-    const [scrollPos, setScrollPos] = React.useState<number>(0);
-
-    const { data: courses = [], isLoading: isLoadingCourses, error } = useSWR(reqId ? `api/degree/courses/${reqId}` : null, { refreshInterval: 0, fallbackData: [] }); 
-
-    // React.useEffect(() => {
-    //     if (reqId === undefined) {
-    //         setUrl("");
-    //     } else {
-    //         setUrl(`api/degree/courses/${reqId}`);
-    //     }
-    // }, [reqId]);
-
-    React.useEffect(() => {
-        if (error) console.log(error); // ERROR handling
-        else {
-            setResults([]);
-            setTimeout(() => {
-                const res = !queryString ? [...courses] : fuse.search(queryString).map(course => course.item);
-                setResults([...res])
-            }, 0.01);
-        }
-    }, [queryString, isLoadingCourses])
-
-    let fuse = new Fuse(courses, {  // CHANGE TO courses
-        keys: ['id', 'title', 'description']
-    })
-
-    return (
-        <>
-        {isLoadingCourses  ? 
-            <LoadingComponentContainer>
-                <LoadingComponent>
-                    loading courses...
-                </LoadingComponent>
-            </LoadingComponentContainer>
-        : <SearchPanelResult>
-                <ResultsList courses={results} scrollPos={scrollPos} setScrollPos={setScrollPos}/>
-        </SearchPanelResult>}
         </>
     )
 }

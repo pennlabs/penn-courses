@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useDrag } from "react-dnd";
 import { ItemTypes } from "../dnd/constants";
 import { GrayIcon } from '../common/bulma_derived_components';
@@ -17,9 +16,8 @@ export const BaseCourseContainer = styled.span<{ $isDragging?: boolean, $isDepre
   border-radius: 10px;
   padding: .5rem;
   text-wrap: nowrap;
-  color: ${props => props.$isDisabled ? "rgba(0, 0, 0, .6)" : "#000"};
   cursor: ${props => props.$isDisabled || props.$isDepressed ? "not-allowed" : "grab"};
-  opacity: ${props => props.$isDragging ? 0.5 : 1};
+  opacity: ${props => props.$isDisabled || props.$isDragging ? 0.7 : 1};
   background-color: ${props => props.$isDragging ? "#4B9AE7" : props.$isDepressed ? "var(--primary-color)" : "#F2F3F4"};
 `;
 
@@ -62,21 +60,23 @@ const CoursePlanned = ({ fulfillment, semester, removeCourse } : CoursePlannedPr
   }), [fulfillment, semester])
 
   return (   
-    <PlannedCourseContainer
-      $isDragging={isDragging}
-      $isDepressed={false}
-      $isDisabled={false}
-      ref={drag} 
-      >
-      <Draggable isDragging={isDragging} >
-          <ReviewPanelTrigger full_code={fulfillment.full_code}>
-            <div> {fulfillment.full_code}</div> 
-          </ReviewPanelTrigger>
-      </Draggable>
-      <GrayIcon className="close-button" onClick={() => {removeCourse(fulfillment.full_code);}}>
-        <i className="fas fa-times"></i>
-      </GrayIcon>
-    </PlannedCourseContainer>
+    <Draggable isDragging={isDragging}>
+      <ReviewPanelTrigger full_code={fulfillment.full_code}>
+        <PlannedCourseContainer
+        $isDragging={isDragging}
+        $isDepressed={false}
+        $isDisabled={false}
+        ref={drag} 
+        >
+            <div>
+              {fulfillment.full_code}
+            </div>
+            <GrayIcon className="close-button" onClick={() => removeCourse(fulfillment.full_code)}>
+              <i className="fas fa-times"></i>
+            </GrayIcon>
+        </PlannedCourseContainer>
+      </ReviewPanelTrigger>
+    </Draggable>
   )
 }
 
