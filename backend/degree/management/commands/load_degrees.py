@@ -43,6 +43,7 @@ class Command(BaseCommand):
         directory = kwargs["directory"]
         assert path.isdir(directory), f"{directory} is not a directory"
 
+        created_count = 0
         for degree_file in listdir(directory):
             year, program, degree, major, concentration = re.match(
                 r"(\d+)-(\w+)-(\w+)-(\w+)(?:-(\w+))?", degree_file
@@ -74,14 +75,16 @@ class Command(BaseCommand):
                     concentration=concentration,
                     year=year,
                 )
-                degree.save()
 
                 with open(path.join(directory, degree_file)) as f:
                     degree_json = json.load(f)
 
                 if kwargs["verbosity"]:
                     print(f"Parsing and saving degree {degree}...")
-                parse_and_save_degreeworks(degree_json, degree)
+                created_count += parse_and_save_degreeworks(degree_json, degree)
+
+        if kwargs["verbosity"]:
+            print(f"Created {created_count} degrees")
 
         if kwargs["deduplicate_rules"]:
             if kwargs["verbosity"]:
