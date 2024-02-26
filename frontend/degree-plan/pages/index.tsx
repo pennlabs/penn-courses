@@ -40,14 +40,14 @@ export default function Home() {
             },
           }}
         >
-          {/* <OnboardingPage /> */}
-          <FourYearPlanPage user={user} updateUser={updateUser} />
+          <OnboardingPage />
+          {/* <FourYearPlanPage user={user} updateUser={updateUser} />
           {showLoginModal && (
             <LoginModal
               pathname={window.location.pathname}
               siteName="Penn Degree Plan"
             />
-          )}
+          )} */}
           {/* <Dock/> */}
         </SWRConfig>
       </DndProvider>

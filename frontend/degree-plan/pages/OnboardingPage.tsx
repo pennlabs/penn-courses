@@ -2,10 +2,22 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@radix-ui/themes";
 import { PlusIcon } from "@radix-ui/react-icons";
 import { Theme } from "@radix-ui/themes";
-import { PanelContainer } from "./FourYearPlanPage";
 import styled from "@emotion/styled";
 import useSWR from "swr";
 import Select from "react-select";
+
+const PanelContainer = styled.div<{ $maxWidth: string; $minWidth: string }>`
+  border-radius: 10px;
+  box-shadow: 0px 0px 10px 6px rgba(0, 0, 0, 0.05);
+  background-color: #ffffff;
+  margin: 9px;
+  height: 82vh;
+  overflow: hidden; /* Hide scrollbars */
+  width: ${(props) => (props.$maxWidth || props.$maxWidth ? "auto" : "100%")};
+  max-width: ${(props) => (props.$maxWidth ? props.$maxWidth : "auto")};
+  min-width: ${(props) => (props.$minWidth ? props.$minWidth : "auto")};
+  position: relative;
+`;
 
 const CenteredFlexContainer = styled.div`
   display: flex;
@@ -57,6 +69,11 @@ const customSelectStylesLeft = {
     minHeight: "35px",
     height: "35px",
   }),
+  menu: (provided) => ({
+    ...provided,
+    width: 250,
+    maxHeight: 200,
+  }),
   valueContainer: (provided) => ({
     ...provided,
     height: "35px",
@@ -78,6 +95,11 @@ const customSelectStylesRight = {
     width: 500,
     minHeight: "35px",
     height: "35px",
+  }),
+  menu: (provided) => ({
+    ...provided,
+    width: 500,
+    maxHeight: 200,
   }),
   valueContainer: (provided) => ({
     ...provided,
@@ -105,6 +127,10 @@ const customSelectStylesRight = {
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
   }),
+  loadingIndicator: (provided) => ({
+    ...provided,
+    color: "gray",
+  }),
 };
 
 const OnboardingPage = () => {
@@ -122,17 +148,13 @@ const OnboardingPage = () => {
         school.length > 0 &&
         major.length > 0
     );
-    console.log(startingYear);
-    console.log(graduationYear);
-    console.log(school);
-    console.log(major);
-    console.log(
-      startingYear !== null &&
-        graduationYear !== null &&
-        school.length > 0 &&
-        major.length > 0
-    );
   }, [startingYear, graduationYear, school, major]);
+
+  const { data: degreeplans, isLoading: isLoadingDegreeplans } = useSWR<
+    DegreePlan[]
+  >("/api/degree/degreeplans");
+
+  console.log(degreeplans);
 
   const startingYearOptions = [
     { value: "2024", label: "2024" },
@@ -141,13 +163,28 @@ const OnboardingPage = () => {
     { value: "2021", label: "2021" },
   ];
 
-  const endingYearOptions = [
+  const graduationYearOptions = [
     { value: "2027", label: "2027" },
     { value: "2026", label: "2026" },
     { value: "2025", label: "2025" },
     { value: "2024", label: "2024" },
   ];
 
+  const schoolOptions =
+    degreeplans?.map((plan) => ({
+      value: plan.program,
+      label: plan.program,
+    })) || [];
+
+  console.log(schoolOptions);
+
+  const majorOptions =
+    degreeplans?.map((plan) => ({ value: plan.major, label: plan.major })) ||
+    [];
+
+  // TODO: Load in minorOptions
+
+  // TODO: Handle next button
   // const add_degree = (degreeplanId, degreeId) => {
   //   const updated = postFetcher(
   //     `/api/degree/degreeplans/${degreeplanId}/degrees`,
@@ -164,10 +201,6 @@ const OnboardingPage = () => {
   //   ); // refetch the fulfillments
   // };
 
-  // const { data: degreeplans, isLoading: isLoadingDegreeplans } = useSWR<
-  //   DegreePlan[]
-  // >("/api/degree/degreeplans");
-
   return (
     <Theme>
       <CenteredFlexContainer>
@@ -179,7 +212,7 @@ const OnboardingPage = () => {
             <Column>
               <Label required>Starting Year</Label>
               <Select
-                options={yearOptions}
+                options={startingYearOptions}
                 value={startingYear}
                 onChange={(selectedOption) => setStartingYear(selectedOption)}
                 isClearable
@@ -189,7 +222,7 @@ const OnboardingPage = () => {
 
               <Label required>Graduation Year</Label>
               <Select
-                options={yearOptions}
+                options={graduationYearOptions}
                 value={graduationYear}
                 onChange={(selectedOption) => setGraduationYear(selectedOption)}
                 isClearable
@@ -201,35 +234,38 @@ const OnboardingPage = () => {
             <Column>
               <Label required>School(s) or Program(s)</Label>
               <Select
-                options={yearOptions}
+                options={schoolOptions}
                 value={school}
                 onChange={(selectedOption) => setSchool(selectedOption)}
                 isClearable
                 isMulti
                 placeholder="Select School or Program"
                 styles={customSelectStylesRight}
+                isLoading={isLoadingDegreeplans}
               />
 
               <Label required>Major(s)</Label>
               <Select
-                options={yearOptions}
+                options={majorOptions}
                 value={major}
                 onChange={(selectedOption) => setMajor(selectedOption)}
                 isClearable
                 isMulti
                 placeholder="Major Name, Degree"
                 styles={customSelectStylesRight}
+                isLoading={isLoadingDegreeplans}
               />
 
               <h5>Minor(s)</h5>
               <Select
-                options={yearOptions}
+                options={startingYearOptions}
                 value={minor}
                 onChange={(selectedOption) => setMinor(selectedOption)}
                 isClearable
                 isMulti
                 placeholder="Minor Name"
                 styles={customSelectStylesRight}
+                isLoading={isLoadingDegreeplans}
               />
             </Column>
           </ColumnsContainer>
