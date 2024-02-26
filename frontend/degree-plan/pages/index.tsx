@@ -36,8 +36,8 @@ export default function Home() {
               fetch(resource, init).then((res) => res.json()),
           }}
         >
-          <OnboardingPage />
-          {/* <Nav
+          {/* <OnboardingPage /> */}
+          <Nav
             login={updateUser}
             logout={() => updateUser(null)}
             user={user}
@@ -49,7 +49,7 @@ export default function Home() {
             setSearchClosed={setSearchClosed}
             reqId={reqId}
             setReqId={setReqId}
-          /> */}
+          />
           {/* {showLoginModal && (
             <LoginModal
               pathname={window.location.pathname}
