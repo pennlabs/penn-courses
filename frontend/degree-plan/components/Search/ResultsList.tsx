@@ -1,7 +1,8 @@
 import React, { useEffect, useRef } from "react";
 import styled from '@emotion/styled';
 import Course from "./Course";
-import { Course as CourseType, SortMode } from "../../types";
+import { Course as CourseType, DegreePlan, Fulfillment, Rule, SortMode } from "../../types";
+import { useSWRCrud } from "@/hooks/swrcrud";
 
 const goodEasy = ({ difficulty, course_quality: courseQuality }: CourseType) =>
     !difficulty || !courseQuality
@@ -41,15 +42,6 @@ const courseSort = (courses: CourseType[], sortMode: SortMode) => {
     return sorted;
 };
 
-export interface CourseListProps {
-    courses: CourseType[];
-    getCourse: (id: string) => void;
-    sortMode: SortMode;
-    scrollPos: number;
-    setScrollPos: (pos: number) => void;
-    recCoursesId: string[];
-}
-
 const CourseListContainer = styled.div`
     box-sizing: border-box;
     border-radius: 0.375em;
@@ -57,7 +49,6 @@ const CourseListContainer = styled.div`
     display: flex;
     flex-direction: column;
     min-height: 0;
-    max-height: 72vh;
     overflow: auto;
 `;
 
@@ -90,14 +81,28 @@ const CoursesContainer = styled.ul`
     }
 `;
 
-// const CourseListContainerWrapper = ({children}) => <CourseListContainer>{children}</CourseListContainer>
 
+export interface CourseListProps {
+    courses: CourseType[];
+    getCourse: (id: string) => void;
+    sortMode: SortMode;
+    scrollPos: number;
+    setScrollPos: (pos: number) => void;
+    recCoursesId: string[];
+    activeDegreeplanId: DegreePlan["id"] | null;
+    ruleId: Rule["id"];
+}
 const ResultsList = ({
+    ruleId,
+    activeDegreeplanId,
     courses,
     sortMode,
     scrollPos,
     setScrollPos
 }: CourseListProps) => {
+    // TODO: what if activeDegreeplan is not defined
+    const { createOrUpdate } = useSWRCrud<Fulfillment>(`/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`, { idKey: "full_code" });
+
     const listRef = useRef<HTMLUListElement>(null);
     useEffect(() => {
         // Set sections list scroll position to stored position
@@ -107,8 +112,6 @@ const ResultsList = ({
         // Return cleanup function that stores current sections scroll position
         return () => setScrollPos(listRef.current?.scrollTop || 0);
     }, [scrollPos, setScrollPos]);
-
-    // if (!courses.length) return <div>{`No results:((`}</div>
 
     return (
         <CourseListContainer>
@@ -120,9 +123,9 @@ const ResultsList = ({
             <CoursesContainer ref={listRef}>
                 {courses.map((course) => 
                 <Course
-                    key={course.id}
+                    key={course.id + course.semester}
                     course={course}
-                    onClick={() => {/*getCourse(course.id)*/}}
+                    onClick={() => createOrUpdate({ rules: [ruleId] }, course.full_code)}
                     isStar={false}
                     //showCourseDetail={} searchReqId={}
                 />)}

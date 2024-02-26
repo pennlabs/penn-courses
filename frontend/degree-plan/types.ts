@@ -66,13 +66,17 @@ export interface Course {
   credits: number;
 }
 
-export interface Fulfillment extends DBObject {
-  id: number;
-  degree_plan: number; // id
+// The interface we use to pass fulfillments when using React DnD
+export interface DnDFulfillment {
   full_code: string;
   course: Course | null; // id
   semester: string | null;
   rules: number[]; // ids
+}
+
+export interface Fulfillment extends DBObject, DnDFulfillment {
+  id: number;
+  degree_plan: number; // id
 }
 
 // Internal representation of a plan (this is derived from fulfillments)

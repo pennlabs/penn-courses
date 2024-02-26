@@ -1,12 +1,12 @@
-import { useMemo } from 'react';
-import Rule from './Rule';
-import { Degree, DegreePlan, Fulfillment } from '@/types';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import RuleComponent from './Rule';
+import { Degree, DegreePlan, Fulfillment, Rule } from '@/types';
 import styled from '@emotion/styled';
-import { PanelBody, PanelContainer, PanelHeader } from '@/components/FourYearPlan/PlanPanel'
+import { EditButton, PanelBody, PanelContainer, PanelHeader, PanelTopBarIcon, PanelTopBarIconList, TopBarIcon } from '@/components/FourYearPlan/PlanPanel'
 import { useSWRCrud } from '@/hooks/swrcrud';
 import useSWR from 'swr';
-import { GrayIcon } from '../bulma_derived_components';
-import { AddButton } from '../FourYearPlan/Semesters';
+import { GrayIcon, Icon } from '../common/bulma_derived_components';
+import React from 'react';
 
 const requirementDropdownListStyle = {
   maxHeight: '90%',
@@ -44,9 +44,23 @@ const DegreeHeaderContainer = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
+  font-size: 1rem;
+  font-weight: 500;
+  background-color: var(--primary-color);
+  padding: 0.5rem 1rem;
+  border-radius: var(--req-item-radius);
+`
+
+const ReqPanelTitle = styled.div`
   font-size: 1.5rem;
   font-weight: 500;
 `
+
+const DegreeBody = styled.div`
+  padding: 0.5rem 1rem;
+  overflow-y: auto;
+`
+
 const DegreeYear = styled.div`
   font-size: 1.25rem;
   font-weight: 500;
@@ -58,7 +72,7 @@ const DegreeTitleWrapper = styled.div`
   align-items: center;
   gap: .5rem;
 `
-const TrashIcon = styled(GrayIcon)`
+export const TrashIcon = styled(GrayIcon)`
   pointer-events: auto;
   color: #b2b2b2;
   &:hover {
@@ -66,14 +80,23 @@ const TrashIcon = styled(GrayIcon)`
   }
 `
 
-const DegreeWrapper = styled.div`
-  margin-bottom: 1rem;
+const AddButton = styled.div`
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+  justify-content: center;
+  background-color: var(--plus-button-color);
+  padding: 1rem;
+  border-radius: var(--req-item-radius);
+  align-items: center;
+  color: white;
 `
 
-const DegreeHeader = ({ degree, remove }: { degree: Degree, remove: (degreeId: Degree["id"]) => void}) => {
+const DegreeHeader = ({ degree, remove, setCollapsed, collapsed, editMode }: { degree: Degree, remove: (degreeId: Degree["id"]) => void, setCollapsed: (status: boolean) => void, collapsed: boolean, editMode: boolean}) => {
   const degreeName = `${degree.degree} in ${degree.major} ${degree.concentration ? `(${degree.concentration})` : ''}`
   return (
-    <DegreeHeaderContainer>
+    <DegreeHeaderContainer onClick={() => setCollapsed(!collapsed)}>
       <DegreeTitleWrapper>
         <div>
           {degreeName}
@@ -82,10 +105,48 @@ const DegreeHeader = ({ degree, remove }: { degree: Degree, remove: (degreeId: D
           {degree.year}
         </DegreeYear>
       </DegreeTitleWrapper>
-      <TrashIcon role="button" onClick={() => remove(degree.id)}>
-        <i className="fa fa-trash fa-xs"/>
-      </TrashIcon>
+      <span>
+        {!!editMode ? 
+        <TrashIcon role="button" onClick={() => remove(degree.id)}>
+          <i className="fa fa-trash fa-md"/>
+        </TrashIcon>
+        :
+        <Icon>
+          <i className={`fas fa-chevron-${collapsed ? "up" : "down"}`}></i>
+        </Icon>}
+      </span>
     </DegreeHeaderContainer>
+  )
+}
+
+const Degree = ({degree, rulesToFulfillments, activeDegreeplan, editMode, setModalKey, setModalObject}: any) => {
+  const [collapsed, setCollapsed] = useState(false);
+
+  return (
+    <div>
+      <DegreeHeader 
+      degree={degree} 
+      key={degree.id} 
+      remove={() => {
+        setModalObject(activeDegreeplan);
+        setModalKey("degree-remove");
+      }} 
+      setCollapsed={setCollapsed}
+      collapsed={collapsed || editMode} // Collapse degree view in edit mode
+      editMode={editMode}
+      />
+      {!collapsed && !editMode &&
+      <DegreeBody>
+        {degree.rules.map((rule: any) => (
+          <RuleComponent 
+          rulesToFulfillments={rulesToFulfillments}
+          activeDegreePlanId={activeDegreeplan.id}
+          rule={rule} 
+          key={rule.id}
+          />
+        ))}
+      </DegreeBody>}
+    </div>
   )
 }
 
@@ -94,37 +155,64 @@ interface ReqPanelProps {
   setModalObject: (arg0: DegreePlan | null) => void;
   activeDegreeplan: DegreePlan | null;
   isLoading: boolean;
+  setSearchClosed: any;
+  handleSearch: any;
 }
 const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, setSearchClosed, handleSearch}: ReqPanelProps) => {
-  const degrees = activeDegreeplan?.degrees;
-  const { update: updateDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans');
-  
+  const [editMode, setEditMode] = React.useState(false);
+
   const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null); 
-  const plannedCourses = useMemo(() => {
+
+  const rulesToFulfillments = useMemo(() => {
     if (!fulfillments) return {}
+    const rulesToCourses: { [rule: string]: Fulfillment[] } = {};
+    fulfillments.forEach(fulfillment => {
+      fulfillment.rules.forEach(rule => {
+        if (!(rule in rulesToCourses)) {
+          rulesToCourses[rule] = [];
+        }
+        rulesToCourses[rule].push(fulfillment);
+      });
+    });
+    // console.log(rulesToCourses)
+    return rulesToCourses;
   }, [fulfillments])
+
+  const getProgress = (rule: any) => {
+    if (rule.q) {
+      return [rulesToFulfillments[rule.id].length, rule.num] // rule.num is not the most accurate rep of number of reqs
+    }
+    let satisfied = 0, total = 0;
+    for (let i = 0; i < rule.rules.length; i++) {
+      const [satisfiedByRule, totalByRule] = getProgress(rule.rules[i]);
+      satisfied += satisfiedByRule; total += totalByRule;
+    }
+    return [satisfied, total];
+  } 
 
   return(
       <PanelContainer>
-        <PanelBody>
-            {!activeDegreeplan ? <EmptyPanel /> :
-              activeDegreeplan.degrees.map(degree => (
-                <DegreeWrapper>
-                  <DegreeHeader degree={degree} key={degree.id} remove={(id) => {
-                    setModalKey("degree-remove")
-                    // TODO
-                  }}/>
-                  {degree.rules.map((rule: any) => (
-                    <Rule 
-                      rule={rule} 
-                      setSearchClosed={setSearchClosed} 
-                      handleSearch={handleSearch} 
-                      key={rule.id}
-                    />
-                  ))}
-                </DegreeWrapper>
-              )) 
-            }
+        <PanelHeader>
+          <ReqPanelTitle>Requirements</ReqPanelTitle>
+          <PanelTopBarIconList>
+            <EditButton editMode={editMode} setEditMode={setEditMode} />
+          </PanelTopBarIconList>
+        </PanelHeader>
+        {!activeDegreeplan ? <EmptyPanel /> :
+          <PanelBody>
+            {activeDegreeplan.degrees.map(degree => (
+              <Degree 
+              degree={degree} 
+              rulesToFulfillments={rulesToFulfillments} 
+              activeDegreeplan={activeDegreeplan} 
+              setSearchClosed={setSearchClosed} 
+              handleSearch={handleSearch}
+              editMode={editMode}
+              setModalKey={setModalKey}
+              setModalObject={setModalObject}
+              />
+            ))}
+            {editMode && 
             <AddButton role="button" onClick={() => {
               setModalObject(activeDegreeplan);
               setModalKey("degree-add");
@@ -133,8 +221,9 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
               <div>
                 Add Degree
               </div>
-            </AddButton>
+            </AddButton>}
         </PanelBody>
+        }
       </PanelContainer>
   );
 }

@@ -37,11 +37,19 @@ height: 100%;
     user-select: none;
     background-color: transparent;
     border: 1px solid transparent;
-    padding: .375rem .75rem;
+    padding: .125rem .25rem;
     font-size: 1rem;
-    line-height: 1.5;
+    line-height: 1;
     border-radius: .25rem;
     transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+}
+
+.btn-row {
+    display: flex;
+    flex-direction: row;
+    gap: .5rem;
+    align-items: center;
+    margin: .125rem;
 }
 
 .btn-action {
@@ -61,14 +69,14 @@ height: 100%;
 }
 
 #banner-info .title {
-    font-size: 30px;
+    font-size: 1.5rem;
     letter-spacing: -0.7px;
     margin-bottom: 0px;
     font-weight: 500;
 }
 
 #banner-info .subtitle {
-    font-size: 20px;
+    font-size: 1.1rem;
     letter-spacing: -0.5px;
     font-weight: normal;
     margin-bottom: 0;
@@ -144,7 +152,10 @@ height: 100%;
 
 .scoredesc .title {
     display: inline-block;
-    font-size: 17px;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: .5rem;
+    margin-bottom: 0;
 }
 
 .scoredesc .subtitle {
@@ -155,10 +166,10 @@ height: 100%;
 
 .scorebox {
     display: inline-block;
-    margin-left: 5px;
-    margin-right: 5px;
-    height: 70px;
-    width: 70px;
+    margin-left: .4rem;
+    margin-right: .4rem;
+    height: 3rem;
+    width: 3rem;
     border-radius: 4px;
     text-align: center;
     background: rgb(255, 255, 255);
@@ -166,14 +177,16 @@ height: 100%;
 
 .scorebox .num {
     color: white;
-    margin-top: 16px;
-    font-size: 25px;
+    margin-top: .5rem;;
+    font-size: 1.25rem;
 }
 
 .scorebox .desc {
     font-size: 15px;
     letter-spacing: -0.3px;
-    margin-top: 20px;
+    font-size: .8rem;
+    margin-top: .5rem;
+    font-weight: bold;
 }
 
 #live {
@@ -245,39 +258,27 @@ const ErrorWrapper = styled.div`
 
 const InfoBox = ({
   data: {
-    average_reviews: average = {},
-    recent_reviews: recent = {},
-    code = "",
-    aliases,
+    course_quality,
+    instructor_quality,
+    difficulty,
+    work_required,
+    id: code,
+    crosslistings: aliases,
     description,
-    name,
+    title: name,
     notes,
     num_sections: numSections,
-    num_sections_recent: numSectionsRecent
   },
   data,
   liveData,
   close
 }) => {
-  const {
-    rInstructorQuality: avgInstructorQuality,
-    rCourseQuality: avgCourseQuality,
-    rDifficulty: avgDifficulty,
-    rWorkRequired: avgWorkRequired
-  } = average;
-  const {
-    rInstructorQuality: recentInstructorQuality,
-    rCourseQuality: recentCourseQuality,
-    rDifficulty: recentDifficulty,
-    rWorkRequired: recentWorkRequired
-  } = recent;
-  const hasReviews =
-    avgInstructorQuality != null ||
-    avgCourseQuality != null ||
-    avgDifficulty != null ||
-    avgWorkRequired != null;
-
-  console.log("data", data)
+  const hasReviews = !!(
+    instructor_quality ||
+    course_quality ||
+    difficulty ||
+    work_required
+  );
 
   if (!data) {
     return <h1>Loading data...</h1>;
@@ -298,25 +299,14 @@ const InfoBox = ({
               liveData={liveData}
             />
           </div>
-
           {hasReviews && (
             <div id="banner-score">
               <Ratings
                 value="Average"
-                instructor={avgInstructorQuality}
-                course={avgCourseQuality}
-                difficulty={avgDifficulty}
-                work={avgWorkRequired}
-                num_sections={numSections}
-              />
-
-              <Ratings
-                value="Recent"
-                instructor={recentInstructorQuality}
-                course={recentCourseQuality}
-                difficulty={recentDifficulty}
-                work={recentWorkRequired}
-                num_sections={numSectionsRecent}
+                instructor={instructor_quality}
+                course={course_quality}
+                difficulty={difficulty}
+                work={work_required}
               />
             </div>
           )}

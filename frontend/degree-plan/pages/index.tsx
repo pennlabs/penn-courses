@@ -9,12 +9,11 @@ import React, { useState } from "react";
 import { type User } from "../types";
 import LoginModal from "pcx-shared-components/src/accounts/LoginModal";
 import { SWRConfig } from "swr";
+import Dock from "@/components/Dock/Dock";
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [searchClosed, setSearchClosed] = useState(true);
-  const [reqId, setReqId] = useState<undefined | number>(undefined);
 
   const updateUser = (newUserVal: User | null) => {
     if (!newUserVal) {
@@ -34,28 +33,22 @@ export default function Home() {
           value={{
             fetcher: (resource, init) =>
               fetch(resource, init).then((res) => res.json()),
+            onError: (error, key) => {
+              if (error.status !== 403 && error.status !== 404) {
+                // error handling
+              }
+            },
           }}
         >
           {/* <OnboardingPage /> */}
-          <Nav
-            login={updateUser}
-            logout={() => updateUser(null)}
-            user={user}
-            setSearchClosed={setSearchClosed}
-            setReqId={setReqId}
-          />
-          <FourYearPlanPage
-            searchClosed={searchClosed}
-            setSearchClosed={setSearchClosed}
-            reqId={reqId}
-            setReqId={setReqId}
-          />
-          {/* {showLoginModal && (
+          <FourYearPlanPage user={user} updateUser={updateUser} />
+          {showLoginModal && (
             <LoginModal
               pathname={window.location.pathname}
               siteName="Penn Degree Plan"
             />
-          )} */}
+          )}
+          {/* <Dock/> */}
         </SWRConfig>
       </DndProvider>
     </>

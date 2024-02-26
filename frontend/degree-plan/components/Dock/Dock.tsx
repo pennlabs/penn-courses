@@ -1,33 +1,30 @@
 
 import styled from '@emotion/styled';
 import { DarkGrayIcon } from '../Requirements/QObject';
-import React from "react";
-import { useDrop } from "react-dnd";
+import React, { useContext } from "react";
+import { useDrag, useDrop } from "react-dnd";
 import { Course } from "@/types";
 import { ItemTypes } from "../dnd/constants";
-import { CourseID, CourseIDContainer } from '../Search/Course';
-import { BaseCourseContainer, RemoveCourseButton } from '../FourYearPlan/CoursePlanned';
-import { GrayIcon } from '../bulma_derived_components';
+import DockedCourse from './DockedCourse';
+import { SearchPanelContext } from '../Search/SearchPanel';
 
 
 const DockWrapper = styled.div`
     z-index: 1;
-    opacity: 0.9;
-    position: fixed;
     width: 100%;
-    bottom: 2%;
     display: flex;
     justify-content: center;
+    flex-grow: 0;
 `
 
-const DockContainer = styled.div`
-    border-radius: 15px;
-    background-color: var(--primary-color-dark);
-    height: 5vh;
-    min-width: 28vw;
+const DockContainer = styled.div<{$isDroppable:boolean, $isOver: boolean}>`
+    border-radius: 0px;
+    box-shadow: 0px 0px 4px 2px ${props => props.$isOver ? 'var(--selected-color);' : props.$isDroppable ? 'var(--primary-color-dark);' : 'rgba(0, 0, 0, 0.05);'}
+    background-color: var(--primary-color);
+    width: 100%;
     display: flex;
     justify-content: left;
-    padding: 5px 10px;
+    padding: 1rem 1rem;
 `
 
 const Divider = styled.div`
@@ -49,70 +46,55 @@ const DockedCoursesWrapper = styled.div`
     width: 100%;
     border-radius: 8px;
 `
-// border-style: solid;
-// border-color: grey;
 
 const DockedCourses = styled.div`
+    height: 100%;
     display: flex;
     flex-direction: row;
+    gap: 1rem;
+    padding: 0.1rem;
 `
-
-const DockedCourse = styled.div`
-    margin: 5px;
-    position: relative;
-`
-
-interface IDock {
-    setSearchClosed: (status: boolean) => void;
-    setReqId: (id: number) => void;
-}
-
-const Dock = ({setSearchClosed, setReqId}: IDock) => {
-    // const ref = React.useRef(null);
+const Dock = () => {
+    const { setSearchPanelOpen, setSearchRuleQuery, setSearchRuleId } = useContext(SearchPanelContext)
     const [dockedCourses, setDockedCourses] = React.useState<string[]>([]);
-    const [mouseOver, setMouseOver] = React.useState(false);
 
-    const removeCourse = (full_code: string) => {
+    const removeDockedCourse = (full_code: string) => {
         setDockedCourses((dockedCourses) => dockedCourses.filter(c => c !== full_code));
     }
 
-    const [{ isOver }, drop] = useDrop(() => ({
+    const [{ isOver, canDrop }, drop] = useDrop(() => ({
         accept: ItemTypes.COURSE,
         drop: (course: Course) => {
             console.log("DROPPED", course.full_code, 'from', course.semester);
             setDockedCourses((dockedCourses) => dockedCourses.filter(c => c !== course.full_code)); // to prevent duplicates
             setDockedCourses((dockedCourses) => [...dockedCourses, course.full_code]);
         },
+        canDrop: () => {return true},
         collect: monitor => ({
-          isOver: !!monitor.isOver()
+          isOver: !!monitor.isOver(),
+          canDrop: !!monitor.canDrop()
         }),
     }), []);
 
     return (
-        <DockWrapper>
-            <DockContainer>
+        <DockWrapper ref={drop} >
+            <DockContainer $isDroppable={canDrop} $isOver={isOver}>
                 <DockerElm>
-                    <SearchIconContainer onClick={() => {setSearchClosed(false); setReqId(-1);}}>
+                    <SearchIconContainer onClick={() => {
+                        setSearchRuleQuery(""); // TODO: should this reset the search?
+                        setSearchRuleId(null);
+                        setSearchPanelOpen(true);
+                    }}>
                         <DarkGrayIcon>
-                        <i class="fas fa-search fa-lg"/>
+                        <i className="fas fa-search fa-lg"/>
                         </DarkGrayIcon>
                     </SearchIconContainer>
                 </DockerElm>
                 <Divider/>
-                <DockedCoursesWrapper ref={drop}>
-                    <DockedCourses >
+                <DockedCoursesWrapper>
+                    <DockedCourses>
                         {dockedCourses.map((full_code, i) => 
-                            <DockedCourse 
-                                key={i}     
-                                onMouseOver={() => setMouseOver(true)} 
-                                onMouseLeave={() => setMouseOver(false)}>
-                                <BaseCourseContainer>
-                                    <span>{full_code.replace(/-/g, " ")}</span>
-                                    <RemoveCourseButton hidden={!mouseOver} onClick={() => removeCourse(full_code)}>
-                                        <GrayIcon><i className="fas fa-times"></i></GrayIcon>
-                                    </RemoveCourseButton>
-                                </BaseCourseContainer>
-                            </DockedCourse>
+                            <DockedCourse removeDockedCourse={removeDockedCourse} full_code={full_code}/>
                         )}
                     </DockedCourses>
                 </DockedCoursesWrapper>

@@ -1,4 +1,3 @@
-from django.core.exceptions import ObjectDoesNotExist
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from django_filters.rest_framework import DjangoFilterBackend
 from django.http import Http404
@@ -141,19 +140,3 @@ def courses_for_rule(request, rule_id: int):
     """
     Search for courses that fulfill a given rule.
     """
-    try:
-        rule = Rule.objects.get(id=rule_id)
-    except ObjectDoesNotExist:
-        return Response(
-            data={"error": f"Rule with id {rule_id} does not exist."},
-            status=status.HTTP_404_NOT_FOUND,
-        )
-
-    q = rule.get_q_object()
-    if q is None:
-        return Response(
-            data={"error": f"Rule with id {rule_id} has no query object."},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-    courses = Course.objects.filter(q)
-    return Response(CourseListSerializer(courses, many=True).data)

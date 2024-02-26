@@ -1,7 +1,7 @@
 
-import Semester from "./Semester"
+import FlexSemester from "./Semester"
 import styled from "@emotion/styled";
-import { Icon } from "../bulma_derived_components";
+import { Icon } from "../common/bulma_derived_components";
 import { Course, DegreePlan, Fulfillment } from "@/types";
 import useSWR from "swr";
 import { useEffect, useState } from "react";
@@ -26,30 +26,45 @@ const SemestersContainer = styled.div`
     flex-wrap: wrap;
 ;`
 
-const FlexSemester = styled(Semester)`
-    flex: 1 1 15rem;
-`;
+// const AddSemesterContainer = styled.div`
+//     flex: 1 1 15rem;
+//     display: flex;
+//     flex-direction: column;
+//     gap: .5rem;
+// `;
 
-const AddSemesterContainer = styled.div`
-    flex: 1 1 15rem;
+const AddSemesterContainer  = styled.div`
+    background: #FFFFFF;
+    border-style: dashed;
+    border-radius: 10px;
+    border-width: 2px;
+    padding: 1rem;
     display: flex;
     flex-direction: column;
-    gap: .5rem;
+    flex: 1 1 15rem;
+    align-items: center;
+    color: var(--plus-button-color);
 `;
 
-export const AddButton = styled.div`
-    width: 100%;
+const AddButtonContainer = styled.div`
+    height: 100%;
     display: flex;
     justify-content: space-between;
-    background-color: rgba(32, 156, 238, .9);
     padding: 1rem;
-    border-radius: 10px;
     align-items: center;
-    color: white;
+    color: var(--plus-button-color);
 `
 
-const EditButton = styled(AddButton)`
-    background-color: rgb(255, 193, 7);
+const PlusIcon = styled(Icon)`
+    width: 100%;
+    align-items: center;
+`
+
+const AddButton = styled.div`
+    align-items: center;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
 `
 
 // TODO: get a consistent color palette across PCx
@@ -64,22 +79,16 @@ const ModifySemesters = ({ addSemester, semesters, className }: ModifySemestersP
     return (
         // TODO: add a modal for this
         <AddSemesterContainer className={className}>
-            <AddButton role="button" onClick={() => addSemester(getNextSemester(semesterKeys[semesterKeys.length - 1] || "2023C"))}>
-                <Icon>
-                    <i className="fas fa-plus"></i>
-                </Icon>
-                <div>
-                    Add Semester
-                </div>
-            </AddButton>
-            <EditButton role="button">
-                <Icon>
-                    <i className="fas fa-edit"></i>
-                </Icon>
-                <div>
-                    Edit Semesters
-                </div>
-            </EditButton>
+            <AddButtonContainer role="button" onClick={() => addSemester(getNextSemester(semesterKeys[semesterKeys.length - 1] || "2023C"))}>
+                <AddButton >
+                    <PlusIcon>
+                        <i className="fas fa-plus fa-lg"></i>
+                    </PlusIcon>
+                    <div>
+                        Add Semester
+                    </div>
+                </AddButton>
+            </AddButtonContainer>
         </AddSemesterContainer>
     )
 }
@@ -87,15 +96,33 @@ const ModifySemesters = ({ addSemester, semesters, className }: ModifySemestersP
 interface SemestersProps {
     activeDegreeplan: DegreePlan | undefined;
     showStats: any;
-    className: string
+    className: string;
+    editMode: boolean;
+    setModalKey: (arg0: string) => void;
+    setModalObject: (obj: any) => void;
 }
 
-const Semesters = ({ activeDegreeplan, showStats, className }: SemestersProps) => {
+const Semesters = ({ activeDegreeplan, showStats, className, editMode, setModalKey, setModalObject}: SemestersProps) => {
     const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null);    
     // semesters is state mostly derived from fulfillments
+    
+    // TODO: change to other storage methods
+    const defaultSemesters = {} as { [semester: string]: Fulfillment[] };
     const [semesters, setSemesters] = useState<{[semester: string]: Fulfillment[]}>({});
     const addSemester = (semester: string) => { if (!semesters[semester]) setSemesters({...semesters, [semester]: []}) };
-    const defaultSemesters = {} as { [semester: string]: Fulfillment[] };
+    const removeSemester = (semester: string) => {
+        console.log('remove called');
+        if (semesters[semester]) {
+            console.log('delete');
+            var newSems : {[semester: string]: Fulfillment[]} = {};
+            for (var sem in semesters) {
+                if (sem !== semester) newSems = {...newSems, [sem]: semesters[sem]};
+            }
+            setSemesters(newSems);
+            console.log('done delete');
+        }
+    }
+    /** Get semesters from local storage */
     useEffect(() => {
         if (!activeDegreeplan) return;
         if (typeof window === "undefined") return setSemesters(defaultSemesters); // default state
@@ -107,6 +134,15 @@ const Semesters = ({ activeDegreeplan, showStats, className }: SemestersProps) =
         );
     }, [activeDegreeplan])
 
+    /** Update semesters to local storage */
+    useEffect(() => {
+        if (!activeDegreeplan) return;
+        if (typeof window !== undefined) {
+            localStorage.setItem(getLocalSemestersKey(activeDegreeplan.id), JSON.stringify(semesters));
+        }
+    }, [semesters, activeDegreeplan])
+
+    /** Parse fulfillments and group them by semesters */
     useEffect(() => {
         if (!activeDegreeplan || !fulfillments) return; // TODO: need more logic in this case
         setSemesters(currentSemesters => {
@@ -123,19 +159,22 @@ const Semesters = ({ activeDegreeplan, showStats, className }: SemestersProps) =
         })
     }, [fulfillments, activeDegreeplan]);
 
-    useEffect(() => {
-        if (!activeDegreeplan) return;
-        if (typeof window !== undefined) {
-            localStorage.setItem(getLocalSemestersKey(activeDegreeplan.id), JSON.stringify(semesters));
-        }
-    }, [semesters, activeDegreeplan])
-
     return (
         <SemestersContainer className={className}>            
             {Object.keys(semesters).sort().map((semester: any) =>
-                <FlexSemester activeDegreeplanId={activeDegreeplan?.id} showStats={showStats} semester={semester} fulfillments={semesters[semester]} key={semester}/>
+                <FlexSemester 
+                    activeDegreeplanId={activeDegreeplan?.id} 
+                    showStats={showStats} 
+                    semester={semester} 
+                    fulfillments={semesters[semester]} 
+                    key={semester} 
+                    editMode={editMode}
+                    removeSemester={removeSemester}
+                    setModalKey={setModalKey}
+                    setModalObject={setModalObject}
+                    />
                 )}
-            <ModifySemesters addSemester={addSemester} semesters={semesters} />
+            {editMode && <ModifySemesters addSemester={addSemester} semesters={semesters} />}
         </SemestersContainer>
     )
 }

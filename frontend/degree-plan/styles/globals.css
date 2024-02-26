@@ -11,10 +11,19 @@
 
   /* lavender */
   --primary-color-dark: #C5D2F6;
-  --primary-color-light: #F5F5F5;
+  --primary-color: #E3E8F4;
+  --primary-color-light: #EDF1FC;
   --background-white: #F7F9FC;
   --background-grey:#F7F9FC;
 
+  /* Edit mode */
+  --plus-button-color: #9FB5EF;
+
+  /* DnD */
+  --selected-color: #967BB6;
+
+  /* Requirement */
+  --req-item-radius: 5px;
 
   --primary-glow: conic-gradient(
     from 180deg at 50% 50%,
@@ -120,4 +129,18 @@ a {
 
 .is-rounded {
   border-radius: 15px;
+}
+
+.draggable {
+  cursor: grab;
+}
+
+.dragging {
+  cursor: grabbing;
+}
+
+.droppable {
+  box-shadow: 0 0 50px;
+  transition: 0.3s var(--primary-color-dark);
+
 }

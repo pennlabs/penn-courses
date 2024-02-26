@@ -1,17 +1,28 @@
 import React, { useState, useEffect, useRef } from "react";
 import ReqPanel from "../components/Requirements/ReqPanel";
 import PlanPanel from "../components/FourYearPlan/PlanPanel";
-import SearchPanel from "../components/Search/SearchPanel";
+import {
+  SearchPanel,
+  SearchPanelContext,
+} from "../components/Search/SearchPanel";
 // import Plan from "../components/example/Plan";
-import CourseDetailPanel from "@/components/Course/CourseDetailPanel";
 import styled from "@emotion/styled";
 import useSWR from "swr";
-import { Course, DegreePlan, Options } from "@/types";
+import { Course, DegreePlan, Options, Rule } from "@/types";
 import ReviewPanel from "@/components/Infobox/ReviewPanel";
 import { ReviewPanelContext } from "@/components/Infobox/ReviewPanel";
 import DegreeModal, { ModalKey } from "@/components/FourYearPlan/DegreeModal";
 import SplitPane, { Pane } from "react-split-pane";
+import Nav from "@/components/NavBar/Nav";
 import Dock from "@/components/Dock/Dock";
+import useWindowDimensions from "@/hooks/window";
+
+const PageContainer = styled.div`
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  flex-direction: column;
+`;
 
 const Row = styled.div`
   position: relative;
@@ -19,15 +30,11 @@ const Row = styled.div`
   width: 100%;
 `;
 
-// display: flex;
-//     flex-direction: row;
-//     position: relative;
-const PlanPageContainer = styled.div`
+const BodyContainer = styled.div`
   background-color: var(--background-grey);
-  padding: 0rem 3rem;
-  position: absolute;
+  padding: 0.5rem;
   width: 100%;
-  height: 89%;
+  flex-grow: 1;
 `;
 
 export const PanelTopBar = styled.div`
@@ -40,38 +47,22 @@ export const PanelTopBar = styled.div`
   width: 100%;
 `;
 
-export const PanelContainer = styled.div<{
-  $maxWidth: string;
-  $minWidth: string;
-}>`
+const PanelWrapper = styled.div<{ $maxWidth: string; $minWidth: string }>`
   border-radius: 10px;
-  box-shadow: 0px 0px 10px 6px rgba(0, 0, 0, 0.05);
+  box-shadow: 0px 0px 5px 2px rgba(0, 0, 0, 0.05);
   background-color: #ffffff;
-  margin: 9px;
-  height: 82vh;
   overflow: hidden; /* Hide scrollbars */
   width: ${(props) => (props.$maxWidth || props.$maxWidth ? "auto" : "100%")};
   max-width: ${(props) => (props.$maxWidth ? props.$maxWidth : "auto")};
   min-width: ${(props) => (props.$minWidth ? props.$minWidth : "auto")};
   position: relative;
+  height: 100%;
 `;
 
-const FourYearPlanPage = ({
-  searchClosed,
-  setSearchClosed,
-  reqId,
-  setReqId,
-}: any) => {
-  const [leftWidth, setLeftWidth] = useState(800);
-  const [drag, setDrag] = useState(false);
-  const [x, setX] = useState(0);
-
-  const [degreeModalOpen, setDegreeModalOpen] = React.useState(false);
-
+const FourYearPlanPage = ({ updateUser, user }: any) => {
   // edit modals for degree and degree plan
   const [modalKey, setModalKey] = useState<ModalKey>(null);
   const [modalObject, setModalObject] = useState<DegreePlan | null>(null); // stores the which degreeplan is being updated using the modal
-  // useEffect(() => console.log(modalKey), [modalKey])
 
   // active degree plan
   const [activeDegreeplanId, setActiveDegreeplanId] = useState<
@@ -103,71 +94,45 @@ const FourYearPlanPage = ({
   // review panel
   const { data: options } = useSWR<Options>("/api/options");
   const [reviewPanelCoords, setReviewPanelCoords] = useState<{
-    x: number;
-    y: number;
-  }>({ x: 0, y: 0 });
+    top?: number;
+    left?: number;
+    right?: number;
+    bottom?: number;
+  }>({ top: 0, left: 0 });
   const [reviewPanelFullCode, setReviewPanelFullCode] = useState<
     Course["full_code"] | null
   >(null);
-  const [reviewPanelIsPermanent, setReviewPanelIsPermanent] = useState(false);
-
-  const [results, setResults] = useState([]);
-
-  const [reqQuery, setReqQuery] = useState("");
-
-  const [highlightReqId, setHighlightReqId] = useState(-1);
-
-  const handleCloseSearchPanel = () => {
-    // setHighlightReqId(-1);
-    setSearchClosed(true);
-  };
-
-  // testing version
-  const [majors, setMajors] = useState([
-    { id: 1843, name: "Computer Science, BSE" },
-    { id: 1744, name: "Visual Studies, BAS" },
-  ]);
-  const [currentMajor, setCurrentMajor] = useState({});
-  useEffect(() => {
-    if (majors.length !== 0) setCurrentMajor(majors[0]);
-  }, [majors]);
-
   const ref = useRef(null);
-  const [totalWidth, setTotalWidth] = useState(0);
 
-  useEffect(() => {
-    console.log("total width: ", ref.current ? ref.current.offsetWidth : 0);
-    setTotalWidth(ref.current ? ref.current.offsetWidth : 0);
-  }, [ref.current]);
-
-  const [loading, setLoading] = useState(false);
-  const handleSearch = async (id: number, query: string) => {
-    setSearchClosed(false);
-    setLoading(true);
-    setReqQuery(query);
-    if (id != undefined) setReqId(id);
-  };
+  // search panel
+  const [searchPanelOpen, setSearchPanelOpen] = useState<boolean>(false);
+  const [searchRuleId, setSearchRuleId] = useState<Rule["id"] | null>(null);
+  const [searchRuleQuery, setSearchRuleQuery] = useState<string | null>(null); // a query object
 
   return (
-    <PlanPageContainer ref={ref}>
+    <SearchPanelContext.Provider
+      value={{
+        setSearchPanelOpen: setSearchPanelOpen,
+        searchPanelOpen: searchPanelOpen,
+        setSearchRuleId: setSearchRuleId,
+        searchRuleId: searchRuleId,
+        setSearchRuleQuery: setSearchRuleQuery,
+        searchRuleQuery: searchRuleQuery,
+      }}
+    >
       <ReviewPanelContext.Provider
         value={{
           full_code: reviewPanelFullCode,
           set_full_code: setReviewPanelFullCode,
-          isPermanent: reviewPanelIsPermanent,
-          setIsPermanent: setReviewPanelIsPermanent,
           position: reviewPanelCoords,
           setPosition: setReviewPanelCoords,
         }}
       >
-        <Dock setSearchClosed={setSearchClosed} setReqId={setReqId} />
         {reviewPanelFullCode && (
           <ReviewPanel
             currentSemester={options?.SEMESTER}
             full_code={reviewPanelFullCode}
             set_full_code={setReviewPanelFullCode}
-            isPermanent={reviewPanelIsPermanent}
-            setIsPermanent={setReviewPanelIsPermanent}
             position={reviewPanelCoords}
             setPosition={setReviewPanelCoords}
           />
@@ -180,64 +145,61 @@ const FourYearPlanPage = ({
             setActiveDegreeplanId={setActiveDegreeplanId}
           />
         )}
-        <Row>
-          <SplitPane
-            split="vertical"
-            minSize={0}
-            maxSize={750}
-            defaultSize="50%"
-          >
-            <Pane>
-              <PanelContainer>
-                <PlanPanel
-                  setModalKey={setModalKey}
-                  modalKey={modalKey}
-                  setModalObject={setModalObject}
-                  isLoading={isLoadingDegreeplans || isLoadingActiveDegreePlan}
-                  activeDegreeplan={activeDegreePlan}
-                  degreeplans={degreeplans}
-                  setActiveDegreeplanId={setActiveDegreeplanId}
-                />
-              </PanelContainer>
-            </Pane>
-            <Pane style={{ display: "flex", flexDirection: "row" }}>
-              <PanelContainer>
-                {/* <SplitPane split="horizontal" minSize='80%'> */}
-                <ReqPanel
-                  setModalKey={setModalKey}
-                  setModalObject={setModalObject}
-                  activeDegreeplan={activeDegreePlan}
-                  highlightReqId={highlightReqId}
-                  setHighlightReqId={setHighlightReqId}
-                  setMajors={setMajors}
-                  currentMajor={currentMajor}
-                  setCurrentMajor={setCurrentMajor}
-                  setSearchClosed={setSearchClosed}
-                  setDegreeModalOpen={setDegreeModalOpen}
-                  handleSearch={handleSearch}
-                />
-                {/* <div>
-                                        load area
-                                    </div>
-                                </SplitPane> */}
-              </PanelContainer>
-              <PanelContainer
-                hidden={searchClosed}
-                $minWidth={"40%"}
-                $maxWidth={"45%"}
+        <PageContainer>
+          <Nav login={updateUser} logout={() => updateUser(null)} user={user} />
+          <BodyContainer ref={ref}>
+            <Row>
+              <SplitPane
+                split="vertical"
+                minSize={0}
+                maxSize={useWindowDimensions()["width"] * 0.65}
+                defaultSize="50%"
               >
-                <SearchPanel
-                  setClosed={handleCloseSearchPanel}
-                  courses={results}
-                  reqId={reqId}
-                  loading={loading}
-                />
-              </PanelContainer>
-            </Pane>
-          </SplitPane>
-        </Row>
+                <PanelWrapper>
+                  <PlanPanel
+                    setModalKey={setModalKey}
+                    modalKey={modalKey}
+                    setModalObject={setModalObject}
+                    isLoading={
+                      isLoadingDegreeplans || isLoadingActiveDegreePlan
+                    }
+                    activeDegreeplan={activeDegreePlan}
+                    degreeplans={degreeplans}
+                    setActiveDegreeplanId={setActiveDegreeplanId}
+                  />
+                </PanelWrapper>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    height: "100%",
+                  }}
+                >
+                  <PanelWrapper>
+                    {/* <SplitPane split="horizontal" minSize='80%'> */}
+                    <ReqPanel
+                      setModalKey={setModalKey}
+                      setModalObject={setModalObject}
+                      activeDegreeplan={activeDegreePlan}
+                    />
+                    {/* <div>
+                                                load area
+                                            </div>
+                                        </SplitPane> */}
+                  </PanelWrapper>
+                  {searchPanelOpen && (
+                    <PanelWrapper $minWidth={"40%"} $maxWidth={"45%"}>
+                      <SearchPanel activeDegreeplanId={activeDegreeplanId} />
+                    </PanelWrapper>
+                  )}
+                </div>
+              </SplitPane>
+            </Row>
+          </BodyContainer>
+          <Dock />
+        </PageContainer>
       </ReviewPanelContext.Provider>
-    </PlanPageContainer>
+    </SearchPanelContext.Provider>
   );
 };
 
