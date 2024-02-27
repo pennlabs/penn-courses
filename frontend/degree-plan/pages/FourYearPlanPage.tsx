@@ -79,8 +79,10 @@ const FourYearPlanPage = ({ updateUser, user, activeDegreeplanId, setActiveDegre
 
   useEffect(() => {
     // recompute the active degreeplan id on changes to the degreeplans
-    if (!degreeplans?.length) {
+    if (!isLoadingDegreeplans && !degreeplans?.length) {
       setShowOnboardingModal(true);
+    }
+    if (!degreeplans?.length) {
       setActiveDegreeplanId(null);
     }
     else if (

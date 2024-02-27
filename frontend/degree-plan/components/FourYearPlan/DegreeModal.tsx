@@ -1,8 +1,8 @@
 import styled from "@emotion/styled";
-import type { DegreePlan, Fulfillment, Semester } from "@/types";
-import { useState } from "react";
+import type { DegreeListing, DegreePlan, Fulfillment, MajorOption, SchoolOption, Semester } from "@/types";
+import React, { useState } from "react";
 import { deleteFetcher, postFetcher, useSWRCrud } from "@/hooks/swrcrud";
-import { useSWRConfig } from "swr";
+import useSWR, { useSWRConfig } from "swr";
 import ModalContainer from "../common/ModalContainer";
 import Select from "react-select";
 
@@ -61,15 +61,47 @@ const ModalInterior = ({ modalObject, modalKey, setActiveDegreeplanId, close }: 
     const { create: createDegreeplan, update: updateDegreeplan, remove: deleteDegreeplan, copy: copyDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans');
     const { mutate } = useSWRConfig();
 
-    console.log("FIRED")
-
     const create_degreeplan = (name: string) => { 
         createDegreeplan({ name: name })
         .then((new_) => new_ && setActiveDegreeplanId(new_.id))
     }
+    const [school, setSchool] = useState<SchoolOption>();
+    const [major, setMajor] = useState<MajorOption>();
 
     const [name, setName] = useState<string>(modalObject?.name || "");
-    const [degreeId, setDegreeId] = useState<number | null>(null);
+    // const [degreeId, setDegreeId] = useState<number | null>(null);
+
+    const { data: degrees, isLoading: isLoadingDegrees } = useSWR<
+        DegreeListing[]
+    >(`/api/degree/degrees`);
+
+    const defaultSchools = ['BSE', 'BA', 'BAS', 'BS'];
+
+    const schoolOptions =
+        defaultSchools.map((d) => ({
+        value: d,
+        label: d
+        }))
+    // console.log('schooOptions', schoolOptions);
+
+    /** Create label for major listings */
+    const createMajorLabel = (degree: DegreeListing) => {
+        const concentration = 
+        degree.concentration && degree.concentration !== 'NONE' 
+            ? ` - ${degree.concentration}`
+            : '';
+        return `${degree.major}${concentration}`;
+    }
+
+    const getMajorOptions = React.useCallback(() => {
+        /** Filter major options based on selected schools/degrees */
+        const majorOptions = degrees
+        ?.filter(d => school?.value === d.degree)
+        .map((degree) => ({ value: degree, label: createMajorLabel(degree)})) 
+        || [];
+        return majorOptions;
+    }, [school]);
+
 
     if (modalKey === "plan-create") {
         return (
@@ -138,39 +170,29 @@ const ModalInterior = ({ modalObject, modalKey, setActiveDegreeplanId, close }: 
         case "degree-add":
             return (
                 <ModalInteriorWrapper>
-                    {/* <Column>
-                        <div>
-                            <Label required>School(s) or Program(s)</Label>
-                            <Select
+                    <div style={{display: 'flex', flexDirection: 'row'}}>
+                        <Select
                             options={schoolOptions}
-                            value={schools}
-                            onChange={(selectedOption) => setSchools(selectedOption)}
+                            value={school}
+                            onChange={(selectedOption) => setSchool(selectedOption)}
                             isClearable
-                            isMulti
                             placeholder="Select School or Program"
-                            styles={customSelectStylesRight}
+                            // styles={customSelectStylesRight}
                             isLoading={isLoadingDegrees}
                             />
-                        </div>
-
-                        <div>
-                            <Label required>Major(s)</Label>
-                            <Select
+                        <Select
                             options={getMajorOptions()}
-                            value={majors}
-                            onChange={(selectedOption) => setMajors(selectedOption)}
+                            value={major}
+                            onChange={(selectedOption) => setMajor(selectedOption)}
                             isClearable
-                            isMulti
-                            placeholder={schools.length > 0 ? "Major - Concentration" : "Please Select Program First"}
-                            styles={customSelectStylesRight}
+                            placeholder={school ? "Major - Concentration" : "Please Select Program First"}
+                            // styles={customSelectStylesRight}
                             isLoading={isLoadingDegrees}
                             />
-                        </div>
-
-                    <Column/> */}
+                    </div>
                     <ModalButton onClick={() => {
-                        if (!degreeId) return;
-                        add_degree(modalObject.id, degreeId)
+                        if (!major?.value.id) return;
+                        add_degree(modalObject.id, major?.value.id);
                         close();
                     }}>Add</ModalButton>
                 </ModalInteriorWrapper>

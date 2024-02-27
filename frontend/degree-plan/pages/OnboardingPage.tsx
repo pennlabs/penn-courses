@@ -41,7 +41,7 @@ const ColumnsContainer = styled.div`
   }
 `;
 
-const Column = styled.div`
+export const Column = styled.div`
   display: flex;
   flex-direction: column;
   flex: 1;
@@ -63,7 +63,7 @@ const NextButton = styled(Button)`
   background-color: var(--primary-color-dark);
 `;
 
-const Label = styled.h5`
+export const Label = styled.h5`
   padding-top: 25px;
   &:after {
     content: "*";
