@@ -16,6 +16,7 @@ import SplitPane, { Pane } from "react-split-pane";
 import Nav from "@/components/NavBar/Nav";
 import Dock from "@/components/Dock/Dock";
 import useWindowDimensions from "@/hooks/window";
+import OnboardingPage from "./OnboardingPage";
 
 const PageContainer = styled.div`
   height: 100vh;
@@ -59,27 +60,29 @@ const PanelWrapper = styled.div<{ $maxWidth: string; $minWidth: string }>`
   height: 100%;
 `;
 
-const FourYearPlanPage = ({ updateUser, user }: any) => {
+const FourYearPlanPage = ({ updateUser, user, activeDegreeplanId, setActiveDegreeplanId }: any) => {
   // edit modals for degree and degree plan
   const [modalKey, setModalKey] = useState<ModalKey>(null);
   const [modalObject, setModalObject] = useState<DegreePlan | null>(null); // stores the which degreeplan is being updated using the modal
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
 
-  // active degree plan
-  const [activeDegreeplanId, setActiveDegreeplanId] = useState<
-    null | DegreePlan["id"]
-  >(null);
   const { data: degreeplans, isLoading: isLoadingDegreeplans } = useSWR<
     DegreePlan[]
   >("/api/degree/degreeplans");
+
   const { data: activeDegreePlan, isLoading: isLoadingActiveDegreePlan } =
     useSWR(
       activeDegreeplanId
         ? `/api/degree/degreeplans/${activeDegreeplanId}`
         : null
     );
+
   useEffect(() => {
     // recompute the active degreeplan id on changes to the degreeplans
-    if (!degreeplans?.length) setActiveDegreeplanId(null);
+    if (!degreeplans?.length) {
+      setShowOnboardingModal(true);
+      setActiveDegreeplanId(null);
+    }
     else if (
       !activeDegreeplanId ||
       !degreeplans.find((d) => d.id === activeDegreeplanId)
@@ -90,6 +93,8 @@ const FourYearPlanPage = ({ updateUser, user }: any) => {
       setActiveDegreeplanId(mostRecentUpdated.id);
     }
   }, [degreeplans, activeDegreeplanId]);
+
+  const windowWidth = useWindowDimensions()["width"];
 
   // review panel
   const { data: options } = useSWR<Options>("/api/options");
@@ -147,12 +152,19 @@ const FourYearPlanPage = ({ updateUser, user }: any) => {
         )}
         <PageContainer>
           <Nav login={updateUser} logout={() => updateUser(null)} user={user} />
+          
           <BodyContainer ref={ref}>
+          {!!showOnboardingModal 
+          ? 
+            <OnboardingPage 
+              setShowOnboardingModal={setShowOnboardingModal} 
+              setActiveDegreeplanId={setActiveDegreeplanId}/>
+          :
             <Row>
               <SplitPane
                 split="vertical"
                 minSize={0}
-                maxSize={useWindowDimensions()["width"] * 0.65}
+                maxSize={windowWidth ? windowWidth * 0.65 : 1000}
                 defaultSize="50%"
               >
                 <PanelWrapper>
@@ -183,9 +195,9 @@ const FourYearPlanPage = ({ updateUser, user }: any) => {
                       activeDegreeplan={activeDegreePlan}
                     />
                     {/* <div>
-                                                load area
-                                            </div>
-                                        </SplitPane> */}
+                            load area
+                        </div>
+                    </SplitPane> */}
                   </PanelWrapper>
                   {searchPanelOpen && (
                     <PanelWrapper $minWidth={"40%"} $maxWidth={"45%"}>
@@ -195,8 +207,10 @@ const FourYearPlanPage = ({ updateUser, user }: any) => {
                 </div>
               </SplitPane>
             </Row>
+            }
+
           </BodyContainer>
-          <Dock />
+          {!showOnboardingModal && <Dock />}
         </PageContainer>
       </ReviewPanelContext.Provider>
     </SearchPanelContext.Provider>

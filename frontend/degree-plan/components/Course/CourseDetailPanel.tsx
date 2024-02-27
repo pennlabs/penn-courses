@@ -6,7 +6,6 @@ import { mdiClose, mdiMagnify } from "@mdi/js";
 import { titleStyle, topBarStyle } from "@/pages/FourYearPlanPage";
 import Course from "../Requirements/Course";
 import FuzzyCourseDetail from 'react-fuzzy';
-import Fuse from 'fuse.js'
 import DetailHeader from "./CourseDetailHeader";
 import DetailRatings from "./CourseDetailRatings";
 

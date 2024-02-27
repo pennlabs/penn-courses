@@ -4,7 +4,7 @@ import { useState } from "react";
 import { deleteFetcher, postFetcher, useSWRCrud } from "@/hooks/swrcrud";
 import { useSWRConfig } from "swr";
 import ModalContainer from "../common/ModalContainer";
-
+import Select from "react-select";
 
 export type ModalKey = "plan-create" | "plan-rename" | "plan-remove" | "degree-add" | "degree-remove" | "semester-remove" | null; // null is closed
 
@@ -138,7 +138,36 @@ const ModalInterior = ({ modalObject, modalKey, setActiveDegreeplanId, close }: 
         case "degree-add":
             return (
                 <ModalInteriorWrapper>
-                    <ModalInput type="number" placeholder="Degree Id" value={degreeId || undefined} onChange={e => setDegreeId(Number(e.target.value))} />
+                    {/* <Column>
+                        <div>
+                            <Label required>School(s) or Program(s)</Label>
+                            <Select
+                            options={schoolOptions}
+                            value={schools}
+                            onChange={(selectedOption) => setSchools(selectedOption)}
+                            isClearable
+                            isMulti
+                            placeholder="Select School or Program"
+                            styles={customSelectStylesRight}
+                            isLoading={isLoadingDegrees}
+                            />
+                        </div>
+
+                        <div>
+                            <Label required>Major(s)</Label>
+                            <Select
+                            options={getMajorOptions()}
+                            value={majors}
+                            onChange={(selectedOption) => setMajors(selectedOption)}
+                            isClearable
+                            isMulti
+                            placeholder={schools.length > 0 ? "Major - Concentration" : "Please Select Program First"}
+                            styles={customSelectStylesRight}
+                            isLoading={isLoadingDegrees}
+                            />
+                        </div>
+
+                    <Column/> */}
                     <ModalButton onClick={() => {
                         if (!degreeId) return;
                         add_degree(modalObject.id, degreeId)

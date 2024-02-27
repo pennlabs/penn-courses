@@ -13,6 +13,30 @@ export interface Rule extends DBObject {
   rules: Rule[];
 }
 
+/** Onboarding page types */
+export interface SchoolOption {
+  label: DegreeListing["degree"];
+  value: DegreeListing["degree"];
+}
+
+export interface MajorOption {
+  label: DegreeListing["major"];
+  value: DegreeListing;
+}
+
+export interface DegreeListing extends DBObject {
+  id: number;
+  year: number;
+  program: string;
+  degree: string;
+  major: string;
+  concentration: string;
+  rules: number[];
+  credits: number;
+}
+
+
+
 export interface Degree extends DBObject {
   id: number;
   year: number;

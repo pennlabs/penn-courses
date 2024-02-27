@@ -122,6 +122,7 @@ const PlanPanel = ({ setModalKey, modalKey, setModalObject, setActiveDegreeplanI
                     activeDegreeplan={activeDegreeplan} 
                     showStats={showStats} 
                     editMode={editMode}
+                    setEditMode={setEditMode}
                     setModalKey={setModalKey}
                     setModalObject={setModalObject}
                     />

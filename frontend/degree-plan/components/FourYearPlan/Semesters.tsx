@@ -100,9 +100,10 @@ interface SemestersProps {
     editMode: boolean;
     setModalKey: (arg0: string) => void;
     setModalObject: (obj: any) => void;
+    setEditMode: (arg0: boolean) => void;
 }
 
-const Semesters = ({ activeDegreeplan, showStats, className, editMode, setModalKey, setModalObject}: SemestersProps) => {
+const Semesters = ({ activeDegreeplan, showStats, className, editMode, setModalKey, setModalObject, setEditMode}: SemestersProps) => {
     const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null);    
     // semesters is state mostly derived from fulfillments
     
@@ -141,6 +142,10 @@ const Semesters = ({ activeDegreeplan, showStats, className, editMode, setModalK
             localStorage.setItem(getLocalSemestersKey(activeDegreeplan.id), JSON.stringify(semesters));
         }
     }, [semesters, activeDegreeplan])
+
+    useEffect(() => {
+        if (!fulfillments?.length) setEditMode(true);
+    }, [fulfillments]);
 
     /** Parse fulfillments and group them by semesters */
     useEffect(() => {
