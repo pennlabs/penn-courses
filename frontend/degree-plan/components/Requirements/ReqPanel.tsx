@@ -4,7 +4,7 @@ import { Degree, DegreePlan, Fulfillment, Rule } from '@/types';
 import styled from '@emotion/styled';
 import { EditButton, PanelBody, PanelContainer, PanelHeader, PanelTopBarIcon, PanelTopBarIconList, TopBarIcon } from '@/components/FourYearPlan/PlanPanel'
 import { useSWRCrud } from '@/hooks/swrcrud';
-import useSWR from 'swr';
+import useSWR, { useSWRConfig } from 'swr';
 import { GrayIcon, Icon } from '../common/bulma_derived_components';
 import React from 'react';
 
@@ -119,25 +119,28 @@ const DegreeHeader = ({ degree, remove, setCollapsed, collapsed, editMode }: { d
   )
 }
 
-const Degree = ({degree, rulesToFulfillments, activeDegreeplan, editMode, setModalKey, setModalObject}: any) => {
+const Degree = ({degree_id, rulesToFulfillments, activeDegreeplan, editMode, setModalKey, setModalObject}: any) => {
   const [collapsed, setCollapsed] = useState(false);
+  const { data: degree, isLoading: isLoadingDegrees } = useSWR<Degree[]>(activeDegreeplan ? `/api/degree/degrees/?id=${degree_id}`: null);
+  // const { cache, mutate, } = useSWRConfig();
 
   return (
     <div>
+      {degree && 
       <DegreeHeader 
-      degree={degree} 
-      key={degree.id} 
-      remove={() => {
-        setModalObject({degreeplanId: activeDegreeplan.id, degreeId: degree.id});
-        setModalKey("degree-remove");
-      }} 
-      setCollapsed={setCollapsed}
-      collapsed={collapsed || editMode} // Collapse degree view in edit mode
-      editMode={editMode}
-      />
+        degree={degree[0]} 
+        key={degree_id} 
+        remove={() => {
+          setModalObject({degreeplanId: activeDegreeplan.id, degreeId: degree_id});
+          setModalKey("degree-remove");
+        }} 
+        setCollapsed={setCollapsed}
+        collapsed={collapsed || editMode} // Collapse degree view in edit mode
+        editMode={editMode}
+        />}
       {!collapsed && !editMode &&
       <DegreeBody>
-        {degree.rules.map((rule: any) => (
+        {degree && degree[0].rules.map((rule: any) => (
           <RuleComponent 
           rulesToFulfillments={rulesToFulfillments}
           activeDegreePlanId={activeDegreeplan.id}
@@ -200,9 +203,9 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
         </PanelHeader>
         {!activeDegreeplan ? <EmptyPanel /> :
           <PanelBody>
-            {activeDegreeplan.degrees.map(degree => (
+            {activeDegreeplan.degrees.map(degree_id => (
               <Degree 
-              degree={degree} 
+              degree_id={degree_id} 
               rulesToFulfillments={rulesToFulfillments} 
               activeDegreeplan={activeDegreeplan} 
               setSearchClosed={setSearchClosed} 

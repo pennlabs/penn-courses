@@ -303,6 +303,45 @@ class CourseListSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
+class SimpleCourseSerializer(serializers.ModelSerializer):
+    id = serializers.ReadOnlyField(
+        source="full_code",
+        help_text=dedent(
+            """
+        The full code of the course, in the form '{dept code}-{course code}'
+        dash-joined department and code of the course, e.g. `CIS-120` for CIS-120."""
+        ),
+    )
+
+    course_quality = serializers.DecimalField(
+        max_digits=4, decimal_places=3, read_only=True, help_text=course_quality_help
+    )
+    difficulty = serializers.DecimalField(
+        max_digits=4, decimal_places=3, read_only=True, help_text=difficulty_help
+    )
+    instructor_quality = serializers.DecimalField(
+        max_digits=4,
+        decimal_places=3,
+        read_only=True,
+        help_text=instructor_quality_help,
+    )
+    work_required = serializers.DecimalField(
+        max_digits=4, decimal_places=3, read_only=True, help_text=work_required_help
+    )
+
+    class Meta:
+        model = Course
+        fields = [
+            "id",
+            "title",
+            "credits",
+            "semester",
+            "course_quality",
+            "instructor_quality",
+            "difficulty",
+            "work_required",
+        ]
+        read_only_fields = fields
 
 class CourseDetailSerializer(CourseListSerializer):
     crosslistings = serializers.SlugRelatedField(

@@ -4,7 +4,7 @@ from django.db.models import Q
 from rest_framework import serializers
 
 from courses.models import Course
-from courses.serializers import CourseListSerializer, CourseDetailSerializer
+from courses.serializers import CourseListSerializer, CourseDetailSerializer, SimpleCourseSerializer
 from degree.models import Degree, DegreePlan, DoubleCountRestriction, Fulfillment, Rule
 from courses.util import get_current_semester
 
@@ -54,7 +54,7 @@ class FulfillmentSerializer(serializers.ModelSerializer):
     def get_course(self, obj):
         course = Course.with_reviews.filter(full_code=obj.full_code, semester__lte=get_current_semester()).order_by("-semester").first()
         if course is not None:
-            return CourseDetailSerializer(course).data
+            return SimpleCourseSerializer(course).data
         return None
     
     # TODO: add a get_queryset method to only allow rules from the degree plan
@@ -120,14 +120,13 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
         read_only=True,
         help_text="The courses used to fulfill degree plan.",
     )
-    degrees = DegreeDetailSerializer(read_only=True, many=True)
-    degree_ids = serializers.PrimaryKeyRelatedField(
-        many=True,
-        required=False,    
-        source="degrees",
-        queryset=Degree.objects.all(),
-        help_text="The degree_id this degree plan belongs to.",
-    )
+    # degree_ids = serializers.PrimaryKeyRelatedField(
+    #     many=True,
+    #     required=False,    
+    #     source="degrees",
+    #     queryset=Degree.objects.all(),
+    #     help_text="The degree_id this degree plan belongs to.",
+    # )
     person = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:

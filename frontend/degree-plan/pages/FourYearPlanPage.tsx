@@ -7,7 +7,7 @@ import {
 } from "../components/Search/SearchPanel";
 // import Plan from "../components/example/Plan";
 import styled from "@emotion/styled";
-import useSWR from "swr";
+import useSWR, { useSWRConfig } from "swr";
 import { Course, DegreePlan, Options, Rule } from "@/types";
 import ReviewPanel from "@/components/Infobox/ReviewPanel";
 import { ReviewPanelContext } from "@/components/Infobox/ReviewPanel";
@@ -77,7 +77,10 @@ const FourYearPlanPage = ({ updateUser, user, activeDegreeplanId, setActiveDegre
         : null
     );
 
+  console.log(activeDegreePlan);
+  
   useEffect(() => {
+    console.log('detect change in degreeplans');
     // recompute the active degreeplan id on changes to the degreeplans
     if (!isLoadingDegreeplans && !degreeplans?.length) {
       setShowOnboardingModal(true);
@@ -85,16 +88,16 @@ const FourYearPlanPage = ({ updateUser, user, activeDegreeplanId, setActiveDegre
     if (!degreeplans?.length) {
       setActiveDegreeplanId(null);
     }
-    // else if (degreeplans.length > 0) {
-    //   setActiveDegreeplanId(degreeplans[0].id);
-    // }
-    else if (!activeDegreeplanId || !degreeplans.find((d) => d.id === activeDegreeplanId)
-    ) {
-      const mostRecentUpdated = degreeplans.reduce((a, b) =>
-        a.updated_at > b.updated_at ? a : b
-      );
-      setActiveDegreeplanId(mostRecentUpdated.id);
+    else if (degreeplans.length > 0) {
+      setActiveDegreeplanId(degreeplans[1].id);
     }
+    // else if (!activeDegreeplanId || !degreeplans.find((d) => d.id === activeDegreeplanId)
+    // ) {
+    //   const mostRecentUpdated = degreeplans.reduce((a, b) =>
+    //     a.updated_at > b.updated_at ? a : b
+    //   );
+    //   setActiveDegreeplanId(mostRecentUpdated.id);
+    // }
   }, [degreeplans]);
 
   const windowWidth = useWindowDimensions()["width"];

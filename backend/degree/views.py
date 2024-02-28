@@ -26,13 +26,22 @@ class DegreeViewset(viewsets.ReadOnlyModelViewSet):
     Retrieve a list of all Degree objects.
     """
 
-    queryset = Degree.objects.all()
+    # queryset = Degree.objects.all()
     filter_backends = [DjangoFilterBackend, SearchFilter]
     search_fields = ["program", "degree", "concentration", "year"]
     filterset_fields = search_fields
 
+    def get_queryset(self):
+            queryset = Degree.objects.all()
+            degree_id = self.request.query_params.get('id', None)
+            if degree_id is not None:
+                queryset = queryset.filter(id=degree_id)
+            return queryset
+    
     def get_serializer_class(self):
         if self.action == "list":
+            if self.request.query_params.get('id', None) is not None:
+                return DegreeDetailSerializer
             return DegreeListSerializer
         return DegreeDetailSerializer
 
@@ -64,11 +73,9 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         return context
     
     def retrieve(self, request, *args, **kwargs):
-        print('aha')
         degree_plan = self.get_object()
         serializer = self.get_serializer(degree_plan)
         # print(serializer.data)
-        print(type(serializer.data))
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     @action(detail=True, methods=["post"])
