@@ -53,7 +53,7 @@ const ModalButton = styled.button`
 
 interface ModalInteriorProps {
     modalKey: ModalKey;
-    modalObject: DegreePlan | null | Fulfillment[];
+    modalObject: DegreePlan | null | {helper: () => void};
     setActiveDegreeplanId: (arg0: DegreePlan["id"]) => void;
     close: () => void;
 }
@@ -140,8 +140,11 @@ const ModalInterior = ({ modalObject, modalKey, setActiveDegreeplanId, close }: 
         mutate(key => key && key.startsWith(`/api/degree/degreeplans/${degreeplanId}/fulfillments`)) // refetch the fulfillments   
     }
 
-    const remove_semester = (fulfillments:Fulfillment[]) => {
-        console.log('clear fulfillments: ', fulfillments);
+    const remove_semester = (degreeplanId: number, fulfillments:Fulfillment[]) => {
+        // console.log('new fulfillments: ', fulfillments.map(f => f.full_code));
+        // const updated = deleteFetcher(`/api/degree/degreeplans/${degreeplanId}/fulfillments`, {full_code: 'PHYS-3351'}) 
+        // mutate(`/api/degree/degreeplans/${degreeplanId}/fulfillments`, updated, { populateCache: true, revalidate: false }) // use updated degree plan returned
+        // mutate(key => key && key.startsWith(`/api/degree/degreeplans/${degreeplanId}/fulfillments`))// refetch the fulfillments 
     }
 
     switch (modalKey) {
@@ -212,7 +215,8 @@ const ModalInterior = ({ modalObject, modalKey, setActiveDegreeplanId, close }: 
                 <ModalInteriorWrapper>
                     <p>Are you sure you want to remove this semester? All of your planning for this semester will be lost</p>
                     <ModalButton onClick={() => {
-                        remove_semester(modalObject);
+                        modalObject.helper();
+                        // remove_semester(modalObject.degreeplanId, modalObject.fulfillments);
                         close();
                     }}>Remove</ModalButton>
                 </ModalInteriorWrapper>

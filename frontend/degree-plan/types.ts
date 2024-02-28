@@ -36,7 +36,6 @@ export interface DegreeListing extends DBObject {
 }
 
 
-
 export interface Degree extends DBObject {
   id: number;
   year: number;

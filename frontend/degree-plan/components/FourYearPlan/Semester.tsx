@@ -98,10 +98,18 @@ const FlexSemester = ({ showStats, semester, fulfillments, activeDegreeplanId, e
         // setDockedCourses((dockedCourses:string[]) => [...dockedCourses, full_code]);
     }
 
-    const handleRemoveSemester = () => {
+    const removeSemesterHelper = () => {
         removeSemester(semester);
+        console.log('fulfillments', fulfillments);
+        for (var i = 0; i < fulfillments.length; i++) {
+            console.log(fulfillments[i].full_code)
+            createOrUpdate({ semester: null }, fulfillments[i].full_code);
+        }
+    }
+
+    const handleRemoveSemester = () => {
         setModalKey('semester-remove');
-        setModalObject(fulfillments);
+        setModalObject({helper: removeSemesterHelper});
     }
 
     return (

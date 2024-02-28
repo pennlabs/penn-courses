@@ -123,7 +123,7 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
             degree_plan_id=self.get_degree_plan_id(),
         )
         return queryset
-
+    
     def create(self, request, *args, **kwargs):
         if request.data.get("full_code") is None:
             raise ValidationError({ "full_code": "This field is required." })
@@ -132,8 +132,6 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
             return self.partial_update(request, *args, **kwargs)
         except Http404:
             return super().create(request, *args, **kwargs)
-    
-
 
 @api_view(["GET"])
 def courses_for_rule(request, rule_id: int):

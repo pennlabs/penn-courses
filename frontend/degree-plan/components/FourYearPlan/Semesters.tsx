@@ -111,6 +111,7 @@ const Semesters = ({ activeDegreeplan, showStats, className, editMode, setModalK
     const defaultSemesters = {} as { [semester: string]: Fulfillment[] };
     const [semesters, setSemesters] = useState<{[semester: string]: Fulfillment[]}>({});
     const addSemester = (semester: string) => { if (!semesters[semester]) setSemesters({...semesters, [semester]: []}) };
+
     const removeSemester = (semester: string) => {
         console.log('remove called');
         if (semesters[semester]) {
@@ -120,9 +121,21 @@ const Semesters = ({ activeDegreeplan, showStats, className, editMode, setModalK
                 if (sem !== semester) newSems = {...newSems, [sem]: semesters[sem]};
             }
             setSemesters(newSems);
+            // localStorage.setItem(getLocalSemestersKey(activeDegreeplan.id), JSON.stringify(semesters));
             console.log('done delete');
         }
     }
+
+    const handleRemoveSemester = (semester: string) => {
+        // setModalKey('semester-remove');
+        // const modalObj = {
+        //     degreeplanId: activeDegreeplan?.id,
+        //     fulfillments: fulfillments?.filter(f => f.semester === semester),
+        //     removeLocalSemString: () => removeSemester(semester)
+        // }
+        // setModalObject(modalObj);
+    }
+
     /** Get semesters from local storage */
     useEffect(() => {
         if (!activeDegreeplan) return;
@@ -143,9 +156,10 @@ const Semesters = ({ activeDegreeplan, showStats, className, editMode, setModalK
         }
     }, [semesters, activeDegreeplan])
 
-    useEffect(() => {
-        if (!fulfillments?.length) setEditMode(true);
-    }, [fulfillments]);
+    // useEffect(() => {
+    //     if (!fulfillments?.length) setEditMode(true);
+    //     else setEditMode(false);
+    // }, [fulfillments]);
 
     /** Parse fulfillments and group them by semesters */
     useEffect(() => {
