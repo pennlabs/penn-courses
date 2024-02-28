@@ -5,6 +5,7 @@ export interface DBObject {
 export interface Rule extends DBObject {
   id: number;
   q: string; // could be blank
+  q_json: any;
   title: string; // could be blank
   credits: number | null;
   parent: Rule["id"],

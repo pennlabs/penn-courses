@@ -63,6 +63,14 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         context.update({"request": self.request})  # used to get the user
         return context
     
+    def retrieve(self, request, *args, **kwargs):
+        print('aha')
+        degree_plan = self.get_object()
+        serializer = self.get_serializer(degree_plan)
+        # print(serializer.data)
+        print(type(serializer.data))
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
     @action(detail=True, methods=["post"])
     def copy(self, request, pk=None):
         """

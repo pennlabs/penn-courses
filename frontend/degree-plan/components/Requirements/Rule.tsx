@@ -105,10 +105,12 @@ const RuleComponent = ({ activeDegreePlanId, rule, rulesToFulfillments} : RulePr
       <>
         {rule.q ? 
           <RuleLeafWrapper $isDroppable={canDrop} $isOver={isOver} ref={drop}>
-              <RuleLeaf q={rule.q} rule={rule} fulfillmentsForRule={fulfillmentsForRule} satisfied={satisfied} />
-              {rule.credits && <CusCourses>{cus} / {rule.credits} cus</CusCourses>}
-              {" "}
-              {rule.num && <CusCourses>{num} / {rule.num}</CusCourses>}
+              <RuleLeaf q_json={rule.q_json} rule={rule} fulfillmentsForRule={fulfillmentsForRule} satisfied={satisfied} />
+              <div>
+                {rule.credits && <CusCourses>{cus} / {rule.credits} cus</CusCourses>}
+                {" "}
+                {rule.num && <CusCourses>{num} / {rule.num}</CusCourses>}
+              </div>
           </RuleLeafWrapper>
           :
           <RuleTitleWrapper onClick={() => setCollapsed(!collapsed)}>

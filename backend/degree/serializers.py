@@ -16,9 +16,16 @@ class DegreeListSerializer(serializers.ModelSerializer):
 
 
 class RuleSerializer(serializers.ModelSerializer):
+    q_json = serializers.ReadOnlyField(help_text="JSON representation of the q object")
+
     class Meta:
         model = Rule
         fields = "__all__"
+    
+    def to_representation(self, instance):
+        data = super(RuleSerializer, self).to_representation(instance)
+        data.q = ""
+        return data
 
 
 # Allow recursive serialization of rules

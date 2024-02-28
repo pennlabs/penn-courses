@@ -44,6 +44,7 @@ const ModalInput = styled.input`
 `;
 
 const ModalButton = styled.button`
+    margin: 10px 0px 250px 0px;
     background-color: rgb(98, 116, 241);
     border-radius: .25rem;
     padding: .25rem .5rem;
@@ -140,13 +141,6 @@ const ModalInterior = ({ modalObject, modalKey, setActiveDegreeplanId, close }: 
         mutate(key => key && key.startsWith(`/api/degree/degreeplans/${degreeplanId}/fulfillments`)) // refetch the fulfillments   
     }
 
-    const remove_semester = (degreeplanId: number, fulfillments:Fulfillment[]) => {
-        // console.log('new fulfillments: ', fulfillments.map(f => f.full_code));
-        // const updated = deleteFetcher(`/api/degree/degreeplans/${degreeplanId}/fulfillments`, {full_code: 'PHYS-3351'}) 
-        // mutate(`/api/degree/degreeplans/${degreeplanId}/fulfillments`, updated, { populateCache: true, revalidate: false }) // use updated degree plan returned
-        // mutate(key => key && key.startsWith(`/api/degree/degreeplans/${degreeplanId}/fulfillments`))// refetch the fulfillments 
-    }
-
     switch (modalKey) {
         case "plan-rename":
             return (
@@ -173,7 +167,7 @@ const ModalInterior = ({ modalObject, modalKey, setActiveDegreeplanId, close }: 
         case "degree-add":
             return (
                 <ModalInteriorWrapper>
-                    <div style={{display: 'flex', flexDirection: 'row'}}>
+                    <div style={{display: 'flex', flexDirection: 'column', gap: '1rem'}}>
                         <Select
                             options={schoolOptions}
                             value={school}
@@ -216,7 +210,6 @@ const ModalInterior = ({ modalObject, modalKey, setActiveDegreeplanId, close }: 
                     <p>Are you sure you want to remove this semester? All of your planning for this semester will be lost</p>
                     <ModalButton onClick={() => {
                         modalObject.helper();
-                        // remove_semester(modalObject.degreeplanId, modalObject.fulfillments);
                         close();
                     }}>Remove</ModalButton>
                 </ModalInteriorWrapper>
@@ -235,7 +228,6 @@ const DegreeModal = ({ setModalKey, modalKey, modalObject, setActiveDegreeplanId
     <ModalContainer
     title={getModalTitle(modalKey)}
     close={() => setModalKey(null)}
-    isBig
     modalKey={modalKey}
     >
         <ModalInterior modalObject={modalObject} setActiveDegreeplanId={setActiveDegreeplanId} />

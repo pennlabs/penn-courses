@@ -85,16 +85,17 @@ const FourYearPlanPage = ({ updateUser, user, activeDegreeplanId, setActiveDegre
     if (!degreeplans?.length) {
       setActiveDegreeplanId(null);
     }
-    else if (
-      !activeDegreeplanId ||
-      !degreeplans.find((d) => d.id === activeDegreeplanId)
+    // else if (degreeplans.length > 0) {
+    //   setActiveDegreeplanId(degreeplans[0].id);
+    // }
+    else if (!activeDegreeplanId || !degreeplans.find((d) => d.id === activeDegreeplanId)
     ) {
       const mostRecentUpdated = degreeplans.reduce((a, b) =>
         a.updated_at > b.updated_at ? a : b
       );
       setActiveDegreeplanId(mostRecentUpdated.id);
     }
-  }, [degreeplans, activeDegreeplanId]);
+  }, [degreeplans]);
 
   const windowWidth = useWindowDimensions()["width"];
 

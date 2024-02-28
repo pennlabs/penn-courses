@@ -83,22 +83,30 @@ collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
     )
 }
 
-const Row = styled.div`
+/**     position: relative;
+    width: 100%;
     display: inline-flex;
-    align-items: center;
-    display: flex;
-    align-content: flex-end;
-    gap: .25rem;
+    align-items: center; */
+const Row = styled.div`
+    gap: .2rem;
+    flex: 1;
     flex-wrap: wrap;
     margin: .5 rem 0;
 `;
 
+const AttributeWrapper = styled.div`
+    min-width: 4rem;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+`
+
 
 const Attributes = ({ attributes }: { attributes: string[] }) => {
-    return <Row>
+    return <AttributeWrapper>
         <DarkGrayIcon><i className="fas fa-at fa-sm"></i></DarkGrayIcon> {/*TODO: add a tooltip */}
         <Wrap>{attributes.join(', ')}</Wrap>
-    </Row>
+    </AttributeWrapper>
 }
     // display: inline-flex;
     // align-items: center;
@@ -129,9 +137,11 @@ interface SearchConditionInnerProps {
 const SearchConditionInner = ({ q }: SearchConditionInnerProps) => {
     if (q.type === "LEAF") {
         q = { type: "AND", clauses: [q] }
-    } else if (q.type === "COURSE" || q.type === "SEARCH") {
+    } else if (q.type === "COURSE") {
         throw Error("Course inside search condition"); // TODO: this is inelegant
-    }
+    } else if (q.type === "SEARCH") {
+        throw Error("Search inside search condition"); // TODO: this is inelegant
+    } 
 
     const conditions = q.clauses.filter((clause) => clause.type === "LEAF") as Condition[];
     const compounds = q.clauses.filter((clause) => clause.type === "OR" || clause.type === "AND") as Compound[];
@@ -143,11 +153,11 @@ const SearchConditionInner = ({ q }: SearchConditionInnerProps) => {
         display.push(<Attributes attributes={compoundCondition['attributes__code__in'] as string[]} />);
     }
     if ('department__code' in compoundCondition && 'code__gte' in compoundCondition && 'code__lte' in compoundCondition) {
-        display.push(<Wrap>{compoundCondition['department__code']} {compoundCondition['code__gte']}-{compoundCondition['code__lte']}</Wrap>);
+        display.push(<AttributeWrapper><span>{compoundCondition['department__code']}</span> {compoundCondition['code__gte']}-{compoundCondition['code__lte']}</AttributeWrapper>);
     } else if ('department__code' in compoundCondition && 'code__gte' in compoundCondition) {
-        display.push(<Wrap>{compoundCondition['department__code']} {compoundCondition['code__gte']}-9999</Wrap>);
+        display.push(<AttributeWrapper>{compoundCondition['department__code']} {compoundCondition['code__gte']}-9999</AttributeWrapper>);
     } else if ('department__code' in compoundCondition && 'code__lte' in compoundCondition) {
-        display.push(<Wrap>{compoundCondition['department__code']} 0000-{compoundCondition['code__lte']}</Wrap>);
+        display.push(<AttributeWrapper>{compoundCondition['department__code']} 0000-{compoundCondition['code__lte']}</AttributeWrapper>);
     } else if ('department__code' in compoundCondition) {
         display.push(<Wrap>in {compoundCondition['department__code']}</Wrap>);
     } else if ('code__lte' in compoundCondition && 'code__gte' in compoundCondition) {
@@ -159,9 +169,9 @@ const SearchConditionInner = ({ q }: SearchConditionInnerProps) => {
     }
     if ('department__code__in' in compoundCondition) {
         const departments = compoundCondition['department__code__in'] as string[];
-        display.push(<Row> in {
+        display.push(<div> in {
             interpolate(departments.map((dept) => <div key={dept}>{dept}</div>), <CourseOptionsSeparator>or</CourseOptionsSeparator>)
-        }</Row>);
+        }</div>);
     }
     if ('full_code__startswith' in compoundCondition) {
         const padding = "XXXX-XXXX";
@@ -172,11 +182,11 @@ const SearchConditionInner = ({ q }: SearchConditionInnerProps) => {
     }
 
     compounds.forEach((compound) => display.push(
-        <Row>
+        <>
             <CourseOptionsSeparator>{'('}</CourseOptionsSeparator>
             <SearchConditionInner q={compound} />
             <CourseOptionsSeparator>{')'}</CourseOptionsSeparator>
-        </Row>
+        </>
     ));
 
     if (display.length == 0) {
@@ -184,9 +194,9 @@ const SearchConditionInner = ({ q }: SearchConditionInnerProps) => {
     }
 
     return (
-        <>
+        <div>
             {interpolate(display, <CourseOptionsSeparator>{q.type}</CourseOptionsSeparator>)}
-        </>
+        </div>
     )
 }
 
@@ -311,7 +321,7 @@ const QObject = ({ q, fulfillments, rule, satisfied }: QObjectProps) => {
             });
 
             // transformations applied to parse tree should guarantee that searchConditions is a singleton
-            assert(searchConditions.length <= 1, "Expected search conditions to be merged")
+            assert(searchConditions.length <= 1, "Expected search conditions to be merged") // TODO!!
             const displaySearchConditions = searchConditions.map(search => {
                 const courses = Array.from(fulfillmentsMap.values())
                 fulfillmentsMap.clear()
@@ -332,29 +342,32 @@ const QObject = ({ q, fulfillments, rule, satisfied }: QObjectProps) => {
 }
 
 const QObjectWrapper = styled.div`
+    max-width: 90%;
     display: flex;
     flex-direction: row;
     gap: 0.5rem;
 `
 
 interface RuleLeafProps { 
-    q: string;
-    activeDegreePlanId: number, 
+    q_json: any;
+    // activeDegreePlanId: number, 
     fulfillmentsForRule: Fulfillment[]; // fulfillments for this rule 
     rule: Rule;
     satisfied: boolean;
 }
-const RuleLeaf = ({ q, fulfillmentsForRule, rule, satisfied }: RuleLeafProps) => {
-    const qObjParser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
-    let parsed = qObjParser.feed(q).results[0] as ParsedQObj;
-    if (!parsed) return null;
 
-    // apply some transformations to parse tree
-    const t1 = transformDepartmentInClauses(parsed);
+const RuleLeaf = ({ q_json, fulfillmentsForRule, rule, satisfied }: RuleLeafProps) => {
+    console.log(q_json)
+    const t1 = transformDepartmentInClauses(q_json);
     const t2 = transformCourseClauses(t1);
     const t3 = transformSearchConditions(t2)
-    parsed = t3 as TransformedQObject;
-    return <QObject q={parsed} fulfillments={fulfillmentsForRule} rule={rule} satisfied={satisfied} />
+    q_json = t3 as TransformedQObject;
+
+    return (
+        <QObjectWrapper>
+            <QObject q={q_json} fulfillments={fulfillmentsForRule} rule={rule} satisfied={satisfied} />
+        </QObjectWrapper>
+    )
 }
 
 export default RuleLeaf;

@@ -12,7 +12,7 @@ from django.db.models.signals import m2m_changed
 from django.utils import timezone
 
 from courses.models import Course
-from degree.utils.model_utils import q_object_parser
+from degree.utils.model_utils import q_object_parser, json_parser
 
 
 program_choices = [
@@ -176,6 +176,10 @@ class Rule(models.Model):
             "parent={self.parent.title if self.parent else None}"
         )
 
+    @property
+    def q_json(self):
+        return self.get_json_q_object()
+    
     def evaluate(self, full_codes: Iterable[str]) -> bool:
         """
         Check if this rule is fulfilled by the provided courses.
@@ -223,6 +227,10 @@ class Rule(models.Model):
             return None
         return q_object_parser.parse(self.q)
 
+    def get_json_q_object(self) -> dict | None:
+        if not self.q:
+            return None
+        return json_parser.parse(self.q)
 
 class DegreePlan(models.Model):
     """

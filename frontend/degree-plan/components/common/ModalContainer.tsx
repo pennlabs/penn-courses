@@ -24,6 +24,7 @@ const OuterModalContainer = styled.div<{ $title: string }>`
     left: 0;
     right: 0;
     top: 0;
+    height: 100%;
 
     header,
     footer {
@@ -50,8 +51,8 @@ const ModalBackground = styled.div`
 
 const ModalCard = styled.div<{ $isBig: boolean }>`
     border-radius: 4px;
-    max-width: ${(props) => (props.$isBig ? "400px" : "700px")} !important;
-    max-height: ${(props) => (props.$isBig ? "275px" : "400px")} !important;
+    max-width: ${(props) => (props.$isBig ? "400px" : "1000px")} !important;
+    max-height: ${(props) => (props.$isBig ? "275px" : "800px")} !important;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -117,9 +118,12 @@ const ModalCardTitle = styled.header`
 
 const ModalCardBody = styled.section`
     background-color: white;
+    display: flex;
+    flex-direction: column;
     flex-grow: 1;
     flex-shrink: 1;
     overflow: auto;
+    height: 100%;
     padding-left: 2rem;
     padding-right: 2rem;
     padding-bottom: 1.5rem;
