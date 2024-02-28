@@ -128,7 +128,7 @@ const Degree = ({degree, rulesToFulfillments, activeDegreeplan, editMode, setMod
       degree={degree} 
       key={degree.id} 
       remove={() => {
-        setModalObject(activeDegreeplan);
+        setModalObject({degreeplanId: activeDegreeplan.id, degreeId: degree.id});
         setModalKey("degree-remove");
       }} 
       setCollapsed={setCollapsed}

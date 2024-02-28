@@ -57,7 +57,7 @@ export const getFetcher = baseFetcher({ method: "GET" })
 export const postFetcher = baseFetcher({ method: "POST" })
 export const patchFetcher = baseFetcher({ method: "PATCH" })
 export const putFetcher = baseFetcher({ method: "PUT" })
-export const deleteFetcher = baseFetcher({ method: "DELETE" }, false);
+export const deleteFetcher = baseFetcher({ method: "DELETE" });
 
 const normalizeFinalSlash = (resource: string) => {
     if (!resource.endsWith("/")) resource += "/";

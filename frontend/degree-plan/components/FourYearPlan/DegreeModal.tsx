@@ -52,9 +52,18 @@ const ModalButton = styled.button`
     border: none;
 `;
 
+interface RemoveDegreeProps {
+    degreeplanId: number;
+    degreeId: number
+}
+
+interface RemoveSemesterProps {
+    helper: () => void
+}
+
 interface ModalInteriorProps {
     modalKey: ModalKey;
-    modalObject: DegreePlan | null | {helper: () => void};
+    modalObject: DegreePlan | null | RemoveSemesterProps | RemoveDegreeProps;
     setActiveDegreeplanId: (arg0: DegreePlan["id"]) => void;
     close: () => void;
 }
@@ -199,7 +208,7 @@ const ModalInterior = ({ modalObject, modalKey, setActiveDegreeplanId, close }: 
                 <ModalInteriorWrapper>
                     <p>Are you sure you want to remove this degree? All of your planning for this degree will be lost</p>
                     <ModalButton onClick={() => {
-                        remove_degree(modalObject.id, modalObject.id)
+                        remove_degree(modalObject.degreeplanId, modalObject.degreeId)
                         close();
                     }}>Remove</ModalButton>
                 </ModalInteriorWrapper>
