@@ -501,17 +501,17 @@ export const removeCartItem = (sectionId) => ({
     sectionId,
 });
 
-export const addAlertItem = (section) => ({
+export const addAlertFrontend = (alert) => ({
     type: ADD_ALERT_ITEM,
-    section,
+    alert,
 });
 
-export const removeAlertItem = (sectionId) => ({
+export const removeAlertFrontend = (sectionId) => ({
     type: REMOVE_ALERT_ITEM,
     sectionId,
 });
 
-export const updateContactInfo = (contactInfo) => ({
+export const updateContactInfoFrontend = (contactInfo) => ({
     type: UPDATE_CONTACT_INFO,
     contactInfo,
 });
@@ -744,61 +744,119 @@ export const setCurrentUserPrimarySchedule = (user, scheduleId) => (
         .catch((error) => error.json());
 };
 
-export const addAlertOnBackend = (sectionId) => (dispatch) => {
-    /*
-    const postRegistration = (section_id: string) =>
-        doAPIRequest("/api/alert/registrations/", "POST", {
-            section: section_id,
-            auto_resubscribe: true,
-            close_notification: email !== "" && closedNotif,
-        });
-
-            isCourseOpen(section).then((isOpen) => {
-                postRegistration(section)
-                    .then((res) => {
-                        if (res.ok) {
-                            clearInputValue();
-                            setClosedNotif(false);
-                        }
-                        setResponse(res);
-                    })
-                    .catch(handleError);
-            });
-            return;
-    */
+export const addAlertBackend = (sectionId) => (dispatch) => {
+    const registrationObj = {
+        section: sectionId,
+        auto_resubscribe: true,
+        close_notification: false,
+    }
+    const init = {
+        method: "POST",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+        body: JSON.stringify(registrationObj),
+    }
+    doAPIRequest("/alert/registrations/", init)
+        .then((res) => res.json())
+        .then((data) => {
+            dispatch(addAlertFrontend({ ...registrationObj, id: data.id }));
+        })
+        // .catch((error) => console.log(error));
 }
 
-export const deleteAlertOnBackend = (sectionId) => (dispatch) => {
-    // TODO
+export const removeAlertBackend = (alertId, sectionId) => (dispatch) => {
+    const updateObj = {
+        deleted: true,
+    }
+    const init = {
+        method: "PUT",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+        body: JSON.stringify(updateObj),
+    }
+    doAPIRequest(`/alert/registrations/${alertId}/`, init)
+        .then((res) => {
+            if(res.ok) {
+                dispatch(removeAlertFrontend(sectionId));
+            }
+        })
+    //     // .catch((error) => console.log(error));
 }
 
 export const fetchAlerts = () => (dispatch) => {
+    const init = {
+        method: "GET",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+    }
+    doAPIRequest("/alert/registrations/", init)
+        .then((res) => res.json())
+        .then((alerts) => {
+            alerts.forEach((alert) => {
+                dispatch(addAlertFrontend({ id: alert.id, section: alert.section, auto_resubscribe: alert.auto_resubscribe, close_notification: alert.close_notification }));
+            });
+        })
+        .catch((error => error.json()));
 }
 
 export const fetchContactInfo = () => (dispatch) => {
-    doAPIRequest("/accounts/me/")
-        .then((res) => {
-            if (res.ok) {
-                return res.json();
-            }
-            throw new Error(JSON.stringify(res));
-        })
-        .catch((error) => error.json());
-}
-
-export const updateContactInfoOnBackend = (contactInfo) => (dispatch) => {
-    doAPIRequest("/accounts/me/", "PATCH", {
-        profile: { 
-            email: contactInfo.email,
-            phone: parsePhoneNumberFromString(contactInfo.phone, "US")?.number ?? ""
+    fetch("/accounts/me/", {
+        method: "GET",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
         },
     })
-        .then((res) => {
-            if (!res.ok) {
-                throw new Error(JSON.stringify(res));
-            } else {
-                // return submitRegistration();
-            }
+        .then((res) => res.json())
+        .then((data) => {
+            dispatch(updateContactInfoFrontend({email: data.profile.email, phone: data.profile.phone}));
         })
-        .catch((error) => error.json());
+        // eslint-disable-next-line no-console
+        .catch((error) => console.log(error));
+}
+
+export const updateContactInfoBackend = (contactInfo) => (dispatch) => {
+    const profile = {
+        email: contactInfo.email,
+        phone: parsePhoneNumberFromString(contactInfo.phone, "US")?.number ?? ""
+    }
+    fetch("/accounts/me/", {
+        method: "PATCH",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+        body: JSON.stringify({ 
+            profile: profile
+        }),
+    })
+    .then((res) => {
+        if (!res.ok) {
+            throw new Error(JSON.stringify(res));
+        } else {
+            // update on front end
+            dispatch(updateContactInfoFrontend(profile));
+        }
+    });
 }

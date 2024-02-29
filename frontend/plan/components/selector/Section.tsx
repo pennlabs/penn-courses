@@ -21,7 +21,7 @@ interface SectionProps {
         remove: () => void;
     }
     inAlerts: boolean;
-    setContactInfo: (email: string, phone: string) => void;
+    setContactInfoBackend: (email: string, phone: string) => void;
     contactInfo: { email: string; phone: string };
 }
 
@@ -132,7 +132,7 @@ const HoverSwitch = styled.div`
     }
 `;
 
-export default function Section({ section, cart, inCart, alerts, inAlerts, setContactInfo, contactInfo }: SectionProps) {
+export default function Section({ section, cart, inCart, alerts, inAlerts, setContactInfoBackend, contactInfo }: SectionProps) {
     const { instructors, meetings, status } = section;
 
     const { schedules, scheduleSelected } = useSelector(
@@ -250,7 +250,7 @@ export default function Section({ section, cart, inCart, alerts, inAlerts, setCo
                         <AlertButton 
                             alerts={alerts} 
                             inAlerts={inAlerts} 
-                            setContactInfo={setContactInfo} 
+                            setContactInfoBackend={setContactInfoBackend} 
                             contactInfo={contactInfo} 
                         />
                     ) : (

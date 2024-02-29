@@ -88,6 +88,13 @@ export interface Section {
     associated_sections: Section[];
 }
 
+export interface Alert {
+    id: string;
+    section: string;
+    auto_resubscribe: boolean;
+    close_notification: boolean;
+}
+
 export interface Meeting {
     id: string;
     day: string;

@@ -12,6 +12,8 @@ def pca_registration_open():
     Returns True iff PCA should be accepting new registrations.
     """
     current_adp = get_or_create_add_drop_period(semester=get_current_semester())
+    # ONLY FOR DEVELOPMENT - Luke Tong
+    return True
     return get_bool("REGISTRATION_OPEN", True) and (
         current_adp.end is None
         or datetime.utcnow().replace(tzinfo=gettz(TIME_ZONE)) < current_adp.end

@@ -3,8 +3,8 @@ import styled from "styled-components";
 import { connect } from "react-redux";
 
 import Section from "./Section";
-import { Section as SectionType } from "../../types";
-import { addAlertItem, addCartItem, removeAlertItem, removeCartItem, updateContactInfo } from "../../actions";
+import { Section as SectionType, Alert as AlertType } from "../../types";
+import { addAlertBackend, addCartItem, removeAlertBackend, removeCartItem, updateContactInfoBackend } from "../../actions";
 
 interface SectionListProps {
     sections: SectionType[];
@@ -21,9 +21,9 @@ function SectionList({
     sections,
     cartSections,
     manageCart,
-    alertedSections,
+    alerts,
     manageAlerts,
-    setContactInfo,
+    setContactInfoBackend,
     contactInfo,
     view,
 }: SectionListProps & {
@@ -32,14 +32,15 @@ function SectionList({
     ) => { add: () => void; remove: () => void };
     cartSections: string[];
     manageAlerts: (
-        section: SectionType
+        section: SectionType,
+        alerts: AlertType[],
     ) => { add: () => void; remove: () => void };
-    alertedSections: string[];
-    setContactInfo: (email: string, phone: string) => void;
+    alerts: AlertType[];
+    setContactInfoBackend: (email: string, phone: string) => void;
     contactInfo: { email: string; phone: string };
 }) {
     const isInCart = ({ id }: SectionType) => cartSections.indexOf(id) !== -1;
-    const isInAlerts = ({ id }: SectionType) => alertedSections.indexOf(id) !== -1;
+    const isInAlerts = ({ id }: SectionType) => alerts.map((alert: AlertType) => alert.section).indexOf(id) !== -1;
     return (
         <ResultsContainer>
             <ul>
@@ -49,9 +50,9 @@ function SectionList({
                         section={s}
                         cart={manageCart(s)}
                         inCart={isInCart(s)}
-                        alerts={manageAlerts(s)}
+                        alerts={manageAlerts(s, alerts)}
                         inAlerts={isInAlerts(s)}
-                        setContactInfo={setContactInfo}
+                        setContactInfoBackend={setContactInfoBackend}
                         contactInfo={contactInfo}
                     />
                 ))}
@@ -63,7 +64,7 @@ function SectionList({
 const mapStateToProps = (state: any, ownProps: SectionListProps) => ({
     ...ownProps,
     cartSections: state.schedule.cartSections.map((sec: SectionType) => sec.id),
-    alertedSections: state.alerts.alertedCourses.map((sec: SectionType) => sec.id),
+    alerts: state.alerts.alertedCourses,
     contactInfo: state.alerts.contactInfo,
 });
 
@@ -72,13 +73,14 @@ const mapDispatchToProps = (dispatch: (payload: any) => void) => ({
         add: () => dispatch(addCartItem(section)),
         remove: () => dispatch(removeCartItem(section.id)),
     }),
-    manageAlerts: (section: SectionType) => ({
-        add: () => dispatch(addAlertItem(section)), // TODO:
-        remove: () => dispatch(removeAlertItem(section.id)),
+    manageAlerts: (section: SectionType, alerts: AlertType[]) => ({
+        add: () => dispatch(addAlertBackend(section.id)),
+        remove: () => {
+            const alertId = alerts.find((a: AlertType) => a.section === section.id)?.id;
+            dispatch(removeAlertBackend(alertId, section.id));
+        }
     }),
-    setContactInfo: (email: string, phone: string) => {
-        dispatch(updateContactInfo({ email, phone }));
-    }
+    setContactInfoBackend: (email: string, phone: string) => dispatch(updateContactInfoBackend({ email, phone })),
 });
 
 // @ts-ignore

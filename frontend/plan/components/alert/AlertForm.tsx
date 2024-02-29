@@ -46,12 +46,16 @@ const SubmitButton = styled.button`
 `;
 
 interface AlertFormProps {
-    setContactInfo: (email: string, phone: string) => void;
+    setContactInfoBackend: (email: string, phone: string) => void;
     contactInfo: { email: string; phone: string };
     setShowForm: (show: boolean) => void;
+    alerts: {
+        add: () => void;
+        remove: () => void;
+    }
 }
 
-export default function AlertForm({ setContactInfo, contactInfo, setShowForm }: AlertFormProps) {
+export default function AlertForm({ setContactInfoBackend, contactInfo, setShowForm, alerts }: AlertFormProps) {
     return(
         <Form
             onClick={(e) => e.stopPropagation()}
@@ -59,7 +63,8 @@ export default function AlertForm({ setContactInfo, contactInfo, setShowForm }: 
                 e.preventDefault();
                 const email = (e.target as HTMLFormElement).elements[0].value;
                 const phone = (e.target as HTMLFormElement).elements[1].value;
-                setContactInfo(email, phone);
+                setContactInfoBackend(email, phone);
+                alerts.add();
                 setShowForm(false);
             }}
         >

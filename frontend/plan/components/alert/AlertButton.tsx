@@ -8,7 +8,7 @@ interface AlertButtonProps {
         remove: () => void;
     }
     inAlerts: boolean;
-    setContactInfo: (email: string, phone: string) => void;
+    setContactInfoBackend: (email: string, phone: string) => void;
     contactInfo: { email: string; phone: string };
 }
 
@@ -23,7 +23,7 @@ const Bell = styled.button`
     }
 `;
 
-export default function AlertButton({ alerts, inAlerts, setContactInfo, contactInfo }: AlertButtonProps) {
+export default function AlertButton({ alerts, inAlerts, setContactInfoBackend, contactInfo }: AlertButtonProps) {
     const [showForm, setShowForm] = useState(false);
 
     return(
@@ -36,7 +36,6 @@ export default function AlertButton({ alerts, inAlerts, setContactInfo, contactI
                         alerts.remove();
                         setShowForm(false);
                     } else {
-                        alerts.add();
                         setShowForm(true);
                     }
                 }}
@@ -49,9 +48,10 @@ export default function AlertButton({ alerts, inAlerts, setContactInfo, contactI
 
             {showForm &&
                 <AlertForm
-                    setContactInfo={setContactInfo}
+                    setContactInfoBackend={setContactInfoBackend}
                     contactInfo={contactInfo}
                     setShowForm={setShowForm}
+                    alerts={alerts}
                 />
             }
 

@@ -5,7 +5,6 @@ import {
 } from "../actions";
 const initialState = {
     alertedCourses: [],
-    alertsPushedToBackend: false,
     contactInfo: {
         email: "",
         phone: "",
@@ -16,12 +15,12 @@ export const alerts = (state=initialState, action) => {
         case ADD_ALERT_ITEM:
             return {
                 ...state,
-                alertedCourses: [...state.alertedCourses, action.section],
+                alertedCourses: [...state.alertedCourses, action.alert],
             };
         case REMOVE_ALERT_ITEM:
             return {
                 ...state,
-                alertedCourses: state.alertedCourses.filter((course) => course.id !== action.sectionId),
+                alertedCourses: state.alertedCourses.filter(({ section }) => section !== action.sectionId),
             };
         case UPDATE_CONTACT_INFO:
             return {
