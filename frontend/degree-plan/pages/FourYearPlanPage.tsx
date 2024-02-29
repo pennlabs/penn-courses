@@ -60,7 +60,12 @@ const PanelWrapper = styled.div<{ $maxWidth: string; $minWidth: string }>`
   height: 100%;
 `;
 
-const FourYearPlanPage = ({ updateUser, user, activeDegreeplanId, setActiveDegreeplanId }: any) => {
+const FourYearPlanPage = ({
+  updateUser,
+  user,
+  activeDegreeplanId,
+  setActiveDegreeplanId,
+}: any) => {
   // edit modals for degree and degree plan
   const [modalKey, setModalKey] = useState<ModalKey>(null);
   const [modalObject, setModalObject] = useState<DegreePlan | null>(null); // stores the which degreeplan is being updated using the modal
@@ -78,9 +83,9 @@ const FourYearPlanPage = ({ updateUser, user, activeDegreeplanId, setActiveDegre
     );
 
   console.log(activeDegreePlan);
-  
+
   useEffect(() => {
-    console.log('detect change in degreeplans');
+    console.log("detect change in degreeplans");
     // recompute the active degreeplan id on changes to the degreeplans
     if (!isLoadingDegreeplans && !degreeplans?.length) {
       setShowOnboardingModal(true);
@@ -88,16 +93,18 @@ const FourYearPlanPage = ({ updateUser, user, activeDegreeplanId, setActiveDegre
     if (!degreeplans?.length) {
       setActiveDegreeplanId(null);
     }
-    else if (degreeplans.length > 0) {
-      setActiveDegreeplanId(degreeplans[1].id);
-    }
-    // else if (!activeDegreeplanId || !degreeplans.find((d) => d.id === activeDegreeplanId)
-    // ) {
-    //   const mostRecentUpdated = degreeplans.reduce((a, b) =>
-    //     a.updated_at > b.updated_at ? a : b
-    //   );
-    //   setActiveDegreeplanId(mostRecentUpdated.id);
+    // else if (degreeplans.length > 0) {
+    //   setActiveDegreeplanId(degreeplans[1].id);
     // }
+    else if (
+      !activeDegreeplanId ||
+      !degreeplans.find((d) => d.id === activeDegreeplanId)
+    ) {
+      const mostRecentUpdated = degreeplans.reduce((a, b) =>
+        a.updated_at > b.updated_at ? a : b
+      );
+      setActiveDegreeplanId(mostRecentUpdated.id);
+    }
   }, [degreeplans]);
 
   const windowWidth = useWindowDimensions()["width"];
@@ -158,63 +165,62 @@ const FourYearPlanPage = ({ updateUser, user, activeDegreeplanId, setActiveDegre
         )}
         <PageContainer>
           <Nav login={updateUser} logout={() => updateUser(null)} user={user} />
-          
+
           <BodyContainer ref={ref}>
-          {!!showOnboardingModal 
-          ? 
-            <OnboardingPage 
-              setShowOnboardingModal={setShowOnboardingModal} 
-              setActiveDegreeplanId={setActiveDegreeplanId}/>
-          :
-            <Row>
-              <SplitPane
-                split="vertical"
-                minSize={0}
-                maxSize={windowWidth ? windowWidth * 0.65 : 1000}
-                defaultSize="50%"
-              >
-                <PanelWrapper>
-                  <PlanPanel
-                    setModalKey={setModalKey}
-                    modalKey={modalKey}
-                    setModalObject={setModalObject}
-                    isLoading={
-                      isLoadingDegreeplans || isLoadingActiveDegreePlan
-                    }
-                    activeDegreeplan={activeDegreePlan}
-                    degreeplans={degreeplans}
-                    setActiveDegreeplanId={setActiveDegreeplanId}
-                  />
-                </PanelWrapper>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "row",
-                    height: "100%",
-                  }}
+            {!!showOnboardingModal ? (
+              <OnboardingPage
+                setShowOnboardingModal={setShowOnboardingModal}
+                setActiveDegreeplanId={setActiveDegreeplanId}
+              />
+            ) : (
+              <Row>
+                <SplitPane
+                  split="vertical"
+                  minSize={0}
+                  maxSize={windowWidth ? windowWidth * 0.65 : 1000}
+                  defaultSize="50%"
                 >
                   <PanelWrapper>
-                    {/* <SplitPane split="horizontal" minSize='80%'> */}
-                    <ReqPanel
+                    <PlanPanel
                       setModalKey={setModalKey}
+                      modalKey={modalKey}
                       setModalObject={setModalObject}
+                      isLoading={
+                        isLoadingDegreeplans || isLoadingActiveDegreePlan
+                      }
                       activeDegreeplan={activeDegreePlan}
+                      degreeplans={degreeplans}
+                      setActiveDegreeplanId={setActiveDegreeplanId}
                     />
-                    {/* <div>
+                  </PanelWrapper>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "row",
+                      height: "100%",
+                    }}
+                  >
+                    <PanelWrapper>
+                      {/* <SplitPane split="horizontal" minSize='80%'> */}
+                      <ReqPanel
+                        setModalKey={setModalKey}
+                        setModalObject={setModalObject}
+                        activeDegreeplan={activeDegreePlan}
+                      />
+                      {/* <div>
                             load area
                         </div>
                     </SplitPane> */}
-                  </PanelWrapper>
-                  {searchPanelOpen && (
-                    <PanelWrapper $minWidth={"40%"} $maxWidth={"45%"}>
-                      <SearchPanel activeDegreeplanId={activeDegreeplanId} />
                     </PanelWrapper>
-                  )}
-                </div>
-              </SplitPane>
-            </Row>
-            }
-
+                    {searchPanelOpen && (
+                      <PanelWrapper $minWidth={"40%"} $maxWidth={"45%"}>
+                        <SearchPanel activeDegreeplanId={activeDegreeplanId} />
+                      </PanelWrapper>
+                    )}
+                  </div>
+                </SplitPane>
+              </Row>
+            )}
           </BodyContainer>
           {!showOnboardingModal && <Dock />}
         </PageContainer>
