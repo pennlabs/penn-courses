@@ -25,6 +25,7 @@ program_choices = [
 program_code_to_name = dict(program_choices)
 
 
+
 class Degree(models.Model):
     """
     This model represents a degree for a specific year.
@@ -231,6 +232,7 @@ class Rule(models.Model):
         if not self.q:
             return None
         return json_parser.parse(self.q)
+
 
 class DegreePlan(models.Model):
     """
@@ -498,3 +500,29 @@ class DoubleCountRestriction(models.Model):
             intersection_cus = 0
 
         return self.max_credits and intersection_cus > self.max_credits
+
+
+class DockedCourse(models.Model):
+    '''
+    This represents a course docked by a user. 
+    This is keyed by user but not degree plan, so when a user switches degree plan, the docked courses will not change.
+    '''
+    person = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.CASCADE,
+        help_text="The user the docked course belongs to.",
+    )
+
+    full_code = models.CharField(
+        max_length=16,
+        blank=True,
+        db_index=True,
+        help_text="The dash-joined department and code of the course, e.g., `CIS-120`",
+    )
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["person", "full_code"], 
+                name="unique docked course",
+            )
+        ]

@@ -36,6 +36,12 @@ export interface DegreeListing extends DBObject {
   credits: number;
 }
 
+export interface DockedCourse extends DBObject {
+  id: number;
+  full_code: string;
+  person: any;
+}
+
 
 export interface Degree extends DBObject {
   id: number;

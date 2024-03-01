@@ -77,7 +77,7 @@ const FourYearPlanPage = ({ updateUser, user, activeDegreeplanId, setActiveDegre
         : null
     );
 
-  console.log(activeDegreePlan);
+  // console.log(activeDegreePlan);
   
   useEffect(() => {
     console.log('detect change in degreeplans');

@@ -43,6 +43,7 @@ export const baseFetcher = (init: RequestInit, jsonify: boolean = true) => async
         body: body === undefined ? undefined : JSON.stringify(body)
     });
     if (!res.ok) {
+        console.log('res is not ok', res)
         const error = new Error('An error occurred while fetching the data.') as SWRCrudError;
         // Attach extra info to the error object.
         error.info = await res.json()
@@ -152,10 +153,10 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
         return updated;
     }
 
-    const remove = (id: idType) => {
+    const remove = async (id: idType) => {
         if (!id) return;
         const key = normalizeFinalSlash(endpoint) + id;
-        const removed = removeFetcher(key);
+        const removed = await removeFetcher(key)
         mutate(endpoint, removed, {
             optimisticData: (list?: Array<T>) => list ? list.filter((item: T) => String(item[idKey]) !== id) : [],
             populateCache: (_, list?: Array<T>) => {

@@ -11,13 +11,14 @@ from rest_framework.response import Response
 
 from courses.models import Course
 from courses.serializers import CourseListSerializer
-from degree.models import Degree, DegreePlan, Fulfillment, Rule
+from degree.models import Degree, DegreePlan, Fulfillment, Rule, DockedCourse
 from degree.serializers import (
     DegreeDetailSerializer,
     DegreeListSerializer,
     DegreePlanDetailSerializer,
     DegreePlanListSerializer,
     FulfillmentSerializer,
+    DockedCourseSerializer
 )
 
 
@@ -44,7 +45,6 @@ class DegreeViewset(viewsets.ReadOnlyModelViewSet):
                 return DegreeDetailSerializer
             return DegreeListSerializer
         return DegreeDetailSerializer
-
 
 class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     """
@@ -153,3 +153,52 @@ def courses_for_rule(request, rule_id: int):
     """
     Search for courses that fulfill a given rule.
     """
+
+
+class DockedCourseViewset(viewsets.ModelViewSet):
+    """
+    List, retrieve, create, destroy, and update docked courses
+    """
+    permission_classes = [IsAuthenticated]
+    serializer_class = DockedCourseSerializer
+    # http_method_names = ["get", "post", "head", "delete"]
+    queryset = DockedCourse.objects.all()
+    lookup_field = "full_code"
+
+    def get_queryset(self):
+        queryset = DockedCourse.objects.filter(person=self.request.user)
+        return queryset
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({"request": self.request})  # used to get the user
+        return context
+    
+    # def retrieve(self, request, *args, **kwargs):
+    #     dockedCourse = self.get_object()
+    #     serializer = self.get_serializer(dockedCourse)
+    #     return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    def create(self, request, *args, **kwargs):
+        if request.data.get("full_code") is None:
+            raise ValidationError({ "full_code": "This field is required." })
+        self.kwargs["full_code"] = request.data["full_code"]
+        self.kwargs["person"] = self.request.user
+        try:
+            return self.partial_update(request, *args, **kwargs)
+        except Http404:
+            return super().create(request, *args, **kwargs)
+        
+    def destroy(self, request, *args, **kwargs):
+        if kwargs["full_code"] is None:
+            raise ValidationError({ "full_code": "This field is required." })
+
+        instances_to_delete = self.get_queryset().filter(full_code=kwargs["full_code"])
+        
+        if not instances_to_delete.exists():
+            raise Http404("No instances matching the provided full_code were found.")
+
+        for instance in instances_to_delete:
+            self.perform_destroy(instance)
+        
+        return Response(status.HTTP_200_OK)
