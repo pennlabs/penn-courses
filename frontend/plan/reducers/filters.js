@@ -1,7 +1,7 @@
 import {
-    LOAD_REQUIREMENTS,
-    ADD_SCHOOL_REQ,
-    REM_SCHOOL_REQ,
+    LOAD_ATTRIBUTES,
+    ADD_SCHOOL_ATTR,
+    REM_SCHOOL_ATTR,
     UPDATE_SEARCH_TEXT,
     UPDATE_RANGE_FILTER,
     CLEAR_FILTER,
@@ -11,16 +11,23 @@ import {
 } from "../actions";
 
 export const initialState = {
-    schoolReq: {
+    schoolAttrs: {
         SAS: [],
         SEAS: [],
         NURS: [],
         WH: [],
+        LPS: [],
+        DSGN: [],
+        GSE: [],
+        LAW: [],
+        MED: [],
+        VET: [],
+        MODE: [],
     },
     filterData: {
         searchString: "",
         searchType: "courseIDSearch",
-        selectedReq: null,
+        selectedAttrs: null,
         difficulty: [0, 4],
         course_quality: [0, 4],
         instructor_quality: [0, 4],
@@ -48,20 +55,20 @@ export const initialState = {
         "schedule-fit": -1,
         is_open: 0,
     },
-    defaultReqs: null,
+    defaultAttrs: null,
 };
 
 export const filters = (state = initialState, action) => {
     switch (action.type) {
-        case LOAD_REQUIREMENTS:
+        case LOAD_ATTRIBUTES:
             return {
                 ...state,
-                schoolReq: action.obj,
+                schoolAttrs: action.obj,
                 filterData: {
                     ...state.filterData,
-                    selectedReq: action.selObj,
+                    selectedAttrs: action.selObj,
                 },
-                defaultReqs: action.selObj,
+                defaultAttrs: action.selObj,
             };
 
         case UPDATE_SEARCH_TEXT:
@@ -73,26 +80,26 @@ export const filters = (state = initialState, action) => {
                 },
             };
 
-        case ADD_SCHOOL_REQ:
+        case ADD_SCHOOL_ATTR:
             return {
                 ...state,
                 filterData: {
                     ...state.filterData,
-                    selectedReq: {
-                        ...state.filterData.selectedReq,
-                        [action.reqID]: 1,
+                    selectedAttrs: {
+                        ...state.filterData.selectedAttrs,
+                        [action.attrCode]: 1,
                     },
                 },
             };
 
-        case REM_SCHOOL_REQ:
+        case REM_SCHOOL_ATTR:
             return {
                 ...state,
                 filterData: {
                     ...state.filterData,
-                    selectedReq: {
-                        ...state.filterData.selectedReq,
-                        [action.reqID]: 0,
+                    selectedAttrs: {
+                        ...state.filterData.selectedAttrs,
+                        [action.attrCode]: 0,
                     },
                 },
             };
@@ -129,12 +136,12 @@ export const filters = (state = initialState, action) => {
             };
 
         case CLEAR_FILTER:
-            if (action.propertyName === "selectedReq") {
+            if (action.propertyName === "selectedAttrs") {
                 return {
                     ...state,
                     filterData: {
                         ...state.filterData,
-                        selectedReq: state.defaultReqs,
+                        selectedAttrs: state.defaultAttrs,
                     },
                 };
             }
@@ -154,10 +161,10 @@ export const filters = (state = initialState, action) => {
                 filterData: {
                     ...initialState.filterData,
                     searchString: state.filterData.searchString,
-                    selectedReq: state.defaultReqs,
+                    selectedAttrs: state.defaultAttrs,
                 },
-                defaultReqs: state.defaultReqs,
-                schoolReq: state.schoolReq,
+                defaultAttrs: state.defaultAttrs,
+                schoolAttrs: state.schoolAttrs,
             };
         default:
             return state;

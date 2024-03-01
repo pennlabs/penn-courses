@@ -1,7 +1,7 @@
 import ReactGA from "react-ga";
 import {
-    ADD_SCHOOL_REQ,
-    REM_SCHOOL_REQ,
+    ADD_SCHOOL_ATTR,
+    REM_SCHOOL_ATTR,
     UPDATE_SEARCH_TEXT,
     UPDATE_RANGE_FILTER,
     CHANGE_MY_SCHEDULE,
@@ -30,7 +30,7 @@ export const logException = (description = "", fatal = false) => {
     }
 };
 
-const filterActions = [ADD_SCHOOL_REQ, REM_SCHOOL_REQ, UPDATE_RANGE_FILTER];
+const filterActions = [ADD_SCHOOL_ATTR, REM_SCHOOL_ATTR, UPDATE_RANGE_FILTER];
 const schedActions = [
     CHANGE_MY_SCHEDULE,
     RENAME_SCHEDULE,

@@ -19,8 +19,6 @@ const schoolToLetter = (school: School) => {
             return "";
     }
 };
-const getReqCode = (school: School, name: string) =>
-    `${schoolToLetter(school)}: ${name}`;
 
 const annotatePrerequisites = (
     text: string | null,
@@ -95,7 +93,7 @@ const Icon = styled.span`
 
 export default function CourseDetails({
     course: {
-        requirements = [],
+        attributes = [],
         crosslistings = [],
         description,
         prerequisites: prereqText,
@@ -119,15 +117,15 @@ export default function CourseDetails({
                 &nbsp; Difficulty: &nbsp;
                 <Badge value={difficulty} />
             </li>
-            {requirements.length > 0 ? (
+            {attributes.length > 0 ? (
                 <li>
                     <Icon>
                         <i className="far fa-check-circle" />
                     </Icon>
                     &nbsp; Fulfills: &nbsp;
                     <TagList
-                        elements={requirements.map(({ school, name }) =>
-                            getReqCode(school, name)
+                        elements={attributes.map(({ school, description }) =>
+                            description
                         )}
                         limit={1}
                     />
