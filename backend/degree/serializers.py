@@ -4,16 +4,54 @@ from django.db.models import Q
 from rest_framework import serializers
 
 from courses.models import Course
-from courses.serializers import CourseListSerializer, CourseDetailSerializer, SimpleCourseSerializer
-from degree.models import Degree, DegreePlan, DoubleCountRestriction, Fulfillment, Rule
+from courses.serializers import CourseListSerializer, CourseDetailSerializer
+from degree.models import Degree, DegreePlan, DoubleCountRestriction, Fulfillment, Rule, DockedCourse
 from courses.util import get_current_semester
-
 
 class DegreeListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Degree
         fields = "__all__"
 
+class SimpleCourseSerializer(serializers.ModelSerializer):
+    id = serializers.ReadOnlyField(
+        source="full_code",
+        help_text=dedent(
+            """
+        The full code of the course, in the form '{dept code}-{course code}'
+        dash-joined department and code of the course, e.g. `CIS-120` for CIS-120."""
+        ),
+    )
+
+    course_quality = serializers.DecimalField(
+        max_digits=4, decimal_places=3, read_only=True, help_text='course_quality_help'
+    )
+    difficulty = serializers.DecimalField(
+        max_digits=4, decimal_places=3, read_only=True, help_text='difficulty_help'
+    )
+    instructor_quality = serializers.DecimalField(
+        max_digits=4,
+        decimal_places=3,
+        read_only=True,
+        help_text='instructor_quality_help',
+    )
+    work_required = serializers.DecimalField(
+        max_digits=4, decimal_places=3, read_only=True, help_text='work_required_help'
+    )
+
+    class Meta:
+        model = Course
+        fields = [
+            "id",
+            "title",
+            "credits",
+            "semester",
+            "course_quality",
+            "instructor_quality",
+            "difficulty",
+            "work_required",
+        ]
+        read_only_fields = fields
 
 class RuleSerializer(serializers.ModelSerializer):
     q_json = serializers.ReadOnlyField(help_text="JSON representation of the q object")
@@ -131,4 +169,13 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DegreePlan
+        fields = "__all__"
+
+
+class DockedCourseSerializer(serializers.ModelSerializer):
+    id = serializers.ReadOnlyField(help_text="The id of the docked course")
+    person = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
+    class Meta:
+        model = DockedCourse
         fields = "__all__"

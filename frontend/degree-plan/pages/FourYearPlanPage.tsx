@@ -82,8 +82,6 @@ const FourYearPlanPage = ({
         : null
     );
 
-  console.log(activeDegreePlan);
-
   useEffect(() => {
     console.log("detect change in degreeplans");
     // recompute the active degreeplan id on changes to the degreeplans

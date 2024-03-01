@@ -1,12 +1,14 @@
 
 import styled from '@emotion/styled';
 import { DarkGrayIcon } from '../Requirements/QObject';
-import React, { useContext } from "react";
+import React, { useContext, useEffect } from "react";
 import { useDrag, useDrop } from "react-dnd";
-import { Course } from "@/types";
+import { Course, IDockedCourse } from "@/types";
 import { ItemTypes } from "../dnd/constants";
 import DockedCourse from './DockedCourse';
 import { SearchPanelContext } from '../Search/SearchPanel';
+import { useSWRCrud } from '@/hooks/swrcrud';
+import useSWR, { useSWRConfig } from 'swr';
 
 
 const DockWrapper = styled.div`
@@ -57,17 +59,33 @@ const DockedCourses = styled.div`
 const Dock = () => {
     const { setSearchPanelOpen, setSearchRuleQuery, setSearchRuleId } = useContext(SearchPanelContext)
     const [dockedCourses, setDockedCourses] = React.useState<string[]>([]);
+    const { createOrUpdate,remove } = useSWRCrud<IDockedCourse>(`/api/degree/docked`, {idKey: 'full_code'});
+    const {data: dockedCourseObjs, isLoading} = useSWR<IDockedCourse[]>(`/api/degree/docked`, {fallback: []}) 
 
-    const removeDockedCourse = (full_code: string) => {
+    const removeDockedCourse = async (full_code: string) => {
+        /** Preemtively update frontend */
         setDockedCourses((dockedCourses) => dockedCourses.filter(c => c !== full_code));
+        /** Update backend */
+        await remove(full_code);
     }
+
+    useEffect(() => {
+        if (dockedCourseObjs !== undefined) {
+            setDockedCourses(dockedCourseObjs.map(obj => obj.full_code));
+        }
+    }, [dockedCourseObjs])
 
     const [{ isOver, canDrop }, drop] = useDrop(() => ({
         accept: ItemTypes.COURSE,
         drop: (course: Course) => {
             console.log("DROPPED", course.full_code, 'from', course.semester);
-            setDockedCourses((dockedCourses) => dockedCourses.filter(c => c !== course.full_code)); // to prevent duplicates
-            setDockedCourses((dockedCourses) => [...dockedCourses, course.full_code]);
+            const repeated = dockedCourses.filter(c => c === course.full_code)
+            if (!repeated.length) {
+                /** Preemtively update frontend */
+                setDockedCourses((dockedCourses) => [...dockedCourses, course.full_code]);
+                /** Update backend */
+                createOrUpdate({"full_code": course.full_code}, course.full_code);
+            }
         },
         canDrop: () => {return true},
         collect: monitor => ({
@@ -92,11 +110,11 @@ const Dock = () => {
                 </DockerElm>
                 <Divider/>
                 <DockedCoursesWrapper>
-                    <DockedCourses>
+                    {!isLoading && <DockedCourses>
                         {dockedCourses.map((full_code, i) => 
                             <DockedCourse removeDockedCourse={removeDockedCourse} full_code={full_code}/>
                         )}
-                    </DockedCourses>
+                    </DockedCourses>}
                 </DockedCoursesWrapper>
             </DockContainer>
         </DockWrapper>
