@@ -1,4 +1,5 @@
 // import React from "react";
+import { string } from "prop-types";
 import styled from "styled-components";
 
 export const Container = styled.div`
@@ -47,6 +48,16 @@ export interface GridItemProps {
     border?: boolean;
 }
 
+export interface GridCourseTitleProps {
+    valign?: boolean;
+    halign?: boolean;
+    talign?: boolean;
+    paddingLeft?: string;
+    color?: string;
+    border?: boolean;
+    column: number | string;
+}
+
 export const GridItem = styled.div<GridItemProps>`
     display: flex;
     align-items: ${(props) => (props.valign ? "center" : null)};
@@ -56,6 +67,18 @@ export const GridItem = styled.div<GridItemProps>`
     grid-row: ${(props) => props.row};
     background-color: ${(props) => (props.color ? props.color : "white")};
     border-bottom: ${(props) => (props.border ? "1px solid #ececec" : null)};
+`;
+
+export const GridCourseTitle = styled.div<GridCourseTitleProps>`
+    display: flex;
+    align-items: ${(props) => (props.valign ? "center" : null)};
+    justify-content: ${(props) => (props.halign ? "center" : null)};
+    text-align: ${(props) => (props.talign ? "center" : null)};
+    padding-left: ${(props) =>
+        props.paddingLeft ? props.paddingLeft : "2rem"};
+    background-color: ${(props) => (props.color ? props.color : "white")};
+    border-bottom: ${(props) => (props.border ? "1px solid #ececec" : null)};
+    grid-column: ${(props) => props.column};
 `;
 
 export const RightItem = styled.div`

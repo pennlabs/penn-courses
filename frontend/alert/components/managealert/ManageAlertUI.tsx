@@ -5,7 +5,9 @@ import Header from "./Header";
 import { AlertSearch } from "./AlertSearch";
 import { AlertItem } from "./AlertItem";
 import { maxWidth, PHONE } from "../../constants";
-import { Alert, AlertAction, TAlertSel } from "../../types";
+import { Alert, AlertAction, SectionStatus, TAlertSel } from "../../types";
+import { AlertHeader } from "./AlertHeader";
+import { groupByProperty } from "../../util";
 
 const Container = styled.div`
     background: #ffffff;
@@ -90,6 +92,8 @@ export const ManageAlert = ({
     const [searchTimeout, setSearchTimeout] = useState<number>();
     const [numSelected, setNumSelected] = useState(0);
 
+    let rowNum = 0;
+
     useEffect(() => {
         setNumSelected(
             Object.values(alertSel).reduce((acc, x) => acc + (x ? 1 : 0), 0)
@@ -109,6 +113,17 @@ export const ManageAlert = ({
         );
     };
 
+    /**
+     * Returns alerts grouped by course
+     * @return grouped alerts
+     */
+    const groupedAlerts = groupByProperty(
+        alerts,
+        (a, b) => a.section.localeCompare(b.section),
+        "-",
+        (obj) => obj.section
+    );
+
     return (
         <Container>
             <Flex margin="0.2rem 2rem 0.1rem 2rem" center valign spaceBetween>
@@ -123,28 +138,46 @@ export const ManageAlert = ({
                 batchSelectHandler={batchSelectHandler}
             />
             <AlertGrid>
-                {alerts?.map?.((alert, i) => (
-                    <AlertItem
-                        key={alert.id}
-                        checked={alertSel[alert.id]}
-                        rownum={i + 1}
-                        alertLastSent={alert.alertLastSent}
-                        course={alert.section}
-                        status={alert.status}
-                        actions={alert.actions}
-                        closed={alert.closedNotif}
-                        toggleAlert={toggleAlert(alert.id)}
-                        alertHandler={() =>
-                            actionHandler(alert.id, alert.actions)
-                        }
-                        closedHandler={() =>
-                            actionHandler(alert.id, alert.closedNotif)
-                        }
-                        deleteHandler={() =>
-                            actionHandler(alert.id, AlertAction.DELETE)
-                        }
-                    />
-                ))}
+                {Object.keys(groupedAlerts).map((key) => {
+                    return (
+                        <>
+                            <AlertHeader courseCode={key} rowNum={++rowNum} />
+                            {groupedAlerts[key]?.map?.((alert) => {
+                                return (
+                                    <AlertItem
+                                        key={alert.id}
+                                        checked={alertSel[alert.id]}
+                                        rowNum={++rowNum}
+                                        alertLastSent={alert.alertLastSent}
+                                        course={alert.section}
+                                        status={alert.status}
+                                        actions={alert.actions}
+                                        closed={alert.closedNotif}
+                                        toggleAlert={toggleAlert(alert.id)}
+                                        alertHandler={() =>
+                                            actionHandler(
+                                                alert.id,
+                                                alert.actions
+                                            )
+                                        }
+                                        closedHandler={() =>
+                                            actionHandler(
+                                                alert.id,
+                                                alert.closedNotif
+                                            )
+                                        }
+                                        deleteHandler={() =>
+                                            actionHandler(
+                                                alert.id,
+                                                AlertAction.DELETE
+                                            )
+                                        }
+                                    />
+                                );
+                            })}
+                        </>
+                    );
+                })}
             </AlertGrid>
         </Container>
     );

@@ -23,15 +23,14 @@ const StatusGridItem = styled(GridItem)`
 const TrashImg = styled(Img)`
     cursor: pointer;
     opacity: 75%;
-    
+
     &:hover {
         opacity: 100%;
     }
     &:active {
         transform: translateY(0.1rem);
     }
-    
-`
+`;
 
 // Component for an alert entry (renders as a row in CSS grid)
 interface AlertItemProps {
@@ -40,7 +39,7 @@ interface AlertItemProps {
     status: SectionStatus;
     actions: AlertAction;
     closed: AlertAction;
-    rownum: number;
+    rowNum: number;
     checked: boolean;
     toggleAlert: () => void;
     alertHandler: () => void;
@@ -53,7 +52,7 @@ export const AlertItem = ({
     status,
     actions,
     closed,
-    rownum,
+    rowNum,
     checked,
     toggleAlert,
     alertHandler,
@@ -77,14 +76,14 @@ export const AlertItem = ({
 
     return (
         <>
-            <GridItem column={1} row={rownum} border halign valign>
+            <GridItem column={1} row={rowNum} border halign valign>
                 <input
                     type="checkbox"
                     checked={checked}
                     onChange={toggleAlert}
                 />
             </GridItem>
-            <GridItem column={2} row={rownum} border halign valign talign>
+            <GridItem column={2} row={rowNum} border halign valign talign>
                 {alertLastSent ? (
                     <P size="0.7rem">{alertLastSent}</P>
                 ) : (
@@ -93,21 +92,21 @@ export const AlertItem = ({
                     </P>
                 )}
             </GridItem>
-            <GridItem column={3} row={rownum} border halign valign talign>
+            <GridItem column={3} row={rowNum} border halign valign talign>
                 <P size="0.7rem">{course}</P>
             </GridItem>
-            <StatusGridItem column={4} row={rownum} border halign valign>
+            <StatusGridItem column={4} row={rowNum} border halign valign>
                 <StatusInd background={statuscolor} />
                 <P size="0.7rem">{statustext}</P>
             </StatusGridItem>
-            <GridItem border column={5} row={rownum} halign valign></GridItem>
-            <GridItem border column={6} row={rownum} halign valign>
+            <GridItem border column={5} row={rowNum} halign valign></GridItem>
+            <GridItem border column={6} row={rowNum} halign valign>
                 <ToggleSwitch type={actions} handleChange={alertHandler} />
             </GridItem>
-            <GridItem border column={7} row={rownum} halign valign>
+            <GridItem border column={7} row={rowNum} halign valign>
                 <ToggleSwitch type={closed} handleChange={closedHandler} />
             </GridItem>
-            <GridItem border column={8} row={rownum} halign valign>
+            <GridItem border column={8} row={rowNum} halign valign>
                 <TrashImg
                     src="/svg/trash.svg"
                     width="1.15rem"
