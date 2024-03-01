@@ -3,10 +3,10 @@ import { connect } from "react-redux";
 import { ThunkDispatch } from "redux-thunk";
 import styled from "styled-components";
 import CartSection from "../CartSection";
-import { scheduleContainsSection, meetingSetsIntersect } from "../meetUtil";
-import { removeCartItem, toggleCheck, fetchCourseDetails } from "../../actions";
+import { fetchCourseDetails, removeAlertBackend } from "../../actions";
 
-import { Section, CartCourse } from "../../types";
+import { Alert } from "../../types";
+import AlertSection from "./AlertSection";
 
 const Box = styled.section<{ length: number }>`
     height: calc(100vh - 9em - 3em);
@@ -40,13 +40,11 @@ const Box = styled.section<{ length: number }>`
 `;
 
 interface CartProps {
-    courses: CartCourse[];
-    toggleCourse: (sectionId: Section) => void;
-    removeItem: (sectionId: string) => void;
-    courseInfo: (id: string) => void;
     courseInfoLoading: boolean;
-    setTab?: (_: number) => void;
-    lastAdded: { id: string; code: string };
+    alertedCourses: Alert[];
+    contactInfo: { email: string; phone: string };
+    removeAlert: (alertId: string, sectionId: string) => void;
+    courseInfo: (id: string) => void;
     mobileView: boolean;
 }
 
@@ -54,7 +52,7 @@ const CartEmptyImage = styled.img`
     max-width: min(60%, 40vw);
 `;
 
-const CartEmpty = () => (
+const AlertsEmpty = () => (
     <div
         style={{
             fontSize: "0.8em",
@@ -68,55 +66,44 @@ const CartEmpty = () => (
                 marginBottom: "0.5rem",
             }}
         >
-            Your cart is empty
+            You have no alerts!
         </h3>
-        Click a course section&apos;s + icon to add it to the schedule.
+        Click a course&apos;s bell icon to sign up for alerts.
         <br />
         <CartEmptyImage src="/icons/empty-state-cart.svg" alt="" />
     </div>
 );
 
-const Cart = ({
-    courses,
-    toggleCourse,
-    removeItem,
-    courseInfo,
+const Alerts = ({
     courseInfoLoading,
-    setTab,
-    lastAdded,
+    alertedCourses,
+    contactInfo,
+    removeAlert,
+    courseInfo,
     mobileView,
 }: CartProps) => (
-    <Box length={courses.length} id="cart">
-        {courses.length === 0 ? (
-            <CartEmpty />
+    <Box length={alertedCourses.length} id="alerts">
+        {alertedCourses.length === 0 ? (
+            <AlertsEmpty />
         ) : (
-            courses
-                .sort((a, b) => a.section.id.localeCompare(b.section.id))
-                .map(({ section, checked, overlaps }, i) => {
-                    const { id: code, meetings } = section;
+            alertedCourses
+                .map((alert) => {
                     return (
-                        <CartSection
-                            key={i}
-                            toggleCheck={() => toggleCourse(section)}
-                            code={code}
-                            lastAdded={lastAdded && code === lastAdded.id}
-                            checked={checked}
-                            meetings={meetings || []}
+                        <AlertSection 
+                            alert={alert}
+                            checked={true}
+                            toggleCheck={() => {}}
                             remove={(event) => {
                                 event.stopPropagation();
-                                removeItem(code);
+                                removeAlert(alert.id, alert.section);
                             }}
-                            overlaps={overlaps}
                             courseInfo={(event) => {
                                 event.stopPropagation();
-                                const codeParts = code.split("-");
+                                const codeParts = alert.section.split("-");
                                 if (!courseInfoLoading) {
                                     courseInfo(
                                         `${codeParts[0]}-${codeParts[1]}`
                                     );
-                                    if (mobileView && setTab) {
-                                        setTab(0);
-                                    }
                                 }
                             }}
                         />
@@ -127,38 +114,17 @@ const Cart = ({
 );
 
 const mapStateToProps = ({
-    schedule: { cartSections = [], schedules, scheduleSelected, lastAdded },
-    sections: { courseInfoLoading },
+    alerts: { alertedCourses, contactInfo },
+    sections: { courseInfoLoading }
 }: any) => ({
     courseInfoLoading,
-    courses: cartSections.map((course: Section) => ({
-        section: course,
-        checked:
-            schedules[scheduleSelected] &&
-            scheduleContainsSection(
-                schedules[scheduleSelected].sections,
-                course
-            ),
-        overlaps:
-            course.meetings &&
-            schedules[scheduleSelected] &&
-            schedules[scheduleSelected].sections
-                ? meetingSetsIntersect(
-                      course.meetings,
-                      schedules[scheduleSelected].sections
-                          .filter((s: Section) => s.id !== course.id)
-                          .map((s: Section) => s.meetings)
-                          .flat()
-                  )
-                : false,
-    })),
-    lastAdded,
+    alertedCourses,
+    contactInfo,
 });
 
 const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
-    toggleCourse: (sectionId: Section) => dispatch(toggleCheck(sectionId)),
-    removeItem: (courseId: string) => dispatch(removeCartItem(courseId)),
-    courseInfo: (id: string) => dispatch(fetchCourseDetails(id)),
+    removeAlert: (alertId: string, sectionId: string) => dispatch(removeAlertBackend(alertId, sectionId)),
+    courseInfo: (sectionId: string) => dispatch(fetchCourseDetails(sectionId)),
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(Cart);
+export default connect(mapStateToProps, mapDispatchToProps)(Alerts);

@@ -28,6 +28,7 @@ import { preventMultipleTabs } from "../components/syncutils";
 import { DISABLE_MULTIPLE_TABS } from "../constants/sync_constants";
 import { User } from "../types";
 import { ToastContainer } from "react-toastify";
+import Alerts from "../components/alert/Alerts";
 
 const GlobalStyle = createGlobalStyle`
   html {
@@ -92,6 +93,15 @@ const Toast = styled(ToastContainer)`
     }
 `;
 
+const CartTab = styled.h3<{ active: boolean }>`
+    display: inline-flex;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    margin-right: 1rem;
+    color: ${(props) => (props.active ? "black" : "gray")};
+`;
+
 let middlewares = [thunkMiddleware, analyticsMiddleware];
 if (process.env.NODE_ENV === "development") {
     // eslint-disable-next-line
@@ -131,6 +141,9 @@ function Index() {
     const containerRef = useRef<HTMLDivElement>();
     const scrollTop = () => window.scrollTo(0, 0);
     const isExpanded = view === 1;
+
+    // carts or alerts tab
+    const [showCart, setShowCart] = useState<boolean>(true);
 
     const [showLoginModal, setShowLoginModal] = useState<boolean>(true);
     const [user, setUser] = useState<User | null>(null);
@@ -263,8 +276,13 @@ function Index() {
                         />
                         <Tab
                             className="topTab"
-                            label="Schedule"
+                            label="Alerts"
                             onClick={() => setTab(2)}
+                        />
+                        <Tab
+                            className="topTab"
+                            label="Schedule"
+                            onClick={() => setTab(3)}
                         />
                     </CustomTabs>
                     <SwipeableViews
@@ -304,6 +322,9 @@ function Index() {
                         </div>
                         <div style={{ padding: "10px" }}>
                             <Cart setTab={setTab} mobileView={true} />
+                        </div>
+                        <div style={{ padding: "10px" }}>
+                            <Alerts mobileView={true} />
                         </div>
                         <div style={{ padding: "10px" }}>
                             {/* Unfortunately running into a weird issue with connected components and TS. */}
@@ -389,16 +410,30 @@ function Index() {
                                     flexDirection: "column",
                                 }}
                             >
-                                <h3
-                                    style={{
-                                        display: "flex",
-                                        fontWeight: "bold",
-                                        marginBottom: "0.5rem",
-                                    }}
-                                >
-                                    Cart
-                                </h3>
-                                <Cart mobileView={false} />
+                                <div>
+                                    <CartTab
+                                        active={showCart}
+                                        onClick={(event) => {
+                                            event.stopPropagation();
+                                            setShowCart(true);
+                                        }}
+                                    >
+                                        Cart
+                                    </CartTab>
+                                    <CartTab
+                                        active={!showCart}
+                                        onClick={(event) => {
+                                            event.stopPropagation();
+                                            setShowCart(false);
+                                        }}
+                                    >
+                                        Alerts
+                                    </CartTab>
+                                </div>
+                                {showCart ? 
+                                    <Cart mobileView={false} /> : 
+                                    <Alerts mobileView={false} /> 
+                                }
                             </div>
                             <div
                                 style={{
