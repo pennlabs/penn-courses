@@ -20,6 +20,16 @@ This container is designed to work with both backend and frontend development. S
 
 For more information, visit dev container [documentation](https://code.visualstudio.com/docs/remote/containers).
 
+#### Pushing Code
+
+You can use `ssh-add` to make your SSH keys available to the dev container. This will allow you to push code to GitHub.
+
+```
+ssh-add ~/.ssh/id_rsa
+```
+
+
+
 
 ## API Documentation
 API Docs can be found at `/api/documentation` on the back-end server. Also check out the code for more explanations
