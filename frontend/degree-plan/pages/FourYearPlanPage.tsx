@@ -31,8 +31,7 @@ const Row = styled.div`
 `;
 
 const BodyContainer = styled.div`
-  background-color: var(--background-grey);
-  padding: 0.5rem;
+  background-color: var(--background-blue-grey);
   width: 100%;
   flex-grow: 1;
 `;
@@ -49,8 +48,7 @@ export const PanelTopBar = styled.div`
 
 const PanelWrapper = styled.div<{ $maxWidth: string; $minWidth: string }>`
   border-radius: 10px;
-  box-shadow: 0px 0px 5px 2px rgba(0, 0, 0, 0.05);
-  background-color: #ffffff;
+  box-shadow: 0px 0px 8px 0px #00000026;
   overflow: hidden; /* Hide scrollbars */
   width: ${(props) => (props.$maxWidth || props.$maxWidth ? "auto" : "100%")};
   max-width: ${(props) => (props.$maxWidth ? props.$maxWidth : "auto")};
@@ -169,41 +167,36 @@ const FourYearPlanPage = ({
                   minSize={0}
                   maxSize={windowWidth ? windowWidth * 0.65 : 1000}
                   defaultSize="50%"
+                  style={{
+                    padding: "2rem"
+                  }}
                 >
-                  <PanelWrapper>
-                    <PlanPanel
-                      setModalKey={setModalKey}
-                      modalKey={modalKey}
-                      setModalObject={setModalObject}
-                      isLoading={
-                        isLoadingDegreeplans || isLoadingActiveDegreePlan
-                      }
-                      activeDegreeplan={activeDegreePlan}
-                      degreeplans={degreeplans}
-                      setActiveDegreeplanId={setActiveDegreeplanId}
-                    />
+                <PanelWrapper>
+                  <PlanPanel
+                    setModalKey={setModalKey}
+                    modalKey={modalKey}
+                    setModalObject={setModalObject}
+                    isLoading={
+                      isLoadingDegreeplans || isLoadingActiveDegreePlan
+                    }
+                    activeDegreeplan={activeDegreePlan}
+                    degreeplans={degreeplans}
+                    setActiveDegreeplanId={setActiveDegreeplanId}
+                  />
+                </PanelWrapper>
+                <PanelWrapper>
+                  <ReqPanel
+                    setModalKey={setModalKey}
+                    setModalObject={setModalObject}
+                    isLoading={isLoadingActiveDegreePlan}
+                    activeDegreeplan={activeDegreePlan}
+                  />
+                </PanelWrapper>
+                {searchPanelOpen && (
+                  <PanelWrapper $minWidth={"40%"} $maxWidth={"45%"}>
+                    <SearchPanel activeDegreeplanId={activeDegreeplanId} />
                   </PanelWrapper>
-                  <div
-                    style={{
-                      display: "flex",
-                      flexDirection: "row",
-                      height: "100%",
-                    }}
-                  >
-                    <PanelWrapper>
-                      <ReqPanel
-                        setModalKey={setModalKey}
-                        setModalObject={setModalObject}
-                        isLoading={isLoadingActiveDegreePlan}
-                        activeDegreeplan={activeDegreePlan}
-                      />
-                    </PanelWrapper>
-                    {searchPanelOpen && (
-                      <PanelWrapper $minWidth={"40%"} $maxWidth={"45%"}>
-                        <SearchPanel activeDegreeplanId={activeDegreeplanId} />
-                      </PanelWrapper>
-                    )}
-                  </div>
+                )}
                 </SplitPane>
               </Row>
             )}

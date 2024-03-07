@@ -1,4 +1,3 @@
-import { GrayIcon } from '../common/bulma_derived_components';
 import SelectListDropdown from "./SelectListDropdown";
 import Semesters from "./Semesters";
 import styled from "@emotion/styled";
@@ -7,36 +6,23 @@ import React, { useState } from "react";
 import { useSWRCrud } from '@/hooks/swrcrud';
 import Skeleton from "react-loading-skeleton"
 import 'react-loading-skeleton/dist/skeleton.css'
+import { EditButton } from './EditButton';
+import { PanelTopBarButton, PanelTopBarIcon } from "./PanelTopBarCommon";
 
-export const PanelTopBarIcon = styled(GrayIcon)<{ $active: boolean }>`
-    width: 2rem;
-    height: 2rem;
-    color: ${props => props.$active ? "#76bf96" : "#c6c6c6"};
-    &:hover {
-        color: #76bf96;
-    }
-`;
+const ShowStatsWrapper = styled(PanelTopBarButton)`
+    min-width: 8.75rem;
+`
 
-const ShowStatsButton = ({ showStats, setShowStats }: { showStats: boolean, setShowStats: (arg0: boolean)=>void }) => {
-    return (
-        <div onClick={() => setShowStats(!showStats)}>
-            <PanelTopBarIcon $active={showStats}>
-                <i className="fas fa-lg fa-chart-bar"></i>
-            </PanelTopBarIcon>
+export const ShowStatsButton = ({ showStats, setShowStats }: { showStats: boolean, setShowStats: (arg0: boolean) => void }) => (
+    <ShowStatsWrapper onClick={() => setShowStats(!showStats)}>
+        <PanelTopBarIcon>
+            <i className={`fas fa-md fa-chart-bar ${showStats ? "" : "icon-crossed-out"}`}/>
+        </PanelTopBarIcon>
+        <div>
+            {showStats ? "Hide Stats" : "Show Stats"}
         </div>
-    )
-}
-
-export const EditButton = ({ editMode, setEditMode }: { editMode: boolean, setEditMode: (arg0: boolean)=>void }) => {
-    return (
-        <div onClick={() => setEditMode(!editMode)}>
-            <PanelTopBarIcon $active={editMode}>
-                <i className="fas fa-lg fa-edit"></i>
-            </PanelTopBarIcon>
-        </div>
-    )
-}
-
+    </ShowStatsWrapper>
+);
 
 export const DarkBlueBackgroundSkeleton: React.FC<{ width: string }> = (props) => (
     <Skeleton
@@ -51,12 +37,11 @@ export const PanelHeader = styled.div`
     background-color: var(--primary-color);
     padding: 0.5rem 1rem;
     flex-grow: 0;
-    font-size: 1.5rem;
     font-weight: 300;
 `;
 
 export const PanelBody = styled.div`
-    padding: .5rem;
+    padding: 1.5rem;
     height: 100%;
     overflow-y: auto;
     flex-grow: 1;

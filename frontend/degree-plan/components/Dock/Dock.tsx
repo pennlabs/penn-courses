@@ -11,7 +11,6 @@ import { useSWRCrud } from '@/hooks/swrcrud';
 import useSWR, { useSWRConfig } from 'swr';
 import { DarkBlueBackgroundSkeleton } from '../FourYearPlan/PlanPanel';
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
-import Logo from '../NavBar/Logo';
 
 const DockWrapper = styled.div`
     z-index: 1;
@@ -39,6 +38,7 @@ const SearchIconContainer = styled.div`
     border-width: 0;
     border-right-width: 2px;
     border-style: solid;
+    flex-shrink: 0;
 `
 
 const DockedCoursesWrapper = styled.div`
@@ -47,7 +47,20 @@ const DockedCoursesWrapper = styled.div`
     border-radius: 8px;
     display: flex;
     align-items: center;
-    flex-grow: 1
+    flex-grow: 1;
+    flex-shrink: 1;
+    overflow-x: auto;
+
+    /* Hide scrollbar */
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+    /* Hide scrollbar for Chrome, Safari and Opera */
+
+    &::-webkit-scrollbar {
+        display: none;
+        height: 100px;
+        width: 100px;
+    }
 `
 
 const DockedCourses = styled.div`
@@ -56,12 +69,17 @@ const DockedCourses = styled.div`
     flex-direction: row;
     gap: 1rem;
     padding: 0.1rem;
+    overflow: auto;
 `
 
 const CenteringCourseDock = styled.div`
     color: var(--primary-color-extra-dark);
     margin-left: auto;
     margin-right: auto;
+`
+
+const Logo = styled.img`
+    flex-shrink: 0;
 `
 
 interface DockProps {
@@ -143,7 +161,7 @@ const Dock = ({ user, login, logout  }: DockProps) => {
                 <DockedCoursesWrapper>
                     {dockedCoursesComponent}
                 </DockedCoursesWrapper>
-                <Logo/>
+                <Logo src='pdp-logo.svg' width='30' height='45'/>
             </DockContainer>
         </DockWrapper>
     )

@@ -22,7 +22,7 @@ const getLocalSemestersKey = (degreeplanId: DegreePlan["id"]) => `PDP-${degreepl
 const SemestersContainer = styled.div`
     display: flex;
     flex-direction: row;
-    gap: 1rem;
+    gap: 1.25rem;
     flex-wrap: wrap;
 ;`
 

@@ -1,4 +1,4 @@
-import "bootstrap/dist/css/bootstrap.css";
+// import "bootstrap/dist/css/bootstrap.css";
 import "react-toastify/dist/ReactToastify.css";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";

@@ -1,5 +1,3 @@
-'use client'
-
 import React, { useState, useEffect, useRef } from "react";
 import styled from "@emotion/styled";
 import { GrayIcon } from "../common/bulma_derived_components";
@@ -24,7 +22,6 @@ const ButtonContainer = styled.div<{ $isActive: boolean; }>`
     }
 
     * {
-        font-size: 0.75rem;
         color: #333333;
     }
 
@@ -104,6 +101,7 @@ const DropdownRenameButton = ({ rename }: { rename: () => void }) => (
 const ScheduleOptionsContainer = styled.div`
     display: flex;
     flex-grow: 0.5;
+    gap: .25rem;
     justify-content: flex-end;
     width: 25%;
 `;
@@ -197,7 +195,8 @@ const DropdownMenu = styled.div<{$isActive: boolean}>`
     position: absolute;
     top: 100%;
     z-index: 20;
-    `;
+    font-size: 1rem;
+`;
 
 const DropdownContent = styled.div`
     background-color: #fff;
@@ -210,7 +209,6 @@ const AddNew = styled.button`
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-    font-size: 0.75rem;
     border-radius: 0 !important;
     cursor: pointer;
     padding: 0.5rem 0.5rem 0.5rem 1rem;
@@ -236,8 +234,9 @@ const ScheduleDropdownHeader = styled.div`
 `
 
 const SelectedName = styled.span`
-    font-weight: 600;
+    font-weight: 500;
     min-width: 5rem;
+    font-size: 1.25rem;
 `
 
 interface SelectListDropdownProps<T extends DBObject,> {

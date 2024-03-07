@@ -44,7 +44,7 @@ const SearchContainer = styled.div`
 const SearchField = styled.input`
     width: 100%;
     min-width: 10rem;
-    background-color: var(--background-grey);
+    background-color: var(--background-blue-grey);
     padding-left: 0.5em;
     border-radius: 5px;
     border-width: 0.8px;

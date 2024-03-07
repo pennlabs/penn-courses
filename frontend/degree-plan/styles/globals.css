@@ -5,17 +5,19 @@
     'Roboto Mono', 'Oxygen Mono', 'Ubuntu Monospace', 'Source Code Pro',
     'Fira Mono', 'Droid Sans Mono', 'Courier New', monospace;
 
-  --foreground-rgb: 0, 0, 0;
+  --foreground-rgb: #575757;
   --background-start-rgb: 214, 219, 220;
   --background-end-rgb: 255, 255, 255;
 
-  /* lavender */
+  /* blue */
   --primary-color-extra-dark: #9AA7C6;
+  --primary-color-xx-dark: #819AE1;
   --primary-color-dark: #C5D2F6;
   --primary-color: #E3E8F4;
   --primary-color-light: #EDF1FC;
   --background-white: #F7F9FC;
-  --background-grey:#F7F9FC;
+  --background-blue-grey:#F7F9FC;
+  --background-light-grey: #F8F8F8;
 
   /* Edit mode */
   --plus-button-color: #9FB5EF;
@@ -57,9 +59,10 @@
   --card-border-rgb: 131, 134, 135;
 }
 
+/*
 @media (prefers-color-scheme: dark) {
   :root {
-    --foreground-rgb: 255, 255, 255;
+    --foreground-rgb: rgb(255, 255, 255);
     --background-start-rgb: 0, 0, 0;
     --background-end-rgb: 0, 0, 0;
 
@@ -89,6 +92,7 @@
     --card-border-rgb: 200, 200, 200;
   }
 }
+*/
 
 * {
   box-sizing: border-box;
@@ -103,7 +107,7 @@ body {
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
+  color: var(--foreground-rgb);
   background: linear-gradient(
       to bottom,
       transparent,
@@ -144,4 +148,15 @@ a {
   box-shadow: 0 0 50px;
   transition: 0.3s var(--primary-color-dark);
 
+}
+
+.icon-crossed-out:after {
+    content: "";
+    position: absolute;
+    width: 3px;
+    height: 141.421356%;
+    top: -20.710678%;
+    display: block;
+    left: 50%;
+    transform: translate(-50%, 0) rotate(45deg);
 }

@@ -2,11 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import RuleComponent, { SkeletonRule } from './Rule';
 import { Degree, DegreePlan, Fulfillment, Rule } from '@/types';
 import styled from '@emotion/styled';
-import { DarkBlueBackgroundSkeleton, EditButton, PanelBody, PanelContainer, PanelHeader, PanelTopBarIcon, PanelTopBarIconList, TopBarIcon } from '@/components/FourYearPlan/PlanPanel'
+import { DarkBlueBackgroundSkeleton, PanelBody, PanelContainer, PanelHeader, PanelTopBarIconList, TopBarIcon } from '@/components/FourYearPlan/PlanPanel'
+import { PanelTopBarIcon } from "../FourYearPlan/PanelTopBarCommon";
+import { EditButton } from '../FourYearPlan/EditButton';
 import { useSWRCrud } from '@/hooks/swrcrud';
 import useSWR, { useSWRConfig } from 'swr';
 import { GrayIcon, Icon } from '../common/bulma_derived_components';
 import React from 'react';
+import { ModalKey } from '../FourYearPlan/DegreeModal';
 
 const requirementDropdownListStyle = {
   maxHeight: '90%',
@@ -52,8 +55,8 @@ const DegreeHeaderContainer = styled.div`
 `
 
 const ReqPanelTitle = styled.div`
-  font-size: 1.5rem;
-  font-weight: 500;
+  font-size: 1.25rem;
+  font-weight: 500; 
 `
 
 const DegreeBody = styled.div`
@@ -196,7 +199,7 @@ const Degree = ({degree_id, rulesToFulfillments, activeDegreeplan, editMode, set
 }
 
 interface ReqPanelProps {
-  setModalKey: (arg0: string) => void;
+  setModalKey: (arg0: ModalKey) => void;
   setModalObject: (arg0: DegreePlan | null) => void;
   activeDegreeplan: DegreePlan | null;
   isLoading: boolean;
@@ -219,7 +222,6 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
         rulesToCourses[rule].push(fulfillment);
       });
     });
-    // console.log(rulesToCourses)
     return rulesToCourses;
   }, [fulfillments])
 
@@ -236,41 +238,41 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
   } 
 
   return(
-      <PanelContainer>
-        <PanelHeader>
-          <ReqPanelTitle>Requirements</ReqPanelTitle>
-          <PanelTopBarIconList>
-            <EditButton editMode={editMode} setEditMode={setEditMode} />
-          </PanelTopBarIconList>
-        </PanelHeader>
-        {!activeDegreeplan ? <EmptyPanel /> :
-          <PanelBody>
-            {activeDegreeplan.degrees.map(degree_id => (
-              <Degree 
-              degree_id={degree_id} 
-              rulesToFulfillments={rulesToFulfillments} 
-              activeDegreeplan={activeDegreeplan} 
-              setSearchClosed={setSearchClosed} 
-              handleSearch={handleSearch}
-              editMode={editMode}
-              setModalKey={setModalKey}
-              setModalObject={setModalObject}
-              isLoading={isLoading}
-              />
-            ))}
-            {editMode && 
-            <AddButton role="button" onClick={() => {
-              setModalObject(activeDegreeplan);
-              setModalKey("degree-add");
-            }}>
-              <i className="fa fa-plus" />
-              <div>
-                Add Degree
-              </div>
-            </AddButton>}
-        </PanelBody>
-        }
-      </PanelContainer>
+    <PanelContainer>
+      <PanelHeader>
+        <ReqPanelTitle>Requirements</ReqPanelTitle>
+        <PanelTopBarIconList>
+          <EditButton editMode={editMode} setEditMode={setEditMode} />
+        </PanelTopBarIconList>
+      </PanelHeader>
+      {!activeDegreeplan ? <EmptyPanel /> :
+        <PanelBody>
+          {activeDegreeplan.degrees.map(degree_id => (
+            <Degree 
+            degree_id={degree_id} 
+            rulesToFulfillments={rulesToFulfillments} 
+            activeDegreeplan={activeDegreeplan} 
+            setSearchClosed={setSearchClosed} 
+            handleSearch={handleSearch}
+            editMode={editMode}
+            setModalKey={setModalKey}
+            setModalObject={setModalObject}
+            isLoading={isLoading}
+            />
+          ))}
+          {editMode && 
+          <AddButton role="button" onClick={() => {
+            setModalObject(activeDegreeplan);
+            setModalKey("degree-add");
+          }}>
+            <i className="fa fa-plus" />
+            <div>
+              Add Degree
+            </div>
+          </AddButton>}
+      </PanelBody>
+      }
+    </PanelContainer>
   );
 }
 export default ReqPanel;

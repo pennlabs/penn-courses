@@ -70,7 +70,9 @@ const DockedCourse = ({removeDockedCourse, full_code}: any) => {
         >
             <Draggable isDragging={isDragging} >
                 <ReviewPanelTrigger full_code={full_code}>
-                <div> {full_code.replace(/-/g, " ")}</div>
+                  <BaseCourseContainer $isDisabled={false} $isDragging={isDragging} $isDepressed={false}>
+                    {full_code.replace(/-/g, " ")}
+                  </BaseCourseContainer>
                 </ReviewPanelTrigger>
             </Draggable>
             <GrayIcon className="close-button" onClick={() => removeDockedCourse(full_code)}>

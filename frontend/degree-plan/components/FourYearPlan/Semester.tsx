@@ -5,8 +5,7 @@ import CoursesPlanned, { SkeletonCoursesPlanned } from "./CoursesPlanned";
 import Stats from "./Stats";
 import styled from '@emotion/styled';
 import { Course, DegreePlan, DnDFulfillment, Fulfillment, Semester } from "@/types";
-import { postFetcher, useSWRCrud } from "@/hooks/swrcrud";
-import { useSWRConfig } from "swr";
+import { useSWRCrud } from "@/hooks/swrcrud";
 import { TrashIcon } from "../Requirements/ReqPanel";
 import Skeleton from "react-loading-skeleton"
 import 'react-loading-skeleton/dist/skeleton.css'
@@ -41,7 +40,7 @@ const SemesterLabel = styled.div`
 `;
 
 const SemesterContent = styled.div`
-    margin-top: .5rem;
+    margin-top: 1rem;
     display: flex;
     flex-direction: row;
     gap: 1rem;
@@ -57,9 +56,9 @@ const FlexCoursesPlanned = styled(CoursesPlanned)`
 `;
 
 const CreditsLabel = styled.div`
-    font-size: 1.2rem;
+    font-size: 1rem;
     font-weight: 500;
-    margin-top: 1rem;
+    margin-top: 1.25rem;
     margin-left: auto;
     margin-right: 0;
     display: flex;
