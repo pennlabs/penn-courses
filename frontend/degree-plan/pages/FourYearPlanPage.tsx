@@ -13,7 +13,6 @@ import ReviewPanel from "@/components/Infobox/ReviewPanel";
 import { ReviewPanelContext } from "@/components/Infobox/ReviewPanel";
 import DegreeModal, { ModalKey } from "@/components/FourYearPlan/DegreeModal";
 import SplitPane, { Pane } from "react-split-pane";
-import Nav from "@/components/NavBar/Nav";
 import Dock from "@/components/Dock/Dock";
 import useWindowDimensions from "@/hooks/window";
 import OnboardingPage from "./OnboardingPage";
