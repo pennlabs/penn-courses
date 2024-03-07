@@ -5,7 +5,7 @@ import styled from "@emotion/styled";
 import nearley from "nearley";
 import grammar from "@/util/q_object_grammar" 
 import { Icon } from "../common/bulma_derived_components";
-import { BaseCourseContainer } from "../FourYearPlan/CoursePlanned";
+import { BaseCourseContainer, SkeletonCourse } from "../FourYearPlan/CoursePlanned";
 import assert from "assert";
 import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
 import { Draggable } from "../common/DnD";
@@ -88,9 +88,10 @@ collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
     display: inline-flex;
     align-items: center; */
 const Row = styled.div`
+    display: flex;
+    flex-direction: row;
     gap: .2rem;
-    flex: 1;
-    flex-wrap: wrap;
+    flex-grow: 1;
     margin: .5 rem 0;
 `;
 
@@ -129,6 +130,10 @@ const Wrap = styled.span`
 
 export const DarkGrayIcon = styled(Icon)`
     color: #575757;
+`
+
+export const DarkBlueIcon = styled(Icon)`
+    color: var(--primary-color-extra-dark);
 `
 
 interface SearchConditionInnerProps {
@@ -343,7 +348,7 @@ const QObject = ({ q, fulfillments, rule, satisfied }: QObjectProps) => {
 
 const QObjectWrapper = styled.div`
     max-width: 90%;
-    display: flex;
+    display: inline-flex;
     flex-direction: row;
     gap: 0.5rem;
 `
@@ -355,6 +360,21 @@ interface RuleLeafProps {
     rule: Rule;
     satisfied: boolean;
 }
+
+export const SkeletonRuleLeaf = () => (
+    <div
+    style={{
+        display: "flex",
+        gap: ".5rem"
+    }}
+    >
+        <SkeletonCourse /> 
+        <CourseOptionsSeparator>or</CourseOptionsSeparator>
+        <SkeletonCourse /> 
+        <CourseOptionsSeparator>or</CourseOptionsSeparator>
+        <SkeletonCourse />
+    </div>
+)
 
 const RuleLeaf = ({ q_json, fulfillmentsForRule, rule, satisfied }: RuleLeafProps) => {
     const t1 = transformDepartmentInClauses(q_json);

@@ -59,6 +59,7 @@ AccountIndicator.propTypes = {
     nameLength: PropTypes.number,
     leftAligned: PropTypes.bool,
     pathname: PropTypes.string,
+    dropdownTop: PropTypes.bool,
 };
 
 export default AccountIndicator;

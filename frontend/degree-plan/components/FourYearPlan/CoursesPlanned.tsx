@@ -1,7 +1,7 @@
 
 
 import { Ref } from "react";
-import CoursePlanned, { PlannedCourseContainer } from "./CoursePlanned";
+import CoursePlanned, { PlannedCourseContainer, SkeletonCourse } from "./CoursePlanned";
 import styled from "@emotion/styled";
 import { Course, Fulfillment } from "@/types";
 
@@ -12,15 +12,22 @@ const PlannedCoursesContainer = styled.div`
     gap: .5rem;
 `;
 
+export const SkeletonCoursesPlanned = () => (
+    <PlannedCoursesContainer>
+        <SkeletonCourse />
+        <SkeletonCourse />
+    </PlannedCoursesContainer>
+)
+
 interface CoursesPlannedProps {
     fulfillments: Fulfillment[];
     removeCourse: (course: Course["full_code"]) => void;
     semester: Course["full_code"],
     className: string;
-    dropRef: Ref<React.ReactNode>;
+    isLoading: boolean;
 }
 
-const CoursesPlanned = ({fulfillments, removeCourse, className, semester, dropRef}: CoursesPlannedProps) => {    
+const CoursesPlanned = ({fulfillments, removeCourse, className, semester, isLoading}: CoursesPlannedProps) => {
     return (
         <PlannedCoursesContainer className={className}>
             {fulfillments.map(fulfillment => 

@@ -1,13 +1,15 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useDrop } from "react-dnd";
 import { ItemTypes } from "../dnd/constants";
-import CoursesPlanned from "./CoursesPlanned";
+import CoursesPlanned, { SkeletonCoursesPlanned } from "./CoursesPlanned";
 import Stats from "./Stats";
 import styled from '@emotion/styled';
-import { Course, DegreePlan, DnDFulfillment, Fulfillment } from "@/types";
+import { Course, DegreePlan, DnDFulfillment, Fulfillment, Semester } from "@/types";
 import { postFetcher, useSWRCrud } from "@/hooks/swrcrud";
 import { useSWRConfig } from "swr";
 import { TrashIcon } from "../Requirements/ReqPanel";
+import Skeleton from "react-loading-skeleton"
+import 'react-loading-skeleton/dist/skeleton.css'
 
 
 const translateSemester = (semester: Course["semester"]) => {
@@ -60,7 +62,35 @@ const CreditsLabel = styled.div`
     margin-top: 1rem;
     margin-left: auto;
     margin-right: 0;
+    display: flex;
+    gap: .5rem;
+    align-items: center;
 `;
+
+const InlineSkeleton = styled(Skeleton)`
+    display: inline-block;
+`
+
+export const SkeletonSemester = ({ 
+    showStats,
+} : { showStats: boolean }) => {
+    return (
+        <SemesterCard $isDroppable={false} $isOver={false}>
+            <SemesterHeader>
+                <SemesterLabel>
+                    <Skeleton width="5em" />
+                </SemesterLabel>
+            </SemesterHeader>
+            <SemesterContent> 
+                <SkeletonCoursesPlanned />
+                {!!showStats && <FlexStats fulfillments={[]}/>}
+            </SemesterContent>
+            <CreditsLabel>
+                <InlineSkeleton width="2em" /><span>CUs</span>
+            </CreditsLabel>
+        </SemesterCard>
+    )
+}
 
 interface SemesterProps {
     showStats: boolean;
@@ -72,9 +102,20 @@ interface SemesterProps {
     setModalKey: (arg0: string) => void;
     setModalObject: (obj: any) => void;
     removeSemester: (sem: string) => void;
+    isLoading: boolean
 }
 
-const FlexSemester = ({ showStats, semester, fulfillments, activeDegreeplanId, editMode, setModalKey, setModalObject, removeSemester} : SemesterProps) => {
+const FlexSemester = ({ 
+    showStats,
+    semester,
+    fulfillments,
+    activeDegreeplanId,
+    editMode,
+    setModalKey,
+    setModalObject,
+    removeSemester,
+    isLoading 
+} : SemesterProps) => {
     const credits = fulfillments.reduce((acc, curr) => acc + (curr.course?.credits || 1), 0)
 
     // the fulfillments api uses the POST method for updates (it creates if it doesn't exist, and updates if it does)
@@ -94,8 +135,6 @@ const FlexSemester = ({ showStats, semester, fulfillments, activeDegreeplanId, e
 
     const handleRemoveCourse = (full_code: Course["full_code"]) => {
         createOrUpdate({ semester: null }, full_code);
-        /** API: add to dock */
-        // setDockedCourses((dockedCourses:string[]) => [...dockedCourses, full_code]);
     }
 
     const removeSemesterHelper = () => {
@@ -113,7 +152,7 @@ const FlexSemester = ({ showStats, semester, fulfillments, activeDegreeplanId, e
     }
 
     return (
-        <SemesterCard $showStats={showStats} $isDroppable={canDrop} $isOver={isOver} ref={drop} >
+        <SemesterCard $isDroppable={canDrop} $isOver={isOver} ref={drop}>
             <SemesterHeader>
                 <SemesterLabel>
                     {translateSemester(semester)}

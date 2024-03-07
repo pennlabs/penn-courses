@@ -113,7 +113,7 @@ const UserSelector = ({
     dropdownTop, // whether the dropdown menu should appear above or below
 }) => {
     const [selected, setSelected] = useState(false);
-
+    
     const firstName = rest.first_name;
     const lastName = rest.last_name;
 
@@ -172,6 +172,7 @@ UserSelector.propTypes = {
     leftAligned: PropTypes.bool,
     backgroundColor: PropTypes.string,
     nameLength: PropTypes.number,
+    dropdownTop: PropTypes.bool,
 };
 
 export default UserSelector;

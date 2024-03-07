@@ -71,10 +71,9 @@ const FourYearPlanPage = ({
   const [modalObject, setModalObject] = useState<DegreePlan | null>(null); // stores the which degreeplan is being updated using the modal
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
 
-  const { data: degreeplans, isLoading: isLoadingDegreeplans } = useSWR<
+    const { data: degreeplans, isLoading: isLoadingDegreeplans } = useSWR<
     DegreePlan[]
   >("/api/degree/degreeplans");
-
   const { data: activeDegreePlan, isLoading: isLoadingActiveDegreePlan } =
     useSWR(
       activeDegreeplanId
@@ -83,18 +82,14 @@ const FourYearPlanPage = ({
     );
 
   useEffect(() => {
-    console.log("detect change in degreeplans");
+    console.log("FIRED", degreeplans)
     // recompute the active degreeplan id on changes to the degreeplans
     if (!isLoadingDegreeplans && !degreeplans?.length) {
       setShowOnboardingModal(true);
     }
     if (!degreeplans?.length) {
       setActiveDegreeplanId(null);
-    }
-    // else if (degreeplans.length > 0) {
-    //   setActiveDegreeplanId(degreeplans[1].id);
-    // }
-    else if (
+    } else if (
       !activeDegreeplanId ||
       !degreeplans.find((d) => d.id === activeDegreeplanId)
     ) {
@@ -103,7 +98,7 @@ const FourYearPlanPage = ({
       );
       setActiveDegreeplanId(mostRecentUpdated.id);
     }
-  }, [degreeplans]);
+  }, [degreeplans, isLoadingDegreeplans]);
 
   const windowWidth = useWindowDimensions()["width"];
 
@@ -123,7 +118,7 @@ const FourYearPlanPage = ({
   // search panel
   const [searchPanelOpen, setSearchPanelOpen] = useState<boolean>(false);
   const [searchRuleId, setSearchRuleId] = useState<Rule["id"] | null>(null);
-  const [searchRuleQuery, setSearchRuleQuery] = useState<string | null>(null); // a query object
+  const [searchRuleQuery, setSearchRuleQuery] = useState<string | null>(null); // a query object 
 
   return (
     <SearchPanelContext.Provider
@@ -162,8 +157,6 @@ const FourYearPlanPage = ({
           />
         )}
         <PageContainer>
-          <Nav login={updateUser} logout={() => updateUser(null)} user={user} />
-
           <BodyContainer ref={ref}>
             {!!showOnboardingModal ? (
               <OnboardingPage
@@ -199,16 +192,12 @@ const FourYearPlanPage = ({
                     }}
                   >
                     <PanelWrapper>
-                      {/* <SplitPane split="horizontal" minSize='80%'> */}
                       <ReqPanel
                         setModalKey={setModalKey}
                         setModalObject={setModalObject}
+                        isLoading={isLoadingActiveDegreePlan}
                         activeDegreeplan={activeDegreePlan}
                       />
-                      {/* <div>
-                            load area
-                        </div>
-                    </SplitPane> */}
                     </PanelWrapper>
                     {searchPanelOpen && (
                       <PanelWrapper $minWidth={"40%"} $maxWidth={"45%"}>
@@ -220,7 +209,7 @@ const FourYearPlanPage = ({
               </Row>
             )}
           </BodyContainer>
-          {!showOnboardingModal && <Dock />}
+          <Dock user={user} login={updateUser} logout={() => updateUser(null)} />
         </PageContainer>
       </ReviewPanelContext.Provider>
     </SearchPanelContext.Provider>

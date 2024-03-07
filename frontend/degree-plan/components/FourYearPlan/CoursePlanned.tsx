@@ -5,6 +5,8 @@ import styled from '@emotion/styled';
 import { Course, DnDFulfillment, Fulfillment } from "@/types";
 import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
 import { Draggable } from "../common/DnD";
+import Skeleton from "react-loading-skeleton"
+import 'react-loading-skeleton/dist/skeleton.css'
 
 export const BaseCourseContainer = styled.span<{ $isDragging?: boolean, $isDepressed: boolean, $isDisabled: boolean }>`
   display: flex;
@@ -50,6 +52,14 @@ interface CoursePlannedProps {
   semester: Course["semester"]
 }
 
+export const SkeletonCourse = () => (
+  <PlannedCourseContainer $isDepressed={false} $isDisabled={false}>
+      <div>
+        <Skeleton width="5em"/>
+      </div>
+  </PlannedCourseContainer>
+)
+
 const CoursePlanned = ({ fulfillment, semester, removeCourse } : CoursePlannedProps) => {
   const [{ isDragging }, drag] = useDrag<DnDFulfillment, never, { isDragging: boolean }>(() => ({
     type: ItemTypes.COURSE,
@@ -59,7 +69,7 @@ const CoursePlanned = ({ fulfillment, semester, removeCourse } : CoursePlannedPr
     })
   }), [fulfillment, semester])
 
-  return (   
+  return (
     <Draggable isDragging={isDragging}>
       <ReviewPanelTrigger full_code={fulfillment.full_code}>
         <PlannedCourseContainer

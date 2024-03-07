@@ -4,8 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import styled from "@emotion/styled";
 import { GrayIcon } from "../common/bulma_derived_components";
 import { DBObject, DegreePlan } from "../../types";
-import { getNameOfDeclaration } from "typescript";
-
+import { DarkBlueBackgroundSkeleton } from "./PlanPanel";
 
 const ButtonContainer = styled.div<{ $isActive: boolean; }>`
     line-height: 1.5;
@@ -207,7 +206,7 @@ const DropdownContent = styled.div`
     padding: 0;
 `;
 
-const AddNew = styled.a`
+const AddNew = styled.button`
     display: flex;
     flex-direction: row;
     justify-content: space-between;
@@ -238,6 +237,7 @@ const ScheduleDropdownHeader = styled.div`
 
 const SelectedName = styled.span`
     font-weight: 600;
+    min-width: 5rem;
 `
 
 interface SelectListDropdownProps<T extends DBObject,> {
@@ -252,6 +252,7 @@ interface SelectListDropdownProps<T extends DBObject,> {
         rename?: (item: T) => void;
         create: () => void;
     };
+    isLoading: boolean;
 }
 
 const SelectListDropdown = <T extends DBObject,>({
@@ -266,6 +267,7 @@ const SelectListDropdown = <T extends DBObject,>({
         rename,
         create,
     },
+    isLoading,
 }: SelectListDropdownProps<T>) => {
     const [isActive, setIsActive] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
@@ -288,7 +290,7 @@ const SelectListDropdown = <T extends DBObject,>({
     return (
         <ScheduleDropdownContainer ref={ref} $isActive={isActive}>
             <ScheduleDropdownHeader>
-                <SelectedName>{active && getItemName(active)}</SelectedName>
+                <SelectedName>{active ? getItemName(active) : <DarkBlueBackgroundSkeleton />}</SelectedName>
                 <DropdownTrigger
                     $isActive={isActive}
                     onClick={() => {
@@ -325,7 +327,7 @@ const SelectListDropdown = <T extends DBObject,>({
                                     />
                                 );
                             })}
-                    <AddNew onClick={create} role="button" href="#">
+                    <AddNew onClick={create} role="button" href="#" disabled={isLoading}>
                         <GrayIcon>
                             <i className="fa fa-plus" aria-hidden="true" />
                         </GrayIcon>

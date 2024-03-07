@@ -3,8 +3,10 @@ import SelectListDropdown from "./SelectListDropdown";
 import Semesters from "./Semesters";
 import styled from "@emotion/styled";
 import type { DegreePlan } from "@/types";
-import { useState } from "react";
+import React, { useState } from "react";
 import { useSWRCrud } from '@/hooks/swrcrud';
+import Skeleton from "react-loading-skeleton"
+import 'react-loading-skeleton/dist/skeleton.css'
 
 export const PanelTopBarIcon = styled(GrayIcon)<{ $active: boolean }>`
     width: 2rem;
@@ -34,6 +36,14 @@ export const EditButton = ({ editMode, setEditMode }: { editMode: boolean, setEd
         </div>
     )
 }
+
+
+export const DarkBlueBackgroundSkeleton: React.FC<{ width: string }> = (props) => (
+    <Skeleton
+    baseColor="var(--primary-color-dark)"
+    {...props}
+    />
+)
 
 export const PanelHeader = styled.div`
     display: flex;
@@ -81,7 +91,15 @@ interface PlanPanelProps {
     isLoading: boolean;
 }
 
-const PlanPanel = ({ setModalKey, modalKey, setModalObject, setActiveDegreeplanId, activeDegreeplan, degreeplans } : PlanPanelProps) => {
+const PlanPanel = ({ 
+    setModalKey,
+    modalKey,
+    setModalObject,
+    setActiveDegreeplanId,
+    activeDegreeplan,
+    degreeplans,
+    isLoading 
+} : PlanPanelProps) => {
     const { copy: copyDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans');
     const [showStats, setShowStats] = useState(true);
     const [editMode, setEditMode] = useState(false);
@@ -109,7 +127,8 @@ const PlanPanel = ({ setModalKey, modalKey, setModalObject, setActiveDegreeplanI
                                 setModalObject(item)
                             },
                             create: () => setModalKey("plan-create")
-                        }}              
+                        }}
+                        isLoading={isLoading} 
                     />
                     <PanelTopBarIconList>
                         <ShowStatsButton showStats={showStats} setShowStats={setShowStats} />
@@ -122,9 +141,9 @@ const PlanPanel = ({ setModalKey, modalKey, setModalObject, setActiveDegreeplanI
                     activeDegreeplan={activeDegreeplan} 
                     showStats={showStats} 
                     editMode={editMode}
-                    setEditMode={setEditMode}
                     setModalKey={setModalKey}
                     setModalObject={setModalObject}
+                    isLoading={isLoading}
                     />
                 </PanelBody>
             </PanelContainer>

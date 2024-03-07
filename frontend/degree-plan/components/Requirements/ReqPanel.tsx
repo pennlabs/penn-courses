@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import RuleComponent from './Rule';
+import RuleComponent, { SkeletonRule } from './Rule';
 import { Degree, DegreePlan, Fulfillment, Rule } from '@/types';
 import styled from '@emotion/styled';
-import { EditButton, PanelBody, PanelContainer, PanelHeader, PanelTopBarIcon, PanelTopBarIconList, TopBarIcon } from '@/components/FourYearPlan/PlanPanel'
+import { DarkBlueBackgroundSkeleton, EditButton, PanelBody, PanelContainer, PanelHeader, PanelTopBarIcon, PanelTopBarIconList, TopBarIcon } from '@/components/FourYearPlan/PlanPanel'
 import { useSWRCrud } from '@/hooks/swrcrud';
 import useSWR, { useSWRConfig } from 'swr';
 import { GrayIcon, Icon } from '../common/bulma_derived_components';
@@ -62,7 +62,8 @@ const DegreeBody = styled.div`
 `
 
 const DegreeYear = styled.div`
-  font-size: 1.25rem;
+  margin-left: .25rem;
+  font-size: .9rem;
   font-weight: 500;
   color: #575757;
 `
@@ -93,8 +94,17 @@ const AddButton = styled.div`
   color: white;
 `
 
-const DegreeHeader = ({ degree, remove, setCollapsed, collapsed, editMode }: { degree: Degree, remove: (degreeId: Degree["id"]) => void, setCollapsed: (status: boolean) => void, collapsed: boolean, editMode: boolean}) => {
-  const degreeName = `${degree.degree} in ${degree.major} ${degree.concentration ? `(${degree.concentration})` : ''}`
+interface DegreeHeaderProps {
+  degree: Degree,
+  remove: (degreeId: Degree["id"]) => void,
+  setCollapsed: (status: boolean) => void,
+  collapsed: boolean,
+  editMode: boolean,
+  skeleton?: boolean,
+}
+
+const DegreeHeader = ({ degree, remove, setCollapsed, collapsed, editMode, skeleton }: DegreeHeaderProps) => {
+  const degreeName = !skeleton ? `${degree.degree} in ${degree.major} ${degree.concentration ? `(${degree.concentration})` : ''}` : <DarkBlueBackgroundSkeleton width="10em" />;
   return (
     <DegreeHeaderContainer onClick={() => setCollapsed(!collapsed)}>
       <DegreeTitleWrapper>
@@ -102,11 +112,11 @@ const DegreeHeader = ({ degree, remove, setCollapsed, collapsed, editMode }: { d
           {degreeName}
         </div>
         <DegreeYear>
-          {degree.year}
+          {!skeleton ? degree.year : <DarkBlueBackgroundSkeleton width="4em" />}
         </DegreeYear>
       </DegreeTitleWrapper>
       <span>
-        {!!editMode ? 
+        {!skeleton && !!editMode ? 
         <TrashIcon role="button" onClick={() => remove(degree.id)}>
           <i className="fa fa-trash fa-md"/>
         </TrashIcon>
@@ -119,16 +129,47 @@ const DegreeHeader = ({ degree, remove, setCollapsed, collapsed, editMode }: { d
   )
 }
 
-const Degree = ({degree_id, rulesToFulfillments, activeDegreeplan, editMode, setModalKey, setModalObject}: any) => {
+const Degree = ({degree_id, rulesToFulfillments, activeDegreeplan, editMode, setModalKey, setModalObject, isLoading}: any) => {
   const [collapsed, setCollapsed] = useState(false);
-  const { data: degree, isLoading: isLoadingDegrees } = useSWR<Degree[]>(activeDegreeplan ? `/api/degree/degrees/?id=${degree_id}`: null);
-  // const { cache, mutate, } = useSWRConfig();
+  const { data: degrees, isLoading: isLoadingDegrees } = useSWR<Degree[]>(activeDegreeplan ? `/api/degree/degrees/?id=${degree_id}`: null);
+  
+  if (isLoadingDegrees || isLoading) {
+    return (
+      <div>
+        <DegreeHeader
+        degree={{}}
+        remove={() => void {}}
+        setCollapsed={setCollapsed}
+        skeleton={true}
+        />
+        <DegreeBody>
+          <SkeletonRule>
+            <SkeletonRule>
+              <SkeletonRule />
+              <SkeletonRule />
+              <SkeletonRule />
+            </SkeletonRule>
+            <SkeletonRule>
+              <SkeletonRule />
+              <SkeletonRule />
+              <SkeletonRule />
+            </SkeletonRule>
+          </SkeletonRule>
+          <SkeletonRule>
+            <SkeletonRule />
+            <SkeletonRule />
+            <SkeletonRule />
+          </SkeletonRule>
+        </DegreeBody>
+      </div>
+    )
+  }
 
   return (
     <div>
-      {degree && 
+      {degrees && 
       <DegreeHeader 
-        degree={degree[0]} 
+        degree={degrees[0]} 
         key={degree_id} 
         remove={() => {
           setModalObject({degreeplanId: activeDegreeplan.id, degreeId: degree_id});
@@ -137,10 +178,11 @@ const Degree = ({degree_id, rulesToFulfillments, activeDegreeplan, editMode, set
         setCollapsed={setCollapsed}
         collapsed={collapsed || editMode} // Collapse degree view in edit mode
         editMode={editMode}
+        skeleton={false}
         />}
       {!collapsed && !editMode &&
       <DegreeBody>
-        {degree && degree[0].rules.map((rule: any) => (
+        {degrees && degrees[0].rules.map((rule: any) => (
           <RuleComponent 
           rulesToFulfillments={rulesToFulfillments}
           activeDegreePlanId={activeDegreeplan.id}
@@ -213,6 +255,7 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
               editMode={editMode}
               setModalKey={setModalKey}
               setModalObject={setModalObject}
+              isLoading={isLoading}
               />
             ))}
             {editMode && 

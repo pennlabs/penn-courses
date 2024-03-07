@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import RuleLeaf from './QObject';
+import React, { useState } from 'react';
+import RuleLeaf, { SkeletonRuleLeaf } from './QObject';
 import { Course, Fulfillment, Rule as RuleComponent } from '@/types';
 import styled from '@emotion/styled';
 import { Icon } from '../common/bulma_derived_components';
 import { useSWRCrud } from '@/hooks/swrcrud';
 import { useDrop } from 'react-dnd';
 import { ItemTypes } from '../dnd/constants';
+import { DarkBlueBackgroundSkeleton } from '../FourYearPlan/PlanPanel';
 
 const RuleTitleWrapper = styled.div`
     background-color: var(--primary-color-light);
@@ -51,11 +52,56 @@ const CusCourses = styled.div`
   white-space: nowrap;
 `
 
+const Row = styled.div`
+  display: flex;
+  gap: .5rem;
+`
+
 interface RuleProps {
     rule: RuleComponent;
     rulesToFulfillments: { [ruleId: string]: Fulfillment[] };
     activeDegreePlanId: number;
 }
+
+
+/**
+ * Skeleton of a rule, which excepts children that are skeleton rules. If the skeleton has children, then
+ * it is treated as a rule header; otherwise it is treated as a rule leaf.
+ */
+export const SkeletonRule: React.FC<React.PropsWithChildren> = ({ children }) => (
+  <>
+    {!children ?
+      <RuleLeafWrapper $isDroppable={false} $isOver={false}>
+          <SkeletonRuleLeaf />
+          <div>
+            <CusCourses>
+              <Row>
+                <DarkBlueBackgroundSkeleton width="1em" />
+                <span>/</span>
+                <DarkBlueBackgroundSkeleton width="2em" />
+              </Row>
+            </CusCourses>
+          </div>
+      </RuleLeafWrapper>
+      :
+      <RuleTitleWrapper>
+        <ProgressBar $progress={0}></ProgressBar>
+        <RuleTitle $progress={0}>
+          <Row>
+            <DarkBlueBackgroundSkeleton width="10em" />
+            <DarkBlueBackgroundSkeleton width="7em" />
+          </Row>
+            <Icon>
+              <i className="fas fa-chevron-down" />
+            </Icon>
+        </RuleTitle>
+      </RuleTitleWrapper>
+      }
+    <div className="ms-3">
+      {children}
+    </div>
+  </>
+)
 
 /**
  * Recursive component to represent a rule.
