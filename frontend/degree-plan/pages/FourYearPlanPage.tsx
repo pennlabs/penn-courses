@@ -36,9 +36,17 @@ const BodyContainer = styled.div`
   flex-grow: 1;
 `;
 
-const PanelWrapper = styled.div<{ $maxWidth: string; $minWidth: string }>`
+const PanelWrapper = styled.div`
+  padding: 5px;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  gap: 2rem;
+`
+
+const PanelInteriorWrapper = styled.div<{ $maxWidth: string; $minWidth: string }>`
   border-radius: 10px;
-  box-shadow: 0px 0px 8px 0px #00000026;
+  box-shadow: 0px 0px 5px 1px #00000026;
   overflow: hidden; /* Hide scrollbars */
   width: ${(props) => (props.$maxWidth || props.$maxWidth ? "auto" : "100%")};
   max-width: ${(props) => (props.$maxWidth ? props.$maxWidth : "auto")};
@@ -161,41 +169,36 @@ const FourYearPlanPage = ({
                     padding: "2rem"
                   }}
                 >
-                <PanelWrapper>
-                  <PlanPanel
-                    setModalKey={setModalKey}
-                    modalKey={modalKey}
-                    setModalObject={setModalObject}
-                    isLoading={
-                      isLoadingDegreeplans || isLoadingActiveDegreePlan
-                    }
-                    activeDegreeplan={activeDegreePlan}
-                    degreeplans={degreeplans}
-                    setActiveDegreeplanId={setActiveDegreeplanId}
-                  />
-                </PanelWrapper>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "row",
-                    height: "100%",
-                    gap: "2rem"
-                  }}
-                >
                   <PanelWrapper>
-                    <ReqPanel
-                      setModalKey={setModalKey}
-                      setModalObject={setModalObject}
-                      isLoading={isLoadingActiveDegreePlan}
-                      activeDegreeplan={activeDegreePlan}
-                    />
+                    <PanelInteriorWrapper>
+                      <PlanPanel
+                        setModalKey={setModalKey}
+                        modalKey={modalKey}
+                        setModalObject={setModalObject}
+                        isLoading={
+                          isLoadingDegreeplans || isLoadingActiveDegreePlan
+                        }
+                        activeDegreeplan={activeDegreePlan}
+                        degreeplans={degreeplans}
+                        setActiveDegreeplanId={setActiveDegreeplanId}
+                      />
+                    </PanelInteriorWrapper>
                   </PanelWrapper>
-                  {searchPanelOpen && (
-                    <PanelWrapper $minWidth={"40%"} $maxWidth={"45%"}>
-                      <SearchPanel activeDegreeplanId={activeDegreeplanId} />
-                    </PanelWrapper>
-                  )}
-                </div>
+                  <PanelWrapper>
+                    <PanelInteriorWrapper>
+                      <ReqPanel
+                        setModalKey={setModalKey}
+                        setModalObject={setModalObject}
+                        isLoading={isLoadingActiveDegreePlan}
+                        activeDegreeplan={activeDegreePlan}
+                      />
+                    </PanelInteriorWrapper>
+                    {searchPanelOpen && (
+                      <PanelInteriorWrapper $minWidth={"40%"} $maxWidth={"45%"}>
+                        <SearchPanel activeDegreeplanId={activeDegreeplanId} />
+                      </PanelInteriorWrapper>
+                    )}
+                  </PanelWrapper>
                 </SplitPane>
               </Row>
             )}
