@@ -30,20 +30,26 @@ const getCsrf = (): string | boolean => {
     return result;
 };
 
-export const baseFetcher = (init: RequestInit, jsonify: boolean = true) => async (resource: string, body?: any) => {
+/**
+ * The base fetcher for swrcrud.
+ * @param init A RequestInit object. By default, the credentials, mode, and headers options are set.
+ * @param returnJson Whether to jsonify the response. If this is false, then the function will return
+ * undefined
+ * @returns JSON or undefined (see @param returnJson).
+ */
+export const baseFetcher = (init: RequestInit, returnJson: boolean = true) => async (resource: string, body?: any) => {
     const res = await fetch(resource, {
         credentials: "include",
         mode: "same-origin",
         headers: {
             "Accept": "application/json",
             "X-CSRFToken": getCsrf(),
-            "Content-Type": jsonify ? "application/json" : undefined
+            "Content-Type": returnJson ? "application/json" : undefined
         } as HeadersInit,
         ...init,
         body: body === undefined ? undefined : JSON.stringify(body)
     });
     if (!res.ok) {
-        console.log('res is not ok', res)
         const error = new Error('An error occurred while fetching the data.') as SWRCrudError;
         // Attach extra info to the error object.
         error.info = await res.json()
@@ -51,14 +57,14 @@ export const baseFetcher = (init: RequestInit, jsonify: boolean = true) => async
         // TODO: need to figure out how to catch these errors
         throw Promise.reject(error);
     }
-    return jsonify ? res.json() : res;
+    return returnJson ? res.json() : undefined;
 }
 
 export const getFetcher = baseFetcher({ method: "GET" })
 export const postFetcher = baseFetcher({ method: "POST" })
 export const patchFetcher = baseFetcher({ method: "PATCH" })
 export const putFetcher = baseFetcher({ method: "PUT" })
-export const deleteFetcher = baseFetcher({ method: "DELETE" });
+export const deleteFetcher = baseFetcher({ method: "DELETE" }, false); // expect no response from delete requests
 
 const normalizeFinalSlash = (resource: string) => {
     if (!resource.endsWith("/")) resource += "/";
@@ -161,8 +167,7 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
             optimisticData: (list?: Array<T>) => list ? list.filter((item: T) => String(item[idKey]) !== id) : [],
             populateCache: (_, list?: Array<T>) => {
                 if (!list) return []
-                if (!removed) return list;
-                return list.filter((item: any) => item[idKey] !== id)
+                return list.filter((item: T) => item[idKey] !== id)
             },
             revalidate: false
         })
@@ -181,7 +186,7 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
         updated[idKey] = id;
         mutate(
             endpoint,
-            postFetcher(endpoint, updated), 
+            createOrUpdateFetcher(endpoint, updated), 
             {
                 optimisticData: (list: Array<T> | undefined) => {
                     if (!list) return [];

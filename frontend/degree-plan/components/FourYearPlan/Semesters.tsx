@@ -1,5 +1,5 @@
 
-import FlexSemester from "./Semester"
+import FlexSemester, { SkeletonSemester } from "./Semester"
 import styled from "@emotion/styled";
 import { Icon } from "../common/bulma_derived_components";
 import { Course, DegreePlan, Fulfillment } from "@/types";
@@ -22,7 +22,7 @@ const getLocalSemestersKey = (degreeplanId: DegreePlan["id"]) => `PDP-${degreepl
 const SemestersContainer = styled.div`
     display: flex;
     flex-direction: row;
-    gap: 1rem;
+    gap: 1.25rem;
     flex-wrap: wrap;
 ;`
 
@@ -96,14 +96,22 @@ const ModifySemesters = ({ addSemester, semesters, className }: ModifySemestersP
 interface SemestersProps {
     activeDegreeplan: DegreePlan | undefined;
     showStats: any;
-    className: string;
+    className?: string;
     editMode: boolean;
     setModalKey: (arg0: string) => void;
     setModalObject: (obj: any) => void;
-    setEditMode: (arg0: boolean) => void;
+    isLoading: boolean;
 }
 
-const Semesters = ({ activeDegreeplan, showStats, className, editMode, setModalKey, setModalObject, setEditMode}: SemestersProps) => {
+const Semesters = ({ 
+    activeDegreeplan,
+    showStats,
+    className,
+    editMode,
+    setModalKey,
+    setModalObject,
+    isLoading
+}: SemestersProps) => {
     const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null);    
     // semesters is state mostly derived from fulfillments
     
@@ -124,16 +132,6 @@ const Semesters = ({ activeDegreeplan, showStats, className, editMode, setModalK
             // localStorage.setItem(getLocalSemestersKey(activeDegreeplan.id), JSON.stringify(semesters));
             console.log('done delete');
         }
-    }
-
-    const handleRemoveSemester = (semester: string) => {
-        // setModalKey('semester-remove');
-        // const modalObj = {
-        //     degreeplanId: activeDegreeplan?.id,
-        //     fulfillments: fulfillments?.filter(f => f.semester === semester),
-        //     removeLocalSemString: () => removeSemester(semester)
-        // }
-        // setModalObject(modalObj);
     }
 
     /** Get semesters from local storage */
@@ -180,7 +178,8 @@ const Semesters = ({ activeDegreeplan, showStats, className, editMode, setModalK
 
     return (
         <SemestersContainer className={className}>            
-            {Object.keys(semesters).sort().map((semester: any) =>
+            {isLoading ? Array.from(Array(8).keys()).map(() => <SkeletonSemester showStats={showStats} />) :
+            Object.keys(semesters).sort().map((semester: any) =>
                 <FlexSemester 
                     activeDegreeplanId={activeDegreeplan?.id} 
                     showStats={showStats} 

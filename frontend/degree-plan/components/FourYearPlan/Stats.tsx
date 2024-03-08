@@ -80,7 +80,7 @@ const getAverages = (fulfillments: Fulfillment[]) => {
 }
 
 
-const Stats = ({ fulfillments, className } : { fulfillments: Fulfillment[], className: string }) => {
+const Stats = ({ fulfillments, className } : { fulfillments: Fulfillment[], className?: string }) => {
     const { course_quality, instructor_quality, difficulty, work_required } = getAverages(fulfillments) as Record<StatsType, number>;
 
     return (

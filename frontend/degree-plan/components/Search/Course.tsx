@@ -5,6 +5,10 @@ import { ItemTypes } from "../dnd/constants";
 
 import Badge from "./Badge";
 import { Draggable } from "../common/DnD";
+import { Course as CourseType } from "@/types";
+import Skeleton from "react-loading-skeleton";
+import 'react-loading-skeleton/dist/skeleton.css'
+
 // import { Course as CourseType } from "../../types";
 // import { Icon } from "../bulma_derived_components";
 
@@ -98,6 +102,28 @@ const InfoPopup = styled.div<{ $show: boolean }>`
     box-shadow: 0 2px 3px rgba(10, 10, 10, 0.1), 0 0 0 1px rgba(10, 10, 10, 0.1);
 `;
 
+export const SkeletonCourse = () => (
+    // eslint-disable-next-line
+    <RowSelectors>
+        <CourseContainer>
+            <CourseInfoContainer role="button">  
+                <CourseIdentityContainer>
+                    <CourseIDContainer>
+                            <CourseID><Skeleton width="5rem"/></CourseID>
+                    </CourseIDContainer>
+                    <CourseTitle></CourseTitle>
+                </CourseIdentityContainer>
+                <CourseQualityContainer>
+                    <Badge />
+                </CourseQualityContainer>
+                <CourseDifficultyContainer>
+                    <Badge />
+                </CourseDifficultyContainer>
+            </CourseInfoContainer>
+        </CourseContainer>
+    </RowSelectors>
+)
+
 interface CourseProps {
     course: CourseType;
     onClick: () => void;
@@ -114,17 +140,15 @@ export default function Course({
     isStar,
 }: CourseProps) {
     /** React dnd */
-    const [{ isDragging, color }, drag, dragPreview] = useDrag(() => ({
+    const [{ isDragging }, drag, dragPreview] = useDrag(() => ({
         type: ItemTypes.COURSE,
         item: {full_code: course.id, semester:-1},
         collect: (monitor) => ({
             isDragging: !!monitor.isDragging(),
-            color: monitor.isDragging() ? 'none' : 'none'
         })
     }))
 
     return (
-        // eslint-disable-next-line
         <RowSelectors>
             <CourseContainer>
                 <CourseInfoContainer
@@ -134,7 +158,7 @@ export default function Course({
                     <CourseIdentityContainer ref={drag}>
                         <Draggable isDragging={isDragging}>
                             <CourseIDContainer>
-                                    <CourseID style={{color}}>{course.id.replace(/-/g, " ")}</CourseID>
+                                <CourseID>{course.id.replace(/-/g, " ")}</CourseID>
                             </CourseIDContainer>
                             <CourseTitle>{course.title}</CourseTitle>
                         </Draggable>

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import styled from '@emotion/styled';
-import Course from "./Course";
+import Course, { SkeletonCourse } from "./Course";
 import { Course as CourseType, DegreePlan, Fulfillment, Rule, SortMode } from "../../types";
 import { useSWRCrud } from "@/hooks/swrcrud";
 
@@ -9,39 +9,6 @@ const goodEasy = ({ difficulty, course_quality: courseQuality }: CourseType) =>
         ? 0
         : Math.pow(courseQuality + 0.5, 1.5) / (difficulty + 1);
 
-/**
- * Sorts courses by the given sort mode
- * @param courses A list of course objects
- * @param sortMode The sort mode as a string
- * @returns {*} A sorted list of courses
- */
-const courseSort = (courses: CourseType[], sortMode: SortMode) => {
-    const sorted = [...courses];
-    sorted.sort((courseA, courseB) => {
-        switch (sortMode) {
-            case SortMode.QUALITY:
-                return !courseB.course_quality
-                    ? -1
-                    : courseB.course_quality - courseA.course_quality;
-            case SortMode.DIFFICULTY:
-                return !courseB.difficulty
-                    ? -1
-                    : courseA.difficulty - courseB.difficulty;
-            case SortMode.RECOMMENDED:
-                return !courseB.recommendation_score
-                    ? -1
-                    : courseB.recommendation_score -
-                          courseA.recommendation_score;
-            case SortMode.GOOD_AND_EASY:
-                return goodEasy(courseB) - goodEasy(courseA);
-            case SortMode.NAME:
-            default:
-                return courseA.id.localeCompare(courseB.id);
-        }
-    });
-    return sorted;
-};
-
 const CourseListContainer = styled.div`
     box-sizing: border-box;
     border-radius: 0.375em;
@@ -49,7 +16,7 @@ const CourseListContainer = styled.div`
     display: flex;
     flex-direction: column;
     min-height: 0;
-    overflow: auto;
+    overflow: hidden;
 `;
 
 const HeaderContainer = styled.div`
@@ -71,8 +38,6 @@ const Header = styled.div`
 const CoursesContainer = styled.ul`
     height: 100%;
     padding-left: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
     font-size: 0.7em;
     list-style: none;
 
@@ -86,32 +51,20 @@ export interface CourseListProps {
     courses: CourseType[];
     getCourse: (id: string) => void;
     sortMode: SortMode;
-    scrollPos: number;
-    setScrollPos: (pos: number) => void;
     recCoursesId: string[];
     activeDegreeplanId: DegreePlan["id"] | null;
     ruleId: Rule["id"];
+    isLoading: boolean;
 }
 const ResultsList = ({
     ruleId,
     activeDegreeplanId,
     courses,
     sortMode,
-    scrollPos,
-    setScrollPos
+    isLoading
 }: CourseListProps) => {
     // TODO: what if activeDegreeplan is not defined
     const { createOrUpdate } = useSWRCrud<Fulfillment>(`/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`, { idKey: "full_code" });
-
-    const listRef = useRef<HTMLUListElement>(null);
-    useEffect(() => {
-        // Set sections list scroll position to stored position
-        if (listRef.current) {
-            listRef.current.scrollTop = scrollPos;
-        }
-        // Return cleanup function that stores current sections scroll position
-        return () => setScrollPos(listRef.current?.scrollTop || 0);
-    }, [scrollPos, setScrollPos]);
 
     return (
         <CourseListContainer>
@@ -120,15 +73,16 @@ const ResultsList = ({
                 <Header width="20%">QUAL</Header>
                 <Header width="20%">DIFF</Header>
             </HeaderContainer>
-            <CoursesContainer ref={listRef}>
-                {courses.map((course) => 
+            <CoursesContainer>
+                {!isLoading ? courses.map((course) => 
                 <Course
                     key={course.id + course.semester}
                     course={course}
                     onClick={() => createOrUpdate({ rules: [ruleId] }, course.full_code)}
                     isStar={false}
-                    //showCourseDetail={} searchReqId={}
-                />)}
+                />) : 
+                Array.from(Array(3).keys()).map(() => <SkeletonCourse />)
+                }
             </CoursesContainer>
         </CourseListContainer>
     );

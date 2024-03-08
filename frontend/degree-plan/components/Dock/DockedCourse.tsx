@@ -7,25 +7,11 @@ import styled from '@emotion/styled';
 import { ItemTypes } from '../dnd/constants';
 import { Draggable } from "../common/DnD";
 import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
+import { BaseCourseContainer } from "../FourYearPlan/CoursePlanned";
 
-const BaseCourseContainer = styled.span<{ $isDragging?: boolean, $isDepressed: boolean, $isDisabled: boolean }>`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-width: 70px;
-  background: #F2F3F4;
-  margin: 0px 6px;
-  border-radius: 0px;
-  padding: 0rem 2rem;
-  text-wrap: nowrap;
-  color: ${props => props.$isDisabled ? "rgba(0, 0, 0, .6)" : "#000"};
-  cursor: ${props => props.$isDisabled || props.$isDepressed ? "not-allowed" : "grab"};
-  opacity: ${props => props.$isDragging ? 0.5 : 1};
-  background-color: ${props => props.$isDragging ? "#4B9AE7" : props.$isDepressed ? "var(--primary-color)" : "#F2F3F4"};
-`;
 
 const DockedCourseContainer = styled(BaseCourseContainer)`
-    height: 100%;
+  height: 100%;
   position: relative;
   opacity: ${props => props.$isDragging ? 0.5 : 1};
 
@@ -49,8 +35,6 @@ const DockedCourseContainer = styled(BaseCourseContainer)`
 
 
 const DockedCourse = ({removeDockedCourse, full_code}: any) => {
-    const [mouseOver, setMouseOver] = React.useState(false);
-
     /** React dnd */
     const [{ isDragging, color }, drag, dragPreview] = useDrag(() => ({
         type: ItemTypes.COURSE,
@@ -64,13 +48,15 @@ const DockedCourse = ({removeDockedCourse, full_code}: any) => {
     return (
         <DockedCourseContainer
         $isDragging={isDragging}
-        $isDepressed={false}
+        $isUsed={false}
         $isDisabled={false}
         ref={drag} 
         >
             <Draggable isDragging={isDragging} >
                 <ReviewPanelTrigger full_code={full_code}>
-                <div> {full_code.replace(/-/g, " ")}</div>
+                  <BaseCourseContainer $isDisabled={false} $isDragging={isDragging} $isUsed={false}>
+                    {full_code.replace(/-/g, " ")}
+                  </BaseCourseContainer>
                 </ReviewPanelTrigger>
             </Draggable>
             <GrayIcon className="close-button" onClick={() => removeDockedCourse(full_code)}>

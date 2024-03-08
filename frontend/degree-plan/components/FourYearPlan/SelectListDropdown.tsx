@@ -1,11 +1,8 @@
-'use client'
-
 import React, { useState, useEffect, useRef } from "react";
 import styled from "@emotion/styled";
 import { GrayIcon } from "../common/bulma_derived_components";
 import { DBObject, DegreePlan } from "../../types";
-import { getNameOfDeclaration } from "typescript";
-
+import { DarkBlueBackgroundSkeleton } from "./PanelCommon";
 
 const ButtonContainer = styled.div<{ $isActive: boolean; }>`
     line-height: 1.5;
@@ -25,7 +22,6 @@ const ButtonContainer = styled.div<{ $isActive: boolean; }>`
     }
 
     * {
-        font-size: 0.75rem;
         color: #333333;
     }
 
@@ -105,6 +101,7 @@ const DropdownRenameButton = ({ rename }: { rename: () => void }) => (
 const ScheduleOptionsContainer = styled.div`
     display: flex;
     flex-grow: 0.5;
+    gap: .25rem;
     justify-content: flex-end;
     width: 25%;
 `;
@@ -198,7 +195,8 @@ const DropdownMenu = styled.div<{$isActive: boolean}>`
     position: absolute;
     top: 100%;
     z-index: 20;
-    `;
+    font-size: 1rem;
+`;
 
 const DropdownContent = styled.div`
     background-color: #fff;
@@ -207,11 +205,10 @@ const DropdownContent = styled.div`
     padding: 0;
 `;
 
-const AddNew = styled.a`
+const AddNew = styled.button`
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-    font-size: 0.75rem;
     border-radius: 0 !important;
     cursor: pointer;
     padding: 0.5rem 0.5rem 0.5rem 1rem;
@@ -237,7 +234,9 @@ const ScheduleDropdownHeader = styled.div`
 `
 
 const SelectedName = styled.span`
-    font-weight: 600;
+    font-weight: 500;
+    min-width: 5rem;
+    font-size: 1.25rem;
 `
 
 interface SelectListDropdownProps<T extends DBObject,> {
@@ -252,6 +251,7 @@ interface SelectListDropdownProps<T extends DBObject,> {
         rename?: (item: T) => void;
         create: () => void;
     };
+    isLoading: boolean;
 }
 
 const SelectListDropdown = <T extends DBObject,>({
@@ -266,6 +266,7 @@ const SelectListDropdown = <T extends DBObject,>({
         rename,
         create,
     },
+    isLoading,
 }: SelectListDropdownProps<T>) => {
     const [isActive, setIsActive] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
@@ -288,7 +289,7 @@ const SelectListDropdown = <T extends DBObject,>({
     return (
         <ScheduleDropdownContainer ref={ref} $isActive={isActive}>
             <ScheduleDropdownHeader>
-                <SelectedName>{active && getItemName(active)}</SelectedName>
+                <SelectedName>{active ? getItemName(active) : <DarkBlueBackgroundSkeleton />}</SelectedName>
                 <DropdownTrigger
                     $isActive={isActive}
                     onClick={() => {
@@ -325,7 +326,7 @@ const SelectListDropdown = <T extends DBObject,>({
                                     />
                                 );
                             })}
-                    <AddNew onClick={create} role="button" href="#">
+                    <AddNew onClick={create} role="button" href="#" disabled={isLoading}>
                         <GrayIcon>
                             <i className="fa fa-plus" aria-hidden="true" />
                         </GrayIcon>

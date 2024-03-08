@@ -1,4 +1,5 @@
 export const ItemTypes = {
     MAJOR: 'major',
-    COURSE: 'course'
+    COURSE: 'course',
+    FULFILLMENT: 'fulfillment'
   }

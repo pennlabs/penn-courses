@@ -91,12 +91,11 @@ const ModalInterior = ({
     create: createDegreeplan,
     update: updateDegreeplan,
     remove: deleteDegreeplan,
-    copy: copyDegreeplan,
   } = useSWRCrud<DegreePlan>("/api/degree/degreeplans");
   const { mutate } = useSWRConfig();
 
   const create_degreeplan = (name: string) => {
-    createDegreeplan({ name: name }).then(
+    createDegreeplan({ name }).then(
       (new_) => new_ && setActiveDegreeplanId(new_.id)
     );
   };
@@ -160,16 +159,6 @@ const ModalInterior = ({
   }
   if (!modalKey || !modalObject) return <div></div>;
 
-  const rename_degreeplan = (name: string, id: DegreePlan["id"]) =>
-    void updateDegreeplan({ name }, id);
-  const remove_degreeplan = (id) => {
-    deleteDegreeplan(id);
-    mutate(
-      (key) => key.startsWith(`/api/degree/degreeplans/${id}`),
-      undefined,
-      { revalidate: false }
-    );
-  };
   const add_degree = async (degreeplanId, degreeId) => {
     const updated = await postFetcher(
       `/api/degree/degreeplans/${degreeplanId}/degrees`,
@@ -213,7 +202,7 @@ const ModalInterior = ({
           />
           <ModalButton
             onClick={() => {
-              rename_degreeplan(name, modalObject.id);
+              updateDegreeplan({ name }, modalObject.id)
               close();
             }}
           >
@@ -227,7 +216,7 @@ const ModalInterior = ({
           <p>Are you sure you want to remove this degree plan?</p>
           <ModalButton
             onClick={() => {
-              remove_degreeplan(modalObject.id);
+              deleteDegreeplan(modalObject.id);
               close();
             }}
           >

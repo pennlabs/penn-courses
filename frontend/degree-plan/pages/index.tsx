@@ -1,15 +1,12 @@
-import "bootstrap/dist/css/bootstrap.css";
+// import "bootstrap/dist/css/bootstrap.css";
 import "react-toastify/dist/ReactToastify.css";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
-import Nav from "../components/NavBar/Nav";
 import FourYearPlanPage from "./FourYearPlanPage";
-import OnboardingPage from "./OnboardingPage";
 import React, { useEffect, useState } from "react";
 import { DegreePlan, type User } from "../types";
 import LoginModal from "pcx-shared-components/src/accounts/LoginModal";
-import useSWR, { SWRConfig } from "swr";
-import Dock from "@/components/Dock/Dock";
+import { SWRConfig } from "swr";
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);

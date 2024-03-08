@@ -5,20 +5,21 @@ import styled from '@emotion/styled';
 import { Course, DnDFulfillment, Fulfillment } from "@/types";
 import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
 import { Draggable } from "../common/DnD";
+import Skeleton from "react-loading-skeleton"
+import 'react-loading-skeleton/dist/skeleton.css'
 
-export const BaseCourseContainer = styled.span<{ $isDragging?: boolean, $isDepressed: boolean, $isDisabled: boolean }>`
+export const BaseCourseContainer = styled.span<{ $isDragging?: boolean, $isUsed: boolean, $isDisabled: boolean }>`
   display: flex;
   justify-content: center;
   align-items: center;
   min-width: 70px;
   min-height: 35px;
-  background: #F2F3F4;
   border-radius: 10px;
   padding: .5rem;
   text-wrap: nowrap;
-  cursor: ${props => props.$isDisabled || props.$isDepressed ? "not-allowed" : "grab"};
+  cursor: ${props => props.$isDisabled || props.$isUsed ? "not-allowed" : "grab"};
   opacity: ${props => props.$isDisabled || props.$isDragging ? 0.7 : 1};
-  background-color: ${props => props.$isDragging ? "#4B9AE7" : props.$isDepressed ? "var(--primary-color)" : "#F2F3F4"};
+  background-color: ${props => props.$isDragging ? "#4B9AE7" : props.$isUsed ? "var(--primary-color)" : "var(--background-grey)"};
 `;
 
 export const PlannedCourseContainer = styled(BaseCourseContainer)`
@@ -50,21 +51,29 @@ interface CoursePlannedProps {
   semester: Course["semester"]
 }
 
+export const SkeletonCourse = () => (
+  <PlannedCourseContainer $isUsed={false} $isDisabled={false}>
+      <div>
+        <Skeleton width="5em"/>
+      </div>
+  </PlannedCourseContainer>
+)
+
 const CoursePlanned = ({ fulfillment, semester, removeCourse } : CoursePlannedProps) => {
   const [{ isDragging }, drag] = useDrag<DnDFulfillment, never, { isDragging: boolean }>(() => ({
-    type: ItemTypes.COURSE,
+    type: ItemTypes.FULFILLMENT,
     item: fulfillment,
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging()
     })
   }), [fulfillment, semester])
 
-  return (   
+  return (
     <Draggable isDragging={isDragging}>
       <ReviewPanelTrigger full_code={fulfillment.full_code}>
         <PlannedCourseContainer
         $isDragging={isDragging}
-        $isDepressed={false}
+        $isUsed={false}
         $isDisabled={false}
         ref={drag} 
         >

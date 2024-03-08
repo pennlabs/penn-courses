@@ -185,11 +185,11 @@ const OnboardingPage = ({setShowOnboardingModal, setActiveDegreeplanId} : {setSh
   ];
 
   const graduationYearOptions = [
-    { value: "2027", label: "2027" },
-    { value: "2026", label: "2026" },
-    { value: "2025", label: "2025" },
     { value: "2024", label: "2024" },
-  ];
+    { value: "2025", label: "2025" },
+    { value: "2026", label: "2026" },
+    { value: "2027", label: "2027" },
+  ]
 
   const defaultSchools = ['BSE', 'BA', 'BAS', 'BS'];
 
@@ -279,7 +279,7 @@ const OnboardingPage = ({setShowOnboardingModal, setActiveDegreeplanId} : {setSh
               </div>
 
               <div>
-                <Label required>Default Plan Name</Label>
+                <Label required>Degree Plan Name</Label>
                 <TextInput value={name} onChange={(e) => setName(e.target.value)} placeholder=""/>
               </div>
             </Column>
