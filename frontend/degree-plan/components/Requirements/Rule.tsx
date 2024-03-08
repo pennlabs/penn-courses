@@ -60,6 +60,7 @@ const Row = styled.div`
 
 const Indented = styled.div`
   margin-left: .75rem;
+  margin-bottom: 1rem;
 `
 
 
@@ -164,13 +165,15 @@ const RuleComponent = (ruleTree : RuleTree) => {
               }
           </RuleTitle>
         </RuleTitleWrapper>
-        <Indented>
-          {children.map((ruleTree) => (
-            <div>
-              <RuleComponent {...ruleTree} />
-            </div>
-          ))}
-        </Indented>
+        {!collapsed &&
+          <Indented>
+            {children.map((ruleTree) => (
+              <div>
+                <RuleComponent {...ruleTree} />
+              </div>
+            ))}
+          </Indented>
+          }
       </>
     )
 }

@@ -66,7 +66,7 @@ interface CourseOptionProps {
 }
 const CourseOption = ({ full_code, semester, isChosen = false, ruleIsSatisfied = false, ruleId }: CourseOptionProps) => {
     const [{ isDragging }, drag] = useDrag<DnDFulfillment, never, { isDragging: boolean }>(() => ({
-        type: ItemTypes.COURSE,
+        type: ItemTypes.FULFILLMENT,
         item: {full_code: full_code, semester: null, rules: [ruleId], course: null },
 collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
         canDrag: !isChosen && !ruleIsSatisfied
