@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import styled from "@emotion/styled";
 import { GrayIcon } from "../common/bulma_derived_components";
 import { DBObject, DegreePlan } from "../../types";
-import { DarkBlueBackgroundSkeleton } from "./PlanPanel";
+import { DarkBlueBackgroundSkeleton } from "./PanelCommon";
 
 const ButtonContainer = styled.div<{ $isActive: boolean; }>`
     line-height: 1.5;

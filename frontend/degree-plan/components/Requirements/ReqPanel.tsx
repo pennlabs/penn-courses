@@ -1,24 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import RuleComponent, { SkeletonRule } from './Rule';
 import { Degree, DegreePlan, Fulfillment, Rule } from '@/types';
 import styled from '@emotion/styled';
-import { DarkBlueBackgroundSkeleton, PanelBody, PanelContainer, PanelHeader, PanelTopBarIconList, TopBarIcon } from '@/components/FourYearPlan/PlanPanel'
-import { PanelTopBarIcon } from "../FourYearPlan/PanelTopBarCommon";
+import { DarkBlueBackgroundSkeleton, PanelBody, PanelContainer, PanelHeader, PanelTopBarIconList } from "../FourYearPlan/PanelCommon";
 import { EditButton } from '../FourYearPlan/EditButton';
-import { useSWRCrud } from '@/hooks/swrcrud';
-import useSWR, { useSWRConfig } from 'swr';
-import { GrayIcon, Icon } from '../common/bulma_derived_components';
+import useSWR from 'swr';
+import { Icon } from '../common/bulma_derived_components';
 import React from 'react';
 import { ModalKey } from '../FourYearPlan/DegreeModal';
-
-const requirementDropdownListStyle = {
-  maxHeight: '90%',
-  width: '100%',
-  overflowY: 'auto',
-  paddingRight: '15px',
-  paddingLeft: '15px',
-  marginTop: '10px'
-}
+import { TrashIcon } from '../common/TrashIcon';
 
 const EmptyPanelContainer = styled.div`
   display: flex;
@@ -50,7 +40,7 @@ const DegreeHeaderContainer = styled.div`
   font-size: 1rem;
   font-weight: 500;
   background-color: var(--primary-color);
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1.25rem;
   border-radius: var(--req-item-radius);
 `
 
@@ -64,7 +54,7 @@ const DegreeBody = styled.div`
   overflow-y: auto;
 `
 
-const DegreeYear = styled.div`
+export const DegreeYear = styled.span`
   margin-left: .25rem;
   font-size: .9rem;
   font-weight: 500;
@@ -76,14 +66,6 @@ const DegreeTitleWrapper = styled.div`
   align-items: center;
   gap: .5rem;
 `
-export const TrashIcon = styled(GrayIcon)`
-  pointer-events: auto;
-  color: #b2b2b2;
-  &:hover {
-    color: #7E7E7E;
-  }
-`
-
 const AddButton = styled.div`
   width: 100%;
   display: flex;
@@ -95,6 +77,10 @@ const AddButton = styled.div`
   border-radius: var(--req-item-radius);
   align-items: center;
   color: white;
+`
+
+const ReqPanelBody = styled(PanelBody)`
+  padding: .75rem;
 `
 
 interface DegreeHeaderProps {
@@ -131,6 +117,46 @@ const DegreeHeader = ({ degree, remove, setCollapsed, collapsed, editMode, skele
     </DegreeHeaderContainer>
   )
 }
+
+
+// Logic for rule trees
+interface RuleTreeBaseNode {
+  type: string;
+  rule: Rule;
+  activeDegreePlanId: DegreePlan["id"];
+  progress: number; // a number between 0 and 1
+}
+interface RuleTreeLeaf extends RuleTreeBaseNode {
+  type: "LEAF";
+  cus: number;
+  num: number;
+  fulfillments: Fulfillment[]; // The fulfillments for the rule
+}
+interface RuleTreeInternalNode extends RuleTreeBaseNode {
+  type: "INTERNAL_NODE";
+  children: RuleTree[];
+}
+export type RuleTree = RuleTreeLeaf | RuleTreeInternalNode;
+
+// TODO: factor out activeDegreePlanId so it's not in entire tree
+interface RuleProps {
+    rule: Rule;
+    rulesToFulfillments: { [ruleId: string]: Fulfillment[] };
+    activeDegreePlanId: number;
+}
+const computeRuleTree = ({ activeDegreePlanId, rule, rulesToFulfillments }: RuleProps): RuleTree => {
+  if (rule.q) { // Rule leaf
+    const fulfillmentsForRule: Fulfillment[] = rulesToFulfillments[rule.id] || [];
+    const cus = fulfillmentsForRule.reduce((acc, f) => acc + (f.course?.credits || 1), 0); // default to 1 cu 
+    const num = fulfillmentsForRule.length;
+    const progress = Math.min(rule.credits ? cus / rule.credits : 1, rule.num ? num / rule.num : 1);
+    return { activeDegreePlanId, type: "LEAF", progress, cus, num, rule, fulfillments: fulfillmentsForRule }
+  }
+  const children = rule.rules.map((child) => computeRuleTree({ activeDegreePlanId, rule: child, rulesToFulfillments }))
+  const progress = children.reduce((acc, { progress }) => (progress == 1 ? 1 : 0) + acc, 0) / children.length;
+  return { activeDegreePlanId, type: "INTERNAL_NODE", children, progress, rule } // internal node
+}
+
 
 const Degree = ({degree_id, rulesToFulfillments, activeDegreeplan, editMode, setModalKey, setModalObject, isLoading}: any) => {
   const [collapsed, setCollapsed] = useState(false);
@@ -187,10 +213,7 @@ const Degree = ({degree_id, rulesToFulfillments, activeDegreeplan, editMode, set
       <DegreeBody>
         {degrees && degrees[0].rules.map((rule: any) => (
           <RuleComponent 
-          rulesToFulfillments={rulesToFulfillments}
-          activeDegreePlanId={activeDegreeplan.id}
-          rule={rule} 
-          key={rule.id}
+          {...computeRuleTree({ activeDegreePlanId: activeDegreeplan.id, rule, rulesToFulfillments })}
           />
         ))}
       </DegreeBody>}
@@ -246,7 +269,7 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
         </PanelTopBarIconList>
       </PanelHeader>
       {!activeDegreeplan ? <EmptyPanel /> :
-        <PanelBody>
+        <ReqPanelBody>
           {activeDegreeplan.degrees.map(degree_id => (
             <Degree 
             degree_id={degree_id} 
@@ -270,7 +293,7 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
               Add Degree
             </div>
           </AddButton>}
-      </PanelBody>
+      </ReqPanelBody>
       }
     </PanelContainer>
   );

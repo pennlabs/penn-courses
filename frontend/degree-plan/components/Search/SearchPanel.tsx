@@ -1,10 +1,10 @@
 import React, { createContext, useContext } from "react";
-import { ICourseQ } from "@/models/Types";
-import { PanelTopBar } from "@/pages/FourYearPlanPage";
 import useSWR from "swr";
 import ResultsList from "./ResultsList";
 import styled from "@emotion/styled";
 import { DegreePlan, Rule } from "@/types";
+import { PanelHeader } from "../FourYearPlan/PanelCommon";
+import { GrayIcon } from "../common/bulma_derived_components";
 
 interface SearchPanelContextType {
     setSearchPanelOpen: (arg0: boolean) => void;
@@ -34,21 +34,21 @@ const SearchPanelResult = styled.div`
 `
 
 const SearchContainer = styled.div`
-    label {
-        font-size: 0.75rem;
-    };
-    padding-left: 0.6em;
-    padding-right: 0.5em;
-`;
+    margin: 0 0.5rem;
+    padding: .5rem .25rem;
+    background-color: var(--background-color-blue-grey);
+    border-radius: .75rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+`
 
 const SearchField = styled.input`
-    width: 100%;
-    min-width: 10rem;
-    background-color: var(--background-blue-grey);
-    padding-left: 0.5em;
-    border-radius: 5px;
-    border-width: 0.8px;
+    flex-grow: 1;
+    border: none;
     color: black;
+    background: none;
+    font: inherit;
 `;
 
 const LoadingComponentContainer = styled.div`
@@ -75,8 +75,11 @@ const PanelTitle = styled.div`
     font-weight: 500;
 `
 
-type ISearchResultCourse =  {course: ICourseQ};
-
+const SearchPanelHeader = styled(PanelHeader)`
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.25rem;
+`
 
 export const SearchPanel = ({ activeDegreeplanId }: { activeDegreeplanId: DegreePlan["id"] | null }) => {
     const { setSearchPanelOpen, searchRuleId: ruleId, searchRuleQuery: ruleQuery }= useContext(SearchPanelContext); 
@@ -91,19 +94,20 @@ export const SearchPanel = ({ activeDegreeplanId }: { activeDegreeplanId: Degree
 
     return (
         <PanelContainer>
-            <PanelTopBar>
-              <div className='d-flex justify-content-between'>
-                <PanelTitle>Search </PanelTitle>
+            <SearchPanelHeader>
+                <PanelTitle>Search</PanelTitle>
                 <label onClick={() => {setQueryString(""); setSearchPanelOpen(false);}}>
                     <i className="fa fa-times" />
                 </label>
-              </div>
-            </PanelTopBar>
+            </SearchPanelHeader>
             <SearchPanelBody>
                 <SearchContainer
                     role="button"
                     className="control has-icons-left"
                 >
+                    <GrayIcon>
+                        <i className="fas fa-search fa-lg" />
+                    </GrayIcon>
                     <SearchField
                         aria-label="search for a course"
                         autoFocus
@@ -153,13 +157,13 @@ const SearchResult = ({ ruleId, query, activeDegreeplanId }: any) => {
                     </LoadingComponent>
                 </LoadingComponentContainer>
             : <SearchPanelResult>
-                    <ResultsList 
-                    activeDegreeplanId={activeDegreeplanId} 
-                    ruleId={ruleId} 
-                    courses={courses} 
-                    scrollPos={scrollPos} 
-                    setScrollPos={setScrollPos}
-                    />
+                <ResultsList 
+                activeDegreeplanId={activeDegreeplanId} 
+                ruleId={ruleId} 
+                courses={courses} 
+                scrollPos={scrollPos} 
+                setScrollPos={setScrollPos}
+                />
             </SearchPanelResult>}
         </>
     )

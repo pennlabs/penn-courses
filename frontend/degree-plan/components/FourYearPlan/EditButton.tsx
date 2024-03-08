@@ -1,6 +1,6 @@
 import React from "react";
 import styled from '@emotion/styled';
-import { PanelTopBarButton, PanelTopBarIcon, PanelTopBarString } from "./PanelTopBarCommon";
+import { PanelTopBarButton, PanelTopBarIcon, PanelTopBarString } from "./PanelCommon";
 
 const EditButtonWrapper = styled(PanelTopBarButton)`
     min-width: 5.5rem; /* Specify width so size does not change */

@@ -31,19 +31,9 @@ const Row = styled.div`
 `;
 
 const BodyContainer = styled.div`
-  background-color: var(--background-blue-grey);
+  background-color: var(--background-light-grey);
   width: 100%;
   flex-grow: 1;
-`;
-
-export const PanelTopBar = styled.div`
-  padding-left: 15px;
-  padding-top: 7px;
-  padding-bottom: 5px;
-  padding-right: 15px;
-  border-top-left-radius: 10px;
-  border-top-right-radius: 10px;
-  width: 100%;
 `;
 
 const PanelWrapper = styled.div<{ $maxWidth: string; $minWidth: string }>`
@@ -184,19 +174,28 @@ const FourYearPlanPage = ({
                     setActiveDegreeplanId={setActiveDegreeplanId}
                   />
                 </PanelWrapper>
-                <PanelWrapper>
-                  <ReqPanel
-                    setModalKey={setModalKey}
-                    setModalObject={setModalObject}
-                    isLoading={isLoadingActiveDegreePlan}
-                    activeDegreeplan={activeDegreePlan}
-                  />
-                </PanelWrapper>
-                {searchPanelOpen && (
-                  <PanelWrapper $minWidth={"40%"} $maxWidth={"45%"}>
-                    <SearchPanel activeDegreeplanId={activeDegreeplanId} />
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "row",
+                    height: "100%",
+                    gap: "2rem"
+                  }}
+                >
+                  <PanelWrapper>
+                    <ReqPanel
+                      setModalKey={setModalKey}
+                      setModalObject={setModalObject}
+                      isLoading={isLoadingActiveDegreePlan}
+                      activeDegreeplan={activeDegreePlan}
+                    />
                   </PanelWrapper>
-                )}
+                  {searchPanelOpen && (
+                    <PanelWrapper $minWidth={"40%"} $maxWidth={"45%"}>
+                      <SearchPanel activeDegreeplanId={activeDegreeplanId} />
+                    </PanelWrapper>
+                  )}
+                </div>
                 </SplitPane>
               </Row>
             )}

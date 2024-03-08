@@ -9,7 +9,7 @@ import DockedCourse from './DockedCourse';
 import { SearchPanelContext } from '../Search/SearchPanel';
 import { useSWRCrud } from '@/hooks/swrcrud';
 import useSWR, { useSWRConfig } from 'swr';
-import { DarkBlueBackgroundSkeleton } from '../FourYearPlan/PlanPanel';
+import { DarkBlueBackgroundSkeleton } from "../FourYearPlan/PanelCommon";
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
 
 const DockWrapper = styled.div`

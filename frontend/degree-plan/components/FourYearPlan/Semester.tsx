@@ -6,7 +6,7 @@ import Stats from "./Stats";
 import styled from '@emotion/styled';
 import { Course, DegreePlan, DnDFulfillment, Fulfillment, Semester } from "@/types";
 import { useSWRCrud } from "@/hooks/swrcrud";
-import { TrashIcon } from "../Requirements/ReqPanel";
+import { TrashIcon } from '../common/TrashIcon';
 import Skeleton from "react-loading-skeleton"
 import 'react-loading-skeleton/dist/skeleton.css'
 
