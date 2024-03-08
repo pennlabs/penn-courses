@@ -8,6 +8,7 @@ import { ItemTypes } from '../dnd/constants';
 import { Draggable } from "../common/DnD";
 import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
 import { BaseCourseContainer } from "../FourYearPlan/CoursePlanned";
+import { DnDCourse } from "@/types";
 
 
 const DockedCourseContainer = styled(BaseCourseContainer)`
@@ -36,12 +37,11 @@ const DockedCourseContainer = styled(BaseCourseContainer)`
 
 const DockedCourse = ({removeDockedCourse, full_code}: any) => {
     /** React dnd */
-    const [{ isDragging, color }, drag, dragPreview] = useDrag(() => ({
+    const [{ isDragging }, drag] = useDrag<DnDCourse, never, { isDraggin: boolean }>(() => ({
         type: ItemTypes.COURSE,
-        item: {full_code: full_code, semester:-1},
+        item: { full_code },
         collect: (monitor) => ({
             isDragging: !!monitor.isDragging(),
-            color: monitor.isDragging() ? 'none' : 'none'
         })
     }))
 

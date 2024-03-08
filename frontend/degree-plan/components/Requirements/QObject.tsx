@@ -1,6 +1,6 @@
 import { useDrag, useDrop } from "react-dnd";
 import { ItemTypes } from "../dnd/constants";
-import type { Course, DnDFulfillment, Fulfillment, Rule } from "@/types";
+import type { Course, DnDCourse, Fulfillment, Rule } from "@/types";
 import styled from "@emotion/styled";
 import nearley from "nearley";
 import grammar from "@/util/q_object_grammar" 
@@ -65,10 +65,10 @@ interface CourseOptionProps {
     ruleId: Rule["id"];
 }
 const CourseOption = ({ full_code, semester, isChosen = false, ruleIsSatisfied = false, ruleId }: CourseOptionProps) => {
-    const [{ isDragging }, drag] = useDrag<DnDFulfillment, never, { isDragging: boolean }>(() => ({
-        type: ItemTypes.FULFILLMENT,
-        item: {full_code: full_code, semester: null, rules: [ruleId], course: null },
-collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
+    const [{ isDragging }, drag] = useDrag<DnDCourse, never, { isDragging: boolean }>(() => ({
+        type: ItemTypes.COURSE,
+        item: { full_code },
+        collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
         canDrag: !isChosen && !ruleIsSatisfied
     }), [isChosen, ruleIsSatisfied])
 
@@ -83,10 +83,6 @@ collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
     )
 }
 
-/**     position: relative;
-    width: 100%;
-    display: inline-flex;
-    align-items: center; */
 const Row = styled.div`
     display: flex;
     flex-direction: row;
@@ -109,11 +105,7 @@ const Attributes = ({ attributes }: { attributes: string[] }) => {
         <Wrap>{attributes.join(', ')}</Wrap>
     </AttributeWrapper>
 }
-    // display: inline-flex;
-    // align-items: center;
-    // align-content: flex-end;
-    // gap: .25rem;
-    // flex-wrap: wrap;
+
 const SearchConditionWrapper = styled(BaseCourseContainer)`
     display: flex;
     flex-direction: row;

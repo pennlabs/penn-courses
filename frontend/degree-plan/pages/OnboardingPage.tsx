@@ -236,8 +236,6 @@ const OnboardingPage = ({setShowOnboardingModal, setActiveDegreeplanId} : {setSh
     .then((res) => {
       if (res) {
         setActiveDegreeplanId(res.id)
-        console.log('arguments to the route', [majors.map(m => m.value.id)]);
-        console.log('post new degrees for degree plan with id ', res.id);
         const updated = postFetcher(`/api/degree/degreeplans/${res.id}/degrees`, { degree_ids: majors.map(m => m.value.id) }) // add degree
         // mutate(`api/degree/degreeplans/${res.id}`, updated, { populateCache: true, revalidate: false }) // use updated degree plan returned
         // mutate(key => key && key.startsWith(`/api/degree/degreeplans/${res.id}/fulfillments`)) // refetch the fulfillments  

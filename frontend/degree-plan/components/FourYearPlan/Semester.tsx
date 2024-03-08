@@ -4,7 +4,7 @@ import { ItemTypes } from "../dnd/constants";
 import CoursesPlanned, { SkeletonCoursesPlanned } from "./CoursesPlanned";
 import Stats from "./Stats";
 import styled from '@emotion/styled';
-import { Course, DegreePlan, DnDFulfillment, Fulfillment, Semester } from "@/types";
+import { Course, DegreePlan, DnDCourse, Fulfillment } from "@/types";
 import { useSWRCrud } from "@/hooks/swrcrud";
 import { TrashIcon } from '../common/TrashIcon';
 import Skeleton from "react-loading-skeleton"
@@ -118,13 +118,16 @@ const FlexSemester = ({
     const credits = fulfillments.reduce((acc, curr) => acc + (curr.course?.credits || 1), 0)
 
     // the fulfillments api uses the POST method for updates (it creates if it doesn't exist, and updates if it does)
-    const { createOrUpdate } = useSWRCrud<Fulfillment>(`/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`, { idKey: "full_code" });
+    const { createOrUpdate } = useSWRCrud<Fulfillment>(
+        `/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`,
+        { idKey: "full_code",
+        createDefaultOptimisticData: { semester: null, rules: [] }
+    });
 
-    const [{ isOver, canDrop }, drop] = useDrop<DnDFulfillment, never, { isOver: boolean, canDrop: boolean }>(() => ({
+    const [{ isOver, canDrop }, drop] = useDrop<DnDCourse, never, { isOver: boolean, canDrop: boolean }>(() => ({
         accept: ItemTypes.COURSE,
-        drop: (fulfillment: DnDFulfillment) => {
-            console.log(semester, fulfillment)
-            createOrUpdate({ semester, rules: fulfillment.rules }, fulfillment.full_code);
+        drop: (fulfillment: DnDCourse) => {
+            createOrUpdate({ semester }, fulfillment.full_code);
         },
         collect: monitor => ({
           isOver: !!monitor.isOver(),
@@ -138,7 +141,6 @@ const FlexSemester = ({
 
     const removeSemesterHelper = () => {
         removeSemester(semester);
-        console.log('fulfillments', fulfillments);
         for (var i = 0; i < fulfillments.length; i++) {
             console.log(fulfillments[i].full_code)
             createOrUpdate({ semester: null }, fulfillments[i].full_code);

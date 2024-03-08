@@ -2,7 +2,7 @@ import { useDrag } from "react-dnd";
 import { ItemTypes } from "../dnd/constants";
 import { GrayIcon } from '../common/bulma_derived_components';
 import styled from '@emotion/styled';
-import { Course, DnDFulfillment, Fulfillment } from "@/types";
+import { Course, DnDCourse, Fulfillment } from "@/types";
 import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
 import { Draggable } from "../common/DnD";
 import Skeleton from "react-loading-skeleton"
@@ -60,9 +60,9 @@ export const SkeletonCourse = () => (
 )
 
 const CoursePlanned = ({ fulfillment, semester, removeCourse } : CoursePlannedProps) => {
-  const [{ isDragging }, drag] = useDrag<DnDFulfillment, never, { isDragging: boolean }>(() => ({
-    type: ItemTypes.FULFILLMENT,
-    item: fulfillment,
+  const [{ isDragging }, drag] = useDrag<DnDCourse, never, { isDragging: boolean }>(() => ({
+    type: ItemTypes.COURSE,
+    item: fulfillment, // squeezed down to just a DnDCourse
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging()
     })
