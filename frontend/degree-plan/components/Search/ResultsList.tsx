@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import styled from '@emotion/styled';
-import Course from "./Course";
+import Course, { SkeletonCourse } from "./Course";
 import { Course as CourseType, DegreePlan, Fulfillment, Rule, SortMode } from "../../types";
 import { useSWRCrud } from "@/hooks/swrcrud";
 
@@ -71,8 +71,6 @@ const Header = styled.div`
 const CoursesContainer = styled.ul`
     height: 100%;
     padding-left: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
     font-size: 0.7em;
     list-style: none;
 
@@ -86,32 +84,20 @@ export interface CourseListProps {
     courses: CourseType[];
     getCourse: (id: string) => void;
     sortMode: SortMode;
-    scrollPos: number;
-    setScrollPos: (pos: number) => void;
     recCoursesId: string[];
     activeDegreeplanId: DegreePlan["id"] | null;
     ruleId: Rule["id"];
+    isLoading: boolean;
 }
 const ResultsList = ({
     ruleId,
     activeDegreeplanId,
     courses,
     sortMode,
-    scrollPos,
-    setScrollPos
+    isLoading
 }: CourseListProps) => {
     // TODO: what if activeDegreeplan is not defined
     const { createOrUpdate } = useSWRCrud<Fulfillment>(`/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`, { idKey: "full_code" });
-
-    const listRef = useRef<HTMLUListElement>(null);
-    useEffect(() => {
-        // Set sections list scroll position to stored position
-        if (listRef.current) {
-            listRef.current.scrollTop = scrollPos;
-        }
-        // Return cleanup function that stores current sections scroll position
-        return () => setScrollPos(listRef.current?.scrollTop || 0);
-    }, [scrollPos, setScrollPos]);
 
     return (
         <CourseListContainer>
@@ -120,15 +106,16 @@ const ResultsList = ({
                 <Header width="20%">QUAL</Header>
                 <Header width="20%">DIFF</Header>
             </HeaderContainer>
-            <CoursesContainer ref={listRef}>
-                {courses.map((course) => 
+            <CoursesContainer>
+                {!isLoading ? courses.map((course) => 
                 <Course
                     key={course.id + course.semester}
                     course={course}
                     onClick={() => createOrUpdate({ rules: [ruleId] }, course.full_code)}
                     isStar={false}
-                    //showCourseDetail={} searchReqId={}
-                />)}
+                />) : 
+                Array.from(Array(3).keys()).map(() => <SkeletonCourse />)
+                }
             </CoursesContainer>
         </CourseListContainer>
     );

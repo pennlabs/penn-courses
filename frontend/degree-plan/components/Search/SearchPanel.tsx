@@ -2,7 +2,7 @@ import React, { createContext, useContext } from "react";
 import useSWR from "swr";
 import ResultsList from "./ResultsList";
 import styled from "@emotion/styled";
-import { DegreePlan, Rule } from "@/types";
+import { DegreePlan, Rule, Course as CourseType } from "@/types";
 import { PanelHeader } from "../FourYearPlan/PanelCommon";
 import { GrayIcon } from "../common/bulma_derived_components";
 
@@ -27,6 +27,7 @@ export const SearchPanelContext = createContext<SearchPanelContextType>({
 
 const SearchPanelBody = styled.div`
     margin: 10px;
+    overflow-y: auto;
 `
 
 const SearchPanelResult = styled.div`
@@ -34,9 +35,10 @@ const SearchPanelResult = styled.div`
 `
 
 const SearchContainer = styled.div`
-    margin: 0 0.5rem;
-    padding: .5rem .25rem;
-    background-color: var(--background-color-blue-grey);
+    position: sticky;
+    top: 0;
+    padding: .5rem .75rem;
+    background-color: var(--background-grey);
     border-radius: .75rem;
     display: flex;
     align-items: center;
@@ -44,8 +46,9 @@ const SearchContainer = styled.div`
 `
 
 const SearchField = styled.input`
-    flex-grow: 1;
+    flex: 1;
     border: none;
+    outline: none;
     color: black;
     background: none;
     font: inherit;
@@ -102,8 +105,6 @@ export const SearchPanel = ({ activeDegreeplanId }: { activeDegreeplanId: Degree
             </SearchPanelHeader>
             <SearchPanelBody>
                 <SearchContainer
-                    role="button"
-                    className="control has-icons-left"
                 >
                     <GrayIcon>
                         <i className="fas fa-search fa-lg" />
@@ -115,7 +116,7 @@ export const SearchPanel = ({ activeDegreeplanId }: { activeDegreeplanId: Degree
                         value={queryString}
                         onChange={(e) => {setQueryString(e.target.value)}}
                         autoComplete="off"
-                        placeholder={ruleId == -1 ? "General Search!" : `Filtering for ${ruleQuery ? ruleQuery : 'requirement'}`}
+                        placeholder={!ruleId ? "Search for a course!" : `Filtering for ${ruleQuery ? ruleQuery : 'a requirement'}`}
                     />
                 </SearchContainer>
                 <SearchResult ruleId={ruleId} query={queryString} activeDegreeplanId={activeDegreeplanId}/> 
@@ -141,30 +142,22 @@ export const useDebounce = (value: any, delay: number) => {
 }
 
 const buildSearchKey = (ruleId: Rule["id"] | null, query: string): string | null => {
-    return query.length >= 3 || ruleId !== null ? `api/base/all/search/courses?search=${query}${ruleId ? `&rule_ids=${ruleId}` : ""}` : null
+    return query.length >= 3 || ruleId ? `api/base/all/search/courses?search=${query}${ruleId ? `&rule_ids=${ruleId}` : ""}` : null
 }
 
 const SearchResult = ({ ruleId, query, activeDegreeplanId }: any) => {
     const debouncedQuery = useDebounce(query, 400)
-    const [scrollPos, setScrollPos] = React.useState<number>(0);
     const { data: courses = [], isLoading: isLoadingCourses, error } = useSWR(buildSearchKey(ruleId, debouncedQuery)); 
     return (
         <>
-            {isLoadingCourses  ? 
-                <LoadingComponentContainer>
-                    <LoadingComponent>
-                        loading courses...
-                    </LoadingComponent>
-                </LoadingComponentContainer>
-            : <SearchPanelResult>
-                <ResultsList 
+            <SearchPanelResult>
+                <ResultsList
                 activeDegreeplanId={activeDegreeplanId} 
                 ruleId={ruleId} 
                 courses={courses} 
-                scrollPos={scrollPos} 
-                setScrollPos={setScrollPos}
+                isLoading={isLoadingCourses}
                 />
-            </SearchPanelResult>}
+            </SearchPanelResult>
         </>
     )
 }
