@@ -16,6 +16,7 @@ export const PanelTopBarString = styled.div`
 `
 
 export const PanelTopBarButton = styled.button`
+    border: none;
     display: flex;
     flex-direction: row;
     justify-content: start;
@@ -23,6 +24,7 @@ export const PanelTopBarButton = styled.button`
     padding: .5rem 1rem;
     gap: .5rem;
     min-height: 1.5rem;
+    font-family: inherit;
 
     font-size: 1rem;
     font-weight: 500;

@@ -35,8 +35,6 @@ const DockedCourseContainer = styled(BaseCourseContainer)`
 
 
 const DockedCourse = ({removeDockedCourse, full_code}: any) => {
-    const [mouseOver, setMouseOver] = React.useState(false);
-
     /** React dnd */
     const [{ isDragging, color }, drag, dragPreview] = useDrag(() => ({
         type: ItemTypes.COURSE,

@@ -280,7 +280,7 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
             editMode={editMode}
             setModalKey={setModalKey}
             setModalObject={setModalObject}
-            isLoading={isLoading}
+            isLoading={isLoading || isLoadingFulfillments}
             />
           ))}
           {editMode && 

@@ -61,7 +61,7 @@ export const SkeletonCourse = () => (
 
 const CoursePlanned = ({ fulfillment, semester, removeCourse } : CoursePlannedProps) => {
   const [{ isDragging }, drag] = useDrag<DnDFulfillment, never, { isDragging: boolean }>(() => ({
-    type: ItemTypes.COURSE,
+    type: ItemTypes.FULFILLMENT,
     item: fulfillment,
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging()

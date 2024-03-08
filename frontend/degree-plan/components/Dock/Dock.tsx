@@ -109,7 +109,7 @@ const Dock = ({ user, login, logout  }: DockProps) => {
     const [{ isOver, canDrop }, drop] = useDrop(() => ({
         accept: ItemTypes.COURSE,
         drop: (course: Course) => {
-            console.log("DROPPED", course.full_code, 'from', course.semester);
+console.log("DROPPED", course.full_code, 'from', course.semester);
             const repeated = dockedCourses.filter(c => c === course.full_code)
             if (!repeated.length) {
                 /** Preemtively update frontend */
@@ -118,7 +118,6 @@ const Dock = ({ user, login, logout  }: DockProps) => {
                 createOrUpdate({"full_code": course.full_code}, course.full_code);
             }
         },
-        canDrop: () => {return true},
         collect: monitor => ({
           isOver: !!monitor.isOver(),
           canDrop: !!monitor.canDrop()
@@ -132,7 +131,7 @@ const Dock = ({ user, login, logout  }: DockProps) => {
          :
         !dockedCourses.length ? <CenteringCourseDock>Drop courses in the dock for later.</CenteringCourseDock> :
         <DockedCourses>
-            {dockedCourses.map((full_code, i) => 
+            {dockedCourses.toReversed().map((full_code, i) => 
                 <DockedCourse removeDockedCourse={removeDockedCourse} full_code={full_code}/>
             )}
         </DockedCourses>
