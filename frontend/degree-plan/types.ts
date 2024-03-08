@@ -95,15 +95,15 @@ export interface Course {
   credits: number;
 }
 
-// The interface we use to pass fulfillments when using React DnD
-export interface DnDFulfillment {
+// The interface we use with React DND
+export interface DnDCourse {
   full_code: string;
+}
+
+export interface Fulfillment extends DBObject, DnDCourse {
   course: Course | null; // id
   semester: string | null;
   rules: number[]; // ids
-}
-
-export interface Fulfillment extends DBObject, DnDFulfillment {
   id: number;
   degree_plan: number; // id
 }

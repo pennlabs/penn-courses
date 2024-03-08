@@ -3,7 +3,7 @@ import styled from '@emotion/styled';
 import { DarkBlueIcon } from '../Requirements/QObject';
 import React, { useContext, useEffect } from "react";
 import { useDrop } from "react-dnd";
-import { Course, IDockedCourse, User } from "@/types";
+import { Course, DegreePlan, DnDCourse, Fulfillment, IDockedCourse, User } from "@/types";
 import { ItemTypes } from "../dnd/constants";
 import DockedCourse from './DockedCourse';
 import { SearchPanelContext } from '../Search/SearchPanel';
@@ -11,6 +11,7 @@ import { useSWRCrud } from '@/hooks/swrcrud';
 import useSWR, { useSWRConfig } from 'swr';
 import { DarkBlueBackgroundSkeleton } from "../FourYearPlan/PanelCommon";
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
+import _ from 'lodash';
 
 const DockWrapper = styled.div`
     z-index: 1;
@@ -86,30 +87,34 @@ interface DockProps {
     login: (u: User) => void;
     logout: () => void;
     user: User | null;
+    activeDegreeplanId: DegreePlan["id"];
 }
-const Dock = ({ user, login, logout  }: DockProps) => {
+const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
     const { searchPanelOpen, setSearchPanelOpen, setSearchRuleQuery, setSearchRuleId } = useContext(SearchPanelContext)
     const [dockedCourses, setDockedCourses] = React.useState<string[]>([]);
-    const { createOrUpdate,remove } = useSWRCrud<IDockedCourse>(`/api/degree/docked`, {idKey: 'full_code'});
-    const {data: dockedCourseObjs, isLoading} = useSWR<IDockedCourse[]>(`/api/degree/docked`, {fallback: []}) 
+    const { createOrUpdate, remove } = useSWRCrud<IDockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
+    const { data: fulfillments = [], isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplanId ? `/api/degree/degreeplans/${activeDegreeplanId}/fulfillments` : null);    
+    const { remove: deleteFulfillment } = useSWRCrud<Fulfillment>(`/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`, { idKey: "full_code" });
+    const {data: dockedCourseObjs = [], isLoading} = useSWR<IDockedCourse[]>(`/api/degree/docked`) 
 
-    const removeDockedCourse = async (full_code: string) => {
+    const removeDockedCourse = (full_code: string) => {
         /** Preemtively update frontend */
         setDockedCourses((dockedCourses) => dockedCourses.filter(c => c !== full_code));
         /** Update backend */
-        await remove(full_code);
+        remove(full_code);
+        deleteFulfillment(full_code)
     }
 
     useEffect(() => {
-        if (dockedCourseObjs !== undefined) {
-            setDockedCourses(dockedCourseObjs.map(obj => obj.full_code));
-        }
+        setDockedCourses(_.uniq([
+            ...fulfillments.filter(fulfillment => fulfillment.semester === null).map(fulfillment => fulfillment.full_code),
+            ...dockedCourseObjs.map(obj => obj.full_code)
+        ]));
     }, [dockedCourseObjs])
 
     const [{ isOver, canDrop }, drop] = useDrop(() => ({
         accept: ItemTypes.COURSE,
-        drop: (course: Course) => {
-console.log("DROPPED", course.full_code, 'from', course.semester);
+        drop: (course: DnDCourse) => {
             const repeated = dockedCourses.filter(c => c === course.full_code)
             if (!repeated.length) {
                 /** Preemtively update frontend */
