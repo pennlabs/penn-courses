@@ -15,16 +15,16 @@ export const PanelTopBarString = styled.div`
     flex-shrink: 1;
 `
 
-export const PanelTopBarButton = styled.div`
+export const PanelTopBarButton = styled.button`
     display: flex;
     flex-direction: row;
     justify-content: start;
     align-items: center;
-    padding: 0 1rem;
+    padding: .5rem 1rem;
     gap: .5rem;
     min-height: 1.5rem;
 
-    font-size: 1rem !important;
+    font-size: 1rem;
     font-weight: 500;
    
     background: var(--primary-color-xx-dark); 

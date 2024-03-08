@@ -9,7 +9,7 @@ import { PanelTopBarButton, PanelTopBarIcon } from "./PanelCommon";
 import { PanelContainer, PanelHeader, PanelTopBarIconList, PanelBody } from "./PanelCommon";
 
 const ShowStatsWrapper = styled(PanelTopBarButton)`
-    min-width: 8.75rem;
+    min-width: 9rem;
 `
 
 const ShowStatsButton = ({ showStats, setShowStats }: { showStats: boolean, setShowStats: (arg0: boolean) => void }) => (

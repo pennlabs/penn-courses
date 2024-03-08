@@ -88,7 +88,7 @@ interface DockProps {
     user: User | null;
 }
 const Dock = ({ user, login, logout  }: DockProps) => {
-    const { setSearchPanelOpen, setSearchRuleQuery, setSearchRuleId } = useContext(SearchPanelContext)
+    const { searchPanelOpen, setSearchPanelOpen, setSearchRuleQuery, setSearchRuleId } = useContext(SearchPanelContext)
     const [dockedCourses, setDockedCourses] = React.useState<string[]>([]);
     const { createOrUpdate,remove } = useSWRCrud<IDockedCourse>(`/api/degree/docked`, {idKey: 'full_code'});
     const {data: dockedCourseObjs, isLoading} = useSWR<IDockedCourse[]>(`/api/degree/docked`, {fallback: []}) 
@@ -152,7 +152,7 @@ const Dock = ({ user, login, logout  }: DockProps) => {
                 <SearchIconContainer onClick={() => {
                     setSearchRuleQuery("");
                     setSearchRuleId(null);
-                    setSearchPanelOpen(true);
+                    setSearchPanelOpen(!searchPanelOpen);
                 }}>
                     <DarkBlueIcon>
                         <i className="fas fa-search fa-lg"/>

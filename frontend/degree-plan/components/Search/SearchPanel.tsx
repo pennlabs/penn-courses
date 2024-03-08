@@ -26,12 +26,13 @@ export const SearchPanelContext = createContext<SearchPanelContextType>({
 
 
 const SearchPanelBody = styled.div`
-    margin: 10px;
+    margin: .6rem;
     overflow-y: auto;
 `
 
 const SearchPanelResult = styled.div`
-    margin-top: 8px;
+    margin-top: .5rem;
+    overflow-x: hidden;
 `
 
 const SearchContainer = styled.div`
@@ -54,16 +55,6 @@ const SearchField = styled.input`
     font: inherit;
 `;
 
-const LoadingComponentContainer = styled.div`
-    height: 10em;
-`
-const LoadingComponent = styled.div`
-    margin: 0;
-    text: bold;
-    font-size: 1em;
-    text-align: center; 
-    transform: translate(0, 90%)
-`
 const PanelContainer = styled.div`
     border-radius: 10px;
     box-shadow: 0px 0px 10px 6px rgba(0, 0, 0, 0.05);

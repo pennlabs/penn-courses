@@ -75,7 +75,7 @@ collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
     return (
         <ReviewPanelTrigger full_code={full_code}>
             <Draggable isDragging={isDragging}>
-                <BaseCourseContainer ref={drag} $isDepressed={isChosen} $isDisabled={!isChosen && ruleIsSatisfied}>
+                <BaseCourseContainer ref={drag} $isUsed={isChosen} $isDisabled={!isChosen && ruleIsSatisfied}>
                     {semester ? `${full_code} (${semester})` : full_code.replace("-", " ")}
                 </BaseCourseContainer>
             </Draggable>
