@@ -50,7 +50,6 @@ const ReqPanelTitle = styled.div`
 `
 
 const DegreeBody = styled.div`
-  padding: 0.5rem 1rem;
   overflow-y: auto;
   overflow-x: hidden;
 `
@@ -81,6 +80,7 @@ const AddButton = styled.div`
 `
 
 const ReqPanelBody = styled(PanelBody)`
+  overflow-y: scroll;
   padding: .75rem;
 `
 
