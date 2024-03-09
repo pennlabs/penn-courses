@@ -46,9 +46,12 @@ export const PlannedCourseContainer = styled(BaseCourseContainer)`
 `;
 
 interface CoursePlannedProps {
-  fulfillment: Fulfillment,
-  removeCourse: (course: Course["full_code"]) => void,
-  semester: Course["semester"]
+  course: DnDCourse;
+  removeCourse: (course: Course["full_code"]) => void;
+  semester: Course["semester"];
+  isUsed: boolean;
+  isDisabled: boolean;
+  className?: string;
 }
 
 export const SkeletonCourse = () => (
@@ -59,30 +62,33 @@ export const SkeletonCourse = () => (
   </PlannedCourseContainer>
 )
 
-const CoursePlanned = ({ fulfillment, semester, removeCourse } : CoursePlannedProps) => {
+const CoursePlanned = ({ course, removeCourse, isUsed = false, isDisabled = false, className } : CoursePlannedProps) => {
   const [{ isDragging }, drag] = useDrag<DnDCourse, never, { isDragging: boolean }>(() => ({
     type: ItemTypes.COURSE,
-    item: fulfillment, // squeezed down to just a DnDCourse
+    item: course,
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging()
     })
-  }), [fulfillment, semester])
+  }), [course])
 
   return (
     <Draggable isDragging={isDragging}>
-      <ReviewPanelTrigger full_code={fulfillment.full_code}>
+      <ReviewPanelTrigger full_code={course.full_code}>
         <PlannedCourseContainer
         $isDragging={isDragging}
-        $isUsed={false}
-        $isDisabled={false}
-        ref={drag} 
+        $isUsed={isUsed}
+        $isDisabled={isDisabled}
+        ref={drag}
+        className={className}
         >
             <div>
-              {fulfillment.full_code}
+              {course.full_code}
             </div>
-            <GrayIcon className="close-button" onClick={() => removeCourse(fulfillment.full_code)}>
-              <i className="fas fa-times"></i>
-            </GrayIcon>
+            {isUsed &&
+              <GrayIcon className="close-button" onClick={() => removeCourse(course.full_code)}>
+                <i className="fas fa-times"></i>
+              </GrayIcon>
+              }
         </PlannedCourseContainer>
       </ReviewPanelTrigger>
     </Draggable>

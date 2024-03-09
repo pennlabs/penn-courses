@@ -126,8 +126,8 @@ const FlexSemester = ({
 
     const [{ isOver, canDrop }, drop] = useDrop<DnDCourse, never, { isOver: boolean, canDrop: boolean }>(() => ({
         accept: ItemTypes.COURSE,
-        drop: (fulfillment: DnDCourse) => {
-            createOrUpdate({ semester }, fulfillment.full_code);
+        drop: (course: DnDCourse) => {
+            createOrUpdate({ semester }, course.full_code);
         },
         collect: monitor => ({
           isOver: !!monitor.isOver(),

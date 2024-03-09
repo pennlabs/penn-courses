@@ -5,13 +5,13 @@ import React, { useContext, useEffect } from "react";
 import { useDrop } from "react-dnd";
 import { Course, DegreePlan, DnDCourse, Fulfillment, IDockedCourse, User } from "@/types";
 import { ItemTypes } from "../dnd/constants";
-import DockedCourse from './DockedCourse';
 import { SearchPanelContext } from '../Search/SearchPanel';
 import { useSWRCrud } from '@/hooks/swrcrud';
 import useSWR, { useSWRConfig } from 'swr';
 import { DarkBlueBackgroundSkeleton } from "../FourYearPlan/PanelCommon";
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
 import _ from 'lodash';
+import CoursePlanned from '../FourYearPlan/CoursePlanned';
 
 const DockWrapper = styled.div`
     z-index: 1;
@@ -83,6 +83,10 @@ const Logo = styled.img`
     flex-shrink: 0;
 `
 
+const DockedCourse = styled(CoursePlanned)`
+    background: var(--background-grey);
+` 
+
 interface DockProps {
     login: (u: User) => void;
     logout: () => void;
@@ -106,10 +110,9 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
     }
 
     useEffect(() => {
-        setDockedCourses(_.uniq([
-            ...fulfillments.filter(fulfillment => fulfillment.semester === null).map(fulfillment => fulfillment.full_code),
+        setDockedCourses([
             ...dockedCourseObjs.map(obj => obj.full_code)
-        ]));
+        ]);
     }, [dockedCourseObjs])
 
     const [{ isOver, canDrop }, drop] = useDrop(() => ({
@@ -129,6 +132,8 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
         }),
     }), []);
 
+    useEffect(() => console.log(`dropped! ${isOver}`), [isOver])
+
     const dockedCoursesComponent = isLoading ?
         <CenteringCourseDock>
             <DarkBlueBackgroundSkeleton width="20rem"/>
@@ -136,8 +141,8 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
          :
         !dockedCourses.length ? <CenteringCourseDock>Drop courses in the dock for later.</CenteringCourseDock> :
         <DockedCourses>
-            {dockedCourses.toReversed().map((full_code, i) => 
-                <DockedCourse removeDockedCourse={removeDockedCourse} full_code={full_code}/>
+            {dockedCourses.toReversed().map((full_code) => 
+                <DockedCourse removeCourse={removeDockedCourse} course={{ full_code }} isUsed isDisabled={false} />
             )}
         </DockedCourses>
 

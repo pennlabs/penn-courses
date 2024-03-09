@@ -8,19 +8,19 @@ import { EditButton } from './EditButton';
 import { PanelTopBarButton, PanelTopBarIcon } from "./PanelCommon";
 import { PanelContainer, PanelHeader, PanelTopBarIconList, PanelBody } from "./PanelCommon";
 
-const ShowStatsWrapper = styled(PanelTopBarButton)`
-    min-width: 8.75rem;
+const ShowStatsText = styled.div`
+    min-width: 6rem;
 `
 
 const ShowStatsButton = ({ showStats, setShowStats }: { showStats: boolean, setShowStats: (arg0: boolean) => void }) => (
-    <ShowStatsWrapper onClick={() => setShowStats(!showStats)}>
+    <PanelTopBarButton onClick={() => setShowStats(!showStats)}>
         <PanelTopBarIcon>
             <i className={`fas fa-md fa-chart-bar ${showStats ? "" : "icon-crossed-out"}`}/>
         </PanelTopBarIcon>
-        <div>
+        <ShowStatsText>
             {showStats ? "Hide Stats" : "Show Stats"}
-        </div>
-    </ShowStatsWrapper>
+        </ShowStatsText>
+    </PanelTopBarButton>
 );
 
 interface PlanPanelProps {
