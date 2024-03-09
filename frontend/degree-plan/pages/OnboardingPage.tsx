@@ -5,7 +5,7 @@ import { Theme } from "@radix-ui/themes";
 import styled from "@emotion/styled";
 import useSWR, { mutate } from "swr";
 import Select from "react-select";
-import { DegreeListing, DegreePlan, MajorOption, SchoolOption } from "@/types";
+import { DegreeListing, DegreePlan, MajorOption, Options, SchoolOption } from "@/types";
 import { postFetcher, useSWRCrud } from "@/hooks/swrcrud";
 
 const PanelContainer = styled.div<{ $maxWidth: string; $minWidth: string }>`
@@ -65,6 +65,7 @@ const NextButton = styled(Button)`
 
 export const Label = styled.h5`
   padding-top: 25px;
+  font-size: 1rem;
   &:after {
     content: "*";
     color: red;
@@ -73,12 +74,20 @@ export const Label = styled.h5`
 `;
 
 const TextInput = styled.input`
+  font-size: 1rem;
   padding: 2px 6px;
-  width: 60%;
-  height: 40%;
-  border-radius: 3px;
-  border-style: solid;
-`
+  width: 65%;
+  height: 2.2rem;
+  border-radius: 4px;
+  border: 1px solid rgb(204, 204, 204);
+`;
+
+const FieldWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  align-items: left;
+`;
 
 const customSelectStylesLeft = {
   control: (provided) => ({
@@ -177,28 +186,30 @@ const OnboardingPage = ({setShowOnboardingModal, setActiveDegreeplanId} : {setSh
     DegreeListing[]
   >(`/api/degree/degrees`);
 
-  const startingYearOptions = [
-    { value: "2024", label: "2024" },
-    { value: "2023", label: "2023" },
-    { value: "2022", label: "2022" },
-    { value: "2021", label: "2021" },
-  ];
+  const { data: options } = useSWR<Options>("/api/options");
 
-  const graduationYearOptions = [
-    { value: "2024", label: "2024" },
-    { value: "2025", label: "2025" },
-    { value: "2026", label: "2026" },
-    { value: "2027", label: "2027" },
-  ]
+  const getYearOptions = React.useCallback(() => {
+    if (!options) return {
+      startYears: [],
+      gradYears: []
+    };
+    const currentYear = Number(options.SEMESTER.substring(0, 4));
+    return { // Up and down to 5 years
+      startYears: [...Array(5).keys()].map(i => ({value: currentYear - i, label: currentYear - i})),
+      gradYears: [...Array(5).keys()].map(i => ({value: currentYear + i, label: currentYear + i}))
+    }
+  }, [options])
 
-  const defaultSchools = ['BSE', 'BA', 'BAS', 'BS'];
+  const startingYearOptions = getYearOptions()?.startYears;
+  const graduationYearOptions = getYearOptions()?.gradYears;
+
+  const defaultSchools = ['BA', 'BSE',  'BAS', 'BS', 'BSN'];
 
   const schoolOptions =
     defaultSchools.map((d) => ({
       value: d,
       label: d
     }))
-  // console.log('schooOptions', schoolOptions);
 
   /** Create label for major listings */
   const createMajorLabel = (degree: DegreeListing) => {
@@ -235,12 +246,12 @@ const OnboardingPage = ({setShowOnboardingModal, setActiveDegreeplanId} : {setSh
     .catch(e => alert('Trouble adding degrees: ' + e))
     .then((res) => {
       if (res) {
-        setActiveDegreeplanId(res.id)
-        console.log('arguments to the route', [majors.map(m => m.value.id)]);
-        console.log('post new degrees for degree plan with id ', res.id);
         const updated = postFetcher(`/api/degree/degreeplans/${res.id}/degrees`, { degree_ids: majors.map(m => m.value.id) }) // add degree
         // mutate(`api/degree/degreeplans/${res.id}`, updated, { populateCache: true, revalidate: false }) // use updated degree plan returned
         // mutate(key => key && key.startsWith(`/api/degree/degreeplans/${res.id}/fulfillments`)) // refetch the fulfillments  
+        setActiveDegreeplanId(res.id);
+        localStorage.setItem('PDP-start-grad-years', JSON.stringify({startingYear: startingYear?.value, graduationYear: graduationYear?.value}));
+        // TODO: update the backend on user's start/grad years
         setShowOnboardingModal(false);
       }
     })
@@ -254,7 +265,7 @@ const OnboardingPage = ({setShowOnboardingModal, setActiveDegreeplanId} : {setSh
           </h1>
           <ColumnsContainer>
             <Column>
-              <div>
+              <FieldWrapper>
                 <Label required>Starting Year</Label>
                 <Select
                   options={startingYearOptions}
@@ -264,9 +275,9 @@ const OnboardingPage = ({setShowOnboardingModal, setActiveDegreeplanId} : {setSh
                   placeholder="Select Year Started"
                   styles={customSelectStylesLeft}
                 />
-              </div>
+              </FieldWrapper>
 
-              <div>
+              <FieldWrapper>
                 <Label required>Graduation Year</Label>
                 <Select
                   options={graduationYearOptions}
@@ -276,16 +287,16 @@ const OnboardingPage = ({setShowOnboardingModal, setActiveDegreeplanId} : {setSh
                   placeholder="Select Year of Graduation"
                   styles={customSelectStylesLeft}
                 />
-              </div>
+              </FieldWrapper>
 
-              <div>
+              <FieldWrapper>
                 <Label required>Degree Plan Name</Label>
                 <TextInput value={name} onChange={(e) => setName(e.target.value)} placeholder=""/>
-              </div>
+              </FieldWrapper>
             </Column>
 
             <Column>
-              <div>
+              <FieldWrapper>
                 <Label required>School(s) or Program(s)</Label>
                 <Select
                   options={schoolOptions}
@@ -297,9 +308,9 @@ const OnboardingPage = ({setShowOnboardingModal, setActiveDegreeplanId} : {setSh
                   styles={customSelectStylesRight}
                   isLoading={isLoadingDegrees}
                 />
-              </div>
+              </FieldWrapper>
 
-              <div>
+              <FieldWrapper>
                 <Label required>Major(s)</Label>
                 <Select
                   options={getMajorOptions()}
@@ -311,7 +322,7 @@ const OnboardingPage = ({setShowOnboardingModal, setActiveDegreeplanId} : {setSh
                   styles={customSelectStylesRight}
                   isLoading={isLoadingDegrees}
                 />
-              </div>
+              </FieldWrapper>
 
               {/* <h5>Concentration</h5>
               <Select

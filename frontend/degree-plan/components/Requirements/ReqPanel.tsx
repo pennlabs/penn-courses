@@ -230,9 +230,15 @@ interface ReqPanelProps {
   handleSearch: any;
 }
 const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, setSearchClosed, handleSearch}: ReqPanelProps) => {
-  const [editMode, setEditMode] = React.useState(false);
+
+  const [editMode, setEditMode] = React.useState(false); 
 
   const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null); 
+
+  /** If no degrees in the degree plan, enter edit mode */
+  React.useEffect(() => {
+      setEditMode(!isLoading && activeDegreeplan?.degrees.length === 0);
+  }, [activeDegreeplan]);
 
   const rulesToFulfillments = useMemo(() => {
     if (!fulfillments) return {}

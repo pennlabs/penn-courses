@@ -150,7 +150,7 @@ const ModalInterior = ({
   const [school, setSchool] = useState<SchoolOption>();
   const [major, setMajor] = useState<MajorOption>();
 
-  const [name, setName] = useState<string>(modalObject?.name || "");
+  const [name, setName] = useState<string>("");
   // const [degreeId, setDegreeId] = useState<number | null>(null);
 
   const { data: degrees, isLoading: isLoadingDegrees } =
@@ -339,10 +339,9 @@ const ModalInterior = ({
     case "semester-remove":
       return (
         <ModalInteriorWrapper>
-          <p>
-            Are you sure you want to remove this semester? All of your planning
-            for this semester will be lost
-          </p>
+          <ModalTextWrapper>
+              <ModalText>Are you sure you want to remove this semester? All of your planning for this semester will be lost</ModalText>
+            </ModalTextWrapper>
           <ModalButton
             onClick={() => {
               modalObject.helper();

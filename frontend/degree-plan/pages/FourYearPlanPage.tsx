@@ -77,7 +77,6 @@ const FourYearPlanPage = ({
     );
 
   useEffect(() => {
-    console.log("FIRED", degreeplans)
     // recompute the active degreeplan id on changes to the degreeplans
     if (!isLoadingDegreeplans && !degreeplans?.length) {
       setShowOnboardingModal(true);
@@ -172,6 +171,7 @@ const FourYearPlanPage = ({
                   <PanelWrapper>
                     <PanelInteriorWrapper>
                       <PlanPanel
+                        currentSemester={options?.SEMESTER}
                         setModalKey={setModalKey}
                         modalKey={modalKey}
                         setModalObject={setModalObject}
@@ -181,6 +181,7 @@ const FourYearPlanPage = ({
                         activeDegreeplan={activeDegreePlan}
                         degreeplans={degreeplans}
                         setActiveDegreeplanId={setActiveDegreeplanId}
+                        setShowOnboardingModal={setShowOnboardingModal}
                       />
                     </PanelInteriorWrapper>
                   </PanelWrapper>
