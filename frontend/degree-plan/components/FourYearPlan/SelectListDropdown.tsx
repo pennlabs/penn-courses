@@ -167,7 +167,7 @@ const ScheduleDropdownContainer = styled.div<{$isActive: boolean}>`
 `;
 
 const DropdownTrigger = styled.div<{$isActive: boolean}>`
-    margin-left: 1.5rem;
+    margin: 0.35rem 0rem 0rem;
     height: 1.5rem;
     width: 1.5rem;
     text-align: center;
@@ -214,6 +214,7 @@ const AddNew = styled.button`
     padding: 0.5rem 0.5rem 0.5rem 1rem;
     transition: background 0.1s ease;
     background: #fff;
+    width: 100%;
 
     &:hover {
         background: #ebedf1;
@@ -229,6 +230,7 @@ const AddNew = styled.button`
 
 const ScheduleDropdownHeader = styled.div`
     display: flex;
+    align-items: center;
     position: relative;
     width: 100%;
 `
@@ -299,7 +301,7 @@ const SelectListDropdown = <T extends DBObject,>({
                 >
                     <div aria-haspopup={true} aria-controls="dropdown-menu">
                         <GrayIcon>
-                            <i className="fa fa-chevron-down" aria-hidden="true" />
+                            <i className={`fa ${isActive ? 'fa-chevron-up' : 'fa-chevron-down'}`} aria-hidden="true" />
                         </GrayIcon>
                     </div>
                 </DropdownTrigger>

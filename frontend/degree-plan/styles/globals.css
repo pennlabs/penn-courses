@@ -22,6 +22,9 @@
 
   /* Edit mode */
   --plus-button-color: #9FB5EF;
+  --modal-button-color: #819AE1;
+  --modal-title-color: #575757;
+  --modal-text-color: #4A4A4A;
 
   /* DnD */
   --selected-color: #967BB6;
@@ -115,6 +118,10 @@ body {
       rgb(var(--background-end-rgb))
     )
     rgb(var(--background-start-rgb));
+}
+
+button {
+  cursor: pointer;
 }
 
 a {
