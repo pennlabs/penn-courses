@@ -64,7 +64,11 @@ const ResultsList = ({
     isLoading
 }: CourseListProps) => {
     // TODO: what if activeDegreeplan is not defined
-    const { createOrUpdate } = useSWRCrud<Fulfillment>(`/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`, { idKey: "full_code" });
+    const { createOrUpdate } = useSWRCrud<Fulfillment>(
+        `/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`,
+        { idKey: "full_code",
+        createDefaultOptimisticData: { semester: null, rules: [] }
+    });
 
     return (
         <CourseListContainer>

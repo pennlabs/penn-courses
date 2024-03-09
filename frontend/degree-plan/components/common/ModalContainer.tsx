@@ -24,8 +24,6 @@ const OuterModalContainer = styled.div<{ $title: string }>`
     left: 0;
     right: 0;
     top: 0;
-    height: 100%;
-
     header,
     footer {
         background-color: white;
@@ -93,26 +91,17 @@ const ModalCard = styled.div<{ $isBig: boolean }>`
 `;
 
 const ModalCardHead = styled.header`
-    align-items: center;
     display: flex;
-    flex-shrink: 0;
-    justify-content: flex-start;
-    padding: 20px;
-    position: relative;
-    border-bottom: none !important;
-    background-color: white !important;
-    font-weight: bold;
-    border-radius: 4px !important;
-    border-radius: 4px 4px 0 0 !important;
-    padding-left: 2rem;
-    padding-right: 2rem;
+    flex-direction: row;
+    padding: 1.2rem 1.5rem 1rem;
+    border-radius: 4px 4px 0 0;
+    justify-content: space-between;
 `;
 
-const ModalCardTitle = styled.header`
-    color: #363636;
-    flex-grow: 1;
-    flex-shrink: 0;
-    font-size: 1.5rem;
+const ModalCardTitle = styled.div`
+    color: var(--modal-title-color);
+    font-weight: 480;
+    font-size: 1.1rem;
     line-height: 1;
 `;
 
@@ -123,10 +112,7 @@ const ModalCardBody = styled.section`
     flex-grow: 1;
     flex-shrink: 1;
     overflow: auto;
-    height: 100%;
-    padding-left: 2rem;
-    padding-right: 2rem;
-    padding-bottom: 1.5rem;
+    padding: 0rem 1.5rem 1.5rem;
     .button,
     input {
         display: block;

@@ -75,22 +75,24 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
     endpoint: string, 
     config = {}
 ) => {
-    const { createFetcher, updateFetcher, removeFetcher, createOrUpdateFetcher, copyFetcher, idKey } = {
+    const { createFetcher, updateFetcher, removeFetcher, createOrUpdateFetcher, copyFetcher, idKey, createDefaultOptimisticData } = {
         createFetcher: postFetcher, 
         copyFetcher: postFetcher,
         updateFetcher: patchFetcher, 
         removeFetcher: deleteFetcher, 
         createOrUpdateFetcher: postFetcher,
         idKey: "id" as keyof T,
+        createDefaultOptimisticData: {} as Partial<T>, // e.g., for fields computed by the backend
         ...config
     }
 
     const { mutate } = useSWRConfig();
 
-    const create = (newItem: any) => {
+    const create = (newItem: Partial<T>) => {
         const created = createFetcher(endpoint, newItem);
+        const optimistic = {...createDefaultOptimisticData, ...newItem} as T;
         mutate(endpoint, created, {
-            optimisticData: (list?: Array<T>) => list ? [...list, newItem] : [newItem],
+            optimisticData: (list?: Array<T>) => list ? [...list, optimistic] : [optimistic],
             populateCache: (created: T, list?: Array<T>) => list ? [...list, created] : [created],
             revalidate: false
         })
@@ -191,7 +193,7 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
                 optimisticData: (list: Array<T> | undefined) => {
                     if (!list) return [];
                     const old = list.find((item: T) => item[idKey] === id) || {};
-                    const optimistic = {...old, ...updated} as T;
+                    const optimistic = {...createDefaultOptimisticData, ...old, ...updated} as T;
                     return [...list.filter((item: T) => item[idKey] !== id), optimistic]
                 },
                 populateCache: (updated: T, list: Array<T> | undefined) => {
