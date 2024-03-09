@@ -177,7 +177,7 @@ height: 100%;
 
 .scorebox .num {
     color: white;
-    margin-top: .5rem;;
+    margin-top: .6rem;;
     font-size: 1.25rem;
 }
 
@@ -185,7 +185,7 @@ height: 100%;
     font-size: 15px;
     letter-spacing: -0.3px;
     font-size: .8rem;
-    margin-top: .5rem;
+    margin-top: .8rem;
     font-weight: bold;
 }
 

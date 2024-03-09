@@ -246,6 +246,7 @@ const OnboardingPage = ({setShowOnboardingModal, setActiveDegreeplan} : {setShow
     .catch(e => alert('Trouble adding degrees: ' + e))
     .then((res) => {
       if (res) {
+        setActiveDegreeplanId(res.id)
         const updated = postFetcher(`/api/degree/degreeplans/${res.id}/degrees`, { degree_ids: majors.map(m => m.value.id) }) // add degree
         // mutate(`api/degree/degreeplans/${res.id}`, updated, { populateCache: true, revalidate: false }) // use updated degree plan returned
         // mutate(key => key && key.startsWith(`/api/degree/degreeplans/${res.id}/fulfillments`)) // refetch the fulfillments  
