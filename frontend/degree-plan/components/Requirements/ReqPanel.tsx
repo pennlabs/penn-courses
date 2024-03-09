@@ -52,6 +52,7 @@ const ReqPanelTitle = styled.div`
 const DegreeBody = styled.div`
   padding: 0.5rem 1rem;
   overflow-y: auto;
+  overflow-x: hidden;
 `
 
 export const DegreeYear = styled.span`

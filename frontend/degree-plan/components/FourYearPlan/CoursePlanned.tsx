@@ -8,7 +8,7 @@ import { Draggable } from "../common/DnD";
 import Skeleton from "react-loading-skeleton"
 import 'react-loading-skeleton/dist/skeleton.css'
 
-export const BaseCourseContainer = styled.span<{ $isDragging?: boolean, $isUsed: boolean, $isDisabled: boolean }>`
+export const BaseCourseContainer = styled.div<{ $isDragging?: boolean, $isUsed: boolean, $isDisabled: boolean }>`
   display: flex;
   justify-content: center;
   align-items: center;

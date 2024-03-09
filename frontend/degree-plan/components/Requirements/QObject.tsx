@@ -15,13 +15,11 @@ import { useContext } from "react";
 import { SearchPanelContext } from "../Search/SearchPanel";
 
 const interpolate = <T,>(arr: T[], separator: T) => 
-    <QObjectWrapper>
-    {arr.flatMap(
+    arr.flatMap(
         (elem, index) => index < arr.length - 1 ? 
         [elem, separator] 
         : [elem]
-    )}
-    </QObjectWrapper>
+    )
 
 
 type ConditionKey = "full_code" | "semester" | "attributes__code__in" | "department__code" | "full_code__startswith" | "code__gte" | "code__lte" | "department__code__in" 
@@ -83,21 +81,17 @@ collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
     )
 }
 
-/**     position: relative;
-    width: 100%;
-    display: inline-flex;
-    align-items: center; */
-const Row = styled.div`
+const Row = styled.div<{ $wrap?: boolean, $gap?: string }>`
     display: flex;
     flex-direction: row;
-    gap: .2rem;
-    flex-grow: 1;
-    margin: .5 rem 0;
+    gap: ${({ $gap }) => $gap ? $gap : "0.5rem" };
+    align-items: center;
+    flex-wrap: ${({ $wrap }) => $wrap ? "wrap" : "nowrap"};
 `;
 
 const AttributeWrapper = styled.div`
-    min-width: 4rem;
     display: flex;
+    gap: .5rem;
     flex-direction: row;
     align-items: center;
 `
@@ -106,21 +100,16 @@ const AttributeWrapper = styled.div`
 const Attributes = ({ attributes }: { attributes: string[] }) => {
     return <AttributeWrapper>
         <DarkGrayIcon><i className="fas fa-at fa-sm"></i></DarkGrayIcon> {/*TODO: add a tooltip */}
-        <Wrap>{attributes.join(', ')}</Wrap>
+        <span>{attributes.join(', ')}</span>
     </AttributeWrapper>
 }
-    // display: inline-flex;
-    // align-items: center;
-    // align-content: flex-end;
-    // gap: .25rem;
-    // flex-wrap: wrap;
+
 const SearchConditionWrapper = styled(BaseCourseContainer)`
     display: flex;
-    flex-direction: row;
-    margin: .5 rem 0;
+    flex-wrap: wrap;
+    gap: .5rem;
     background-color: #EDF1FC;
     box-shadow: 0px 0px 14px 2px rgba(0, 0, 0, 0.05);
-    text-wrap: none;
     cursor: pointer;
 `
 
@@ -174,9 +163,15 @@ const SearchConditionInner = ({ q }: SearchConditionInnerProps) => {
     }
     if ('department__code__in' in compoundCondition) {
         const departments = compoundCondition['department__code__in'] as string[];
-        display.push(<div> in {
-            interpolate(departments.map((dept) => <div key={dept}>{dept}</div>), <CourseOptionsSeparator>or</CourseOptionsSeparator>)
-        }</div>);
+        display.push(
+            <Row>
+                <div>in</div> 
+                {interpolate(
+                    departments.map((dept) => <div key={dept}>{dept}</div>), 
+                    <CourseOptionsSeparator>or</CourseOptionsSeparator>)
+                }
+            </Row>
+        );
     }
     if ('full_code__startswith' in compoundCondition) {
         const padding = "XXXX-XXXX";
@@ -187,11 +182,11 @@ const SearchConditionInner = ({ q }: SearchConditionInnerProps) => {
     }
 
     compounds.forEach((compound) => display.push(
-        <>
+        <Row $gap=".1rem">
             <CourseOptionsSeparator>{'('}</CourseOptionsSeparator>
             <SearchConditionInner q={compound} />
             <CourseOptionsSeparator>{')'}</CourseOptionsSeparator>
-        </>
+        </Row>
     ));
 
     if (display.length == 0) {
@@ -199,9 +194,9 @@ const SearchConditionInner = ({ q }: SearchConditionInnerProps) => {
     }
 
     return (
-        <div>
+        <Row>
             {interpolate(display, <CourseOptionsSeparator>{q.type}</CourseOptionsSeparator>)}
-        </div>
+        </Row>
     )
 }
 
@@ -217,15 +212,15 @@ const SearchCondition = ({ ruleId, ruleQuery, fulfillments, ruleIsSatisfied, q}:
     return (
         <SearchConditionWrapper $isDisabled={ruleIsSatisfied}>
             <SearchConditionInner q={q} />
-            <div onClick={() => { 
+            <DarkGrayIcon
+            onClick={() => { 
                 setSearchRuleQuery(ruleQuery);
                 setSearchRuleId(ruleId);
                 setSearchPanelOpen(true);
-            }}>
-                <DarkGrayIcon>
-                    <i className="fas fa-search fa-sm"/>
-                </DarkGrayIcon>
-            </div>
+            }}
+            >
+                <i className="fas fa-search fa-sm"/>
+            </DarkGrayIcon>
             {fulfillments.map(fulfillment => (
                 <CourseOption 
                 full_code={fulfillment.full_code} 
@@ -243,7 +238,6 @@ const CourseOptionsSeparator = styled.div`
     text-transform: uppercase;
     color: #575757;
     font-weight: 500;
-    margin: 8px 0px;
 `;
 
 const transformCourseClauses = (q: ParsedQObj): ParsedQObj => {
@@ -333,11 +327,12 @@ const QObject = ({ q, fulfillments, rule, satisfied }: QObjectProps) => {
                 return <SearchCondition fulfillments={courses} q={search.q} ruleIsSatisfied={satisfied} ruleId={rule.id} ruleQuery={rule.q} />
             })
 
-            return <Row>{
-                interpolate(
+            return <Row $wrap>
+                {interpolate(
                     [...displayCoursesWithSemesters, ...displayCoursesWithoutSemesters, ...displaySearchConditions], 
                     <CourseOptionsSeparator>or</CourseOptionsSeparator>
-                )}</Row>
+                )}
+                </Row>
         case "SEARCH":
             return <SearchCondition q={q.q} ruleIsSatisfied={satisfied} fulfillments={fulfillments} ruleId={rule.id} ruleQuery={rule.q} />;
         case "COURSE":
@@ -345,13 +340,6 @@ const QObject = ({ q, fulfillments, rule, satisfied }: QObjectProps) => {
             return <CourseOption full_code={q.full_code} semester={q.semester} isChosen={isChosen} ruleIsSatisfied={satisfied} ruleId={rule.id} />
     }
 }
-
-const QObjectWrapper = styled.div`
-    max-width: 90%;
-    display: inline-flex;
-    flex-direction: row;
-    gap: 0.5rem;
-`
 
 interface RuleLeafProps { 
     q_json: any;
@@ -376,6 +364,9 @@ export const SkeletonRuleLeaf = () => (
     </div>
 )
 
+const RuleLeafWrapper = styled(Row)`
+    margin-bottom: .5rem;
+`
 const RuleLeaf = ({ q_json, fulfillmentsForRule, rule, satisfied }: RuleLeafProps) => {
     const t1 = transformDepartmentInClauses(q_json);
     const t2 = transformCourseClauses(t1);
@@ -383,9 +374,9 @@ const RuleLeaf = ({ q_json, fulfillmentsForRule, rule, satisfied }: RuleLeafProp
     q_json = t3 as TransformedQObject;
 
     return (
-        <QObjectWrapper>
+        <RuleLeafWrapper $wrap>
             <QObject q={q_json} fulfillments={fulfillmentsForRule} rule={rule} satisfied={satisfied} />
-        </QObjectWrapper>
+        </RuleLeafWrapper>
     )
 }
 
