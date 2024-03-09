@@ -33,7 +33,7 @@ const AccountIndicator = ({
                 response.json().then((newUser) => login(newUser));
             })
             .catch(logout);
-    }, [login, logout, user]);
+    }, [user]);
 
     return user ? (
         <UserSelector

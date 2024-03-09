@@ -98,8 +98,8 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
     const [dockedCourses, setDockedCourses] = React.useState<string[]>([]);
     const { createOrUpdate, remove } = useSWRCrud<IDockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
     const { data: fulfillments = [], isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplanId ? `/api/degree/degreeplans/${activeDegreeplanId}/fulfillments` : null);    
-    const { remove: deleteFulfillment } = useSWRCrud<Fulfillment>(`/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`, { idKey: "full_code" });
-    const {data: dockedCourseObjs = [], isLoading} = useSWR<IDockedCourse[]>(`/api/degree/docked`) 
+    const { createOrUpdate, remove: deleteFulfillment } = useSWRCrud<Fulfillment>(`/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`, { idKey: "full_code" });
+    const {data: dockedCourseObjs = [], isLoading} = useSWR<IDockedCourse[]>(user ? `/api/degree/docked` : null); 
 
     const removeDockedCourse = (full_code: string) => {
         /** Preemtively update frontend */
@@ -118,6 +118,7 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
     const [{ isOver, canDrop }, drop] = useDrop(() => ({
         accept: ItemTypes.COURSE,
         drop: (course: DnDCourse) => {
+            console.log("DROPPED", course.full_code, 'from', course.semester);
             const repeated = dockedCourses.filter(c => c === course.full_code)
             if (!repeated.length) {
                 /** Preemtively update frontend */

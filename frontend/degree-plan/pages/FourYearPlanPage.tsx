@@ -36,9 +36,17 @@ const BodyContainer = styled.div`
   flex-grow: 1;
 `;
 
-const PanelWrapper = styled.div<{ $maxWidth: string; $minWidth: string }>`
+const PanelWrapper = styled.div`
+  padding: 5px;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  gap: 2rem;
+`
+
+const PanelInteriorWrapper = styled.div<{ $maxWidth: string; $minWidth: string }>`
   border-radius: 10px;
-  box-shadow: 0px 0px 8px 0px #00000026;
+  box-shadow: 0px 0px 5px 1px #00000026;
   overflow: hidden; /* Hide scrollbars */
   width: ${(props) => (props.$maxWidth || props.$maxWidth ? "auto" : "100%")};
   max-width: ${(props) => (props.$maxWidth ? props.$maxWidth : "auto")};
@@ -49,41 +57,35 @@ const PanelWrapper = styled.div<{ $maxWidth: string; $minWidth: string }>`
 
 const FourYearPlanPage = ({
   updateUser,
-  user,
-  activeDegreeplanId,
-  setActiveDegreeplanId,
+  user
 }: any) => {
   // edit modals for degree and degree plan
   const [modalKey, setModalKey] = useState<ModalKey>(null);
   const [modalObject, setModalObject] = useState<DegreePlan | null>(null); // stores the which degreeplan is being updated using the modal
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+  const [activeDegreeplan, setActiveDegreeplan] = React.useState<DegreePlan | null>(null);
 
-    const { data: degreeplans, isLoading: isLoadingDegreeplans } = useSWR<
+  const { data: degreeplans, isLoading: isLoadingDegreeplans } = useSWR<
     DegreePlan[]
   >("/api/degree/degreeplans");
-  const { data: activeDegreePlan, isLoading: isLoadingActiveDegreePlan } =
-    useSWR(
-      activeDegreeplanId
-        ? `/api/degree/degreeplans/${activeDegreeplanId}`
-        : null
-    );
+  
+  console.log(degreeplans)
 
   useEffect(() => {
-    console.log("FIRED", degreeplans)
     // recompute the active degreeplan id on changes to the degreeplans
     if (!isLoadingDegreeplans && !degreeplans?.length) {
       setShowOnboardingModal(true);
     }
+    console.log(activeDegreeplan)
     if (!degreeplans?.length) {
-      setActiveDegreeplanId(null);
+      setActiveDegreeplan(null);
     } else if (
-      !activeDegreeplanId ||
-      !degreeplans.find((d) => d.id === activeDegreeplanId)
+      !activeDegreeplan || !degreeplans.find((d) => d.id === activeDegreeplan.id)
     ) {
       const mostRecentUpdated = degreeplans.reduce((a, b) =>
         a.updated_at > b.updated_at ? a : b
       );
-      setActiveDegreeplanId(mostRecentUpdated.id);
+      setActiveDegreeplan(mostRecentUpdated);
     }
   }, [degreeplans, isLoadingDegreeplans]);
 
@@ -140,7 +142,7 @@ const FourYearPlanPage = ({
             setModalKey={setModalKey}
             modalKey={modalKey}
             modalObject={modalObject}
-            setActiveDegreeplanId={setActiveDegreeplanId}
+            setActiveDegreeplan={setActiveDegreeplan}
           />
         )}
         <PageContainer>
@@ -148,7 +150,7 @@ const FourYearPlanPage = ({
             {!!showOnboardingModal ? (
               <OnboardingPage
                 setShowOnboardingModal={setShowOnboardingModal}
-                setActiveDegreeplanId={setActiveDegreeplanId}
+                setActiveDegreeplan={setActiveDegreeplan}
               />
             ) : (
               <Row>
@@ -161,41 +163,38 @@ const FourYearPlanPage = ({
                     padding: "2rem"
                   }}
                 >
-                <PanelWrapper>
-                  <PlanPanel
-                    setModalKey={setModalKey}
-                    modalKey={modalKey}
-                    setModalObject={setModalObject}
-                    isLoading={
-                      isLoadingDegreeplans || isLoadingActiveDegreePlan
-                    }
-                    activeDegreeplan={activeDegreePlan}
-                    degreeplans={degreeplans}
-                    setActiveDegreeplanId={setActiveDegreeplanId}
-                  />
-                </PanelWrapper>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "row",
-                    height: "100%",
-                    gap: "2rem"
-                  }}
-                >
                   <PanelWrapper>
-                    <ReqPanel
-                      setModalKey={setModalKey}
-                      setModalObject={setModalObject}
-                      isLoading={isLoadingActiveDegreePlan}
-                      activeDegreeplan={activeDegreePlan}
-                    />
+                    <PanelInteriorWrapper>
+                      <PlanPanel
+                        currentSemester={options?.SEMESTER}
+                        setModalKey={setModalKey}
+                        modalKey={modalKey}
+                        setModalObject={setModalObject}
+                        isLoading={
+                          isLoadingDegreeplans // || isLoadingActiveDegreePlan
+                        }
+                        activeDegreeplan={activeDegreeplan}
+                        degreeplans={degreeplans}
+                        setActiveDegreeplan={setActiveDegreeplan}
+                        setShowOnboardingModal={setShowOnboardingModal}
+                      />
+                    </PanelInteriorWrapper>
                   </PanelWrapper>
-                  {searchPanelOpen && (
-                    <PanelWrapper $minWidth={"40%"} $maxWidth={"45%"}>
-                      <SearchPanel activeDegreeplanId={activeDegreeplanId} />
-                    </PanelWrapper>
-                  )}
-                </div>
+                  <PanelWrapper>
+                    <PanelInteriorWrapper>
+                      <ReqPanel
+                        setModalKey={setModalKey}
+                        setModalObject={setModalObject}
+                        isLoading={isLoadingDegreeplans}
+                        activeDegreeplan={activeDegreeplan}
+                      />
+                    </PanelInteriorWrapper>
+                    {searchPanelOpen && (
+                      <PanelInteriorWrapper $minWidth={"40%"} $maxWidth={"45%"}>
+                        <SearchPanel activeDegreeplanId={activeDegreeplan ? activeDegreeplan.id : null} />
+                      </PanelInteriorWrapper>
+                    )}
+                  </PanelWrapper>
                 </SplitPane>
               </Row>
             )}

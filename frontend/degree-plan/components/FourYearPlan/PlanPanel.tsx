@@ -2,7 +2,7 @@ import SelectListDropdown from "./SelectListDropdown";
 import Semesters from "./Semesters";
 import styled from "@emotion/styled";
 import type { DegreePlan } from "@/types";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useSWRCrud } from '@/hooks/swrcrud';
 import { EditButton } from './EditButton';
 import { PanelTopBarButton, PanelTopBarIcon } from "./PanelCommon";
@@ -27,20 +27,24 @@ interface PlanPanelProps {
     setModalKey: (arg0: string) => void;
     modalKey: string;
     setModalObject: (arg0: DegreePlan | null) => void;
-    setActiveDegreeplanId: (arg0: DegreePlan["id"]) => void;
-    activeDegreeplan: DegreePlan | undefined;
+    setActiveDegreeplan: (arg0: DegreePlan | null) => void;
+    activeDegreeplan: DegreePlan | null;
     degreeplans: DegreePlan[] | undefined;
     isLoading: boolean;
+    currentSemester: string;
+    setShowOnboardingModal: (arg0: boolean) => void;
 }
 
 const PlanPanel = ({ 
     setModalKey,
     modalKey,
     setModalObject,
-    setActiveDegreeplanId,
+    setActiveDegreeplan,
+    setShowOnboardingModal,
     activeDegreeplan,
     degreeplans,
-    isLoading 
+    isLoading,
+    currentSemester
 } : PlanPanelProps) => {
     const { copy: copyDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans');
     const [showStats, setShowStats] = useState(true);
@@ -54,11 +58,11 @@ const PlanPanel = ({
                         active={activeDegreeplan}
                         getItemName={(item: DegreePlan) => item.name}
                         allItems={degreeplans || []} 
-                        selectItem={(id: DegreePlan["id"]) => setActiveDegreeplanId(id)}
+                        selectItem={(id: DegreePlan["id"]) => setActiveDegreeplan(degreeplans?.filter(d => d.id === id)[0])}
                         mutators={{
                             copy: (item: DegreePlan) => {
                                 (copyDegreeplan({...item, name: `${item.name} (copy)`}, item.id) as Promise<any>)
-                                .then((copied) => copied && setActiveDegreeplanId(copied.id))
+                                .then((copied) => copied && setActiveDegreeplan(copied.id))
                             },
                             remove: (item: DegreePlan) => {
                                 setModalKey("plan-remove")
@@ -68,7 +72,15 @@ const PlanPanel = ({
                                 setModalKey("plan-rename")
                                 setModalObject(item)
                             },
-                            create: () => setModalKey("plan-create")
+                            create: () => {
+                                /** When a semester is created, 
+                                 * if there is no localStorage.getItem('PDP-start-grad-years'), 
+                                 * the onboarding page will pop up which then sets PDP-start-grad-years
+                                 * in localStorage */
+                                if (typeof window !== "undefined" && !!localStorage.getItem('PDP-start-grad-years'))
+                                    setModalKey("plan-create")
+                                else setShowOnboardingModal(true);
+                            }
                         }}
                         isLoading={isLoading} 
                     />
@@ -83,9 +95,11 @@ const PlanPanel = ({
                     activeDegreeplan={activeDegreeplan} 
                     showStats={showStats} 
                     editMode={editMode}
+                    setEditMode={setEditMode}
                     setModalKey={setModalKey}
                     setModalObject={setModalObject}
                     isLoading={isLoading}
+                    currentSemester={currentSemester}
                     />
                 </PanelBody>
             </PanelContainer>
