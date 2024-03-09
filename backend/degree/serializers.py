@@ -147,9 +147,17 @@ class FulfillmentSerializer(serializers.ModelSerializer):
 class DegreePlanListSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(help_text="The id of the DegreePlan.")
 
+    degree_ids = serializers.PrimaryKeyRelatedField(
+        many=True,
+        required=False,    
+        source="degrees",
+        queryset=Degree.objects.all(),
+        help_text="The degree_id this degree plan belongs to.",
+    )
+
     class Meta:
         model = DegreePlan
-        fields = ["id", "name", "created_at", "updated_at"]
+        fields = ["id", "name", "created_at", "updated_at", "degree_ids"]
 
 
 class DegreePlanDetailSerializer(serializers.ModelSerializer):
@@ -158,13 +166,7 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
         read_only=True,
         help_text="The courses used to fulfill degree plan.",
     )
-    # degree_ids = serializers.PrimaryKeyRelatedField(
-    #     many=True,
-    #     required=False,    
-    #     source="degrees",
-    #     queryset=Degree.objects.all(),
-    #     help_text="The degree_id this degree plan belongs to.",
-    # )
+
     person = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:

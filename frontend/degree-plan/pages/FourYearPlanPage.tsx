@@ -57,40 +57,35 @@ const PanelInteriorWrapper = styled.div<{ $maxWidth: string; $minWidth: string }
 
 const FourYearPlanPage = ({
   updateUser,
-  user,
-  activeDegreeplanId,
-  setActiveDegreeplanId,
+  user
 }: any) => {
   // edit modals for degree and degree plan
   const [modalKey, setModalKey] = useState<ModalKey>(null);
   const [modalObject, setModalObject] = useState<DegreePlan | null>(null); // stores the which degreeplan is being updated using the modal
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+  const [activeDegreeplan, setActiveDegreeplan] = React.useState<DegreePlan | null>(null);
 
-    const { data: degreeplans, isLoading: isLoadingDegreeplans } = useSWR<
+  const { data: degreeplans, isLoading: isLoadingDegreeplans } = useSWR<
     DegreePlan[]
   >("/api/degree/degreeplans");
-  const { data: activeDegreePlan, isLoading: isLoadingActiveDegreePlan } =
-    useSWR(
-      activeDegreeplanId
-        ? `/api/degree/degreeplans/${activeDegreeplanId}`
-        : null
-    );
+  
+  console.log(degreeplans)
 
   useEffect(() => {
     // recompute the active degreeplan id on changes to the degreeplans
     if (!isLoadingDegreeplans && !degreeplans?.length) {
       setShowOnboardingModal(true);
     }
+    console.log(activeDegreeplan)
     if (!degreeplans?.length) {
-      setActiveDegreeplanId(null);
+      setActiveDegreeplan(null);
     } else if (
-      !activeDegreeplanId ||
-      !degreeplans.find((d) => d.id === activeDegreeplanId)
+      !activeDegreeplan || !degreeplans.find((d) => d.id === activeDegreeplan.id)
     ) {
       const mostRecentUpdated = degreeplans.reduce((a, b) =>
         a.updated_at > b.updated_at ? a : b
       );
-      setActiveDegreeplanId(mostRecentUpdated.id);
+      setActiveDegreeplan(mostRecentUpdated);
     }
   }, [degreeplans, isLoadingDegreeplans]);
 
@@ -147,7 +142,7 @@ const FourYearPlanPage = ({
             setModalKey={setModalKey}
             modalKey={modalKey}
             modalObject={modalObject}
-            setActiveDegreeplanId={setActiveDegreeplanId}
+            setActiveDegreeplan={setActiveDegreeplan}
           />
         )}
         <PageContainer>
@@ -155,7 +150,7 @@ const FourYearPlanPage = ({
             {!!showOnboardingModal ? (
               <OnboardingPage
                 setShowOnboardingModal={setShowOnboardingModal}
-                setActiveDegreeplanId={setActiveDegreeplanId}
+                setActiveDegreeplan={setActiveDegreeplan}
               />
             ) : (
               <Row>
@@ -176,11 +171,11 @@ const FourYearPlanPage = ({
                         modalKey={modalKey}
                         setModalObject={setModalObject}
                         isLoading={
-                          isLoadingDegreeplans || isLoadingActiveDegreePlan
+                          isLoadingDegreeplans // || isLoadingActiveDegreePlan
                         }
-                        activeDegreeplan={activeDegreePlan}
+                        activeDegreeplan={activeDegreeplan}
                         degreeplans={degreeplans}
-                        setActiveDegreeplanId={setActiveDegreeplanId}
+                        setActiveDegreeplan={setActiveDegreeplan}
                         setShowOnboardingModal={setShowOnboardingModal}
                       />
                     </PanelInteriorWrapper>
@@ -190,13 +185,13 @@ const FourYearPlanPage = ({
                       <ReqPanel
                         setModalKey={setModalKey}
                         setModalObject={setModalObject}
-                        isLoading={isLoadingActiveDegreePlan}
-                        activeDegreeplan={activeDegreePlan}
+                        isLoading={isLoadingDegreeplans}
+                        activeDegreeplan={activeDegreeplan}
                       />
                     </PanelInteriorWrapper>
                     {searchPanelOpen && (
                       <PanelInteriorWrapper $minWidth={"40%"} $maxWidth={"45%"}>
-                        <SearchPanel activeDegreeplanId={activeDegreeplanId} />
+                        <SearchPanel activeDegreeplanId={activeDegreeplan ? activeDegreeplan.id : null} />
                       </PanelInteriorWrapper>
                     )}
                   </PanelWrapper>

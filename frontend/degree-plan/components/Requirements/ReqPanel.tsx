@@ -176,12 +176,12 @@ const Degree = ({degree_id, rulesToFulfillments, activeDegreeplan, editMode, set
             <SkeletonRule>
               <SkeletonRule />
               <SkeletonRule />
-              <SkeletonRule />
+              {/* <SkeletonRule /> */}
             </SkeletonRule>
             <SkeletonRule>
               <SkeletonRule />
-              <SkeletonRule />
-              <SkeletonRule />
+              {/* <SkeletonRule />
+              <SkeletonRule /> */}
             </SkeletonRule>
           </SkeletonRule>
           <SkeletonRule>
@@ -235,9 +235,10 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
 
   const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null); 
 
+
   /** If no degrees in the degree plan, enter edit mode */
   React.useEffect(() => {
-      setEditMode(!isLoading && activeDegreeplan?.degrees.length === 0);
+      setEditMode(!isLoading && activeDegreeplan?.degree_ids?.length === 0);
   }, [activeDegreeplan]);
 
   const rulesToFulfillments = useMemo(() => {
@@ -274,9 +275,11 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
           <EditButton editMode={editMode} setEditMode={setEditMode} />
         </PanelTopBarIconList>
       </PanelHeader>
-      {!activeDegreeplan ? <EmptyPanel /> :
+      {!activeDegreeplan ? <ReqPanelBody><Degree isLoading={true}/></ReqPanelBody> :
+      <>
+        {!activeDegreeplan.degree_ids ? <EmptyPanel /> :
         <ReqPanelBody>
-          {activeDegreeplan.degrees.map(degree_id => (
+          {activeDegreeplan.degree_ids.map(degree_id => (
             <Degree 
             degree_id={degree_id} 
             rulesToFulfillments={rulesToFulfillments} 
@@ -286,7 +289,7 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
             editMode={editMode}
             setModalKey={setModalKey}
             setModalObject={setModalObject}
-            isLoading={isLoading || isLoadingFulfillments}
+            isLoading={isLoading}
             />
           ))}
           {editMode && 
@@ -299,8 +302,9 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
               Add Degree
             </div>
           </AddButton>}
-      </ReqPanelBody>
-      }
+        </ReqPanelBody>
+        }
+      </>}
     </PanelContainer>
   );
 }
