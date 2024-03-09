@@ -369,10 +369,10 @@ export const SkeletonRuleLeaf = () => (
     }}
     >
         <SkeletonCourse /> 
-        <CourseOptionsSeparator>or</CourseOptionsSeparator>
+        {/* <CourseOptionsSeparator>or</CourseOptionsSeparator>
         <SkeletonCourse /> 
         <CourseOptionsSeparator>or</CourseOptionsSeparator>
-        <SkeletonCourse />
+        <SkeletonCourse /> */}
     </div>
 )
 

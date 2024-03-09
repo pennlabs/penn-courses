@@ -12,11 +12,6 @@ export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
-  // active degree plan
-  const [activeDegreeplanId, setActiveDegreeplanId] = useState<
-    null | DegreePlan["id"]
-  >(null);
-
 
   const updateUser = (newUserVal: User | null) => {
     if (!newUserVal) {
@@ -50,7 +45,7 @@ export default function Home() {
               siteName="Penn Degree Plan"
             />
           )}
-            <FourYearPlanPage user={user} updateUser={updateUser} activeDegreeplanId={activeDegreeplanId} setActiveDegreeplanId={setActiveDegreeplanId} />
+            <FourYearPlanPage user={user} updateUser={updateUser}/>
         </SWRConfig>
       </DndProvider>
     </>

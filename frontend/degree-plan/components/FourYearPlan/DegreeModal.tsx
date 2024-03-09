@@ -126,13 +126,13 @@ interface RemoveSemesterProps {
 interface ModalInteriorProps {
   modalKey: ModalKey;
   modalObject: DegreePlan | null | RemoveSemesterProps | RemoveDegreeProps;
-  setActiveDegreeplanId: (arg0: DegreePlan["id"]) => void;
+  setActiveDegreeplan: (arg0: DegreePlan) => void;
   close: () => void;
 }
 const ModalInterior = ({
   modalObject,
   modalKey,
-  setActiveDegreeplanId,
+  setActiveDegreeplan,
   close,
 }: ModalInteriorProps) => {
   const {
@@ -144,7 +144,7 @@ const ModalInterior = ({
 
   const create_degreeplan = (name: string) => {
     createDegreeplan({ name }).then(
-      (new_) => new_ && setActiveDegreeplanId(new_.id)
+      (new_) => new_ && setActiveDegreeplan(new_)
     );
   };
   const [school, setSchool] = useState<SchoolOption>();
@@ -360,13 +360,13 @@ interface DegreeModalProps {
   setModalKey: (arg0: ModalKey) => void;
   modalKey: ModalKey;
   modalObject: DegreePlan | null;
-  setActiveDegreeplanId: (arg0: DegreePlan["id"]) => void;
+  setActiveDegreeplan: (arg0: DegreePlan) => void;
 }
 const DegreeModal = ({
   setModalKey,
   modalKey,
   modalObject,
-  setActiveDegreeplanId,
+  setActiveDegreeplan,
 }: DegreeModalProps) => (
   <ModalContainer
     title={getModalTitle(modalKey)}
@@ -375,7 +375,7 @@ const DegreeModal = ({
   >
     <ModalInterior
       modalObject={modalObject}
-      setActiveDegreeplanId={setActiveDegreeplanId}
+      setActiveDegreeplan={setActiveDegreeplan}
       close={() => setModalKey(null)}
     />
   </ModalContainer>

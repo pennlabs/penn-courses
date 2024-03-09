@@ -160,7 +160,7 @@ const customSelectStylesRight = {
   }),
 };
 
-const OnboardingPage = ({setShowOnboardingModal, setActiveDegreeplanId} : {setShowOnboardingModal: (arg0: boolean) => void, setActiveDegreeplanId: (arg0: number) => void }) => {
+const OnboardingPage = ({setShowOnboardingModal, setActiveDegreeplan} : {setShowOnboardingModal: (arg0: boolean) => void, setActiveDegreeplan: (arg0: DegreePlan) => void }) => {
   const [startingYear, setStartingYear] = useState(null);
   const [graduationYear, setGraduationYear] = useState(null);
   const [schools, setSchools] = useState<SchoolOption[]>([]);
@@ -249,7 +249,7 @@ const OnboardingPage = ({setShowOnboardingModal, setActiveDegreeplanId} : {setSh
         const updated = postFetcher(`/api/degree/degreeplans/${res.id}/degrees`, { degree_ids: majors.map(m => m.value.id) }) // add degree
         // mutate(`api/degree/degreeplans/${res.id}`, updated, { populateCache: true, revalidate: false }) // use updated degree plan returned
         // mutate(key => key && key.startsWith(`/api/degree/degreeplans/${res.id}/fulfillments`)) // refetch the fulfillments  
-        setActiveDegreeplanId(res.id);
+        setActiveDegreeplan(res);
         localStorage.setItem('PDP-start-grad-years', JSON.stringify({startingYear: startingYear?.value, graduationYear: graduationYear?.value}));
         // TODO: update the backend on user's start/grad years
         setShowOnboardingModal(false);
