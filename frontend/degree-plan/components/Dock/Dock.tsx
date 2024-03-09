@@ -91,7 +91,7 @@ const Dock = ({ user, login, logout  }: DockProps) => {
     const { searchPanelOpen, setSearchPanelOpen, setSearchRuleQuery, setSearchRuleId } = useContext(SearchPanelContext)
     const [dockedCourses, setDockedCourses] = React.useState<string[]>([]);
     const { createOrUpdate,remove } = useSWRCrud<IDockedCourse>(`/api/degree/docked`, {idKey: 'full_code'});
-    const {data: dockedCourseObjs, isLoading} = useSWR<IDockedCourse[]>(`/api/degree/docked`, {fallback: []}) 
+    const {data: dockedCourseObjs, isLoading} = useSWR<IDockedCourse[] | null>(user ? `/api/degree/docked` : null) 
 
     const removeDockedCourse = async (full_code: string) => {
         /** Preemtively update frontend */
@@ -101,7 +101,8 @@ const Dock = ({ user, login, logout  }: DockProps) => {
     }
 
     useEffect(() => {
-        if (dockedCourseObjs !== undefined) {
+        console.log("docked courses: ", dockedCourseObjs);
+        if (!!dockedCourseObjs && dockedCourseObjs !== undefined) {
             setDockedCourses(dockedCourseObjs.map(obj => obj.full_code));
         }
     }, [dockedCourseObjs])
@@ -109,7 +110,7 @@ const Dock = ({ user, login, logout  }: DockProps) => {
     const [{ isOver, canDrop }, drop] = useDrop(() => ({
         accept: ItemTypes.COURSE,
         drop: (course: Course) => {
-console.log("DROPPED", course.full_code, 'from', course.semester);
+            console.log("DROPPED", course.full_code, 'from', course.semester);
             const repeated = dockedCourses.filter(c => c === course.full_code)
             if (!repeated.length) {
                 /** Preemtively update frontend */

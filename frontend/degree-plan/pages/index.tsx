@@ -51,7 +51,6 @@ export default function Home() {
             />
           )}
             <FourYearPlanPage user={user} updateUser={updateUser} activeDegreeplanId={activeDegreeplanId} setActiveDegreeplanId={setActiveDegreeplanId} />
-            {/* <Dock/> */}
         </SWRConfig>
       </DndProvider>
     </>

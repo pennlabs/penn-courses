@@ -2,7 +2,7 @@ import SelectListDropdown from "./SelectListDropdown";
 import Semesters from "./Semesters";
 import styled from "@emotion/styled";
 import type { DegreePlan } from "@/types";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useSWRCrud } from '@/hooks/swrcrud';
 import { EditButton } from './EditButton';
 import { PanelTopBarButton, PanelTopBarIcon } from "./PanelCommon";
@@ -31,6 +31,8 @@ interface PlanPanelProps {
     activeDegreeplan: DegreePlan | undefined;
     degreeplans: DegreePlan[] | undefined;
     isLoading: boolean;
+    currentSemester: string;
+    setShowOnboardingModal: (arg0: boolean) => void;
 }
 
 const PlanPanel = ({ 
@@ -38,9 +40,11 @@ const PlanPanel = ({
     modalKey,
     setModalObject,
     setActiveDegreeplanId,
+    setShowOnboardingModal,
     activeDegreeplan,
     degreeplans,
-    isLoading 
+    isLoading,
+    currentSemester
 } : PlanPanelProps) => {
     const { copy: copyDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans');
     const [showStats, setShowStats] = useState(true);
@@ -68,7 +72,15 @@ const PlanPanel = ({
                                 setModalKey("plan-rename")
                                 setModalObject(item)
                             },
-                            create: () => setModalKey("plan-create")
+                            create: () => {
+                                /** When a semester is created, 
+                                 * if there is no localStorage.getItem('PDP-start-grad-years'), 
+                                 * the onboarding page will pop up which then sets PDP-start-grad-years
+                                 * in localStorage */
+                                if (typeof window !== "undefined" && !!localStorage.getItem('PDP-start-grad-years'))
+                                    setModalKey("plan-create")
+                                else setShowOnboardingModal(true);
+                            }
                         }}
                         isLoading={isLoading} 
                     />
@@ -83,9 +95,11 @@ const PlanPanel = ({
                     activeDegreeplan={activeDegreeplan} 
                     showStats={showStats} 
                     editMode={editMode}
+                    setEditMode={setEditMode}
                     setModalKey={setModalKey}
                     setModalObject={setModalObject}
                     isLoading={isLoading}
+                    currentSemester={currentSemester}
                     />
                 </PanelBody>
             </PanelContainer>
