@@ -1,11 +1,11 @@
 import { useDrag, useDrop } from "react-dnd";
 import { ItemTypes } from "../dnd/constants";
-import type { Course, DnDFulfillment, Fulfillment, Rule } from "@/types";
+import type { Course, DnDCourse, Fulfillment, Rule } from "@/types";
 import styled from "@emotion/styled";
 import nearley from "nearley";
 import grammar from "@/util/q_object_grammar" 
 import { Icon } from "../common/bulma_derived_components";
-import { BaseCourseContainer, SkeletonCourse } from "../FourYearPlan/CoursePlanned";
+import CoursePlanned, { BaseCourseContainer, SkeletonCourse } from "../FourYearPlan/CoursePlanned";
 import assert from "assert";
 import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
 import { Draggable } from "../common/DnD";
@@ -63,10 +63,10 @@ interface CourseOptionProps {
     ruleId: Rule["id"];
 }
 const CourseOption = ({ full_code, semester, isChosen = false, ruleIsSatisfied = false, ruleId }: CourseOptionProps) => {
-    const [{ isDragging }, drag] = useDrag<DnDFulfillment, never, { isDragging: boolean }>(() => ({
-        type: ItemTypes.FULFILLMENT,
-        item: {full_code: full_code, semester: null, rules: [ruleId], course: null },
-collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
+    const [{ isDragging }, drag] = useDrag<DnDCourse, never, { isDragging: boolean }>(() => ({
+        type: ItemTypes.COURSE,
+        item: { full_code },
+        collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
         canDrag: !isChosen && !ruleIsSatisfied
     }), [isChosen, ruleIsSatisfied])
 
@@ -222,12 +222,7 @@ const SearchCondition = ({ ruleId, ruleQuery, fulfillments, ruleIsSatisfied, q}:
                 <i className="fas fa-search fa-sm"/>
             </DarkGrayIcon>
             {fulfillments.map(fulfillment => (
-                <CourseOption 
-                full_code={fulfillment.full_code} 
-                isChosen 
-                ruleIsSatisfied={ruleIsSatisfied} 
-                ruleId={ruleId}
-                />
+                <CoursePlanned course={fulfillment} isDisabled={ruleIsSatisfied} isUsed />
             ))}
         </SearchConditionWrapper>
     )
@@ -307,7 +302,7 @@ const QObject = ({ q, fulfillments, rule, satisfied }: QObjectProps) => {
                 
                 // we've already used this course, so delete it 
                 if (isChosen) fulfillmentsMap.delete(course.full_code);
-                return <CourseOption full_code={course.full_code} semester={course.semester} isChosen={isChosen} ruleIsSatisfied={satisfied} ruleId={rule.id} />;
+                return <CoursePlanned course={course} isDisabled={satisfied && !isChosen} isUsed={isChosen} />;
             });
             const displayCoursesWithoutSemesters = courses.map(course => {
                 assert(typeof course.semester === "undefined")
@@ -316,7 +311,7 @@ const QObject = ({ q, fulfillments, rule, satisfied }: QObjectProps) => {
 
                 // we've already used this course, so delete it
                 if (isChosen) fulfillmentsMap.delete(course.full_code); 
-                return <CourseOption full_code={course.full_code} isChosen={isChosen} ruleIsSatisfied={satisfied} ruleId={rule.id} />;
+                return <CoursePlanned course={course} isDisabled={satisfied && !isChosen} isUsed={isChosen} />;
             });
 
             // transformations applied to parse tree should guarantee that searchConditions is a singleton
@@ -337,7 +332,7 @@ const QObject = ({ q, fulfillments, rule, satisfied }: QObjectProps) => {
             return <SearchCondition q={q.q} ruleIsSatisfied={satisfied} fulfillments={fulfillments} ruleId={rule.id} ruleQuery={rule.q} />;
         case "COURSE":
             const isChosen = !!fulfillments.find(fulfillment => fulfillment.full_code == q.full_code && (!q.semester || q.semester === fulfillment.semester))
-            return <CourseOption full_code={q.full_code} semester={q.semester} isChosen={isChosen} ruleIsSatisfied={satisfied} ruleId={rule.id} />
+            return <CoursePlanned course={q} isDisabled={satisfied && !isChosen} isUsed={isChosen} />;
     }
 }
 
@@ -357,10 +352,10 @@ export const SkeletonRuleLeaf = () => (
     }}
     >
         <SkeletonCourse /> 
-        <CourseOptionsSeparator>or</CourseOptionsSeparator>
+        {/* <CourseOptionsSeparator>or</CourseOptionsSeparator>
         <SkeletonCourse /> 
         <CourseOptionsSeparator>or</CourseOptionsSeparator>
-        <SkeletonCourse />
+        <SkeletonCourse /> */}
     </div>
 )
 

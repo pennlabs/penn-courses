@@ -55,7 +55,7 @@ export interface Degree extends DBObject {
 
 export interface DegreePlan extends DBObject {
   id: number;
-  degrees: number[]; // the ids of the degrees in the degree plan, which we use to mutate the degree plan
+  degree_ids: number[]; // the ids of the degrees in the degree plan, which we use to mutate the degree plan
   name: string;
   updated_at: string;
   created_at: string;
@@ -95,15 +95,15 @@ export interface Course {
   credits: number;
 }
 
-// The interface we use to pass fulfillments when using React DnD
-export interface DnDFulfillment {
+// The interface we use with React DND
+export interface DnDCourse {
   full_code: string;
+}
+
+export interface Fulfillment extends DBObject, DnDCourse {
   course: Course | null; // id
   semester: string | null;
   rules: number[]; // ids
-}
-
-export interface Fulfillment extends DBObject, DnDFulfillment {
   id: number;
   degree_plan: number; // id
 }

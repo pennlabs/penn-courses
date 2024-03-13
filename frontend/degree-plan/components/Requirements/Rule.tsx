@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import RuleLeaf, { SkeletonRuleLeaf } from './QObject';
-import { Course, Fulfillment, Rule } from '@/types';
+import { Course, DnDCourse, Fulfillment, Rule } from '@/types';
 import styled from '@emotion/styled';
 import { Icon } from '../common/bulma_derived_components';
 import { useSWRCrud } from '@/hooks/swrcrud';
@@ -114,22 +114,20 @@ const RuleComponent = (ruleTree : RuleTree) => {
     const [collapsed, setCollapsed] = useState(false);
 
     // hooks for LEAFs
-    // the fulfillments api uses the POST method for updates (it creates if it doesn't exist, and updates if it does)
-    const { createOrUpdate } = useSWRCrud<Fulfillment>(`/api/degree/degreeplans/${activeDegreePlanId}/fulfillments`, { idKey: "full_code" });
-    const [{ isOver, canDrop }, drop] = useDrop(() => ({
+    const { createOrUpdate } = useSWRCrud<Fulfillment>(
+        `/api/degree/degreeplans/${activeDegreePlanId}/fulfillments`,
+        { idKey: "full_code",
+        createDefaultOptimisticData: { semester: null, rules: [] }
+    });
+    const [{ isOver, canDrop }, drop] = useDrop<DnDCourse, never, { isOver: boolean, canDrop: boolean }>({
         accept: ItemTypes.COURSE,
-        drop: (course: Course) => {
-            console.log("DROPPED", course.full_code, 'from', course.semester);
-            if (!!course.semester) {
-              createOrUpdate({ semester: course.semester, rules: [rule.id] }, course.full_code);
-            }
-        },
-        canDrop: () => {return !satisfied && !!rule.q},  // has to be a rule leaf and unsatisfied to drop
+        drop: (course: DnDCourse) => void createOrUpdate({ rules: [rule.id] }, course.full_code), // TODO: this doesn't handle fulfillments that already have a rule
+        canDrop: () => { return !satisfied && !!rule.q },
         collect: monitor => ({
           isOver: !!monitor.isOver() && !satisfied,
           canDrop: !!monitor.canDrop()
         }),
-    }), [createOrUpdate]);
+    }, [createOrUpdate, satisfied]);
 
 
     if (type === "LEAF") {

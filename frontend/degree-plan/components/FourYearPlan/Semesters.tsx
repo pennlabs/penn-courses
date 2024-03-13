@@ -4,7 +4,7 @@ import styled from "@emotion/styled";
 import { Icon } from "../common/bulma_derived_components";
 import { Course, DegreePlan, Fulfillment } from "@/types";
 import useSWR from "swr";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 const getNextSemester = (semester: string) => {
     console.log("GET NEXT SEMESTER")
@@ -100,7 +100,9 @@ interface SemestersProps {
     editMode: boolean;
     setModalKey: (arg0: string) => void;
     setModalObject: (obj: any) => void;
+    setEditMode: (arg0: boolean) => void;
     isLoading: boolean;
+    currentSemester: string;
 }
 
 const Semesters = ({ 
@@ -110,54 +112,78 @@ const Semesters = ({
     editMode,
     setModalKey,
     setModalObject,
+    setEditMode,
+    currentSemester,
     isLoading
 }: SemestersProps) => {
     const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null);    
     // semesters is state mostly derived from fulfillments
-    
-    // TODO: change to other storage methods
-    const defaultSemesters = {} as { [semester: string]: Fulfillment[] };
+
+    const getDefaultSemesters = React.useCallback(() => {
+        if (!currentSemester) return {};
+
+        var startingYear, graduationYear;
+        if (typeof window === "undefined") {
+            startingYear = Number(currentSemester.substring(0, 4)); // Use current semester as default starting semester
+            graduationYear = startingYear + 4;
+        } else {
+            const startGradYearStr = localStorage.getItem('PDP-start-grad-years');
+            if (!!startGradYearStr) {
+                const startGradYear = JSON.parse(startGradYearStr);
+                startingYear = startGradYear.startingYear;
+                graduationYear = startGradYear.graduationYear;
+            } else {
+                return {}; 
+            }
+        }
+
+        var res = {} as {[semester: string]: Fulfillment[]};
+        for (var year = startingYear; year < graduationYear; year++) {
+            res = {...res, [`${year}C`]: [], [`${year + 1}A`]: []}; // A is Spring, C is Fall
+        }
+        return res;
+        
+    }, [currentSemester]);
+
     const [semesters, setSemesters] = useState<{[semester: string]: Fulfillment[]}>({});
     const addSemester = (semester: string) => { if (!semesters[semester]) setSemesters({...semesters, [semester]: []}) };
 
     const removeSemester = (semester: string) => {
-        console.log('remove called');
         if (semesters[semester]) {
-            console.log('delete');
             var newSems : {[semester: string]: Fulfillment[]} = {};
             for (var sem in semesters) {
                 if (sem !== semester) newSems = {...newSems, [sem]: semesters[sem]};
             }
             setSemesters(newSems);
-            // localStorage.setItem(getLocalSemestersKey(activeDegreeplan.id), JSON.stringify(semesters));
-            console.log('done delete');
         }
+    }
+
+    const semesterCompare = (a, b) => {
+        if (a.substring(0, 4) !== b.substring(0, 4)) return a - b; // compare year is years are different
+        else return a.substring(4) - b.substring(4); // compare semester if years are the same
     }
 
     /** Get semesters from local storage */
     useEffect(() => {
         if (!activeDegreeplan) return;
-        if (typeof window === "undefined") return setSemesters(defaultSemesters); // default state
+        if (typeof window === "undefined") return setSemesters(getDefaultSemesters()); // default state
         const stickyValue = localStorage.getItem(getLocalSemestersKey(activeDegreeplan.id));
         setSemesters(
             stickyValue !== null
             ? JSON.parse(stickyValue)
-            : defaultSemesters
+            : getDefaultSemesters()
         );
     }, [activeDegreeplan])
 
     /** Update semesters to local storage */
     useEffect(() => {
+        if (Object.keys(semesters).length == 0 && !isLoading) setEditMode(true); // if finish loading and no semesters, we go to edit mode for the user to add new semesters
+        else setEditMode(false);
         if (!activeDegreeplan) return;
         if (typeof window !== undefined) {
             localStorage.setItem(getLocalSemestersKey(activeDegreeplan.id), JSON.stringify(semesters));
         }
     }, [semesters, activeDegreeplan])
-
-    // useEffect(() => {
-    //     if (!fulfillments?.length) setEditMode(true);
-    //     else setEditMode(false);
-    // }, [fulfillments]);
 
     /** Parse fulfillments and group them by semesters */
     useEffect(() => {
@@ -179,7 +205,7 @@ const Semesters = ({
     return (
         <SemestersContainer className={className}>            
             {isLoading ? Array.from(Array(8).keys()).map(() => <SkeletonSemester showStats={showStats} />) :
-            Object.keys(semesters).sort().map((semester: any) =>
+            Object.keys(semesters).sort(semesterCompare).map((semester: any) =>
                 <FlexSemester 
                     activeDegreeplanId={activeDegreeplan?.id} 
                     showStats={showStats} 

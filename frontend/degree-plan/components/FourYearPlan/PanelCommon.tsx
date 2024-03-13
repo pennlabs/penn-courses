@@ -47,6 +47,7 @@ export const PanelHeader = styled.div`
     padding: 0.5rem 1rem;
     flex-grow: 0;
     font-weight: 300;
+    align-items: center;
 `;
 
 export const PanelBody = styled.div`
