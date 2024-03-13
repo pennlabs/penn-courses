@@ -715,6 +715,11 @@ def get_semesters(semesters: str = None) -> list[str]:
 
 
 def historical_year_probability(current, courses):
+    """
+    current: the current semester represented in the 20XX(A|B|C) format
+    courses: a list of Course objects sorted by date in ascending order
+    Returns a list of 3 probabilities representing the likelihood of taking a course in each semester
+    """
     prob_distribution = [0.4, 0.3, 0.15, 0.1, 0.05]
 
     def normalize_and_round(prob, i):
@@ -736,33 +741,26 @@ def historical_year_probability(current, courses):
             semester_number = 3
         semester_year = int(semester[:-1])
         return 10 * semester_year + semester_number
-
-    current_index = get_semester_and_course_index(current)
-    min_index = current_index - 50
+    
+    current_index = int(translate_semester(current)) // 10
+    min_index = current_index - 60
     max_index = current_index - 10
+    p = [0, 0, 0]
     if courses == []:
-        return [0, 0, 0]
+        return p
     else:
-        last_index = get_semester_and_course_index(courses[0].semester)
+        last_index = int(translate_semester(courses[0].semester)) // 10
         if last_index > min_index:
             prob_distribution = normalize_and_round(
                 prob_distribution, ((current_index - last_index) + 9) // 10
             )
-    p_A = 0
-    p_B = 0
-    p_C = 0
     for c in courses:
         """Provides calculation"""
-        index = get_semester_and_course_index(c.semester)
+        index = int(translate_semester(c.semester)) // 10
         if index < min_index or index > max_index:
             continue
         diff = (current_index - index) // 10 - 1
         if diff >= len(prob_distribution):
             diff = len(prob_distribution) - 1
-        if index % 10 == 1:
-            p_A += prob_distribution[diff]
-        elif index % 10 == 2:
-            p_B += prob_distribution[diff]
-        elif index % 10 == 3:
-            p_C += prob_distribution[diff]
-    return [min(round(p_A, 2), 1.00), min(round(p_B, 2), 1.00), min(round(p_C, 2), 1.00)]
+        p[index % 10 - 1] += prob_distribution[diff]
+    return list(map(lambda x: min(round(x,2), 1.00) , p))

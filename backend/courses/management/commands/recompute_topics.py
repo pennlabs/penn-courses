@@ -145,15 +145,16 @@ class Command(BaseCommand):
             "If an error is encountered, all changes for that semester will be rolled back. "
             "Any changes made to previous semesters will persist."
         )
-
+        
         min_semester = kwargs["min_semester"]
         if min_semester:
             assert (
                 min_semester in all_semesters()
             ), f"--min-semester={min_semester} is not a valid semester."
-
+        semesters = sorted([sem for sem in all_semesters() if not min_semester or sem >= min_semester])
         recompute_topics(min_semester, verbose=True, allow_null_parent_topic=bool(min_semester))
-
+        if semesters:
+            recompute_historical_probabilities(current_semester=semesters[-1], verbose=True)
 
 def recompute_historical_probabilities(current_semester, verbose=False):
     """
@@ -162,13 +163,16 @@ def recompute_historical_probabilities(current_semester, verbose=False):
     if verbose:
         print("Recomputing historical probabilities for all topics...")
     topics = Topic.objects.all()
+    length = len(topics)
     # Iterate over each Topic
-    for topic in topics:
+    for i, topic in enumerate(topics):
+        if i % 1000 == 0:
+            print(f"Recomputing topics for semesters >={i}/{length}")
         # Calculate historical_year_probability for the current topic
         test = topic.courses.order_by("semester").all()
         historical_prob = historical_year_probability(current_semester, test)
         # Update the historical_probabilities field for the current topic
         topic.historical_probabilities_spring = historical_prob[0]
         topic.historical_probabilities_summer = historical_prob[1]
-        topic.historical_probabilities_fall = historical_prob[0]
+        topic.historical_probabilities_fall = historical_prob[2]
         topic.save()
