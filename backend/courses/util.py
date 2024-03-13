@@ -741,7 +741,7 @@ def historical_year_probability(current, courses):
             semester_number = 3
         semester_year = int(semester[:-1])
         return 10 * semester_year + semester_number
-    
+
     current_index = int(translate_semester(current)) // 10
     min_index = current_index - 60
     max_index = current_index - 10
@@ -763,4 +763,4 @@ def historical_year_probability(current, courses):
         if diff >= len(prob_distribution):
             diff = len(prob_distribution) - 1
         p[index % 10 - 1] += prob_distribution[diff]
-    return list(map(lambda x: min(round(x,2), 1.00) , p))
+    return list(map(lambda x: min(round(x, 2), 1.00), p))

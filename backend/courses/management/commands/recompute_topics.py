@@ -145,16 +145,19 @@ class Command(BaseCommand):
             "If an error is encountered, all changes for that semester will be rolled back. "
             "Any changes made to previous semesters will persist."
         )
-        
+
         min_semester = kwargs["min_semester"]
         if min_semester:
             assert (
                 min_semester in all_semesters()
             ), f"--min-semester={min_semester} is not a valid semester."
-        semesters = sorted([sem for sem in all_semesters() if not min_semester or sem >= min_semester])
+        semesters = sorted(
+            [sem for sem in all_semesters() if not min_semester or sem >= min_semester]
+        )
         recompute_topics(min_semester, verbose=True, allow_null_parent_topic=bool(min_semester))
         if semesters:
             recompute_historical_probabilities(current_semester=semesters[-1], verbose=True)
+
 
 def recompute_historical_probabilities(current_semester, verbose=False):
     """
