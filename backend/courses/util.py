@@ -718,7 +718,8 @@ def historical_year_probability(current, courses):
     """
     current: the current semester represented in the 20XX(A|B|C) format
     courses: a list of Course objects sorted by date in ascending order
-    Returns a list of 3 probabilities representing the likelihood of taking a course in each semester
+    Returns a list of 3 probabilities representing the likelihood of taking a course in each
+    semester
     """
     prob_distribution = [0.4, 0.3, 0.15, 0.1, 0.05]
 
