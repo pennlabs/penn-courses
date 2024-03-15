@@ -3,7 +3,7 @@ import { connect } from "react-redux";
 import { ThunkDispatch } from "redux-thunk";
 import styled from "styled-components";
 import CartSection from "../CartSection";
-import { fetchCourseDetails, removeAlertBackend } from "../../actions";
+import { fetchCourseDetails, removeAlertItem } from "../../actions";
 
 import { Alert } from "../../types";
 import AlertSection from "./AlertSection";
@@ -123,7 +123,7 @@ const mapStateToProps = ({
 });
 
 const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
-    removeAlert: (alertId: string, sectionId: string) => dispatch(removeAlertBackend(alertId, sectionId)),
+    removeAlert: (alertId: string, sectionId: string) => dispatch(removeAlertItem(alertId, sectionId)),
     courseInfo: (sectionId: string) => dispatch(fetchCourseDetails(sectionId)),
 });
 

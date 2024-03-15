@@ -1,6 +1,4 @@
 import styled from "styled-components";
-import { useState } from "react";
-import AlertForm from "./AlertForm";
 
 interface AlertButtonProps {
     alerts: {
@@ -8,8 +6,6 @@ interface AlertButtonProps {
         remove: () => void;
     }
     inAlerts: boolean;
-    setContactInfoBackend: (email: string, phone: string) => void;
-    contactInfo: { email: string; phone: string };
 }
 
 const Bell = styled.button`
@@ -23,9 +19,7 @@ const Bell = styled.button`
     }
 `;
 
-export default function AlertButton({ alerts, inAlerts, setContactInfoBackend, contactInfo }: AlertButtonProps) {
-    const [showForm, setShowForm] = useState(false);
-
+export default function AlertButton({ alerts, inAlerts }: AlertButtonProps) {
     return(
         <div className={`popover is-popover-left`}>
             <Bell
@@ -34,9 +28,8 @@ export default function AlertButton({ alerts, inAlerts, setContactInfoBackend, c
                     event.stopPropagation();
                     if(inAlerts) {
                         alerts.remove();
-                        setShowForm(false);
                     } else {
-                        setShowForm(true);
+                        alerts.add();
                     }
                 }}
             >
@@ -46,19 +39,13 @@ export default function AlertButton({ alerts, inAlerts, setContactInfoBackend, c
                 />
             </Bell>
 
-            {showForm &&
-                <AlertForm
-                    setContactInfoBackend={setContactInfoBackend}
-                    contactInfo={contactInfo}
-                    setShowForm={setShowForm}
-                    alerts={alerts}
-                />
+            
+            {inAlerts ||
+                <span className="popover-content">
+                    {" "}
+                    Course is closed. Sign up for an alert!{" "}
+                </span>
             }
-
-            {showForm || <span className="popover-content">
-                {" "}
-                Course is closed. Sign up for an alert!{" "}
-            </span>}
         </div>
     )
 }

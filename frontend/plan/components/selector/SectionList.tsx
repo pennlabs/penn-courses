@@ -4,7 +4,7 @@ import { connect } from "react-redux";
 
 import Section from "./Section";
 import { Section as SectionType, Alert as AlertType } from "../../types";
-import { addAlertBackend, addCartItem, removeAlertBackend, removeCartItem, updateContactInfoBackend } from "../../actions";
+import { addAlertItem, addCartItem, openModal, removeAlertItem, removeCartItem, updateContactInfoBackend } from "../../actions";
 
 interface SectionListProps {
     sections: SectionType[];
@@ -23,8 +23,6 @@ function SectionList({
     manageCart,
     alerts,
     manageAlerts,
-    setContactInfoBackend,
-    contactInfo,
     view,
 }: SectionListProps & {
     manageCart: (
@@ -36,7 +34,7 @@ function SectionList({
         alerts: AlertType[],
     ) => { add: () => void; remove: () => void };
     alerts: AlertType[];
-    setContactInfoBackend: (email: string, phone: string) => void;
+    onContactInfoChange: (email: string, phone: string) => void;
     contactInfo: { email: string; phone: string };
 }) {
     const isInCart = ({ id }: SectionType) => cartSections.indexOf(id) !== -1;
@@ -52,8 +50,6 @@ function SectionList({
                         inCart={isInCart(s)}
                         alerts={manageAlerts(s, alerts)}
                         inAlerts={isInAlerts(s)}
-                        setContactInfoBackend={setContactInfoBackend}
-                        contactInfo={contactInfo}
                     />
                 ))}
             </ul>
@@ -65,7 +61,6 @@ const mapStateToProps = (state: any, ownProps: SectionListProps) => ({
     ...ownProps,
     cartSections: state.schedule.cartSections.map((sec: SectionType) => sec.id),
     alerts: state.alerts.alertedCourses,
-    contactInfo: state.alerts.contactInfo,
 });
 
 const mapDispatchToProps = (dispatch: (payload: any) => void) => ({
@@ -74,13 +69,12 @@ const mapDispatchToProps = (dispatch: (payload: any) => void) => ({
         remove: () => dispatch(removeCartItem(section.id)),
     }),
     manageAlerts: (section: SectionType, alerts: AlertType[]) => ({
-        add: () => dispatch(addAlertBackend(section.id)),
+        add: () => dispatch(openModal("ALERT_FORM", { sectionId: section.id }, "Sign up for Alerts")),
         remove: () => {
             const alertId = alerts.find((a: AlertType) => a.section === section.id)?.id;
-            dispatch(removeAlertBackend(alertId, section.id));
+            dispatch(removeAlertItem(alertId, section.id));
         }
     }),
-    setContactInfoBackend: (email: string, phone: string) => dispatch(updateContactInfoBackend({ email, phone })),
 });
 
 // @ts-ignore

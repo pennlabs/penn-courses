@@ -3,6 +3,8 @@ import {
     renameSchedule,
     downloadSchedule,
     createScheduleOnBackend,
+    updateContactInfoBackend,
+    addAlertItem,
 } from "../../actions";
 import {
     sendFriendRequest,
@@ -12,6 +14,7 @@ import NameScheduleModalInterior from "./AddScheduleFriendsModalInterior";
 import PendingRequestsModalInterior from "./PendingRequestsModalInterior";
 import WelcomeModalInterior from "./WelcomeModalInterior";
 import CalendarModal from "./CalendarModal";
+import AlertFormModal from "./AlertFormModal";
 
 /**
  * Generates a modal interior component based on the redux state.
@@ -94,6 +97,10 @@ export const generateModalInterior = (reduxState) => {
                     </p>
                 </div>
             );
+        case "ALERT_FORM":
+            return (
+                <AlertFormModal contactInfo={reduxState.alerts.contactInfo} />
+            );
         default:
             return null;
     }
@@ -141,6 +148,12 @@ export const generateModalActions = (dispatch, modalKey, modalProps) => {
             return {
                 namingFunction: (newName) =>
                     dispatch(downloadSchedule(newName)),
+            };
+        case "ALERT_FORM":
+            return {
+                onContactInfoChange: (email, phone) =>
+                    dispatch(updateContactInfoBackend({ email, phone })),
+                addAlert: () => dispatch(addAlertItem(modalProps.sectionId)),
             };
         default:
             return {};

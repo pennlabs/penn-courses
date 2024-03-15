@@ -1,10 +1,10 @@
 import fetch from "cross-fetch";
 import AwesomeDebouncePromise from "awesome-debounce-promise";
 import { batch } from "react-redux";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
 import getCsrf from "../components/csrf";
 import { MIN_FETCH_INTERVAL } from "../constants/sync_constants";
 import { PATH_REGISTRATION_SCHEDULE_NAME } from "../constants/constants";
-import { parsePhoneNumberFromString } from "libphonenumber-js";
 
 export const UPDATE_SEARCH = "UPDATE_SEARCH";
 export const UPDATE_SEARCH_REQUEST = "UPDATE_SEARCH_REQUEST";
@@ -45,7 +45,6 @@ export const CHANGE_SORT_TYPE = "CHANGE_SORT_TYPE";
 
 export const ADD_ALERT_ITEM = "ADD_ALERT_ITEM";
 export const REMOVE_ALERT_ITEM = "REMOVE_ALERT_ITEM";
-
 export const UPDATE_CONTACT_INFO = "UPDATE_CONTACT_INFO";
 
 export const MARK_ALERTS_SYNCED = "MARK_ALERTS_SYNCED";
@@ -744,12 +743,12 @@ export const setCurrentUserPrimarySchedule = (user, scheduleId) => (
         .catch((error) => error.json());
 };
 
-export const addAlertBackend = (sectionId) => (dispatch) => {
+export const addAlertItem = (sectionId) => (dispatch) => {
     const registrationObj = {
         section: sectionId,
         auto_resubscribe: true,
         close_notification: false,
-    }
+    };
     const init = {
         method: "POST",
         credentials: "include",
@@ -760,19 +759,19 @@ export const addAlertBackend = (sectionId) => (dispatch) => {
             "X-CSRFToken": getCsrf(),
         },
         body: JSON.stringify(registrationObj),
-    }
+    };
     doAPIRequest("/alert/registrations/", init)
         .then((res) => res.json())
         .then((data) => {
             dispatch(addAlertFrontend({ ...registrationObj, id: data.id }));
-        })
-        // .catch((error) => console.log(error));
-}
+        });
+    // .catch((error) => console.log(error));
+};
 
-export const removeAlertBackend = (alertId, sectionId) => (dispatch) => {
+export const removeAlertItem = (alertId, sectionId) => (dispatch) => {
     const updateObj = {
         deleted: true,
-    }
+    };
     const init = {
         method: "PUT",
         credentials: "include",
@@ -783,15 +782,14 @@ export const removeAlertBackend = (alertId, sectionId) => (dispatch) => {
             "X-CSRFToken": getCsrf(),
         },
         body: JSON.stringify(updateObj),
-    }
-    doAPIRequest(`/alert/registrations/${alertId}/`, init)
-        .then((res) => {
-            if(res.ok) {
-                dispatch(removeAlertFrontend(sectionId));
-            }
-        })
+    };
+    doAPIRequest(`/alert/registrations/${alertId}/`, init).then((res) => {
+        if (res.ok) {
+            dispatch(removeAlertFrontend(sectionId));
+        }
+    });
     //     // .catch((error) => console.log(error));
-}
+};
 
 export const fetchAlerts = () => (dispatch) => {
     const init = {
@@ -803,16 +801,23 @@ export const fetchAlerts = () => (dispatch) => {
             "Content-Type": "application/json",
             "X-CSRFToken": getCsrf(),
         },
-    }
+    };
     doAPIRequest("/alert/registrations/", init)
         .then((res) => res.json())
         .then((alerts) => {
             alerts.forEach((alert) => {
-                dispatch(addAlertFrontend({ id: alert.id, section: alert.section, auto_resubscribe: alert.auto_resubscribe, close_notification: alert.close_notification }));
+                dispatch(
+                    addAlertFrontend({
+                        id: alert.id,
+                        section: alert.section,
+                        auto_resubscribe: alert.auto_resubscribe,
+                        close_notification: alert.close_notification,
+                    })
+                );
             });
         })
-        .catch((error => error.json()));
-}
+        .catch((error) => error.json());
+};
 
 export const fetchContactInfo = () => (dispatch) => {
     fetch("/accounts/me/", {
@@ -827,17 +832,23 @@ export const fetchContactInfo = () => (dispatch) => {
     })
         .then((res) => res.json())
         .then((data) => {
-            dispatch(updateContactInfoFrontend({email: data.profile.email, phone: data.profile.phone}));
+            dispatch(
+                updateContactInfoFrontend({
+                    email: data.profile.email,
+                    phone: data.profile.phone,
+                })
+            );
         })
         // eslint-disable-next-line no-console
         .catch((error) => console.log(error));
-}
+};
 
 export const updateContactInfoBackend = (contactInfo) => (dispatch) => {
     const profile = {
         email: contactInfo.email,
-        phone: parsePhoneNumberFromString(contactInfo.phone, "US")?.number ?? ""
-    }
+        phone:
+            parsePhoneNumberFromString(contactInfo.phone, "US")?.number || "",
+    };
     fetch("/accounts/me/", {
         method: "PATCH",
         credentials: "include",
@@ -847,11 +858,10 @@ export const updateContactInfoBackend = (contactInfo) => (dispatch) => {
             "Content-Type": "application/json",
             "X-CSRFToken": getCsrf(),
         },
-        body: JSON.stringify({ 
-            profile: profile
+        body: JSON.stringify({
+            profile,
         }),
-    })
-    .then((res) => {
+    }).then((res) => {
         if (!res.ok) {
             throw new Error(JSON.stringify(res));
         } else {
@@ -859,4 +869,4 @@ export const updateContactInfoBackend = (contactInfo) => (dispatch) => {
             dispatch(updateContactInfoFrontend(profile));
         }
     });
-}
+};
