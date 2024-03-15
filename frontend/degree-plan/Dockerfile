@@ -24,5 +24,5 @@ FROM nginx:1.12
 
 LABEL maintainer="Penn Labs"
 
-COPY review/nginx.conf /etc/nginx/conf.d/default.conf
+COPY degree-plan/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build-deps /app/degree-plan/build/ /usr/share/nginx/html
