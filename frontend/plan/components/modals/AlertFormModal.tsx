@@ -2,48 +2,6 @@ import parsePhoneNumberFromString, { isValidNumber } from "libphonenumber-js";
 import { useEffect, useState } from "react";
 import styled from "styled-components";
 
-export const Input = styled.input`
-    width: auto;
-    outline: none;
-    border: 1px solid #d6d6d6;
-    color: #4a4a4a;
-    font-size: 1.4rem;
-    padding: 0.5rem 1rem;
-    border-radius: 5px;
-    margin-bottom: 0.6rem;
-    margin-top: 0.6rem;
-    :focus {
-        box-shadow: 0 0 0 0.125em rgba(50, 115, 220, 0.25);
-    }
-    ::placeholder {
-        color: #d0d0d0;
-    }
-`;
-
-const Form = styled.form`
-    display: flex;
-    flex-direction: column;
-    height: 200px;
-    background-color: white;
-    padding: 1em;
-`;
-
-const SubmitButton = styled.button`
-    border-radius: 5px;
-    background-color: #209cee;
-    color: white;
-    font-size: 1em;
-    margin: 1em;
-    width: 5em;
-    padding: 0.7em 1em;
-    transition: 0.2s all;
-    border: none;
-    cursor: pointer;
-    :hover {
-        background-color: #1496ed;
-    }
-`;
-
 interface AlertFormProps {
     onContactInfoChange: (email: string, phone: string) => void;
     contactInfo: { email: string; phone: string };
@@ -56,27 +14,23 @@ export default function AlertForm({ onContactInfoChange, contactInfo, addAlert, 
     const [phoneRef, setPhoneRef] = useState<HTMLInputElement | null>(null);
     const [email, setEmail] = useState(contactInfo.email);
     const [phone, setPhone] = useState(contactInfo.phone);
+    const [emailErrorObj, setEmailErrorObj] = useState({ message: "", error: false });
     const [phoneErrorObj, setPhoneErrorObj] = useState({ message: "", error: false });
 
-    /*
+    
     useEffect(() => {
-        if(phone && phone != "") {
-            const parsedNumber = parsePhoneNumberFromString(phone)?.formatNational() || null;
-            if(!parsedNumber) {
-                setPhoneErrorObj({
-                    message: "Invalid phone number",
-                    error: true,
-                });
-            } else {
-                setPhone(parsedNumber);
-                setPhoneErrorObj({
-                    message: "",
-                    error: false,
-                });
-            }
+        if(email.length === 0) {
+            setEmailErrorObj({ message: "Email cannot be empty", error: true });
+        } else {
+            setEmailErrorObj({ message: "", error: false });
+        }
+
+        if(phone && phone.length !== 0 && !isValidNumber(phone, "US")) {
+            setPhoneErrorObj({ message: "Invalid phone number", error: true });
+        } else {
+            setPhoneErrorObj({ message: "", error: false });
         }
     }, [email, phone]);
-    */
 
     const submit = () => {
         if(!emailRef) {
@@ -93,11 +47,15 @@ export default function AlertForm({ onContactInfoChange, contactInfo, addAlert, 
                 value={email}
                 type="email"
                 ref={(ref) => setEmailRef(ref)}
+                style={{
+                    backgroundColor: emailErrorObj.error ? "#f9dcda" : "#f1f1f1",
+                }}
                 onChange={() => {
                     setEmail(emailRef?.value || "");
                 }}
                 placeholder="Email"
             />
+            <p className="error_message">{emailErrorObj.message}</p>
             <input
                 value={phone}
                 type="tel"
@@ -115,6 +73,7 @@ export default function AlertForm({ onContactInfoChange, contactInfo, addAlert, 
                 className="button is-link"
                 type="button"
                 onClick={submit}
+                disabled={emailErrorObj.error || phoneErrorObj.error}
             >
                 Submit
             </button>
