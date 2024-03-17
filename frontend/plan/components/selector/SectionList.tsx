@@ -1,14 +1,30 @@
 import React, { FunctionComponent } from "react";
 import styled from "styled-components";
 import { connect } from "react-redux";
-
 import Section from "./Section";
 import { Section as SectionType, Alert as AlertType } from "../../types";
-import { addAlertItem, addCartItem, openModal, removeAlertItem, removeCartItem, updateContactInfoBackend } from "../../actions";
+import { addCartItem, openModal, removeAlertItem, removeCartItem } from "../../actions";
 
 interface SectionListProps {
     sections: SectionType[];
     view: number;
+}
+
+interface SectionListStateProps {
+    cartSections: string[];
+    alerts: AlertType[];
+    contactInfo: { email: string; phone: string };
+}
+
+interface SectionListDispatchProps {
+    manageCart: (
+        section: SectionType
+    ) => { add: () => void; remove: () => void };
+    manageAlerts: (
+        section: SectionType,
+        alerts: AlertType[],
+    ) => { add: () => void; remove: () => void };
+    onContactInfoChange: (email: string, phone: string) => void;
 }
 
 const ResultsContainer = styled.div`
@@ -24,19 +40,7 @@ function SectionList({
     alerts,
     manageAlerts,
     view,
-}: SectionListProps & {
-    manageCart: (
-        section: SectionType
-    ) => { add: () => void; remove: () => void };
-    cartSections: string[];
-    manageAlerts: (
-        section: SectionType,
-        alerts: AlertType[],
-    ) => { add: () => void; remove: () => void };
-    alerts: AlertType[];
-    onContactInfoChange: (email: string, phone: string) => void;
-    contactInfo: { email: string; phone: string };
-}) {
+}: SectionListProps & SectionListStateProps & SectionListDispatchProps) {
     const isInCart = ({ id }: SectionType) => cartSections.indexOf(id) !== -1;
     const isInAlerts = ({ id }: SectionType) => alerts.map((alert: AlertType) => alert.section).indexOf(id) !== -1;
     return (

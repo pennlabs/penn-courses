@@ -1,22 +1,20 @@
-import parsePhoneNumberFromString, { isValidNumber } from "libphonenumber-js";
+import { isValidNumber } from "libphonenumber-js";
 import { useEffect, useState } from "react";
-import styled from "styled-components";
 
-interface AlertFormProps {
+interface AlertFormModalProps {
     onContactInfoChange: (email: string, phone: string) => void;
     contactInfo: { email: string; phone: string };
     addAlert: () => void;
     close: () => void;
 }
 
-export default function AlertForm({ onContactInfoChange, contactInfo, addAlert, close }: AlertFormProps) {
+const AlertFormModal: React.FC<AlertFormModalProps> = ({ onContactInfoChange, contactInfo, addAlert, close }) => {
     const [emailRef, setEmailRef] = useState<HTMLInputElement | null>(null);
     const [phoneRef, setPhoneRef] = useState<HTMLInputElement | null>(null);
     const [email, setEmail] = useState(contactInfo.email);
     const [phone, setPhone] = useState(contactInfo.phone);
     const [emailErrorObj, setEmailErrorObj] = useState({ message: "", error: false });
     const [phoneErrorObj, setPhoneErrorObj] = useState({ message: "", error: false });
-
     
     useEffect(() => {
         if(email.length === 0) {
@@ -81,33 +79,4 @@ export default function AlertForm({ onContactInfoChange, contactInfo, addAlert, 
     )
 }
 
-// export default function AlertForm({ onContactInfoChange, contactInfo, addAlert, close }: AlertFormProps) {
-//     return(
-//         <Form
-//             onClick={(e) => e.stopPropagation()}
-//             onSubmit={(e) => {
-//                 e.preventDefault();
-//                 const email = ((e.target as HTMLFormElement).elements[0] as HTMLInputElement).value;
-//                 const phone = ((e.target as HTMLFormElement).elements[1] as HTMLInputElement).value;
-//                 onContactInfoChange(email, phone);
-//                 addAlert();
-//                 close();
-//             }}
-//         >
-//             <Input
-//                 type="email"
-//                 required
-//                 placeholder="Email"
-//                 defaultValue={contactInfo.email}
-//             />
-//             <Input
-//                 type="tel"
-//                 placeholder="Phone (optional)"
-//                 defaultValue={contactInfo.phone}
-//             />
-//             <SubmitButton type="submit">
-//                 Submit
-//             </SubmitButton>
-//         </Form>
-//     )
-// }
+export default AlertFormModal;

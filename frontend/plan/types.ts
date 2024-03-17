@@ -93,6 +93,7 @@ export interface Alert {
     section: string;
     auto_resubscribe: boolean;
     close_notification: boolean;
+    status: string;
 }
 
 export interface Meeting {

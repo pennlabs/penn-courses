@@ -16,17 +16,39 @@ const CourseDetailsContainer = styled.div`
     align-items: left;
 `;
 
-const CourseDetails = ({ alert }: AlertDetailsProps) => (
-    <CourseDetailsContainer>
-        <b>
-            <span>{alert.section.replace(/-/g, " ")}</span>
-        </b>
-        <div style={{ fontSize: "0.8rem" }}>
-            Full
-            {/* TODO: fetch whether the course is actually full from state lmfao */}
-        </div>
-    </CourseDetailsContainer>
-);
+const StatusInd = styled.div<{ background: string }>`
+    display: inline-block;
+    border-radius: 1rem;
+    width: 0.4rem;
+    height: 0.4rem;
+    margin-right: 0.2rem;
+    background-color: ${(props) => props.background};
+`;
+
+const CourseDetails = ({ alert }: AlertDetailsProps) => {
+    let statustext;
+    let statuscolor;
+
+    if(alert.status === "O") {
+        statustext = "Open";
+        statuscolor = "#78d381";
+    } else {
+        statustext = "Closed";
+        statuscolor = "#e1e6ea";
+    }
+
+    return(
+        <CourseDetailsContainer>
+            <b>
+                <span>{alert.section.replace(/-/g, " ")}</span>
+            </b>
+            <div style={{ fontSize: "0.8rem", position: "relative" }}>
+                <StatusInd background={statuscolor} />
+                {statustext}
+            </div>
+        </CourseDetailsContainer>
+    );
+};
 
 const AlertCourseButton = styled.div`
     flex-grow: 0;
@@ -105,13 +127,13 @@ const AlertItem = styled.div<{ isMobile: boolean }>`
     }
 `;
 
-const AlertSection = ({
+const AlertSection: React.FC<AlertSectionProps> = ({
     alert,
     checked,
     toggleCheck,
     remove,
     courseInfo,
-}: AlertSectionProps) => (
+}) => (
     <AlertItem
         role="switch"
         id={alert.id}

@@ -19,7 +19,7 @@ const Bell = styled.button`
     }
 `;
 
-export default function AlertButton({ alerts, inAlerts }: AlertButtonProps) {
+const AlertButton: React.FC<AlertButtonProps> = ({ alerts, inAlerts }) => {
     return(
         <div className={`popover is-popover-left`}>
             <Bell
@@ -49,3 +49,5 @@ export default function AlertButton({ alerts, inAlerts }: AlertButtonProps) {
         </div>
     )
 }
+
+export default AlertButton;

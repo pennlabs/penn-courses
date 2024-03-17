@@ -763,7 +763,13 @@ export const addAlertItem = (sectionId) => (dispatch) => {
     doAPIRequest("/alert/registrations/", init)
         .then((res) => res.json())
         .then((data) => {
-            dispatch(addAlertFrontend({ ...registrationObj, id: data.id }));
+            dispatch(
+                addAlertFrontend({
+                    ...registrationObj,
+                    id: data.id,
+                    status: data.section_status,
+                })
+            );
         });
     // .catch((error) => console.log(error));
 };
@@ -812,6 +818,7 @@ export const fetchAlerts = () => (dispatch) => {
                         section: alert.section,
                         auto_resubscribe: alert.auto_resubscribe,
                         close_notification: alert.close_notification,
+                        status: alert.section_status,
                     })
                 );
             });

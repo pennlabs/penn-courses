@@ -143,9 +143,9 @@ function Index() {
     const isExpanded = view === 1;
 
     // carts or alerts tab
-    const [showCart, setShowCart] = useState<boolean>(true);
+    const [showCart, setShowCart] = useState(true);
 
-    const [showLoginModal, setShowLoginModal] = useState<boolean>(true);
+    const [showLoginModal, setShowLoginModal] = useState(true);
     const [user, setUser] = useState<User | null>(null);
 
     useEffect(() => {

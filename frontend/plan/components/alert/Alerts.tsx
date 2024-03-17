@@ -1,8 +1,7 @@
-import React from "react";
+import React, { FunctionComponent } from "react";
 import { connect } from "react-redux";
 import { ThunkDispatch } from "redux-thunk";
 import styled from "styled-components";
-import CartSection from "../CartSection";
 import { fetchCourseDetails, removeAlertItem } from "../../actions";
 
 import { Alert } from "../../types";
@@ -39,7 +38,7 @@ const Box = styled.section<{ length: number }>`
     }
 `;
 
-interface CartProps {
+interface AlertsProps {
     courseInfoLoading: boolean;
     alertedCourses: Alert[];
     contactInfo: { email: string; phone: string };
@@ -74,14 +73,13 @@ const AlertsEmpty = () => (
     </div>
 );
 
-const Alerts = ({
+const Alerts: React.FC<AlertsProps> = ({
     courseInfoLoading,
     alertedCourses,
-    contactInfo,
     removeAlert,
     courseInfo,
     mobileView,
-}: CartProps) => (
+}) => (
     <Box length={alertedCourses.length} id="alerts">
         {alertedCourses.length === 0 ? (
             <AlertsEmpty />
