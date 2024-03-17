@@ -1,0 +1,491 @@
+{
+  "id": "00000000-0000-0000-0000-000000000000",
+  "prevId": "",
+  "version": "5",
+  "dialect": "pg",
+  "tables": {
+    "alert_pcademanddistributionestimate": {
+      "name": "alert_pcademanddistributionestimate",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "semester": {
+          "name": "semester",
+          "type": "varchar(5)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "percent_through_add_drop_period": {
+          "name": "percent_through_add_drop_period",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "in_add_drop_period": {
+          "name": "in_add_drop_period",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "highest_demand_section_volume": {
+          "name": "highest_demand_section_volume",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lowest_demand_section_volume": {
+          "name": "lowest_demand_section_volume",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "highest_demand_section_id": {
+          "name": "highest_demand_section_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "lowest_demand_section_id": {
+          "name": "lowest_demand_section_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "csprdv_lognorm_param_loc": {
+          "name": "csprdv_lognorm_param_loc",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "csprdv_lognorm_param_scale": {
+          "name": "csprdv_lognorm_param_scale",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "csprdv_lognorm_param_shape": {
+          "name": "csprdv_lognorm_param_shape",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "csrdv_frac_zero": {
+          "name": "csrdv_frac_zero",
+          "type": "double precision",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "alert_pcademanddistributionestimate_semester_37849a16": {
+          "name": "alert_pcademanddistributionestimate_semester_37849a16",
+          "columns": [
+            "semester"
+          ],
+          "isUnique": false
+        },
+        "alert_pcademanddistributionestimate_semester_37849a16_like": {
+          "name": "alert_pcademanddistributionestimate_semester_37849a16_like",
+          "columns": [
+            "semester"
+          ],
+          "isUnique": false
+        },
+        "alert_pcademanddistributionestimate_created_at_5410c834": {
+          "name": "alert_pcademanddistributionestimate_created_at_5410c834",
+          "columns": [
+            "created_at"
+          ],
+          "isUnique": false
+        },
+        "alert_pcademanddistributio_highest_demand_section_id_57bb8642": {
+          "name": "alert_pcademanddistributio_highest_demand_section_id_57bb8642",
+          "columns": [
+            "highest_demand_section_id"
+          ],
+          "isUnique": false
+        },
+        "alert_pcademanddistributio_lowest_demand_section_id_5c0092e2": {
+          "name": "alert_pcademanddistributio_lowest_demand_section_id_5c0092e2",
+          "columns": [
+            "lowest_demand_section_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "alert_pcademanddistr_highest_demand_secti_57bb8642_fk_courses_s": {
+          "name": "alert_pcademanddistr_highest_demand_secti_57bb8642_fk_courses_s",
+          "tableFrom": "alert_pcademanddistributionestimate",
+          "tableTo": "courses_section",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "highest_demand_section_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "alert_pcademanddistr_lowest_demand_sectio_5c0092e2_fk_courses_s": {
+          "name": "alert_pcademanddistr_lowest_demand_sectio_5c0092e2_fk_courses_s",
+          "tableFrom": "alert_pcademanddistributionestimate",
+          "tableTo": "courses_section",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "lowest_demand_section_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "alert_registration": {
+      "name": "alert_registration",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "bigserial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(254)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "phone": {
+          "name": "phone",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notification_sent": {
+          "name": "notification_sent",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "notification_sent_at": {
+          "name": "notification_sent_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notification_sent_by": {
+          "name": "notification_sent_by",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "resubscribed_from_id": {
+          "name": "resubscribed_from_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "section_id": {
+          "name": "section_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "api_key_id": {
+          "name": "api_key_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source": {
+          "name": "source",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "deleted": {
+          "name": "deleted",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "auto_resubscribe": {
+          "name": "auto_resubscribe",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "original_created_at": {
+          "name": "original_created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cancelled": {
+          "name": "cancelled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cancelled_at": {
+          "name": "cancelled_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "close_notification": {
+          "name": "close_notification",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "close_notification_sent": {
+          "name": "close_notification_sent",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "close_notification_sent_at": {
+          "name": "close_notification_sent_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "close_notification_sent_by": {
+          "name": "close_notification_sent_by",
+          "type": "varchar(16)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "head_registration_id": {
+          "name": "head_registration_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "idx_24879_resubscribed_from_id": {
+          "name": "idx_24879_resubscribed_from_id",
+          "columns": [
+            "resubscribed_from_id"
+          ],
+          "isUnique": true
+        },
+        "idx_24879_alert_registration_section_id_530b9baf_fk_courses_sec": {
+          "name": "idx_24879_alert_registration_section_id_530b9baf_fk_courses_sec",
+          "columns": [
+            "section_id"
+          ],
+          "isUnique": false
+        },
+        "idx_24879_alert_registration_api_key_id_3b2b38c6_fk_courses_api": {
+          "name": "idx_24879_alert_registration_api_key_id_3b2b38c6_fk_courses_api",
+          "columns": [
+            "api_key_id"
+          ],
+          "isUnique": false
+        },
+        "idx_24879_alert_registration_user_id_c35d7d06_fk_auth_user_id": {
+          "name": "idx_24879_alert_registration_user_id_c35d7d06_fk_auth_user_id",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": false
+        },
+        "alert_registration_head_registration_id_2e55fa08": {
+          "name": "alert_registration_head_registration_id_2e55fa08",
+          "columns": [
+            "head_registration_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "alert_registration_api_key_id_3b2b38c6_fk_courses_apikey_id": {
+          "name": "alert_registration_api_key_id_3b2b38c6_fk_courses_apikey_id",
+          "tableFrom": "alert_registration",
+          "tableTo": "courses_apikey",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "api_key_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "alert_registration_head_registration_id_2e55fa08_fk_alert_reg": {
+          "name": "alert_registration_head_registration_id_2e55fa08_fk_alert_reg",
+          "tableFrom": "alert_registration",
+          "tableTo": "alert_registration",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "head_registration_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "alert_registration_resubscribed_from_id_f3055d31_fk_alert_reg": {
+          "name": "alert_registration_resubscribed_from_id_f3055d31_fk_alert_reg",
+          "tableFrom": "alert_registration",
+          "tableTo": "alert_registration",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "resubscribed_from_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "alert_registration_section_id_530b9baf_fk_courses_section_id": {
+          "name": "alert_registration_section_id_530b9baf_fk_courses_section_id",
+          "tableFrom": "alert_registration",
+          "tableTo": "courses_section",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "section_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "alert_registration_user_id_c35d7d06_fk_auth_user_id": {
+          "name": "alert_registration_user_id_c35d7d06_fk_auth_user_id",
+          "tableFrom": "alert_registration",
+          "tableTo": "auth_user",
+          "schemaTo": "public",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
+    },
+    "alert_adddropperiod": {
+      "name": "alert_adddropperiod",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "semester": {
+          "name": "semester",
+          "type": "varchar(5)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "start": {
+          "name": "start",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "end": {
+          "name": "end",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "estimated_start": {
+          "name": "estimated_start",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "estimated_end": {
+          "name": "estimated_end",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "alert_adddropperiod_semester_0552c5eb_like": {
+          "name": "alert_adddropperiod_semester_0552c5eb_like",
+          "columns": [
+            "semester"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "alert_adddropperiod_semester_key": {
+          "columns": [
+            "semester"
+          ],
+          "nullsNotDistinct": false,
+          "name": "alert_adddropperiod_semester_key"
+        }
+      }
+    }
+  },
+  "enums": {},
+  "schemas": {},
+  "_meta": {
+    "schemas": {},
+    "tables": {},
+    "columns": {}
+  }
+}
