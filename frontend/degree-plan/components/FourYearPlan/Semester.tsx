@@ -1,14 +1,15 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useDrop } from "react-dnd";
+import { useDrag, useDrop } from "react-dnd";
 import { ItemTypes } from "../dnd/constants";
 import CoursesPlanned, { SkeletonCoursesPlanned } from "./CoursesPlanned";
 import Stats from "./Stats";
 import styled from '@emotion/styled';
-import { Course, DegreePlan, DnDCourse, Fulfillment } from "@/types";
+import { Course, DegreePlan, DnDCourse, DockedCourse, Fulfillment } from "@/types";
 import { useSWRCrud } from "@/hooks/swrcrud";
 import { TrashIcon } from '../common/TrashIcon';
 import Skeleton from "react-loading-skeleton"
 import 'react-loading-skeleton/dist/skeleton.css'
+import { mutate } from "swr";
 
 
 const translateSemester = (semester: Course["semester"]) => {
@@ -117,8 +118,10 @@ const FlexSemester = ({
 } : SemesterProps) => {
     const credits = fulfillments.reduce((acc, curr) => acc + (curr.course?.credits || 1), 0)
 
+    const { createOrUpdate: addToDock } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
+
     // the fulfillments api uses the POST method for updates (it creates if it doesn't exist, and updates if it does)
-    const { createOrUpdate } = useSWRCrud<Fulfillment>(
+    const { createOrUpdate, remove } = useSWRCrud<Fulfillment>(
         `/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`,
         { 
             idKey: "full_code",
@@ -127,9 +130,13 @@ const FlexSemester = ({
     );
 
     const [{ isOver, canDrop }, drop] = useDrop<DnDCourse, never, { isOver: boolean, canDrop: boolean }>(() => ({
-        accept: ItemTypes.COURSE,
+        accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_DOCK, ItemTypes.COURSE_IN_REQ],
         drop: (course: DnDCourse) => {
-            createOrUpdate({ semester }, course.full_code);
+            if (course.rule_id === undefined || course.rule_id == null) { // moved from plan or dock
+                createOrUpdate({ semester }, course.full_code);
+            } else { // moved from req panel
+                createOrUpdate({ rules: [course.rule_id], semester }, course.full_code);
+            }
         },
         collect: monitor => ({
           isOver: !!monitor.isOver(),
@@ -137,14 +144,15 @@ const FlexSemester = ({
         }),
     }), [createOrUpdate, semester]);
 
-    const handleRemoveCourse = (full_code: Course["full_code"]) => {
-        createOrUpdate({ semester: null }, full_code);
+    const handleRemoveCourse = async (full_code: Course["full_code"]) => {
+        remove(full_code);
+        addToDock({"full_code": full_code}, full_code);
+        await mutate(`/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`);
     }
 
     const removeSemesterHelper = () => {
         removeSemester(semester);
         for (var i = 0; i < fulfillments.length; i++) {
-            console.log(fulfillments[i].full_code)
             createOrUpdate({ semester: null }, fulfillments[i].full_code);
         }
     }

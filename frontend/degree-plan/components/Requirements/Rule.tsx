@@ -119,9 +119,13 @@ const RuleComponent = (ruleTree : RuleTree) => {
         { idKey: "full_code",
         createDefaultOptimisticData: { semester: null, rules: [] }
     });
+
     const [{ isOver, canDrop }, drop] = useDrop<DnDCourse, never, { isOver: boolean, canDrop: boolean }>({
-        accept: ItemTypes.COURSE,
-        drop: (course: DnDCourse) => void createOrUpdate({ rules: [rule.id] }, course.full_code), // TODO: this doesn't handle fulfillments that already have a rule
+        accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_DOCK], 
+        drop: (course: DnDCourse) => {
+          createOrUpdate({ rules: [rule.id] }, course.full_code)
+
+        }, // TODO: this doesn't handle fulfillments that already have a rule
         canDrop: () => { return !satisfied && !!rule.q },
         collect: monitor => ({
           isOver: !!monitor.isOver() && !satisfied,
@@ -134,7 +138,7 @@ const RuleComponent = (ruleTree : RuleTree) => {
       const { fulfillments, cus, num } = ruleTree;
       return (
         <RuleLeafWrapper $isDroppable={canDrop} $isOver={isOver} ref={drop}>
-            <RuleLeaf q_json={rule.q_json} rule={rule} fulfillmentsForRule={fulfillments} satisfied={satisfied} />
+            <RuleLeaf q_json={rule.q_json} rule={rule} fulfillmentsForRule={fulfillments} satisfied={satisfied} activeDegreePlanId={activeDegreePlanId}/>
             <div>
               {rule.credits && <CusCourses>{cus} / {rule.credits} cus</CusCourses>}
               {" "}

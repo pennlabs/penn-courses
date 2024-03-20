@@ -5,7 +5,7 @@ import styled from "@emotion/styled";
 import nearley from "nearley";
 import grammar from "@/util/q_object_grammar" 
 import { Icon } from "../common/bulma_derived_components";
-import CoursePlanned, { BaseCourseContainer, SkeletonCourse } from "../FourYearPlan/CoursePlanned";
+import CoursePlanned, { BaseCourseContainer, SkeletonCourse } from "../FourYearPlan/CourseInPlan";
 import assert from "assert";
 import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
 import { Draggable } from "../common/DnD";
@@ -13,6 +13,7 @@ import { useSWRCrud } from "@/hooks/swrcrud";
 import useSWR from "swr";
 import { useContext } from "react";
 import { SearchPanelContext } from "../Search/SearchPanel";
+import CourseInReq from "./CourseInReq";
 
 const interpolate = <T,>(arr: T[], separator: T) => 
     arr.flatMap(
@@ -280,14 +281,9 @@ interface QObjectProps {
     fulfillments: Fulfillment[]; // fulfillments for this rule 
     rule: Rule;
     satisfied: boolean;
-    activeDegreeplanId: number;
+    activeDegreePlanId: number;
 }
-const QObject = ({ q, fulfillments, rule, satisfied, activeDegreeplanId }: QObjectProps) => {
-    const { createOrUpdate } = useSWRCrud<Fulfillment>(
-        `/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`,
-        { idKey: "full_code",
-        createDefaultOptimisticData: { semester: null, rules: [] }
-    });
+const QObject = ({ q, fulfillments, rule, satisfied, activeDegreePlanId }: QObjectProps) => {
 
     // recursively render
     switch (q.type) {
@@ -309,7 +305,8 @@ const QObject = ({ q, fulfillments, rule, satisfied, activeDegreeplanId }: QObje
                 
                 // we've already used this course, so delete it 
                 if (isChosen) fulfillmentsMap.delete(course.full_code);
-                return <CoursePlanned course={course} isDisabled={satisfied && !isChosen} isUsed={isChosen} />;
+                // return <div>what </div>
+                return <CourseInReq course={course} isDisabled={satisfied && !isChosen} isUsed={isChosen} rule_id={rule.id} activeDegreePlanId={activeDegreePlanId}/>;
             });
             const displayCoursesWithoutSemesters = courses.map(course => {
                 assert(typeof course.semester === "undefined")
@@ -318,7 +315,8 @@ const QObject = ({ q, fulfillments, rule, satisfied, activeDegreeplanId }: QObje
 
                 // we've already used this course, so delete it
                 if (isChosen) fulfillmentsMap.delete(course.full_code); 
-                return <CoursePlanned course={course} isDisabled={satisfied && !isChosen} isUsed={isChosen} />;
+                // return <div>uppp </div>
+                return <CourseInReq course={course} isDisabled={satisfied && !isChosen} isUsed={isChosen} rule_id={rule.id} activeDegreePlanId={activeDegreePlanId}/>;
             });
 
             // transformations applied to parse tree should guarantee that searchConditions is a singleton
@@ -339,7 +337,8 @@ const QObject = ({ q, fulfillments, rule, satisfied, activeDegreeplanId }: QObje
             return <SearchCondition q={q.q} ruleIsSatisfied={satisfied} fulfillments={fulfillments} ruleId={rule.id} ruleQuery={rule.q} />;
         case "COURSE":
             const isChosen = fulfillments.find(fulfillment => fulfillment.full_code == q.full_code && (!q.semester || q.semester === fulfillment.semester))
-            return <CoursePlanned course={q} isDisabled={satisfied && !isChosen} isUsed={!!isChosen} onClick={() => { console.log("fired"); createOrUpdate({ rules: [rule.id] }, q.full_code)}} />;
+            return <CourseInReq course={q} isDisabled={satisfied && !isChosen} isUsed={!!isChosen} rule_id={rule.id} activeDegreePlanId={activeDegreePlanId}/>;
+            // onClick={() => { console.log("fired"); createOrUpdate({ rules: [rule.id] }, q.full_code)}}
     }
 }
 
@@ -349,6 +348,7 @@ interface RuleLeafProps {
     fulfillmentsForRule: Fulfillment[]; // fulfillments for this rule 
     rule: Rule;
     satisfied: boolean;
+    activeDegreePlanId: number;
 }
 
 export const SkeletonRuleLeaf = () => (
@@ -369,7 +369,7 @@ export const SkeletonRuleLeaf = () => (
 const RuleLeafWrapper = styled(Row)`
     margin-bottom: .5rem;
 `
-const RuleLeaf = ({ q_json, fulfillmentsForRule, rule, satisfied }: RuleLeafProps) => {
+const RuleLeaf = ({ q_json, fulfillmentsForRule, rule, satisfied, activeDegreePlanId }: RuleLeafProps) => {
     const t1 = transformDepartmentInClauses(q_json);
     const t2 = transformCourseClauses(t1);
     const t3 = transformSearchConditions(t2)
@@ -377,7 +377,7 @@ const RuleLeaf = ({ q_json, fulfillmentsForRule, rule, satisfied }: RuleLeafProp
 
     return (
         <RuleLeafWrapper $wrap>
-            <QObject q={q_json} fulfillments={fulfillmentsForRule} rule={rule} satisfied={satisfied} />
+            <QObject q={q_json} fulfillments={fulfillmentsForRule} rule={rule} satisfied={satisfied} activeDegreePlanId={activeDegreePlanId} />
         </RuleLeafWrapper>
     )
 }

@@ -147,7 +147,9 @@ interface RuleProps {
 }
 const computeRuleTree = ({ activeDegreePlanId, rule, rulesToFulfillments }: RuleProps): RuleTree => {
   if (rule.q) { // Rule leaf
+    // console.log('Rule is: ', rule)
     const fulfillmentsForRule: Fulfillment[] = rulesToFulfillments[rule.id] || [];
+    // console.log('fulfillments for rule: ', fulfillmentsForRule)
     const cus = fulfillmentsForRule.reduce((acc, f) => acc + (f.course?.credits || 1), 0); // default to 1 cu 
     const num = fulfillmentsForRule.length;
     const progress = Math.min(rule.credits ? cus / rule.credits : 1, rule.num ? num / rule.num : 1);
@@ -235,7 +237,7 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
   const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null); 
 
   const rulesToFulfillments = useMemo(() => {
-    if (!fulfillments) return {}
+    if (isLoadingFulfillments || !fulfillments) return {};
     const rulesToCourses: { [rule: string]: Fulfillment[] } = {};
     fulfillments.forEach(fulfillment => {
       fulfillment.rules.forEach(rule => {
@@ -245,20 +247,21 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
         rulesToCourses[rule].push(fulfillment);
       });
     });
+    console.log('rules to fulfillments', rulesToCourses)
     return rulesToCourses;
-  }, [fulfillments])
+  }, [fulfillments, isLoadingFulfillments])
 
-  const getProgress = (rule: any) => {
-    if (rule.q) {
-      return [rulesToFulfillments[rule.id].length, rule.num] // rule.num is not the most accurate rep of number of reqs
-    }
-    let satisfied = 0, total = 0;
-    for (let i = 0; i < rule.rules.length; i++) {
-      const [satisfiedByRule, totalByRule] = getProgress(rule.rules[i]);
-      satisfied += satisfiedByRule; total += totalByRule;
-    }
-    return [satisfied, total];
-  } 
+  // const getProgress = (rule: any) => {
+  //   if (rule.q) {
+  //     return [rulesToFulfillments[rule.id].length, rule.num] // rule.num is not the most accurate rep of number of reqs
+  //   }
+  //   let satisfied = 0, total = 0;
+  //   for (let i = 0; i < rule.rules.length; i++) {
+  //     const [satisfiedByRule, totalByRule] = getProgress(rule.rules[i]);
+  //     satisfied += satisfiedByRule; total += totalByRule;
+  //   }
+  //   return [satisfied, total];
+  // } 
 
   return(
     <PanelContainer>

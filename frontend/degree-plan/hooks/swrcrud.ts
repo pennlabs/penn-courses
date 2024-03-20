@@ -55,9 +55,8 @@ export const baseFetcher = (init: RequestInit, returnJson: boolean = true) => as
         error.info = await res.json()
         error.status = res.status
         // TODO: need to figure out how to catch these errors
-        throw Promise.reject(error);
-    }
-    return returnJson ? res.json() : undefined;
+        throw error;
+    } else return returnJson ? res.json() : undefined;
 }
 
 export const getFetcher = baseFetcher({ method: "GET" })

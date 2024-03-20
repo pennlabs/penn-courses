@@ -230,6 +230,7 @@ const ModalInterior = ({
             <ModalButton
               onClick={() => {
                 add_degreeplan(name);
+                
                 close();
               }}
             >
