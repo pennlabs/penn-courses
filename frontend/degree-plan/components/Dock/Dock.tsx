@@ -84,8 +84,18 @@ const Logo = styled.img`
     flex-shrink: 0;
 `
 
+
 const DockedCourseItem = styled(CourseInDock)`
     background: var(--background-grey);
+` 
+
+const AnimatedDockedCourseItem = styled(CourseInDock)`
+    z-index: 1000;
+    background: var(--background-grey);
+    animation-name: jump;
+      animation-duration: 3s;
+      animation-iteration-count: 1;
+      animation-timing-function: linear;
 ` 
 
 interface DockProps {
@@ -96,11 +106,21 @@ interface DockProps {
 }
 
 const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
+    // const [courseAdded, setCourseAdded] = React.useState(false);
     const { searchPanelOpen, setSearchPanelOpen, setSearchRuleQuery, setSearchRuleId } = useContext(SearchPanelContext)
     const { createOrUpdate } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
     const {data: dockedCourses = [], isLoading} = useSWR<DockedCourse[]>(user ? `/api/degree/docked` : null); 
-    console.log(dockedCourses);
 
+    // Returns a boolean that indiates whether this is the first render
+    const useIsMount = () => {
+        const isMountRef = React.useRef(true);
+        useEffect(() => {
+          isMountRef.current = false;
+        }, []);
+        return isMountRef.current;
+      };
+    
+    const isMount = useIsMount();
 
     const [{ isOver, canDrop }, drop] = useDrop(() => ({
         accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_REQ],
@@ -113,8 +133,17 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
         }),
     }), []);
 
-    useEffect(() => console.log(`dropped! ${isOver}`), [isOver])
-
+    // React.useEffect(() => {
+    //     if (!isMount) {
+    //         console.log('future render');
+    //         setCourseAdded(true);
+    //         setTimeout(() => {
+    //             setCourseAdded(false);
+    //         }, 3000);
+    //     } else {
+    //         console.log('first render');
+    //     }
+    // }, [isMount, dockedCourses]);
 
     return (
         <DockWrapper ref={drop} >
@@ -144,11 +173,22 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
                     </CenteringCourseDock> 
                     :
                     !dockedCourses.length ? <CenteringCourseDock>Drop courses in the dock for later.</CenteringCourseDock> :
-                    <DockedCourses>
-                        {dockedCourses.map((course) => 
-                            <DockedCourseItem course={course} isUsed isDisabled={false} />
-                        )}
-                    </DockedCourses>}
+                        // courseAdded ?
+                        // <DockedCourses>
+                        //     {dockedCourses.map((course, i) => {
+                        //         if (i == dockedCourses.length - 1) {
+                        //             return <AnimatedDockedCourseItem course={course} isUsed isDisabled={false} />
+                        //         }
+                        //         return <DockedCourseItem course={course} isUsed isDisabled={false} />
+                        //     }
+                        //     )}
+                        // </DockedCourses>
+                        // :
+                        <DockedCourses>
+                            {dockedCourses.map((course) => 
+                                <AnimatedDockedCourseItem course={course} isUsed isDisabled={false} />
+                            )}
+                        </DockedCourses>}
                 </DockedCoursesWrapper>
                 <Logo src='pdp-logo.svg' width='30' height='45'/>
             </DockContainer>

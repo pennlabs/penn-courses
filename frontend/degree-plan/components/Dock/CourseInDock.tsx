@@ -24,7 +24,7 @@ const CourseInDock = ({ course, isUsed = false, isDisabled = false, className, o
     }
 
     const [{ isDragging }, drag] = useDrag<DnDCourse, never, { isDragging: boolean }>(() => ({
-      type: ItemTypes.COURSE_IN_REQ,
+      type: ItemTypes.COURSE_IN_DOCK,
       item: course,
       collect: (monitor) => ({
         isDragging: !!monitor.isDragging()
