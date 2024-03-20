@@ -11,7 +11,7 @@ import useSWR, { useSWRConfig } from 'swr';
 import { DarkBlueBackgroundSkeleton } from "../FourYearPlan/PanelCommon";
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
 import _ from 'lodash';
-import CoursePlanned from '../FourYearPlan/CoursePlanned';
+import CoursePlanned from '../FourYearPlan/CourseInPlan';
 
 const DockWrapper = styled.div`
     z-index: 1;
@@ -113,7 +113,7 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
     }, [dockedCourseObjs])
 
     const [{ isOver, canDrop }, drop] = useDrop(() => ({
-        accept: ItemTypes.COURSE,
+        accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_REQ],
         drop: (course: DnDCourse) => {
             console.log("DROPPED", course.full_code, 'from', course.semester);
             const repeated = dockedCourses.filter(c => c === course.full_code)

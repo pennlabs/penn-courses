@@ -63,9 +63,9 @@ export const SkeletonCourse = () => (
   </PlannedCourseContainer>
 )
 
-const CoursePlanned = ({ course, removeCourse, isUsed = false, isDisabled = false, className, onClick } : CoursePlannedProps) => {
+const CourseInPlan = ({ course, removeCourse, isUsed = false, isDisabled = false, className, onClick } : CoursePlannedProps) => {
   const [{ isDragging }, drag] = useDrag<DnDCourse, never, { isDragging: boolean }>(() => ({
-    type: ItemTypes.COURSE,
+    type: ItemTypes.COURSE_IN_PLAN,
     item: course,
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging()
@@ -101,4 +101,4 @@ const CoursePlanned = ({ course, removeCourse, isUsed = false, isDisabled = fals
 }
 
 
-export default CoursePlanned;
+export default CourseInPlan;

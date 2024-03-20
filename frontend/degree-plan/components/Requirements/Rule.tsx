@@ -110,6 +110,8 @@ const RuleComponent = (ruleTree : RuleTree) => {
     const { type, activeDegreePlanId, rule, progress } = ruleTree; 
     const satisfied = progress === 1;
 
+    console.log(ruleTree);
+
     // state for INTERNAL_NODEs
     const [collapsed, setCollapsed] = useState(false);
 
@@ -119,9 +121,13 @@ const RuleComponent = (ruleTree : RuleTree) => {
         { idKey: "full_code",
         createDefaultOptimisticData: { semester: null, rules: [] }
     });
+
     const [{ isOver, canDrop }, drop] = useDrop<DnDCourse, never, { isOver: boolean, canDrop: boolean }>({
-        accept: ItemTypes.COURSE,
-        drop: (course: DnDCourse) => void createOrUpdate({ rules: [rule.id] }, course.full_code), // TODO: this doesn't handle fulfillments that already have a rule
+        accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_DOCK], 
+        drop: (course: DnDCourse) => {
+          createOrUpdate({ rules: [rule.id] }, course.full_code)
+
+        }, // TODO: this doesn't handle fulfillments that already have a rule
         canDrop: () => { return !satisfied && !!rule.q },
         collect: monitor => ({
           isOver: !!monitor.isOver() && !satisfied,

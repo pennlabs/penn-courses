@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useDrop } from "react-dnd";
+import { useDrag, useDrop } from "react-dnd";
 import { ItemTypes } from "../dnd/constants";
 import CoursesPlanned, { SkeletonCoursesPlanned } from "./CoursesPlanned";
 import Stats from "./Stats";
@@ -127,9 +127,10 @@ const FlexSemester = ({
     );
 
     const [{ isOver, canDrop }, drop] = useDrop<DnDCourse, never, { isOver: boolean, canDrop: boolean }>(() => ({
-        accept: ItemTypes.COURSE,
+        accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_DOCK, ItemTypes.COURSE_IN_REQ],
         drop: (course: DnDCourse) => {
             createOrUpdate({ semester }, course.full_code);
+            if (course.rule_id !== undefined && course.rule_id != null) createOrUpdate({ rules: [course.rule_id] }, course.full_code)
         },
         collect: monitor => ({
           isOver: !!monitor.isOver(),
