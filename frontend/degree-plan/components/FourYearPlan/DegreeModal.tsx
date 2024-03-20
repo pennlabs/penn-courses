@@ -161,20 +161,16 @@ const ModalInterior = ({
 
   const [school, setSchool] = useState<SchoolOption>();
   const [major, setMajor] = useState<MajorOption>();
-
   const [name, setName] = useState<string>("");
-  // const [degreeId, setDegreeId] = useState<number | null>(null);
 
   const { data: degrees, isLoading: isLoadingDegrees } =
     useSWR<DegreeListing[]>(`/api/degree/degrees`);
 
   const defaultSchools = ["BSE", "BA", "BAS", "BS"];
-
   const schoolOptions = defaultSchools.map((d) => ({
     value: d,
     label: d,
   }));
-  // console.log('schooOptions', schoolOptions);
 
   /** Create label for major listings */
   const createMajorLabel = (degree: DegreeListing) => {
@@ -197,7 +193,7 @@ const ModalInterior = ({
     return majorOptions;
   }, [school]);
 
-  if (!modalKey || !modalObject) return <div></div>;
+  if (!modalKey && !modalObject) return <div></div>;
 
   
   const add_degree = async (degreeplanId: number, degreeId: number) => {

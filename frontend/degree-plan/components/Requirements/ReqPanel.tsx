@@ -230,15 +230,9 @@ interface ReqPanelProps {
   handleSearch: any;
 }
 const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, setSearchClosed, handleSearch}: ReqPanelProps) => {
-
   const [editMode, setEditMode] = React.useState(false);  
   const { data: activeDegreeplanDetail = null, isLoading: isLoadingDegrees } = useSWR<DegreePlan>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}` : null); 
   const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null); 
-  
-  /** If no degrees in the degree plan, enter edit mode */
-  React.useEffect(() => {
-      setEditMode(!isLoading && activeDegreeplan?.degrees?.length === 0);
-  }, [activeDegreeplan]);
 
   const rulesToFulfillments = useMemo(() => {
     if (!fulfillments) return {}
@@ -276,8 +270,9 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
       </PanelHeader>
       {!activeDegreeplan ? <ReqPanelBody><Degree isLoading={true}/></ReqPanelBody> :
       <>
-        {!activeDegreeplanDetail || isLoadingDegrees ? <EmptyPanel /> :
+        {activeDegreeplanDetail && 
         <ReqPanelBody>
+          {activeDegreeplanDetail.degrees.length == 0 && !editMode && <EmptyPanel />}
           {activeDegreeplanDetail.degrees.map(degree => (
             <Degree 
             degree={degree} 
@@ -291,8 +286,7 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
             isLoading={isLoading}
             />
           ))}
-          {editMode && 
-          <AddButton role="button" onClick={() => {
+          {editMode && <AddButton role="button" onClick={() => {
             setModalObject(activeDegreeplan);
             setModalKey("degree-add");
           }}>
