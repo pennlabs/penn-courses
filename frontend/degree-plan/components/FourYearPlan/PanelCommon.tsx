@@ -42,6 +42,7 @@ export const DarkBlueBackgroundSkeleton: React.FC<{ width: string; }> = (props) 
 export const PanelHeader = styled.div`
     display: flex;
     justify-content: space-between;
+    align-items: center;
     background-color: var(--primary-color);
     padding: 0.5rem 1rem;
     flex-grow: 0;

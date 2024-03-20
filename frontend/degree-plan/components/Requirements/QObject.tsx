@@ -15,13 +15,11 @@ import { useContext } from "react";
 import { SearchPanelContext } from "../Search/SearchPanel";
 
 const interpolate = <T,>(arr: T[], separator: T) => 
-    <QObjectWrapper>
-    {arr.flatMap(
+    arr.flatMap(
         (elem, index) => index < arr.length - 1 ? 
         [elem, separator] 
         : [elem]
-    )}
-    </QObjectWrapper>
+    )
 
 
 type ConditionKey = "full_code" | "semester" | "attributes__code__in" | "department__code" | "full_code__startswith" | "code__gte" | "code__lte" | "department__code__in" 
@@ -83,17 +81,17 @@ const CourseOption = ({ full_code, semester, isChosen = false, ruleIsSatisfied =
     )
 }
 
-const Row = styled.div`
+const Row = styled.div<{ $wrap?: boolean, $gap?: string }>`
     display: flex;
     flex-direction: row;
-    gap: .2rem;
-    flex-grow: 1;
-    margin: .5 rem 0;
+    gap: ${({ $gap }) => $gap ? $gap : "0.5rem" };
+    align-items: center;
+    flex-wrap: ${({ $wrap }) => $wrap ? "wrap" : "nowrap"};
 `;
 
 const AttributeWrapper = styled.div`
-    min-width: 4rem;
     display: flex;
+    gap: .5rem;
     flex-direction: row;
     align-items: center;
 `
@@ -102,17 +100,16 @@ const AttributeWrapper = styled.div`
 const Attributes = ({ attributes }: { attributes: string[] }) => {
     return <AttributeWrapper>
         <DarkGrayIcon><i className="fas fa-at fa-sm"></i></DarkGrayIcon> {/*TODO: add a tooltip */}
-        <Wrap>{attributes.join(', ')}</Wrap>
+        <span>{attributes.join(', ')}</span>
     </AttributeWrapper>
 }
 
 const SearchConditionWrapper = styled(BaseCourseContainer)`
     display: flex;
-    flex-direction: row;
-    margin: .5 rem 0;
+    flex-wrap: wrap;
+    gap: .5rem;
     background-color: #EDF1FC;
     box-shadow: 0px 0px 14px 2px rgba(0, 0, 0, 0.05);
-    text-wrap: none;
     cursor: pointer;
 `
 
@@ -166,9 +163,15 @@ const SearchConditionInner = ({ q }: SearchConditionInnerProps) => {
     }
     if ('department__code__in' in compoundCondition) {
         const departments = compoundCondition['department__code__in'] as string[];
-        display.push(<div> in {
-            interpolate(departments.map((dept) => <div key={dept}>{dept}</div>), <CourseOptionsSeparator>or</CourseOptionsSeparator>)
-        }</div>);
+        display.push(
+            <Row>
+                <div>in</div> 
+                {interpolate(
+                    departments.map((dept) => <div key={dept}>{dept}</div>), 
+                    <CourseOptionsSeparator>or</CourseOptionsSeparator>)
+                }
+            </Row>
+        );
     }
     if ('full_code__startswith' in compoundCondition) {
         const padding = "XXXX-XXXX";
@@ -179,11 +182,11 @@ const SearchConditionInner = ({ q }: SearchConditionInnerProps) => {
     }
 
     compounds.forEach((compound) => display.push(
-        <>
+        <Row $gap=".1rem">
             <CourseOptionsSeparator>{'('}</CourseOptionsSeparator>
             <SearchConditionInner q={compound} />
             <CourseOptionsSeparator>{')'}</CourseOptionsSeparator>
-        </>
+        </Row>
     ));
 
     if (display.length == 0) {
@@ -191,9 +194,9 @@ const SearchConditionInner = ({ q }: SearchConditionInnerProps) => {
     }
 
     return (
-        <div>
+        <Row>
             {interpolate(display, <CourseOptionsSeparator>{q.type}</CourseOptionsSeparator>)}
-        </div>
+        </Row>
     )
 }
 
@@ -209,15 +212,15 @@ const SearchCondition = ({ ruleId, ruleQuery, fulfillments, ruleIsSatisfied, q}:
     return (
         <SearchConditionWrapper $isDisabled={ruleIsSatisfied}>
             <SearchConditionInner q={q} />
-            <div onClick={() => { 
+            <DarkGrayIcon
+            onClick={() => { 
                 setSearchRuleQuery(ruleQuery);
                 setSearchRuleId(ruleId);
                 setSearchPanelOpen(true);
-            }}>
-                <DarkGrayIcon>
-                    <i className="fas fa-search fa-sm"/>
-                </DarkGrayIcon>
-            </div>
+            }}
+            >
+                <i className="fas fa-search fa-sm"/>
+            </DarkGrayIcon>
             {fulfillments.map(fulfillment => (
                 <CoursePlanned course={fulfillment} isDisabled={ruleIsSatisfied} isUsed />
             ))}
@@ -230,7 +233,6 @@ const CourseOptionsSeparator = styled.div`
     text-transform: uppercase;
     color: #575757;
     font-weight: 500;
-    margin: 8px 0px;
 `;
 
 const transformCourseClauses = (q: ParsedQObj): ParsedQObj => {
@@ -274,12 +276,19 @@ const transformSearchConditions = (q: ParsedQObj): ParsedQObj => {
 }
 
 interface QObjectProps { 
-    q: TransformedQObject; 
+    q: TransformedQObject;
     fulfillments: Fulfillment[]; // fulfillments for this rule 
     rule: Rule;
     satisfied: boolean;
+    activeDegreeplanId: number;
 }
-const QObject = ({ q, fulfillments, rule, satisfied }: QObjectProps) => {
+const QObject = ({ q, fulfillments, rule, satisfied, activeDegreeplanId }: QObjectProps) => {
+    const { createOrUpdate } = useSWRCrud<Fulfillment>(
+        `/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`,
+        { idKey: "full_code",
+        createDefaultOptimisticData: { semester: null, rules: [] }
+    });
+
     // recursively render
     switch (q.type) {
         case "OR":
@@ -320,25 +329,19 @@ const QObject = ({ q, fulfillments, rule, satisfied }: QObjectProps) => {
                 return <SearchCondition fulfillments={courses} q={search.q} ruleIsSatisfied={satisfied} ruleId={rule.id} ruleQuery={rule.q} />
             })
 
-            return <Row>{
-                interpolate(
+            return <Row $wrap>
+                {interpolate(
                     [...displayCoursesWithSemesters, ...displayCoursesWithoutSemesters, ...displaySearchConditions], 
                     <CourseOptionsSeparator>or</CourseOptionsSeparator>
-                )}</Row>
+                )}
+                </Row>
         case "SEARCH":
             return <SearchCondition q={q.q} ruleIsSatisfied={satisfied} fulfillments={fulfillments} ruleId={rule.id} ruleQuery={rule.q} />;
         case "COURSE":
-            const isChosen = !!fulfillments.find(fulfillment => fulfillment.full_code == q.full_code && (!q.semester || q.semester === fulfillment.semester))
-            return <CoursePlanned course={q} isDisabled={satisfied && !isChosen} isUsed={isChosen} />;
+            const isChosen = fulfillments.find(fulfillment => fulfillment.full_code == q.full_code && (!q.semester || q.semester === fulfillment.semester))
+            return <CoursePlanned course={q} isDisabled={satisfied && !isChosen} isUsed={!!isChosen} onClick={() => { console.log("fired"); createOrUpdate({ rules: [rule.id] }, q.full_code)}} />;
     }
 }
-
-const QObjectWrapper = styled.div`
-    max-width: 90%;
-    display: inline-flex;
-    flex-direction: row;
-    gap: 0.5rem;
-`
 
 interface RuleLeafProps { 
     q_json: any;
@@ -363,6 +366,9 @@ export const SkeletonRuleLeaf = () => (
     </div>
 )
 
+const RuleLeafWrapper = styled(Row)`
+    margin-bottom: .5rem;
+`
 const RuleLeaf = ({ q_json, fulfillmentsForRule, rule, satisfied }: RuleLeafProps) => {
     const t1 = transformDepartmentInClauses(q_json);
     const t2 = transformCourseClauses(t1);
@@ -370,9 +376,9 @@ const RuleLeaf = ({ q_json, fulfillmentsForRule, rule, satisfied }: RuleLeafProp
     q_json = t3 as TransformedQObject;
 
     return (
-        <QObjectWrapper>
+        <RuleLeafWrapper $wrap>
             <QObject q={q_json} fulfillments={fulfillmentsForRule} rule={rule} satisfied={satisfied} />
-        </QObjectWrapper>
+        </RuleLeafWrapper>
     )
 }
 

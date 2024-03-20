@@ -51,6 +51,7 @@ const ReqPanelTitle = styled.div`
 
 const DegreeBody = styled.div`
   overflow-y: auto;
+  overflow-x: hidden;
 `
 
 export const DegreeYear = styled.span`
@@ -158,15 +159,15 @@ const computeRuleTree = ({ activeDegreePlanId, rule, rulesToFulfillments }: Rule
 }
 
 
-const Degree = ({degree_id, rulesToFulfillments, activeDegreeplan, editMode, setModalKey, setModalObject, isLoading}: any) => {
+const Degree = ({degree, rulesToFulfillments, activeDegreeplan, editMode, setModalKey, setModalObject, isLoading}: any) => {
   const [collapsed, setCollapsed] = useState(false);
-  const { data: degrees, isLoading: isLoadingDegrees } = useSWR<Degree[]>(activeDegreeplan ? `/api/degree/degrees/?id=${degree_id}`: null);
+  // const { data: degrees, isLoading: isLoadingDegrees } = useSWR<Degree[]>(activeDegreeplan ? `/api/degree/degrees/?id=${degree_id}`: null);
   
-  if (isLoadingDegrees || isLoading) {
+  if (isLoading) {
     return (
       <div>
         <DegreeHeader
-        degree={{}}
+        degree={degree}
         remove={() => void {}}
         setCollapsed={setCollapsed}
         skeleton={true}
@@ -196,22 +197,21 @@ const Degree = ({degree_id, rulesToFulfillments, activeDegreeplan, editMode, set
 
   return (
     <div>
-      {degrees && 
       <DegreeHeader 
-        degree={degrees[0]} 
-        key={degree_id} 
+        degree={degree} 
+        key={degree.id} 
         remove={() => {
-          setModalObject({degreeplanId: activeDegreeplan.id, degreeId: degree_id});
+          setModalObject({degreeplanId: activeDegreeplan.id, degreeId: degree.id});
           setModalKey("degree-remove");
         }} 
         setCollapsed={setCollapsed}
         collapsed={collapsed || editMode} // Collapse degree view in edit mode
         editMode={editMode}
         skeleton={false}
-        />}
+        />
       {!collapsed && !editMode &&
       <DegreeBody>
-        {degrees && degrees[0].rules.map((rule: any) => (
+        {degree && degree.rules.map((rule: any) => (
           <RuleComponent 
           {...computeRuleTree({ activeDegreePlanId: activeDegreeplan.id, rule, rulesToFulfillments })}
           />
@@ -231,14 +231,13 @@ interface ReqPanelProps {
 }
 const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, setSearchClosed, handleSearch}: ReqPanelProps) => {
 
-  const [editMode, setEditMode] = React.useState(false); 
-
+  const [editMode, setEditMode] = React.useState(false);  
+  const { data: activeDegreeplanDetail = null, isLoading: isLoadingDegrees } = useSWR<DegreePlan>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}` : null); 
   const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null); 
-
-
+  
   /** If no degrees in the degree plan, enter edit mode */
   React.useEffect(() => {
-      setEditMode(!isLoading && activeDegreeplan?.degree_ids?.length === 0);
+      setEditMode(!isLoading && activeDegreeplan?.degrees?.length === 0);
   }, [activeDegreeplan]);
 
   const rulesToFulfillments = useMemo(() => {
@@ -277,11 +276,11 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
       </PanelHeader>
       {!activeDegreeplan ? <ReqPanelBody><Degree isLoading={true}/></ReqPanelBody> :
       <>
-        {!activeDegreeplan.degree_ids ? <EmptyPanel /> :
+        {!activeDegreeplanDetail || isLoadingDegrees ? <EmptyPanel /> :
         <ReqPanelBody>
-          {activeDegreeplan.degree_ids.map(degree_id => (
+          {activeDegreeplanDetail.degrees.map(degree => (
             <Degree 
-            degree_id={degree_id} 
+            degree={degree} 
             rulesToFulfillments={rulesToFulfillments} 
             activeDegreeplan={activeDegreeplan} 
             setSearchClosed={setSearchClosed} 

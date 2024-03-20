@@ -120,9 +120,11 @@ const FlexSemester = ({
     // the fulfillments api uses the POST method for updates (it creates if it doesn't exist, and updates if it does)
     const { createOrUpdate } = useSWRCrud<Fulfillment>(
         `/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`,
-        { idKey: "full_code",
-        createDefaultOptimisticData: { semester: null, rules: [] }
-    });
+        { 
+            idKey: "full_code",
+            createDefaultOptimisticData: { semester: null, rules: [] }
+        }
+    );
 
     const [{ isOver, canDrop }, drop] = useDrop<DnDCourse, never, { isOver: boolean, canDrop: boolean }>(() => ({
         accept: ItemTypes.COURSE,

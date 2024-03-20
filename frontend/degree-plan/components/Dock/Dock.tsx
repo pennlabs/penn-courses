@@ -97,8 +97,6 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
     const { searchPanelOpen, setSearchPanelOpen, setSearchRuleQuery, setSearchRuleId } = useContext(SearchPanelContext)
     const [dockedCourses, setDockedCourses] = React.useState<string[]>([]);
     const { createOrUpdate, remove } = useSWRCrud<IDockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
-    const { data: fulfillments = [], isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplanId ? `/api/degree/degreeplans/${activeDegreeplanId}/fulfillments` : null);    
-    const { createOrUpdate, remove: deleteFulfillment } = useSWRCrud<Fulfillment>(`/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`, { idKey: "full_code" });
     const {data: dockedCourseObjs = [], isLoading} = useSWR<IDockedCourse[]>(user ? `/api/degree/docked` : null); 
 
     const removeDockedCourse = (full_code: string) => {
@@ -106,7 +104,6 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
         setDockedCourses((dockedCourses) => dockedCourses.filter(c => c !== full_code));
         /** Update backend */
         remove(full_code);
-        deleteFulfillment(full_code)
     }
 
     useEffect(() => {

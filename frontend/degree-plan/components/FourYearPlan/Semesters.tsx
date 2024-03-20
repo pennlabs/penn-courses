@@ -94,7 +94,7 @@ const ModifySemesters = ({ addSemester, semesters, className }: ModifySemestersP
 }
 
 interface SemestersProps {
-    activeDegreeplan: DegreePlan | undefined;
+    activeDegreeplan?: DegreePlan;
     showStats: any;
     className?: string;
     editMode: boolean;
