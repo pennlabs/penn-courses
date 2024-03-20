@@ -110,8 +110,6 @@ const RuleComponent = (ruleTree : RuleTree) => {
     const { type, activeDegreePlanId, rule, progress } = ruleTree; 
     const satisfied = progress === 1;
 
-    console.log(ruleTree);
-
     // state for INTERNAL_NODEs
     const [collapsed, setCollapsed] = useState(false);
 
@@ -140,7 +138,7 @@ const RuleComponent = (ruleTree : RuleTree) => {
       const { fulfillments, cus, num } = ruleTree;
       return (
         <RuleLeafWrapper $isDroppable={canDrop} $isOver={isOver} ref={drop}>
-            <RuleLeaf q_json={rule.q_json} rule={rule} fulfillmentsForRule={fulfillments} satisfied={satisfied} />
+            <RuleLeaf q_json={rule.q_json} rule={rule} fulfillmentsForRule={fulfillments} satisfied={satisfied} activeDegreePlanId={activeDegreePlanId}/>
             <div>
               {rule.credits && <CusCourses>{cus} / {rule.credits} cus</CusCourses>}
               {" "}

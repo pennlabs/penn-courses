@@ -39,7 +39,7 @@ export interface DegreeListing extends DBObject {
 export interface DockedCourse extends DBObject {
   id: number;
   full_code: string;
-  person: any;
+  person?: any;
 }
 
 

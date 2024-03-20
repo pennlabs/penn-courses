@@ -153,7 +153,6 @@ const computeRuleTree = ({ activeDegreePlanId, rule, rulesToFulfillments }: Rule
     const cus = fulfillmentsForRule.reduce((acc, f) => acc + (f.course?.credits || 1), 0); // default to 1 cu 
     const num = fulfillmentsForRule.length;
     const progress = Math.min(rule.credits ? cus / rule.credits : 1, rule.num ? num / rule.num : 1);
-    // console.log('progress for leaf node:', progress)
     return { activeDegreePlanId, type: "LEAF", progress, cus, num, rule, fulfillments: fulfillmentsForRule }
   }
   const children = rule.rules.map((child) => computeRuleTree({ activeDegreePlanId, rule: child, rulesToFulfillments }))

@@ -8,32 +8,24 @@ import { Draggable } from "../common/DnD";
 import { PlannedCourseContainer } from "../FourYearPlan/CourseInPlan";
 import { useSWRCrud } from "@/hooks/swrcrud";
 
-interface CourseInReqProps {
+interface CourseInDockProps {
     course: DnDCourse;
     isUsed: boolean;
     isDisabled: boolean;
-    rule_id: number;
     className?: string;
-    activeDegreePlanId: number;
     onClick?: () => void;
   }
 
-const CourseInReq = ({ course, isUsed = false, isDisabled = false, className, onClick, rule_id, activeDegreePlanId } : CourseInReqProps) => {
-  const { remove } = useSWRCrud<Fulfillment>(
-      `/api/degree/degreeplans/${activeDegreePlanId}/fulfillments`,
-      { idKey: "full_code",
-      createDefaultOptimisticData: { semester: null, rules: [] }
-  });
-  const { createOrUpdate } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
+const CourseInDock = ({ course, isUsed = false, isDisabled = false, className, onClick } : CourseInDockProps) => {
+    const { remove } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
 
     const handleRemoveCourse = (full_code: string) => {
       remove(full_code);
-      createOrUpdate({"full_code": full_code}, full_code); 
     }
 
     const [{ isDragging }, drag] = useDrag<DnDCourse, never, { isDragging: boolean }>(() => ({
       type: ItemTypes.COURSE_IN_REQ,
-      item: {...course, rule_id: rule_id},
+      item: course,
       collect: (monitor) => ({
         isDragging: !!monitor.isDragging()
       })
@@ -68,4 +60,4 @@ const CourseInReq = ({ course, isUsed = false, isDisabled = false, className, on
   }
   
   
-  export default CourseInReq;
+  export default CourseInDock;

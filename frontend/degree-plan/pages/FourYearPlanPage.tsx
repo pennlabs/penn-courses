@@ -69,8 +69,6 @@ const FourYearPlanPage = ({
     DegreePlan[]
   >("/api/degree/degreeplans");
   
-  console.log(degreeplans)
-
   useEffect(() => {
     // recompute the active degreeplan id on changes to the degreeplans
     if (!isLoadingDegreeplans && !degreeplans?.length) {
