@@ -44,7 +44,7 @@ export const baseFetcher = (init: RequestInit, returnJson: boolean = true) => as
         headers: {
             "Accept": "application/json",
             "X-CSRFToken": getCsrf(),
-            "Content-Type": returnJson ? "application/json" : undefined
+            "Content-Type": "application/json"
         } as HeadersInit,
         ...init,
         body: body === undefined ? undefined : JSON.stringify(body)

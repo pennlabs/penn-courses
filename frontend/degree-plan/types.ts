@@ -55,7 +55,7 @@ export interface Degree extends DBObject {
 
 export interface DegreePlan extends DBObject {
   id: number;
-  degree_ids: number[]; // the ids of the degrees in the degree plan, which we use to mutate the degree plan
+  degrees: Degree[]
   name: string;
   updated_at: string;
   created_at: string;
