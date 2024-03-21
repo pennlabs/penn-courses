@@ -101,7 +101,6 @@ interface AlertSectionProps {
 const AlertItem = styled.div<{ isMobile: boolean }>`
     background: white;
     transition: 250ms ease background;
-    cursor: pointer;
     user-select: none;
 
     display: ${(props) => (props.isMobile ? "grid" : "flex")};
@@ -118,11 +117,9 @@ const AlertItem = styled.div<{ isMobile: boolean }>`
     &:hover {
         background: #f5f5ff;
     }
-    &:active {
-        background: #efeffe;
-    }
 
     &:hover i {
+        cursor: pointer;
         color: #d3d3d8;
     }
 `;

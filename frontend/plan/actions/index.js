@@ -44,7 +44,7 @@ export const REMOVE_CART_ITEM = "REMOVE_CART_ITEM";
 export const CHANGE_SORT_TYPE = "CHANGE_SORT_TYPE";
 
 export const ADD_ALERT_ITEM = "ADD_ALERT_ITEM";
-export const REMOVE_ALERT_ITEM = "REMOVE_ALERT_ITEM";
+export const DELETE_ALERT_ITEM = "DELETE_ALERT_ITEM";
 export const UPDATE_CONTACT_INFO = "UPDATE_CONTACT_INFO";
 
 export const MARK_ALERTS_SYNCED = "MARK_ALERTS_SYNCED";
@@ -505,8 +505,8 @@ export const addAlertFrontend = (alert) => ({
     alert,
 });
 
-export const removeAlertFrontend = (sectionId) => ({
-    type: REMOVE_ALERT_ITEM,
+export const deleteAlertFrontend = (sectionId) => ({
+    type: DELETE_ALERT_ITEM,
     sectionId,
 });
 
@@ -767,14 +767,14 @@ export const addAlertItem = (sectionId) => (dispatch) => {
                 addAlertFrontend({
                     ...registrationObj,
                     id: data.id,
-                    status: data.section_status,
+                    cancelled: false,
+                    status: "C",
                 })
             );
         });
-    // .catch((error) => console.log(error));
 };
 
-export const removeAlertItem = (alertId, sectionId) => (dispatch) => {
+export const deleteAlertItem = (alertId, sectionId) => (dispatch) => {
     const updateObj = {
         deleted: true,
     };
@@ -791,7 +791,7 @@ export const removeAlertItem = (alertId, sectionId) => (dispatch) => {
     };
     doAPIRequest(`/alert/registrations/${alertId}/`, init).then((res) => {
         if (res.ok) {
-            dispatch(removeAlertFrontend(sectionId));
+            dispatch(deleteAlertFrontend(sectionId));
         }
     });
     //     // .catch((error) => console.log(error));
@@ -816,6 +816,7 @@ export const fetchAlerts = () => (dispatch) => {
                     addAlertFrontend({
                         id: alert.id,
                         section: alert.section,
+                        cancelled: alert.cancelled,
                         auto_resubscribe: alert.auto_resubscribe,
                         close_notification: alert.close_notification,
                         status: alert.section_status,

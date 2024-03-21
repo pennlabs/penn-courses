@@ -1,6 +1,6 @@
 import {
     ADD_ALERT_ITEM,
-    REMOVE_ALERT_ITEM,
+    DELETE_ALERT_ITEM,
     UPDATE_CONTACT_INFO,
 } from "../actions";
 
@@ -18,7 +18,7 @@ export const alerts = (state = initialState, action) => {
                 ...state,
                 alertedCourses: [...state.alertedCourses, action.alert],
             };
-        case REMOVE_ALERT_ITEM:
+        case DELETE_ALERT_ITEM:
             return {
                 ...state,
                 alertedCourses: state.alertedCourses.filter(

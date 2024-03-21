@@ -2,7 +2,7 @@ import React, { FunctionComponent } from "react";
 import { connect } from "react-redux";
 import { ThunkDispatch } from "redux-thunk";
 import styled from "styled-components";
-import { fetchCourseDetails, removeAlertItem } from "../../actions";
+import { fetchCourseDetails, deleteAlertItem } from "../../actions";
 
 import { Alert } from "../../types";
 import AlertSection from "./AlertSection";
@@ -42,7 +42,7 @@ interface AlertsProps {
     courseInfoLoading: boolean;
     alertedCourses: Alert[];
     contactInfo: { email: string; phone: string };
-    removeAlert: (alertId: string, sectionId: string) => void;
+    deleteAlert: (alertId: string, sectionId: string) => void;
     courseInfo: (id: string) => void;
     mobileView: boolean;
 }
@@ -76,7 +76,7 @@ const AlertsEmpty = () => (
 const Alerts: React.FC<AlertsProps> = ({
     courseInfoLoading,
     alertedCourses,
-    removeAlert,
+    deleteAlert,
     courseInfo,
     mobileView,
 }) => (
@@ -93,7 +93,7 @@ const Alerts: React.FC<AlertsProps> = ({
                             toggleCheck={() => {}}
                             remove={(event) => {
                                 event.stopPropagation();
-                                removeAlert(alert.id, alert.section);
+                                deleteAlert(alert.id, alert.section);
                             }}
                             courseInfo={(event) => {
                                 event.stopPropagation();
@@ -121,7 +121,7 @@ const mapStateToProps = ({
 });
 
 const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
-    removeAlert: (alertId: string, sectionId: string) => dispatch(removeAlertItem(alertId, sectionId)),
+    deleteAlert: (alertId: string, sectionId: string) => dispatch(deleteAlertItem(alertId, sectionId)),
     courseInfo: (sectionId: string) => dispatch(fetchCourseDetails(sectionId)),
 });
 

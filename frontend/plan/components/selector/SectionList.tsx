@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { connect } from "react-redux";
 import Section from "./Section";
 import { Section as SectionType, Alert as AlertType } from "../../types";
-import { addCartItem, openModal, removeAlertItem, removeCartItem } from "../../actions";
+import { addCartItem, openModal, deleteAlertItem, removeCartItem } from "../../actions";
 
 interface SectionListProps {
     sections: SectionType[];
@@ -76,7 +76,7 @@ const mapDispatchToProps = (dispatch: (payload: any) => void) => ({
         add: () => dispatch(openModal("ALERT_FORM", { sectionId: section.id }, "Sign up for Alerts")),
         remove: () => {
             const alertId = alerts.find((a: AlertType) => a.section === section.id)?.id;
-            dispatch(removeAlertItem(alertId, section.id));
+            dispatch(deleteAlertItem(alertId, section.id));
         }
     }),
 });
