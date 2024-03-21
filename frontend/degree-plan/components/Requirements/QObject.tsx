@@ -276,19 +276,12 @@ const transformSearchConditions = (q: ParsedQObj): ParsedQObj => {
 }
 
 interface QObjectProps { 
-    q: TransformedQObject;
+    q: TransformedQObject; 
     fulfillments: Fulfillment[]; // fulfillments for this rule 
     rule: Rule;
     satisfied: boolean;
-    activeDegreeplanId: number;
 }
-const QObject = ({ q, fulfillments, rule, satisfied, activeDegreeplanId }: QObjectProps) => {
-    const { createOrUpdate } = useSWRCrud<Fulfillment>(
-        `/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`,
-        { idKey: "full_code",
-        createDefaultOptimisticData: { semester: null, rules: [] }
-    });
-
+const QObject = ({ q, fulfillments, rule, satisfied }: QObjectProps) => {
     // recursively render
     switch (q.type) {
         case "OR":
@@ -338,8 +331,8 @@ const QObject = ({ q, fulfillments, rule, satisfied, activeDegreeplanId }: QObje
         case "SEARCH":
             return <SearchCondition q={q.q} ruleIsSatisfied={satisfied} fulfillments={fulfillments} ruleId={rule.id} ruleQuery={rule.q} />;
         case "COURSE":
-            const isChosen = fulfillments.find(fulfillment => fulfillment.full_code == q.full_code && (!q.semester || q.semester === fulfillment.semester))
-            return <CoursePlanned course={q} isDisabled={satisfied && !isChosen} isUsed={!!isChosen} onClick={() => { console.log("fired"); createOrUpdate({ rules: [rule.id] }, q.full_code)}} />;
+            const isChosen = !!fulfillments.find(fulfillment => fulfillment.full_code == q.full_code && (!q.semester || q.semester === fulfillment.semester))
+            return <CoursePlanned course={q} isDisabled={satisfied && !isChosen} isUsed={isChosen} />;
     }
 }
 
