@@ -277,7 +277,7 @@ const transformSearchConditions = (q: ParsedQObj): ParsedQObj => {
 }
 
 interface QObjectProps { 
-    q: TransformedQObject;
+    q: TransformedQObject; 
     fulfillments: Fulfillment[]; // fulfillments for this rule 
     rule: Rule;
     satisfied: boolean;

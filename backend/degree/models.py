@@ -20,6 +20,7 @@ program_choices = [
     ("EU_BAS", "Engineering BAS"),
     ("AU_BA", "College BA"),
     ("WU_BS", "Wharton BS"),
+    ("NU_BSN", "Nursing BSN")
 ]
 
 program_code_to_name = dict(program_choices)
