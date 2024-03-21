@@ -7,6 +7,10 @@ from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+import redis
+import re
+from redis.commands.search.query import NumericFilter, Query
+from django.conf import settings
 
 from courses.models import (
     Course,
@@ -818,3 +822,79 @@ def autocomplete(request):
     return Response(
         {"courses": course_set, "departments": department_set, "instructors": instructor_set}
     )
+
+@api_view(["GET"])
+def deep_search(request):
+    """
+    Completes deep search.
+    """
+    # Setup Redis
+    r = redis.Redis(connection_pool=settings.REDIS_POOL)
+
+    # Query Parameters
+    text_query = request.GET.get("q")
+    course_work_low = float(request.GET.get("workLow"))
+    course_work_high = float(request.GET.get("workHigh"))
+    course_difficulty_low = float(request.GET.get("difficultyLow"))
+    course_difficulty_high = float(request.GET.get("difficultyHigh"))
+    course_quality_low = float(request.GET.get("qualityLow"))
+    course_quality_high = float(request.GET.get("qualityHigh"))
+
+    # Create Filters
+    department_search_term = Query(text_query) \
+        .return_fields('code', 'name') \
+        .scorer("DISMAX") \
+        .paging(0, 5)
+
+    course_search_term = Query(text_query) \
+        .return_fields('code', 'crosslistings', 'instructors', 'title', 'description', 'semester', 'course_quality', 'work_required', 'difficulty') \
+        .scorer("DISMAX") \
+        .paging(0, 5)
+
+    instructor_search_term = Query(text_query) \
+        .return_fields('name', 'desc', 'id') \
+        .scorer("DISMAX") \
+        .paging(0, 5)
+
+    if course_work_low != 0 or course_work_high != 4:
+        course_search_term.add_filter(NumericFilter("course_work", course_work_low or 0, course_work_high or 4))
+    if course_difficulty_low != 0 or course_difficulty_high != 4:
+        course_search_term.add_filter(NumericFilter("course_difficulty", course_difficulty_low or 0, course_difficulty_high or 4))
+    if course_quality_low != 0 or course_quality_high != 4:
+        course_search_term.add_filter(NumericFilter("course_quality", course_quality_low or 0, course_quality_high or 4))
+
+    # Result
+    department_results = r.ft("departments").search(department_search_term)
+    course_results = r.ft("courses").search(course_search_term)
+    instructor_results = r.ft("instructors").search(instructor_search_term)
+
+    out = {
+        "Departments": [
+            {
+                'code': e.code,
+                'name': e.name
+            } for e in department_results.docs
+        ],
+        "Courses": [
+            {
+                'code': e.code,
+                'title': e.title,
+                'description': e.description,
+                'quality': e.course_quality,
+                'work': e.work_required,
+                'difficulty': e.difficulty,
+                'current': True,
+                'instructors': e.instructors.split(', '),
+                'cleanCode': re.sub('\s', '-', re.sub('<[^<]+?>|course/', '', e.code))
+            } for e in course_results.docs
+        ],
+        "Instructors": [
+            {
+                'name': e.name,
+                'desc': e.desc,
+                'id': e.id
+            } for e in instructor_results.docs
+        ]
+    }
+
+    return Response(out)

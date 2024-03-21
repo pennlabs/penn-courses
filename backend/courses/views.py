@@ -45,7 +45,6 @@ SEMESTER_PARAM_DESCRIPTION = (
     "can just pass 'current' for the current semester."
 )
 
-
 class BaseCourseMixin(AutoPrefetchViewSetMixin, generics.GenericAPIView):
     @staticmethod
     def get_semester_field():
