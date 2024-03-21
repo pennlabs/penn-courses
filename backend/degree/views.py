@@ -65,7 +65,8 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     def get_serializer_class(self):
         if self.action == "list":
             return DegreePlanListSerializer
-        return DegreePlanDetailSerializer
+        else:
+            return DegreePlanDetailSerializer
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -75,8 +76,16 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         degree_plan = self.get_object()
         serializer = self.get_serializer(degree_plan)
-        # print(serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def create(self, request, *args, **kwargs):
+        if request.data.get("name") is None:
+            raise ValidationError({ "name": "This field is required." })
+        new_degree_plan = DegreePlan(name=request.data.get("name"), person=self.request.user)
+        new_degree_plan.save()
+        serializer = self.get_serializer(new_degree_plan)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
     
     @action(detail=True, methods=["post"])
     def copy(self, request, pk=None):
@@ -92,19 +101,21 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     
     @action(detail=True, methods=["post", "delete"])
     def degrees(self, request, pk=None):
-        degree_ids = request.data.get("degree_ids")
-        if degree_ids is None:
+        degree_id = request.data.get("degree_id")
+        if degree_id is None:
             raise ValidationError({ "degree_ids": "This field is required." })
-        if not isinstance(degree_ids, list):
-            raise ValidationError({ "degree_ids": "This field must be a list." })
         degree_plan = self.get_object()
 
         try:
+            print("c")
             if request.method == "POST":
-                degree_plan.degrees.add(*degree_ids)
+                degree_plan.degrees.add(degree_id)
             elif request.method == "DELETE":
-                degree_plan.degrees.remove(*degree_ids)
+                degree_plan.degrees.remove(degree_id)
+                print("here")
+                return Response(status=status.HTTP_204_NO_CONTENT)
         except IntegrityError:
+            print("error")
             return Response(
                 data={"error": "One or more of the degrees does not exist."},
                 status=status.HTTP_400_BAD_REQUEST,

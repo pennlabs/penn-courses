@@ -211,18 +211,18 @@ class Rule(models.Model):
             # TODO: run some extra checks...
 
             return True
-
-        assert self.children.all().exists()
-        count = 0
-        for child in self.children.all():
-            if not child.evaluate(full_codes):
-                if self.num is None:
-                    return False
-            else:
-                count += 1
-        if self.num is not None and count < self.num:
-            return False
-        return True
+        else:
+            # assert self.children.all().exists()
+            count = 0
+            for child in self.children.all():
+                if not child.evaluate(full_codes):
+                    if self.num is None:
+                        return False
+                else:
+                    count += 1
+            if self.num is not None and count < self.num:
+                return False
+            return True
 
     def get_q_object(self) -> Q | None:
         if not self.q:

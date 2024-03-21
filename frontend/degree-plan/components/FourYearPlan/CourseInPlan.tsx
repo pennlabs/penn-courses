@@ -52,6 +52,7 @@ interface CoursePlannedProps {
   isUsed: boolean;
   isDisabled: boolean;
   className?: string;
+  onClick?: () => void;
 }
 
 export const SkeletonCourse = () => (
@@ -62,9 +63,9 @@ export const SkeletonCourse = () => (
   </PlannedCourseContainer>
 )
 
-const CoursePlanned = ({ course, removeCourse, isUsed = false, isDisabled = false, className } : CoursePlannedProps) => {
+const CourseInPlan = ({ course, removeCourse, isUsed = false, isDisabled = false, className, onClick } : CoursePlannedProps) => {
   const [{ isDragging }, drag] = useDrag<DnDCourse, never, { isDragging: boolean }>(() => ({
-    type: ItemTypes.COURSE,
+    type: ItemTypes.COURSE_IN_PLAN,
     item: course,
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging()
@@ -72,28 +73,32 @@ const CoursePlanned = ({ course, removeCourse, isUsed = false, isDisabled = fals
   }), [course])
 
   return (
-    <Draggable isDragging={isDragging}>
-      <ReviewPanelTrigger full_code={course.full_code}>
-        <PlannedCourseContainer
-        $isDragging={isDragging}
-        $isUsed={isUsed}
-        $isDisabled={isDisabled}
-        ref={drag}
-        className={className}
-        >
-            <div>
-              {course.full_code}
-            </div>
-            {isUsed &&
-              <GrayIcon className="close-button" onClick={() => removeCourse(course.full_code)}>
-                <i className="fas fa-times"></i>
-              </GrayIcon>
-              }
-        </PlannedCourseContainer>
-      </ReviewPanelTrigger>
-    </Draggable>
+    <div onClick={onClick}>
+      <Draggable
+      isDragging={isDragging}
+      >
+        <ReviewPanelTrigger full_code={course.full_code}>
+          <PlannedCourseContainer
+          $isDragging={isDragging}
+          $isUsed={isUsed}
+          $isDisabled={isDisabled}
+          ref={drag}
+          className={className}
+          >
+              <div>
+                {course.full_code}
+              </div>
+              {isUsed &&
+                <GrayIcon className="close-button" onClick={() => removeCourse(course.full_code)}>
+                  <i className="fas fa-times"></i>
+                </GrayIcon>
+                }
+          </PlannedCourseContainer>
+        </ReviewPanelTrigger>
+      </Draggable>
+    </div>
   )
 }
 
 
-export default CoursePlanned;
+export default CourseInPlan;
