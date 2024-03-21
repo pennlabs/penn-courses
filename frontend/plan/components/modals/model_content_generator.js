@@ -3,7 +3,7 @@ import {
     renameSchedule,
     downloadSchedule,
     createScheduleOnBackend,
-    updateContactInfoBackend,
+    updateContactInfo,
     addAlertItem,
 } from "../../actions";
 import {
@@ -152,7 +152,7 @@ export const generateModalActions = (dispatch, modalKey, modalProps) => {
         case "ALERT_FORM":
             return {
                 onContactInfoChange: (email, phone) =>
-                    dispatch(updateContactInfoBackend({ email, phone })),
+                    dispatch(updateContactInfo({ email, phone })),
                 addAlert: () => dispatch(addAlertItem(modalProps.sectionId)),
             };
         default:

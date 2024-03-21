@@ -851,7 +851,7 @@ export const fetchContactInfo = () => (dispatch) => {
         .catch((error) => console.log(error));
 };
 
-export const updateContactInfoBackend = (contactInfo) => (dispatch) => {
+export const updateContactInfo = (contactInfo) => (dispatch) => {
     const profile = {
         email: contactInfo.email,
         phone:
