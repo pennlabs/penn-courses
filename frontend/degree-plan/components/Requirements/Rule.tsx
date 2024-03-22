@@ -8,6 +8,7 @@ import { useDrop } from 'react-dnd';
 import { ItemTypes } from '../dnd/constants';
 import { DarkBlueBackgroundSkeleton } from "../FourYearPlan/PanelCommon";
 import { DegreeYear, RuleTree } from './ReqPanel';
+import assert from 'assert';
 
 const RuleTitleWrapper = styled.div`
     background-color: var(--primary-color-light);
@@ -61,6 +62,21 @@ const Row = styled.div`
 const Indented = styled.div`
   margin-left: .75rem;
   margin-bottom: 1rem;
+`
+
+const PickNWrapper = styled.div`
+  background-color: var(--primary-color);
+  padding: .5rem;
+  padding-bottom: .25rem;
+  border-radius: .5rem;
+`
+
+const PickNTitle = styled.div`
+  display: flex;
+  font-weight: 500;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  justify-content: space-between;
 `
 
 
@@ -149,7 +165,29 @@ const RuleComponent = (ruleTree : RuleTree) => {
     }
 
     // otherwise, type == "INTERNAL_NODE"
-    const { children } = ruleTree; 
+    const { children, num } = ruleTree; 
+
+    if (num) {
+      assert(children.every(child => child.type == "LEAF"))
+
+      return <PickNWrapper>
+        <PickNTitle>
+          <div>Pick {num}</div>
+          {satisfied &&
+            <Icon>
+              <i className="fas fa-check-circle"></i>
+            </Icon>
+            }
+        </PickNTitle>
+            {children.map((ruleTree) => (
+              <div>
+                <RuleComponent {...ruleTree} />
+              </div>
+            ))}
+      </PickNWrapper>
+    }
+
+
     return (
       <>
         <RuleTitleWrapper onClick={() => setCollapsed(!collapsed)}>

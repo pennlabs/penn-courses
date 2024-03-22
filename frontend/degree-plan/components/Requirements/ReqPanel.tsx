@@ -135,6 +135,7 @@ interface RuleTreeLeaf extends RuleTreeBaseNode {
 }
 interface RuleTreeInternalNode extends RuleTreeBaseNode {
   type: "INTERNAL_NODE";
+  num?: number;
   children: RuleTree[];
 }
 export type RuleTree = RuleTreeLeaf | RuleTreeInternalNode;
@@ -147,17 +148,16 @@ interface RuleProps {
 }
 const computeRuleTree = ({ activeDegreePlanId, rule, rulesToFulfillments }: RuleProps): RuleTree => {
   if (rule.q) { // Rule leaf
-    // console.log('Rule is: ', rule)
     const fulfillmentsForRule: Fulfillment[] = rulesToFulfillments[rule.id] || [];
-    // console.log('fulfillments for rule: ', fulfillmentsForRule)
     const cus = fulfillmentsForRule.reduce((acc, f) => acc + (f.course?.credits || 1), 0); // default to 1 cu 
     const num = fulfillmentsForRule.length;
     const progress = Math.min(rule.credits ? cus / rule.credits : 1, rule.num ? num / rule.num : 1);
     return { activeDegreePlanId, type: "LEAF", progress, cus, num, rule, fulfillments: fulfillmentsForRule }
   }
-  const children = rule.rules.map((child) => computeRuleTree({ activeDegreePlanId, rule: child, rulesToFulfillments }))
-  const progress = children.reduce((acc, { progress }) => (progress == 1 ? 1 : 0) + acc, 0) / children.length;
-  return { activeDegreePlanId, type: "INTERNAL_NODE", children, progress, rule } // internal node
+  
+  const children = rule.rules.map((child) => computeRuleTree({ activeDegreePlanId, rule: child, rulesToFulfillments })) 
+  const progress = children.reduce((acc, { progress }) => (progress == 1 ? 1 : 0) + acc, 0) / Math.min(children.length, rule.num || Infinity);
+  return { num: rule.num || undefined, activeDegreePlanId, type: "INTERNAL_NODE", children, progress, rule } // internal node
 }
 
 
