@@ -246,7 +246,8 @@ const OnboardingPage = ({
         .map((degree) => ({
           value: degree,
           label: createMajorLabel(degree),
-        })) || [];
+        }))
+        .sort((a, b) => a.label.localeCompare(b.label)) || [];
     return majorOptions;
   }, [schools]);
 
