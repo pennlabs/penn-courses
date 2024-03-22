@@ -13020,6 +13020,11 @@ react-ga@^2.7.0:
   resolved "https://registry.npmjs.org/react-ga/-/react-ga-2.7.0.tgz"
   integrity sha512-AjC7UOZMvygrWTc2hKxTDvlMXEtbmA0IgJjmkhgmQQ3RkXrWR11xEagLGFGaNyaPnmg24oaIiaNPnEoftUhfXA==
 
+react-hook-form@^7.51.1:
+  version "7.51.1"
+  resolved "https://registry.yarnpkg.com/react-hook-form/-/react-hook-form-7.51.1.tgz#3ce5f8b5ef41903b4054a641cef8c0dc8bf8ae85"
+  integrity sha512-ifnBjl+kW0ksINHd+8C/Gp6a4eZOdWyvRv0UBaByShwU8JbVx5hTcTWEcd5VdybvmPTATkVVXk9npXArHmo56w==
+
 react-input-autosize@^2.2.1:
   version "2.2.2"
   resolved "https://registry.npmjs.org/react-input-autosize/-/react-input-autosize-2.2.2.tgz"
