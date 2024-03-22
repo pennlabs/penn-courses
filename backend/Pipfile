@@ -17,11 +17,11 @@ black = "==22.3.0"
 
 [packages]
 click = "==8.0.4"
-django = ">=3.2"
+django = ">=5"
 psycopg2 = "*"
 requests = "*"
 twilio = "*"
-channels = "<3"
+channels = "*"
 channels-redis = "*"
 phonenumbers = "*"
 celery = "<5"
