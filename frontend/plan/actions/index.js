@@ -911,7 +911,7 @@ export const updateContactInfo = (contactInfo) => (dispatch) => {
     const profile = {
         email: contactInfo.email,
         phone:
-            parsePhoneNumberFromString(contactInfo.phone, "US")?.number && "",
+            parsePhoneNumberFromString(contactInfo.phone, "US")?.number ?? "",
     };
     fetch("/accounts/me/", {
         method: "PATCH",
