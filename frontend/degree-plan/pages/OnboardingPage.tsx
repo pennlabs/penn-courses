@@ -19,12 +19,13 @@ const PanelContainer = styled.div<{ $maxWidth: string; $minWidth: string }>`
   box-shadow: 0px 0px 10px 6px rgba(0, 0, 0, 0.05);
   background-color: #ffffff;
   margin: 1rem;
-  height: 85%;
+  min-height: 85%;
   overflow: hidden; /* Hide scrollbars */
   width: ${(props) => (props.$maxWidth || props.$maxWidth ? "auto" : "100%")};
   max-width: ${(props) => (props.$maxWidth ? props.$maxWidth : "auto")};
   min-width: ${(props) => (props.$minWidth ? props.$minWidth : "auto")};
   position: relative;
+  padding-bottom: "5%";
 `;
 
 const CenteredFlexContainer = styled.div`
@@ -37,13 +38,14 @@ const CenteredFlexContainer = styled.div`
 const ColumnsContainer = styled.div`
   display: flex;
   justify-content: space-between;
-  padding-top: 1.6rem;
-  padding-left: 100px;
+  padding-top: 1%;
+  padding-left: 5%;
   gap: 20px;
-  height: 100%;
+  min-height: 100%;
 
   @media (max-width: 768px) {
     flex-direction: column;
+    padding-bottom: 5%;
   }
 `;
 
@@ -52,23 +54,33 @@ export const Column = styled.div`
   flex-direction: column;
   flex: 1;
   gap: 2rem;
-  padding-right: 3rem;
+  padding-right: 2%;
 `;
 
 const NextButtonContainer = styled.div`
-  padding-top: 3rem;
-  padding-right: 6rem;
+  padding-top: 5%;
+  padding-right: 15%;
   display: flex;
   flex-direction: row;
   justify-content: end;
+
+  @media (max-width: 768px) {
+    padding-right: 5%;
+    width: 100%;
+    justify-content: center;
+  }
 `;
 
 const NextButton = styled(Button)`
   background-color: var(--primary-color-dark);
+  @media (max-width: 768px) {
+    width: 80%;
+    margin: 0 auto;
+  }
 `;
 
 export const Label = styled.h5`
-  padding-top: 25px;
+  padding-top: 3%;
   font-size: 1rem;
   &:after {
     content: "*";
@@ -123,7 +135,7 @@ const customSelectStylesLeft = {
 const customSelectStylesRight = {
   control: (provided) => ({
     ...provided,
-    width: 500,
+    width: "80%",
     minHeight: "35px",
     height: "35px",
   }),
@@ -291,8 +303,8 @@ const OnboardingPage = ({
 
   return (
     <CenteredFlexContainer>
-      <PanelContainer $maxWidth="1400px" $minWidth="1400px">
-        <h1 style={{ paddingLeft: "100px", paddingTop: "50px" }}>
+      <PanelContainer $maxWidth="90%" $minWidth="90%">
+        <h1 style={{ paddingLeft: "5%", paddingTop: "5%" }}>
           Degree Information
         </h1>
         <ColumnsContainer>
@@ -394,6 +406,7 @@ const OnboardingPage = ({
                 style={{
                   height: "35px",
                   width: "90px",
+                  borderRadius: "7px",
                 }}
               >
                 Next
