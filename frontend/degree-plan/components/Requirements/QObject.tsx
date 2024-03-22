@@ -55,33 +55,6 @@ type ParsedQObj = Condition | Compound | QCourse | Search;
 type TransformedQObject = QCourse | Search | Or;
 
 
-
-interface CourseOptionProps {
-    full_code: QCourse["full_code"];
-    semester?: QCourse["semester"];
-    isChosen: boolean;
-    ruleIsSatisfied: boolean;
-    ruleId: Rule["id"];
-}
-const CourseOption = ({ full_code, semester, isChosen = false, ruleIsSatisfied = false, ruleId }: CourseOptionProps) => {
-    const [{ isDragging }, drag] = useDrag<DnDCourse, never, { isDragging: boolean }>(() => ({
-        type: ItemTypes.COURSE,
-        item: { full_code },
-        collect: (monitor) => ({ isDragging: !!monitor.isDragging() }),
-        canDrag: !isChosen && !ruleIsSatisfied
-    }), [isChosen, ruleIsSatisfied])
-
-    return (
-        <ReviewPanelTrigger full_code={full_code}>
-            <Draggable isDragging={isDragging}>
-                <BaseCourseContainer ref={drag} $isUsed={isChosen} $isDisabled={!isChosen && ruleIsSatisfied}>
-                    {semester ? `${full_code} (${semester})` : full_code.replace("-", " ")}
-                </BaseCourseContainer>
-            </Draggable>
-        </ReviewPanelTrigger>
-    )
-}
-
 const Row = styled.div<{ $wrap?: boolean, $gap?: string }>`
     display: flex;
     flex-direction: row;
