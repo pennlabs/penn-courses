@@ -2,9 +2,8 @@ import React, { FunctionComponent } from "react";
 import { connect } from "react-redux";
 import { ThunkDispatch } from "redux-thunk";
 import styled from "styled-components";
-import { fetchCourseDetails, deleteAlertItem } from "../../actions";
-
-import { Alert } from "../../types";
+import { fetchCourseDetails, openModal, deactivateAlertItem, deleteAlertItem } from "../../actions";
+import { Section as SectionType, Alert as AlertType } from "../../types";
 import AlertSection from "./AlertSection";
 
 const Box = styled.section<{ length: number }>`
@@ -40,9 +39,13 @@ const Box = styled.section<{ length: number }>`
 
 interface AlertsProps {
     courseInfoLoading: boolean;
-    alertedCourses: Alert[];
+    alertedCourses: AlertType[];
     contactInfo: { email: string; phone: string };
-    deleteAlert: (alertId: string, sectionId: string) => void;
+    manageAlerts?: (section: string, alerts: AlertType[]) => {
+        add: () => void;
+        remove: () => void;
+        delete: () => void;
+    };
     courseInfo: (id: string) => void;
     mobileView: boolean;
 }
@@ -76,40 +79,44 @@ const AlertsEmpty = () => (
 const Alerts: React.FC<AlertsProps> = ({
     courseInfoLoading,
     alertedCourses,
-    deleteAlert,
+    manageAlerts,
     courseInfo,
     mobileView,
-}) => (
-    <Box length={alertedCourses.length} id="alerts">
-        {alertedCourses.length === 0 ? (
-            <AlertsEmpty />
-        ) : (
-            alertedCourses
-                .map((alert) => {
-                    return (
-                        <AlertSection 
-                            alert={alert}
-                            checked={true}
-                            toggleCheck={() => {}}
-                            remove={(event) => {
-                                event.stopPropagation();
-                                deleteAlert(alert.id, alert.section);
-                            }}
-                            courseInfo={(event) => {
-                                event.stopPropagation();
-                                const codeParts = alert.section.split("-");
-                                if (!courseInfoLoading) {
-                                    courseInfo(
-                                        `${codeParts[0]}-${codeParts[1]}`
-                                    );
-                                }
-                            }}
-                        />
-                    );
-                })
-        )}
-    </Box>
-);
+}) => {
+    const isInAlerts = ({ id }: AlertType) => alertedCourses
+        .filter(({ cancelled }) => cancelled === false)
+        .map((alert: AlertType) => alert.id)
+        .indexOf(id) !== -1;
+    return(
+        <Box length={alertedCourses.length} id="alerts">
+            {alertedCourses.length === 0 ? (
+                <AlertsEmpty />
+            ) : (
+                alertedCourses
+                    .map((alert) => {
+                        return (
+                            <AlertSection
+                                key={alert.id}
+                                alert={alert}
+                                alerts={manageAlerts?.(alert.section, alertedCourses)}
+                                inAlerts={isInAlerts(alert)}
+                                courseInfo={(event) => {
+                                    event.stopPropagation();
+                                    const codeParts = alert.section.split("-");
+                                    if (!courseInfoLoading) {
+                                        courseInfo(
+                                            `${codeParts[0]}-${codeParts[1]}`
+                                        );
+                                    }
+                                }}
+                            />
+                        );
+                    })
+            )}
+        </Box>
+
+    );
+};
 
 const mapStateToProps = ({
     alerts: { alertedCourses, contactInfo },
@@ -121,7 +128,20 @@ const mapStateToProps = ({
 });
 
 const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
-    deleteAlert: (alertId: string, sectionId: string) => dispatch(deleteAlertItem(alertId, sectionId)),
+    manageAlerts: (sectionId: string, alerts: AlertType[]) => ({
+        add: () => {
+            const alertId = alerts.find((a: AlertType) => a.section === sectionId)?.id;
+            dispatch(openModal("ALERT_FORM", { sectionId: sectionId, alertId: alertId }, "Sign up for Alerts"))
+        },
+        remove: () => {
+            const alertId = alerts.find((a: AlertType) => a.section === sectionId)?.id;
+            dispatch(deactivateAlertItem(sectionId, alertId));
+        },
+        delete: () => {
+            const alertId = alerts.find((a: AlertType) => a.section === sectionId)?.id;
+            dispatch(deleteAlertItem(sectionId, alertId));
+        }
+    }),
     courseInfo: (sectionId: string) => dispatch(fetchCourseDetails(sectionId)),
 });
 

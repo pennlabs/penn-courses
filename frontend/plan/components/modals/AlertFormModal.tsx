@@ -2,9 +2,9 @@ import { isValidNumber } from "libphonenumber-js";
 import { useEffect, useState } from "react";
 
 interface AlertFormModalProps {
-    onContactInfoChange: (email: string, phone: string) => void;
+    onContactInfoChange?: (email: string, phone: string) => void;
     contactInfo: { email: string; phone: string };
-    addAlert: () => void;
+    addAlert?: () => void;
     close: () => void;
 }
 
@@ -34,8 +34,8 @@ const AlertFormModal: React.FC<AlertFormModalProps> = ({ onContactInfoChange, co
         if(!emailRef) {
             return;
         }
-        onContactInfoChange(emailRef.value, phoneRef?.value ?? "");
-        addAlert();
+        onContactInfoChange?.(emailRef.value, phoneRef?.value ?? "");
+        addAlert?.();
         close();
     }
 
@@ -49,7 +49,7 @@ const AlertFormModal: React.FC<AlertFormModalProps> = ({ onContactInfoChange, co
                     backgroundColor: emailErrorObj.error ? "#f9dcda" : "#f1f1f1",
                 }}
                 onChange={() => {
-                    setEmail(emailRef?.value || "");
+                    setEmail(emailRef?.value ?? "");
                 }}
                 placeholder="Email"
             />
@@ -62,7 +62,7 @@ const AlertFormModal: React.FC<AlertFormModalProps> = ({ onContactInfoChange, co
                     backgroundColor: phoneErrorObj.error ? "#f9dcda" : "#f1f1f1",
                 }}
                 onChange={() => {
-                    setPhone(phoneRef?.value || "");
+                    setPhone(phoneRef?.value ?? "");
                 }}
                 placeholder="Phone (optional)"
             />

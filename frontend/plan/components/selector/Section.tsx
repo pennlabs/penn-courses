@@ -245,10 +245,19 @@ export default function Section({ section, cart, inCart, alerts, inAlerts }: Sec
                         )}
                     </div>
                     {status === "C" ? (
-                        <AlertButton 
-                            alerts={alerts} 
-                            inAlerts={inAlerts} 
-                        />
+                        <div className={`popover is-popover-left`}>
+                            <AlertButton
+                                alerts={alerts}
+                                inAlerts={inAlerts}
+                            />
+        
+                            {inAlerts ||
+                                <span className="popover-content">
+                                    {" "}
+                                    Course is closed. Sign up for an alert!{" "}
+                                </span>
+                            }
+                        </div>
                     ) : (
                         <div />
                     )}

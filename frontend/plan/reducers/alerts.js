@@ -1,7 +1,9 @@
 import {
-    ADD_ALERT_ITEM,
+    REGISTER_ALERT_ITEM,
     DELETE_ALERT_ITEM,
     UPDATE_CONTACT_INFO,
+    REACTIVATE_ALERT_ITEM,
+    DEACTIVATE_ALERT_ITEM,
 } from "../actions";
 
 const initialState = {
@@ -13,10 +15,28 @@ const initialState = {
 };
 export const alerts = (state = initialState, action) => {
     switch (action.type) {
-        case ADD_ALERT_ITEM:
+        case REGISTER_ALERT_ITEM:
             return {
                 ...state,
                 alertedCourses: [...state.alertedCourses, action.alert],
+            };
+        case REACTIVATE_ALERT_ITEM:
+            return {
+                ...state,
+                alertedCourses: state.alertedCourses.map((alert) => {
+                    if (alert.section === action.sectionId)
+                        return { ...alert, cancelled: false };
+                    return alert;
+                }),
+            };
+        case DEACTIVATE_ALERT_ITEM:
+            return {
+                ...state,
+                alertedCourses: state.alertedCourses.map((alert) => {
+                    if (alert.section === action.sectionId)
+                        return { ...alert, cancelled: true };
+                    return alert;
+                }),
             };
         case DELETE_ALERT_ITEM:
             return {

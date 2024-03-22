@@ -43,7 +43,9 @@ export const ADD_CART_ITEM = "ADD_CART_ITEM";
 export const REMOVE_CART_ITEM = "REMOVE_CART_ITEM";
 export const CHANGE_SORT_TYPE = "CHANGE_SORT_TYPE";
 
-export const ADD_ALERT_ITEM = "ADD_ALERT_ITEM";
+export const REGISTER_ALERT_ITEM = "REGISTER_ALERT_ITEM";
+export const REACTIVATE_ALERT_ITEM = "REACTIVATE_ALERT_ITEM";
+export const DEACTIVATE_ALERT_ITEM = "DEACTIVATE_ALERT_ITEM";
 export const DELETE_ALERT_ITEM = "DELETE_ALERT_ITEM";
 export const UPDATE_CONTACT_INFO = "UPDATE_CONTACT_INFO";
 
@@ -500,9 +502,19 @@ export const removeCartItem = (sectionId) => ({
     sectionId,
 });
 
-export const addAlertFrontend = (alert) => ({
-    type: ADD_ALERT_ITEM,
+export const registerAlertFrontend = (alert) => ({
+    type: REGISTER_ALERT_ITEM,
     alert,
+});
+
+export const reactivateAlertFrontend = (sectionId) => ({
+    type: REACTIVATE_ALERT_ITEM,
+    sectionId,
+});
+
+export const deactivateAlertFrontend = (sectionId) => ({
+    type: DEACTIVATE_ALERT_ITEM,
+    sectionId,
 });
 
 export const deleteAlertFrontend = (sectionId) => ({
@@ -743,7 +755,7 @@ export const setCurrentUserPrimarySchedule = (user, scheduleId) => (
         .catch((error) => error.json());
 };
 
-export const addAlertItem = (sectionId) => (dispatch) => {
+export const registerAlertItem = (sectionId) => (dispatch) => {
     const registrationObj = {
         section: sectionId,
         auto_resubscribe: true,
@@ -764,7 +776,7 @@ export const addAlertItem = (sectionId) => (dispatch) => {
         .then((res) => res.json())
         .then((data) => {
             dispatch(
-                addAlertFrontend({
+                registerAlertFrontend({
                     ...registrationObj,
                     id: data.id,
                     cancelled: false,
@@ -774,7 +786,51 @@ export const addAlertItem = (sectionId) => (dispatch) => {
         });
 };
 
-export const deleteAlertItem = (alertId, sectionId) => (dispatch) => {
+export const reactivateAlertItem = (sectionId, alertId) => (dispatch) => {
+    const updateObj = {
+        cancelled: false,
+    };
+    const init = {
+        method: "PUT",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+        body: JSON.stringify(updateObj),
+    };
+    doAPIRequest(`/alert/registrations/${alertId}/`, init).then((res) => {
+        if (res.ok) {
+            dispatch(reactivateAlertFrontend(sectionId));
+        }
+    });
+};
+
+export const deactivateAlertItem = (sectionId, alertId) => (dispatch) => {
+    const updateObj = {
+        cancelled: true,
+    };
+    const init = {
+        method: "PUT",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+        body: JSON.stringify(updateObj),
+    };
+    doAPIRequest(`/alert/registrations/${alertId}/`, init).then((res) => {
+        if (res.ok) {
+            dispatch(deactivateAlertFrontend(sectionId));
+        }
+    });
+};
+
+export const deleteAlertItem = (sectionId, alertId) => (dispatch) => {
     const updateObj = {
         deleted: true,
     };
@@ -813,7 +869,7 @@ export const fetchAlerts = () => (dispatch) => {
         .then((alerts) => {
             alerts.forEach((alert) => {
                 dispatch(
-                    addAlertFrontend({
+                    registerAlertFrontend({
                         id: alert.id,
                         section: alert.section,
                         cancelled: alert.cancelled,

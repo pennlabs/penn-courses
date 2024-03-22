@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { connect } from "react-redux";
 import Section from "./Section";
 import { Section as SectionType, Alert as AlertType } from "../../types";
-import { addCartItem, openModal, deleteAlertItem, removeCartItem } from "../../actions";
+import { addCartItem, openModal, deleteAlertItem, removeCartItem, deactivateAlertItem } from "../../actions";
 
 interface SectionListProps {
     sections: SectionType[];
@@ -42,7 +42,10 @@ function SectionList({
     view,
 }: SectionListProps & SectionListStateProps & SectionListDispatchProps) {
     const isInCart = ({ id }: SectionType) => cartSections.indexOf(id) !== -1;
-    const isInAlerts = ({ id }: SectionType) => alerts.map((alert: AlertType) => alert.section).indexOf(id) !== -1;
+    const isInAlerts = ({ id }: SectionType) => alerts
+        .filter((alert: AlertType) => alert.cancelled === false)
+        .map((alert: AlertType) => alert.section)
+        .indexOf(id) !== -1;
     return (
         <ResultsContainer>
             <ul>
@@ -73,10 +76,13 @@ const mapDispatchToProps = (dispatch: (payload: any) => void) => ({
         remove: () => dispatch(removeCartItem(section.id)),
     }),
     manageAlerts: (section: SectionType, alerts: AlertType[]) => ({
-        add: () => dispatch(openModal("ALERT_FORM", { sectionId: section.id }, "Sign up for Alerts")),
+        add: () => {
+            const alertId = alerts.find((a: AlertType) => a.section === section.id)?.id;
+            dispatch(openModal("ALERT_FORM", { sectionId: section.id, alertId: alertId }, "Sign up for Alerts"))
+        },
         remove: () => {
             const alertId = alerts.find((a: AlertType) => a.section === section.id)?.id;
-            dispatch(deleteAlertItem(alertId, section.id));
+            dispatch(deactivateAlertItem(section.id, alertId));
         }
     }),
 });

@@ -4,7 +4,8 @@ import {
     downloadSchedule,
     createScheduleOnBackend,
     updateContactInfo,
-    addAlertItem,
+    registerAlertItem,
+    reactivateAlertItem,
 } from "../../actions";
 import {
     sendFriendRequest,
@@ -153,7 +154,23 @@ export const generateModalActions = (dispatch, modalKey, modalProps) => {
             return {
                 onContactInfoChange: (email, phone) =>
                     dispatch(updateContactInfo({ email, phone })),
-                addAlert: () => dispatch(addAlertItem(modalProps.sectionId)),
+                addAlert: () => {
+                    if (modalProps.alertId) {
+                        dispatch(
+                            reactivateAlertItem(
+                                modalProps.sectionId,
+                                modalProps.alertId
+                            )
+                        );
+                    } else {
+                        dispatch(
+                            registerAlertItem(
+                                modalProps.sectionId,
+                                modalProps.alertId
+                            )
+                        );
+                    }
+                },
             };
         default:
             return {};

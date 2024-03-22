@@ -2,6 +2,8 @@ import React from "react";
 import styled from "styled-components";
 import { isMobile } from "react-device-detect";
 import { Alert } from "../../types";
+import AlertButton from "./AlertButton";
+import { Section as SectionType, Alert as AlertType } from "../../types";
 
 interface AlertDetailsProps {
     alert: Alert;
@@ -50,7 +52,7 @@ const CourseDetails = ({ alert }: AlertDetailsProps) => {
     );
 };
 
-const AlertCourseButton = styled.div`
+const AlertCourseButton = styled.div.attrs({ className: "btn" })`
     flex-grow: 0;
     flex-direction: row;
     align-items: center;
@@ -92,9 +94,12 @@ const CourseTrashCan = ({ remove }: CourseTrashCanProps) => (
 
 interface AlertSectionProps {
     alert: Alert;
-    checked: boolean;
-    toggleCheck: () => void;
-    remove: (event: React.MouseEvent<HTMLDivElement>) => void;
+    inAlerts: boolean;
+    alerts?: {
+        add: () => void;
+        remove: () => void;
+        delete: () => void;
+    };
     courseInfo: (event: React.MouseEvent<HTMLDivElement>) => void;
 }
 
@@ -118,7 +123,7 @@ const AlertItem = styled.div<{ isMobile: boolean }>`
         background: #f5f5ff;
     }
 
-    &:hover i {
+    &:hover .btn i {
         cursor: pointer;
         color: #d3d3d8;
     }
@@ -126,29 +131,34 @@ const AlertItem = styled.div<{ isMobile: boolean }>`
 
 const AlertSection: React.FC<AlertSectionProps> = ({
     alert,
-    checked,
-    toggleCheck,
-    remove,
+    alerts,
+    inAlerts,
     courseInfo,
-}) => (
-    <AlertItem
-        role="switch"
-        id={alert.id}
-        aria-checked="false"
-        isMobile={isMobile}
-        onClick={toggleCheck}
-    >
-        {/* TODO: Change to AlertButton. create distinction between remove/deleting an alert */}
-        <AlertCourseButton>
-            <i
-                style={{ fontSize: "1rem", color: "#67676a" }}
-                className={`fas fa-bell`}
-            />
-        </AlertCourseButton>
-        <CourseDetails alert={alert} />
-        <CourseInfoButton courseInfo={courseInfo} />
-        <CourseTrashCan remove={remove} />
-    </AlertItem>
-);
+}) => {
+    return(
+        <AlertItem
+            role="switch"
+            id={alert.id}
+            aria-checked="false"
+            isMobile={isMobile}
+        >
+            <div style={{
+                alignItems: "center",
+                display: "flex",
+            }}>
+                <AlertButton
+                    alerts={alerts}
+                    inAlerts={inAlerts}
+                />
+            </div>
+            <CourseDetails alert={alert} />
+            <CourseInfoButton courseInfo={courseInfo} />
+            <CourseTrashCan remove={(event) => {
+                event.stopPropagation();
+                alerts?.delete();
+            }} />
+        </AlertItem>
+    )
+};
 
 export default AlertSection;
