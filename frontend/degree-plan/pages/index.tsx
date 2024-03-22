@@ -12,7 +12,6 @@ export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
 
-
   const updateUser = (newUserVal: User | null) => {
     if (!newUserVal) {
       // the user has logged out; show the login modal
@@ -33,9 +32,9 @@ export default function Home() {
               fetch(resource, init).then((res) => res.json()),
             provider: () => new Map(),
             onError: (error, key) => {
-              if (error.status !== 403 && error.status !== 404) {
-                alert(error.info);
-              }
+              // if (error.status !== 403 && error.status !== 404) {
+              //   alert(error.info);
+              // }
             },
           }}
         >
@@ -45,7 +44,7 @@ export default function Home() {
               siteName="Penn Degree Plan"
             />
           )}
-            <FourYearPlanPage user={user} updateUser={updateUser}/>
+          <FourYearPlanPage user={user} updateUser={updateUser} />
         </SWRConfig>
       </DndProvider>
     </>

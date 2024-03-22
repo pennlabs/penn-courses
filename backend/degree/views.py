@@ -101,17 +101,19 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     
     @action(detail=True, methods=["post", "delete"])
     def degrees(self, request, pk=None):
-        degree_id = request.data.get("degree_id")
-        if degree_id is None:
+        degree_ids = request.data.get("degree_ids")
+        if not isinstance(degree_ids, list):
+            raise ValidationError({"degree_ids": "This field must be a list."})
+        if degree_ids is None:
             raise ValidationError({ "degree_ids": "This field is required." })
         degree_plan = self.get_object()
 
         try:
             print("c")
             if request.method == "POST":
-                degree_plan.degrees.add(degree_id)
+                degree_plan.degrees.add(*degree_ids)
             elif request.method == "DELETE":
-                degree_plan.degrees.remove(degree_id)
+                degree_plan.degrees.remove(*degree_ids)
                 print("here")
                 return Response(status=status.HTTP_204_NO_CONTENT)
         except IntegrityError:
