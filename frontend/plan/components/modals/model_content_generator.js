@@ -163,11 +163,7 @@ export const generateModalActions = (dispatch, modalKey, modalProps) => {
                             )
                         );
                     } else {
-                        dispatch(
-                            registerAlertItem(
-                                modalProps.sectionId
-                            )
-                        );
+                        dispatch(registerAlertItem(modalProps.sectionId));
                     }
                 },
             };
