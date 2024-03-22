@@ -788,7 +788,7 @@ export const registerAlertItem = (sectionId) => (dispatch) => {
 
 export const reactivateAlertItem = (sectionId, alertId) => (dispatch) => {
     const updateObj = {
-        cancelled: false,
+        resubscribe: true,
     };
     const init = {
         method: "PUT",
