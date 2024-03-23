@@ -65,7 +65,7 @@ const Indented = styled.div`
 `
 
 const PickNWrapper = styled.div`
-  background-color: var(--primary-color);
+  background-color: var(--primary-color-light);
   padding: .5rem;
   padding-bottom: .25rem;
   border-radius: .5rem;
@@ -74,8 +74,9 @@ const PickNWrapper = styled.div`
 const PickNTitle = styled.div`
   display: flex;
   font-weight: 500;
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   margin-bottom: 1rem;
+  margin-left: .25rem;
   justify-content: space-between;
 `
 
@@ -168,11 +169,9 @@ const RuleComponent = (ruleTree : RuleTree) => {
     const { children, num } = ruleTree; 
 
     if (num) {
-      assert(children.every(child => child.type == "LEAF"))
-
       return <PickNWrapper>
         <PickNTitle>
-          <div>Pick {num}</div>
+          <div>Pick {num}:</div>
           {satisfied &&
             <Icon>
               <i className="fas fa-check-circle"></i>
