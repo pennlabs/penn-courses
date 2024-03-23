@@ -45,9 +45,14 @@ class Command(BaseCommand):
 
         created_count = 0
         for degree_file in listdir(directory):
-            year, program, degree, major, concentration = re.match(
+            degree_match = re.match(
                 r"(\d+)-(\w+)-(\w+)-(\w+)(?:-(\w+))?", degree_file
-            ).groups()
+            )
+            if not degree_match:
+                if kwargs["verbosity"]:
+                    print("Skipping {degree_file} because its name does not follow the format of a degree file.")
+                continue
+            year, program, degree, major, concentration = degree_match.groups()
             if program not in program_code_to_name:
                 if kwargs["verbosity"]:
                     print(
