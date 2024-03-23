@@ -134,8 +134,7 @@ class JSONTransformer(Transformer):
         return clause
 
 
-q_object_parser = Lark(
-    r"""
+lark_q_object = r"""
     q: "<Q:" clause ">"
 
     ?clause: condition
@@ -170,49 +169,17 @@ q_object_parser = Lark(
     %import common.WS
     %import common._STRING_ESC_INNER
     %ignore WS
-    """,
+    """
+
+q_object_parser = Lark(
+    lark_q_object,
     start="q",
     transformer=QObjectTransformer(),
     parser="lalr",
 )
 
 json_parser = Lark(
-    r"""
-    q: "<Q:" clause ">"
-
-    ?clause: condition
-           | and_clause
-           | or_clause
-           | not_clause
-          // NOTE: XOR clauses are not supported (yet...)
-
-    ?connector_clause: and_clause
-                    | or_clause
-
-    condition: "(" string "," value ")"
-    and_clause:"(AND:" [clause ("," clause)*] ")"
-    or_clause: "(OR:" [clause ("," clause)*] ")"
-    not_clause: "(NOT" connector_clause ")"
-
-    ?value: primitive
-          | array
-
-    ?primitive: string
-             | SIGNED_INT -> sint
-             | SIGNED_FLOAT -> sfloat
-             | none
-
-    array: "[" [primitive ("," primitive)*] "]"
-    none: "None"
-    string: /'.*?(?<!\\)(\\\\)*?'/ // escapable strings
-          | /".*?(?<!\\)(\\\\)*?"/
-
-    %import common.SIGNED_INT
-    %import common.SIGNED_FLOAT
-    %import common.WS
-    %import common._STRING_ESC_INNER
-    %ignore WS
-    """,
+    lark_q_object,
     start="q",
     transformer=JSONTransformer(),
     parser="lalr",
