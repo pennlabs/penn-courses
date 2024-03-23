@@ -51,6 +51,7 @@ const ReqPanelTitle = styled.div`
 
 const DegreeBody = styled.div`
   overflow-y: auto;
+  overflow-x: hidden;
 `
 
 export const DegreeYear = styled.span`
@@ -134,6 +135,7 @@ interface RuleTreeLeaf extends RuleTreeBaseNode {
 }
 interface RuleTreeInternalNode extends RuleTreeBaseNode {
   type: "INTERNAL_NODE";
+  num?: number;
   children: RuleTree[];
 }
 export type RuleTree = RuleTreeLeaf | RuleTreeInternalNode;
@@ -152,21 +154,22 @@ const computeRuleTree = ({ activeDegreePlanId, rule, rulesToFulfillments }: Rule
     const progress = Math.min(rule.credits ? cus / rule.credits : 1, rule.num ? num / rule.num : 1);
     return { activeDegreePlanId, type: "LEAF", progress, cus, num, rule, fulfillments: fulfillmentsForRule }
   }
-  const children = rule.rules.map((child) => computeRuleTree({ activeDegreePlanId, rule: child, rulesToFulfillments }))
-  const progress = children.reduce((acc, { progress }) => (progress == 1 ? 1 : 0) + acc, 0) / children.length;
-  return { activeDegreePlanId, type: "INTERNAL_NODE", children, progress, rule } // internal node
+  
+  const children = rule.rules.map((child) => computeRuleTree({ activeDegreePlanId, rule: child, rulesToFulfillments })) 
+  const progress = children.reduce((acc, { progress }) => (progress == 1 ? 1 : 0) + acc, 0) / Math.min(children.length, rule.num || Infinity);
+  return { num: rule.num || undefined, activeDegreePlanId, type: "INTERNAL_NODE", children, progress, rule } // internal node
 }
 
 
-const Degree = ({degree_id, rulesToFulfillments, activeDegreeplan, editMode, setModalKey, setModalObject, isLoading}: any) => {
+const Degree = ({degree, rulesToFulfillments, activeDegreeplan, editMode, setModalKey, setModalObject, isLoading}: any) => {
   const [collapsed, setCollapsed] = useState(false);
-  const { data: degrees, isLoading: isLoadingDegrees } = useSWR<Degree[]>(activeDegreeplan ? `/api/degree/degrees/?id=${degree_id}`: null);
+  // const { data: degrees, isLoading: isLoadingDegrees } = useSWR<Degree[]>(activeDegreeplan ? `/api/degree/degrees/?id=${degree_id}`: null);
   
-  if (isLoadingDegrees || isLoading) {
+  if (isLoading) {
     return (
       <div>
         <DegreeHeader
-        degree={{}}
+        degree={degree}
         remove={() => void {}}
         setCollapsed={setCollapsed}
         skeleton={true}
@@ -196,22 +199,21 @@ const Degree = ({degree_id, rulesToFulfillments, activeDegreeplan, editMode, set
 
   return (
     <div>
-      {degrees && 
       <DegreeHeader 
-        degree={degrees[0]} 
-        key={degree_id} 
+        degree={degree} 
+        key={degree.id} 
         remove={() => {
-          setModalObject({degreeplanId: activeDegreeplan.id, degreeId: degree_id});
+          setModalObject({degreeplanId: activeDegreeplan.id, degreeId: degree.id});
           setModalKey("degree-remove");
         }} 
         setCollapsed={setCollapsed}
         collapsed={collapsed || editMode} // Collapse degree view in edit mode
         editMode={editMode}
         skeleton={false}
-        />}
+        />
       {!collapsed && !editMode &&
       <DegreeBody>
-        {degrees && degrees[0].rules.map((rule: any) => (
+        {degree && degree.rules.map((rule: any) => (
           <RuleComponent 
           {...computeRuleTree({ activeDegreePlanId: activeDegreeplan.id, rule, rulesToFulfillments })}
           />
@@ -230,19 +232,12 @@ interface ReqPanelProps {
   handleSearch: any;
 }
 const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, setSearchClosed, handleSearch}: ReqPanelProps) => {
-
-  const [editMode, setEditMode] = React.useState(false); 
-
+  const [editMode, setEditMode] = React.useState(false);  
+  const { data: activeDegreeplanDetail = null, isLoading: isLoadingDegrees } = useSWR<DegreePlan>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}` : null); 
   const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null); 
 
-
-  /** If no degrees in the degree plan, enter edit mode */
-  React.useEffect(() => {
-      setEditMode(!isLoading && activeDegreeplan?.degree_ids?.length === 0);
-  }, [activeDegreeplan]);
-
   const rulesToFulfillments = useMemo(() => {
-    if (!fulfillments) return {}
+    if (isLoadingFulfillments || !fulfillments) return {};
     const rulesToCourses: { [rule: string]: Fulfillment[] } = {};
     fulfillments.forEach(fulfillment => {
       fulfillment.rules.forEach(rule => {
@@ -252,20 +247,21 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
         rulesToCourses[rule].push(fulfillment);
       });
     });
+    console.log('rules to fulfillments', rulesToCourses)
     return rulesToCourses;
-  }, [fulfillments])
+  }, [fulfillments, isLoadingFulfillments])
 
-  const getProgress = (rule: any) => {
-    if (rule.q) {
-      return [rulesToFulfillments[rule.id].length, rule.num] // rule.num is not the most accurate rep of number of reqs
-    }
-    let satisfied = 0, total = 0;
-    for (let i = 0; i < rule.rules.length; i++) {
-      const [satisfiedByRule, totalByRule] = getProgress(rule.rules[i]);
-      satisfied += satisfiedByRule; total += totalByRule;
-    }
-    return [satisfied, total];
-  } 
+  // const getProgress = (rule: any) => {
+  //   if (rule.q) {
+  //     return [rulesToFulfillments[rule.id].length, rule.num] // rule.num is not the most accurate rep of number of reqs
+  //   }
+  //   let satisfied = 0, total = 0;
+  //   for (let i = 0; i < rule.rules.length; i++) {
+  //     const [satisfiedByRule, totalByRule] = getProgress(rule.rules[i]);
+  //     satisfied += satisfiedByRule; total += totalByRule;
+  //   }
+  //   return [satisfied, total];
+  // } 
 
   return(
     <PanelContainer>
@@ -277,11 +273,12 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
       </PanelHeader>
       {!activeDegreeplan ? <ReqPanelBody><Degree isLoading={true}/></ReqPanelBody> :
       <>
-        {!activeDegreeplan.degree_ids ? <EmptyPanel /> :
+        {activeDegreeplanDetail && 
         <ReqPanelBody>
-          {activeDegreeplan.degree_ids.map(degree_id => (
+          {activeDegreeplanDetail.degrees.length == 0 && !editMode && <EmptyPanel />}
+          {activeDegreeplanDetail.degrees.map(degree => (
             <Degree 
-            degree_id={degree_id} 
+            degree={degree} 
             rulesToFulfillments={rulesToFulfillments} 
             activeDegreeplan={activeDegreeplan} 
             setSearchClosed={setSearchClosed} 
@@ -292,8 +289,7 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
             isLoading={isLoading}
             />
           ))}
-          {editMode && 
-          <AddButton role="button" onClick={() => {
+          {editMode && <AddButton role="button" onClick={() => {
             setModalObject(activeDegreeplan);
             setModalKey("degree-add");
           }}>

@@ -1,7 +1,7 @@
 
 
 import { Ref } from "react";
-import CoursePlanned, { PlannedCourseContainer, SkeletonCourse } from "./CoursePlanned";
+import CoursePlanned, { PlannedCourseContainer, SkeletonCourse } from "./CourseInPlan";
 import styled from "@emotion/styled";
 import { Course, Fulfillment } from "@/types";
 

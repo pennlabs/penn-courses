@@ -8,6 +8,7 @@ import { useDrop } from 'react-dnd';
 import { ItemTypes } from '../dnd/constants';
 import { DarkBlueBackgroundSkeleton } from "../FourYearPlan/PanelCommon";
 import { DegreeYear, RuleTree } from './ReqPanel';
+import assert from 'assert';
 
 const RuleTitleWrapper = styled.div`
     background-color: var(--primary-color-light);
@@ -61,6 +62,21 @@ const Row = styled.div`
 const Indented = styled.div`
   margin-left: .75rem;
   margin-bottom: 1rem;
+`
+
+const PickNWrapper = styled.div`
+  background-color: var(--primary-color);
+  padding: .5rem;
+  padding-bottom: .25rem;
+  border-radius: .5rem;
+`
+
+const PickNTitle = styled.div`
+  display: flex;
+  font-weight: 500;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  justify-content: space-between;
 `
 
 
@@ -119,9 +135,13 @@ const RuleComponent = (ruleTree : RuleTree) => {
         { idKey: "full_code",
         createDefaultOptimisticData: { semester: null, rules: [] }
     });
+
     const [{ isOver, canDrop }, drop] = useDrop<DnDCourse, never, { isOver: boolean, canDrop: boolean }>({
-        accept: ItemTypes.COURSE,
-        drop: (course: DnDCourse) => void createOrUpdate({ rules: [rule.id] }, course.full_code), // TODO: this doesn't handle fulfillments that already have a rule
+        accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_DOCK], 
+        drop: (course: DnDCourse) => {
+          createOrUpdate({ rules: [rule.id] }, course.full_code)
+
+        }, // TODO: this doesn't handle fulfillments that already have a rule
         canDrop: () => { return !satisfied && !!rule.q },
         collect: monitor => ({
           isOver: !!monitor.isOver() && !satisfied,
@@ -134,7 +154,7 @@ const RuleComponent = (ruleTree : RuleTree) => {
       const { fulfillments, cus, num } = ruleTree;
       return (
         <RuleLeafWrapper $isDroppable={canDrop} $isOver={isOver} ref={drop}>
-            <RuleLeaf q_json={rule.q_json} rule={rule} fulfillmentsForRule={fulfillments} satisfied={satisfied} />
+            <RuleLeaf q_json={rule.q_json} rule={rule} fulfillmentsForRule={fulfillments} satisfied={satisfied} activeDegreePlanId={activeDegreePlanId}/>
             <div>
               {rule.credits && <CusCourses>{cus} / {rule.credits} cus</CusCourses>}
               {" "}
@@ -145,7 +165,29 @@ const RuleComponent = (ruleTree : RuleTree) => {
     }
 
     // otherwise, type == "INTERNAL_NODE"
-    const { children } = ruleTree; 
+    const { children, num } = ruleTree; 
+
+    if (num) {
+      assert(children.every(child => child.type == "LEAF"))
+
+      return <PickNWrapper>
+        <PickNTitle>
+          <div>Pick {num}</div>
+          {satisfied &&
+            <Icon>
+              <i className="fas fa-check-circle"></i>
+            </Icon>
+            }
+        </PickNTitle>
+            {children.map((ruleTree) => (
+              <div>
+                <RuleComponent {...ruleTree} />
+              </div>
+            ))}
+      </PickNWrapper>
+    }
+
+
     return (
       <>
         <RuleTitleWrapper onClick={() => setCollapsed(!collapsed)}>

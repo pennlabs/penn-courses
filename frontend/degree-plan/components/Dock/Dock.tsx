@@ -3,7 +3,7 @@ import styled from '@emotion/styled';
 import { DarkBlueIcon } from '../Requirements/QObject';
 import React, { useContext, useEffect } from "react";
 import { useDrop } from "react-dnd";
-import { Course, DegreePlan, DnDCourse, Fulfillment, IDockedCourse, User } from "@/types";
+import { Course, DegreePlan, DnDCourse, DockedCourse, Fulfillment, User } from "@/types";
 import { ItemTypes } from "../dnd/constants";
 import { SearchPanelContext } from '../Search/SearchPanel';
 import { useSWRCrud } from '@/hooks/swrcrud';
@@ -11,7 +11,8 @@ import useSWR, { useSWRConfig } from 'swr';
 import { DarkBlueBackgroundSkeleton } from "../FourYearPlan/PanelCommon";
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
 import _ from 'lodash';
-import CoursePlanned from '../FourYearPlan/CoursePlanned';
+import CoursePlanned from '../FourYearPlan/CourseInPlan';
+import CourseInDock from './CourseInDock';
 
 const DockWrapper = styled.div`
     z-index: 1;
@@ -83,8 +84,18 @@ const Logo = styled.img`
     flex-shrink: 0;
 `
 
-const DockedCourse = styled(CoursePlanned)`
+
+const DockedCourseItem = styled(CourseInDock)`
     background: var(--background-grey);
+` 
+
+const AnimatedDockedCourseItem = styled(CourseInDock)`
+    z-index: 1000;
+    background: var(--background-grey);
+    animation-name: jump;
+      animation-duration: 3s;
+      animation-iteration-count: 1;
+      animation-timing-function: linear;
 ` 
 
 interface DockProps {
@@ -93,39 +104,28 @@ interface DockProps {
     user: User | null;
     activeDegreeplanId: DegreePlan["id"];
 }
+
 const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
+    // const [courseAdded, setCourseAdded] = React.useState(false);
     const { searchPanelOpen, setSearchPanelOpen, setSearchRuleQuery, setSearchRuleId } = useContext(SearchPanelContext)
-    const [dockedCourses, setDockedCourses] = React.useState<string[]>([]);
-    const { createOrUpdate, remove } = useSWRCrud<IDockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
-    const { data: fulfillments = [], isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplanId ? `/api/degree/degreeplans/${activeDegreeplanId}/fulfillments` : null);    
-    const { createOrUpdate, remove: deleteFulfillment } = useSWRCrud<Fulfillment>(`/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`, { idKey: "full_code" });
-    const {data: dockedCourseObjs = [], isLoading} = useSWR<IDockedCourse[]>(user ? `/api/degree/docked` : null); 
+    const { createOrUpdate } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
+    const {data: dockedCourses = [], isLoading} = useSWR<DockedCourse[]>(user ? `/api/degree/docked` : null); 
 
-    const removeDockedCourse = (full_code: string) => {
-        /** Preemtively update frontend */
-        setDockedCourses((dockedCourses) => dockedCourses.filter(c => c !== full_code));
-        /** Update backend */
-        remove(full_code);
-        deleteFulfillment(full_code)
-    }
-
-    useEffect(() => {
-        setDockedCourses([
-            ...dockedCourseObjs.map(obj => obj.full_code)
-        ]);
-    }, [dockedCourseObjs])
+    // Returns a boolean that indiates whether this is the first render
+    const useIsMount = () => {
+        const isMountRef = React.useRef(true);
+        useEffect(() => {
+          isMountRef.current = false;
+        }, []);
+        return isMountRef.current;
+      };
+    
+    const isMount = useIsMount();
 
     const [{ isOver, canDrop }, drop] = useDrop(() => ({
-        accept: ItemTypes.COURSE,
+        accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_REQ],
         drop: (course: DnDCourse) => {
-            console.log("DROPPED", course.full_code, 'from', course.semester);
-            const repeated = dockedCourses.filter(c => c === course.full_code)
-            if (!repeated.length) {
-                /** Preemtively update frontend */
-                setDockedCourses((dockedCourses) => [...dockedCourses, course.full_code]);
-                /** Update backend */
-                createOrUpdate({"full_code": course.full_code}, course.full_code);
-            }
+           createOrUpdate({"full_code": course.full_code}, course.full_code);
         },
         collect: monitor => ({
           isOver: !!monitor.isOver(),
@@ -133,19 +133,17 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
         }),
     }), []);
 
-    useEffect(() => console.log(`dropped! ${isOver}`), [isOver])
-
-    const dockedCoursesComponent = isLoading ?
-        <CenteringCourseDock>
-            <DarkBlueBackgroundSkeleton width="20rem"/>
-        </CenteringCourseDock> 
-         :
-        !dockedCourses.length ? <CenteringCourseDock>Drop courses in the dock for later.</CenteringCourseDock> :
-        <DockedCourses>
-            {dockedCourses.toReversed().map((full_code) => 
-                <DockedCourse removeCourse={removeDockedCourse} course={{ full_code }} isUsed isDisabled={false} />
-            )}
-        </DockedCourses>
+    // React.useEffect(() => {
+    //     if (!isMount) {
+    //         console.log('future render');
+    //         setCourseAdded(true);
+    //         setTimeout(() => {
+    //             setCourseAdded(false);
+    //         }, 3000);
+    //     } else {
+    //         console.log('first render');
+    //     }
+    // }, [isMount, dockedCourses]);
 
     return (
         <DockWrapper ref={drop} >
@@ -169,7 +167,28 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
                     </DarkBlueIcon>
                 </SearchIconContainer>
                 <DockedCoursesWrapper>
-                    {dockedCoursesComponent}
+                    {isLoading ?
+                    <CenteringCourseDock>
+                        <DarkBlueBackgroundSkeleton width="20rem"/>
+                    </CenteringCourseDock> 
+                    :
+                    !dockedCourses.length ? <CenteringCourseDock>Drop courses in the dock for later.</CenteringCourseDock> :
+                        // courseAdded ?
+                        // <DockedCourses>
+                        //     {dockedCourses.map((course, i) => {
+                        //         if (i == dockedCourses.length - 1) {
+                        //             return <AnimatedDockedCourseItem course={course} isUsed isDisabled={false} />
+                        //         }
+                        //         return <DockedCourseItem course={course} isUsed isDisabled={false} />
+                        //     }
+                        //     )}
+                        // </DockedCourses>
+                        // :
+                        <DockedCourses>
+                            {dockedCourses.map((course) => 
+                                <AnimatedDockedCourseItem course={course} isUsed isDisabled={false} />
+                            )}
+                        </DockedCourses>}
                 </DockedCoursesWrapper>
                 <Logo src='pdp-logo.svg' width='30' height='45'/>
             </DockContainer>

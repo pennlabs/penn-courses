@@ -8,10 +8,16 @@ import type {
   Semester,
 } from "@/types";
 import React, { useState } from "react";
-import { deleteFetcher, postFetcher, useSWRCrud } from "@/hooks/swrcrud";
+import {
+  deleteFetcher,
+  getFetcher,
+  postFetcher,
+  useSWRCrud,
+} from "@/hooks/swrcrud";
 import useSWR, { useSWRConfig } from "swr";
 import ModalContainer from "../common/ModalContainer";
 import Select from "react-select";
+import useSWRMutation from "swr/mutation";
 
 export type ModalKey =
   | "plan-create"
@@ -60,12 +66,12 @@ const ModalInput = styled.input`
 const ModalTextWrapper = styled.div`
   text-align: start;
   width: 100%;
-`
+`;
 
 const ModalText = styled.div`
   color: var(--modal-text-color);
   font-size: 0.87rem;
-`
+`;
 
 const ModalButton = styled.button`
   margin: 0px 0px 0px 0px;
@@ -84,7 +90,7 @@ const ButtonRow = styled.div<{ $center?: boolean }>`
   flex-direction: row;
   justify-content: ${(props) => (props.$center ? "center" : "flex-end")};
   gap: 0.5rem;
-`
+`;
 
 const CancelButton = styled.button`
   margin: 0px 0px 0px 0px;
@@ -95,7 +101,7 @@ const CancelButton = styled.button`
   padding: 0.25rem 0.5rem;
   color: var(--modal-button-color);
   border: none;
-`
+`;
 
 const SelectList = styled.div`
   display: flex;
@@ -103,7 +109,7 @@ const SelectList = styled.div`
   gap: 1.5rem;
   align-items: left;
   width: 100%;
-`
+`;
 
 const DegreeAddInterior = styled.div`
   display: flex;
@@ -111,8 +117,7 @@ const DegreeAddInterior = styled.div`
   gap: 2rem;
   width: 100%;
   padding: 1.2rem 2rem 280px;
-`
-
+`;
 
 interface RemoveDegreeProps {
   degreeplanId: number;
@@ -126,7 +131,7 @@ interface RemoveSemesterProps {
 interface ModalInteriorProps {
   modalKey: ModalKey;
   modalObject: DegreePlan | null | RemoveSemesterProps | RemoveDegreeProps;
-  setActiveDegreeplan: (arg0: DegreePlan) => void;
+  setActiveDegreeplan: (arg0: DegreePlan | null) => void;
   close: () => void;
 }
 const ModalInterior = ({
@@ -140,29 +145,32 @@ const ModalInterior = ({
     update: updateDegreeplan,
     remove: deleteDegreeplan,
   } = useSWRCrud<DegreePlan>("/api/degree/degreeplans");
+
   const { mutate } = useSWRConfig();
 
-  const create_degreeplan = (name: string) => {
-    createDegreeplan({ name }).then(
-      (new_) => new_ && setActiveDegreeplan(new_)
-    );
+  const add_degreeplan = async (name: string) => {
+    const _new = await postFetcher("/api/degree/degreeplans", { name: name });
+    await mutate("/api/degree/degreeplans"); // use updated degree plan returned
+    setActiveDegreeplan(_new);
   };
+
+  const delete_degreeplan = async (id: number) => {
+    await deleteFetcher(`/api/degree/degreeplans/${id}`);
+    await mutate("/api/degree/degreeplans"); // use updated degree plan returned
+  };
+
   const [school, setSchool] = useState<SchoolOption>();
   const [major, setMajor] = useState<MajorOption>();
-
   const [name, setName] = useState<string>("");
-  // const [degreeId, setDegreeId] = useState<number | null>(null);
 
   const { data: degrees, isLoading: isLoadingDegrees } =
     useSWR<DegreeListing[]>(`/api/degree/degrees`);
 
   const defaultSchools = ["BSE", "BA", "BAS", "BS"];
-
   const schoolOptions = defaultSchools.map((d) => ({
     value: d,
     label: d,
   }));
-  // console.log('schooOptions', schoolOptions);
 
   /** Create label for major listings */
   const createMajorLabel = (degree: DegreeListing) => {
@@ -185,37 +193,23 @@ const ModalInterior = ({
     return majorOptions;
   }, [school]);
 
-  if (!modalKey || !modalObject) return <div></div>;
+  if (!modalKey && !modalObject) return <div></div>;
 
-  const add_degree = async (degreeplanId, degreeId) => {
+  const add_degree = async (degreeplanId: number, degreeId: number) => {
+    // const { mutate } = useSWR(`/api/degree/degreeplans/${degreeplanId}/degrees`, getFetcher);
     const updated = await postFetcher(
       `/api/degree/degreeplans/${degreeplanId}/degrees`,
       { degree_ids: [degreeId] }
-    ); // add degree
-    mutate(`/api/degree/degreeplans/${degreeplanId}`, updated, {
-      populateCache: true,
-      revalidate: true,
-    }); // use updated degree plan returned
-    mutate(
-      (key) =>
-        key &&
-        key.startsWith(`/api/degree/degreeplans/${degreeplanId}/fulfillments`)
-    ); // refetch the fulfillments
+    );
+    await mutate(`/api/degree/degreeplans/${degreeplanId}`); // use updated degree plan returned
+    await mutate(`/api/degree/degreeplans/${degreeplanId}/fulfillments`);
   };
-  const remove_degree = async (degreeplanId, degreeId) => {
-    const updated = await deleteFetcher(
-      `/api/degree/degreeplans/${degreeplanId}/degrees`,
-      { degree_ids: [degreeId] }
-    ); // remove degree
-    mutate(`/api/degree/degreeplans/${degreeplanId}`, updated, {
-      populateCache: true,
-      revalidate: false,
-    }); // use updated degree plan returned
-    mutate(
-      (key) =>
-        key &&
-        key.startsWith(`/api/degree/degreeplans/${degreeplanId}/fulfillments`)
-    ); // refetch the fulfillments
+
+  const remove_degree = async (degreeplanId: number, degreeId: number) => {
+    await deleteFetcher(`/api/degree/degreeplans/${degreeplanId}/degrees`, {
+      degree_ids: [degreeId],
+    }); // remove degree
+    await mutate(`/api/degree/degreeplans/${degreeplanId}`); // use updated degree plan returned
   };
 
   switch (modalKey) {
@@ -229,12 +223,11 @@ const ModalInterior = ({
             onChange={(e) => setName(e.target.value)}
           />
           <ButtonRow>
-            <CancelButton onClick={close}>
-              Cancel
-            </CancelButton>
+            <CancelButton onClick={close}>Cancel</CancelButton>
             <ModalButton
               onClick={() => {
-                create_degreeplan(name);
+                add_degreeplan(name);
+
                 close();
               }}
             >
@@ -255,7 +248,7 @@ const ModalInterior = ({
           {/* <ButtonRow> */}
           <ModalButton
             onClick={() => {
-              updateDegreeplan({ name }, modalObject.id)
+              updateDegreeplan({ name }, modalObject.id);
               close();
             }}
           >
@@ -267,19 +260,21 @@ const ModalInterior = ({
     case "plan-remove":
       return (
         <ModalInteriorWrapper>
-            <ModalTextWrapper>
-              <ModalText>Are you sure you want to remove this degree plan?</ModalText>
-            </ModalTextWrapper>
-            <ButtonRow $center={true}>
-              <ModalButton
-                onClick={() => {
-                  deleteDegreeplan(modalObject.id);
-                  close();
-                }}
-              >
-                Remove
-              </ModalButton>
-            </ButtonRow>
+          <ModalTextWrapper>
+            <ModalText>
+              Are you sure you want to remove this degree plan?
+            </ModalText>
+          </ModalTextWrapper>
+          <ButtonRow $center={true}>
+            <ModalButton
+              onClick={() => {
+                delete_degreeplan(modalObject.id);
+                close();
+              }}
+            >
+              Remove
+            </ModalButton>
+          </ButtonRow>
         </ModalInteriorWrapper>
       );
     case "degree-add":
@@ -293,7 +288,7 @@ const ModalInterior = ({
                 onChange={(selectedOption) => setSchool(selectedOption)}
                 isClearable
                 placeholder="Select School or Program"
-                isLoading={isLoadingDegrees}
+                isLoading={false}
               />
               <Select
                 options={getMajorOptions()}
@@ -301,7 +296,11 @@ const ModalInterior = ({
                 onChange={(selectedOption) => setMajor(selectedOption)}
                 isClearable
                 placeholder={
-                  school ? "Major - Concentration" : "Please Select Program First"
+                  school
+                    ? isLoadingDegrees
+                      ? "loading programs"
+                      : "Major - Concentration"
+                    : "Please Select Program First"
                 }
                 isLoading={isLoadingDegrees}
               />
@@ -324,8 +323,11 @@ const ModalInterior = ({
       return (
         <ModalInteriorWrapper>
           <ModalTextWrapper>
-              <ModalText>Are you sure you want to remove this degree? All of your planning for this degree will be lost</ModalText>
-            </ModalTextWrapper>
+            <ModalText>
+              Are you sure you want to remove this degree? All of your planning
+              for this degree will be lost
+            </ModalText>
+          </ModalTextWrapper>
           <ModalButton
             onClick={() => {
               remove_degree(modalObject.degreeplanId, modalObject.degreeId);
@@ -340,8 +342,11 @@ const ModalInterior = ({
       return (
         <ModalInteriorWrapper>
           <ModalTextWrapper>
-              <ModalText>Are you sure you want to remove this semester? All of your planning for this semester will be lost</ModalText>
-            </ModalTextWrapper>
+            <ModalText>
+              Are you sure you want to remove this semester? All of your
+              planning for this semester will be lost
+            </ModalText>
+          </ModalTextWrapper>
           <ModalButton
             onClick={() => {
               modalObject.helper();
