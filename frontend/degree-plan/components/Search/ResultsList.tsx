@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import styled from '@emotion/styled';
 import Course, { SkeletonCourse } from "./Course";
-import { Course as CourseType, DegreePlan, Fulfillment, Rule, SortMode } from "../../types";
+import { Course as CourseType, DegreePlan, DockedCourse, Fulfillment, Rule, SortMode } from "../../types";
 import { useSWRCrud } from "@/hooks/swrcrud";
 
 const goodEasy = ({ difficulty, course_quality: courseQuality }: CourseType) =>
@@ -15,7 +15,7 @@ const CourseListContainer = styled.div`
     height: 100%;
     display: flex;
     flex-direction: column;
-    min-height: 0;
+    min-height: 100%;
     overflow: hidden;
 `;
 
@@ -47,28 +47,33 @@ const CoursesContainer = styled.ul`
 `;
 
 
-export interface CourseListProps {
+export interface ResultListProps {
     courses: CourseType[];
     getCourse: (id: string) => void;
     sortMode: SortMode;
     recCoursesId: string[];
     activeDegreeplanId: DegreePlan["id"] | null;
-    ruleId: Rule["id"];
+    fulfillments: Fulfillment[],
+    ruleId: Rule["id"] | null;
     isLoading: boolean;
 }
 const ResultsList = ({
     ruleId,
     activeDegreeplanId,
+    fulfillments,
     courses,
     sortMode,
     isLoading
-}: CourseListProps) => {
+}: ResultListProps) => {
     // TODO: what if activeDegreeplan is not defined
-    const { createOrUpdate } = useSWRCrud<Fulfillment>(
+    const { createOrUpdate: createOrUpdateFulfillment } = useSWRCrud<Fulfillment>(
         `/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`,
-        { idKey: "full_code",
-        createDefaultOptimisticData: { semester: null, rules: [] }
-    });
+        { 
+            idKey: "full_code",
+            createDefaultOptimisticData: { semester: null, rules: [] }
+        }
+    );
+    const { createOrUpdate: createOrUpdateDockedCourse } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
 
     return (
         <CourseListContainer>
@@ -82,9 +87,15 @@ const ResultsList = ({
                 <Course
                     key={course.id + course.semester}
                     course={course}
-                    onClick={() => createOrUpdate({ rules: [ruleId] }, course.full_code)}
-                    isStar={false}
-                />) : 
+                    onClick={() => {
+                        if (ruleId) {
+                            const rules = fulfillments.find(fulfillment => fulfillment.full_code == course.full_code)?.rules || [];
+                            createOrUpdateFulfillment({ rules: [...rules, ruleId] }, course.id);
+                        } else createOrUpdateDockedCourse({}, course.id);
+                    }}
+                    // star means the course is a fulfillment
+                    isStar={!!fulfillments.find((fulfillment) => fulfillment.full_code == course.full_code)}
+                />) :
                 Array.from(Array(3).keys()).map(() => <SkeletonCourse />)
                 }
             </CoursesContainer>

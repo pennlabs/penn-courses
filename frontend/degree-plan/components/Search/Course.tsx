@@ -5,9 +5,10 @@ import { ItemTypes } from "../dnd/constants";
 
 import Badge from "./Badge";
 import { Draggable } from "../common/DnD";
-import { Course as CourseType } from "@/types";
+import { Course as CourseType, DnDCourse, Rule } from "@/types";
 import Skeleton from "react-loading-skeleton";
 import 'react-loading-skeleton/dist/skeleton.css'
+import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
 
 // import { Course as CourseType } from "../../types";
 // import { Icon } from "../bulma_derived_components";
@@ -126,6 +127,7 @@ export const SkeletonCourse = () => (
 
 interface CourseProps {
     course: CourseType;
+    ruleId: Rule["id"] | null,
     onClick: () => void;
     isRecCourse?: boolean;
     onClickDelete?: () => void;
@@ -134,15 +136,16 @@ interface CourseProps {
 
 export default function Course({
     course,
+    ruleId,
     onClick,
     isRecCourse,
     onClickDelete,
     isStar,
 }: CourseProps) {
     /** React dnd */
-    const [{ isDragging }, drag, dragPreview] = useDrag(() => ({
-        type: ItemTypes.COURSE,
-        item: {full_code: course.id, semester:-1},
+    const [{ isDragging }, drag, dragPreview] = useDrag<DnDCourse>(() => ({
+        type: ItemTypes.COURSE_IN_REQ,
+        item: {full_code: course.id, semester:-1, rule_id: ruleId},
         collect: (monitor) => ({
             isDragging: !!monitor.isDragging(),
         })
@@ -150,28 +153,30 @@ export default function Course({
 
     return (
         <RowSelectors>
-            <CourseContainer>
-                <CourseInfoContainer
-                    onClick={onClick}
-                    role="button"
-                >   
-                    <CourseIdentityContainer ref={drag}>
-                        <Draggable isDragging={isDragging}>
-                            <CourseIDContainer>
-                                <CourseID>{course.id.replace(/-/g, " ")}</CourseID>
-                            </CourseIDContainer>
-                            <CourseTitle>{course.title}</CourseTitle>
-                        </Draggable>
-                    </CourseIdentityContainer>
-                    
-                    <CourseQualityContainer>
-                        <Badge value={course.course_quality} />
-                    </CourseQualityContainer>
-                    <CourseDifficultyContainer>
-                        <Badge value={course.difficulty} />
-                    </CourseDifficultyContainer>
-                </CourseInfoContainer>
-            </CourseContainer>
+            <ReviewPanelTrigger full_code={course.full_code}>
+                <CourseContainer>
+                    <CourseInfoContainer
+                        onClick={onClick}
+                        role="button"
+                    >   
+                        <CourseIdentityContainer ref={drag}>
+                            <Draggable isDragging={isDragging}>
+                                <CourseIDContainer>
+                                    <CourseID>{course.id.replace(/-/g, " ")}</CourseID>
+                                </CourseIDContainer>
+                                <CourseTitle>{course.title}</CourseTitle>
+                            </Draggable>
+                        </CourseIdentityContainer>
+                        
+                        <CourseQualityContainer>
+                            <Badge value={course.course_quality} />
+                        </CourseQualityContainer>
+                        <CourseDifficultyContainer>
+                            <Badge value={course.difficulty} />
+                        </CourseDifficultyContainer>
+                    </CourseInfoContainer>
+                </CourseContainer>
+            </ReviewPanelTrigger>
         </RowSelectors>
     );
 }

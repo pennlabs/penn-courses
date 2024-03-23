@@ -74,7 +74,7 @@ const SearchConditionWrapper = styled(BaseCourseContainer)`
     display: flex;
     flex-wrap: wrap;
     gap: .5rem;
-    background-color: #EDF1FC;
+    background-color: var(--primary-color-light);
     box-shadow: 0px 0px 14px 2px rgba(0, 0, 0, 0.05);
     cursor: pointer;
 `
@@ -173,7 +173,7 @@ interface SearchConditionProps extends SearchConditionInnerProps {
     ruleQuery: string;
 }
 const SearchCondition = ({ ruleId, ruleQuery, fulfillments, ruleIsSatisfied, q}: SearchConditionProps) => {
-    const { setSearchPanelOpen, setSearchRuleQuery, setSearchRuleId } = useContext(SearchPanelContext);
+    const { setSearchPanelOpen, setSearchRuleQuery, setSearchRuleId, setSearchFulfillments } = useContext(SearchPanelContext);
 
     return (
         <SearchConditionWrapper $isDisabled={ruleIsSatisfied}>
@@ -183,6 +183,7 @@ const SearchCondition = ({ ruleId, ruleQuery, fulfillments, ruleIsSatisfied, q}:
                 setSearchRuleQuery(ruleQuery);
                 setSearchRuleId(ruleId);
                 setSearchPanelOpen(true);
+                setSearchFulfillments(fulfillments)
             }}
             >
                 <i className="fas fa-search fa-sm"/>

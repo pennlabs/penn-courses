@@ -8,7 +8,7 @@ import {
 // import Plan from "../components/example/Plan";
 import styled from "@emotion/styled";
 import useSWR, { useSWRConfig } from "swr";
-import { Course, DegreePlan, Options, Rule } from "@/types";
+import { Course, DegreePlan, Fulfillment, Options, Rule } from "@/types";
 import ReviewPanel from "@/components/Infobox/ReviewPanel";
 import { ReviewPanelContext } from "@/components/Infobox/ReviewPanel";
 import DegreeModal, { ModalKey } from "@/components/FourYearPlan/DegreeModal";
@@ -105,17 +105,20 @@ const FourYearPlanPage = ({
   // search panel
   const [searchPanelOpen, setSearchPanelOpen] = useState<boolean>(false);
   const [searchRuleId, setSearchRuleId] = useState<Rule["id"] | null>(null);
-  const [searchRuleQuery, setSearchRuleQuery] = useState<string | null>(null); // a query object 
+  const [searchRuleQuery, setSearchRuleQuery] = useState<string | null>(null); // a query object
+  const [searchFulfillments, setSearchFulfillments] = useState<Fulfillment[]>([]); // fulfillments matching the ruleId
 
   return (
     <SearchPanelContext.Provider
       value={{
-        setSearchPanelOpen: setSearchPanelOpen,
-        searchPanelOpen: searchPanelOpen,
-        setSearchRuleId: setSearchRuleId,
-        searchRuleId: searchRuleId,
-        setSearchRuleQuery: setSearchRuleQuery,
-        searchRuleQuery: searchRuleQuery,
+        setSearchPanelOpen,
+        searchPanelOpen,
+        setSearchRuleId,
+        searchRuleId,
+        setSearchRuleQuery,
+        searchRuleQuery,
+        setSearchFulfillments,
+        searchFulfillments
       }}
     >
       <ReviewPanelContext.Provider

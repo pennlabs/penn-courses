@@ -2,7 +2,7 @@ import React, { createContext, useContext } from "react";
 import useSWR from "swr";
 import ResultsList from "./ResultsList";
 import styled from "@emotion/styled";
-import { DegreePlan, Rule, Course as CourseType } from "@/types";
+import { DegreePlan, Rule, Course as CourseType, Fulfillment } from "@/types";
 import { PanelHeader } from "../FourYearPlan/PanelCommon";
 import { GrayIcon } from "../common/bulma_derived_components";
 
@@ -11,6 +11,8 @@ interface SearchPanelContextType {
     searchPanelOpen: boolean;
     setSearchRuleId: (arg0: Rule["id"] | null) => void;
     searchRuleId: Rule["id"] | null;
+    setSearchFulfillments: (arg0: Fulfillment[]) => void,
+    searchFulfillments: Fulfillment[],
     setSearchRuleQuery: (arg0: string | null) => void;
     searchRuleQuery: string | null; // the q string associated with the rule
 }
@@ -20,6 +22,8 @@ export const SearchPanelContext = createContext<SearchPanelContextType>({
     searchPanelOpen: false,
     setSearchRuleId: (arg0) => {},
     searchRuleId: null,
+    setSearchFulfillments: (arg0) => {},
+    searchFulfillments: [],
     setSearchRuleQuery: (arg0) => {},
     searchRuleQuery: ""
 });
@@ -76,7 +80,12 @@ const SearchPanelHeader = styled(PanelHeader)`
 `
 
 export const SearchPanel = ({ activeDegreeplanId }: { activeDegreeplanId: DegreePlan["id"] | null }) => {
-    const { setSearchPanelOpen, searchRuleId: ruleId, searchRuleQuery: ruleQuery }= useContext(SearchPanelContext); 
+    const { 
+        setSearchPanelOpen, 
+        searchRuleId: ruleId, 
+        searchRuleQuery: ruleQuery,
+        searchFulfillments: fulfillments
+    }= useContext(SearchPanelContext); 
 
     // queryString and searchRuleQuery are different (queryString is the actual query e.g., "World Civ",
     // and searchRuleQuery is a q object)
@@ -110,7 +119,7 @@ export const SearchPanel = ({ activeDegreeplanId }: { activeDegreeplanId: Degree
                         placeholder={!ruleId ? "Search for a course!" : `Filtering for ${ruleQuery ? ruleQuery : 'a requirement'}`}
                     />
                 </SearchContainer>
-                <SearchResult ruleId={ruleId} query={queryString} activeDegreeplanId={activeDegreeplanId}/> 
+                <SearchResults ruleId={ruleId} query={queryString} activeDegreeplanId={activeDegreeplanId} fulfillments={fulfillments}/> 
             </SearchPanelBody>
         </PanelContainer>
     )
@@ -136,7 +145,13 @@ const buildSearchKey = (ruleId: Rule["id"] | null, query: string): string | null
     return query.length >= 3 || ruleId ? `api/base/all/search/courses?search=${query}${ruleId ? `&rule_ids=${ruleId}` : ""}` : null
 }
 
-const SearchResult = ({ ruleId, query, activeDegreeplanId }: any) => {
+interface SearchResultsProps {
+    ruleId: Rule["id"] | null,
+    query: string,
+    activeDegreeplanId: DegreePlan["id"] | null,
+    fulfillments: Fulfillment[]
+}
+const SearchResults = ({ ruleId, query, activeDegreeplanId, fulfillments }: SearchResultsProps) => {
     const debouncedQuery = useDebounce(query, 400)
     const { data: courses = [], isLoading: isLoadingCourses, error } = useSWR(buildSearchKey(ruleId, debouncedQuery)); 
     return (
@@ -145,7 +160,8 @@ const SearchResult = ({ ruleId, query, activeDegreeplanId }: any) => {
                 <ResultsList
                 activeDegreeplanId={activeDegreeplanId} 
                 ruleId={ruleId} 
-                courses={courses} 
+                courses={courses}
+                fulfillments={fulfillments}
                 isLoading={isLoadingCourses}
                 />
             </SearchPanelResult>
