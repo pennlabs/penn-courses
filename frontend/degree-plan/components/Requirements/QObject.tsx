@@ -1,16 +1,8 @@
-import { useDrag, useDrop } from "react-dnd";
-import { ItemTypes } from "../dnd/constants";
 import type { Course, DnDCourse, Fulfillment, Rule } from "@/types";
 import styled from "@emotion/styled";
-import nearley from "nearley";
-import grammar from "@/util/q_object_grammar" 
 import { Icon } from "../common/bulma_derived_components";
 import CoursePlanned, { BaseCourseContainer, SkeletonCourse } from "../FourYearPlan/CourseInPlan";
 import assert from "assert";
-import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
-import { Draggable } from "../common/DnD";
-import { useSWRCrud } from "@/hooks/swrcrud";
-import useSWR from "swr";
 import { useContext } from "react";
 import { SearchPanelContext } from "../Search/SearchPanel";
 import CourseInReq from "./CourseInReq";
@@ -347,6 +339,8 @@ const RuleLeaf = ({ q_json, fulfillmentsForRule, rule, satisfied, activeDegreePl
     const t2 = transformCourseClauses(t1);
     const t3 = transformSearchConditions(t2)
     q_json = t3 as TransformedQObject;
+
+    console.log(q_json)
 
     return (
         <RuleLeafWrapper $wrap>
