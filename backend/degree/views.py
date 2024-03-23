@@ -33,11 +33,11 @@ class DegreeViewset(viewsets.ReadOnlyModelViewSet):
     filterset_fields = search_fields
 
     def get_queryset(self):
-            queryset = Degree.objects.all()
-            degree_id = self.request.query_params.get('id', None)
-            if degree_id is not None:
-                queryset = queryset.filter(id=degree_id)
-            return queryset
+        queryset = Degree.objects.all()
+        degree_id = self.request.query_params.get('id', None)
+        if degree_id is not None:
+            queryset = queryset.filter(id=degree_id)
+        return queryset
     
     def get_serializer_class(self):
         if self.action == "list":

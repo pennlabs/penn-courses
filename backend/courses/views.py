@@ -68,10 +68,10 @@ class BaseCourseMixin(AutoPrefetchViewSetMixin, generics.GenericAPIView):
         if semester != "all":
             queryset = queryset.filter(**{self.get_semester_field(): semester})
         else:
-            # force distinctness by taking latest semester
-            # Note: we may apply further filters after this distinct; the Django ORM will optimize
-            # so that the filters may appear before the distinct, as we desire.
-            queryset = queryset.order_by("full_code", "semester").distinct("full_code")
+            # This orders by semester
+            # TODO: currently, we know we need the "full_code" because we apply distinct by full_code later
+            # but we can't necessarily know this in the future
+            queryset = queryset.order_by("full_code", "-semester")
         return queryset
 
     def get_queryset(self):
@@ -213,23 +213,6 @@ class CourseListSearch(CourseList):
 
         if self.request is None or not self.request.user or not self.request.user.is_authenticated:
             return context
-
-        (
-            _,
-            _,
-            curr_course_vectors_dict,
-            past_course_vectors_dict,
-        ) = retrieve_course_clusters()
-        user_vector, _ = vectorize_user(
-            self.request.user, curr_course_vectors_dict, past_course_vectors_dict
-        )
-        context.update(
-            {
-                "user_vector": user_vector,
-                "curr_course_vectors_dict": curr_course_vectors_dict,
-            }
-        )
-
         return context
 
     filter_backends = [TypedCourseSearchBackend, CourseSearchFilterBackend]
