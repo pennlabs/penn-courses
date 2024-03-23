@@ -12,6 +12,8 @@ from degree.models import (
     DoubleCountRestriction,
     Fulfillment,
     Rule,
+    CourseTaken,
+    DegreeProfile
 )
 
 
@@ -188,3 +190,23 @@ class DockedCourseSerializer(serializers.ModelSerializer):
     class Meta:
         model = DockedCourse
         fields = ["full_code", "id"]
+
+
+
+class CourseTakenSerializer(serializers.ModelSerializer):
+    course = SimpleCourseSerializer(read_only=True)
+
+    class Meta:
+        model = CourseTaken
+        fields = ['course', 'semester', 'grade']
+        
+
+class DegreeProfileSerializer(serializers.ModelSerializer):
+    id = serializers.ReadOnlyField(help_text="The id of the user profile")
+    courses_taken = CourseTakenSerializer(source='courses_taken', many=True, read_only=True)
+
+    class Meta:
+        model = DegreeProfile
+        fields = ["id", "user_profile", "graduation_date", "declared_majors", "declared_minors", "courses_taken"]
+        read_only_fields = ['user_profile']
+    

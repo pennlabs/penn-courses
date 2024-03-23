@@ -11,7 +11,7 @@ from django.db.models.functions import Coalesce
 from django.db.models.signals import m2m_changed
 from django.utils import timezone
 
-from courses.models import Course
+from courses.models import Course, UserProfile
 from degree.utils.model_utils import json_parser, q_object_parser
 
 
@@ -25,6 +25,36 @@ program_choices = [
 
 program_code_to_name = dict(program_choices)
 
+
+"""
+Transcript Model
+==================
+
+The user optionally uploads a pdf of transcript and we create a Transcript object based on the scraped transcript info.
+
+"""
+
+class Transcript(models.Model):
+    program = models.CharField(
+        max_length=255, 
+        db_index=True, 
+        help_text=dedent(
+            """
+            The user's current program (e.g. SEAS B.S.)
+            """
+        ),
+    )
+    courses = models.ForeignKey(
+        Course,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        help_text=dedent(
+            """
+            Courses already taken, prob a list of Course objects
+            """
+        ),
+    )
 
 class Degree(models.Model):
     """
@@ -547,6 +577,178 @@ class DockedCourse(models.Model):
                 name="unique docked course",
             )
         ]
+
+class School(models.Model):
+    code = models.CharField(
+        max_length=4, 
+        unique=True, 
+        help_text="The school/degree type, e.g., BS")
+
+    def __str__(self):
+        return self.code
+    
+class Major(models.Model):
+    code = models.CharField(
+        max_length=4, 
+        unique=True, 
+        help_text="The major code, e.g., BIOL")
+
+    def __str__(self):
+        return self.code
+
+class Minor(models.Model):
+    code = models.CharField(
+        max_length=4, 
+        unique=True, 
+        help_text="The minor code, e.g., BIOL")
+
+    def __str__(self):
+        return self.code
+
+class Concentration(models.Model):
+    code = models.CharField(
+        max_length=4, 
+        unique=True, 
+        help_text="The concentration code, e.g., AI")
+
+    def __str__(self):
+        return self.code
+    
+
+class DegreeProfile(models.Model):
+    user_profile = models.OneToOneField(
+        UserProfile, 
+        on_delete=models.CASCADE,
+        related_name="degree_profile",
+        help_text="extending the user profile class from courses to store degree plan specific info",
+        related_name='courses_taken'
+    )
+
+    transcript = models.OneToOneField(
+        Transcript,
+        on_delete=models.CASCADE,
+        related_name="transcript",
+        help_text="The user's uploaded transcript parsed into a Transcript object (optional)",
+    )
+
+    graduation_date = models.CharField(
+        max_length=5,
+        help_text=dedent(
+            """
+            The user's expected graduation date (of the form YYYYx where x is A [for spring],
+            B [summer], or C [fall]), e.g. `2019C` for fall 2019)
+            """
+        ),
+    )
+
+    school = models.ManyToManyField(
+        School,
+        help_text=dedent(
+            """
+            The user's school ('BA', 'BSE',  'BAS', 'BS', 'BSN')
+            """
+        ),
+    )
+
+    declared_majors = models.ManyToManyField(
+        Major,
+        help_text=dedent(
+            """
+            The user's declared majors, e.g., BIOL
+            """
+        ),
+    )
+
+    declared_minors = models.ManyToManyField(
+        Minor,
+        help_text=dedent(
+            """
+            The user's declared minors, e.g., BIOL
+            """
+        ),
+    )
+
+    concentrations = models.ManyToManyField(
+        Concentration,
+        help_text=dedent(
+            """
+            The user's degree/major concentrations, e.g., AI
+            """
+        ),
+    )
+
+    transfer_credits = models.ManyToManyField(
+        Course,
+        related_name='course',
+        help_text=dedent(
+            """
+            Transfer credits
+            """
+        ),
+    )
+
+    courses_taken = models.ManyToManyField(
+        Course,
+        through="CourseTaken",
+        related_name='students',
+        help_text=dedent(
+            """
+            A list of course codes that the user has already taken, matched with semester
+            """
+        ),
+    )
+
+    
+class CourseTaken:
+    """
+    An intermediate model for courses taken, which allows us to connect the course to the user, the semester it was taken, 
+    and grade received.
+    """
+    degree_profile = models.ForeignKey(
+        DegreeProfile,
+        on_delete=models.CASCADE,
+        help_text=dedent(
+            """
+            The degree profile to which this course was taken
+            """
+        ),
+    )
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        help_text=dedent(
+            """
+            A list of course codes that the user has already taken, matched with semester
+            """
+        ),
+    )
+    semester = models.CharField(
+        max_length=5,
+        help_text=dedent(
+            """
+            The semester taken, in the form YYYYx
+            """
+        ),
+    )
+    grade = models.CharField(
+        max_length=2,
+        help_text=dedent(
+            """
+            The user's grade for this course
+            """
+        ),
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["degree_profile", "course", "semester"], 
+                name="unique_satisfaction"
+            )
+        ]
+
+
+
 
 
 # After beta: delete this (and remove the DegreeWaitlist permission class)

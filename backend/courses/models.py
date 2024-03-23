@@ -1322,7 +1322,7 @@ class PreNGSSRequirement(models.Model):
                 | Q(id__in=self.courses.all())
             )
         )
-
+    
 
 """
 3rd-Party API
