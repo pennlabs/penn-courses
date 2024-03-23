@@ -1,9 +1,7 @@
 import logging
 
-from django.core.cache import caches
 from django.core.management.base import BaseCommand
 from tqdm import tqdm
-from review.management.commands.precompute_pcr_views import precompute_pcr_views
 
 from courses import registrar
 from courses.management.commands.loadstatus import set_all_status
@@ -12,6 +10,7 @@ from courses.management.commands.recompute_soft_state import recompute_soft_stat
 from courses.models import Department, Section
 from courses.util import get_current_semester, upsert_course_from_opendata
 from review.management.commands.clearcache import clear_cache
+from review.management.commands.precompute_pcr_views import precompute_pcr_views
 
 
 def registrar_import(semester=None, query=""):
@@ -46,8 +45,8 @@ def registrar_import(semester=None, query=""):
         # Make sure to load in summer course data as well
         # (cron job only does current semester, which is either fall or spring)
         registrar_import(semester=semester[:-1] + "B", query=query)
-    
-    precompute_pcr_views()
+
+    precompute_pcr_views(True, False)
 
 
 class Command(BaseCommand):

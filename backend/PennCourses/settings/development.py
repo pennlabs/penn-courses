@@ -17,18 +17,4 @@ CACHES = {
     "default": {
         "BACKEND": "django.core.cache.backends.dummy.DummyCache",
     },
-    "blue": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": REDIS_URL_BASE + "/2",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        },
-    },
-    "green": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": REDIS_URL_BASE + "/3",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        },
-    },
 }

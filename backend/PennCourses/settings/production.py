@@ -35,22 +35,7 @@ CACHES = {
             "SOCKET_CONNECT_TIMEOUT": 1,
             "SOCKET_TIMEOUT": 1,
         },
-    },
-    "blue": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": REDIS_URL_BASE + "/2",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        },
-    },
-    "green": {
-        "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": REDIS_URL_BASE + "/3",
-        "OPTIONS": {
-            "CLIENT_CLASS": "django_redis.client.DefaultClient",
-        },
-    },
-
+    }
 }
 
 MOBILE_NOTIFICATION_SECRET = os.environ.get("MOBILE_NOTIFICATION_SECRET", "")

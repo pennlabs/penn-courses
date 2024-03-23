@@ -1,7 +1,7 @@
 from collections import Counter, defaultdict
 
 from dateutil.tz import gettz
-from django.core.cache import caches
+from django.core.cache import cache
 from django.db.models import F, Max, OuterRef, Q, Subquery, Value
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -16,6 +16,7 @@ from courses.models import (
     NGSSRestriction,
     PreNGSSRestriction,
     Section,
+    Topic,
 )
 from courses.util import get_current_semester, get_or_create_add_drop_period, prettify_semester
 from PennCourses.docs_settings import PcxAutoSchema
@@ -30,7 +31,7 @@ from review.documentation import (
     instructor_for_course_reviews_response_schema,
     instructor_reviews_response_schema,
 )
-from review.models import ALL_FIELD_SLUGS, Review
+from review.models import ALL_FIELD_SLUGS, CachedReviewResponse, Review
 from review.util import (
     aggregate_reviews,
     avg_and_recent_demand_plots,
@@ -91,6 +92,10 @@ section_filters_pcr = Q(has_reviews=True) | (
     (~Q(course__title="") | ~Q(course__description="")) & ~Q(activity="REC") & ~Q(status="X")
 )
 
+HOUR_IN_SECONDS = 60 * 60
+DAY_IN_SECONDS = HOUR_IN_SECONDS * 24
+MONTH_IN_SECONDS = DAY_IN_SECONDS * 30
+
 
 @api_view(["GET"])
 @schema(
@@ -131,13 +136,22 @@ section_filters_pcr = Q(has_reviews=True) | (
 @permission_classes([IsAuthenticated])
 def course_reviews(request, course_code, semester=None):
     request_semester = request.GET.get("semester")
-    cache = caches["blue"]
     topic_id = cache.get(course_code)
     if topic_id is None:
-        return Response(manual_course_reviews(course_code, request_semester, semester))
+        topic = Topic.objects.filter(course_code=course_code).first()
+        course_id_list = list(topic.courses.values_list("id"))
+        topic_id = ".".join([str(id) for id in sorted(course_id_list)])
+        cache.set(course_code, topic_id, MONTH_IN_SECONDS)
+
     response = cache.get(topic_id)
     if response is None:
-        return Response(manual_course_reviews(course_code, request_semester, semester))
+        cached_response = CachedReviewResponse.objects.filter(topic_id=topic_id).first()
+        if cached_response is None:
+            response = manual_course_reviews(course_code, request_semester, semester)
+        else:
+            response = cached_response.response
+        cache.set(topic_id, response, MONTH_IN_SECONDS)
+
     return Response(response)
 
 
@@ -174,7 +188,7 @@ def manual_course_reviews(course_code, request_semester, semester=None):
     branched_from_semester = course.branched_from_semester
     course = topic.most_recent
     course_code = course.full_code
-    aliases = course.crosslistings.values_list("full_code", flat=True)
+    aliases = list(course.crosslistings.values_list("full_code", flat=True))
 
     superseded = False
     if semester:
@@ -261,7 +275,7 @@ def manual_course_reviews(course_code, request_semester, semester=None):
         section_filters_pcr,
         course__topic=topic,
     )
-   
+
     return {
         "code": course["full_code"],
         "last_offered_sem_if_superceded": last_offered_sem_if_superceded,
