@@ -5,7 +5,7 @@ from rest_framework import serializers
 
 from courses.models import Course
 from courses.serializers import CourseListSerializer, CourseDetailSerializer
-from degree.models import Degree, DegreePlan, DoubleCountRestriction, Fulfillment, Rule, DockedCourse
+from degree.models import Degree, DegreePlan, DoubleCountRestriction, Fulfillment, Rule, DockedCourse, CourseTaken, DegreeProfile
 from courses.util import get_current_semester
 
 class DegreeListSerializer(serializers.ModelSerializer):
@@ -181,3 +181,22 @@ class DockedCourseSerializer(serializers.ModelSerializer):
     class Meta:
         model = DockedCourse
         fields = "__all__"
+
+
+class CourseTakenSerializer(serializers.ModelSerializer):
+    course = SimpleCourseSerializer(read_only=True)
+
+    class Meta:
+        model = CourseTaken
+        fields = ['course', 'semester', 'grade']
+        
+
+class DegreeProfileSerializer(serializers.ModelSerializer):
+    id = serializers.ReadOnlyField(help_text="The id of the user profile")
+    courses_taken = CourseTakenSerializer(source='courses_taken', many=True, read_only=True)
+
+    class Meta:
+        model = DegreeProfile
+        fields = ["id", "user_profile", "graduation_date", "declared_majors", "declared_minors", "courses_taken"]
+        read_only_fields = ['user_profile']
+    
