@@ -5,7 +5,7 @@ import styled from '@emotion/styled';
 import { Course, DnDCourse, DockedCourse, Fulfillment } from "@/types";
 import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
 import { Draggable } from "../common/DnD";
-import { PlannedCourseContainer } from "../FourYearPlan/CourseInPlan";
+import { CourseXButton, PlannedCourseContainer } from "../FourYearPlan/CourseInPlan";
 import { useSWRCrud } from "@/hooks/swrcrud";
 
 interface CourseInDockProps {
@@ -47,11 +47,7 @@ const CourseInDock = ({ course, isUsed = false, isDisabled = false, className, o
                 <div>
                   {course.full_code}
                 </div>
-                {isUsed &&
-                  <GrayIcon className="close-button" onClick={() => handleRemoveCourse(course.full_code)}>
-                    <i className="fas fa-times"></i>
-                  </GrayIcon>
-                  }
+                {isUsed && <CourseXButton onClick={() => handleRemoveCourse(course.full_code)} />}
             </PlannedCourseContainer>
           </ReviewPanelTrigger>
         </Draggable>

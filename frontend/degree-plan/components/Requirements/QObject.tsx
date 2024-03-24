@@ -176,23 +176,23 @@ const SearchCondition = ({ ruleId, ruleQuery, fulfillments, ruleIsSatisfied, q}:
     const { setSearchPanelOpen, setSearchRuleQuery, setSearchRuleId, setSearchFulfillments } = useContext(SearchPanelContext);
 
     return (
-        <SearchConditionWrapper $isDisabled={ruleIsSatisfied}>
+        <SearchConditionWrapper 
+        $isDisabled={ruleIsSatisfied}             
+        onClick={() => {
+            setSearchRuleQuery(ruleQuery);
+            setSearchRuleId(ruleId);
+            setSearchPanelOpen(true);
+            setSearchFulfillments(fulfillments)
+        }}>
             <SearchConditionInner q={q} />
-            <DarkGrayIcon
-            onClick={() => { 
-                setSearchRuleQuery(ruleQuery);
-                setSearchRuleId(ruleId);
-                setSearchPanelOpen(true);
-                setSearchFulfillments(fulfillments)
-            }}
-            >
+            <DarkGrayIcon>
                 <i className="fas fa-search fa-sm"/>
             </DarkGrayIcon>
             {fulfillments.map(fulfillment => (
-                <CoursePlanned course={fulfillment} isDisabled={ruleIsSatisfied} isUsed />
+                <CoursePlanned course={fulfillment} isDisabled={ruleIsSatisfied} isUsed onClick={(e) => {e.stopPropagation()}} />
             ))}
         </SearchConditionWrapper>
-    )
+    )   
 }
 
 const CourseOptionsSeparator = styled.div`

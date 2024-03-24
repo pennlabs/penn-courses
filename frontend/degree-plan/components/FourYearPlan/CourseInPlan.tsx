@@ -7,6 +7,9 @@ import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
 import { Draggable } from "../common/DnD";
 import Skeleton from "react-loading-skeleton"
 import 'react-loading-skeleton/dist/skeleton.css'
+import { DarkGrayIcon } from "../Requirements/QObject";
+
+const COURSE_BORDER_RADIUS = "10px";
 
 export const BaseCourseContainer = styled.div<{ $isDragging?: boolean, $isUsed: boolean, $isDisabled: boolean }>`
   display: flex;
@@ -14,7 +17,7 @@ export const BaseCourseContainer = styled.div<{ $isDragging?: boolean, $isUsed: 
   align-items: center;
   min-width: 70px;
   min-height: 35px;
-  border-radius: 10px;
+  border-radius: ${COURSE_BORDER_RADIUS};
   padding: .5rem;
   text-wrap: nowrap;
   cursor: ${props => props.$isDisabled || props.$isUsed ? "not-allowed" : "grab"};
@@ -28,22 +31,28 @@ export const PlannedCourseContainer = styled(BaseCourseContainer)`
   opacity: ${props => props.$isDragging ? 0.5 : 1};
 
   .close-button {
-    display: none;
-    position: absolute;
-    right: 5px;
-    top: 0; 
-    bottom: 0; 
+    padding-left: 1rem;
+    padding-right: 10px;
     margin-top: auto; 
     margin-bottom: auto;
-    height: 1.5rem;
+    height: 100%;
+    align-items: center;
+    opacity: 0.6;
   }
 
   &:hover {
     .close-button {
-      display: unset;
+      display: flex;
+      opacity: unset;
     }
   }
 `;
+
+export const CourseXButton = ({ onClick }: { onClick?: (e: React.MouseEvent<HTMLInputElement>) => void }) => (
+  <GrayIcon className="close-button" onClick={onClick}>
+    <i className="fas fa-times"></i>
+  </GrayIcon>
+)
 
 interface CoursePlannedProps {
   course: DnDCourse;
@@ -52,7 +61,7 @@ interface CoursePlannedProps {
   isUsed: boolean;
   isDisabled: boolean;
   className?: string;
-  onClick?: () => void;
+  onClick?: (arg0: React.MouseEvent<HTMLInputElement>) => void;
 }
 
 export const SkeletonCourse = () => (
@@ -88,11 +97,7 @@ const CourseInPlan = ({ course, removeCourse, isUsed = false, isDisabled = false
               <div>
                 {course.full_code}
               </div>
-              {isUsed &&
-                <GrayIcon className="close-button" onClick={() => removeCourse(course.full_code)}>
-                  <i className="fas fa-times"></i>
-                </GrayIcon>
-                }
+              <CourseXButton onClick={() => removeCourse(course.full_code)} hidden={!isUsed}/>
           </PlannedCourseContainer>
         </ReviewPanelTrigger>
       </Draggable>
