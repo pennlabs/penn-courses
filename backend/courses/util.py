@@ -714,12 +714,14 @@ def get_semesters(semesters: str = None) -> list[str]:
     return sorted(semesters)
 
 
-def historical_year_probability(current, courses):
+def historical_semester_probability(current, courses):
     """
-    current: the current semester represented in the 20XX(A|B|C) format
-    courses: a list of Course objects sorted by date in ascending order
-    Returns a list of 3 probabilities representing the likelihood of taking a course in each
-    semester
+    :param current: The current semester represented in the 20XX(A|B|C) format.
+    :type current: str
+    :param courses: A list of Course objects sorted by date in ascending order.
+    :type courses: list
+    :returns: A list of 3 probabilities representing the likelihood of taking a course in each semester.
+    :rtype: list
     """
     prob_distribution = [0.4, 0.3, 0.15, 0.1, 0.05]
 
@@ -729,19 +731,6 @@ def historical_year_probability(current, courses):
         truncate = prob_distribution[:i]
         total = sum(truncate)
         return list(map(lambda x: round(x / total, 3), truncate))
-
-    def get_semester_and_course_index(semester):
-        """Returns an integer representing the semester."""
-        semester_letter = semester[-1]
-        semester_number = 0
-        if semester_letter == "A":
-            semester_number = 1
-        elif semester_letter == "B":
-            semester_number = 2
-        elif semester_letter == "C":
-            semester_number = 3
-        semester_year = int(semester[:-1])
-        return 10 * semester_year + semester_number
 
     current_index = int(translate_semester(current)) // 10
     min_index = current_index - 60
@@ -756,10 +745,10 @@ def historical_year_probability(current, courses):
                 prob_distribution, ((current_index - last_index) + 9) // 10
             )
     for c in courses:
-        """Provides calculation"""
         index = int(translate_semester(c.semester)) // 10
         if index < min_index or index > max_index:
             continue
+        # Diff is the number of years ago the course was taken
         diff = (current_index - index) // 10 - 1
         if diff >= len(prob_distribution):
             diff = len(prob_distribution) - 1
