@@ -194,34 +194,20 @@ class DockedCourseViewset(viewsets.ModelViewSet):
     
 
 class DegreeProfileViewset(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     serializer_class = DegreeProfileSerializer
-    queryset = DegreeProfile.objects.all()
 
-    def create(self, request, *args, **kwargs):
-        if request.data.get("user_profile") is None:
-            raise ValidationError({ "user_profile": "This field is required." })
-        self.kwargs["user_profile"] = request.data["user_profile"]
-        try:
-            return self.partial_update(request, *args, **kwargs)
-        except Http404:
-            return super().create(request, *args, **kwargs)
+    def get_queryset(self):
+        return DegreeProfile.objects.filter(user_profile__user=self.request.user)
 
-    def retrieve(self, request, *args, **kwargs):
-        degree_profile = self.get_object()
-        serializer = self.get_serializer(degree_profile)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    def perform_create(self, serializer):
+        return serializer.save(user_profile=self.request.user.user_profile)
     
     def destroy(self, request, *args, **kwargs):
-        if kwargs["user_profile"] is None:
-            raise ValidationError({ "user_profile": "This field is required." })
+        instance = self.get_object() 
 
-        instances_to_delete = self.get_queryset().filter(full_code=kwargs["user_profile"])
-        
-        if not instances_to_delete.exists():
-            raise Http404("No instances matching the provided user_profile were found.")
+        if instance.user_profile.user != request.user:
+            raise ValidationError({"user_profile": "Unable to delete profile"})
 
-        for instance in instances_to_delete:
-            self.perform_destroy(instance)
-        
-        return Response(status.HTTP_200_OK)
+        return super().destroy(request, *args, **kwargs)
 
