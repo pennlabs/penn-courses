@@ -720,7 +720,8 @@ def historical_semester_probability(current, courses):
     :type current: str
     :param courses: A list of Course objects sorted by date in ascending order.
     :type courses: list
-    :returns: A list of 3 probabilities representing the likelihood of taking a course in each semester.
+    :returns: A list of 3 probabilities representing the likelihood of
+    taking a course in each semester.
     :rtype: list
     """
     prob_distribution = [0.4, 0.3, 0.15, 0.1, 0.05]
