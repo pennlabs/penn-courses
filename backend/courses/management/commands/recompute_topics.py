@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.models import Count, OuterRef, Subquery
+from tqdm import tqdm
 
 from courses.models import Course, Topic
 from courses.util import all_semesters, historical_semester_probability
@@ -168,11 +169,8 @@ def recompute_historical_semester_probabilities(current_semester, verbose=False)
     if verbose:
         print("Recomputing historical probabilities for all topics...")
     topics = Topic.objects.all()
-    length = len(topics)
     # Iterate over each Topic
-    for i, topic in enumerate(topics):
-        if i % 1000 == 0:
-            print(f"Recomputing topics for semesters >={i}/{length}")
+    for i, topic in tqdm(enumerate(topics)):
         # Calculate historical_year_probability for the current topic
         ordered_courses = topic.courses.all().order_by("semester")
         historical_prob = historical_semester_probability(current_semester, ordered_courses)
