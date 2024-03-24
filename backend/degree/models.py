@@ -557,56 +557,19 @@ class DockedCourse(models.Model):
             )
         ]
 
-class School(models.Model):
-    code = models.CharField(
-        max_length=4, 
-        unique=True, 
-        help_text="The school/degree type, e.g., BS")
-
-    def __str__(self):
-        return self.code
-    
-class Major(models.Model):
-    code = models.CharField(
-        max_length=4, 
-        unique=True, 
-        help_text="The major code, e.g., BIOL")
-
-    def __str__(self):
-        return self.code
-
-class Minor(models.Model):
-    code = models.CharField(
-        max_length=4, 
-        unique=True, 
-        help_text="The minor code, e.g., BIOL")
-
-    def __str__(self):
-        return self.code
-
-class Concentration(models.Model):
-    code = models.CharField(
-        max_length=4, 
-        unique=True, 
-        help_text="The concentration code, e.g., AI")
-
-    def __str__(self):
-        return self.code
-    
-
 class DegreeProfile(models.Model):
     user_profile = models.OneToOneField(
         UserProfile, 
         on_delete=models.CASCADE,
         related_name="degree_profile",
         help_text="extending the user profile class from courses to store degree plan specific info",
-        related_name='courses_taken'
     )
 
     transcript = models.OneToOneField(
         Transcript,
         on_delete=models.CASCADE,
-        related_name="transcript",
+        null=True,
+        related_name="degree_profile",
         help_text="The user's uploaded transcript parsed into a Transcript object (optional)",
     )
 
@@ -620,45 +583,18 @@ class DegreeProfile(models.Model):
         ),
     )
 
-    school = models.ManyToManyField(
-        School,
+    degrees = models.ManyToManyField(
+        Degree,
         help_text=dedent(
             """
-            The user's school ('BA', 'BSE',  'BAS', 'BS', 'BSN')
-            """
-        ),
-    )
-
-    declared_majors = models.ManyToManyField(
-        Major,
-        help_text=dedent(
-            """
-            The user's declared majors, e.g., BIOL
-            """
-        ),
-    )
-
-    declared_minors = models.ManyToManyField(
-        Minor,
-        help_text=dedent(
-            """
-            The user's declared minors, e.g., BIOL
-            """
-        ),
-    )
-
-    concentrations = models.ManyToManyField(
-        Concentration,
-        help_text=dedent(
-            """
-            The user's degree/major concentrations, e.g., AI
+            The user's current degree(s)
             """
         ),
     )
 
     transfer_credits = models.ManyToManyField(
         Course,
-        related_name='course',
+        related_name='transfer_credits_for',
         help_text=dedent(
             """
             Transfer credits
@@ -669,7 +605,7 @@ class DegreeProfile(models.Model):
     courses_taken = models.ManyToManyField(
         Course,
         through="CourseTaken",
-        related_name='students',
+        related_name='degree_profile',
         help_text=dedent(
             """
             A list of course codes that the user has already taken, matched with semester
@@ -722,7 +658,7 @@ class CourseTaken:
         constraints = [
             models.UniqueConstraint(
                 fields=["degree_profile", "course", "semester"], 
-                name="unique_satisfaction"
+                name="unique-degree-profile"
             )
         ]
 

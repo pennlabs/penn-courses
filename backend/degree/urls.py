@@ -9,7 +9,7 @@ router = DefaultRouter(trailing_slash=False)
 router.register(r"degreeplans", DegreePlanViewset, basename="degreeplan")
 router.register(r"degrees", DegreeViewset, basename="degree")
 router.register(r"docked", DockedCourseViewset)
-router.register(r"degreeprofile", DegreeProfileViewset, basename="degreeprofile")
+router.register(r"degreeprofiles", DegreeProfileViewset, basename="degreeprofile")
 fulfillments_router = NestedDefaultRouter(router, r"degreeplans", lookup="degreeplan", trailing_slash=False)
 fulfillments_router.register(r"fulfillments", FulfillmentViewSet, basename="degreeplan-fulfillment")
 
