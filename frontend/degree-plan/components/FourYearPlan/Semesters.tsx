@@ -4,6 +4,7 @@ import { Icon } from "../common/bulma_derived_components";
 import { Course, DegreePlan, Fulfillment } from "@/types";
 import useSWR from "swr";
 import React, { useEffect, useState } from "react";
+import Select from "react-select";
 
 const getNextSemester = (semester: string) => {
   console.log("GET NEXT SEMESTER");
@@ -85,6 +86,24 @@ const AddButton = styled.div`
   gap: 1rem;
 `;
 
+const selectStyles = {
+  control: (provided) => ({
+    ...provided,
+    width: "130px",
+    backgroundColor: "transparent",
+    borderColor: "#9FB5EF",
+    color: "#C1C1C1",
+    boxShadow: "none",
+    "&:hover": {
+      borderColor: "#9FB5EF",
+    },
+  }),
+  singleValue: (provided) => ({
+    ...provided,
+    color: "#C1C1C1",
+  }),
+};
+
 // TODO: get a consistent color palette across PCx
 interface ModifySemestersProps {
   addSemester: (semester: Course["semester"]) => void;
@@ -116,26 +135,23 @@ const ModifySemesters = ({
     addSemester(semester);
   };
 
+  const seasonOptions = [
+    { value: "A", label: "Spring" },
+    { value: "B", label: "Summer" },
+    { value: "C", label: "Fall" },
+  ];
+
+  // TODO: Un-hardcode years
+  const yearOptions = [
+    { value: "2024", label: "2024" },
+    { value: "2025", label: "2025" },
+    { value: "2026", label: "2026" },
+    { value: "2027", label: "2027" },
+  ];
+
   return (
     // TODO: add a modal for this
     <AddSemesterContainer className={className}>
-      <select
-        value={selectedSeason}
-        onChange={(e) => setSelectedSeason(e.target.value)}
-      >
-        <option value="A">Spring</option>
-        <option value="B">Summer</option>
-        <option value="C">Fall</option>
-      </select>
-      <select
-        value={selectedYear}
-        onChange={(e) => setSelectedYear(e.target.value)}
-      >
-        <option value="2024">2024</option>
-        <option value="2025">2025</option>
-        <option value="2026">2026</option>
-        <option value="2027">2027</option>
-      </select>
       <AddButtonContainer role="button" onClick={handleAddSemester}>
         <AddButton>
           <PlusIcon>
@@ -144,6 +160,20 @@ const ModifySemesters = ({
           <div>Add Semester</div>
         </AddButton>
       </AddButtonContainer>
+
+      <Select
+        styles={selectStyles}
+        options={seasonOptions}
+        value={seasonOptions.find((option) => option.value === selectedSeason)}
+        onChange={(option) => setSelectedSeason(option.value)}
+      />
+
+      <Select
+        styles={selectStyles}
+        options={yearOptions}
+        value={yearOptions.find((option) => option.value === selectedYear)}
+        onChange={(option) => setSelectedYear(option.value)}
+      />
     </AddSemesterContainer>
   );
 };
