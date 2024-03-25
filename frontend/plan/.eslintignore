@@ -1,4 +1,5 @@
 /**/old/*
+node_modules/
 next.config.js
 _document.js
 **/*.json

@@ -28,6 +28,8 @@ import { preventMultipleTabs } from "../components/syncutils";
 import { DISABLE_MULTIPLE_TABS } from "../constants/sync_constants";
 import { User } from "../types";
 import { ToastContainer } from "react-toastify";
+import Alerts from "../components/alert/Alerts";
+import { useRouter } from "next/router";
 
 const GlobalStyle = createGlobalStyle`
   html {
@@ -92,6 +94,15 @@ const Toast = styled(ToastContainer)`
     }
 `;
 
+const CartTab = styled.h3<{ active: boolean }>`
+    display: inline-flex;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    margin-right: 1rem;
+    color: ${(props) => (props.active ? "black" : "gray")};
+`;
+
 let middlewares = [thunkMiddleware, analyticsMiddleware];
 if (process.env.NODE_ENV === "development") {
     // eslint-disable-next-line
@@ -112,6 +123,8 @@ export function showToast(text: string, error: boolean) {
 }
 
 function Index() {
+    const router = useRouter();
+    
     const [tab, setTab] = useState(0);
     const [view, setView] = useState(0);
     // FIXME: Hacky, maybe look into redux-persist?
@@ -132,7 +145,9 @@ function Index() {
     const scrollTop = () => window.scrollTo(0, 0);
     const isExpanded = view === 1;
 
-    const [showLoginModal, setShowLoginModal] = useState<boolean>(true);
+
+    const [showLoginModal, setShowLoginModal] = useState(true);
+
     const [user, setUser] = useState<User | null>(null);
 
     useEffect(() => {
@@ -263,8 +278,13 @@ function Index() {
                         />
                         <Tab
                             className="topTab"
-                            label="Schedule"
+                            label="Alerts"
                             onClick={() => setTab(2)}
+                        />
+                        <Tab
+                            className="topTab"
+                            label="Schedule"
+                            onClick={() => setTab(3)}
                         />
                     </CustomTabs>
                     <SwipeableViews
@@ -304,6 +324,9 @@ function Index() {
                         </div>
                         <div style={{ padding: "10px" }}>
                             <Cart setTab={setTab} mobileView={true} />
+                        </div>
+                        <div style={{ padding: "10px" }}>
+                            <Alerts mobileView={true} />
                         </div>
                         <div style={{ padding: "10px" }}>
                             {/* Unfortunately running into a weird issue with connected components and TS. */}
@@ -389,16 +412,24 @@ function Index() {
                                     flexDirection: "column",
                                 }}
                             >
-                                <h3
-                                    style={{
-                                        display: "flex",
-                                        fontWeight: "bold",
-                                        marginBottom: "0.5rem",
-                                    }}
-                                >
-                                    Cart
-                                </h3>
-                                <Cart mobileView={false} />
+                                <div>
+                                    <CartTab
+                                        active={router.query.view !== "alerts"}
+                                        onClick={() => router.replace("/", undefined, { shallow: true })}
+                                    >
+                                        Cart
+                                    </CartTab>
+                                    <CartTab
+                                        active={router.query.view === "alerts"}
+                                        onClick={() => router.replace("/?view=alerts", undefined, { shallow: true })}
+                                    >
+                                        Alerts
+                                    </CartTab>
+                                </div>
+                                {router.query.view === "alerts" ? 
+                                    <Cart mobileView={false} /> :
+                                    <Alerts mobileView={false} />
+                                }
                             </div>
                             <div
                                 style={{
