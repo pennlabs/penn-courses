@@ -634,8 +634,52 @@ class DegreeProfile(models.Model):
         ),
     )
 
+    def calculate_total_credits(self):
+        """
+        Calculates the total credits this person has currently, both through courses taken and transfer credits
+        """
+        total_credits = 0
+
+        for course in self.courses_taken.all():
+            total_credits += course.credits
+
+        for course in self.transfer_credits.all():
+            total_credits += course.credits
+
+        return total_credits
     
-class CourseTaken:
+    def add_course(self, course, semester, grade):
+        """
+        Adds a course to courses taken
+        """
+        CourseTaken.objects.create(
+            degree_profile=self, 
+            course=course, 
+            semester=semester, 
+            grade=grade
+        )
+    
+    def remove_course(self, course, semester):
+        """
+        Removes a course taken by a specific person 
+        """
+        course_taken = CourseTaken.objects.filter(degree_profile=self, course=course, semester=semester)
+
+        if course_taken.exists():
+            course_taken.delete()
+        else:
+            print(f"Course not found for course code {course} in semester {semester}.")
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user_profile"], 
+                name="unique-degree-profile"
+            )
+        ]
+
+    
+class CourseTaken(models.Model):
     """
     An intermediate model for courses taken, which allows us to connect the course to the user, the semester it was taken, 
     and grade received.
@@ -654,7 +698,7 @@ class CourseTaken:
         on_delete=models.CASCADE,
         help_text=dedent(
             """
-            A list of course codes that the user has already taken, matched with semester
+            The course code (e.g. CIS-1210) of the course taken
             """
         ),
     )
@@ -679,7 +723,7 @@ class CourseTaken:
         constraints = [
             models.UniqueConstraint(
                 fields=["degree_profile", "course", "semester"], 
-                name="unique-degree-profile"
+                name="unique-course-taken"
             )
         ]
 

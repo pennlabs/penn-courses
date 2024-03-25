@@ -16,6 +16,9 @@ from degree.models import (
     PDPBetaUser,
     Rule,
     SatisfactionStatus,
+    UserProfile,
+    DegreeProfile,
+    CourseTaken,
 )
 from degree.serializers import SimpleCourseSerializer
 
@@ -365,3 +368,45 @@ class FulfillmentViewsetTest(TestCase):
 
     def test_list_after_update(self):
         pass
+
+
+class DegreeProfileViewsetTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="ashley", password="hi", email="hi@example.com"
+        )
+        self.cis_1200, self.cis_1200_001, _, _ = get_or_create_course_and_section(
+            "CIS-1200-001", TEST_SEMESTER, course_defaults={"credits": 1}
+        )
+        self.cis_1600, self.cis_1600_001, _, _ = get_or_create_course_and_section(
+            "CIS-1600-001", TEST_SEMESTER, course_defaults={"credits": 1}
+        )
+        self.user_profile, _ = UserProfile.objects.get_or_create(
+            user=self.user,
+            defaults={'email': self.user.email, 'push_notifications': False}
+        )
+
+        self.degree = Degree.objects.create(program="EU_BSE", degree="BSE", major="CIS", year=2023, credits=37)
+
+        self.degree_profile = DegreeProfile.objects.create(
+            user_profile=self.user_profile,
+            graduation_date="2026A",
+        )
+        self.degree_profile.degrees.set([self.degree])
+
+        CourseTaken.objects.create(degree_profile=self.degree_profile, course=self.cis_1200, semester=TEST_SEMESTER, grade="A+")
+        CourseTaken.objects.create(degree_profile=self.degree_profile, course=self.cis_1600, semester=TEST_SEMESTER, grade="A+")
+
+        self.client = APIClient()
+        self.client.force_login(self.user)
+
+    def test_get_queryset(self):
+        # Authenticate as user1
+        self.client.force_authenticate(user=self.user)
+        
+        # Make a request to the viewset
+        response = self.client.get(reverse('degreeprofile-list')) # Adjust 'degreeprofile-list' based on your actual URL name
+        
+        # Check that the response contains only user1's DegreeProfile
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]['user_profile'], self.user_profile.id)
