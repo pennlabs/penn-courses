@@ -7,13 +7,15 @@ import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
 import { Draggable } from "../common/DnD";
 import CourseComponent, { PlannedCourseContainer } from "../Course/Course";
 import { CourseXButton } from "../Course/Course";
-import { useSWRCrud } from "@/hooks/swrcrud";
+import { deleteFetcher, useSWRCrud } from "@/hooks/swrcrud";
+import { mutate } from "swr";
 
 interface CourseInReqProps {
     course: DnDCourse;
     isUsed: boolean;
     isDisabled: boolean;
     rule_id: number;
+    fulfillment?: Fulfillment;
     className?: string;
     activeDegreePlanId: number;
     onClick?: () => void;
@@ -22,14 +24,23 @@ interface CourseInReqProps {
 const CourseInReq = (props : CourseInReqProps) => {
     const { course, activeDegreePlanId, rule_id } = props;
 
-    const { remove } = useSWRCrud<Fulfillment>(
+    const { remove: removeFulfillment, createOrUpdate: updateFulfillment } = useSWRCrud<Fulfillment>(
         `/api/degree/degreeplans/${activeDegreePlanId}/fulfillments`,
         { idKey: "full_code",
-        createDefaultOptimisticData: { semester: null, rules: [] }
+        // createDefaultOptimisticData: { semester: null, rules: [] }
     });
     const { createOrUpdate } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
-    const handleRemoveCourse = (full_code: string) => {
-        remove(full_code);
+
+    const handleRemoveCourse = async (full_code: string) => {
+        const updated_rules = course.rules?.filter(rule => rule != rule_id);
+        /** If the current rule about to be removed is the only rule 
+        * the course satisfied, then we delete the fulfillment */
+        if (updated_rules && updated_rules.length == 0) {
+          console.log('hwere')
+          removeFulfillment(full_code);
+        } else {
+          updateFulfillment({rules: updated_rules}, full_code);
+        }
         createOrUpdate({"full_code": full_code}, full_code); 
     }
 

@@ -73,13 +73,7 @@ const PlanPanel = ({
                                 setModalObject(item)
                             },
                             create: () => {
-                                /** When a semester is created, 
-                                 * if there is no localStorage.getItem('PDP-start-grad-years'), 
-                                 * the onboarding page will pop up which then sets PDP-start-grad-years
-                                 * in localStorage */
-                                if (typeof window !== "undefined" && !!localStorage.getItem('PDP-start-grad-years'))
-                                    setModalKey("plan-create")
-                                else setShowOnboardingModal(true);
+                                setShowOnboardingModal(true);
                             }
                         }}
                         isLoading={isLoading} 

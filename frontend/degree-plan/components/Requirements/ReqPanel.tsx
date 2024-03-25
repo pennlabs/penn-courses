@@ -247,7 +247,7 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
         rulesToCourses[rule].push(fulfillment);
       });
     });
-    console.log('rules to fulfillments', rulesToCourses)
+    // console.log('rules to fulfillments', rulesToCourses)
     return rulesToCourses;
   }, [fulfillments, isLoadingFulfillments])
   

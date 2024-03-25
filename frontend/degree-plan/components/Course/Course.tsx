@@ -1,7 +1,7 @@
 import { ConnectDragSource } from "react-dnd";
 import { GrayIcon } from '../common/bulma_derived_components';
 import styled from '@emotion/styled';
-import { Course, DnDCourse } from "@/types";
+import { Course, DnDCourse, Fulfillment } from "@/types";
 import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
 import { Draggable } from "../common/DnD";
 import Skeleton from "react-loading-skeleton"
@@ -45,6 +45,8 @@ export const PlannedCourseContainer = styled(BaseCourseContainer)`
   }
 `;
 
+
+
 const CloseIcon = styled(GrayIcon)<{ $hidden: boolean }>`
   visibility: ${props => props.$hidden ? "hidden" : "visible"};
 `
@@ -62,10 +64,12 @@ interface DraggableComponentProps {
   isUsed: boolean;
   isDisabled: boolean;
   isDragging: boolean;
+  fulfillment?: Fulfillment;
   className?: string;
   onClick?: (arg0: React.MouseEvent<HTMLInputElement>) => void;
   dragRef: ConnectDragSource;
 }
+
 
 export const SkeletonCourse = () => (
   <PlannedCourseContainer $isUsed={false} $isDisabled={false}>
@@ -75,7 +79,46 @@ export const SkeletonCourse = () => (
   </PlannedCourseContainer>
 )
 
-const CourseComponent = ({ course, removeCourse, isUsed = false, isDisabled = false, className, onClick, isDragging, dragRef } : DraggableComponentProps) => (
+const CourseBadge = styled.div`
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.25rem;
+`
+
+const IconBadge = styled.div`
+  padding: 0.2rem;
+  border-radius: 5px;
+  display: flex;
+  flex-direction: row;
+  align-items:center;
+  gap: 0.07rem;
+  background-color: #EBEBEB;
+
+  p {
+    font-size: 14px;
+    font-weight: bold;
+  }
+
+`
+
+
+const SemesterIcon = ({semester}:{semester: string | null}) => {
+  if (!semester) return;
+  const year = semester.substring(2,4);
+  const sem = semester.substring(4);
+
+  return (
+    <IconBadge>
+      <p>{year}</p>
+      {sem === "A" && <i className="spring-icon"></i>}
+      {sem === "B" && <i className="summer-icon"></i>}
+      {sem === "C" && <i className="fall-icon"></i>}
+    </IconBadge>
+  )
+}
+
+const CourseComponent = ({ course, fulfillment, removeCourse, isUsed = false, isDisabled = false, className, onClick, isDragging, dragRef } : DraggableComponentProps) => (
     <Draggable
     isDragging={isDragging}
     onClick={onClick}
@@ -88,9 +131,10 @@ const CourseComponent = ({ course, removeCourse, isUsed = false, isDisabled = fa
         ref={dragRef}
         className={className}
         >
-            <div>
-            {course.full_code}
-            </div>
+            <CourseBadge>
+              {course.full_code.replace("-", " ")}
+              {!!fulfillment && fulfillment.semester !== "" && <SemesterIcon semester={fulfillment.semester}/>}
+            </CourseBadge>
             {isUsed && <CourseXButton onClick={() => removeCourse(course.full_code)} hidden={false}/>}
         </PlannedCourseContainer>
     </ReviewPanelTrigger>
