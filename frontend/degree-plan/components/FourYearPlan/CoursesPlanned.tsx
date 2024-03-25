@@ -22,8 +22,8 @@ export const SkeletonCoursesPlanned = () => (
 
 interface CoursesPlannedProps {
     fulfillments: Fulfillment[];
-    removeCourse: (course: Course["full_code"]) => void;
-    semester: Course["full_code"],
+    removeCourse: (course: Course["id"]) => void;
+    semester: Course["id"],
     className: string;
     isLoading: boolean;
 }

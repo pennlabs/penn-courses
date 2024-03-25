@@ -9,7 +9,7 @@ import { RightCurriedFunction1 } from 'lodash';
 
 const REVIEWPANEL_TRIGGER_TIME = 300 // in ms, how long you have to hover for review panel to open
 
-export const ReviewPanelTrigger = ({ full_code, children }: PropsWithChildren<{full_code: Course["full_code"]}>) => {
+export const ReviewPanelTrigger = ({ full_code, children }: PropsWithChildren<{full_code: Course["id"]}>) => {
     const ref = useRef<HTMLDivElement>(null);
     const { setPosition, set_full_code } = useContext(ReviewPanelContext);
     const timer = useRef<NodeJS.Timeout | null>(null);
@@ -47,8 +47,8 @@ export const ReviewPanelTrigger = ({ full_code, children }: PropsWithChildren<{f
 interface ReviewPanelContextType {
     position: { top?: number, bottom?: number, left?: number, right?: number };
     setPosition: (arg0: ReviewPanelContextType["position"]) => void;
-    full_code: Course["full_code"] | null;
-    set_full_code: (arg0: Course["full_code"] | null) => void;
+    full_code: Course["id"] | null;
+    set_full_code: (arg0: Course["id"] | null) => void;
 }
 
 export const ReviewPanelContext = createContext<ReviewPanelContextType>({

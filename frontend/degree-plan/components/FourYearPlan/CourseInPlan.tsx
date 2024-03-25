@@ -6,7 +6,7 @@ import CourseComponent from "../Course/Course";
 
 interface CoursePlannedProps {
   course: DnDCourse;
-  removeCourse: (course: Course["full_code"]) => void;
+  removeCourse: (course: Course["id"]) => void;
   semester: Course["semester"];
   isDisabled: boolean;
   className?: string;

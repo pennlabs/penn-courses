@@ -57,7 +57,7 @@ export const CourseXButton = ({ onClick, hidden }: { onClick?: (e: React.MouseEv
 
 interface DraggableComponentProps {
   course: DnDCourse;
-  removeCourse: (course: Course["full_code"]) => void;
+  removeCourse: (course: Course["id"]) => void;
   semester?: Course["semester"];
   isUsed: boolean;
   isDisabled: boolean;

@@ -1,4 +1,4 @@
-import type { Course, DegreePlan, DnDCourse, Fulfillment, Rule } from "@/types";
+import type { DegreePlan, Fulfillment, Rule } from "@/types";
 import styled from "@emotion/styled";
 import { Icon } from "../common/bulma_derived_components";
 import CourseInPlan from "../FourYearPlan/CourseInPlan";

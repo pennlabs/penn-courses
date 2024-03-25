@@ -2,7 +2,7 @@ import React, { createContext, useContext } from "react";
 import useSWR from "swr";
 import ResultsList from "./ResultsList";
 import styled from "@emotion/styled";
-import { DegreePlan, Rule, Course as CourseType, Fulfillment } from "@/types";
+import { DegreePlan, Rule, Fulfillment } from "@/types";
 import { PanelHeader } from "../FourYearPlan/PanelCommon";
 import { GrayIcon } from "../common/bulma_derived_components";
 

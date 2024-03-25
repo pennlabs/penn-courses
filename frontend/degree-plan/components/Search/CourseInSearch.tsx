@@ -153,7 +153,7 @@ export default function Course({
 
     return (
         <RowSelectors>
-            <ReviewPanelTrigger full_code={course.full_code}>
+            <ReviewPanelTrigger full_code={course.id}>
                 <CourseContainer>
                     <CourseInfoContainer
                         onClick={onClick}

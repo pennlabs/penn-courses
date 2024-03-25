@@ -83,9 +83,8 @@ export interface Options {
 
 // TODO: differentiate between course and course detail
 export interface Course {
-  id: number;
   title: string;
-  full_code: string;
+  id: string;
   description: string;
   semester: string;
   instructor_quality: number;

@@ -144,7 +144,7 @@ const FlexSemester = ({
         }),
     }), [createOrUpdate, semester]);
 
-    const handleRemoveCourse = async (full_code: Course["full_code"]) => {
+    const handleRemoveCourse = async (full_code: Course["id"]) => {
         remove(full_code);
         addToDock({"full_code": full_code}, full_code);
         await mutate(`/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`);

@@ -98,7 +98,7 @@ const FourYearPlanPage = ({
     bottom?: number;
   }>({ top: 0, left: 0 });
   const [reviewPanelFullCode, setReviewPanelFullCode] = useState<
-    Course["full_code"] | null
+    Course["id"] | null
   >(null);
   const ref = useRef(null);
 
@@ -200,7 +200,7 @@ const FourYearPlanPage = ({
               </Row>
             )}
           </BodyContainer>
-          <Dock user={user} login={updateUser} logout={() => updateUser(null)} />
+          <Dock user={user} login={updateUser} logout={() => updateUser(null)} activeDegreeplanId={activeDegreeplan ? activeDegreeplan.id : null} />
         </PageContainer>
       </ReviewPanelContext.Provider>
     </SearchPanelContext.Provider>

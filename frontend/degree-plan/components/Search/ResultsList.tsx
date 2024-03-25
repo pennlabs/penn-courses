@@ -89,12 +89,12 @@ const ResultsList = ({
                     course={course}
                     onClick={() => {
                         if (ruleId) {
-                            const rules = fulfillments.find(fulfillment => fulfillment.full_code == course.full_code)?.rules || [];
+                            const rules = fulfillments.find(fulfillment => fulfillment.full_code == course.id)?.rules || [];
                             createOrUpdateFulfillment({ rules: [...rules, ruleId] }, course.id);
                         } else createOrUpdateDockedCourse({}, course.id);
                     }}
                     // star means the course is a fulfillment
-                    isStar={!!fulfillments.find((fulfillment) => fulfillment.full_code == course.full_code)}
+                    isStar={!!fulfillments.find((fulfillment) => fulfillment.full_code == course.id)}
                 />) :
                 Array.from(Array(3).keys()).map(() => <SkeletonCourse />)
                 }
