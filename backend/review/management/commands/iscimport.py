@@ -17,6 +17,7 @@ from review.import_utils.import_to_db import (
 )
 from review.import_utils.parse_sql import load_sql_dump
 from review.management.commands.clearcache import clear_cache
+from review.management.commands.precompute_pcr_views import precompute_pcr_views
 from review.models import Review
 
 
@@ -270,13 +271,14 @@ class Command(BaseCommand):
         self.close_files(files)
         # invalidate cached views
         print("Invalidating cache...")
-        del_count = clear_cache()
+        del_count = clear_cache(clear_pcr_cache=True)
         print(f"{del_count if del_count >=0 else 'all'} cache entries removed.")
 
         gc.collect()
 
         print("Recomputing Section.has_reviews...")
         recompute_has_reviews()
+        precompute_pcr_views(True, True)
 
         print("Done.")
         return 0
