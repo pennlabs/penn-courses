@@ -8,7 +8,7 @@ import {
 // import Plan from "../components/example/Plan";
 import styled from "@emotion/styled";
 import useSWR, { useSWRConfig } from "swr";
-import { Course, DegreePlan, Options, Rule } from "@/types";
+import { Course, DegreePlan, Fulfillment, Options, Rule } from "@/types";
 import ReviewPanel from "@/components/Infobox/ReviewPanel";
 import { ReviewPanelContext } from "@/components/Infobox/ReviewPanel";
 import DegreeModal, { ModalKey } from "@/components/FourYearPlan/DegreeModal";
@@ -98,24 +98,27 @@ const FourYearPlanPage = ({
     bottom?: number;
   }>({ top: 0, left: 0 });
   const [reviewPanelFullCode, setReviewPanelFullCode] = useState<
-    Course["full_code"] | null
+    Course["id"] | null
   >(null);
   const ref = useRef(null);
 
   // search panel
   const [searchPanelOpen, setSearchPanelOpen] = useState<boolean>(false);
   const [searchRuleId, setSearchRuleId] = useState<Rule["id"] | null>(null);
-  const [searchRuleQuery, setSearchRuleQuery] = useState<string | null>(null); // a query object 
+  const [searchRuleQuery, setSearchRuleQuery] = useState<string | null>(null); // a query object
+  const [searchFulfillments, setSearchFulfillments] = useState<Fulfillment[]>([]); // fulfillments matching the ruleId
 
   return (
     <SearchPanelContext.Provider
       value={{
-        setSearchPanelOpen: setSearchPanelOpen,
-        searchPanelOpen: searchPanelOpen,
-        setSearchRuleId: setSearchRuleId,
-        searchRuleId: searchRuleId,
-        setSearchRuleQuery: setSearchRuleQuery,
-        searchRuleQuery: searchRuleQuery,
+        setSearchPanelOpen,
+        searchPanelOpen,
+        setSearchRuleId,
+        searchRuleId,
+        setSearchRuleQuery,
+        searchRuleQuery,
+        setSearchFulfillments,
+        searchFulfillments
       }}
     >
       <ReviewPanelContext.Provider
@@ -197,7 +200,7 @@ const FourYearPlanPage = ({
               </Row>
             )}
           </BodyContainer>
-          <Dock user={user} login={updateUser} logout={() => updateUser(null)} />
+          <Dock user={user} login={updateUser} logout={() => updateUser(null)} activeDegreeplanId={activeDegreeplan ? activeDegreeplan.id : null} />
         </PageContainer>
       </ReviewPanelContext.Provider>
     </SearchPanelContext.Provider>

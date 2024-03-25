@@ -33,8 +33,8 @@ def parse_coursearray(courseArray) -> Q:
                 if number.isdigit() and end.isdigit():
                     course_q &= Q(
                         department__code=discipline,
-                        code__gte=int(number),
-                        code__lte=int(end),
+                        code__gte=number.strip(),
+                        code__lte=end.strip(),
                     )
                 else:
                     logging.warn(

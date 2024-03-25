@@ -11,5 +11,5 @@ export const Icon = styled.span`
 `
 
 export const GrayIcon = styled(Icon)`
-    color: #c6c6c6;
+    color: #999999;
 `;

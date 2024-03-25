@@ -14,7 +14,7 @@
   --primary-color-xx-dark: #819AE1;
   --primary-color-dark: #C5D2F6;
   --primary-color: #E3E8F4;
-  --primary-color-light: #EDF1FC;
+  --primary-color-light: #EDF1FCAA; /* Semi-transparent */
   --background-white: #F7F9FC;
   --background-blue-grey:#F7F9FC;
   --background-light-grey: #F8F8F8;
@@ -200,8 +200,9 @@ a {
 }
 
 .jump {
-  -webkit-animation-name: bounce;
-  animation-name: bounce;
+  -webkit-animation-name: jump;
+  animation-name: jump;
   -webkit-transform-origin: center bottom;
   transform-origin: center bottom;
+  animation-duration: ;
 }

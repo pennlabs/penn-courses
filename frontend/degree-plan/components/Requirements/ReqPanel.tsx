@@ -250,19 +250,7 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
     console.log('rules to fulfillments', rulesToCourses)
     return rulesToCourses;
   }, [fulfillments, isLoadingFulfillments])
-
-  // const getProgress = (rule: any) => {
-  //   if (rule.q) {
-  //     return [rulesToFulfillments[rule.id].length, rule.num] // rule.num is not the most accurate rep of number of reqs
-  //   }
-  //   let satisfied = 0, total = 0;
-  //   for (let i = 0; i < rule.rules.length; i++) {
-  //     const [satisfiedByRule, totalByRule] = getProgress(rule.rules[i]);
-  //     satisfied += satisfiedByRule; total += totalByRule;
-  //   }
-  //   return [satisfied, total];
-  // } 
-
+  
   return(
     <PanelContainer>
       <PanelHeader>

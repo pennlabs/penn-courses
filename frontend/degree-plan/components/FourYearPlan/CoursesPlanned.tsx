@@ -1,7 +1,8 @@
 
 
 import { Ref } from "react";
-import CoursePlanned, { PlannedCourseContainer, SkeletonCourse } from "./CourseInPlan";
+import CourseInPlan from "./CourseInPlan";
+import { SkeletonCourse } from "../Course/Course";
 import styled from "@emotion/styled";
 import { Course, Fulfillment } from "@/types";
 
@@ -21,8 +22,8 @@ export const SkeletonCoursesPlanned = () => (
 
 interface CoursesPlannedProps {
     fulfillments: Fulfillment[];
-    removeCourse: (course: Course["full_code"]) => void;
-    semester: Course["full_code"],
+    removeCourse: (course: Course["id"]) => void;
+    semester: Course["id"],
     className: string;
     isLoading: boolean;
 }
@@ -31,7 +32,7 @@ const CoursesPlanned = ({fulfillments, removeCourse, className, semester, isLoad
     return (
         <PlannedCoursesContainer className={className}>
             {fulfillments.map(fulfillment => 
-                <CoursePlanned key={fulfillment.full_code} semester={semester} course={fulfillment} removeCourse={removeCourse} isUsed={true} isDisabled={false}/>
+                <CourseInPlan key={fulfillment.full_code} semester={semester} course={fulfillment} removeCourse={removeCourse} isDisabled={false}/>
             )}
             {/* <PlannedCourseContainer $isDepressed={true}/> */}
         </PlannedCoursesContainer>

@@ -48,6 +48,7 @@ export const PanelHeader = styled.div`
     flex-grow: 0;
     font-weight: 300;
     align-items: center;
+    min-height: 3rem;
 `;
 
 export const PanelBody = styled.div`

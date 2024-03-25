@@ -331,7 +331,7 @@ def degree_rules_filter(queryset, rule_ids):
         if not q:
             continue
         query &= q
-    return queryset.filter(q)
+    return queryset.filter(query)
 
 
 class CourseSearchFilterBackend(filters.BaseFilterBackend):
@@ -345,7 +345,7 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
             "instructor_quality": bound_filter("instructor_quality"),
             "difficulty": bound_filter("difficulty"),
             "is_open": is_open_filter,
-            "degree_rules": degree_rules_filter,
+            "rule_ids": degree_rules_filter,
         }
         for field, filter_func in filters.items():
             param = request.query_params.get(field)
@@ -366,7 +366,7 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
         if len(meeting_query) > 0:
             queryset = meeting_filter(queryset, meeting_query)
 
-        return queryset.distinct()
+        return queryset.distinct("full_code") # TODO: THIS IS A BREAKING CHANGE FOR PCX
 
     def get_schema_operation_parameters(self, view):
         return [
