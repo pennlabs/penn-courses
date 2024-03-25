@@ -1,0 +1,43 @@
+import os
+import requests
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+# Define the base URL and endpoints for Penn Course Review
+BASE_URL = 'http://localhost:8000' # Localhost URL
+LOGIN_URL = 'https://platform.pennlabs.org/accounts/login/'
+TOKEN_URL = 'https://sso.apps.k8s.upenn.edu/auth/realms/master/protocol/openid-connect/token'
+COURSE_REVIEW_ENDPOINT = '/api/review/course/{course_id}'
+USER_ENDPOINT = '/api/user/'
+COURSE_ID = 'CIS-1200'
+
+# OAuth2 credentials from .env or directly as strings
+CLIENT_ID = os.getenv('OPEN_DATA_CLIENT_ID')
+CLIENT_SECRET = os.getenv('OPEN_DATA_OIDC_SECRET')
+
+# Function to get the OAuth2 access token
+def get_access_token():
+    data = {
+        'grant_type': 'client_credentials',
+        'client_id': CLIENT_ID,
+        'client_secret': CLIENT_SECRET
+    }
+    response = requests.post(TOKEN_URL, data=data)
+    return response.json().get('access_token')
+
+# performing API requests with the token
+token = get_access_token()
+print(token)
+headers = {'Authorization': f'Bearer {token}'}
+
+print(BASE_URL + COURSE_REVIEW_ENDPOINT.format(course_id=COURSE_ID))
+
+# Simulate fetching course reviews for a specific course
+#response = requests.get(BASE_URL + COURSE_REVIEW_ENDPOINT.format(course_id=COURSE_ID), headers=headers)
+response = requests.get(f"http://localhost:8000/api/review/course/CIS-1200", headers=headers)
+print(response)
+course_reviews = response.json()
+
+# No cleaning up because we are using a test database? 
