@@ -5,7 +5,8 @@ import styled from '@emotion/styled';
 import { Course, DnDCourse, DockedCourse, Fulfillment } from "@/types";
 import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
 import { Draggable } from "../common/DnD";
-import { PlannedCourseContainer, CourseXButton } from "../FourYearPlan/CourseInPlan";
+import CourseComponent, { PlannedCourseContainer } from "../Course/Course";
+import { CourseXButton } from "../Course/Course";
 import { useSWRCrud } from "@/hooks/swrcrud";
 
 interface CourseInReqProps {
@@ -16,19 +17,20 @@ interface CourseInReqProps {
     className?: string;
     activeDegreePlanId: number;
     onClick?: () => void;
-  }
+}
 
-const CourseInReq = ({ course, isUsed = false, isDisabled = false, className, onClick, rule_id, activeDegreePlanId } : CourseInReqProps) => {
-  const { remove } = useSWRCrud<Fulfillment>(
-      `/api/degree/degreeplans/${activeDegreePlanId}/fulfillments`,
-      { idKey: "full_code",
-      createDefaultOptimisticData: { semester: null, rules: [] }
-  });
-  const { createOrUpdate } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
+const CourseInReq = (props : CourseInReqProps) => {
+    const { course, activeDegreePlanId, rule_id } = props;
 
+    const { remove } = useSWRCrud<Fulfillment>(
+        `/api/degree/degreeplans/${activeDegreePlanId}/fulfillments`,
+        { idKey: "full_code",
+        createDefaultOptimisticData: { semester: null, rules: [] }
+    });
+    const { createOrUpdate } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
     const handleRemoveCourse = (full_code: string) => {
-      remove(full_code);
-      createOrUpdate({"full_code": full_code}, full_code); 
+        remove(full_code);
+        createOrUpdate({"full_code": full_code}, full_code); 
     }
 
     const [{ isDragging }, drag] = useDrag<DnDCourse, never, { isDragging: boolean }>(() => ({
@@ -40,28 +42,9 @@ const CourseInReq = ({ course, isUsed = false, isDisabled = false, className, on
     }), [course])
   
     return (
-      <div onClick={onClick}>
-        <Draggable
-        isDragging={isDragging}
-        >
-          <ReviewPanelTrigger full_code={course.full_code}>
-            <PlannedCourseContainer
-            $isDragging={isDragging}
-            $isUsed={isUsed}
-            $isDisabled={isDisabled}
-            ref={drag}
-            className={className}
-            >
-                <div>
-                  {course.full_code}
-                </div>
-                {isUsed && <CourseXButton onClick={() => handleRemoveCourse(course.full_code)}/>}
-            </PlannedCourseContainer>
-          </ReviewPanelTrigger>
-        </Draggable>
-      </div>
+        <CourseComponent removeCourse={handleRemoveCourse} dragRef={drag} isDragging={isDragging} {...props} />
     )
-  }
+}
   
   
   export default CourseInReq;

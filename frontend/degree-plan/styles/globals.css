@@ -200,8 +200,9 @@ a {
 }
 
 .jump {
-  -webkit-animation-name: bounce;
-  animation-name: bounce;
+  -webkit-animation-name: jump;
+  animation-name: jump;
   -webkit-transform-origin: center bottom;
   transform-origin: center bottom;
+  animation-duration: ;
 }

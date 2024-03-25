@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import styled from '@emotion/styled';
-import Course, { SkeletonCourse } from "./Course";
+import Course, { SkeletonCourse } from "./CourseInSearch";
 import { Course as CourseType, DegreePlan, DockedCourse, Fulfillment, Rule, SortMode } from "../../types";
 import { useSWRCrud } from "@/hooks/swrcrud";
 

@@ -1,7 +1,9 @@
-import type { Course, DnDCourse, Fulfillment, Rule } from "@/types";
+import type { Course, DegreePlan, DnDCourse, Fulfillment, Rule } from "@/types";
 import styled from "@emotion/styled";
 import { Icon } from "../common/bulma_derived_components";
-import CoursePlanned, { BaseCourseContainer, SkeletonCourse } from "../FourYearPlan/CourseInPlan";
+import CourseInPlan from "../FourYearPlan/CourseInPlan";
+import { SkeletonCourse } from "../Course/Course";
+import { BaseCourseContainer } from "../Course/Course";
 import assert from "assert";
 import { useContext } from "react";
 import { SearchPanelContext } from "../Search/SearchPanel";
@@ -83,7 +85,7 @@ const Wrap = styled.span`
     text-wrap: wrap;
 `
 
-export const DarkGrayIcon = styled(Icon)`
+const DarkGrayIcon = styled(Icon)`
     color: #575757;
 `
 
@@ -156,7 +158,7 @@ const SearchConditionInner = ({ q }: SearchConditionInnerProps) => {
     ));
 
     if (display.length == 0) {
-        console.error("Empty display in SearchCondition: ", q)
+        display.push(<div>Pick any course</div>) // TODO: this is placeholder
     }
 
     return (
@@ -171,8 +173,9 @@ interface SearchConditionProps extends SearchConditionInnerProps {
     ruleIsSatisfied: boolean,
     ruleId: Rule["id"];
     ruleQuery: string;
+    activeDegreeplanId: DegreePlan["id"]
 }
-const SearchCondition = ({ ruleId, ruleQuery, fulfillments, ruleIsSatisfied, q}: SearchConditionProps) => {
+const SearchCondition = ({ ruleId, ruleQuery, fulfillments, ruleIsSatisfied, q, activeDegreeplanId}: SearchConditionProps) => {
     const { setSearchPanelOpen, setSearchRuleQuery, setSearchRuleId, setSearchFulfillments } = useContext(SearchPanelContext);
 
     return (
@@ -189,7 +192,7 @@ const SearchCondition = ({ ruleId, ruleQuery, fulfillments, ruleIsSatisfied, q}:
                 <i className="fas fa-search fa-sm"/>
             </DarkGrayIcon>
             {fulfillments.map(fulfillment => (
-                <CoursePlanned course={fulfillment} isDisabled={ruleIsSatisfied} isUsed onClick={(e) => {e.stopPropagation()}} />
+                <CourseInReq course={fulfillment} isDisabled={ruleIsSatisfied} isUsed onClick={(e) => {e.stopPropagation()}} activeDegreePlanId={activeDegreeplanId} />
             ))}
         </SearchConditionWrapper>
     )   
@@ -281,7 +284,6 @@ const QObject = ({ q, fulfillments, rule, satisfied, activeDegreePlanId }: QObje
 
                 // we've already used this course, so delete it
                 if (isChosen) fulfillmentsMap.delete(course.full_code); 
-                // return <div>uppp </div>
                 return <CourseInReq course={course} isDisabled={satisfied && !isChosen} isUsed={isChosen} rule_id={rule.id} activeDegreePlanId={activeDegreePlanId}/>;
             });
 
@@ -290,7 +292,7 @@ const QObject = ({ q, fulfillments, rule, satisfied, activeDegreePlanId }: QObje
             const displaySearchConditions = searchConditions.map(search => {
                 const courses = Array.from(fulfillmentsMap.values())
                 fulfillmentsMap.clear()
-                return <SearchCondition fulfillments={courses} q={search.q} ruleIsSatisfied={satisfied} ruleId={rule.id} ruleQuery={rule.q} />
+                return <SearchCondition fulfillments={courses} q={search.q} ruleIsSatisfied={satisfied} ruleId={rule.id} ruleQuery={rule.q} activeDegreeplanId={activeDegreePlanId}/>
             })
 
             return <Row $wrap>
@@ -300,7 +302,7 @@ const QObject = ({ q, fulfillments, rule, satisfied, activeDegreePlanId }: QObje
                 )}
                 </Row>
         case "SEARCH":
-            return <SearchCondition q={q.q} ruleIsSatisfied={satisfied} fulfillments={fulfillments} ruleId={rule.id} ruleQuery={rule.q} />;
+            return <SearchCondition q={q.q} ruleIsSatisfied={satisfied} fulfillments={fulfillments} ruleId={rule.id} ruleQuery={rule.q} activeDegreeplanId={activeDegreePlanId}/>;
         case "COURSE":
             const isChosen = fulfillments.find(fulfillment => fulfillment.full_code == q.full_code && (!q.semester || q.semester === fulfillment.semester))
             return <CourseInReq course={q} isDisabled={satisfied && !isChosen} isUsed={!!isChosen} rule_id={rule.id} activeDegreePlanId={activeDegreePlanId}/>;

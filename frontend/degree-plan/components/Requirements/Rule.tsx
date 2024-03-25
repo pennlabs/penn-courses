@@ -64,6 +64,12 @@ const Indented = styled.div`
   margin-bottom: 1rem;
 `
 
+const Column = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+`
+
 const PickNWrapper = styled.div`
   background-color: var(--primary-color-light);
   padding: .5rem;
@@ -206,11 +212,13 @@ const RuleComponent = (ruleTree : RuleTree) => {
         </RuleTitleWrapper>
         {!collapsed &&
           <Indented>
-            {children.map((ruleTree) => (
-              <div>
-                <RuleComponent {...ruleTree} />
-              </div>
-            ))}
+            <Column>
+              {children.map((ruleTree) => (
+                <div>
+                  <RuleComponent {...ruleTree} />
+                </div>
+              ))}
+            </Column>
           </Indented>
           }
       </>
