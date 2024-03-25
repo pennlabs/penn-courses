@@ -712,3 +712,46 @@ def get_semesters(semesters: str = None) -> list[str]:
             if s not in possible_semesters:
                 raise ValueError(f"Provided semester {s} was not found in the db.")
     return sorted(semesters)
+
+
+def historical_semester_probability(current, courses):
+    """
+    :param current: The current semester represented in the 20XX(A|B|C) format.
+    :type current: str
+    :param courses: A list of Course objects sorted by date in ascending order.
+    :type courses: list
+    :returns: A list of 3 probabilities representing the likelihood of
+    taking a course in each semester.
+    :rtype: list
+    """
+    prob_distribution = [0.4, 0.3, 0.15, 0.1, 0.05]
+
+    def normalize_and_round(prob, i):
+        """Modifies the probability distribution to account for the
+        fact that the last course was taken i semesters ago."""
+        truncate = prob_distribution[:i]
+        total = sum(truncate)
+        return list(map(lambda x: round(x / total, 3), truncate))
+
+    current_index = int(translate_semester(current)) // 10
+    min_index = current_index - 60
+    max_index = current_index - 10
+    p = [0, 0, 0]
+    if courses == []:
+        return p
+    else:
+        last_index = int(translate_semester(courses[0].semester)) // 10
+        if last_index > min_index:
+            prob_distribution = normalize_and_round(
+                prob_distribution, ((current_index - last_index) + 9) // 10
+            )
+    for c in courses:
+        index = int(translate_semester(c.semester)) // 10
+        if index < min_index or index > max_index:
+            continue
+        # Diff is the number of years ago the course was taken
+        diff = (current_index - index) // 10 - 1
+        if diff >= len(prob_distribution):
+            diff = len(prob_distribution) - 1
+        p[index % 10 - 1] += prob_distribution[diff]
+    return list(map(lambda x: min(round(x, 2), 1.00), p))

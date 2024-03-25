@@ -366,6 +366,36 @@ class Topic(models.Model):
         ),
     )
 
+    historical_probabilities_spring = models.FloatField(
+        default=0,
+        help_text=dedent(
+            """
+        The historical probability of a student taking a course in this topic in the spring
+        semester, based on historical data. This field is recomputed nightly from the
+        `parent_course` graph (in the recompute_soft_state cron job).
+        """
+        ),
+    )
+    historical_probabilities_summer = models.FloatField(
+        default=0,
+        help_text=dedent(
+            """
+        The historical probability of a student taking a course in this topic in the summer
+        semester, based on historical data. This field is recomputed nightly from the
+        `parent_course` graph (in the recompute_soft_state cron job).
+        """
+        ),
+    )
+    historical_probabilities_fall = models.FloatField(
+        default=0,
+        help_text=dedent(
+            """
+        The historical probability of a student taking a course in this topic in the fall
+        semester, based on historical data. This field is recomputed nightly from the
+        `parent_course` graph (in the recompute_soft_state cron job).
+        """
+        ),
+    )
     branched_from = models.ForeignKey(
         "Topic",
         related_name="branched_to",
