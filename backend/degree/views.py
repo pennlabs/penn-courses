@@ -160,7 +160,7 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
             return self.partial_update(request, *args, **kwargs)
         except Http404:
             return super().create(request, *args, **kwargs)
-
+        
 @api_view(["GET"])
 def courses_for_rule(request, rule_id: int):
     """

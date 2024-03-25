@@ -1,11 +1,11 @@
 import { useDrag } from "react-dnd";
 import { ItemTypes } from "../dnd/constants";
-import { Course, DnDCourse } from "@/types";
+import { Course, DnDCourse, Fulfillment } from "@/types";
 import 'react-loading-skeleton/dist/skeleton.css'
 import CourseComponent from "../Course/Course";
 
 interface CoursePlannedProps {
-  course: DnDCourse;
+  course: Fulfillment;
   removeCourse: (course: Course["id"]) => void;
   semester: Course["semester"];
   isDisabled: boolean;

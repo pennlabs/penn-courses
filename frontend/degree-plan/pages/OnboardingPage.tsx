@@ -272,17 +272,7 @@ const OnboardingPage = ({
             `/api/degree/degreeplans/${res.id}/degrees`,
             { degree_ids: majors.map((m) => m.value.id) }
           ); // add degree
-          // mutate(`api/degree/degreeplans/${res.id}`, updated, { populateCache: true, revalidate: false }) // use updated degree plan returned
-          // mutate(key => key && key.startsWith(`/api/degree/degreeplans/${res.id}/fulfillments`)) // refetch the fulfillments
           setActiveDegreeplan(res);
-          localStorage.setItem(
-            "PDP-start-grad-years",
-            JSON.stringify({
-              startingYear: startingYear?.value,
-              graduationYear: graduationYear?.value,
-            })
-          );
-          // TODO: update the backend on user's start/grad years
           setShowOnboardingModal(false);
         }
       });

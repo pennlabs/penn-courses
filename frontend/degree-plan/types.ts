@@ -97,7 +97,7 @@ export interface Course {
 // The interface we use with React DND
 export interface DnDCourse {
   full_code: string;
-  rule_id?: number;
+  rules?: number[];
 }
 
 export interface Fulfillment extends DBObject, DnDCourse {
