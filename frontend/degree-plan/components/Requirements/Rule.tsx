@@ -161,11 +161,12 @@ const RuleComponent = (ruleTree : RuleTree) => {
       return (
         <RuleLeafWrapper $isDroppable={canDrop} $isOver={isOver} ref={drop}>
             <RuleLeaf q_json={rule.q_json} rule={rule} fulfillmentsForRule={fulfillments} satisfied={satisfied} activeDegreePlanId={activeDegreePlanId}/>
-            <div>
-              {rule.credits && <CusCourses>{cus} / {rule.credits} cus</CusCourses>}
+            <Row>
+              {!!satisfied && <i className="fas fa-check-circle" style={{color: '#5EA872'}}></i>}
+              {rule.credits && <CusCourses>{`${cus} / ${rule.credits} ${rule.credits > 1 ? 'cus' : 'cu'}`}</CusCourses>}
               {" "}
               {rule.num && <CusCourses>{num} / {rule.num}</CusCourses>}
-            </div>
+            </Row>
         </RuleLeafWrapper>
       )
     }

@@ -31,9 +31,9 @@
   }
   
   .Resizer.vertical {
-    width: 12px;
-    height: 30%;
-    margin: auto 1rem;
+    width: 9px;
+    height: 45%;
+    margin: auto 0.5rem;
     border-radius: 5px;
     border-left: 1px solid rgba(255, 255, 255, 0);
     border-right: 1px solid rgba(255, 255, 255, 0);
