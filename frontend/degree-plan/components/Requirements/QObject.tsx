@@ -79,6 +79,7 @@ const SearchConditionWrapper = styled(BaseCourseContainer)`
     background-color: var(--primary-color-light);
     box-shadow: 0px 0px 14px 2px rgba(0, 0, 0, 0.05);
     cursor: pointer;
+    padding: .5rem .75rem;
 `
 
 const Wrap = styled.span`

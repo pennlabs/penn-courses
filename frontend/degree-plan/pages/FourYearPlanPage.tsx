@@ -36,7 +36,7 @@ const BodyContainer = styled.div`
   flex-grow: 1;
 `;
 
-const PanelWrapper = styled.div`
+const PanelWrapper = styled(Pane)`
   padding: 5px;
   height: 100%;
   display: flex;
@@ -157,11 +157,10 @@ const FourYearPlanPage = ({
               <Row>
                 <SplitPane
                   split="vertical"
-                  minSize={0}
                   maxSize={windowWidth ? windowWidth * 0.65 : 1000}
                   defaultSize="50%"
                   style={{
-                    padding: "2rem"
+                    padding: "1.5rem"
                   }}
                 >
                   <PanelWrapper>

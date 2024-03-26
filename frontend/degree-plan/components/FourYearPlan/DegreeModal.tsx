@@ -17,7 +17,7 @@ import {
 import useSWR, { useSWRConfig } from "swr";
 import ModalContainer from "../common/ModalContainer";
 import Select from "react-select";
-import useSWRMutation from "swr/mutation";
+import { schoolOptions } from "@/pages/OnboardingPage";
 
 export type ModalKey =
   | "plan-create"
@@ -116,7 +116,7 @@ const DegreeAddInterior = styled.div`
   flex-direction: column;
   gap: 2rem;
   width: 100%;
-  padding: 1.2rem 2rem 280px;
+  padding: 1.2rem 2rem;
 `;
 
 interface RemoveDegreeProps {
@@ -165,12 +165,6 @@ const ModalInterior = ({
 
   const { data: degrees, isLoading: isLoadingDegrees } =
     useSWR<DegreeListing[]>(`/api/degree/degrees`);
-
-  const defaultSchools = ["BSE", "BA", "BAS", "BS"];
-  const schoolOptions = defaultSchools.map((d) => ({
-    value: d,
-    label: d,
-  }));
 
   /** Create label for major listings */
   const createMajorLabel = (degree: DegreeListing) => {
@@ -289,11 +283,14 @@ const ModalInterior = ({
                 isClearable
                 placeholder="Select School or Program"
                 isLoading={false}
+                styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
+                menuPortalTarget={document.body}
               />
               <Select
                 options={getMajorOptions()}
                 value={major}
                 onChange={(selectedOption) => setMajor(selectedOption)}
+                styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
                 isClearable
                 placeholder={
                   school

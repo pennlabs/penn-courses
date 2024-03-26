@@ -97,6 +97,11 @@
   }
 }
 */
+input, select, textarea, button { 
+  font-family: inherit;
+  background-color: inherit;
+  color: inherit;
+}
 
 * {
   box-sizing: border-box;

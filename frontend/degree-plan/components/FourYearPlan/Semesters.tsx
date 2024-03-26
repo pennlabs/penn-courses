@@ -86,7 +86,7 @@ const AddButton = styled.div`
   gap: 1rem;
 `;
 
-const selectStyles = {
+const selectStyles = (topOrBottom: boolean) => ({
   control: (provided) => ({
     ...provided,
     width: "130px",
@@ -97,12 +97,17 @@ const selectStyles = {
     "&:hover": {
       borderColor: "#9FB5EF",
     },
+    ...(
+      topOrBottom ? 
+      { borderBottomLeftRadius: 0, borderBottomRightRadius: 0, borderBottom: 0 } : 
+      { borderTopLeftRadius: 0, borderTopRightRadius: 0 }
+    )
   }),
   singleValue: (provided) => ({
     ...provided,
     color: "#C1C1C1",
   }),
-};
+});
 
 // TODO: get a consistent color palette across PCx
 interface ModifySemestersProps {
@@ -162,14 +167,14 @@ const ModifySemesters = ({
       </AddButtonContainer>
 
       <Select
-        styles={selectStyles}
+        styles={selectStyles(true)}
         options={seasonOptions}
         value={seasonOptions.find((option) => option.value === selectedSeason)}
         onChange={(option) => setSelectedSeason(option.value)}
       />
 
       <Select
-        styles={selectStyles}
+        styles={selectStyles(false)}
         options={yearOptions}
         value={yearOptions.find((option) => option.value === selectedYear)}
         onChange={(option) => setSelectedYear(option.value)}
