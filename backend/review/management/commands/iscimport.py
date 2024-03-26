@@ -219,34 +219,35 @@ class Command(BaseCommand):
         semesters = sorted(list({r["TERM"] for r in summary_rows}))
         gc.collect()
 
-        for semester in semesters:
-            print(f"Loading {semester}...")
-            with transaction.atomic():  # Commit changes if all imports for the semester succeed
-                to_delete = Review.objects.filter(section__course__semester=semester)
-                delete_count = to_delete.count()
-                if delete_count > 0:
-                    if not force:
-                        prompt = input(
-                            f"This import will overwrite {delete_count} rows that have already been"
-                            + "imported. Continue? (y/N) "
-                        )
-                        if prompt.strip().upper() != "Y":
-                            print("Aborting...")
-                            return 0
+        # Commenting
+        # for semester in semesters:
+        #     print(f"Loading {semester}...")
+        #     with transaction.atomic():  # Commit changes if all imports for the semester succeed
+        #         to_delete = Review.objects.filter(section__course__semester=semester)
+        #         delete_count = to_delete.count()
+        #         if delete_count > 0:
+        #             if not force:
+        #                 prompt = input(
+        #                     f"This import will overwrite {delete_count} rows that have already been"
+        #                     + "imported. Continue? (y/N) "
+        #                 )
+        #                 if prompt.strip().upper() != "Y":
+        #                     print("Aborting...")
+        #                     return 0
 
-                    print(
-                        f"Deleting {delete_count} existing reviews for {semester} "
-                        "from the database..."
-                    )
-                    to_delete.delete()
+        #             print(
+        #                 f"Deleting {delete_count} existing reviews for {semester} "
+        #                 "from the database..."
+        #             )
+        #             to_delete.delete()
 
-                print(f"Importing reviews for semester {semester}")
-                stats = import_summary_rows(
-                    (r for r in summary_rows if r["TERM"] == semester), show_progress_bar
-                )
-                print(stats)
+        #         print(f"Importing reviews for semester {semester}")
+        #         stats = import_summary_rows(
+        #             (r for r in summary_rows if r["TERM"] == semester), show_progress_bar
+        #         )
+        #         print(stats)
 
-                gc.collect()
+        #         gc.collect()
 
         with transaction.atomic():
             if import_details:

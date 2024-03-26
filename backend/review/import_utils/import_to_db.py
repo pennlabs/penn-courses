@@ -12,7 +12,7 @@ from courses.util import (
 )
 from review.models import COLUMN_TO_SLUG, CONTEXT_TO_SLUG, Review, ReviewBit
 from review.util import titleize
-
+from django.db import transaction
 
 """
 PCR SQL DUMP IMPORT FUNCTIONS
@@ -240,13 +240,26 @@ def import_ratings_rows(num_ratings, ratings, semesters=None, show_progress_bar=
     Imports rating rows given an iterator ratings and total number of rows num_ratings.
     Optionally filter rows to import by semester with the given semesters list.
     """
+    # adjusted approach with batching implemented
+    num_batches = 5
+    counter = 0
+    batch_size = (num_ratings + 1) // num_batches
+
     stats = dict()
     stat = gen_stat(stats)
-    for i, row in tqdm(enumerate(ratings), total=num_ratings, disable=(not show_progress_bar)):
-        if i % 10000 == 0:
-            gc.collect()
-        if semesters is None or row["TERM"] in semesters:
-            import_ratings_row(row, stat)
+
+    for i in range(num_batches):
+        with transaction.atomic():
+            for j in tqdm(range(batch_size)):
+                if j % 10000 == 0:
+                    gc.collect()
+                if counter == num_ratings:
+                    return stats
+                row = next(ratings)
+                if semesters is None or row["TERM"] in semesters:
+                    import_ratings_row(row, stat)
+            counter += 1
+                
     return stats
 
 
