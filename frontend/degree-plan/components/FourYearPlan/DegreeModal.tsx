@@ -133,12 +133,14 @@ interface ModalInteriorProps {
   modalObject: DegreePlan | null | RemoveSemesterProps | RemoveDegreeProps;
   setActiveDegreeplan: (arg0: DegreePlan | null) => void;
   close: () => void;
+  modalRef: React.RefObject<HTMLSelectElement | null>;
 }
 const ModalInterior = ({
   modalObject,
   modalKey,
   setActiveDegreeplan,
   close,
+  modalRef
 }: ModalInteriorProps) => {
   const {
     create: createDegreeplan,
@@ -283,21 +285,21 @@ const ModalInterior = ({
                 isClearable
                 placeholder="Select School or Program"
                 isLoading={false}
-                styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
-                menuPortalTarget={document.body}
+                styles={{ menuPortal: base => ({ ...base, zIndex: 999 }) }}
+                menuPortalTarget={modalRef.current}
               />
               <Select
                 options={getMajorOptions()}
                 value={major}
                 onChange={(selectedOption) => setMajor(selectedOption)}
-                styles={{ menuPortal: base => ({ ...base, zIndex: 9999 }) }}
+                styles={{ menuPortal: base => ({ ...base, zIndex: 999 }) }}
+                menuPortalTarget={modalRef.current}
                 isClearable
+                isDisabled={!school}
                 placeholder={
-                  school
-                    ? isLoadingDegrees
-                      ? "loading programs"
-                      : "Major - Concentration"
-                    : "Please Select Program First"
+                  isLoadingDegrees
+                    ? "loading programs..."
+                    : "Major - Concentration"
                 }
                 isLoading={isLoadingDegrees}
               />

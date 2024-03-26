@@ -13,6 +13,7 @@ import {
   SchoolOption,
 } from "@/types";
 import { postFetcher, useSWRCrud } from "@/hooks/swrcrud";
+import { getLocalSemestersKey, interpolateSemesters } from "@/components/FourYearPlan/Semesters";
 
 const PanelContainer = styled.div<{ $maxWidth: string; $minWidth: string }>`
   border-radius: 10px;
@@ -113,7 +114,7 @@ const FieldWrapper = styled.div`
   align-items: left;
 `;
 
-const ustomSelectStylesLeft = {
+const customSelectStylesLeft = {
   control: (provided) => ({
     ...provided,
     width: 250,
@@ -191,8 +192,8 @@ const OnboardingPage = ({
   setShowOnboardingModal: (arg0: boolean) => void;
   setActiveDegreeplan: (arg0: DegreePlan) => void;
 }) => {
-  const [startingYear, setStartingYear] = useState(null);
-  const [graduationYear, setGraduationYear] = useState(null);
+  const [startingYear, setStartingYear] = useState<{ label: any, value: number } | null>(null);
+  const [graduationYear, setGraduationYear] = useState<{ label: any, value: number } | null>(null);
   const [schools, setSchools] = useState<SchoolOption[]>([]);
   const [majors, setMajors] = useState<MajorOption[]>([]);
   const [minor, setMinor] = useState([]);
@@ -258,23 +259,16 @@ const OnboardingPage = ({
     return majorOptions;
   }, [schools]);
 
-  // const getConcentrationOptions = React.useCallback(() => {
-  //   /** Filter concentration options based on selected majors */
-  //   const concentrationOptions = degrees
-  //     ?.filter(d => majors.map(s => s.value).includes(d.major))
-  //     .map((degree) => ({ value: degree.concentration, label: degree.concentration}))
-  //     || [];
-  //     console.log(concentrationOptions)
-  //   return concentrationOptions;
-  // }, [majors]);
-
-  // TODO: Load in minorOptions
-
   const handleAddDegrees = () => {
     createDegreeplan({ name: name })
-      .catch((e) => alert("Trouble adding degrees: " + e))
       .then((res) => {
         if (res) {
+          if (startingYear && graduationYear) {
+            window.localStorage.setItem(
+              getLocalSemestersKey(res.id),
+              JSON.stringify(interpolateSemesters(startingYear.value, graduationYear.value))
+            );
+          }
           setActiveDegreeplan(res);
           const updated = postFetcher(
             `/api/degree/degreeplans/${res.id}/degrees`,

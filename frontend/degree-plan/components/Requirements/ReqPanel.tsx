@@ -8,7 +8,7 @@ import useSWR from 'swr';
 import { Icon } from '../common/bulma_derived_components';
 import React from 'react';
 import { ModalKey } from '../FourYearPlan/DegreeModal';
-import { TrashIcon } from '../common/TrashIcon';
+import { LightTrashIcon } from '../common/TrashIcon';
 
 const EmptyPanelContainer = styled.div`
   display: flex;
@@ -108,9 +108,9 @@ const DegreeHeader = ({ degree, remove, setCollapsed, collapsed, editMode, skele
       </DegreeTitleWrapper>
       <span>
         {!skeleton && !!editMode ? 
-        <TrashIcon role="button" onClick={() => remove(degree.id)}>
+        <LightTrashIcon role="button" onClick={() => remove(degree.id)}>
           <i className="fa fa-trash fa-md"/>
-        </TrashIcon>
+        </LightTrashIcon>
         :
         <Icon>
           <i className={`fas fa-chevron-${collapsed ? "up" : "down"}`}></i>
