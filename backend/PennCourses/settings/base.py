@@ -89,12 +89,21 @@ WSGI_APPLICATION = "PennCourses.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
-
+cfg = dj_database_url.config(
+    default="postgres://penn-courses:postgres@localhost:5432/postgres"
+)
+assert cfg.get('OPTIONS') is None
+cfg['OPTIONS'] = {
+    'keepalives': 1,
+    'keepalives_idle': 7200,
+    'keepalives_interval': 30,
+    'keepalives_count': 10
+}
 DATABASES = {
-    "default": dj_database_url.config(
-        # this is overriden by the DATABASE_URL env var
-        default="postgres://penn-courses:postgres@localhost:5432/postgres"
-    )
+	"default": cfg
+}
+DATABASES = {
+    "default": cfg
 }
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
