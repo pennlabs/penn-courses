@@ -217,10 +217,7 @@ class Command(BaseCommand):
 
         if len(manual_merge) > 0:
             print("***Merging records manually***")
-            run_merge(
-                lambda: [set(Instructor.objects.filter(pk__in=manual_merge))],
-                force=True,
-            )
+            run_merge(lambda: [set(Instructor.objects.filter(pk__in=manual_merge))], force=True)
         else:
             if selected_strategies is None:
                 selected_strategies = list(strategies.keys())

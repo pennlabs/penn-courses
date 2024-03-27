@@ -223,11 +223,7 @@ def course_reviews(request, course_code, semester=None):
                 .values("max_sem")
             )
         )
-        .values(
-            instructor_id=F("id"),
-            instructor_name=F("name"),
-            semester=F("most_recent_sem"),
-        )
+        .values(instructor_id=F("id"), instructor_name=F("name"), semester=F("most_recent_sem"))
     )
     for instructor in recent_instructors:
         instructor["exclude_from_recent"] = True
@@ -507,10 +503,7 @@ def instructor_reviews(request, instructor_id):
         if full_code not in max_sem or max_sem[full_code] < r["semester"]:
             max_sem[full_code] = r["semester"]
             courses_res[full_code] = get_average_and_recent_dict_single(
-                r,
-                full_code="most_recent_full_code",
-                code="most_recent_full_code",
-                name="title",
+                r, full_code="most_recent_full_code", code="most_recent_full_code", name="title"
             )
 
     return Response(
@@ -823,9 +816,5 @@ def autocomplete(request):
     )
 
     return Response(
-        {
-            "courses": course_set,
-            "departments": department_set,
-            "instructors": instructor_set,
-        }
+        {"courses": course_set, "departments": department_set, "instructors": instructor_set}
     )
