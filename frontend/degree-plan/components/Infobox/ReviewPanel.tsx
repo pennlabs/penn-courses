@@ -3,21 +3,42 @@ import Draggable from 'react-draggable';
 import useSWR from 'swr';
 import styled from '@emotion/styled';
 import InfoBox from './index'
-import { PropsWithChildren, useContext, useEffect, useRef, useState } from 'react';
+import React, { PropsWithChildren, useContext, useEffect, useRef, useState } from 'react';
 import { createContext } from 'react';
 import { RightCurriedFunction1 } from 'lodash';
 
-const REVIEWPANEL_TRIGGER_TIME = 300 // in ms, how long you have to hover for review panel to open
+const REVIEWPANEL_TRIGGER_TIME = 400 // in ms, how long you have to hover for review panel to open
+
+const useOutsideAlerter = (ref: any) => {
+    const { set_full_code } = useContext(ReviewPanelContext);
+    useEffect(() => {
+      /**
+       * Alert if clicked on outside of element
+       */
+      const handleClickOutside = (event: any) => {
+        if (ref.current && !ref.current.contains(event.target)) {
+            set_full_code(null);
+        }
+      }
+      // Bind the event listener
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        // Unbind the event listener on clean up
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }, [ref]);
+  }
 
 export const ReviewPanelTrigger = ({ full_code, children }: PropsWithChildren<{full_code: Course["id"]}>) => {
     const ref = useRef<HTMLDivElement>(null);
     const { setPosition, set_full_code } = useContext(ReviewPanelContext);
     const timer = useRef<NodeJS.Timeout | null>(null);
+
     return (
         <div
             ref={ref}
-            onMouseEnter={() => {
-                timer.current = setTimeout(() => {
+            onClick={() => {
+                // timer.current = setTimeout(() => {
                     set_full_code(full_code)
                     if (!ref.current) return;
                     const position: ReviewPanelContextType["position"] = {}
@@ -32,11 +53,11 @@ export const ReviewPanelTrigger = ({ full_code, children }: PropsWithChildren<{f
                     else position["top"] = bottom;
                     
                     setPosition(position);
-                }, REVIEWPANEL_TRIGGER_TIME)
+                // }, REVIEWPANEL_TRIGGER_TIME)
             }}
             onMouseLeave={() => {
-                set_full_code(null)
-                if (timer.current) clearTimeout(timer.current);
+                // set_full_code(null)
+                // if (timer.current) clearTimeout(timer.current);
             }}
             className="review-panel-trigger"
         >
@@ -95,10 +116,12 @@ const ReviewPanel = ({
     if (!top && !bottom) right = 0;
     right = left === undefined ? right : undefined;
     bottom = top === undefined ? bottom : undefined;
+    const wrapperRef = useRef(null);
+    useOutsideAlerter(wrapperRef);
 
     return (
         <ReviewPanelWrapper $right={right} $left={left} $top={top} $bottom={bottom}>
-            <ReviewPanelContainer>
+            <ReviewPanelContainer ref={wrapperRef}>
                 {data &&
                     <InfoBox
                         close={() => { 
