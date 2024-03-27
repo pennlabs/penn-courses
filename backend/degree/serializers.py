@@ -126,7 +126,9 @@ class FulfillmentSerializer(serializers.ModelSerializer):
 
         # TODO: check that rules belong to this degree plan
         for rule in rules:
-            if not Course.objects.filter(rule.get_q_object(), full_code=full_code).exists():
+            # NOTE: we don't do any validation if the course doesn't exist in DB. In future, it may be better to
+            # prompt user for manual override
+            if Course.objects.filter(full_code=full_code).exists() and not Course.objects.filter(rule.get_q_object(), full_code=full_code).exists():
                 raise serializers.ValidationError(
                     f"Course {full_code} does not satisfy rule {rule.id}"
                 )
