@@ -123,7 +123,7 @@ const CourseComponent = ({ course, fulfillment, removeCourse, isUsed = false, is
     isDragging={isDragging}
     onClick={onClick}
     >
-    <ReviewPanelTrigger full_code={course.full_code}>
+    <ReviewPanelTrigger full_code={course.full_code} triggerType="click">
         <PlannedCourseContainer
         $isDragging={isDragging}
         $isUsed={isUsed}
