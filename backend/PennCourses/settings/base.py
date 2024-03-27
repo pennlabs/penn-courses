@@ -200,12 +200,7 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.BasicAuthentication",
         "accounts.authentication.PlatformAuthentication",
-    ],
-    'DEFAULT_PARSER_CLASSES': (
-            'rest_framework.parsers.JSONParser',
-            'rest_framework.parsers.FormParser',
-            'rest_framework.parsers.MultiPartParser',
-    ),
+    ]
 }
 
 STATS_WEBHOOK = os.environ.get("STATS_WEBHOOK", None)
