@@ -10,11 +10,12 @@
   --background-end-rgb: 255, 255, 255;
 
   /* blue */
-  --primary-color-extra-dark: #9AA7C6;
   --primary-color-xx-dark: #819AE1;
+  --primary-color-extra-dark: #9AA7C6;
   --primary-color-dark: #C5D2F6;
   --primary-color: #E3E8F4;
-  --primary-color-light: #EDF1FCAA; /* Semi-transparent */
+  --primary-color-light: #DCE4F999;  /* Semi-transparent */
+  --primary-color-extra-light: #EDF1FCAA; /* Semi-transparent */
   --background-white: #F7F9FC;
   --background-blue-grey:#F7F9FC;
   --background-light-grey: #F8F8F8;
@@ -97,6 +98,11 @@
   }
 }
 */
+input, select, textarea, button { 
+  font-family: inherit;
+  background-color: inherit;
+  color: inherit;
+}
 
 * {
   box-sizing: border-box;

@@ -8,7 +8,7 @@ import useSWR from 'swr';
 import { Icon } from '../common/bulma_derived_components';
 import React from 'react';
 import { ModalKey } from '../FourYearPlan/DegreeModal';
-import { TrashIcon } from '../common/TrashIcon';
+import { LightTrashIcon } from '../common/TrashIcon';
 
 const EmptyPanelContainer = styled.div`
   display: flex;
@@ -39,7 +39,8 @@ const DegreeHeaderContainer = styled.div`
   align-items: center;
   font-size: 1rem;
   font-weight: 500;
-  background-color: var(--primary-color);
+  background-color: var(--primary-color-xx-dark);
+  color: #FFF;
   padding: 0.75rem 1.25rem;
   border-radius: var(--req-item-radius);
 `
@@ -50,6 +51,7 @@ const ReqPanelTitle = styled.div`
 `
 
 const DegreeBody = styled.div`
+  margin-top: .5rem;
   overflow-y: auto;
   overflow-x: hidden;
 `
@@ -58,9 +60,8 @@ export const DegreeYear = styled.span`
   margin-left: .25rem;
   font-size: .9rem;
   font-weight: 500;
-  color: #575757;
 `
-const DegreeTitleWrapper = styled.div`
+const  DegreeTitleWrapper = styled.div`
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -107,9 +108,9 @@ const DegreeHeader = ({ degree, remove, setCollapsed, collapsed, editMode, skele
       </DegreeTitleWrapper>
       <span>
         {!skeleton && !!editMode ? 
-        <TrashIcon role="button" onClick={() => remove(degree.id)}>
+        <LightTrashIcon role="button" onClick={() => remove(degree.id)}>
           <i className="fa fa-trash fa-md"/>
-        </TrashIcon>
+        </LightTrashIcon>
         :
         <Icon>
           <i className={`fas fa-chevron-${collapsed ? "up" : "down"}`}></i>

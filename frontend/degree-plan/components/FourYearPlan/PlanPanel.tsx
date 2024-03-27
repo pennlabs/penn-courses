@@ -31,7 +31,7 @@ interface PlanPanelProps {
     activeDegreeplan: DegreePlan | null;
     degreeplans: DegreePlan[] | undefined;
     isLoading: boolean;
-    currentSemester: string;
+    currentSemester?: string;
     setShowOnboardingModal: (arg0: boolean) => void;
 }
 

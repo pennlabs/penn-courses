@@ -13,6 +13,7 @@ import {
   SchoolOption,
 } from "@/types";
 import { postFetcher, useSWRCrud } from "@/hooks/swrcrud";
+import { getLocalSemestersKey, interpolateSemesters } from "@/components/FourYearPlan/Semesters";
 
 const PanelContainer = styled.div<{ $maxWidth: string; $minWidth: string }>`
   border-radius: 10px;
@@ -88,6 +89,14 @@ export const Label = styled.h5`
     display: ${({ required }) => (required ? "inline" : "none")};
   }
 `;
+
+export const schoolOptions = [
+  { value: "BA", label: "Arts & Sciences" },
+  { value: "BSE", label: "Engineering BSE" }, 
+  { value: "BAS", label: "Engineering BAS" },
+  { value: "BS", label: "Wharton" },
+  { value: "BSN", label: "Nursing" }
+];
 
 const TextInput = styled.input`
   font-size: 1rem;
@@ -183,28 +192,22 @@ const OnboardingPage = ({
   setShowOnboardingModal: (arg0: boolean) => void;
   setActiveDegreeplan: (arg0: DegreePlan) => void;
 }) => {
-  const [startingYear, setStartingYear] = useState(null);
-  const [graduationYear, setGraduationYear] = useState(null);
+  const [startingYear, setStartingYear] = useState<{ label: any, value: number } | null>(null);
+  const [graduationYear, setGraduationYear] = useState<{ label: any, value: number } | null>(null);
   const [schools, setSchools] = useState<SchoolOption[]>([]);
   const [majors, setMajors] = useState<MajorOption[]>([]);
-  const [concentrations, setConcentrations] = useState([]);
   const [minor, setMinor] = useState([]);
-  const [complete, setComplete] = useState(false);
   const [name, setName] = useState("");
 
   const { create: createDegreeplan } = useSWRCrud<DegreePlan>(
     "/api/degree/degreeplans"
   );
 
-  useEffect(() => {
-    setComplete(
-      startingYear !== null &&
+  const complete = startingYear !== null &&
         graduationYear !== null &&
         schools.length > 0 &&
         majors.length > 0 &&
-        name !== ""
-    );
-  }, [startingYear, graduationYear, schools, majors, name]);
+        name !== "";
 
   const { data: degrees, isLoading: isLoadingDegrees } =
     useSWR<DegreeListing[]>(`/api/degree/degrees`);
@@ -220,7 +223,7 @@ const OnboardingPage = ({
     const currentYear = Number(options.SEMESTER.substring(0, 4));
     return {
       // Up and down to 5 years
-      startYears: [...Array(5).keys()].map((i) => ({
+      startYears: [...Array(5).keys()].reverse().map((i) => ({
         value: currentYear - i,
         label: currentYear - i,
       })),
@@ -233,13 +236,6 @@ const OnboardingPage = ({
 
   const startingYearOptions = getYearOptions()?.startYears;
   const graduationYearOptions = getYearOptions()?.gradYears;
-
-  const defaultSchools = ["BA", "BSE", "BAS", "BS", "BSN"];
-
-  const schoolOptions = defaultSchools.map((d) => ({
-    value: d,
-    label: d,
-  }));
 
   /** Create label for major listings */
   const createMajorLabel = (degree: DegreeListing) => {
@@ -263,23 +259,16 @@ const OnboardingPage = ({
     return majorOptions;
   }, [schools]);
 
-  // const getConcentrationOptions = React.useCallback(() => {
-  //   /** Filter concentration options based on selected majors */
-  //   const concentrationOptions = degrees
-  //     ?.filter(d => majors.map(s => s.value).includes(d.major))
-  //     .map((degree) => ({ value: degree.concentration, label: degree.concentration}))
-  //     || [];
-  //     console.log(concentrationOptions)
-  //   return concentrationOptions;
-  // }, [majors]);
-
-  // TODO: Load in minorOptions
-
   const handleAddDegrees = () => {
     createDegreeplan({ name: name })
-      .catch((e) => alert("Trouble adding degrees: " + e))
       .then((res) => {
         if (res) {
+          if (startingYear && graduationYear) {
+            window.localStorage.setItem(
+              getLocalSemestersKey(res.id),
+              JSON.stringify(interpolateSemesters(startingYear.value, graduationYear.value))
+            );
+          }
           setActiveDegreeplan(res);
           const updated = postFetcher(
             `/api/degree/degreeplans/${res.id}/degrees`,
@@ -295,10 +284,19 @@ const OnboardingPage = ({
     <CenteredFlexContainer>
       <PanelContainer $maxWidth="90%" $minWidth="90%">
         <h1 style={{ paddingLeft: "5%", paddingTop: "5%" }}>
-          Degree Information
+          Enter your degree(s):
         </h1>
         <ColumnsContainer>
           <Column>
+            <FieldWrapper>
+              <Label required>Degree Plan Name</Label>
+              <TextInput
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder=""
+              />
+            </FieldWrapper>
+
             <FieldWrapper>
               <Label required>Starting Year</Label>
               <Select
@@ -320,15 +318,6 @@ const OnboardingPage = ({
                 isClearable
                 placeholder="Select Year of Graduation"
                 styles={customSelectStylesLeft}
-              />
-            </FieldWrapper>
-
-            <FieldWrapper>
-              <Label required>Degree Plan Name</Label>
-              <TextInput
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder=""
               />
             </FieldWrapper>
           </Column>
@@ -356,10 +345,9 @@ const OnboardingPage = ({
                 onChange={(selectedOption) => setMajors(selectedOption)}
                 isClearable
                 isMulti
+                isDisabled={schools.length === 0}
                 placeholder={
-                  schools.length > 0
-                    ? "Major - Concentration"
-                    : "Please Select Program First"
+                  "Major - Concentration"
                 }
                 styles={customSelectStylesRight}
                 isLoading={isLoadingDegrees}
