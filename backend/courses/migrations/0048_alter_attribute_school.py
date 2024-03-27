@@ -6,10 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        (
-            "courses",
-            "0047_alter_section_pre_ngss_restrictions_ngssrestriction_and_more",
-        ),
+        ("courses", "0047_alter_section_pre_ngss_restrictions_ngssrestriction_and_more"),
     ]
 
     operations = [

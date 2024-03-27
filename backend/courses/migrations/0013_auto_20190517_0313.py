@@ -24,11 +24,7 @@ class Migration(migrations.Migration):
             model_name="requirement",
             name="school",
             field=models.CharField(
-                choices=[
-                    ("SEAS", "Engineering"),
-                    ("WH+", "Wharton"),
-                    ("SAS", "College"),
-                ],
+                choices=[("SEAS", "Engineering"), ("WH+", "Wharton"), ("SAS", "College")],
                 max_length=5,
             ),
         ),
