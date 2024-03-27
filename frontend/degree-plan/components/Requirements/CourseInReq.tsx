@@ -3,7 +3,6 @@ import { ItemTypes } from "../dnd/constants";
 import { GrayIcon } from '../common/bulma_derived_components';
 import styled from '@emotion/styled';
 import { Course, DnDCourse, DockedCourse, Fulfillment } from "@/types";
-import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
 import { Draggable } from "../common/DnD";
 import CourseComponent, { PlannedCourseContainer } from "../Course/Course";
 import { CourseXButton } from "../Course/Course";
