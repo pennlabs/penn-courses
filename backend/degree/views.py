@@ -11,7 +11,7 @@ from rest_framework.response import Response
 
 from courses.models import Course
 from courses.serializers import CourseListSerializer
-from degree.models import Degree, DegreePlan, Fulfillment, Rule, DockedCourse
+from degree.models import Degree, DegreePlan, Fulfillment, PDPBetaUser, Rule, DockedCourse
 from degree.serializers import (
     DegreeDetailSerializer,
     DegreeListSerializer,
@@ -20,20 +20,27 @@ from degree.serializers import (
     FulfillmentSerializer,
     DockedCourseSerializer
 )
+from rest_framework.permissions import BasePermission, IsAuthenticated, SAFE_METHODS
+
+class InPDPBeta(BasePermission):
+    def has_permission(self, request, view):
+        return PDPBetaUser.objects.filter(person=request.user).exists()
 
 
 class DegreeViewset(viewsets.ReadOnlyModelViewSet):
     """
     Retrieve a list of all Degree objects.
     """
-
-    # queryset = Degree.objects.all()
     filter_backends = [DjangoFilterBackend, SearchFilter]
     search_fields = ["program", "degree", "concentration", "year"]
     filterset_fields = search_fields
 
+    # After Beta: remove this permission entirely
+    permission_classes = [IsAuthenticated & InPDPBeta]
+
     def get_queryset(self):
         queryset = Degree.objects.all()
+        # TODO: I don't think this is necessary since querysets are lazily evaluated
         degree_id = self.request.query_params.get('id', None)
         if degree_id is not None:
             queryset = queryset.filter(id=degree_id)
@@ -50,8 +57,8 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     """
     List, retrieve, create, destroy, and update a DegreePlan.
     """
-
-    permission_classes = [IsAuthenticated]
+    # After beta: remove DegreeWaitlist
+    permission_classes = [IsAuthenticated & InPDPBeta]
 
     def get_queryset(self):
         queryset = DegreePlan.objects.filter(person=self.request.user)
@@ -132,7 +139,8 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
     List, retrieve, create, destroy, and update a Fulfillment.
     """
 
-    permission_classes = [IsAuthenticated]
+    # After beta: remove DegreeWaitlist
+    permission_classes = [IsAuthenticated & InPDPBeta]
     serializer_class = FulfillmentSerializer
     http_method_names = ["get", "post", "head", "delete"]
     queryset = Fulfillment.objects.all()
@@ -160,19 +168,13 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
             return self.partial_update(request, *args, **kwargs)
         except Http404:
             return super().create(request, *args, **kwargs)
-        
-@api_view(["GET"])
-def courses_for_rule(request, rule_id: int):
-    """
-    Search for courses that fulfill a given rule.
-    """
-
 
 class DockedCourseViewset(viewsets.ModelViewSet):
     """
     List, retrieve, create, destroy, and update docked courses
     """
-    permission_classes = [IsAuthenticated]
+    # After beta: remove DegreeWaitlist
+    permission_classes = [IsAuthenticated & InPDPBeta]
     serializer_class = DockedCourseSerializer
     # http_method_names = ["get", "post", "head", "delete"]
     queryset = DockedCourse.objects.all()

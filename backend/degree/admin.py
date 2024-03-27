@@ -4,7 +4,7 @@ from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.html import format_html
 
-from degree.models import Degree, DegreePlan, DoubleCountRestriction, Rule, SatisfactionStatus, Fulfillment
+from degree.models import Degree, DegreePlan, DoubleCountRestriction, PDPBetaUser, Rule, SatisfactionStatus, Fulfillment
 
 
 # Register your models here.
@@ -18,9 +18,15 @@ class RuleAdmin(admin.ModelAdmin):
 admin.site.register(DegreePlan)
 admin.site.register(SatisfactionStatus)
 
+@admin.register(PDPBetaUser)
+class PDPBetaUserAdmin(admin.ModelAdmin):
+    search_fields = ("person__username","person__id")
+    autocomplete_fields = ("person",)
+
 @admin.register(Fulfillment)
 class FulfillmentAdmin(admin.ModelAdmin):
     autocomplete_fields = ["rules"]
+
 
 @admin.register(DoubleCountRestriction)
 class DoubleCountRestrictionAdmin(admin.ModelAdmin):

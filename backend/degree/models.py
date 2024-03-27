@@ -527,3 +527,12 @@ class DockedCourse(models.Model):
                 name="unique docked course",
             )
         ]
+
+# After beta: delete this (and remove the DegreeWaitlist permission class)
+class PDPBetaUser(models.Model):
+    person = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.CASCADE,
+        help_text="The user who has access to the PDP beta"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
