@@ -181,11 +181,16 @@ const SearchCondition = ({ ruleId, ruleQuery, fulfillments, ruleIsSatisfied, q, 
 
     return (
         <SearchConditionWrapper 
-        $isDisabled={ruleIsSatisfied}>
+            $isDisabled={false}>
             <SearchConditionInner q={q} />
             <DarkGrayIcon onClick={() => {
             setSearchRuleQuery(ruleQuery);
-            setSearchRuleId(ruleId);
+            if ((q.type === "OR" || q.type === "AND") && q.clauses.length == 0) {
+                // only set search ruleId if the search rule is non-empty
+                setSearchRuleId(null);
+            } else {
+                setSearchRuleId(ruleId)
+            }
             setSearchPanelOpen(true);
             setSearchFulfillments(fulfillments)
         }}>

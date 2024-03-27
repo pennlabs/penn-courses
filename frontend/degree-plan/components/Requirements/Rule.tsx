@@ -65,6 +65,7 @@ const CusCourses = styled.div`
 const Row = styled.div`
   display: flex;
   gap: .5rem;
+  align-items: center;
 `
 
 const Indented = styled.div`
@@ -79,7 +80,7 @@ const Column = styled.div`
 `
 
 const PickNWrapper = styled.div`
-  background-color: var(--primary-color-light);
+  background-color: var(--primary-color-extra-light);
   padding: .5rem;
   padding-bottom: .25rem;
   border-radius: .5rem;
@@ -197,7 +198,7 @@ const RuleComponent = (ruleTree : RuleTree) => {
     // otherwise, type == "INTERNAL_NODE"
     const { children, num } = ruleTree; 
 
-    if (num) {
+    if (num && children.length > num) {
       return <PickNWrapper>
         <PickNTitle>
           <div>Pick {num}:</div>

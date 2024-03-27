@@ -10,10 +10,9 @@ const RatingRow = ({
   difficulty,
   work
 }) => {
-  const numOrNA = num => (isNaN(num) ? "N/A" : num.toFixed(1));
-  // TODO: After switching to styled-components or some other styling solution, refactor this code.
+  const numOrNA = num => (!num || isNaN(num) ? "N/A" : num.toFixed(1));
   const getColor = (num, reverse) => {
-    if (isNaN(num)) {
+    if (!num || isNaN(num)) {
       return "rating-good";
     }
     num = num.toFixed(1);

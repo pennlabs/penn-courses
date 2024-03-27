@@ -51,7 +51,7 @@ const ReqPanelTitle = styled.div`
 `
 
 const DegreeBody = styled.div`
-  margin-top: .75rem;
+  margin-top: .5rem;
   overflow-y: auto;
   overflow-x: hidden;
 `
