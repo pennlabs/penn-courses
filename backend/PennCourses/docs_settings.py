@@ -664,8 +664,7 @@ class JSONOpenAPICustomTagGroupsRenderer(JSONOpenAPIRenderer):
             all_list = all([("list" in v["operationId"].lower()) for v in tag_to_dicts[tag]])
             if all_list:  # if all views in tag are lists, pluralize tag name
                 tag = update_tag(
-                    tag,
-                    " ".join(tag.split(" ")[:-1] + [pluralize_word(tag.split(" ")[-1])]),
+                    tag, " ".join(tag.split(" ")[:-1] + [pluralize_word(tag.split(" ")[-1])])
                 )
             if tag in custom_tag_names.keys():  # rename custom tags
                 tag = update_tag(tag, custom_tag_names[tag])
@@ -852,10 +851,7 @@ class PcxAutoSchema(AutoSchema):
                     fail(param_name, f"The {param_name} kwarg must be a dict.")
                 for dictionary in param_dict.values():
                     if not isinstance(dictionary, dict):
-                        fail(
-                            param_name,
-                            f"All values of the {param_name} dict must be dicts.",
-                        )
+                        fail(param_name, f"All values of the {param_name} dict must be dicts.")
                     for nested_dictionary in dictionary.values():
                         if param_name == "custom_parameters":
                             if not isinstance(nested_dictionary, list):

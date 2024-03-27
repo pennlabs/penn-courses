@@ -1,5 +1,4 @@
 from django_auto_prefetching import AutoPrefetchViewSetMixin
-from django_filters.rest_framework import DjangoFilterBackend
 from django.http import Http404
 from django.db import IntegrityError
 from rest_framework import status, viewsets
@@ -33,7 +32,7 @@ class DegreeViewset(viewsets.ReadOnlyModelViewSet):
     Retrieve a list of all Degree objects.
     """
 
-    filter_backends = [DjangoFilterBackend, SearchFilter]
+    filter_backends = [SearchFilter]
     search_fields = ["program", "degree", "concentration", "year"]
     filterset_fields = search_fields
 

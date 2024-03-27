@@ -49,7 +49,6 @@ INSTALLED_APPS = [
     "options.apps.OptionsConfig",
     "django.contrib.admindocs",
     "django_extensions",
-    "django_filters",
     "alert",
     "courses",
     "plan",
@@ -200,7 +199,7 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.BasicAuthentication",
         "accounts.authentication.PlatformAuthentication",
-    ]
+    ],
 }
 
 STATS_WEBHOOK = os.environ.get("STATS_WEBHOOK", None)
