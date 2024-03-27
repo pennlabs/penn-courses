@@ -8,3 +8,11 @@ export const TrashIcon = styled(GrayIcon)`
     color: #7E7E7E;
   }
 `;
+
+export const LightTrashIcon = styled(GrayIcon)`
+  pointer-events: auto;
+  color: #F5F5F5;
+  &:hover {
+    color: #E0E0E0;
+  }
+`

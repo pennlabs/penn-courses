@@ -79,6 +79,7 @@ const SearchConditionWrapper = styled(BaseCourseContainer)`
     background-color: var(--primary-color-light);
     box-shadow: 0px 0px 14px 2px rgba(0, 0, 0, 0.05);
     cursor: pointer;
+    padding: .5rem .75rem;
 `
 
 const Wrap = styled.span`
@@ -180,11 +181,16 @@ const SearchCondition = ({ ruleId, ruleQuery, fulfillments, ruleIsSatisfied, q, 
 
     return (
         <SearchConditionWrapper 
-        $isDisabled={ruleIsSatisfied}>
+            $isDisabled={false}>
             <SearchConditionInner q={q} />
             <DarkGrayIcon onClick={() => {
             setSearchRuleQuery(ruleQuery);
-            setSearchRuleId(ruleId);
+            if ((q.type === "OR" || q.type === "AND") && q.clauses.length == 0) {
+                // only set search ruleId if the search rule is non-empty
+                setSearchRuleId(null);
+            } else {
+                setSearchRuleId(ruleId)
+            }
             setSearchPanelOpen(true);
             setSearchFulfillments(fulfillments)
         }}>

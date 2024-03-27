@@ -22,20 +22,7 @@ const getNextSemester = (semester: string) => {
   }
 };
 
-const semesterCompare = (a, b) => {
-  const yearA = parseInt(a.substring(0, 4), 10);
-  const yearB = parseInt(b.substring(0, 4), 10);
-  const seasonA = a.substring(4);
-  const seasonB = b.substring(4);
-
-  if (yearA !== yearB) {
-    return yearA - yearB;
-  }
-  const seasonOrder = { A: 1, B: 2, C: 3 };
-  return seasonOrder[seasonA] - seasonOrder[seasonB];
-};
-
-const getLocalSemestersKey = (degreeplanId: DegreePlan["id"]) =>
+export const getLocalSemestersKey = (degreeplanId: DegreePlan["id"]) =>
   `PDP-${degreeplanId}-semesters`;
 
 const SemestersContainer = styled.div`
@@ -44,13 +31,6 @@ const SemestersContainer = styled.div`
   gap: 1.25rem;
   flex-wrap: wrap;
 `;
-
-// const AddSemesterContainer = styled.div`
-//     flex: 1 1 15rem;
-//     display: flex;
-//     flex-direction: column;
-//     gap: .5rem;
-// `;
 
 const AddSemesterContainer = styled.div`
   background: #ffffff;
@@ -86,7 +66,7 @@ const AddButton = styled.div`
   gap: 1rem;
 `;
 
-const selectStyles = {
+const selectStyles = (topOrBottom: boolean) => ({
   control: (provided) => ({
     ...provided,
     width: "130px",
@@ -97,12 +77,17 @@ const selectStyles = {
     "&:hover": {
       borderColor: "#9FB5EF",
     },
+    ...(
+      topOrBottom ? 
+      { borderBottomLeftRadius: 0, borderBottomRightRadius: 0, borderBottom: 0 } : 
+      { borderTopLeftRadius: 0, borderTopRightRadius: 0 }
+    )
   }),
   singleValue: (provided) => ({
     ...provided,
     color: "#C1C1C1",
   }),
-};
+});
 
 // TODO: get a consistent color palette across PCx
 interface ModifySemestersProps {
@@ -117,7 +102,7 @@ const ModifySemesters = ({
   className,
 }: ModifySemestersProps) => {
   const latestSemester =
-    Object.keys(semesters).sort(semesterCompare).pop() || "2026A"; // TODO: Change fallback value to start semester (based on onboarding?)
+    Object.keys(semesters).sort((a, b) => a.localeCompare(b)).pop() || "2026A"; // TODO: Change fallback value to start semester (based on onboarding?)
 
   const nextSemester = getNextSemester(latestSemester);
   const [nextYear, nextSeason] = [
@@ -162,14 +147,14 @@ const ModifySemesters = ({
       </AddButtonContainer>
 
       <Select
-        styles={selectStyles}
+        styles={selectStyles(true)}
         options={seasonOptions}
         value={seasonOptions.find((option) => option.value === selectedSeason)}
         onChange={(option) => setSelectedSeason(option.value)}
       />
 
       <Select
-        styles={selectStyles}
+        styles={selectStyles(false)}
         options={yearOptions}
         value={yearOptions.find((option) => option.value === selectedYear)}
         onChange={(option) => setSelectedYear(option.value)}
@@ -177,6 +162,15 @@ const ModifySemesters = ({
     </AddSemesterContainer>
   );
 };
+
+export const interpolateSemesters = (startingYear: number, graduationYear: number) => {
+  let res = {} as { [semester: string]: Fulfillment[] };
+  for (let year = startingYear; year < graduationYear; year++) {
+    res[`${year}C`] = [];
+    res[`${year + 1}A`] = []; // A is Spring, C is Fall
+  }
+  return res;
+}
 
 interface SemestersProps {
   activeDegreeplan?: DegreePlan;
@@ -187,7 +181,7 @@ interface SemestersProps {
   setModalObject: (obj: any) => void;
   setEditMode: (arg0: boolean) => void;
   isLoading: boolean;
-  currentSemester: string;
+  currentSemester?: string;
 }
 
 const Semesters = ({
@@ -211,28 +205,8 @@ const Semesters = ({
   // semesters is state mostly derived from fulfillments
 
   const getDefaultSemesters = React.useCallback(() => {
-    if (!currentSemester) return {};
-
-    var startingYear, graduationYear;
-    if (typeof window === "undefined") {
-      startingYear = Number(currentSemester.substring(0, 4)); // Use current semester as default starting semester
-      graduationYear = startingYear + 4;
-    } else {
-      const startGradYearStr = localStorage.getItem("PDP-start-grad-years");
-      if (!!startGradYearStr) {
-        const startGradYear = JSON.parse(startGradYearStr);
-        startingYear = startGradYear.startingYear;
-        graduationYear = startGradYear.graduationYear;
-      } else {
-        return {};
-      }
-    }
-
-    var res = {} as { [semester: string]: Fulfillment[] };
-    for (var year = startingYear; year < graduationYear; year++) {
-      res = { ...res, [`${year}C`]: [], [`${year + 1}A`]: [] }; // A is Spring, C is Fall
-    }
-    return res;
+    const startingYear = currentSemester ? Number(currentSemester.substring(0, 4)) : new Date().getFullYear(); // Use current semester as default starting semester
+    return interpolateSemesters(startingYear, startingYear + 4);
   }, [currentSemester]);
 
   const [semesters, setSemesters] = useState<{
@@ -255,15 +229,19 @@ const Semesters = ({
   /** Get semesters from local storage */
   useEffect(() => {
     if (!activeDegreeplan) return;
-    if (typeof window === "undefined")
-      return setSemesters(getDefaultSemesters()); // default state
+    if (typeof window === "undefined") return setSemesters(getDefaultSemesters());
     const stickyValue = localStorage.getItem(
       getLocalSemestersKey(activeDegreeplan.id)
     );
-    setSemesters(
-      stickyValue !== null ? JSON.parse(stickyValue) : getDefaultSemesters()
-    );
-  }, [activeDegreeplan]);
+    if (stickyValue === null) return setSemesters(getDefaultSemesters());
+    let parsed;
+    try {
+      parsed = JSON.parse(stickyValue)
+    } catch {
+      setSemesters(getDefaultSemesters());
+    }
+    setSemesters(parsed);
+  }, [activeDegreeplan, currentSemester]);
 
   /** Update semesters to local storage */
   useEffect(() => {
@@ -305,7 +283,7 @@ const Semesters = ({
             <SkeletonSemester showStats={showStats} />
           ))
         : Object.keys(semesters)
-            .sort(semesterCompare)
+            .sort((a,b) => a.localeCompare(b))
             .map((semester: any) => (
               <FlexSemester
                 activeDegreeplanId={activeDegreeplan?.id}

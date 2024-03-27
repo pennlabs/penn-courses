@@ -7,7 +7,7 @@ import { Draggable } from "../common/DnD";
 import Skeleton from "react-loading-skeleton"
 import 'react-loading-skeleton/dist/skeleton.css'
 
-const COURSE_BORDER_RADIUS = "10px";
+const COURSE_BORDER_RADIUS = "9px";
 
 export const BaseCourseContainer = styled.div<{ $isDragging?: boolean, $isUsed: boolean, $isDisabled: boolean }>`
   display: flex;
@@ -16,11 +16,12 @@ export const BaseCourseContainer = styled.div<{ $isDragging?: boolean, $isUsed: 
   min-width: 70px;
   min-height: 35px;
   border-radius: ${COURSE_BORDER_RADIUS};
-  padding: .5rem;
+  padding: .75rem;
   text-wrap: nowrap;
   cursor: ${props => props.$isDisabled || props.$isUsed ? "not-allowed" : "grab"};
   opacity: ${props => props.$isDisabled || props.$isDragging ? 0.7 : 1};
   background-color: ${props => props.$isDragging ? "#4B9AE7" : "var(--background-grey)"};
+  box-shadow: rgba(0, 0, 0, 0.01) 0px 6px 5px 0px, rgba(0, 0, 0, 0.04) 0px 0px 0px 1px;
 `;
 
 export const PlannedCourseContainer = styled(BaseCourseContainer)`

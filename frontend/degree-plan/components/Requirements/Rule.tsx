@@ -11,7 +11,7 @@ import { DegreeYear, RuleTree } from './ReqPanel';
 import assert from 'assert';
 
 const RuleTitleWrapper = styled.div`
-    background-color: var(--primary-color-light);
+    background-color: var(--primary-color);
     position: relative;
     border-radius: var(--req-item-radius);
 `
@@ -34,12 +34,12 @@ const RuleTitle = styled.div<{$progress: number}>`
   align-items: center;
   width: 100%;
   color: #575757;
-  padding: 0.25rem .5rem;
-  margin: 0.5rem 0;
+  padding: 0.5rem 1.25rem;
+  margin-bottom: 0.5rem;
 `
 
 const RuleLeafWrapper = styled.div<{$isDroppable:boolean, $isOver: boolean}>`
-  margin: .5rem;
+  margin: .25rem;
   margin-left: 0;
   display: flex;
   justify-content: space-between;
@@ -52,26 +52,35 @@ const CusCourses = styled.div`
   font-weight: 500;
   font-size: .9rem;
   white-space: nowrap;
+
+  sup {
+    margin-right: .2em;
+  }
+
+  sub {
+    margin-left: .2em;
+  }
 `
 
 const Row = styled.div`
   display: flex;
   gap: .5rem;
+  align-items: center;
 `
 
 const Indented = styled.div`
   margin-left: .75rem;
-  margin-bottom: 1rem;
+  margin-bottom: .5rem;
 `
 
 const Column = styled.div`
   display: flex;
   flex-direction: column;
-  gap: .25rem;
+  gap: .1rem;
 `
 
 const PickNWrapper = styled.div`
-  background-color: var(--primary-color-light);
+  background-color: var(--primary-color-extra-light);
   padding: .5rem;
   padding-bottom: .25rem;
   border-radius: .5rem;
@@ -84,6 +93,14 @@ const PickNTitle = styled.div`
   margin-bottom: 1rem;
   margin-left: .25rem;
   justify-content: space-between;
+`
+
+const RuleLeafLabel = styled.div`
+  font-size: .9rem;
+`
+
+const RuleLeafContainer = styled(Column)`
+  margin-top: 0.25rem;
 `
 
 
@@ -159,22 +176,29 @@ const RuleComponent = (ruleTree : RuleTree) => {
     if (type === "LEAF") {
       const { fulfillments, cus, num } = ruleTree;
       return (
-        <RuleLeafWrapper $isDroppable={canDrop} $isOver={isOver} ref={drop}>
-            <RuleLeaf q_json={rule.q_json} rule={rule} fulfillmentsForRule={fulfillments} satisfied={satisfied} activeDegreePlanId={activeDegreePlanId}/>
-            <Row>
+          <RuleLeafContainer>
+            <RuleLeafLabel>{rule.title}</RuleLeafLabel>
+            <RuleLeafWrapper $isDroppable={canDrop} $isOver={isOver} ref={drop}>
+              <RuleLeaf q_json={rule.q_json} rule={rule} fulfillmentsForRule={fulfillments} satisfied={satisfied} activeDegreePlanId={activeDegreePlanId}/>
+              <Row>
               {!!satisfied && <i className="fas fa-check-circle" style={{color: '#5EA872'}}></i>}
-              {rule.credits && <CusCourses>{`${cus} / ${rule.credits} ${rule.credits > 1 ? 'cus' : 'cu'}`}</CusCourses>}
-              {" "}
-              {rule.num && <CusCourses>{num} / {rule.num}</CusCourses>}
-            </Row>
-        </RuleLeafWrapper>
+              <Column>
+                {rule.credits && 
+                  <CusCourses><sup>{cus}</sup>/<sub>{rule.credits}</sub><div>{rule.credits > 1 ? 'cus' : 'cu'}</div></CusCourses>
+                  }
+                {" "}
+                {rule.num && <CusCourses><sup>{num}</sup>/<sub>{rule.num}</sub></CusCourses>}
+              </Column>
+              </Row>
+            </RuleLeafWrapper>
+          </RuleLeafContainer>
       )
     }
 
     // otherwise, type == "INTERNAL_NODE"
     const { children, num } = ruleTree; 
 
-    if (num) {
+    if (num && children.length > num) {
       return <PickNWrapper>
         <PickNTitle>
           <div>Pick {num}:</div>

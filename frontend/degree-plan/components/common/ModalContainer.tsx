@@ -1,7 +1,7 @@
 // TODO: this is copied from plan, we should factor out into a shared component
 
 
-import React, { PropsWithChildren } from "react";
+import React, { PropsWithChildren, useRef } from "react";
 import styled from "@emotion/styled";
 
 interface ModalContainerProps {
@@ -10,6 +10,7 @@ interface ModalContainerProps {
     modalProps: any;
     modalKey: string | null;
     isBig: boolean;
+    ref: React.RefObject<HTMLSelectElement>
 }
 
 const OuterModalContainer = styled.div<{ $title: string }>`
@@ -130,35 +131,40 @@ const ModalContainer = ({
     modalKey,
     modalProps,
     isBig: isBig,
-}: PropsWithChildren<ModalContainerProps>) => (
-    <OuterModalContainer $title={title}>
-        <ModalBackground />
-        <ModalCard $isBig={isBig}>
-            <ModalCardHead>
-                <ModalCardTitle>{title}</ModalCardTitle>
-                <div
-                    role="button"
-                    aria-label="close"
-                    onClick={close}
-                    style={{ cursor: "pointer" }}
-                >
-                    <span className="icon is-small">
-                        <i className="fa fa-times" />
-                    </span>
-                </div>
-            </ModalCardHead>
-            <ModalCardBody>
-                {modalKey && 
-                    React.Children.map(children, (child: React.ReactNode) =>
-                        React.cloneElement(child as React.ReactElement, {
-                            close,
-                            modalKey,
-                            ...modalProps
-                        })
-                    )}
-            </ModalCardBody>
-        </ModalCard>
-    </OuterModalContainer>
-);
+    ref
+}: PropsWithChildren<ModalContainerProps>) => {
+    const modalRef = useRef(null);
+    return (
+        <OuterModalContainer $title={title} ref={modalRef}>
+            <ModalBackground />
+            <ModalCard $isBig={isBig}>
+                <ModalCardHead>
+                    <ModalCardTitle>{title}</ModalCardTitle>
+                    <div
+                        role="button"
+                        aria-label="close"
+                        onClick={close}
+                        style={{ cursor: "pointer" }}
+                    >
+                        <span className="icon is-small">
+                            <i className="fa fa-times" />
+                        </span>
+                    </div>
+                </ModalCardHead>
+                <ModalCardBody>
+                    {modalKey && 
+                        React.Children.map(children, (child: React.ReactNode) =>
+                            React.cloneElement(child as React.ReactElement, {
+                                close,
+                                modalKey,
+                                modalRef,
+                                ...modalProps
+                            })
+                        )}
+                </ModalCardBody>
+            </ModalCard>
+        </OuterModalContainer>
+    )
+};
 
 export default ModalContainer;

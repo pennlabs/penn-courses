@@ -85,7 +85,7 @@ export const SearchPanel = ({ activeDegreeplanId }: { activeDegreeplanId: Degree
         searchRuleId: ruleId, 
         searchRuleQuery: ruleQuery,
         searchFulfillments: fulfillments
-    }= useContext(SearchPanelContext); 
+    } = useContext(SearchPanelContext); 
 
     // queryString and searchRuleQuery are different (queryString is the actual query e.g., "World Civ",
     // and searchRuleQuery is a q object)
