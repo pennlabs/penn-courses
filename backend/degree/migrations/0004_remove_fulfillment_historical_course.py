@@ -6,12 +6,12 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('degree', '0003_alter_fulfillment_unique_together'),
+        ("degree", "0003_alter_fulfillment_unique_together"),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='fulfillment',
-            name='historical_course',
+            model_name="fulfillment",
+            name="historical_course",
         ),
     ]

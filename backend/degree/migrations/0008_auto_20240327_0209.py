@@ -9,21 +9,43 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('degree', '0007_alter_dockedcourse_full_code'),
+        ("degree", "0007_alter_dockedcourse_full_code"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='degree',
-            name='program',
-            field=models.CharField(choices=[('EU_BSE', 'Engineering BSE'), ('EU_BAS', 'Engineering BAS'), ('AU_BA', 'College BA'), ('WU_BS', 'Wharton BS'), ('NU_BSN', 'Nursing BSN')], help_text='\nThe program code for this degree, e.g., EU_BSE\n', max_length=10),
+            model_name="degree",
+            name="program",
+            field=models.CharField(
+                choices=[
+                    ("EU_BSE", "Engineering BSE"),
+                    ("EU_BAS", "Engineering BAS"),
+                    ("AU_BA", "College BA"),
+                    ("WU_BS", "Wharton BS"),
+                    ("NU_BSN", "Nursing BSN"),
+                ],
+                help_text="\nThe program code for this degree, e.g., EU_BSE\n",
+                max_length=10,
+            ),
         ),
         migrations.CreateModel(
-            name='PDPBetaUser',
+            name="PDPBetaUser",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('person', models.ForeignKey(help_text='The user who has access to the PDP beta', on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "person",
+                    models.ForeignKey(
+                        help_text="The user who has access to the PDP beta",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
     ]

@@ -18,9 +18,10 @@ from degree.serializers import (
     DegreePlanDetailSerializer,
     DegreePlanListSerializer,
     FulfillmentSerializer,
-    DockedCourseSerializer
+    DockedCourseSerializer,
 )
 from rest_framework.permissions import BasePermission, IsAuthenticated, SAFE_METHODS
+
 
 class InPDPBeta(BasePermission):
     def has_permission(self, request, view):
@@ -31,6 +32,7 @@ class DegreeViewset(viewsets.ReadOnlyModelViewSet):
     """
     Retrieve a list of all Degree objects.
     """
+
     filter_backends = [DjangoFilterBackend, SearchFilter]
     search_fields = ["program", "degree", "concentration", "year"]
     filterset_fields = search_fields
@@ -41,22 +43,24 @@ class DegreeViewset(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         queryset = Degree.objects.all()
         # TODO: I don't think this is necessary since querysets are lazily evaluated
-        degree_id = self.request.query_params.get('id', None)
+        degree_id = self.request.query_params.get("id", None)
         if degree_id is not None:
             queryset = queryset.filter(id=degree_id)
         return queryset
-    
+
     def get_serializer_class(self):
         if self.action == "list":
-            if self.request.query_params.get('id', None) is not None:
+            if self.request.query_params.get("id", None) is not None:
                 return DegreeDetailSerializer
             return DegreeListSerializer
         return DegreeDetailSerializer
+
 
 class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     """
     List, retrieve, create, destroy, and update a DegreePlan.
     """
+
     # After beta: remove DegreeWaitlist
     permission_classes = [IsAuthenticated & InPDPBeta]
 
@@ -79,7 +83,7 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         context = super().get_serializer_context()
         context.update({"request": self.request})  # used to get the user
         return context
-    
+
     def retrieve(self, request, *args, **kwargs):
         degree_plan = self.get_object()
         serializer = self.get_serializer(degree_plan)
@@ -87,32 +91,31 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         if request.data.get("name") is None:
-            raise ValidationError({ "name": "This field is required." })
+            raise ValidationError({"name": "This field is required."})
         new_degree_plan = DegreePlan(name=request.data.get("name"), person=self.request.user)
         new_degree_plan.save()
         serializer = self.get_serializer(new_degree_plan)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    
     @action(detail=True, methods=["post"])
     def copy(self, request, pk=None):
         """
         Copy a degree plan.
         """
         if request.data.get("name") is None:
-            raise ValidationError({ "name": "This field is required." })
+            raise ValidationError({"name": "This field is required."})
         degree_plan = self.get_object()
         new_degree_plan = degree_plan.copy(request.data["name"])
         serializer = self.get_serializer(new_degree_plan)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
+
     @action(detail=True, methods=["post", "delete"])
     def degrees(self, request, pk=None):
         degree_ids = request.data.get("degree_ids")
         if not isinstance(degree_ids, list):
             raise ValidationError({"degree_ids": "This field must be a list."})
         if degree_ids is None:
-            raise ValidationError({ "degree_ids": "This field is required." })
+            raise ValidationError({"degree_ids": "This field is required."})
         degree_plan = self.get_object()
 
         try:
@@ -159,20 +162,22 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
             degree_plan_id=self.get_degree_plan_id(),
         )
         return queryset
-    
+
     def create(self, request, *args, **kwargs):
         if request.data.get("full_code") is None:
-            raise ValidationError({ "full_code": "This field is required." })
+            raise ValidationError({"full_code": "This field is required."})
         self.kwargs["full_code"] = request.data["full_code"]
         try:
             return self.partial_update(request, *args, **kwargs)
         except Http404:
             return super().create(request, *args, **kwargs)
 
+
 class DockedCourseViewset(viewsets.ModelViewSet):
     """
     List, retrieve, create, destroy, and update docked courses
     """
+
     # After beta: remove DegreeWaitlist
     permission_classes = [IsAuthenticated & InPDPBeta]
     serializer_class = DockedCourseSerializer
@@ -188,32 +193,32 @@ class DockedCourseViewset(viewsets.ModelViewSet):
         context = super().get_serializer_context()
         context.update({"request": self.request})  # used to get the user
         return context
-    
+
     # def retrieve(self, request, *args, **kwargs):
     #     dockedCourse = self.get_object()
     #     serializer = self.get_serializer(dockedCourse)
     #     return Response(serializer.data, status=status.HTTP_200_OK)
-    
+
     def create(self, request, *args, **kwargs):
         if request.data.get("full_code") is None:
-            raise ValidationError({ "full_code": "This field is required." })
+            raise ValidationError({"full_code": "This field is required."})
         self.kwargs["full_code"] = request.data["full_code"]
         self.kwargs["person"] = self.request.user
         try:
             return self.partial_update(request, *args, **kwargs)
         except Http404:
             return super().create(request, *args, **kwargs)
-        
+
     def destroy(self, request, *args, **kwargs):
         if kwargs["full_code"] is None:
-            raise ValidationError({ "full_code": "This field is required." })
+            raise ValidationError({"full_code": "This field is required."})
 
         instances_to_delete = self.get_queryset().filter(full_code=kwargs["full_code"])
-        
+
         if not instances_to_delete.exists():
             raise Http404("No instances matching the provided full_code were found.")
 
         for instance in instances_to_delete:
             self.perform_destroy(instance)
-        
+
         return Response(status.HTTP_200_OK)

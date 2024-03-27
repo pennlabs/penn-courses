@@ -313,16 +313,17 @@ def choice_filter(field):
 
     return filter_choices
 
+
 def degree_rules_filter(queryset, rule_ids):
     """
     :param queryset: initial Course object queryset
     :param rule_ids: Comma separated string of of Rule ids to filter by. If the rule does not
-        have a q object, it does not filter the queryset. 
+        have a q object, it does not filter the queryset.
     """
     if not rule_ids:
         return queryset
     query = Q()
-    for rule_id in rule_ids.split(","): 
+    for rule_id in rule_ids.split(","):
         try:
             rule = Rule.objects.get(id=int(rule_id))
         except Rule.DoesNotExist | ValueError:
@@ -366,7 +367,7 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
         if len(meeting_query) > 0:
             queryset = meeting_filter(queryset, meeting_query)
 
-        return queryset.distinct("full_code") # TODO: THIS IS A BREAKING CHANGE FOR PCX
+        return queryset.distinct("full_code")  # TODO: THIS COULD BE A BREAKING CHANGE FOR PCX
 
     def get_schema_operation_parameters(self, view):
         return [
@@ -379,7 +380,7 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                     "a string of comma-separated Rule ids. If multiple Rule ids "
                     "are passed then filtered courses satisfy all the rules."
                 ),
-                "schema": {"type": "string"}
+                "schema": {"type": "string"},
             },
             {
                 "name": "type",

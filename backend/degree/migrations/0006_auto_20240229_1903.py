@@ -9,20 +9,41 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('degree', '0005_degree_credits'),
+        ("degree", "0005_degree_credits"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='DockedCourse',
+            name="DockedCourse",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('full_code', models.CharField(blank=True, help_text='The dash-joined department and code of the course, e.g., `CIS-120`', max_length=16)),
-                ('person', models.ForeignKey(help_text='The user the docked course belongs to.', on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
+                (
+                    "full_code",
+                    models.CharField(
+                        blank=True,
+                        help_text="The dash-joined department and code of the course, e.g., `CIS-120`",
+                        max_length=16,
+                    ),
+                ),
+                (
+                    "person",
+                    models.ForeignKey(
+                        help_text="The user the docked course belongs to.",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
         ),
         migrations.AddConstraint(
-            model_name='dockedcourse',
-            constraint=models.UniqueConstraint(fields=('person', 'full_code'), name='unique docked course'),
+            model_name="dockedcourse",
+            constraint=models.UniqueConstraint(
+                fields=("person", "full_code"), name="unique docked course"
+            ),
         ),
     ]
