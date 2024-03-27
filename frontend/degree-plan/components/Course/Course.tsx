@@ -136,7 +136,7 @@ const CourseComponent = ({ course, fulfillment, removeCourse, isUsed = false, is
               {course.full_code.replace("-", " ")}
               {!!fulfillment && fulfillment.semester !== "" && <SemesterIcon semester={fulfillment.semester}/>}
             </CourseBadge>
-            {isUsed && <CourseXButton onClick={() => removeCourse(course.full_code)} hidden={false}/>}
+            {isUsed && <CourseXButton onClick={(e) => {removeCourse(course.full_code); e.stopPropagation();}} hidden={false}/>}
         </PlannedCourseContainer>
     </ReviewPanelTrigger>
     </Draggable>
