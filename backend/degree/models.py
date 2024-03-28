@@ -20,11 +20,10 @@ program_choices = [
     ("EU_BAS", "Engineering BAS"),
     ("AU_BA", "College BA"),
     ("WU_BS", "Wharton BS"),
-    ("NU_BSN", "Nursing BSN")
+    ("NU_BSN", "Nursing BSN"),
 ]
 
 program_code_to_name = dict(program_choices)
-
 
 
 class Degree(models.Model):
@@ -57,12 +56,30 @@ class Degree(models.Model):
             """
         ),
     )
+    major_name = models.CharField(
+        max_length=128,
+        null=True,
+        help_text=dedent(
+            """
+            The name of the major for this degree, e.g., Africana Studies
+            """
+        ),
+    )
     concentration = models.CharField(
         max_length=4,
         null=True,
         help_text=dedent(
             """
             The concentration code for this degree, e.g., BMAT
+            """
+        ),
+    )
+    concentration_name = models.CharField(
+        max_length=128,
+        null=True,
+        help_text=dedent(
+            """
+            The name of the concentration for this degree, e.g., African American Studies
             """
         ),
     )
@@ -83,10 +100,10 @@ class Degree(models.Model):
             """
         ),
     )
-    
     credits = models.DecimalField(
         decimal_places=2,
         max_digits=4,
+        null=True,
         help_text=dedent(
             """
             The minimum number of CUs required for this degree.
@@ -181,7 +198,7 @@ class Rule(models.Model):
     @property
     def q_json(self):
         return self.get_json_q_object()
-    
+
     def evaluate(self, full_codes: Iterable[str]) -> bool:
         """
         Check if this rule is fulfilled by the provided courses.
@@ -378,6 +395,7 @@ class Fulfillment(models.Model):
     class Meta:
         unique_together = ("degree_plan", "full_code")
 
+
 def update_satisfaction_statuses(sender, instance, action, pk_set, **kwargs):
     """
     This function updates the SatisfactionStatuses associated with a DegreePlan when the rules
@@ -504,10 +522,11 @@ class DoubleCountRestriction(models.Model):
 
 
 class DockedCourse(models.Model):
-    '''
-    This represents a course docked by a user. 
+    """
+    This represents a course docked by a user.
     This is keyed by user but not degree plan, so when a user switches degree plan, the docked courses will not change.
-    '''
+    """
+
     person = models.ForeignKey(
         get_user_model(),
         on_delete=models.CASCADE,
@@ -520,10 +539,11 @@ class DockedCourse(models.Model):
         db_index=True,
         help_text="The dash-joined department and code of the course, e.g., `CIS-120`",
     )
+
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["person", "full_code"], 
+                fields=["person", "full_code"],
                 name="unique docked course",
             )
         ]

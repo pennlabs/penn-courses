@@ -1832,6 +1832,7 @@ class DegreeworksClient:
             # MAJOR
             for major in majors:
                 major_code = major["key"]
+                major_name = major["description"]
                 goals_payload[1]["goals"][0]["selectedChoices"] = [major_code]
 
                 res = self.s.post(
@@ -1847,19 +1848,24 @@ class DegreeworksClient:
                             program=program_code,
                             degree=degree_code,
                             major=major_code,
+                            major_name=major_name,
                             concentration=None,
+                            concentration_name=None,
                             year=year,
                         )
                     )
                     continue
                 for concentration in concentrations:
                     concentration_code = concentration["key"]
+                    concentration_name = concentration["description"]
                     found_degrees.append(
                         Degree(
                             program=program_code,
                             degree=degree_code,
                             major=major_code,
+                            major_name=major_name,
                             concentration=concentration_code,
+                            concentration_name=concentration_name,
                             year=year,
                         )
                     )

@@ -31,7 +31,9 @@ export interface DegreeListing extends DBObject {
   program: string;
   degree: string;
   major: string;
+  major_name: string;
   concentration: string;
+  concentration_name: string;
   rules: number[];
   credits: number;
 }
@@ -49,7 +51,9 @@ export interface Degree extends DBObject {
   program: string;
   degree: string;
   major: string;
+  major_name: string;
   concentration: string;
+  concentration_name: string;
   rules: Rule[];
 }
 
