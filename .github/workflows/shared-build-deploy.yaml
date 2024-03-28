@@ -15,7 +15,7 @@ jobs:
       path: backend
       flake: true
       black: true
-      pythonVersion: 3.10-buster
+      pythonVersion: 3.11-buster
 
   publish-backend:
     uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@v0.1
@@ -55,6 +55,7 @@ jobs:
         product: [review, plan, alert]
     with:
       path: frontend/${{ matrix.product }}
+      nodeVersion: 18.19.0
 
   publish-frontend:
     uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@v0.1
