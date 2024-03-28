@@ -300,7 +300,7 @@ def parse_degreeworks(json: dict, degree: Degree) -> list[Rule] | None:
         # check if this requirement actually has anything in it
         if degree_req == rules[-1] and not degree_req.q:
             rules.pop()
-    
+
     # special case for Additional majors
     if degree.credits is None:
         logging.error("Skipped degree because it has not total credits requirement.")

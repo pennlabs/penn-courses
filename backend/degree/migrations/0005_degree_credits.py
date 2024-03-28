@@ -6,14 +6,19 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('degree', '0004_remove_fulfillment_historical_course'),
+        ("degree", "0004_remove_fulfillment_historical_course"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='degree',
-            name='credits',
-            field=models.DecimalField(decimal_places=2, default=32, help_text='\nThe minimum number of CUs required for this degree.\n', max_digits=4),
+            model_name="degree",
+            name="credits",
+            field=models.DecimalField(
+                decimal_places=2,
+                default=32,
+                help_text="\nThe minimum number of CUs required for this degree.\n",
+                max_digits=4,
+            ),
             preserve_default=False,
         ),
     ]

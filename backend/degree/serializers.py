@@ -5,13 +5,22 @@ from rest_framework import serializers
 
 from courses.models import Course
 from courses.serializers import CourseListSerializer, CourseDetailSerializer
-from degree.models import Degree, DegreePlan, DoubleCountRestriction, Fulfillment, Rule, DockedCourse
+from degree.models import (
+    Degree,
+    DegreePlan,
+    DoubleCountRestriction,
+    Fulfillment,
+    Rule,
+    DockedCourse,
+)
 from courses.util import get_current_semester
+
 
 class DegreeListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Degree
         fields = "__all__"
+
 
 class SimpleCourseSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(
@@ -24,19 +33,19 @@ class SimpleCourseSerializer(serializers.ModelSerializer):
     )
 
     course_quality = serializers.DecimalField(
-        max_digits=4, decimal_places=3, read_only=True, help_text='course_quality_help'
+        max_digits=4, decimal_places=3, read_only=True, help_text="course_quality_help"
     )
     difficulty = serializers.DecimalField(
-        max_digits=4, decimal_places=3, read_only=True, help_text='difficulty_help'
+        max_digits=4, decimal_places=3, read_only=True, help_text="difficulty_help"
     )
     instructor_quality = serializers.DecimalField(
         max_digits=4,
         decimal_places=3,
         read_only=True,
-        help_text='instructor_quality_help',
+        help_text="instructor_quality_help",
     )
     work_required = serializers.DecimalField(
-        max_digits=4, decimal_places=3, read_only=True, help_text='work_required_help'
+        max_digits=4, decimal_places=3, read_only=True, help_text="work_required_help"
     )
 
     class Meta:
@@ -53,13 +62,14 @@ class SimpleCourseSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
+
 class RuleSerializer(serializers.ModelSerializer):
     q_json = serializers.ReadOnlyField(help_text="JSON representation of the q object")
 
     class Meta:
         model = Rule
         fields = "__all__"
-    
+
     def to_representation(self, instance):
         data = super(RuleSerializer, self).to_representation(instance)
         data.q = ""
@@ -89,14 +99,23 @@ class DegreeDetailSerializer(serializers.ModelSerializer):
 
 class FulfillmentSerializer(serializers.ModelSerializer):
     course = serializers.SerializerMethodField()
+
     def get_course(self, obj):
-        course = Course.with_reviews.filter(full_code=obj.full_code, semester__lte=get_current_semester()).order_by("-semester").first()
+        course = (
+            Course.with_reviews.filter(
+                full_code=obj.full_code, semester__lte=get_current_semester()
+            )
+            .order_by("-semester")
+            .first()
+        )
         if course is not None:
             return SimpleCourseSerializer(course).data
         return None
-    
+
     # TODO: add a get_queryset method to only allow rules from the degree plan
-    rules = serializers.PrimaryKeyRelatedField(many=True, queryset=Rule.objects.all(), required=False)
+    rules = serializers.PrimaryKeyRelatedField(
+        many=True, queryset=Rule.objects.all(), required=False
+    )
 
     def to_internal_value(self, data):
         data = data.copy()
@@ -149,7 +168,7 @@ class DegreePlanListSerializer(serializers.ModelSerializer):
 
     # degree_ids = serializers.PrimaryKeyRelatedField(
     #     many=True,
-    #     required=False,    
+    #     required=False,
     #     source="degrees",
     #     queryset=Degree.objects.all(),
     #     help_text="The degree_id this degree plan belongs to.",
@@ -167,8 +186,7 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
     #     help_text="The courses used to fulfill degree plan.",
     # )
     degrees = DegreeDetailSerializer(
-        many=True,
-        help_text="The degrees belonging to this degree plan"
+        many=True, help_text="The degrees belonging to this degree plan"
     )
 
     person = serializers.HiddenField(default=serializers.CurrentUserDefault())

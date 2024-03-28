@@ -287,6 +287,7 @@ class CourseListSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
+
 class CourseDetailSerializer(CourseListSerializer):
     crosslistings = serializers.SlugRelatedField(
         slug_field="full_code",

@@ -212,7 +212,7 @@ class Course(models.Model):
         db_index=True,
         help_text="The number of credits this course takes. This is precomputed for efficiency.",
     )
-    
+
     prerequisites = models.TextField(
         blank=True,
         help_text="Text describing the prereqs for a course, e.g. 'CIS 120, 160' for CIS-121.",
