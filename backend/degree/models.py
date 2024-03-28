@@ -26,36 +26,6 @@ program_choices = [
 program_code_to_name = dict(program_choices)
 
 
-"""
-Transcript Model
-==================
-
-The user optionally uploads a pdf of transcript and we create a Transcript object based on the scraped transcript info.
-
-"""
-
-class Transcript(models.Model):
-    program = models.CharField(
-        max_length=255, 
-        db_index=True, 
-        help_text=dedent(
-            """
-            The user's current program (e.g. SEAS B.S.)
-            """
-        ),
-    )
-    courses = models.ForeignKey(
-        Course,
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        help_text=dedent(
-            """
-            Courses already taken, prob a list of Course objects
-            """
-        ),
-    )
-
 class Degree(models.Model):
     """
     This model represents a degree for a specific year.
@@ -557,6 +527,32 @@ class DockedCourse(models.Model):
             )
         ]
 
+
+class Transcript(models.Model):
+    """
+    Not currently implemented
+    """
+    program = models.CharField(
+        max_length=255, 
+        db_index=True, 
+        help_text=dedent(
+            """
+            The user's current program (e.g. SEAS B.S.)
+            """
+        ),
+    )
+    courses = models.ForeignKey(
+        Course,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        help_text=dedent(
+            """
+            Courses already taken, prob a list of Course objects
+            """
+        ),
+    )
+
 class DegreeProfile(models.Model):
     user_profile = models.OneToOneField(
         UserProfile, 
@@ -627,27 +623,28 @@ class DegreeProfile(models.Model):
 
         return total_credits
     
-    def add_course(self, course, semester, grade):
+    def add_course(self, course_id, semester, grade):
         """
         Adds a course to courses taken
         """
+        course_instance = Course.objects.get(id=course_id)
         CourseTaken.objects.create(
             degree_profile=self, 
-            course=course, 
+            course=course_instance, 
             semester=semester, 
             grade=grade
         )
     
-    def remove_course(self, course, semester):
+    def remove_course(self, course_id, semester):
         """
         Removes a course taken by a specific person 
         """
-        course_taken = CourseTaken.objects.filter(degree_profile=self, course=course, semester=semester)
+        course_taken = CourseTaken.objects.filter(degree_profile=self, course=course_id, semester=semester)
 
         if course_taken.exists():
             course_taken.delete()
         else:
-            print(f"Course not found for course code {course} in semester {semester}.")
+            print(f"Course not found for course id {course_id} in semester {semester}.")
 
     class Meta:
         constraints = [
@@ -677,7 +674,7 @@ class CourseTaken(models.Model):
         on_delete=models.CASCADE,
         help_text=dedent(
             """
-            The course code (e.g. CIS-1210) of the course taken
+            The course object of the course taken
             """
         ),
     )

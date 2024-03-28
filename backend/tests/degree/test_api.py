@@ -5,6 +5,7 @@ from rest_framework.test import APIClient
 
 from courses.models import User
 from courses.serializers import CourseListSerializer
+from degree.serializers import DegreeSerializer, CourseTakenSerializer
 from courses.util import get_or_create_course_and_section
 from degree.models import (
     Degree,
@@ -358,6 +359,21 @@ class FulfillmentViewsetTest(TestCase):
 
 
 class DegreeProfileViewsetTest(TestCase):
+    def assertSerializedDegreeProfileEquals(self, degreeprofile: dict, expected: DegreeProfile):
+        self.assertEqual(len(degreeprofile), 5)
+        self.assertEqual(degreeprofile["user_profile"], expected.user_profile.id)
+        self.assertEqual(degreeprofile["graduation_date"], expected.graduation_date)
+
+        expected_degrees = DegreeSerializer(expected.degrees.all(), many=True).data
+        expected_courses_taken = CourseTakenSerializer(expected.coursetaken_set.all(), many=True).data
+
+        self.assertEqual(
+            degreeprofile["degrees"], expected_degrees
+        )
+        self.assertEqual(
+            degreeprofile["courses_taken"], expected_courses_taken
+        )
+
     def setUp(self):
         self.user = User.objects.create_user(
             username="ashley", password="hi", email="hi@example.com"
@@ -381,19 +397,120 @@ class DegreeProfileViewsetTest(TestCase):
         )
         self.degree_profile.degrees.set([self.degree])
 
-        CourseTaken.objects.create(degree_profile=self.degree_profile, course=self.cis_1200, semester=TEST_SEMESTER, grade="A+")
         CourseTaken.objects.create(degree_profile=self.degree_profile, course=self.cis_1600, semester=TEST_SEMESTER, grade="A+")
 
         self.client = APIClient()
         self.client.force_login(self.user)
 
     def test_get_queryset(self):
-        # Authenticate as user1
         self.client.force_authenticate(user=self.user)
+        response = self.client.get(reverse(
+                'degreeprofile-detail',
+                kwargs={"pk": self.degree_profile.id}, 
+            )
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['user_profile'], self.user_profile.id)
+
+    def test_retrieve_degree_profile(self):
+        new_user = User.objects.create_user(
+            username="freshman", password="password", email="freshman@gmail.com"
+        )
+        self.client.force_authenticate(user=new_user)
         
-        # Make a request to the viewset
-        response = self.client.get(reverse('degreeprofile-list')) # Adjust 'degreeprofile-list' based on your actual URL name
+        new_user_profile, _ = UserProfile.objects.get_or_create(
+            user=new_user,
+            defaults={'email': new_user.email, 'push_notifications': False}
+        )
+
+        new_degree_profile = DegreeProfile.objects.create(
+            user_profile=new_user_profile,
+            graduation_date="2027A",
+        )
+        new_degree_profile.degrees.set([self.degree]) 
+
+        response = self.client.get(
+            reverse(
+                "degreeprofile-detail", 
+                kwargs={"pk": new_degree_profile.id}, 
+            )
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertSerializedDegreeProfileEquals(response.data, new_degree_profile)
+
+    def test_update_degrees(self):
+        """
+        Replaces degrees with ones included in request
+        """
+        self.client.force_authenticate(user=self.user)
+        new_degree = Degree.objects.create(program="EU_BSE", degree="BS", major="MEAM", year=2023, credits=37)
+        update_data = {
+            "degrees": [new_degree.id],
+        }
         
-        # Check that the response contains only user1's DegreeProfile
-        self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]['user_profile'], self.user_profile.id)
+        response = self.client.patch(
+            reverse("degreeprofile-detail", kwargs={"pk": self.degree_profile.id}),
+            data=update_data,
+            format='json'
+        )
+        
+        self.assertEqual(response.status_code, 200, response.content)
+        self.degree_profile.refresh_from_db()
+        updated_degrees = list(self.degree_profile.degrees.values_list('id', flat=True))
+        self.assertEqual(updated_degrees, [new_degree.id])
+
+    def test_add_course(self):
+        self.client.force_authenticate(user=self.user)
+        add_course_data = {
+            "course": self.cis_1200.id, 
+            "semester": TEST_SEMESTER,
+            "grade": "A"
+        }
+        
+        response = self.client.post(
+            reverse("degreeprofile-add_course", kwargs={"pk": self.degree_profile.id}),
+            data=add_course_data,
+            format='json'
+        )
+        
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertTrue(
+            CourseTaken.objects.filter(
+                degree_profile=self.degree_profile, 
+                course=self.cis_1200.id, 
+                semester=TEST_SEMESTER, 
+                grade="A"
+            ).exists()
+        )
+
+    def test_remove_course(self):
+        self.client.force_authenticate(user=self.user)
+        CourseTaken.objects.create(
+            degree_profile=self.degree_profile, 
+            course=self.cis_1600, 
+            semester="2024A", 
+            grade="F"
+        )
+
+        remove_course_data = {
+            "course": self.cis_1600.id,
+            "semester": "2024A"
+        }
+
+        response = self.client.post(
+            reverse("degreeprofile-remove_course", kwargs={"pk": self.degree_profile.id}),
+            data=remove_course_data,
+            format='json'
+        )
+
+        self.assertEqual(response.status_code, 204, response.data)
+        self.assertFalse(
+            CourseTaken.objects.filter(
+                degree_profile=self.degree_profile, 
+                course=self.cis_1600.id, 
+                semester="2024A"
+            ).exists()
+        )
+
+

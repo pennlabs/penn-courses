@@ -77,7 +77,7 @@ class CourseAdmin(admin.ModelAdmin):
     readonly_fields = ("topic", "crosslistings", "course_attributes")
     exclude = ("attributes",)
     list_filter = ("semester",)
-    list_display = ("full_code", "semester", "title")
+    list_display = ("id", "full_code", "semester", "title")
 
     list_select_related = ("department",)
 

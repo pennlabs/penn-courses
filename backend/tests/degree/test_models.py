@@ -243,11 +243,11 @@ class DegreeProfileTest(TestCase):
         self.cis_3200, self.cis_3200_001, _, _ = get_or_create_course_and_section(
             "CIS-3200-001", TEST_SEMESTER, course_defaults={"credits": 1}
         )
-        self.degree_profile.add_course(self.cis_3200, TEST_SEMESTER, "A+")
+        self.degree_profile.add_course(self.cis_3200.id, TEST_SEMESTER, "A+")
 
         self.assertTrue(CourseTaken.objects.filter(
             degree_profile=self.degree_profile, 
-            course=self.cis_3200, 
+            course=self.cis_3200.id, 
             semester=TEST_SEMESTER).exists())
 
     def test_calculate_credits(self):
@@ -258,10 +258,10 @@ class DegreeProfileTest(TestCase):
         self.cis_1210, self.cis_1210_001, _, _ = get_or_create_course_and_section(
             "CIS-1210-001", TEST_SEMESTER, course_defaults={"credits": 1}
         )
-        self.degree_profile.add_course(self.cis_1210, TEST_SEMESTER, "A+")
-        self.degree_profile.remove_course(self.cis_1210, TEST_SEMESTER)
+        self.degree_profile.add_course(self.cis_1210.id, TEST_SEMESTER, "A+")
+        self.degree_profile.remove_course(self.cis_1210.id, TEST_SEMESTER)
         self.assertFalse(CourseTaken.objects.filter(
             degree_profile=self.degree_profile, 
-            course=self.cis_1210, 
+            course=self.cis_1210.id, 
             semester=TEST_SEMESTER).exists())
 

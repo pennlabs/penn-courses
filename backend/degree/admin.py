@@ -4,7 +4,7 @@ from django.template.response import TemplateResponse
 from django.urls import reverse
 from django.utils.html import format_html
 
-from degree.models import Degree, DegreePlan, DoubleCountRestriction, Rule, SatisfactionStatus, Fulfillment, DegreeProfile, CourseTaken
+from degree.models import Degree, DegreePlan, DoubleCountRestriction, Rule, SatisfactionStatus, Fulfillment, DegreeProfile, CourseTaken, UserProfile
 
 
 # Register your models here.
@@ -54,6 +54,13 @@ class DegreeAdmin(admin.ModelAdmin):
     def degree_editor(self, request):
         context = dict(self.admin_site.each_context(request))
         return TemplateResponse(request, "degree-editor.html", context)
+    
 
-admin.site.register(DegreeProfile)
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user')
+admin.site.register(UserProfile, UserProfileAdmin)
+
+class DegreeProfileAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user_profile', 'graduation_date')
+admin.site.register(DegreeProfile, DegreeProfileAdmin)
 admin.site.register(CourseTaken)
