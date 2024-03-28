@@ -98,8 +98,10 @@ def recompute_enrollment():
             """
         )
 
+
 # course credits = sum(section credis for all activities)
-COURSE_CREDITS_RAW_SQL = dedent("""
+COURSE_CREDITS_RAW_SQL = dedent(
+    """
     WITH CourseCredits AS (
         SELECT U0."id", SUM(U2."activity_cus") AS total_credits
         FROM "courses_course" U0
@@ -119,12 +121,14 @@ COURSE_CREDITS_RAW_SQL = dedent("""
 """
 )
 
+
 def recompute_course_credits(
-        model=Course # so this function can be used in migrations (see django.db.migrations.RunPython)
-    ):
+    model=Course,  # so this function can be used in migrations (see django.db.migrations.RunPython)
+):
 
     with connection.cursor() as cursor:
         cursor.execute(COURSE_CREDITS_RAW_SQL)
+
 
 def recompute_precomputed_fields(verbose=False):
     """

@@ -6,13 +6,17 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('degree', '0001_initial'),
+        ("degree", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='degreeplan',
-            name='degrees',
-            field=models.ManyToManyField(blank=True, help_text='The degrees this degree plan is associated with.', to='degree.Degree'),
+            model_name="degreeplan",
+            name="degrees",
+            field=models.ManyToManyField(
+                blank=True,
+                help_text="The degrees this degree plan is associated with.",
+                to="degree.Degree",
+            ),
         ),
     ]

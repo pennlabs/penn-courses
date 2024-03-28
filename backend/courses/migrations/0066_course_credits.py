@@ -7,16 +7,23 @@ from courses.management.commands.recompute_soft_state import COURSE_CREDITS_RAW_
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('courses', '0065_auto_20240211_1321'),
+        ("courses", "0065_auto_20240211_1321"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='course',
-            name='credits',
-            field=models.DecimalField(blank=True, db_index=True, decimal_places=2, help_text='The number of credits this course takes. This is precomputed for efficiency.', max_digits=4, null=True),
+            model_name="course",
+            name="credits",
+            field=models.DecimalField(
+                blank=True,
+                db_index=True,
+                decimal_places=2,
+                help_text="The number of credits this course takes. This is precomputed for efficiency.",
+                max_digits=4,
+                null=True,
+            ),
         ),
         migrations.RunSQL(
             COURSE_CREDITS_RAW_SQL,
-        )
+        ),
     ]
