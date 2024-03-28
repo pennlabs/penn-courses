@@ -5,7 +5,7 @@ import PropTypes from "prop-types";
 const LoginButtonStyles = styled.a`
     font-size: 0.85rem !important;
     padding: 0 1rem 0 1rem;
-    margin-right: ${({ noMargin }) => (noMargin ? 0 : "1rem")};
+    margin-right: ${({ $noMargin }) => ($noMargin ? 0 : "1rem")};
     font-size: .85rem!important;
     background-color: #3273dc;
     border-color: transparent;
@@ -33,16 +33,16 @@ const LoginButtonStyles = styled.a`
     &:active {
         background-color: #2366d1;
     }
-    padding: "0.5rem",
-    fontSize: "1rem!important",
-    paddingRight: "1rem",
-    paddingLeft: "1rem",
+    padding: "0.5rem";
+    font-size: "1rem!important";
+    padding-right: "1rem";
+    padding-left: "1rem";
 `;
 
 const LoginButton = ({ noMargin, pathname }) => {
     return (
         <LoginButtonStyles
-            noMargin={noMargin}
+            $noMargin={noMargin}
             href={`/accounts/login/?next=${pathname}`}
         >
             Login
@@ -51,7 +51,7 @@ const LoginButton = ({ noMargin, pathname }) => {
 };
 
 LoginButton.propTypes = {
-    noMargin: PropTypes.bool,
+    $noMargin: PropTypes.bool,
     pathname: PropTypes.string,
 };
 

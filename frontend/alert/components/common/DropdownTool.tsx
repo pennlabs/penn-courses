@@ -3,15 +3,15 @@ import styled from "styled-components";
 import { Img } from "./common";
 
 interface Props {
-    show?: boolean;
-    width?: string;
+    $show?: boolean;
+    $width?: string;
 }
 
 const DropdownContainer = styled.div<Props>`
     display: flex;
     flex-direction: column;
     justify-content: center;
-    width: ${(props) => props.width}rem;
+    width: ${(props) => props.$width}rem;
     margin-right: 0.5rem;
     z-index: 1;
 `;
@@ -30,13 +30,13 @@ const Icon = styled(Img)`
 const Arrow = styled(Img)<Props>`
     padding-top: 0.1rem;
     margin-left: 0.25rem;
-    transform ${({ show }) => (show ? "rotate(180deg)" : "rotate(0)")};
+    transform ${({ $show: show }) => (show ? "rotate(180deg)" : "rotate(0)")};
 `;
 
 const DropdownMenu = styled.div<Props>`
     position: absolute;
-    display: ${({ show }) => (show ? "flex" : "none")};
-    visibility: ${({ show }) => (show ? "visible" : "hidden")};
+    display: ${({ $show: show }) => (show ? "flex" : "none")};
+    visibility: ${({ $show: show }) => (show ? "visible" : "hidden")};
     flex-direction: column;
     justify-content: center;
     text-align: center;
@@ -105,15 +105,15 @@ const DropdownTool = ({
                 onMouseLeave={() => {
                     setShow(false);
                 }}
-                width={width}
+                $width={width}
             >
                 <DropdownTitle>
                     <Icon src={img} width="0.75rem" height="0.75rem" />
                     {dropdownTitle}
-                    <Arrow src={"/svg/down-arrow.svg"} show={show} width="0.5rem" height="0.5rem" />
+                    <Arrow src={"/svg/down-arrow.svg"} $show={show} $width="0.5rem" height="0.5rem" />
                 </DropdownTitle>
                 <DropdownDiv>
-                    <DropdownMenu show={show} width={width}>
+                    <DropdownMenu $show={show} $width={width}>
                         {showDropdown()}
                     </DropdownMenu>
                 </DropdownDiv>

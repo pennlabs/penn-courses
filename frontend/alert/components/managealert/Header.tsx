@@ -9,9 +9,9 @@ import { AlertAction } from "../../types";
 import { maxWidth, PHONE, DESKTOP, between } from "../../constants";
 import DropdownTool from "../common/DropdownTool";
 
-const Grid = styled.div<{ selected: boolean }>`
+const Grid = styled.div<{ $selected: boolean }>`
     display: grid;
-    grid-template-columns: ${({ selected }) =>
+    grid-template-columns: ${({ $selected: selected }) =>
         selected ? "1fr 10.5fr" : "1fr 1fr 3fr 1fr 1.5fr 1.25fr 2fr 1fr"};
     grid-template-rows: 1.75rem;
 
@@ -102,8 +102,8 @@ const Header = ({
     ];
 
     return (
-        <Grid selected={selected !== 0}>
-            <GridItem column={1} row={1} color="#f8f8f8" halign valign border>
+        <Grid $selected={selected !== 0}>
+            <GridItem $column={1} $row={1} $color="#f8f8f8" $halign $valign $border>
                 <input
                     type="checkbox"
                     checked={batchSelected}
@@ -118,19 +118,19 @@ const Header = ({
                     <GridItem
                         // eslint-disable-next-line
                         key={`header${i}`}
-                        column={i + 2}
-                        row={1}
-                        color="#f8f8f8"
-                        valign
-                        halign
-                        border
+                        $column={i + 2}
+                        $row={1}
+                        $color="#f8f8f8"
+                        $valign
+                        $halign
+                        $border
                     >
                         <HeaderText>{heading}</HeaderText>
                     </GridItem>
                 ))}
             {selected !== 0 && (
                 <>
-                    <GridItem column={2} row={1} color="#f8f8f8" valign>
+                    <GridItem $column={2} $row={1} $color="#f8f8f8" $valign>
                         <HeaderContainer>
                             <HeaderText color="#489be8">{`${selected} SELECTED`}</HeaderText>
                             <Separator style={{ color: "#878787" }}>
@@ -174,7 +174,7 @@ const Header = ({
                                 img={"/svg/bell.svg"}
                             />
                             <HeaderButtonsFlex
-                                valign
+                                $valign
                                 onClick={() =>
                                     batchActionHandler(AlertAction.DELETE)
                                 }

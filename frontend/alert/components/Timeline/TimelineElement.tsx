@@ -9,12 +9,12 @@ const MIN_SEGMENT_LENGTH = 20;
 const MAX_SEGMENT_LENGTH = 250;
 const MULTIPLIER = 18;
 
-const Circle = styled.div<{ open: boolean }>`
+const Circle = styled.div<{ $open: boolean }>`
     height: 0.875rem;
     width: 0.875rem;
-    border: 0.0625rem solid ${({ open }) => (open ? "#78D381" : "#cbd5dd")};
+    border: 0.0625rem solid ${({ $open: open }) => (open ? "#78D381" : "#cbd5dd")};
     border-radius: 50%;
-    color: ${({ open }) => (open ? "#78D381" : "#cbd5dd")};
+    color: ${({ $open: open }) => (open ? "#78D381" : "#cbd5dd")};
     font-size: 0.625rem;
     text-align: center;
     vertical-align: middle;
@@ -22,18 +22,18 @@ const Circle = styled.div<{ open: boolean }>`
 `;
 
 type SegmentProps = {
-    open: boolean;
-    length: number;
+    $open: boolean;
+    $length: number;
 };
 
 const Segment = styled.div<SegmentProps>`
-    background-color: ${({ open }) => (open ? "#78D381" : "#cbd5dd")};
-    height: ${({ length }) => length}px;
+    background-color: ${({ $open: open }) => (open ? "#78D381" : "#cbd5dd")};
+    height: ${({ $length: length }) => length}px;
     width: 0.1875rem;
 `;
 
 type InfoLabelProps = {
-    isTime?: boolean | false;
+    $isTime?: boolean | false;
 };
 
 const InfoLabel = styled.div<InfoLabelProps>`
@@ -43,7 +43,7 @@ const InfoLabel = styled.div<InfoLabelProps>`
     display: flex;
     justify-content: flex-end;
     align-items: center;
-    justify-self: ${({ isTime }) => (isTime ? "end" : "start")};
+    justify-self: ${({ $isTime: isTime }) => (isTime ? "end" : "start")};
 `;
 
 const convertTime = (timeString) => {
@@ -100,10 +100,10 @@ const TimelineElement = ({ courseStatusData, index }: TimelineElementProps) => {
                 <>
                     <InfoLabel>{convertTime(prevTime)[0]}</InfoLabel>
                     <Segment
-                        open={courseStatusData[index - 1][1] == "opened"}
-                        length={segLength}
+                        $open={courseStatusData[index - 1][1] == "opened"}
+                        $length={segLength}
                     />
-                    <InfoLabel isTime={true}>
+                    <InfoLabel $isTime={true}>
                         {convertTime(prevTime)[1]}
                     </InfoLabel>
                 </>
@@ -111,8 +111,8 @@ const TimelineElement = ({ courseStatusData, index }: TimelineElementProps) => {
                 <>
                     <div />
                     <Segment
-                        open={courseStatusData[index - 1][1] == "opened"}
-                        length={segLength}
+                        $open={courseStatusData[index - 1][1] == "opened"}
+                        $length={segLength}
                     />
                     <div />
                 </>
@@ -121,10 +121,10 @@ const TimelineElement = ({ courseStatusData, index }: TimelineElementProps) => {
             <InfoLabel>
                 {!courseStatusData[index][2] && convertTime(currTime)[0]}
             </InfoLabel>
-            <Circle open={courseStatusData[index][1] == "opened"}>
+            <Circle $open={courseStatusData[index][1] == "opened"}>
                 <FontAwesomeIcon icon={faCircle} />
             </Circle>
-            <InfoLabel isTime={true}>{convertTime(currTime)[1]}</InfoLabel>
+            <InfoLabel $isTime={true}>{convertTime(currTime)[1]}</InfoLabel>
         </>
     );
 };

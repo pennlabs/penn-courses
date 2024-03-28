@@ -39,15 +39,15 @@ const DOWN_ARROW = 40;
 const RETURN_KEY = 13;
 const DELETE_KEY = 8;
 
-const DropdownContainer = styled.div<{ below: RefObject<HTMLInputElement> }>`
+const DropdownContainer = styled.div<{ $below: RefObject<HTMLInputElement>, $hidden: boolean }>`
     position: absolute;
     left: 0;
     top: 100%;
-    width: ${({ below }) =>
+    width: ${({ $below: below }) =>
         below.current &&
         below.current.getBoundingClientRect().width -
             AUTOCOMPLETE_BORDER_WIDTH * 2}px;
-    visibility: ${({ hidden }) => (hidden ? "hidden" : "visible")};
+    visibility: ${({ $hidden }) => ($hidden ? "hidden" : "visible")};
     z-index: 5000;
     text-align: left;
 `;
@@ -81,21 +81,21 @@ const AutoCompleteInputBackground = styled(AutoCompleteInput)`
     ${(props) => (props.disabled ? "" : "background: white;")}
 `;
 
-const Container = styled.div<{ inputHeight: string }>`
+const Container = styled.div<{ $inputHeight: string }>`
     position: relative;
     display: block;
     margin-bottom: 1rem;
-    height: ${(props) => props.inputHeight};
+    height: ${(props) => props.$inputHeight};
 `;
 
 const AutoCompleteInputContainer = styled.div``;
 
 const ClearSelection = styled(FontAwesomeIcon)<{
-    hidden?: boolean;
-    parent: RefObject<HTMLInputElement>;
+    $hidden?: boolean;
+    $parent: RefObject<HTMLInputElement>;
 }>`
-    display: ${(props) => (props.hidden ? "none" : "block")};
-    top: ${({ parent }) =>
+    display: ${(props) => (props.$hidden ? "none" : "block")};
+    top: ${({ $parent: parent }) =>
         parent.current && parent.current.getBoundingClientRect().height / 2}px;
     right: 5px;
     padding: 0 8px;
@@ -268,7 +268,7 @@ const AutoComplete = ({
 
     return (
         <Container
-            inputHeight={
+            $inputHeight={
                 inputRef.current
                     ? `${inputRef.current.getBoundingClientRect().height}px`
                     : "inherit"
@@ -280,7 +280,7 @@ const AutoComplete = ({
                     defaultValue={defaultValue}
                     readOnly={bulkMode}
                     // @ts-ignore
-                    autocomplete="off"
+                    autoComplete="off"
                     placeholder="Course"
                     ref={inputRef}
                     onKeyDown={(e) => {
@@ -342,22 +342,22 @@ const AutoComplete = ({
                 />
                 <AutoCompleteInputBackground
                     // @ts-ignore
-                    autocomplete="off"
+                    autoComplete="off"
                     disabled={bulkMode}
                     value={bulkMode ? "" : backdrop}
                     readOnly={true}
                 />
                 <ClearSelection
                     icon={faTimes}
-                    hidden={!bulkMode}
-                    parent={inputRef}
+                    $hidden={!bulkMode}
+                    $parent={inputRef}
                     onClick={() => {
                         clearSelections();
                         clearInputValue();
                     }}
                 />
             </AutoCompleteInputContainer>
-            <DropdownContainer below={inputRef} hidden={!show}>
+            <DropdownContainer $below={inputRef} $hidden={!show}>
                 <DropdownBox>
                     {Object.keys(groupedSuggestions).map((key) => (
                         <GroupSuggestion

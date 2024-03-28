@@ -206,14 +206,14 @@ const LevelRight = styled.div`
     }
 `;
 
-const PlanViewButton = styled.a`
+const PlanViewButton = styled.a<{ $isExpanded: boolean, $expandedButton: boolean }>`
     background-color: ${({
-        isExpanded,
-        expandedButton,
+        $isExpanded,
+        $expandedButton,
     }: {
-        isExpanded: boolean;
-        expandedButton: boolean;
-    }) => (isExpanded === expandedButton ? "white" : "#f0f1f3")};
+        $isExpanded: boolean;
+        $expandedButton: boolean;
+    }) => ($isExpanded === $expandedButton ? "white" : "#f0f1f3")};
     padding: 0.5em 0.5em 0;
 
     img {
@@ -582,8 +582,8 @@ SearchBarProps) {
                     <PlanViewButton
                         role="button"
                         onClick={() => setView(0)}
-                        isExpanded={isExpanded}
-                        expandedButton={true}
+                        $isExpanded={isExpanded}
+                        $expandedButton={true}
                     >
                         <img
                             style={{ width: "1.5em" }}
@@ -594,8 +594,8 @@ SearchBarProps) {
                     <PlanViewButton
                         role="button"
                         onClick={() => setView(1)}
-                        isExpanded={isExpanded}
-                        expandedButton={false}
+                        $isExpanded={isExpanded}
+                        $expandedButton={false}
                     >
                         <img
                             style={{ width: "1.5em" }}

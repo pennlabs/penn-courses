@@ -10,8 +10,8 @@ import Checkbox from "./common/Checkbox";
 import { mapActivityToString } from "../util";
 
 interface DropdownItemBoxProps {
-    selected?: boolean | false;
-    headerBox?: boolean | false;
+    $selected?: boolean | false;
+    $headerBox?: boolean | false;
 }
 
 const DropdownItemBox = styled.div<DropdownItemBoxProps>`
@@ -23,20 +23,20 @@ const DropdownItemBox = styled.div<DropdownItemBoxProps>`
     padding-bottom: 1rem;
     display: flex;
     justify-content: stretch;
-    flex-direction: ${(props) => (props.headerBox ? "column" : "row")};
+    flex-direction: ${(props) => (props.$headerBox ? "column" : "row")};
     cursor: pointer;
     ${(props) =>
-        props.selected ? "background-color: rgb(235, 235, 235);" : ""}
+        props.$selected ? "background-color: rgb(235, 235, 235);" : ""}
 
     &:hover {
         ${(props) =>
-            !props.headerBox ? "background-color: rgb(220, 220, 220);" : ""}
+            !props.$headerBox ? "background-color: rgb(220, 220, 220);" : ""}
     }
 `;
 
-const DropdownItemLeftCol = styled.div<{ headerBox?: boolean | false }>`
-    max-width: ${(props) => (props.headerBox ? "100%" : "65%")};
-    flex-basis: ${(props) => (props.headerBox ? "100%" : "65%")};
+const DropdownItemLeftCol = styled.div<{ $headerBox?: boolean | false }>`
+    max-width: ${(props) => (props.$headerBox ? "100%" : "65%")};
+    flex-basis: ${(props) => (props.$headerBox ? "100%" : "65%")};
     flex-grow: 1;
 `;
 
@@ -84,12 +84,12 @@ const ButtonContainer = styled.div`
     margin-top: 8px;
 `;
 
-const ToggleButton = styled.div<{ toggled: boolean }>`
+const ToggleButton = styled.div<{ $toggled: boolean }>`
     border-radius: 18.5px;
-    border: 1px solid ${(props) => (props.toggled ? "#5891FC" : "#D6D6D6")};
-    color: ${(props) => (props.toggled ? "#5891FC" : "#7A848D")};
+    border: 1px solid ${(props) => (props.$toggled ? "#5891FC" : "#D6D6D6")};
+    color: ${(props) => (props.$toggled ? "#5891FC" : "#7A848D")};
     font-size: 12px;
-    background-color: ${(props) => (props.toggled ? "#EBF2FF" : "#ffffff")};
+    background-color: ${(props) => (props.$toggled ? "#EBF2FF" : "#ffffff")};
     padding: 4px 8px;
     margin-right: 8px;
 `;
@@ -147,7 +147,7 @@ const Suggestion = ({
     }, [selected, ref]);
 
     return (
-        <DropdownItemBox selected={selected} ref={ref}>
+        <DropdownItemBox $selected={selected} ref={ref}>
             <CheckboxContainer
                 onClick={() => {
                     onClick();
@@ -283,8 +283,8 @@ const GroupSuggestion = ({
 
     return (
         <>
-            <DropdownItemBox headerBox={true}>
-                <DropdownItemLeftCol headerBox={true}>
+            <DropdownItemBox $headerBox={true}>
+                <DropdownItemLeftCol $headerBox={true}>
                     <SuggestionTitle>{courseCode}</SuggestionTitle>
                     <SuggestionSubtitle>
                         {sections[Object.keys(sections)[0]].length > 0 &&
@@ -294,7 +294,7 @@ const GroupSuggestion = ({
                 <ButtonContainer>
                     {Object.keys(sections).map((key) => (
                         <ToggleButton
-                            toggled={selectedAllActivity(key)}
+                            $toggled={selectedAllActivity(key)}
                             onClick={() => toggleButton(key)}
                             key={key}
                         >

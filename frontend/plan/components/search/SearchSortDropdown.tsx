@@ -11,7 +11,7 @@ interface DropDownButtonProps {
     makeActive: () => void;
 }
 
-const DropdownButtonContainer = styled.div<{ isActive: boolean }>`
+const DropdownButtonContainer = styled.div<{ $isActive: boolean }>`
     line-height: 1.5;
     position: relative;
     border-radius: 0 !important;
@@ -22,10 +22,10 @@ const DropdownButtonContainer = styled.div<{ isActive: boolean }>`
     flex-direction: row;
     justify-content: space-between;
 
-    background: ${(props) => (props.isActive ? "#F5F6F8" : "#FFF")};
+    background: ${(props) => (props.$isActive ? "#F5F6F8" : "#FFF")};
 
     &:hover {
-        background: ${(props) => (props.isActive ? "#EBEDF1" : "#F5F6F8")};
+        background: ${(props) => (props.$isActive ? "#EBEDF1" : "#F5F6F8")};
     }
 
     &,
@@ -51,7 +51,7 @@ const DropdownButton = ({
                 makeActive();
             }
         }}
-        isActive={isActive}
+        $isActive={isActive}
     >
         {text}
     </DropdownButtonContainer>
@@ -74,7 +74,7 @@ const DropdownContainer = styled.div`
     }
 `;
 
-const DropdownTrigger = styled.div<{ isActive: boolean }>`
+const DropdownTrigger = styled.div<{ $isActive: boolean }>`
     margin-left: 0.75rem;
     height: 1.5rem;
     width: 1.5rem;
@@ -85,7 +85,7 @@ const DropdownTrigger = styled.div<{ isActive: boolean }>`
 
     div {
         background: ${(props) =>
-            props.isActive ? "rgba(162, 180, 237, 0.38) !important" : "none"};
+            props.$isActive ? "rgba(162, 180, 237, 0.38) !important" : "none"};
     }
 
     div:hover {
@@ -93,9 +93,9 @@ const DropdownTrigger = styled.div<{ isActive: boolean }>`
     }
 `;
 
-const DropdownMenu = styled.div<{ isActive: boolean }>`
+const DropdownMenu = styled.div<{ $isActive: boolean }>`
     margin-top: 0.1rem !important;
-    display: ${(props) => (props.isActive ? "block" : "none")};
+    display: ${(props) => (props.$isActive ? "block" : "none")};
     left: 0;
     min-width: 12rem;
     padding-top: 4px;
@@ -133,7 +133,7 @@ const SearchSortDropdown = (obj: { updateSort: (s: SortByType) => void }) => {
         <DropdownContainer ref={ref}>
             <span className="selected_name">Sort by</span>
             <DropdownTrigger
-                isActive={isActive}
+                $isActive={isActive}
                 onClick={() => setIsActive(!isActive)}
                 role="button"
             >
@@ -143,7 +143,7 @@ const SearchSortDropdown = (obj: { updateSort: (s: SortByType) => void }) => {
                     </Icon>
                 </div>
             </DropdownTrigger>
-            <DropdownMenu isActive={isActive} role="menu">
+            <DropdownMenu $isActive={isActive} role="menu">
                 <DropdownContent>
                     {contents.map((sortType, index) => (
                         <DropdownButton

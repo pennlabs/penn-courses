@@ -374,7 +374,7 @@ const GraphBox = ({ courseCode, url_semester, isAverage, setIsAverage }) => {
           setLoaded(true);
         });
     }
-  }, [courseCode, averageOrRecent]);
+  }, [courseCode, averageOrRecent, handlePCAChartDataResponse, url_semester]);
 
   const showPcaDemandPlotContainer =
     (chartData && chartData.pcaDemandChartData) || !loaded;

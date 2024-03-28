@@ -7,7 +7,7 @@ import { useOnClickOutside } from "pcx-shared-components/src/useOnClickOutside";
 
 import TimelineElement from "./TimelineElement";
 
-const AlertHistoryContainer = styled.div<{ close: boolean }>`
+const AlertHistoryContainer = styled.div<{ $close: boolean }>`
     position: fixed;
     right: 0;
     top: 0;
@@ -20,7 +20,7 @@ const AlertHistoryContainer = styled.div<{ close: boolean }>`
     background: white;
     z-index: 5001;
     transform: translate3d(
-        ${({ close }) => (close ? "16.5625rem" : "0")},
+        ${({ $close: close }) => (close ? "16.5625rem" : "0")},
         0,
         0
     );
@@ -76,19 +76,19 @@ const CourseSubHeading = styled.h5`
     font-weight: 500;
 `;
 
-const StatusLabel = styled.div<{ open: boolean }>`
+const StatusLabel = styled.div<{ $open: boolean }>`
     height: 1.4375rem;
     border-radius: 0.1875rem;
     font-weight: 600;
-    color: ${({ open }) => (open ? "#4AB255" : "#e8746a")};
-    background: ${({ open }) => (open ? "#E9F8EB" : "#f9dcda")};
+    color: ${({ $open: open }) => (open ? "#4AB255" : "#e8746a")};
+    background: ${({ $open: open }) => (open ? "#E9F8EB" : "#f9dcda")};
     font-size: 0.75rem;
     text-align: center;
     line-height: 1.5rem;
     padding: 0rem 0.5rem;
 `;
 
-const TimelineScrollContainer = styled.div<{ scroll: boolean }>`
+const TimelineScrollContainer = styled.div<{ $scroll: boolean }>`
     justify-content: flex-start;
     align-items: center;
     overflow-y: scroll;
@@ -96,14 +96,14 @@ const TimelineScrollContainer = styled.div<{ scroll: boolean }>`
     flex-direction: column;
 
     &::-webkit-scrollbar {
-        ${({ scroll }) =>
+        ${({ $scroll: scroll }) =>
             scroll
                 ? `width: 6px !important;
          background-color: transparent;`
                 : "display: none;"}
     }
 
-    ${({ scroll }) =>
+    ${({ $scroll: scroll }) =>
         scroll &&
         `scrollbar-width: thin;
         -ms-overflow-style: none;
@@ -232,7 +232,7 @@ const Timeline = ({ courseCode, setTimeline }: TimelineProps) => {
     }, [courseCode]);
 
     return (
-        <AlertHistoryContainer close={close} ref={scrollRef}>
+        <AlertHistoryContainer $close={close} ref={scrollRef}>
             <AlertTitle>Alert History</AlertTitle>
             <CloseButton
                 onClick={() => {
@@ -249,13 +249,13 @@ const Timeline = ({ courseCode, setTimeline }: TimelineProps) => {
                     <CourseInfoContainer>
                         <CourseSubHeading>{courseCode}</CourseSubHeading>
                         {courseStatusData[0][1] == "opened" ? (
-                            <StatusLabel open={true}>Open</StatusLabel>
+                            <StatusLabel $open={true}>Open</StatusLabel>
                         ) : (
-                            <StatusLabel open={false}>Closed</StatusLabel>
+                            <StatusLabel $open={false}>Closed</StatusLabel>
                         )}
                     </CourseInfoContainer>
 
-                    <TimelineScrollContainer scroll={scrollTimeline}>
+                    <TimelineScrollContainer $scroll={scrollTimeline}>
                         <FlexRow>
                             <TimelineContainer>
                                 {courseStatusData.map(

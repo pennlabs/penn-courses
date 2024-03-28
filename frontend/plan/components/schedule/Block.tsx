@@ -65,7 +65,7 @@ const VisibleBlock = styled.div<VisibleBlockProps>`
     }
 `;
 
-const WarningIcon = styled.i.attrs((props) => ({
+const WarningIcon = styled.i.attrs((props: any) => ({
     className: "fas fa-exclamation",
 }))`
     position: absolute;

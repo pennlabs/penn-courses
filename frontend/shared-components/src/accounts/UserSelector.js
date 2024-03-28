@@ -18,14 +18,14 @@ const NameBubble = styled.div`
     transition: 150ms ease background;
     margin-right: 0.85rem;
     background: ${(props) => {
-        if (props.color === "purple") {
-            return props.selected ? "#6B73D0" : "#c8cbed";
+        if (props.$color === "purple") {
+            return props.$selected ? "#6B73D0" : "#c8cbed";
         }
-        return props.selected ? "#9a9a9a" : "#656565";
+        return props.$selected ? "#9a9a9a" : "#656565";
     }};
     &:hover {
         background: ${(props) =>
-            props.color === "purple" ? "#9399DB" : "#444444"};
+            props.$color === "purple" ? "#9399DB" : "#444444"};
     }
 `;
 
@@ -37,7 +37,7 @@ const InnerMenu = styled.div`
     padding: 0.32rem;
     font-size: 0.85rem;
     box-shadow: 0 0 5px 0 lightgrey;
-    right: ${(props) => (props.leftAligned ? "0%" : "61%")};
+    right: ${(props) => (props.$leftAligned ? "0%" : "61%")};
 `;
 
 const NameContainer = styled.p`
@@ -122,8 +122,8 @@ const UserSelector = ({
     return (
         <Dropdown ref={onClickOutside}>
             <NameBubble
-                selected={selected}
-                color={backgroundColor}
+                $selected={selected}
+                $color={backgroundColor}
                 role="button"
                 id="user-selector"
                 onClick={() => setSelected(!selected)}
@@ -137,7 +137,7 @@ const UserSelector = ({
             <LogoutDropdownMenu selected={selected}>
                 <LogoutDropdownContainer className="dropdown-menu-container">
                     <TriangleUp />
-                    <InnerMenu leftAligned={leftAligned}>
+                    <InnerMenu $leftAligned={leftAligned}>
                         <NameContainer>
                             {" "}
                             {firstName} {lastName}{" "}

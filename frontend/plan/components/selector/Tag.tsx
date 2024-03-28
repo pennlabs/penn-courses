@@ -7,7 +7,7 @@ interface TagProps {
     isAdder?: boolean;
 }
 
-const TagContainer = styled.span<{ isAdder: boolean }>`
+const TagContainer = styled.span<{ $isAdder: boolean }>`
     user-select: none;
     transition: 200ms ease background;
     margin-bottom: 0.35rem;
@@ -27,11 +27,11 @@ const TagContainer = styled.span<{ isAdder: boolean }>`
     white-space: nowrap;
 
     &:hover {
-        background: ${(props) => (props.isAdder ? "#9FA4A6" : "")};
+        background: ${(props) => (props.$isAdder ? "#9FA4A6" : "")};
     }
 
     &:active {
-        background: ${(props) => (props.isAdder ? "#777b7c" : "")};
+        background: ${(props) => (props.$isAdder ? "#777b7c" : "")};
     }
 `;
 
@@ -41,7 +41,7 @@ export default function Tag({
     isAdder = false,
 }: PropsWithChildren<TagProps>) {
     return (
-        <TagContainer isAdder={isAdder} role="button" onClick={onClick}>
+        <TagContainer $isAdder={isAdder} role="button" onClick={onClick}>
             {children}
         </TagContainer>
     );

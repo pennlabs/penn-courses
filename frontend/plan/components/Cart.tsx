@@ -8,13 +8,13 @@ import { removeCartItem, toggleCheck, fetchCourseDetails } from "../actions";
 
 import { Section, CartCourse } from "../types";
 
-const Box = styled.section<{ length: number }>`
+const Box = styled.section<{ $length: number }>`
     height: calc(100vh - 9em - 3em);
     border-radius: 4px;
     box-shadow: 0 5px 14px 0 rgba(0, 0, 0, 0.09);
     background-color: white;
     color: #4a4a4a;
-    overflow: ${(props) => (props.length === 0 ? "hidden" : "auto")};
+    overflow: ${(props) => (props.$length === 0 ? "hidden" : "auto")};
     flex-direction: column;
     padding: 0;
     display: flex;
@@ -86,7 +86,7 @@ const Cart = ({
     lastAdded,
     mobileView,
 }: CartProps) => (
-    <Box length={courses.length} id="cart">
+    <Box $length={courses.length} id="cart">
         {courses.length === 0 ? (
             <CartEmpty />
         ) : (

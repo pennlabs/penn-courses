@@ -16,12 +16,12 @@ const RecWrapper = styled.div`
 `;
 
 const RecContentContainer = styled.div<{
-    collapse: boolean;
+    $collapse: boolean;
 }>`
     height: 100%;
     max-height: 8.125rem;
     min-height: 8.125rem;
-    margin-top: ${({ collapse }) => (collapse ? "-100%" : "0px")};
+    margin-top: ${({ $collapse: collapse }) => (collapse ? "-100%" : "0px")};
     transition: all 1s;
     overflow-y: scroll;
     overflow-x: hidden;
@@ -104,7 +104,7 @@ const RecContent = ({
 }: RecContentProps) => {
     return (
         <RecWrapper>
-            <RecContentContainer collapse={!show}>
+            <RecContentContainer $collapse={!show}>
                 {/* Only create list if there is recommended course(s) */}
                 {fetchStatus == 0 ? (
                     <RecLoading />
