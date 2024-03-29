@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
+# test comment
 
 # Define the base URL and endpoints for Penn Course Review
 BASE_URL = 'http://localhost:8000' # Localhost URL
