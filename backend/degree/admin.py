@@ -57,10 +57,10 @@ class DegreeAdmin(admin.ModelAdmin):
     
 
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user')
+    list_display = ("id", "user")
 admin.site.register(UserProfile, UserProfileAdmin)
 
 class DegreeProfileAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user_profile', 'graduation_date')
+    list_display = ("id", "user_profile", "graduation_date")
 admin.site.register(DegreeProfile, DegreeProfileAdmin)
 admin.site.register(CourseTaken)

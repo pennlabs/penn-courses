@@ -11,7 +11,15 @@ from rest_framework.response import Response
 
 from courses.models import Course
 from courses.serializers import CourseListSerializer
-from degree.models import Degree, DegreePlan, Fulfillment, Rule, DockedCourse, DegreeProfile, UserProfile
+from degree.models import (
+    Degree,
+    DegreePlan,
+    Fulfillment,
+    Rule,
+    DockedCourse,
+    DegreeProfile,
+    UserProfile,
+)
 from degree.serializers import (
     DegreeDetailSerializer,
     DegreeListSerializer,
@@ -21,7 +29,7 @@ from degree.serializers import (
     DockedCourseSerializer,
     DegreeProfileSerializer,
     CourseTakenSerializer,
-    DegreeProfilePatchSerializer
+    DegreeProfilePatchSerializer,
 )
 
 
@@ -36,18 +44,19 @@ class DegreeViewset(viewsets.ReadOnlyModelViewSet):
     filterset_fields = search_fields
 
     def get_queryset(self):
-            queryset = Degree.objects.all()
-            degree_id = self.request.query_params.get('id', None)
-            if degree_id is not None:
-                queryset = queryset.filter(id=degree_id)
-            return queryset
-    
+        queryset = Degree.objects.all()
+        degree_id = self.request.query_params.get("id", None)
+        if degree_id is not None:
+            queryset = queryset.filter(id=degree_id)
+        return queryset
+
     def get_serializer_class(self):
         if self.action == "list":
-            if self.request.query_params.get('id', None) is not None:
+            if self.request.query_params.get("id", None) is not None:
                 return DegreeDetailSerializer
             return DegreeListSerializer
         return DegreeDetailSerializer
+
 
 class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     """
@@ -75,7 +84,7 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         context = super().get_serializer_context()
         context.update({"request": self.request})  # used to get the user
         return context
-    
+
     def retrieve(self, request, *args, **kwargs):
         degree_plan = self.get_object()
         serializer = self.get_serializer(degree_plan)
@@ -83,32 +92,31 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         if request.data.get("name") is None:
-            raise ValidationError({ "name": "This field is required." })
+            raise ValidationError({"name": "This field is required."})
         new_degree_plan = DegreePlan(name=request.data.get("name"), person=self.request.user)
         new_degree_plan.save()
         serializer = self.get_serializer(new_degree_plan)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    
     @action(detail=True, methods=["post"])
     def copy(self, request, pk=None):
         """
         Copy a degree plan.
         """
         if request.data.get("name") is None:
-            raise ValidationError({ "name": "This field is required." })
+            raise ValidationError({"name": "This field is required."})
         degree_plan = self.get_object()
         new_degree_plan = degree_plan.copy(request.data["name"])
         serializer = self.get_serializer(new_degree_plan)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
+
     @action(detail=True, methods=["post", "delete"])
     def degrees(self, request, pk=None):
         degree_ids = request.data.get("degree_ids")
         if not isinstance(degree_ids, list):
             raise ValidationError({"degree_ids": "This field must be a list."})
         if degree_ids is None:
-            raise ValidationError({ "degree_ids": "This field is required." })
+            raise ValidationError({"degree_ids": "This field is required."})
         degree_plan = self.get_object()
 
         try:
@@ -154,15 +162,16 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
             degree_plan_id=self.get_degree_plan_id(),
         )
         return queryset
-    
+
     def create(self, request, *args, **kwargs):
         if request.data.get("full_code") is None:
-            raise ValidationError({ "full_code": "This field is required." })
+            raise ValidationError({"full_code": "This field is required."})
         self.kwargs["full_code"] = request.data["full_code"]
         try:
             return self.partial_update(request, *args, **kwargs)
         except Http404:
             return super().create(request, *args, **kwargs)
+
 
 @api_view(["GET"])
 def courses_for_rule(request, rule_id: int):
@@ -175,6 +184,7 @@ class DockedCourseViewset(viewsets.ModelViewSet):
     """
     List, retrieve, create, destroy, and update docked courses
     """
+
     permission_classes = [IsAuthenticated]
     serializer_class = DockedCourseSerializer
     # http_method_names = ["get", "post", "head", "delete"]
@@ -189,36 +199,36 @@ class DockedCourseViewset(viewsets.ModelViewSet):
         context = super().get_serializer_context()
         context.update({"request": self.request})  # used to get the user
         return context
-    
+
     # def retrieve(self, request, *args, **kwargs):
     #     dockedCourse = self.get_object()
     #     serializer = self.get_serializer(dockedCourse)
     #     return Response(serializer.data, status=status.HTTP_200_OK)
-    
+
     def create(self, request, *args, **kwargs):
         if request.data.get("full_code") is None:
-            raise ValidationError({ "full_code": "This field is required." })
+            raise ValidationError({"full_code": "This field is required."})
         self.kwargs["full_code"] = request.data["full_code"]
         self.kwargs["person"] = self.request.user
         try:
             return self.partial_update(request, *args, **kwargs)
         except Http404:
             return super().create(request, *args, **kwargs)
-        
+
     def destroy(self, request, *args, **kwargs):
         if kwargs["full_code"] is None:
-            raise ValidationError({ "full_code": "This field is required." })
+            raise ValidationError({"full_code": "This field is required."})
 
         instances_to_delete = self.get_queryset().filter(full_code=kwargs["full_code"])
-        
+
         if not instances_to_delete.exists():
             raise Http404("No instances matching the provided full_code were found.")
 
         for instance in instances_to_delete:
             self.perform_destroy(instance)
-        
+
         return Response(status.HTTP_200_OK)
-    
+
 
 class DegreeProfileViewset(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -226,62 +236,61 @@ class DegreeProfileViewset(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return DegreeProfile.objects.filter(user_profile__user=self.request.user)
-    
+
     def get_serializer_class(self):
-        if self.request.method == 'PATCH':
+        if self.request.method == "PATCH":
             return DegreeProfilePatchSerializer
         return super().get_serializer_class()
 
     def perform_create(self, serializer):
         user_profile, _ = UserProfile.objects.get_or_create(user=self.request.user)
         return serializer.save(user_profile=user_profile.id)
-    
+
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
-    
+
     def destroy(self, request, *args, **kwargs):
-        instance = self.get_object() 
+        instance = self.get_object()
 
         if instance.user_profile.user != request.user:
             return Response(
-                {"detail": "Unable to delete profile."},
-                status=status.HTTP_403_FORBIDDEN
+                {"detail": "Unable to delete profile."}, status=status.HTTP_403_FORBIDDEN
             )
 
         return super().destroy(request, *args, **kwargs)
-    
 
-    @action(detail=True, methods=['post'], url_path='add-course', url_name='add_course')
+    @action(detail=True, methods=["post"], url_path="add-course", url_name="add_course")
     def add_course(self, request, pk=None):
         degree_profile = self.get_object()
         serializer = CourseTakenSerializer(data=request.data)
         if serializer.is_valid():
             degree_profile = self.get_object()
             degree_profile.add_course(
-                course_id=serializer.validated_data['course'].id,
-                semester=serializer.validated_data['semester'],
-                grade=serializer.validated_data['grade']
+                course_id=serializer.validated_data["course"].id,
+                semester=serializer.validated_data["semester"],
+                grade=serializer.validated_data["grade"],
             )
-            return Response({'status': 'course added'}, status=status.HTTP_200_OK)
+            return Response({"status": "course added"}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=['post'], url_path='remove-course', url_name='remove_course')
+    @action(detail=True, methods=["post"], url_path="remove-course", url_name="remove_course")
     def remove_course(self, request, pk=None):
         degree_profile = self.get_object()
-        course_id = request.data.get('course')
-        semester = request.data.get('semester')
-        
+        course_id = request.data.get("course")
+        semester = request.data.get("semester")
+
         if not course_id or not semester:
-            return Response({'error': 'missing course id or semester'}, status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response(
+                {"error": "missing course id or semester"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
         try:
             degree_profile.remove_course(course_id=course_id, semester=semester)
-            return Response({'status': 'course removed'}, status=status.HTTP_204_NO_CONTENT)
+            return Response({"status": "course removed"}, status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)

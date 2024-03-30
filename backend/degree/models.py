@@ -20,7 +20,7 @@ program_choices = [
     ("EU_BAS", "Engineering BAS"),
     ("AU_BA", "College BA"),
     ("WU_BS", "Wharton BS"),
-    ("NU_BSN", "Nursing BSN")
+    ("NU_BSN", "Nursing BSN"),
 ]
 
 program_code_to_name = dict(program_choices)
@@ -82,7 +82,7 @@ class Degree(models.Model):
             """
         ),
     )
-    
+
     credits = models.DecimalField(
         decimal_places=2,
         max_digits=4,
@@ -180,7 +180,7 @@ class Rule(models.Model):
     @property
     def q_json(self):
         return self.get_json_q_object()
-    
+
     def evaluate(self, full_codes: Iterable[str]) -> bool:
         """
         Check if this rule is fulfilled by the provided courses.
@@ -377,6 +377,7 @@ class Fulfillment(models.Model):
     class Meta:
         unique_together = ("degree_plan", "full_code")
 
+
 def update_satisfaction_statuses(sender, instance, action, pk_set, **kwargs):
     """
     This function updates the SatisfactionStatuses associated with a DegreePlan when the rules
@@ -503,10 +504,11 @@ class DoubleCountRestriction(models.Model):
 
 
 class DockedCourse(models.Model):
-    '''
-    This represents a course docked by a user. 
+    """
+    This represents a course docked by a user.
     This is keyed by user but not degree plan, so when a user switches degree plan, the docked courses will not change.
-    '''
+    """
+
     person = models.ForeignKey(
         get_user_model(),
         on_delete=models.CASCADE,
@@ -519,10 +521,11 @@ class DockedCourse(models.Model):
         db_index=True,
         help_text="The dash-joined department and code of the course, e.g., `CIS-120`",
     )
+
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["person", "full_code"], 
+                fields=["person", "full_code"],
                 name="unique docked course",
             )
         ]
@@ -532,9 +535,10 @@ class Transcript(models.Model):
     """
     Not currently implemented
     """
+
     program = models.CharField(
-        max_length=255, 
-        db_index=True, 
+        max_length=255,
+        db_index=True,
         help_text=dedent(
             """
             The user's current program (e.g. SEAS B.S.)
@@ -553,12 +557,13 @@ class Transcript(models.Model):
         ),
     )
 
+
 class DegreeProfile(models.Model):
     user_profile = models.OneToOneField(
-        UserProfile, 
+        UserProfile,
         on_delete=models.CASCADE,
         related_name="degree_profile",
-        help_text="extending the user profile class from courses to store degree plan specific info",
+        help_text="extending the user profile class",
     )
 
     transcript = models.OneToOneField(
@@ -590,7 +595,7 @@ class DegreeProfile(models.Model):
 
     transfer_credits = models.ManyToManyField(
         Course,
-        related_name='transfer_credits_for',
+        related_name="transfer_credits_for",
         help_text=dedent(
             """
             Transfer credits
@@ -601,7 +606,7 @@ class DegreeProfile(models.Model):
     courses_taken = models.ManyToManyField(
         Course,
         through="CourseTaken",
-        related_name='degree_profile',
+        related_name="degree_profile",
         help_text=dedent(
             """
             A list of course codes that the user has already taken, matched with semester
@@ -611,7 +616,8 @@ class DegreeProfile(models.Model):
 
     def calculate_total_credits(self):
         """
-        Calculates the total credits this person has currently, both through courses taken and transfer credits
+        Calculates the total credits this person has currently, both through courses taken
+        and transfer credits
         """
         total_credits = 0
 
@@ -622,24 +628,23 @@ class DegreeProfile(models.Model):
             total_credits += course.credits
 
         return total_credits
-    
+
     def add_course(self, course_id, semester, grade):
         """
         Adds a course to courses taken
         """
         course_instance = Course.objects.get(id=course_id)
         CourseTaken.objects.create(
-            degree_profile=self, 
-            course=course_instance, 
-            semester=semester, 
-            grade=grade
+            degree_profile=self, course=course_instance, semester=semester, grade=grade
         )
-    
+
     def remove_course(self, course_id, semester):
         """
-        Removes a course taken by a specific person 
+        Removes a course taken by a specific person
         """
-        course_taken = CourseTaken.objects.filter(degree_profile=self, course=course_id, semester=semester)
+        course_taken = CourseTaken.objects.filter(
+            degree_profile=self, course=course_id, semester=semester
+        )
 
         if course_taken.exists():
             course_taken.delete()
@@ -648,18 +653,16 @@ class DegreeProfile(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(
-                fields=["user_profile"], 
-                name="unique-degree-profile"
-            )
+            models.UniqueConstraint(fields=["user_profile"], name="unique-degree-profile")
         ]
 
-    
+
 class CourseTaken(models.Model):
     """
-    An intermediate model for courses taken, which allows us to connect the course to the user, the semester it was taken, 
-    and grade received.
+    An intermediate model for courses taken, which allows us to connect the course to the user,
+    the semester it was taken, and grade received.
     """
+
     degree_profile = models.ForeignKey(
         DegreeProfile,
         on_delete=models.CASCADE,
@@ -698,9 +701,6 @@ class CourseTaken(models.Model):
     class Meta:
         constraints = [
             models.UniqueConstraint(
-                fields=["degree_profile", "course", "semester"], 
-                name="unique-course-taken"
+                fields=["degree_profile", "course", "semester"], name="unique-course-taken"
             )
         ]
-
-
