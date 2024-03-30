@@ -19,7 +19,7 @@ from degree.serializers import (
     DockedCourseSerializer,
     DegreeProfileSerializer,
     CourseTakenSerializer,
-    DegreeProfilePatchSerializer
+    DegreeProfilePatchSerializer,
 )
 
 
@@ -201,62 +201,61 @@ class DegreeProfileViewset(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return DegreeProfile.objects.filter(user_profile__user=self.request.user)
-    
+
     def get_serializer_class(self):
-        if self.request.method == 'PATCH':
+        if self.request.method == "PATCH":
             return DegreeProfilePatchSerializer
         return super().get_serializer_class()
 
     def perform_create(self, serializer):
         user_profile, _ = UserProfile.objects.get_or_create(user=self.request.user)
         return serializer.save(user_profile=user_profile.id)
-    
+
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
-    
+
     def destroy(self, request, *args, **kwargs):
-        instance = self.get_object() 
+        instance = self.get_object()
 
         if instance.user_profile.user != request.user:
             return Response(
-                {"detail": "Unable to delete profile."},
-                status=status.HTTP_403_FORBIDDEN
+                {"detail": "Unable to delete profile."}, status=status.HTTP_403_FORBIDDEN
             )
 
         return super().destroy(request, *args, **kwargs)
-    
 
-    @action(detail=True, methods=['post'], url_path='add-course', url_name='add_course')
+    @action(detail=True, methods=["post"], url_path="add-course", url_name="add_course")
     def add_course(self, request, pk=None):
         degree_profile = self.get_object()
         serializer = CourseTakenSerializer(data=request.data)
         if serializer.is_valid():
             degree_profile = self.get_object()
             degree_profile.add_course(
-                course_id=serializer.validated_data['course'].id,
-                semester=serializer.validated_data['semester'],
-                grade=serializer.validated_data['grade']
+                course_id=serializer.validated_data["course"].id,
+                semester=serializer.validated_data["semester"],
+                grade=serializer.validated_data["grade"],
             )
-            return Response({'status': 'course added'}, status=status.HTTP_200_OK)
+            return Response({"status": "course added"}, status=status.HTTP_200_OK)
         else:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    @action(detail=True, methods=['post'], url_path='remove-course', url_name='remove_course')
+    @action(detail=True, methods=["post"], url_path="remove-course", url_name="remove_course")
     def remove_course(self, request, pk=None):
         degree_profile = self.get_object()
-        course_id = request.data.get('course')
-        semester = request.data.get('semester')
-        
+        course_id = request.data.get("course")
+        semester = request.data.get("semester")
+
         if not course_id or not semester:
-            return Response({'error': 'missing course id or semester'}, status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response(
+                {"error": "missing course id or semester"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
         try:
             degree_profile.remove_course(course_id=course_id, semester=semester)
-            return Response({'status': 'course removed'}, status=status.HTTP_204_NO_CONTENT)
+            return Response({"status": "course removed"}, status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
-            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
