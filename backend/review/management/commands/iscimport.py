@@ -248,17 +248,18 @@ class Command(BaseCommand):
         #         print(stats)
 
         #         gc.collect()
+        
 
+        if import_details:
+            print("Loading details file...")
+            stats = import_ratings_rows(
+                *load_sql_dump(files[detail_idx]), semesters, show_progress_bar
+            )
+            print(stats)
+
+        gc.collect()
+        
         with transaction.atomic():
-            if import_details:
-                print("Loading details file...")
-                stats = import_ratings_rows(
-                    *load_sql_dump(files[detail_idx]), semesters, show_progress_bar
-                )
-                print(stats)
-
-            gc.collect()
-
             if import_descriptions:
                 print("Loading descriptions file...")
                 stats = import_description_rows(

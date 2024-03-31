@@ -240,25 +240,31 @@ def import_ratings_rows(num_ratings, ratings, semesters=None, show_progress_bar=
     Imports rating rows given an iterator ratings and total number of rows num_ratings.
     Optionally filter rows to import by semester with the given semesters list.
     """
-    # adjusted approach with batching implemented
     num_batches = 5
-    counter = 0
-    batch_size = (num_ratings + 1) // num_batches
+    batch_size = (num_ratings // num_batches) + 1
 
     stats = dict()
     stat = gen_stat(stats)
 
     for i in range(num_batches):
+        print(f"Batch {i + 1}")
         with transaction.atomic():
-            for j in tqdm(range(batch_size)):
+            num_iterations = min(num_ratings, (i + 1) * batch_size) - i * batch_size
+            for j in tqdm(range(num_iterations), disable=(not show_progress_bar)):
                 if j % 10000 == 0:
                     gc.collect()
-                if counter == num_ratings:
+                try:
+                    row = next(ratings)
+                except StopIteration:
                     return stats
-                row = next(ratings)
+                if i != num_batches - 1:
+                    continue
                 if semesters is None or row["TERM"] in semesters:
-                    import_ratings_row(row, stat)
-            counter += 1
+                    try: 
+                        import_ratings_row(row, stat)
+                    except Exception as e:
+                        print(row)
+                        raise Exception("failed")
                 
     return stats
 
