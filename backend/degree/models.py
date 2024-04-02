@@ -206,9 +206,7 @@ class Rule(models.Model):
 
             if self.credits is not None and total_credits < self.credits:
                 return False
-
-            # TODO: run some extra checks...
-
+            
             return True
         else:
             # assert self.children.all().exists()

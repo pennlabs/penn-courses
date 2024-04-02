@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import RuleComponent, { SkeletonRule } from './Rule';
-import { Degree, DegreePlan, Fulfillment, Rule } from '@/types';
+import { Degree as DegreeType, DegreePlan, Fulfillment, Rule } from '@/types';
 import styled from '@emotion/styled';
 import { DarkBlueBackgroundSkeleton, PanelBody, PanelContainer, PanelHeader, PanelTopBarIconList } from "../FourYearPlan/PanelCommon";
 import { EditButton } from '../FourYearPlan/EditButton';
@@ -86,8 +86,8 @@ const ReqPanelBody = styled(PanelBody)`
 `
 
 interface DegreeHeaderProps {
-  degree: Degree,
-  remove: (degreeId: Degree["id"]) => void,
+  degree: DegreeType,
+  remove: (degreeId: DegreeType["id"]) => void,
   setCollapsed: (status: boolean) => void,
   collapsed: boolean,
   editMode: boolean,
@@ -163,9 +163,7 @@ const computeRuleTree = ({ activeDegreePlanId, rule, rulesToFulfillments }: Rule
 
 
 const Degree = ({degree, rulesToFulfillments, activeDegreeplan, editMode, setModalKey, setModalObject, isLoading}: any) => {
-  const [collapsed, setCollapsed] = useState(false);
-  // const { data: degrees, isLoading: isLoadingDegrees } = useSWR<Degree[]>(activeDegreeplan ? `/api/degree/degrees/?id=${degree_id}`: null);
-  
+  const [collapsed, setCollapsed] = useState(false);  
   if (isLoading) {
     return (
       <div>
@@ -248,7 +246,6 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
         rulesToCourses[rule].push(fulfillment);
       });
     });
-    // console.log('rules to fulfillments', rulesToCourses)
     return rulesToCourses;
   }, [fulfillments, isLoadingFulfillments])
   

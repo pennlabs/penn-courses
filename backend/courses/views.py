@@ -68,9 +68,6 @@ class BaseCourseMixin(AutoPrefetchViewSetMixin, generics.GenericAPIView):
         if semester != "all":
             queryset = queryset.filter(**{self.get_semester_field(): semester})
         else:
-            # This orders by semester
-            # TODO: currently, we know we need the "full_code" because we apply distinct by full_code later
-            # but we can't necessarily know this in the future
             queryset = queryset.order_by("full_code", "-semester").distinct("full_code")
         return queryset
 

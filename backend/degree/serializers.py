@@ -112,12 +112,14 @@ class FulfillmentSerializer(serializers.ModelSerializer):
             return SimpleCourseSerializer(course).data
         return None
 
-    # TODO: add a get_queryset method to only allow rules from the degree plan
     rules = serializers.PrimaryKeyRelatedField(
         many=True, queryset=Rule.objects.all(), required=False
     )
 
     def to_internal_value(self, data):
+        """
+        Allow for this route to be nested under the degreeplan viewset.
+        """
         data = data.copy()
         data["degree_plan"] = self.context["view"].get_degree_plan_id()
         return super().to_internal_value(data)
@@ -169,27 +171,12 @@ class FulfillmentSerializer(serializers.ModelSerializer):
 
 
 class DegreePlanListSerializer(serializers.ModelSerializer):
-    id = serializers.ReadOnlyField(help_text="The id of the DegreePlan.")
-
-    # degree_ids = serializers.PrimaryKeyRelatedField(
-    #     many=True,
-    #     required=False,
-    #     source="degrees",
-    #     queryset=Degree.objects.all(),
-    #     help_text="The degree_id this degree plan belongs to.",
-    # )
-
     class Meta:
         model = DegreePlan
         fields = ["id", "name", "created_at", "updated_at"]
 
 
 class DegreePlanDetailSerializer(serializers.ModelSerializer):
-    # fulfillments = FulfillmentSerializer(
-    #     many=True,
-    #     read_only=True,
-    #     help_text="The courses used to fulfill degree plan.",
-    # )
     degrees = DegreeDetailSerializer(
         many=True, help_text="The degrees belonging to this degree plan"
     )
@@ -198,13 +185,12 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DegreePlan
-        fields = ["id", "name", "degrees", "person"]
+        fields = ["id", "name", "degrees", "person", "created_at", "updated_at"]
 
 
 class DockedCourseSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(help_text="The id of the docked course")
-    person = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
         model = DockedCourse
-        fields = "__all__"
+        fields = ["full_code", "id"]
