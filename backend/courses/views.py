@@ -36,7 +36,6 @@ from courses.serializers import (
 )
 from courses.util import get_current_semester
 from PennCourses.docs_settings import PcxAutoSchema
-from plan.management.commands.recommendcourses import retrieve_course_clusters, vectorize_user
 
 
 SEMESTER_PARAM_DESCRIPTION = (

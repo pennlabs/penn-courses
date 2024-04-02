@@ -117,7 +117,7 @@ COURSE_CREDITS_RAW_SQL = dedent(
     UPDATE "courses_course" U0
     SET "credits" = CourseCredits.total_credits
     FROM CourseCredits
-    WHERE U0."id" = CourseCredits."id";       
+    WHERE U0."id" = CourseCredits."id";
 """
 )
 

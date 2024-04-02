@@ -8,10 +8,10 @@ from degree.models import (
     Degree,
     DegreePlan,
     DoubleCountRestriction,
+    Fulfillment,
     PDPBetaUser,
     Rule,
     SatisfactionStatus,
-    Fulfillment,
 )
 
 

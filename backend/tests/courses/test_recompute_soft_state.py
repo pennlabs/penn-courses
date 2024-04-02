@@ -5,8 +5,8 @@ from options.models import Option
 from alert.models import AddDropPeriod
 from courses.management.commands.recompute_soft_state import (
     deduplicate_status_updates,
-    recompute_precomputed_fields,
     recompute_course_credits,
+    recompute_precomputed_fields,
 )
 from courses.models import Building, Course, Meeting, Room, Section, StatusUpdate
 from courses.util import (

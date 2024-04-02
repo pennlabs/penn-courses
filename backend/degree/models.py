@@ -12,7 +12,7 @@ from django.db.models.signals import m2m_changed
 from django.utils import timezone
 
 from courses.models import Course
-from degree.utils.model_utils import q_object_parser, json_parser
+from degree.utils.model_utils import json_parser, q_object_parser
 
 
 program_choices = [
@@ -225,7 +225,7 @@ class Rule(models.Model):
 
             if self.credits is not None and total_credits < self.credits:
                 return False
-            
+
             return True
         else:
             # assert self.children.all().exists()
@@ -523,7 +523,8 @@ class DoubleCountRestriction(models.Model):
 class DockedCourse(models.Model):
     """
     This represents a course docked by a user.
-    This is keyed by user but not degree plan, so when a user switches degree plan, the docked courses will not change.
+    This is keyed by user but not degree plan, so when a user switches degree plan,
+    the docked courses will not change.
     """
 
     person = models.ForeignKey(

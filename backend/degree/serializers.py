@@ -4,16 +4,15 @@ from django.db.models import Q
 from rest_framework import serializers
 
 from courses.models import Course
-from courses.serializers import CourseListSerializer, CourseDetailSerializer
+from courses.util import get_current_semester
 from degree.models import (
     Degree,
     DegreePlan,
+    DockedCourse,
     DoubleCountRestriction,
     Fulfillment,
     Rule,
-    DockedCourse,
 )
-from courses.util import get_current_semester
 
 
 class DegreeListSerializer(serializers.ModelSerializer):
@@ -147,8 +146,8 @@ class FulfillmentSerializer(serializers.ModelSerializer):
 
         # TODO: check that rules belong to this degree plan
         for rule in rules:
-            # NOTE: we don't do any validation if the course doesn't exist in DB. In future, it may be better to
-            # prompt user for manual override
+            # NOTE: we don't do any validation if the course doesn't exist in DB. In future,
+            # it may be better to prompt user for manual override
             if (
                 Course.objects.filter(full_code=full_code).exists()
                 and not Course.objects.filter(rule.get_q_object(), full_code=full_code).exists()

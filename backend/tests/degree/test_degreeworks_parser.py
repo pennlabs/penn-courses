@@ -1,9 +1,10 @@
-from django.db.models import Q
-from django.test import TestCase
 from unittest.mock import patch
 
-from degree.utils import parse_degreeworks
+from django.db.models import Q
+from django.test import TestCase
+
 from degree.models import Degree, Rule
+from degree.utils import parse_degreeworks
 
 
 class EvaluateConditionTest(TestCase):

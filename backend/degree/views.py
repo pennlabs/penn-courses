@@ -1,25 +1,22 @@
-from django_auto_prefetching import AutoPrefetchViewSetMixin
-from django.http import Http404
 from django.db import IntegrityError
+from django.http import Http404
+from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import status, viewsets
-from rest_framework.decorators import api_view, action
+from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 
-from courses.models import Course
-from courses.serializers import CourseListSerializer
-from degree.models import Degree, DegreePlan, Fulfillment, PDPBetaUser, Rule, DockedCourse
+from degree.models import Degree, DegreePlan, DockedCourse, Fulfillment, PDPBetaUser
 from degree.serializers import (
     DegreeDetailSerializer,
     DegreeListSerializer,
     DegreePlanDetailSerializer,
     DegreePlanListSerializer,
-    FulfillmentSerializer,
     DockedCourseSerializer,
+    FulfillmentSerializer,
 )
-from rest_framework.permissions import BasePermission, IsAuthenticated, SAFE_METHODS
 
 
 class InPDPBeta(BasePermission):
