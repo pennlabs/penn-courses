@@ -10,6 +10,27 @@ This is the unified home of all [Penn Courses](https://penncourses.org) products
 
 Note that you need the backend to run the frontend.
 
+### Using Dev Containers
+
+This repository has a built-in dev container that you can use to develop the project. To use it, you need to have [Docker](https://www.docker.com/products/docker-desktop) and [VSCode](https://code.visualstudio.com/) installed.
+
+Press the remote container button in the bottom left of the window and select "Reopen in Container". This will build the dev container and open the project in a new window.
+
+This container is designed to work with both backend and frontend development. Some additional steps are required, like installing `pipenv` dependencies and setting up the database and running the frontend server. Please read and follow the instructions in the backend and frontend READMEs.
+
+For more information, visit dev container [documentation](https://code.visualstudio.com/docs/remote/containers).
+
+#### Pushing Code
+
+You can use `ssh-add` to make your SSH keys available to the dev container. This will allow you to push code to GitHub.
+
+```
+ssh-add ~/.ssh/id_rsa
+```
+
+
+
+
 ## API Documentation
 API Docs can be found at `/api/documentation` on the back-end server. Also check out the code for more explanations
 and documentation! We've tried to keep it up-to-date.
