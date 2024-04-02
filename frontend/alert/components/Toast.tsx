@@ -121,6 +121,7 @@ const Toast = ({ onClose, children, type }: PropsWithChildren<ToastProps>) => {
                 <ToastText $color={textcolor}>{children}</ToastText>
                 <CloseButton
                     // src="/svg/close.svg"
+                    icon={faTimes} // TODO: we shouldn't need to do this
                     color={textcolor}
                     onClick={onClose}
                 />

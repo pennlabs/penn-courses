@@ -39,7 +39,7 @@ const ModalCard = styled.div`
 `;
 
 interface ModalCardHeadProps {
-    center: boolean;
+    $center: boolean;
 }
 
 const ModalCardHead = styled.header<ModalCardHeadProps>`

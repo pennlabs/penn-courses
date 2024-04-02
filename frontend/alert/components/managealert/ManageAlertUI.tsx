@@ -103,7 +103,7 @@ export const ManageAlert = ({
             clearTimeout(searchTimeout);
         }
         setSearchTimeout(
-            setTimeout(() => {
+            window.setTimeout(() => {
                 setFilter({ search: searchText });
             }, 100)
         );

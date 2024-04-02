@@ -66,8 +66,8 @@ const HeaderContainer = styled.div`
     padding-left: 2em;
 `;
 
-const Header = styled.div`
-    width: ${({ width }: { width: string }) => width};
+const Header = styled.div<{ $width: string }>`
+    width: ${({ $width }) => $width};
     color: #a0a0a0;
     padding-left: 0;
     font-weight: bold;
@@ -106,9 +106,9 @@ const CourseList = ({
     return (
         <CourseListContainer>
             <HeaderContainer>
-                <Header width="60%">COURSE</Header>
-                <Header width="20%">QUAL</Header>
-                <Header width="20%">DIFF</Header>
+                <Header $width="60%">COURSE</Header>
+                <Header $width="20%">QUAL</Header>
+                <Header $width="20%">DIFF</Header>
             </HeaderContainer>
             <CoursesContainer ref={listRef}>
                 {courseSort(courses, sortMode).map((course) => (
