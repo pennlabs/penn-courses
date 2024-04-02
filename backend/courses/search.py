@@ -89,7 +89,9 @@ class TypedCourseSearchBackend(filters.SearchFilter):
             return queryset
 
         search_fields = self.get_search_fields(view, request)
-        orm_lookups = [self.construct_search(str(search_field)) for search_field in search_fields]
+        orm_lookups = [
+            self.construct_search(str(search_field), queryset) for search_field in search_fields
+        ]
         search_terms = self.get_search_terms(request)
         if not search_terms:
             return queryset.none()
@@ -125,7 +127,7 @@ class TypedSectionSearchBackend(filters.SearchFilter):
     def filter_queryset(self, request, queryset, view):
         if not self.get_query(request):
             return queryset
-        orm_lookups = [self.construct_search("^full_code")]
+        orm_lookups = [self.construct_search("^full_code", queryset)]
         search_terms = self.get_search_terms(request)
         if not search_terms:
             return queryset.none()

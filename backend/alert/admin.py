@@ -6,12 +6,7 @@ from alert.models import AddDropPeriod, PcaDemandDistributionEstimate, Registrat
 
 
 class RegistrationAdmin(admin.ModelAdmin):
-    readonly_fields = (
-        "head_registration_id",
-        "section_link",
-        "resubscribed_from",
-        "created_at",
-    )
+    readonly_fields = ("head_registration_id", "section_link", "resubscribed_from", "created_at")
     search_fields = (
         "email",
         "phone",

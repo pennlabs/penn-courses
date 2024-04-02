@@ -14,19 +14,17 @@ pytest = "*"
 pytest-django = "*"
 django-debug-toolbar = "*"
 black = "==22.3.0"
-colorama = {version = "*", sys_platform = "== 'win32'"}
-selenium = "*"
 
 [packages]
 click = "==8.0.4"
-django = ">=3.2"
+django = "==5.0.2"
 psycopg2 = "*"
 requests = "*"
 twilio = "*"
-channels = "<3"
+channels = "*"
 channels-redis = "*"
 phonenumbers = "*"
-celery = "<5"
+celery = "*"
 redis = ">=3.4.1"
 sentry-sdk = "*"
 dj-database-url = "*"
@@ -67,4 +65,4 @@ ics = "*"
 drf-nested-routers = "*"
 
 [requires]
-python_full_version = "3.10"
+python_full_version = "3.11"

@@ -12,7 +12,7 @@ from django.db.models.signals import m2m_changed
 from django.utils import timezone
 
 from courses.models import Course
-from degree.utils.model_utils import q_object_parser, json_parser
+from degree.utils.model_utils import json_parser, q_object_parser
 
 
 program_choices = [
@@ -100,6 +100,7 @@ class Degree(models.Model):
             """
         ),
     )
+
     credits = models.DecimalField(
         decimal_places=2,
         max_digits=4,
@@ -224,8 +225,6 @@ class Rule(models.Model):
 
             if self.credits is not None and total_credits < self.credits:
                 return False
-
-            # TODO: run some extra checks...
 
             return True
         else:
@@ -524,7 +523,8 @@ class DoubleCountRestriction(models.Model):
 class DockedCourse(models.Model):
     """
     This represents a course docked by a user.
-    This is keyed by user but not degree plan, so when a user switches degree plan, the docked courses will not change.
+    This is keyed by user but not degree plan, so when a user switches degree plan,
+    the docked courses will not change.
     """
 
     person = models.ForeignKey(
@@ -547,3 +547,13 @@ class DockedCourse(models.Model):
                 name="unique docked course",
             )
         ]
+
+
+# After beta: delete this (and remove the DegreeWaitlist permission class)
+class PDPBetaUser(models.Model):
+    person = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.CASCADE,
+        help_text="The user who has access to the PDP beta",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)

@@ -15,13 +15,7 @@ from django.utils import timezone
 from django.utils.timezone import make_aware
 
 from alert.alerts import Email, PushNotification, Text
-from courses.models import (
-    Course,
-    Section,
-    StatusUpdate,
-    UserProfile,
-    string_dict_to_html,
-)
+from courses.models import Course, Section, StatusUpdate, UserProfile, string_dict_to_html
 from courses.util import (
     does_object_pass_filter,
     get_course_and_section,
@@ -122,8 +116,7 @@ class Registration(models.Model):
     """
 
     created_at = models.DateTimeField(
-        auto_now_add=True,
-        help_text="The datetime at which this registration was created.",
+        auto_now_add=True, help_text="The datetime at which this registration was created."
     )
     original_created_at = models.DateTimeField(
         null=True,
@@ -137,8 +130,7 @@ class Registration(models.Model):
         ),
     )
     updated_at = models.DateTimeField(
-        auto_now=True,
-        help_text="The datetime at which this registration was last modified.",
+        auto_now=True, help_text="The datetime at which this registration was last modified."
     )
 
     SOURCE_CHOICES = (
@@ -267,8 +259,7 @@ class Registration(models.Model):
         ),
     )
     notification_sent = models.BooleanField(
-        default=False,
-        help_text="True if an alert has been sent to the user, false otherwise.",
+        default=False, help_text="True if an alert has been sent to the user, false otherwise."
     )
     notification_sent_at = models.DateTimeField(
         blank=True,
@@ -710,9 +701,7 @@ def register_for_course(
         )
         registration.validate_phone()
         if section.registrations.filter(
-            email=email_address,
-            phone=registration.phone,
-            **Registration.is_active_filter(),
+            email=email_address, phone=registration.phone, **Registration.is_active_filter()
         ).exists():
             return RegStatus.OPEN_REG_EXISTS, section.full_code, None
     else:
@@ -924,14 +913,10 @@ class AddDropPeriod(models.Model):
         ),
     )
     start = models.DateTimeField(
-        null=True,
-        blank=True,
-        help_text="The datetime at which the add drop period started.",
+        null=True, blank=True, help_text="The datetime at which the add drop period started."
     )
     end = models.DateTimeField(
-        null=True,
-        blank=True,
-        help_text="The datetime at which the add drop period ended.",
+        null=True, blank=True, help_text="The datetime at which the add drop period ended."
     )
 
     # estimated_start and estimated_end are filled in automatically in the overridden save method,

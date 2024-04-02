@@ -14,12 +14,6 @@ parser re-builds the Q object correctly.
 
 Note that when you manually test this parser against strings, you'll want to use
 raw strings (ie, q_object_parser.parse(r"..."))
-
-IMPORTANT NOTE: we use the equivalent parser in Nearley.js on the frontend
-in frontend/degree-plan/util/q_object_parser.ne.
-Make sure to keep the two in sync; when you change this one, generate a
-new parser for the frontend using the nearley compiler and update the 
-the q_object_parser.js file in frontend/degree-plan/util.
 """
 
 

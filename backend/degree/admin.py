@@ -8,9 +8,10 @@ from degree.models import (
     Degree,
     DegreePlan,
     DoubleCountRestriction,
+    Fulfillment,
+    PDPBetaUser,
     Rule,
     SatisfactionStatus,
-    Fulfillment,
 )
 
 
@@ -24,6 +25,12 @@ class RuleAdmin(admin.ModelAdmin):
 
 admin.site.register(DegreePlan)
 admin.site.register(SatisfactionStatus)
+
+
+@admin.register(PDPBetaUser)
+class PDPBetaUserAdmin(admin.ModelAdmin):
+    search_fields = ("person__username", "person__id")
+    autocomplete_fields = ("person",)
 
 
 @admin.register(Fulfillment)

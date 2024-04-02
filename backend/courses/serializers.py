@@ -15,7 +15,6 @@ from courses.models import (
     StatusUpdate,
     UserProfile,
 )
-from plan.management.commands.recommendcourses import cosine_similarity
 
 
 class MeetingSerializer(serializers.ModelSerializer):

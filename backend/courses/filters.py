@@ -6,10 +6,10 @@ from django.db.models.expressions import F, Subquery
 from lark import Lark, Transformer, Tree
 from lark.exceptions import UnexpectedInput
 from rest_framework import filters
-from degree.models import Rule
 
 from courses.models import Course, Meeting, PreNGSSRequirement, Section
 from courses.util import get_current_semester
+from degree.models import Rule
 from plan.models import Schedule
 
 
@@ -367,7 +367,7 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
         if len(meeting_query) > 0:
             queryset = meeting_filter(queryset, meeting_query)
 
-        return queryset.distinct("full_code")  # TODO: THIS IS A BREAKING CHANGE FOR PCX
+        return queryset.distinct("full_code")  # TODO: THIS COULD BE A BREAKING CHANGE FOR PCX
 
     def get_schema_operation_parameters(self, view):
         return [

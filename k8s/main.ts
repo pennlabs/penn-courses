@@ -19,10 +19,6 @@ export class MyChart extends PennLabsChart {
     }
 
     new RedisApplication(this, 'redis', {
-      deployment: { 
-	    image: 'redis/redis-stack-server',
-        tag: '6.2.6-v6'
-      },
       persistData: true,
     });
 
@@ -39,7 +35,7 @@ export class MyChart extends PennLabsChart {
       deployment: {
         image: backendImage,
         secret,
-        replicas: 3,
+        replicas: 5,
       },
       djangoSettingsModule: 'PennCourses.settings.production',
       ingressProps,

@@ -116,9 +116,7 @@ class Command(BaseCommand):
         )
 
         parser.add_argument(
-            "--force",
-            action="store_true",
-            help="Complete action in non-interactive mode.",
+            "--force", action="store_true", help="Complete action in non-interactive mode."
         )
 
         parser.set_defaults(summary_file=ISC_SUMMARY_TABLE)

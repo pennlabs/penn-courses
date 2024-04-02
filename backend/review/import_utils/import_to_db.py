@@ -51,10 +51,7 @@ def import_course_and_section(full_course_code, semester, course_title, primary_
         course, section, _, _ = get_or_create_course_and_section(
             full_course_code,
             semester,
-            course_defaults={
-                "primary_listing": primary_listing,
-                "title": course_title or "",
-            },
+            course_defaults={"primary_listing": primary_listing, "title": course_title or ""},
         )
     except ValueError:
         stat("invalid_section_id")

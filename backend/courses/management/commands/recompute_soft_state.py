@@ -117,7 +117,7 @@ COURSE_CREDITS_RAW_SQL = dedent(
     UPDATE "courses_course" U0
     SET "credits" = CourseCredits.total_credits
     FROM CourseCredits
-    WHERE U0."id" = CourseCredits."id";       
+    WHERE U0."id" = CourseCredits."id";
 """
 )
 
@@ -134,6 +134,7 @@ def recompute_precomputed_fields(verbose=False):
     """
     Recomputes the following precomputed fields:
         - Course.num_activities
+        - Course.credits
         - Section.num_meetings
         - Section.has_reviews
         - Section.has_status_updates

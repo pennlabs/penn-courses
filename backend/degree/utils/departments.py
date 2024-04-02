@@ -1,3 +1,4 @@
+# TODO: update this every semester
 ENG_DEPTS = ["BE", "CIS", "CMPE", "EAS", "ESE", "MEAM", "MSE", "NETS", "ROBO"]  # SEAS
 SAS_DEPTS = [
     "AFST",

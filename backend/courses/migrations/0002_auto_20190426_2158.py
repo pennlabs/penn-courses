@@ -17,10 +17,7 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.AutoField(
-                        auto_created=True,
-                        primary_key=True,
-                        serialize=False,
-                        verbose_name="ID",
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
                     ),
                 ),
                 ("code", models.CharField(max_length=4)),
@@ -72,10 +69,7 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.AutoField(
-                        auto_created=True,
-                        primary_key=True,
-                        serialize=False,
-                        verbose_name="ID",
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
                     ),
                 ),
                 ("roomnum", models.CharField(max_length=5)),
@@ -83,8 +77,7 @@ class Migration(migrations.Migration):
                 (
                     "building",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE,
-                        to="courses.Building",
+                        on_delete=django.db.models.deletion.CASCADE, to="courses.Building"
                     ),
                 ),
             ],
@@ -98,10 +91,7 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.AutoField(
-                        auto_created=True,
-                        primary_key=True,
-                        serialize=False,
-                        verbose_name="ID",
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
                     ),
                 ),
                 ("day", models.CharField(max_length=1)),

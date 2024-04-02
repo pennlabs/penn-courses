@@ -49,7 +49,8 @@ class Command(BaseCommand):
             if not degree_match:
                 if kwargs["verbosity"]:
                     print(
-                        "Skipping {degree_file} because its name does not follow the format of a degree file."
+                        "Skipping {degree_file} because its name does not "
+                        "follow the format of a degree file."
                     )
                 continue
             year, program, degree, major, concentration = degree_match.groups()
