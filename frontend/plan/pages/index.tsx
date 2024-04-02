@@ -226,130 +226,168 @@ function Index() {
     );
     return (
         <Provider store={store}>
-            {initGA()}
-            {headPreamble}
-            {showLoginModal && (
-                <LoginModal
-                    pathname={
-                        typeof window !== "undefined"
-                            ? window.location.pathname
-                            : ""
-                    }
-                    siteName="Penn Course Plan"
-                />
-            )}
-            <GlobalStyle />
-            {innerWidth < 800 ? (
-                <>
-                    <SearchBar
-                        store={store}
-                        setTab={setTab}
-                        setView={setView}
-                        mobileView={true}
-                        storeLoaded={storeLoaded}
-                        isExpanded={isExpanded}
-                        setShowLoginModal={setShowLoginModal}
+            <>
+                {initGA()}
+                {headPreamble}
+                {showLoginModal && (
+                    <LoginModal
+                        pathname={
+                            typeof window !== "undefined"
+                                ? window.location.pathname
+                                : ""
+                        }
+                        siteName="Penn Course Plan"
                     />
-                    <CustomTabs value={tab} centered>
-                        <Tab
-                            className="topTab"
-                            label="Search"
-                            onClick={() => setTab(0)}
+                )}
+                <GlobalStyle />
+                {innerWidth < 800 ? (
+                    <>
+                        <SearchBar
+                            store={store}
+                            setTab={setTab}
+                            setView={setView}
+                            mobileView={true}
+                            storeLoaded={storeLoaded}
+                            isExpanded={isExpanded}
+                            setShowLoginModal={setShowLoginModal}
                         />
-                        <Tab
-                            className="topTab"
-                            label="Cart"
-                            onClick={() => setTab(1)}
-                        />
-                        <Tab
-                            className="topTab"
-                            label="Schedule"
-                            onClick={() => setTab(2)}
-                        />
-                    </CustomTabs>
-                    <SwipeableViews
-                        index={tab}
-                        // @ts-ignore
-                        ref={containerRef}
-                        enableMouseEvents
-                        onSwitching={scrollTop}
-                        onChangeIndex={setTab}
-                    >
-                        <div
-                            style={{
-                                paddingLeft: "10px",
-                                paddingRight: "10px",
-                            }}
-                        >
-                            <div>
-                                <div
-                                    style={{
-                                        display: "flex",
-                                        flexDirection: "row",
-                                        justifyContent: "space-around",
-                                        margin: "10px",
-                                    }}
-                                >
-                                    <SearchSortDropdown />
-                                </div>
-                                <Box
-                                    style={{
-                                        paddingLeft: 0,
-                                        paddingRight: 0,
-                                    }}
-                                >
-                                    <Selector mobileView={true} view={0} />
-                                </Box>
-                            </div>
-                        </div>
-                        <div style={{ padding: "10px" }}>
-                            <Cart setTab={setTab} mobileView={true} />
-                        </div>
-                        <div style={{ padding: "10px" }}>
-                            {/* Unfortunately running into a weird issue with connected components and TS. */}
-                            {/* @ts-ignore */}
-                            <Schedule setTab={setTab} mobileView={true} />
-                        </div>
-                    </SwipeableViews>
-                </>
-            ) : (
-                <>
-                    <SearchBar
-                        storeLoaded={storeLoaded}
-                        store={store}
-                        setView={setView}
-                        setTab={setTab}
-                        mobileView={false}
-                        isExpanded={isExpanded}
-                        setShowLoginModal={setShowLoginModal}
-                    />
-                    <div style={{ padding: "0px 2em 0px 2em" }}>
-                        <div
-                            className="App columns is-mobile main smooth-transition"
-                            style={
-                                isExpanded
-                                    ? {
-                                          padding: 0,
-                                          width: "123%",
-                                      }
-                                    : {
-                                          padding: 0,
-                                          width: "129%",
-                                      }
-                            }
+                        <CustomTabs value={tab} centered>
+                            <Tab
+                                className="topTab"
+                                label="Search"
+                                onClick={() => setTab(0)}
+                            />
+                            <Tab
+                                className="topTab"
+                                label="Cart"
+                                onClick={() => setTab(1)}
+                            />
+                            <Tab
+                                className="topTab"
+                                label="Schedule"
+                                onClick={() => setTab(2)}
+                            />
+                        </CustomTabs>
+                        <SwipeableViews
+                            index={tab}
+                            // @ts-ignore
+                            ref={containerRef}
+                            enableMouseEvents
+                            onSwitching={scrollTop}
+                            onChangeIndex={setTab}
                         >
                             <div
-                                className={
+                                style={{
+                                    paddingLeft: "10px",
+                                    paddingRight: "10px",
+                                }}
+                            >
+                                <div>
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            flexDirection: "row",
+                                            justifyContent: "space-around",
+                                            margin: "10px",
+                                        }}
+                                    >
+                                        <SearchSortDropdown />
+                                    </div>
+                                    <Box
+                                        style={{
+                                            paddingLeft: 0,
+                                            paddingRight: 0,
+                                        }}
+                                    >
+                                        <Selector mobileView={true} view={0} />
+                                    </Box>
+                                </div>
+                            </div>
+                            <div style={{ padding: "10px" }}>
+                                <Cart setTab={setTab} mobileView={true} />
+                            </div>
+                            <div style={{ padding: "10px" }}>
+                                {/* Unfortunately running into a weird issue with connected components and TS. */}
+                                {/* @ts-ignore */}
+                                <Schedule setTab={setTab} mobileView={true} />
+                            </div>
+                        </SwipeableViews>
+                    </>
+                ) : (
+                    <>
+                        <SearchBar
+                            storeLoaded={storeLoaded}
+                            store={store}
+                            setView={setView}
+                            setTab={setTab}
+                            mobileView={false}
+                            isExpanded={isExpanded}
+                            setShowLoginModal={setShowLoginModal}
+                        />
+                        <div style={{ padding: "0px 2em 0px 2em" }}>
+                            <div
+                                className="App columns is-mobile main smooth-transition"
+                                style={
                                     isExpanded
-                                        ? "column smooth-transition is-two-thirds"
-                                        : "column smooth-transition is-one-fifth"
+                                        ? {
+                                            padding: 0,
+                                            width: "123%",
+                                        }
+                                        : {
+                                            padding: 0,
+                                            width: "129%",
+                                        }
                                 }
                             >
-                                <span
+                                <div
+                                    className={
+                                        isExpanded
+                                            ? "column smooth-transition is-two-thirds"
+                                            : "column smooth-transition is-one-fifth"
+                                    }
+                                >
+                                    <span
+                                        style={{
+                                            display: "flex",
+                                            flexDirection: "row",
+                                            justifyContent: "space-between",
+                                        }}
+                                    >
+                                        <h3
+                                            style={{
+                                                display: "flex",
+                                                fontWeight: "bold",
+                                                marginBottom: "0.5rem",
+                                            }}
+                                        >
+                                            Search Results
+                                        </h3>
+                                        <div
+                                            style={{
+                                                float: "right",
+                                                display: "flex",
+                                            }}
+                                        >
+                                            <SearchSortDropdown />
+                                        </div>
+                                    </span>
+                                    <Box
+                                        style={{
+                                            paddingLeft: 0,
+                                            paddingRight: 0,
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            flex: 1,
+                                        }}
+                                    >
+                                        <Selector mobileView={false} view={view} />
+                                    </Box>
+                                </div>
+                                <div
+                                    className="column is-2"
                                     style={{
                                         display: "flex",
-                                        flexDirection: "row",
-                                        justifyContent: "space-between",
+                                        flexDirection: "column",
                                     }}
                                 >
                                     <h3
@@ -359,71 +397,35 @@ function Index() {
                                             marginBottom: "0.5rem",
                                         }}
                                     >
-                                        Search Results
+                                        Cart
                                     </h3>
-                                    <div
-                                        style={{
-                                            float: "right",
-                                            display: "flex",
-                                        }}
-                                    >
-                                        <SearchSortDropdown />
-                                    </div>
-                                </span>
-                                <Box
+                                    <Cart mobileView={false} />
+                                </div>
+                                <div
                                     style={{
-                                        paddingLeft: 0,
-                                        paddingRight: 0,
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        flex: 1,
+                                        zIndex: 2,
+                                        paddingRight: "0px",
+                                        marginRight: "15px",
                                     }}
+                                    className={
+                                        isExpanded
+                                            ? "smooth-transition column is-5 hidden"
+                                            : "smooth-transition column is-5"
+                                    }
                                 >
-                                    <Selector mobileView={false} view={view} />
-                                </Box>
-                            </div>
-                            <div
-                                className="column is-2"
-                                style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                }}
-                            >
-                                <h3
-                                    style={{
-                                        display: "flex",
-                                        fontWeight: "bold",
-                                        marginBottom: "0.5rem",
-                                    }}
-                                >
-                                    Cart
-                                </h3>
-                                <Cart mobileView={false} />
-                            </div>
-                            <div
-                                style={{
-                                    zIndex: 2,
-                                    paddingRight: "0px",
-                                    marginRight: "15px",
-                                }}
-                                className={
-                                    isExpanded
-                                        ? "smooth-transition column is-5 hidden"
-                                        : "smooth-transition column is-5"
-                                }
-                            >
-                                <Toast
-                                    autoClose={1000}
-                                    hideProgressBar={true}
-                                />
-                                <Schedule />
+                                    <Toast
+                                        autoClose={1000}
+                                        hideProgressBar={true}
+                                    />
+                                    <Schedule />
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </>
-            )}
-            <Footer />
-            <ModalContainer />
+                    </>
+                )}
+                <Footer />
+                <ModalContainer />
+            </>
         </Provider>
     );
 }

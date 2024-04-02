@@ -5,7 +5,6 @@ import { FilterType } from "../../types";
 
 interface DropdownButtonProps {
     title: string;
-    children: ReactElement;
     filterData: FilterType;
     defaultFilter: FilterType;
     clearFilter: () => void;
@@ -113,7 +112,7 @@ export function DropdownButton({
     filterData,
     defaultFilter,
     clearFilter,
-}: DropdownButtonProps) {
+}: React.PropsWithChildren<DropdownButtonProps>) {
     const [isActive, setIsActive] = useState(false);
 
     const toggleButton = () => {
@@ -158,6 +157,8 @@ export function DropdownButton({
                 <DropdownContent>
                     {/* This injects the setIsActive method to allow children */}
                     {/* to change state of dropdown  */}
+                    {/* 
+                    // @ts-ignore */}
                     {React.Children.map(children, (c: ReactElement) =>
                         React.cloneElement(c, {
                             setIsActive,

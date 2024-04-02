@@ -378,7 +378,7 @@ const ReceivedRequestNotice = styled.div`
     right: 0.2rem;
 `
 
-const DropdownTriggerContainer = styled.div`
+const DropdownTriggerContainer = styled.div<{ $isActive: boolean }>`
     display: flex;
 
     background: ${({ $isActive }: { $isActive: boolean }) =>
@@ -506,7 +506,7 @@ const ScheduleSelectorDropdown = ({
     });
 
     return (
-        <ScheduleDropdownContainer ref={ref} $isActive={isActive}>
+        <ScheduleDropdownContainer ref={ref}>
             <ScheduleDropdownHeader>
                 <DropdownTriggerContainer 
                     $isActive={isActive}
