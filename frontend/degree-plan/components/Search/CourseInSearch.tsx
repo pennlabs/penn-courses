@@ -10,8 +10,6 @@ import Skeleton from "react-loading-skeleton";
 import 'react-loading-skeleton/dist/skeleton.css'
 import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
 
-// import { Course as CourseType } from "../../types";
-// import { Icon } from "../bulma_derived_components";
 
 const RowSelectors = styled.li`
     transition: ease background;
@@ -33,6 +31,7 @@ const CourseContainer = styled.div<{ $isRecCourse: boolean }>`
     align-items: center;
     display: flex;
     flex-direction: row;
+    cursor: default;
 `;
 
 
@@ -103,6 +102,12 @@ const InfoPopup = styled.div<{ $show: boolean }>`
     box-shadow: 0 2px 3px rgba(10, 10, 10, 0.1), 0 0 0 1px rgba(10, 10, 10, 0.1);
 `;
 
+const AddButton = styled.div`
+    margin: 0.1rem 0.3rem 0.1rem;
+    color: var(--green-color);
+    cursor: pointer;
+`
+
 export const SkeletonCourse = () => (
     // eslint-disable-next-line
     <RowSelectors>
@@ -143,29 +148,32 @@ export default function Course({
     isStar,
 }: CourseProps) {
     /** React dnd */
-    const [{ isDragging }, drag, dragPreview] = useDrag<DnDCourse>(() => ({
-        type: ItemTypes.COURSE_IN_REQ,
-        item: {full_code: course.id, semester:-1, rule_id: ruleId},
-        collect: (monitor) => ({
-            isDragging: !!monitor.isDragging(),
-        })
-    }))
+    // const [{ isDragging }, drag, dragPreview] = useDrag<DnDCourse>(() => ({
+    //     type: ItemTypes.COURSE_IN_REQ,
+    //     item: {full_code: course.id, semester:-1, rule_id: ruleId},
+    //     collect: (monitor) => ({
+    //         isDragging: !!monitor.isDragging(),
+    //     })
+    // }))
+
+    const [isMouseOver, setIsMouseOver] = useState(false);
 
     return (
         <RowSelectors>
-            <ReviewPanelTrigger full_code={course.id}>
-                <CourseContainer>
+            <ReviewPanelTrigger full_code={course.id} triggerType="click">
+                <CourseContainer onMouseEnter={() => setIsMouseOver(true)} onMouseLeave={() => setIsMouseOver(false)}>
                     <CourseInfoContainer
-                        onClick={onClick}
                         role="button"
                     >   
-                        <CourseIdentityContainer ref={drag}>
-                            <Draggable isDragging={isDragging}>
-                                <CourseIDContainer>
-                                    <CourseID>{course.id.replace(/-/g, " ")}</CourseID>
-                                </CourseIDContainer>
-                                <CourseTitle>{course.title}</CourseTitle>
-                            </Draggable>
+                        <CourseIdentityContainer >
+                            <CourseIDContainer>
+                                <CourseID>{course.id.replace(/-/g, " ")}</CourseID>
+                                {isMouseOver && 
+                                <AddButton onClick={onClick}>
+                                    <i className="fas fa-md fa-plus-circle" aria-hidden="true"></i>
+                                </AddButton>}
+                            </CourseIDContainer>
+                            <CourseTitle>{course.title}</CourseTitle>
                         </CourseIdentityContainer>
                         
                         <CourseQualityContainer>
@@ -174,6 +182,7 @@ export default function Course({
                         <CourseDifficultyContainer>
                             <Badge value={course.difficulty} />
                         </CourseDifficultyContainer>
+                       
                     </CourseInfoContainer>
                 </CourseContainer>
             </ReviewPanelTrigger>

@@ -56,12 +56,30 @@ class Degree(models.Model):
             """
         ),
     )
+    major_name = models.CharField(
+        max_length=128,
+        null=True,
+        help_text=dedent(
+            """
+            The name of the major for this degree, e.g., Africana Studies
+            """
+        ),
+    )
     concentration = models.CharField(
         max_length=4,
         null=True,
         help_text=dedent(
             """
             The concentration code for this degree, e.g., BMAT
+            """
+        ),
+    )
+    concentration_name = models.CharField(
+        max_length=128,
+        null=True,
+        help_text=dedent(
+            """
+            The name of the concentration for this degree, e.g., African American Studies
             """
         ),
     )
@@ -86,6 +104,7 @@ class Degree(models.Model):
     credits = models.DecimalField(
         decimal_places=2,
         max_digits=4,
+        null=True,
         help_text=dedent(
             """
             The minimum number of CUs required for this degree.
