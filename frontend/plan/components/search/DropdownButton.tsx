@@ -158,6 +158,9 @@ export function DropdownButton({
                     {/* This injects the setIsActive method to allow children */}
                     {/* to change state of dropdown  */}
                     {/* 
+                    We need this ts-ignore because React.Children.map does
+                    not allow the children to be typed as an array of ReactElements
+                    in modern react (it has a broader type).
                     // @ts-ignore */}
                     {React.Children.map(children, (c: ReactElement) =>
                         React.cloneElement(c, {
