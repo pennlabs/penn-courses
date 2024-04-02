@@ -1,5 +1,5 @@
-import React from "react";
-import styled, { CSSProperties } from "styled-components";
+import React, { CSSProperties } from "react";
+import styled from "styled-components";
 
 interface NavBarProps {
     style: CSSProperties;

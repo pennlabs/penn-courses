@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
 
 /**
  * A component that represents a button and a box that appears when the button is clicked/hovered over.
@@ -24,6 +25,7 @@ class Popover extends Component {
       this.dialogElement = document.createElement("div");
       this.dialogElement.style.position = "static";
       document.body.appendChild(this.dialogElement);
+      this.dialogElementRoot = createRoot(this.dialogElement);
       this.componentDidUpdate();
     }
   }
@@ -68,7 +70,7 @@ class Popover extends Component {
       } = this.state;
       const { style, children } = this.props;
       const { scrollX, scrollY } = window;
-      ReactDOM.render(
+      this.dialogElementRoot.render(
         isShown ? (
           <div
             className="msg"
@@ -82,8 +84,7 @@ class Popover extends Component {
           </div>
         ) : (
           undefined
-        ),
-        this.dialogElement
+        )
       );
     }
   }
