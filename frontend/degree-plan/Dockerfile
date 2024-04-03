@@ -1,4 +1,6 @@
-FROM node:10-buster as build-deps
+FROM node:18-bookworm
+
+LABEL maintainer="Penn Labs"
 
 WORKDIR /app/
 
@@ -9,20 +11,18 @@ COPY degree-plan/package.json /app/degree-plan/
 COPY shared-components/package.json /app/shared-components/
 
 # Install dependencies
-RUN yarn workspace penndegreeplan install --production --frozen-lockfile
+RUN yarn workspace degree-plan install --production --frozen-lockfile
 RUN yarn workspace pcx-shared-components install --production --frozen-lockfile
 
 # Copy project
 COPY degree-plan/ /app/degree-plan
 COPY shared-components/ /app/shared-components
 
+# Disable next telemetry
+ENV NEXT_TELEMETRY_DISABLED=1
+
 # Build project
 WORKDIR /app/degree-plan
 RUN yarn build
 
-FROM nginx:1.12
-
-LABEL maintainer="Penn Labs"
-
-COPY degree-plan/nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build-deps /app/degree-plan/build/ /usr/share/nginx/html
+CMD ["yarn", "start"]
