@@ -1,4 +1,4 @@
-from django.conf.urls import url
+from django.urls import re_path
 from django.contrib import admin
 from django.template.response import TemplateResponse
 from django.urls import reverse
@@ -59,7 +59,7 @@ class DegreeAdmin(admin.ModelAdmin):
         # get the default urls
         urls = super().get_urls()
         custom_urls = [
-            url(
+            re_path(
                 r"^degree-editor/$",
                 self.admin_site.admin_view(self.degree_editor),
                 name="degree-editor",
