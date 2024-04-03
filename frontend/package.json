@@ -4,7 +4,8 @@
     "shared-components",
     "alert",
     "plan",
-    "review"
+    "review",
+    "degree-plan"
   ],
   "private": true,
   "scripts": {

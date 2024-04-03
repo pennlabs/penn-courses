@@ -3,9 +3,9 @@
 Since our frontend codebase for Penn Courses products are closely related, we've
 decided to opt for a monorepo version control system to allow for easier 
 code-sharing and aid future development. Currently, the `frontend/` directory 
-houses 3 projects, namely `Penn Course Alert`, `Penn Course Plan` and 
-`pcx-shared-components`, a library containing reusable React components/hooks 
-that are used in both PCA and PCP. 
+houses 5 projects, namely `Penn Course Alert`, `Penn Course Plan`, `Penn Course Review`, 
+`Penn Degree Plan` and `pcx-shared-components`, a library containing reusable React 
+components/hooks that are used in both PCA and PCP. 
 
 ## Setting Up Development Environment 
 Make sure you have `node` (with a version that is ^18) and `yarn` installed.

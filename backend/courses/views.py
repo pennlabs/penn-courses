@@ -36,13 +36,15 @@ from courses.serializers import (
 )
 from courses.util import get_current_semester
 from PennCourses.docs_settings import PcxAutoSchema
-from plan.management.commands.recommendcourses import retrieve_course_clusters, vectorize_user
 
 
 SEMESTER_PARAM_DESCRIPTION = (
     "The semester of the course (of the form YYYYx where x is A [for spring], "
     "B [summer], or C [fall]), e.g. '2019C' for fall 2019. Alternatively, you "
-    "can just pass 'current' for the current semester."
+    "can just pass 'current' for the current semester. Finally, you can pass 'all' "
+    "to always return the most recent course for each full_code, no matter which "
+    "semester it is from. The 'all' option can be significantly more expensive, so use "
+    "only where needed. "
 )
 
 
@@ -64,6 +66,8 @@ class BaseCourseMixin(AutoPrefetchViewSetMixin, generics.GenericAPIView):
         semester = self.get_semester()
         if semester != "all":
             queryset = queryset.filter(**{self.get_semester_field(): semester})
+        else:
+            queryset = queryset.order_by("full_code", "-semester").distinct("full_code")
         return queryset
 
     def get_queryset(self):
@@ -205,15 +209,6 @@ class CourseListSearch(CourseList):
 
         if self.request is None or not self.request.user or not self.request.user.is_authenticated:
             return context
-
-        _, _, curr_course_vectors_dict, past_course_vectors_dict = retrieve_course_clusters()
-        user_vector, _ = vectorize_user(
-            self.request.user, curr_course_vectors_dict, past_course_vectors_dict
-        )
-        context.update(
-            {"user_vector": user_vector, "curr_course_vectors_dict": curr_course_vectors_dict}
-        )
-
         return context
 
     filter_backends = [TypedCourseSearchBackend, CourseSearchFilterBackend]
@@ -272,7 +267,11 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
                 .filter(Q(status="O") | Q(status="C"))
                 .distinct()
                 .prefetch_related(
-                    "course", "meetings", "associated_sections", "meetings__room", "instructors"
+                    "course",
+                    "meetings",
+                    "associated_sections",
+                    "meetings__room",
+                    "instructors",
                 ),
             )
         )

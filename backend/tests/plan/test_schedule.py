@@ -56,7 +56,12 @@ class ScheduleTest(TestCase):
         self.assertEqual(section.semester, serialized_section.get("semester"))
 
         if consider_review_data:
-            fields = ["course_quality", "instructor_quality", "difficulty", "work_required"]
+            fields = [
+                "course_quality",
+                "instructor_quality",
+                "difficulty",
+                "work_required",
+            ]
             for field in fields:
                 expected = get_average_reviews(reviews, field)
                 actual = serialized_section.get(field)

@@ -15,7 +15,6 @@ from courses.models import (
     StatusUpdate,
     UserProfile,
 )
-from plan.management.commands.recommendcourses import cosine_similarity
 
 
 class MeetingSerializer(serializers.ModelSerializer):
@@ -157,7 +156,10 @@ class SectionDetailSerializer(serializers.ModelSerializer):
         max_digits=4, decimal_places=3, read_only=True, help_text=difficulty_help
     )
     instructor_quality = serializers.DecimalField(
-        max_digits=4, decimal_places=3, read_only=True, help_text=instructor_quality_help
+        max_digits=4,
+        decimal_places=3,
+        read_only=True,
+        help_text=instructor_quality_help,
     )
     work_required = serializers.DecimalField(
         max_digits=4, decimal_places=3, read_only=True, help_text=work_required_help
@@ -249,23 +251,7 @@ class CourseListSerializer(serializers.ModelSerializer):
         return obj.sections.count()
 
     def get_recommendation_score(self, obj):
-        user_vector = self.context.get("user_vector")
-        curr_course_vectors_dict = self.context.get("curr_course_vectors_dict")
-
-        if user_vector is None or curr_course_vectors_dict is None:
-            # NOTE: there should be no case in which user_vector is None
-            # but curr_course_vectors_dict is not None. However, for
-            # stability in production, recommendation_score is None when
-            # either is None
-            return None
-
-        course_vector = curr_course_vectors_dict.get(obj.full_code)
-        if course_vector is None:
-            # Fires when the curr_course_vectors_dict is defined (ie, the user is authenticated)
-            # but the course code is not in the model
-            return None
-
-        return cosine_similarity(course_vector, user_vector)
+        return 0
 
     course_quality = serializers.DecimalField(
         max_digits=4, decimal_places=3, read_only=True, help_text=course_quality_help
@@ -274,7 +260,10 @@ class CourseListSerializer(serializers.ModelSerializer):
         max_digits=4, decimal_places=3, read_only=True, help_text=difficulty_help
     )
     instructor_quality = serializers.DecimalField(
-        max_digits=4, decimal_places=3, read_only=True, help_text=instructor_quality_help
+        max_digits=4,
+        decimal_places=3,
+        read_only=True,
+        help_text=instructor_quality_help,
     )
     work_required = serializers.DecimalField(
         max_digits=4, decimal_places=3, read_only=True, help_text=work_required_help
@@ -293,6 +282,7 @@ class CourseListSerializer(serializers.ModelSerializer):
             "difficulty",
             "work_required",
             "recommendation_score",
+            "credits",
         ]
         read_only_fields = fields
 
@@ -353,7 +343,10 @@ class CourseDetailSerializer(CourseListSerializer):
         max_digits=4, decimal_places=3, read_only=True, help_text=difficulty_help
     )
     instructor_quality = serializers.DecimalField(
-        max_digits=4, decimal_places=3, read_only=True, help_text=instructor_quality_help
+        max_digits=4,
+        decimal_places=3,
+        read_only=True,
+        help_text=instructor_quality_help,
     )
     work_required = serializers.DecimalField(
         max_digits=4, decimal_places=3, read_only=True, help_text=work_required_help
@@ -372,6 +365,7 @@ class CourseDetailSerializer(CourseListSerializer):
             "instructor_quality",
             "difficulty",
             "work_required",
+            "credits",
         ] + [
             "crosslistings",
             "pre_ngss_requirements",

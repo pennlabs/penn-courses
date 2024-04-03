@@ -264,8 +264,16 @@ class CrosslistingTestCase(TestCase):
         set_crosslistings(
             self.clst,
             [
-                {"subject_code": "CLST", "course_number": "027", "is_primary_section": False},
-                {"subject_code": "ANCH", "course_number": "027", "is_primary_section": True},
+                {
+                    "subject_code": "CLST",
+                    "course_number": "027",
+                    "is_primary_section": False,
+                },
+                {
+                    "subject_code": "ANCH",
+                    "course_number": "027",
+                    "is_primary_section": True,
+                },
             ],
         )
         self.clst.save()
@@ -276,8 +284,16 @@ class CrosslistingTestCase(TestCase):
         set_crosslistings(
             self.clst,
             [
-                {"subject_code": "CLST", "course_number": "027", "is_primary_section": False},
-                {"subject_code": "ANCH", "course_number": "027", "is_primary_section": True},
+                {
+                    "subject_code": "CLST",
+                    "course_number": "027",
+                    "is_primary_section": False,
+                },
+                {
+                    "subject_code": "ANCH",
+                    "course_number": "027",
+                    "is_primary_section": True,
+                },
             ],
         )
         set_crosslistings(self.anch, [])
@@ -290,9 +306,21 @@ class CrosslistingTestCase(TestCase):
         set_crosslistings(
             self.anch,
             [
-                {"subject_code": "CLST", "course_number": "027", "is_primary_section": False},
-                {"subject_code": "ANCH", "course_number": "027", "is_primary_section": False},
-                {"subject_code": "HIST", "course_number": "027", "is_primary_section": True},
+                {
+                    "subject_code": "CLST",
+                    "course_number": "027",
+                    "is_primary_section": False,
+                },
+                {
+                    "subject_code": "ANCH",
+                    "course_number": "027",
+                    "is_primary_section": False,
+                },
+                {
+                    "subject_code": "HIST",
+                    "course_number": "027",
+                    "is_primary_section": True,
+                },
             ],
         )
         self.anch.save()
