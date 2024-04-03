@@ -1,7 +1,6 @@
-from django.urls import re_path
 from django.contrib import admin
 from django.template.response import TemplateResponse
-from django.urls import reverse
+from django.urls import re_path, reverse
 from django.utils.html import format_html
 
 from degree.models import (
