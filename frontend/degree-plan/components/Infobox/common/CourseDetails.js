@@ -1,13 +1,13 @@
 import React from "react";
 
-const getTimeString = meetings => {
-  const intToTime = t => {
+const getTimeString = (meetings) => {
+  const intToTime = (t) => {
     let hour = Math.floor(t % 12);
-    let min = Math.round((t % 1) * 100);
+    const min = Math.round((t % 1) * 100);
     if (hour === 0) {
       hour = 12;
     }
-    let minStr = min === 0 ? "00" : min.toString();
+    const minStr = min === 0 ? "00" : min.toString();
     return `${hour}:${minStr}`;
   };
 
@@ -17,7 +17,7 @@ const getTimeString = meetings => {
   const times = {};
   let maxcount = 0;
   let maxrange = "";
-  meetings.forEach(meeting => {
+  meetings.forEach((meeting) => {
     const rangeId = `${meeting.start}-${meeting.end}`;
     if (!times[rangeId]) {
       times[rangeId] = [meeting.day];
@@ -31,8 +31,8 @@ const getTimeString = meetings => {
   });
 
   let daySet = "";
-  "MTWRFSU".split("").forEach(day => {
-    times[maxrange].forEach(d => {
+  "MTWRFSU".split("").forEach((day) => {
+    times[maxrange].forEach((d) => {
       if (d === day) {
         daySet += day;
       }

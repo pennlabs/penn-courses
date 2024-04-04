@@ -3,19 +3,13 @@ import React from "react";
 /**
  * Three colored boxes with numerical rating values, used in the course description box.
  */
-const RatingRow = ({
-  value,
-  course,
-  instructor,
-  difficulty,
-  work
-}) => {
-  const numOrNA = num => (!num || isNaN(num) ? "N/A" : num.toFixed(1));
-  const getColor = (num, reverse) => {
-    if (!num || isNaN(num)) {
+const RatingRow = ({ value, course, instructor, difficulty, work }) => {
+  const numOrNA = (num) => (!num || isNaN(num) ? "N/A" : num.toFixed(1));
+  const getColor = (_num, reverse) => {
+    if (!_num || isNaN(_num)) {
       return "rating-good";
     }
-    num = num.toFixed(1);
+    const num = _num.toFixed(1);
     if (num < 2) {
       return reverse ? "rating-good" : "rating-bad";
     }

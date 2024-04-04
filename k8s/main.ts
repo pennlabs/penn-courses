@@ -84,6 +84,13 @@ export class MyChart extends PennLabsChart {
       domain: { host: 'penncoursereview.com', paths: ['/'] },
     });
 
+    new ReactApplication(this, 'degree', {
+      deployment: {
+        image: 'pennlabs/pdp-frontend',
+      },
+      domain: { host: 'penndegreeplan.com', paths: ['/'] },
+    });
+
     new CronJob(this, 'load-courses', {
       schedule: cronTime.everyDayAt(3),
       image: backendImage,
