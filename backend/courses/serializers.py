@@ -3,7 +3,7 @@ from textwrap import dedent
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from backend.plan.management.commands.recommendcourses import cosine_similarity
+from plan.management.commands.recommendcourses import cosine_similarity
 from courses.models import (
     Attribute,
     Course,
