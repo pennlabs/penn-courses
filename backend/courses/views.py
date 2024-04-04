@@ -36,6 +36,7 @@ from courses.serializers import (
 )
 from courses.util import get_current_semester
 from PennCourses.docs_settings import PcxAutoSchema
+from plan.management.commands.recommendcourses import retrieve_course_clusters, vectorize_user
 
 
 SEMESTER_PARAM_DESCRIPTION = (
@@ -209,6 +210,15 @@ class CourseListSearch(CourseList):
 
         if self.request is None or not self.request.user or not self.request.user.is_authenticated:
             return context
+
+        _, _, curr_course_vectors_dict, past_course_vectors_dict = retrieve_course_clusters()
+        user_vector, _ = vectorize_user(
+            self.request.user, curr_course_vectors_dict, past_course_vectors_dict
+        )
+        context.update(
+            {"user_vector": user_vector, "curr_course_vectors_dict": curr_course_vectors_dict}
+        )
+
         return context
 
     filter_backends = [TypedCourseSearchBackend, CourseSearchFilterBackend]
