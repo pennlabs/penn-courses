@@ -110,7 +110,7 @@ const SearchConditionInner = ({ q }: SearchConditionInnerProps) => {
     const compounds = q.clauses.filter((clause) => clause.type === "OR" || clause.type === "AND") as Compound[];
 
     const display = [];
-    const compoundCondition: Record<ConditionKey, any | undefined> = {};
+    const compoundCondition: Partial<Record<ConditionKey, any | undefined>> = {};
     conditions.forEach((leaf) => compoundCondition[leaf.key] = leaf.value); 
     if ('attributes__code__in' in compoundCondition) {
         display.push(<Attributes attributes={compoundCondition['attributes__code__in'] as string[]} />);
@@ -181,7 +181,9 @@ const SearchCondition = ({ ruleId, ruleQuery, fulfillments, ruleIsSatisfied, q, 
 
     return (
         <SearchConditionWrapper 
-            $isDisabled={false}>
+            $isDisabled={false}
+            $isUsed={false}
+        >
             <SearchConditionInner q={q} />
             <DarkGrayIcon onClick={() => {
             setSearchRuleQuery(ruleQuery);
@@ -211,7 +213,7 @@ const CourseOptionsSeparator = styled.div`
 `;
 
 const transformCourseClauses = (q: ParsedQObj): ParsedQObj => {
-    if (q.type === "LEAF" && q.key === "full_code") return { type: "COURSE", full_code: q.value };
+    if (q.type === "LEAF" && q.key === "full_code") return { type: "COURSE", full_code: q.value as string };
     if (q.type === "AND" && q.clauses.length == 2) {
         const semester = (q.clauses.find((clause) => clause.type === "LEAF" && clause.key === "semester") as Condition | undefined)?.value as string | undefined;
         const full_code = (q.clauses.find((clause) => clause.type === "LEAF" && clause.key === "full_code") as Condition | undefined)?.value as string | undefined;

@@ -44,11 +44,11 @@ const PanelWrapper = styled(Pane)`
   gap: 2rem;
 `
 
-const PanelInteriorWrapper = styled.div<{ $maxWidth: string; $minWidth: string }>`
+const PanelInteriorWrapper = styled.div<{ $maxWidth?: string; $minWidth?: string }>`
   border-radius: 10px;
   box-shadow: 0px 0px 5px 1px #00000026;
   overflow: hidden; /* Hide scrollbars */
-  width: ${(props) => (props.$maxWidth || props.$maxWidth ? "auto" : "100%")};
+  width: ${(props) => (props.$maxWidth || "100%")};
   max-width: ${(props) => (props.$maxWidth ? props.$maxWidth : "auto")};
   min-width: ${(props) => (props.$minWidth ? props.$minWidth : "auto")};
   position: relative;
@@ -156,6 +156,8 @@ const FourYearPlanPage = ({
               />
             ) : (
               <Row>
+                {/*
+                // @ts-ignore */}
                 <SplitPane
                   split="vertical"
                   maxSize={windowWidth ? windowWidth * 0.65 : 1000}
@@ -164,6 +166,8 @@ const FourYearPlanPage = ({
                     padding: "1.5rem"
                   }}
                 >
+                  {/*
+                  // @ts-ignore */}
                   <PanelWrapper>
                     <PanelInteriorWrapper>
                       <PlanPanel
@@ -181,6 +185,8 @@ const FourYearPlanPage = ({
                       />
                     </PanelInteriorWrapper>
                   </PanelWrapper>
+                  {/*
+                  // @ts-ignore */}
                   <PanelWrapper>
                     <PanelInteriorWrapper>
                       <ReqPanel

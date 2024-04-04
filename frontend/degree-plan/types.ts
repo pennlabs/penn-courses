@@ -102,9 +102,10 @@ export interface Course {
 export interface DnDCourse {
   full_code: string;
   rules?: number[];
+  rule_id?: number // only used when dragging from REQ panel
 }
 
-export interface Fulfillment extends DBObject, DnDCourse {
+export interface Fulfillment extends DBObject {
   course: Course | null; // id
   semester: string | null;
   rules: number[]; // ids

@@ -5,6 +5,7 @@ import { Course, DegreePlan, Fulfillment } from "@/types";
 import useSWR from "swr";
 import React, { useEffect, useState } from "react";
 import Select from "react-select";
+import { ModalKey } from "./DegreeModal";
 
 const getNextSemester = (semester: string) => {
   console.log("GET NEXT SEMESTER");
@@ -67,7 +68,7 @@ const AddButton = styled.div`
 `;
 
 const selectStyles = (topOrBottom: boolean) => ({
-  control: (provided) => ({
+  control: (provided: any) => ({
     ...provided,
     width: "130px",
     backgroundColor: "transparent",
@@ -83,7 +84,7 @@ const selectStyles = (topOrBottom: boolean) => ({
       { borderTopLeftRadius: 0, borderTopRightRadius: 0 }
     )
   }),
-  singleValue: (provided) => ({
+  singleValue: (provided: any) => ({
     ...provided,
     color: "#C1C1C1",
   }),
@@ -92,7 +93,7 @@ const selectStyles = (topOrBottom: boolean) => ({
 // TODO: get a consistent color palette across PCx
 interface ModifySemestersProps {
   addSemester: (semester: Course["semester"]) => void;
-  className: string;
+  className?: string;
   semesters: { [semester: string]: Fulfillment[] };
 }
 
@@ -150,14 +151,14 @@ const ModifySemesters = ({
         styles={selectStyles(true)}
         options={seasonOptions}
         value={seasonOptions.find((option) => option.value === selectedSeason)}
-        onChange={(option) => setSelectedSeason(option.value)}
+        onChange={(option) => setSelectedSeason(option ? option.value : selectedSeason)}
       />
 
       <Select
         styles={selectStyles(false)}
         options={yearOptions}
         value={yearOptions.find((option) => option.value === selectedYear)}
-        onChange={(option) => setSelectedYear(option.value)}
+        onChange={(option) => setSelectedYear(option ? option.value : selectedYear)}
       />
     </AddSemesterContainer>
   );
@@ -177,7 +178,7 @@ interface SemestersProps {
   showStats: any;
   className?: string;
   editMode: boolean;
-  setModalKey: (arg0: string) => void;
+  setModalKey: (arg0: ModalKey) => void;
   setModalObject: (obj: any) => void;
   setEditMode: (arg0: boolean) => void;
   isLoading: boolean;

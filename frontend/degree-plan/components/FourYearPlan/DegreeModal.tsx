@@ -1,5 +1,6 @@
 import styled from "@emotion/styled";
 import type {
+  Degree,
   DegreeListing,
   DegreePlan,
   Fulfillment,
@@ -130,7 +131,7 @@ interface RemoveSemesterProps {
 
 interface ModalInteriorProps {
   modalKey: ModalKey;
-  modalObject: DegreePlan | null | RemoveSemesterProps | RemoveDegreeProps;
+  modalObject: DegreePlan | null | RemoveSemesterProps | RemoveDegreeProps | Degree;
   setActiveDegreeplan: (arg0: DegreePlan | null) => void;
   close: () => void;
   modalRef: React.RefObject<HTMLSelectElement | null>;
@@ -244,7 +245,7 @@ const ModalInterior = ({
           {/* <ButtonRow> */}
           <ModalButton
             onClick={() => {
-              updateDegreeplan({ name }, modalObject.id);
+              updateDegreeplan({ name }, (modalObject as DegreePlan).id);
               close();
             }}
           >
@@ -264,7 +265,8 @@ const ModalInterior = ({
           <ButtonRow $center={true}>
             <ModalButton
               onClick={() => {
-                delete_degreeplan(modalObject.id);
+                // TODO: these are not great type casts
+                delete_degreeplan((modalObject as DegreePlan).id);
                 close();
               }}
             >
@@ -281,7 +283,7 @@ const ModalInterior = ({
               <Select
                 options={schoolOptions}
                 value={school}
-                onChange={(selectedOption) => setSchool(selectedOption)}
+                onChange={(selectedOption) => setSchool(selectedOption || undefined)}
                 isClearable
                 placeholder="Select School or Program"
                 isLoading={false}
@@ -291,7 +293,7 @@ const ModalInterior = ({
               <Select
                 options={getMajorOptions()}
                 value={major}
-                onChange={(selectedOption) => setMajor(selectedOption)}
+                onChange={(selectedOption) => setMajor(selectedOption || undefined)}
                 styles={{ menuPortal: base => ({ ...base, zIndex: 999 }) }}
                 menuPortalTarget={modalRef.current}
                 isClearable
@@ -308,7 +310,7 @@ const ModalInterior = ({
               <ModalButton
                 onClick={() => {
                   if (!major?.value.id) return;
-                  add_degree(modalObject.id, major?.value.id);
+                  add_degree((modalObject as Degree).id, major?.value.id);
                   close();
                 }}
               >
@@ -329,7 +331,7 @@ const ModalInterior = ({
           </ModalTextWrapper>
           <ModalButton
             onClick={() => {
-              remove_degree(modalObject.degreeplanId, modalObject.degreeId);
+              remove_degree((modalObject as RemoveDegreeProps).degreeplanId, (modalObject as RemoveDegreeProps).degreeId);
               close();
             }}
           >
@@ -348,7 +350,7 @@ const ModalInterior = ({
           </ModalTextWrapper>
           <ModalButton
             onClick={() => {
-              modalObject.helper();
+              (modalObject as RemoveSemesterProps).helper();
               close();
             }}
           >
@@ -364,7 +366,7 @@ interface DegreeModalProps {
   setModalKey: (arg0: ModalKey) => void;
   modalKey: ModalKey;
   modalObject: DegreePlan | null;
-  setActiveDegreeplan: (arg0: DegreePlan) => void;
+  setActiveDegreeplan: (arg0: DegreePlan | null) => void;
 }
 const DegreeModal = ({
   setModalKey,
@@ -377,6 +379,8 @@ const DegreeModal = ({
     close={() => setModalKey(null)}
     modalKey={modalKey}
   >
+    {/*
+    // @ts-ignore */}
     <ModalInterior
       modalObject={modalObject}
       setActiveDegreeplan={setActiveDegreeplan}

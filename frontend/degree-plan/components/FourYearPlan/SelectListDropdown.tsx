@@ -328,7 +328,7 @@ const SelectListDropdown = <T extends DBObject,>({
                                     />
                                 );
                             })}
-                    <AddNew onClick={create} role="button" href="#" disabled={isLoading}>
+                    <AddNew onClick={create} role="button" disabled={isLoading}>
                         <GrayIcon>
                             <i className="fa fa-plus" aria-hidden="true" />
                         </GrayIcon>

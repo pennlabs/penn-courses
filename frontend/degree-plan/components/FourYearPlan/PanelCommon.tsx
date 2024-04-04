@@ -33,7 +33,7 @@ export const PanelTopBarButton = styled.button`
     border-radius: 5px;
     color: #FFFFFF;
 `;
-export const DarkBlueBackgroundSkeleton: React.FC<{ width: string; }> = (props) => (
+export const DarkBlueBackgroundSkeleton: React.FC<{ width?: string; }> = (props) => (
     <Skeleton
         baseColor="var(--primary-color-dark)"
         {...props} />

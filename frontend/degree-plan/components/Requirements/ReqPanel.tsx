@@ -171,7 +171,9 @@ const Degree = ({degree, rulesToFulfillments, activeDegreeplan, editMode, setMod
         degree={degree}
         remove={() => void {}}
         setCollapsed={setCollapsed}
-        skeleton={true}
+        skeleton
+        collapsed={collapsed}
+        editMode={false}
         />
         <DegreeBody>
           <SkeletonRule>
@@ -227,10 +229,8 @@ interface ReqPanelProps {
   setModalObject: (arg0: DegreePlan | null) => void;
   activeDegreeplan: DegreePlan | null;
   isLoading: boolean;
-  setSearchClosed: any;
-  handleSearch: any;
 }
-const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, setSearchClosed, handleSearch}: ReqPanelProps) => {
+const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading}: ReqPanelProps) => {
   const [editMode, setEditMode] = React.useState(false);  
   const { data: activeDegreeplanDetail = null, isLoading: isLoadingDegrees } = useSWR<DegreePlan>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}` : null); 
   const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null); 
@@ -266,9 +266,7 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, set
             <Degree 
             degree={degree} 
             rulesToFulfillments={rulesToFulfillments} 
-            activeDegreeplan={activeDegreeplan} 
-            setSearchClosed={setSearchClosed} 
-            handleSearch={handleSearch}
+            activeDegreeplan={activeDegreeplan}
             editMode={editMode}
             setModalKey={setModalKey}
             setModalObject={setModalObject}

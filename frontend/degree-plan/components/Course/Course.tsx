@@ -105,7 +105,7 @@ const IconBadge = styled.div`
 
 
 const SemesterIcon = ({semester}:{semester: string | null}) => {
-  if (!semester) return;
+  if (!semester) return <div></div>;
   const year = semester.substring(2,4);
   const sem = semester.substring(4);
 

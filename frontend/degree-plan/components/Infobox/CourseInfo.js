@@ -209,7 +209,6 @@ export const CourseHeader = ({
   code,
   name,
   notes,
-  liveData,
   data,
 }) => (
   <div className="course">

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from "react";
 import styled from '@emotion/styled';
 import Course, { SkeletonCourse } from "./CourseInSearch";
-import { Course as CourseType, DegreePlan, DockedCourse, Fulfillment, Rule, SortMode } from "../../types";
+import { Course as CourseType, DegreePlan, DockedCourse, Fulfillment, Rule } from "../../types";
 import { useSWRCrud } from "@/hooks/swrcrud";
 
 const goodEasy = ({ difficulty, course_quality: courseQuality }: CourseType) =>
@@ -49,9 +49,6 @@ const CoursesContainer = styled.ul`
 
 export interface ResultListProps {
     courses: CourseType[];
-    getCourse: (id: string) => void;
-    sortMode: SortMode;
-    recCoursesId: string[];
     activeDegreeplanId: DegreePlan["id"] | null;
     fulfillments: Fulfillment[],
     ruleId: Rule["id"] | null;
@@ -62,7 +59,6 @@ const ResultsList = ({
     activeDegreeplanId,
     fulfillments,
     courses,
-    sortMode,
     isLoading
 }: ResultListProps) => {
     // TODO: what if activeDegreeplan is not defined
@@ -85,6 +81,7 @@ const ResultsList = ({
             <CoursesContainer>
                 {!isLoading ? courses.map((course) => 
                 <Course
+                    ruleId={ruleId}
                     key={course.id + course.semester}
                     course={course}
                     onClick={() => {

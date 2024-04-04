@@ -80,7 +80,7 @@ const NextButton = styled(Button)`
   }
 `;
 
-export const Label = styled.h5`
+export const Label = styled.h5<{ required: boolean }>`
   padding-top: 3%;
   font-size: 1rem;
   &:after {
@@ -115,63 +115,63 @@ const FieldWrapper = styled.div`
 `;
 
 const customSelectStylesLeft = {
-  control: (provided) => ({
+  control: (provided: any) => ({
     ...provided,
     width: 250,
     minHeight: "35px",
     height: "35px",
   }),
-  menu: (provided) => ({
+  menu: (provided: any) => ({
     ...provided,
     width: 250,
     maxHeight: 200,
   }),
-  valueContainer: (provided) => ({
+  valueContainer: (provided: any) => ({
     ...provided,
     height: "35px",
     padding: "0 6px",
   }),
-  input: (provided) => ({
+  input: (provided: any) => ({
     ...provided,
     margin: "0px",
   }),
-  indicatorsContainer: (provided) => ({
+  indicatorsContainer: (provided: any) => ({
     ...provided,
     height: "35px",
   }),
 };
 
 const customSelectStylesRight = {
-  control: (provided) => ({
+  control: (provided: any) => ({
     ...provided,
     width: "80%",
     minHeight: "35px",
     height: "35px",
   }),
-  menu: (provided) => ({
+  menu: (provided: any) => ({
     ...provided,
     width: 500,
     maxHeight: "85rem",
   }),
-  valueContainer: (provided) => ({
+  valueContainer: (provided: any) => ({
     ...provided,
     height: "35px",
     padding: "0 6px",
   }),
-  input: (provided) => ({
+  input: (provided: any) => ({
     ...provided,
     margin: "0px",
   }),
-  indicatorsContainer: (provided) => ({
+  indicatorsContainer: (provided: any) => ({
     ...provided,
     height: "35px",
   }),
-  multiValue: (provided) => ({
+  multiValue: (provided: any) => ({
     ...provided,
     borderRadius: "8px",
     maxWidth: "200px",
   }),
-  multiValueLabel: (provided) => ({
+  multiValueLabel: (provided: any) => ({
     ...provided,
     borderRadius: "8px",
     maxWidth: "90px",
@@ -179,7 +179,7 @@ const customSelectStylesRight = {
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
   }),
-  loadingIndicator: (provided) => ({
+  loadingIndicator: (provided: any) => ({
     ...provided,
     color: "gray",
   }),
@@ -328,7 +328,7 @@ const OnboardingPage = ({
               <Select
                 options={schoolOptions}
                 value={schools}
-                onChange={(selectedOption) => setSchools(selectedOption)}
+                onChange={(selectedOptions) => setSchools([...selectedOptions])}
                 isClearable
                 isMulti
                 placeholder="Select School or Program"
@@ -342,7 +342,7 @@ const OnboardingPage = ({
               <Select
                 options={getMajorOptions()}
                 value={majors}
-                onChange={(selectedOption) => setMajors(selectedOption)}
+                onChange={(selectedOptions) => setMajors([...selectedOptions])}
                 isClearable
                 isMulti
                 isDisabled={schools.length === 0}

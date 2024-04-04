@@ -9,6 +9,8 @@ import { SearchPanelContext } from '../Search/SearchPanel';
 import { useSWRCrud } from '@/hooks/swrcrud';
 import useSWR, { useSWRConfig } from 'swr';
 import { DarkBlueBackgroundSkeleton } from "../FourYearPlan/PanelCommon";
+// TODO: Move shared components to typescript
+// @ts-ignore
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
 import _ from 'lodash';
 import CoursePlanned from '../FourYearPlan/CourseInPlan';
@@ -97,7 +99,7 @@ interface DockProps {
     login: (u: User) => void;
     logout: () => void;
     user: User | null;
-    activeDegreeplanId: DegreePlan["id"];
+    activeDegreeplanId: DegreePlan["id"] | null;
 }
 
 const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {

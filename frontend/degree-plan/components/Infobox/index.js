@@ -270,7 +270,6 @@ const InfoBox = ({
     num_sections: numSections,
   },
   data,
-  liveData,
   close
 }) => {
   const hasReviews = !!(
@@ -296,7 +295,6 @@ const InfoBox = ({
               data={data}
               name={name}
               notes={notes}
-              liveData={liveData}
             />
           </div>
           {hasReviews && (

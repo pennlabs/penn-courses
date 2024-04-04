@@ -25,7 +25,7 @@ const ProgressBar = styled.div<{$progress: number}>`
     border-bottom-left-radius: .3rem;
 `
 
-const RuleTitle = styled.div<{$progress: number}>`
+const RuleTitle = styled.div`
   position: relative;
   font-size: 1rem;
   font-weight: 500;
@@ -126,7 +126,7 @@ export const SkeletonRule: React.FC<React.PropsWithChildren> = ({ children }) =>
       :
       <RuleTitleWrapper>
         <ProgressBar $progress={0}></ProgressBar>
-        <RuleTitle $progress={0}>
+        <RuleTitle>
           <Row>
             <DarkBlueBackgroundSkeleton width="10em" />
             <DarkBlueBackgroundSkeleton width="7em" />
@@ -164,6 +164,7 @@ const RuleComponent = (ruleTree : RuleTree) => {
         accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_DOCK], 
         drop: (course: DnDCourse) => {
           createOrUpdate({ rules: course.rules !== undefined ? [...course.rules, rule.id] : [rule.id] }, course.full_code);
+          return undefined;
         }, // TODO: this doesn't handle fulfillments that already have a rule
         canDrop: () => { return !satisfied && !!rule.q },
         collect: monitor => ({

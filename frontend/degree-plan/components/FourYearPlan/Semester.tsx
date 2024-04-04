@@ -10,6 +10,7 @@ import { TrashIcon } from '../common/TrashIcon';
 import Skeleton from "react-loading-skeleton"
 import 'react-loading-skeleton/dist/skeleton.css'
 import { mutate } from "swr";
+import { ModalKey } from "./DegreeModal";
 
 
 const translateSemester = (semester: Course["semester"]) => {
@@ -97,12 +98,12 @@ interface SemesterProps {
     semester: string;
     fulfillments: Fulfillment[]; // fulfillments of this semester
     activeDegreeplanId: DegreePlan["id"] | undefined;
-    className: string;
+    className?: string;
     editMode: boolean;
-    setModalKey: (arg0: string) => void;
+    setModalKey: (arg0: ModalKey) => void;
     setModalObject: (obj: any) => void;
     removeSemester: (sem: string) => void;
-    isLoading: boolean
+    isLoading?: boolean
 }
 
 const FlexSemester = ({ 
@@ -114,7 +115,7 @@ const FlexSemester = ({
     setModalKey,
     setModalObject,
     removeSemester,
-    isLoading 
+    isLoading = false
 } : SemesterProps) => {
     const credits = fulfillments.reduce((acc, curr) => acc + (curr.course?.credits || 1), 0)
 
@@ -135,8 +136,10 @@ const FlexSemester = ({
             if (course.rule_id === undefined || course.rule_id == null) { // moved from plan or dock
                 createOrUpdate({ semester }, course.full_code);
             } else { // moved from req panel
-                createOrUpdate({ rules: [course.rule_id], semester }, course.full_code);
+                const prev_rules = fulfillments.find((fulfillment) => fulfillment.full_code === course.full_code)?.rules || []
+                createOrUpdate({ rules: [...prev_rules, course.rule_id], semester }, course.full_code);
             }
+            return undefined;
         },
         collect: monitor => ({
           isOver: !!monitor.isOver(),

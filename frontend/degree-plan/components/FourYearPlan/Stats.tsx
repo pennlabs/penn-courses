@@ -29,7 +29,7 @@ const ScoreLabel = styled.div`
 interface ScoreRowProps { 
     score: number;
     label: string;
-    reverse: boolean; 
+    reverse?: boolean; 
 }
 const ScoreRow = ({ score, label, reverse = false }: ScoreRowProps) => {
     const color = getColor(score, reverse);
@@ -44,7 +44,7 @@ const ScoreRow = ({ score, label, reverse = false }: ScoreRowProps) => {
                 text: {
                     fontSize: "2rem",
                     fill: color,
-                    fontWeight: "500"
+                    fontWeight: 500
                 }
             }}
             />
