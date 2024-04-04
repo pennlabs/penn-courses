@@ -3,7 +3,6 @@ from textwrap import dedent
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from plan.management.commands.recommendcourses import cosine_similarity
 from courses.models import (
     Attribute,
     Course,
@@ -16,6 +15,7 @@ from courses.models import (
     StatusUpdate,
     UserProfile,
 )
+from plan.management.commands.recommendcourses import cosine_similarity
 
 
 class MeetingSerializer(serializers.ModelSerializer):
