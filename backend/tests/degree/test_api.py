@@ -1,12 +1,13 @@
 from django.db.models import Q
+from django.db.models.signals import post_save
 from django.test import TestCase
 from django.urls import reverse
+from options.models import Option
 from rest_framework.test import APIClient
 
-from degree.serializers import SimpleCourseSerializer
+from alert.models import AddDropPeriod
 from courses.models import Course, User
-from courses.serializers import CourseListSerializer
-from courses.util import get_or_create_course_and_section
+from courses.util import get_or_create_course_and_section, invalidate_current_semester_cache
 from degree.models import (
     Degree,
     DegreePlan,
@@ -16,13 +17,7 @@ from degree.models import (
     Rule,
     SatisfactionStatus,
 )
-from django.contrib.auth.models import User
-from django.db.models.signals import post_save
-from options.models import Option
-from alert.models import AddDropPeriod
-from courses.util import (
-    invalidate_current_semester_cache,
-)
+from degree.serializers import SimpleCourseSerializer
 
 
 TEST_SEMESTER = "2023C"
@@ -74,10 +69,10 @@ class FulfillmentViewsetTest(TestCase):
         self.assertEqual(len(fulfillment), 6)
         self.assertEqual(fulfillment["id"], expected.id)
 
-        expected_course = SimpleCourseSerializer(Course.with_reviews.get(full_code=expected.full_code)).data
-        self.assertDictEqual(
-            fulfillment["course"], expected_course
-        )
+        expected_course = SimpleCourseSerializer(
+            Course.with_reviews.get(full_code=expected.full_code)
+        ).data
+        self.assertDictEqual(fulfillment["course"], expected_course)
         self.assertEqual(fulfillment["rules"], [rule.id for rule in expected.rules.all()])
         self.assertEqual(fulfillment["semester"], expected.semester)
         self.assertEqual(fulfillment["degree_plan"], expected.degree_plan.id)
@@ -89,12 +84,10 @@ class FulfillmentViewsetTest(TestCase):
         )
 
         set_semester()
-        
+
         # register the user as a beta user
         # TODO: remove after beta
-        PDPBetaUser.objects.create(
-            person=self.user
-        )
+        PDPBetaUser.objects.create(person=self.user)
 
         self.cis_1200, self.cis_1200_001, _, _ = get_or_create_course_and_section(
             "CIS-1200-001", TEST_SEMESTER, course_defaults={"credits": 1}
@@ -273,7 +266,7 @@ class FulfillmentViewsetTest(TestCase):
         )
         self.assertEqual(response.status_code, 201, response.json())
         old_full_code = a.full_code
-        
+
         # a doesn't update
         a.refresh_from_db()
         self.assertEqual(a.full_code, old_full_code)
