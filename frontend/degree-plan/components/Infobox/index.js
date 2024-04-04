@@ -1,31 +1,31 @@
-import React, { useState } from "react";
-import styled from "styled-components";
-import { lato } from "@/fonts";
+/* eslint-disable camelcase */
+import React from "react";
+import styled from "@emotion/styled";
+import { lato } from "../../fonts";
 import Ratings from "./InfoRatings";
 import { CourseDescription, CourseHeader } from "./CourseInfo";
 import { ErrorBox } from "./common/ErrorBox";
 
-
 const InfoBoxCSS = styled.div`
-height: 100%;
+  height: 100%;
 
-.box {
-  font-size: 15px;
-  margin: 0px;
-  color: #4a4a4a;
-}
-.box {
+  .box {
+    font-size: 15px;
+    margin: 0px;
+    color: #4a4a4a;
+  }
+  .box {
     padding: 20px;
     background-color: #ffffff;
     /*box-shadow: 0 0 14px 0 rgba(0, 0, 0, 0.07);*/
     margin-bottom: 30px;
-}
+  }
 
-#banner-score {
+  #banner-score {
     margin-bottom: 20px;
-}
+  }
 
-.btn {
+  .btn {
     display: inline-block;
     font-weight: 400;
     color: #212529;
@@ -37,211 +37,213 @@ height: 100%;
     user-select: none;
     background-color: transparent;
     border: 1px solid transparent;
-    padding: .125rem .25rem;
+    padding: 0.125rem 0.25rem;
     font-size: 1rem;
     line-height: 1;
-    border-radius: .25rem;
-    transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
-}
+    border-radius: 0.25rem;
+    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out,
+      border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  }
 
-.btn-row {
+  .btn-row {
     display: flex;
     flex-direction: row;
-    gap: .5rem;
+    gap: 0.5rem;
     align-items: center;
-    margin: .125rem;
-}
+    margin: 0.125rem;
+  }
 
-.btn-action {
+  .btn-action {
     background-color: #ccc;
     color: white;
     padding: 0.5rem 0.5rem;
-}
+  }
 
-.btn-action:hover {
+  .btn-action:hover {
     background-color: #84b8ba;
     color: white;
-}
+  }
 
-.btn-action:focus,
-.btn-primary:focus {
+  .btn-action:focus,
+  .btn-primary:focus {
     color: white;
-}
+  }
 
-#banner-info .title {
+  #banner-info .title {
     font-size: 1.5rem;
     letter-spacing: -0.7px;
     margin-bottom: 0px;
     font-weight: 500;
-}
+  }
 
-#banner-info .subtitle {
+  #banner-info .subtitle {
     font-size: 1.1rem;
     letter-spacing: -0.5px;
     font-weight: normal;
     margin-bottom: 0;
-}
+  }
 
-#banner-info .nowrap {
+  #banner-info .nowrap {
     white-space: nowrap;
-}
+  }
 
-#banner-info p.desc {
+  #banner-info p.desc {
     line-height: 150%;
     margin-bottom: 15px;
     /*font-family: AvenirNext;*/
     font-size: 15px;
     letter-spacing: -0.3px;
-}
+  }
 
-.scorebox.course {
+  .scorebox.course {
     background-color: #6274f1;
-}
+  }
 
-.scorebox.instructor {
+  .scorebox.instructor {
     background-color: #ffc107;
-}
+  }
 
-.scorebox.difficulty {
+  .scorebox.difficulty {
     background-color: #76bf96;
-}
+  }
 
-.scorebox.workload {
+  .scorebox.workload {
     background-color: #df5d56;
-}
+  }
 
-.scorebox.rating-bad {
+  .scorebox.rating-bad {
     background-color: #ffc107;
-}
+  }
 
-.scorebox.rating-okay {
+  .scorebox.rating-okay {
     background-color: #6274f1;
-}
+  }
 
-.scorebox.rating-good {
+  .scorebox.rating-good {
     background-color: #76bf96;
-}
+  }
 
-.courseCartRow {
+  .courseCartRow {
     float: none;
-}
+  }
 
-.scoredesc {
+  .scoredesc {
     margin-top: 15px;
     padding-bottom: 4px;
     margin-bottom: 9px;
     border-bottom: 1px solid #dbdbdb;
-}
+  }
 
-.courseCartRow>.scorebox {
+  .courseCartRow > .scorebox {
     width: 100px;
     height: 100px;
-}
+  }
 
-.courseCartRow>.scorebox>.desc {
+  .courseCartRow > .scorebox > .desc {
     font-size: 15px;
     margin-top: -5px;
     color: white;
-}
+  }
 
-.courseCartRow>.scorebox>.num {
+  .courseCartRow > .scorebox > .num {
     margin-top: 5px;
     font-size: 3em;
     color: white;
-}
+  }
 
-.scoredesc .title {
+  .scoredesc .title {
     display: inline-block;
     font-size: 1rem;
     text-transform: uppercase;
-    letter-spacing: .5rem;
+    letter-spacing: 0.5rem;
     margin-bottom: 0;
-}
+  }
 
-.scoredesc .subtitle {
+  .scoredesc .subtitle {
     display: inline-block;
     font-size: 15px;
     color: #868686;
-}
+  }
 
-.scorebox {
+  .scorebox {
     display: inline-block;
-    margin-left: .4rem;
-    margin-right: .4rem;
+    margin-left: 0.4rem;
+    margin-right: 0.4rem;
     height: 3rem;
     width: 3rem;
     border-radius: 4px;
     text-align: center;
     background: rgb(255, 255, 255);
-}
+  }
 
-.scorebox .num {
+  .scorebox .num {
     color: white;
-    margin-top: .6rem;;
+    margin-top: 0.6rem;
     font-size: 1.25rem;
-}
+  }
 
-.scorebox .desc {
+  .scorebox .desc {
     font-size: 15px;
     letter-spacing: -0.3px;
-    font-size: .8rem;
-    margin-top: .8rem;
+    font-size: 0.8rem;
+    margin-top: 0.8rem;
     font-weight: bold;
-}
+  }
 
-#live {
+  #live {
     font-size: 1.2em;
-}
+  }
 
-#live .badge {
+  #live .badge {
     margin-right: 5px;
     margin-bottom: 5px;
-}
+  }
 
-#live .badge-success {
+  #live .badge-success {
     background-color: #5cb85c;
-}
+  }
 
-#live .badge-primary {
+  #live .badge-primary {
     background-color: #6274f1;
-}
+  }
 
-#live .badge .count {
+  #live .badge .count {
     margin-left: 4px;
     padding-left: 4px;
     border-left: 1px solid rgba(0, 0, 0, 0.15);
-}
+  }
 
-.float-right {
+  .float-right {
     float: right;
-}
+  }
 
-.badge {
+  .badge {
     color: white;
     display: inline-block;
-    padding: .25em .4em;
+    padding: 0.25em 0.4em;
     font-size: 75%;
     font-weight: 700;
     line-height: 1;
     text-align: center;
     white-space: nowrap;
     vertical-align: baseline;
-    border-radius: .25rem;
-    transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
-}
+    border-radius: 0.25rem;
+    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out,
+      border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+  }
 
-.badge-info {
+  .badge-info {
     background-color: #17a2b8;
-}
+  }
 
-.badge-danger {
+  .badge-danger {
     background-color: #dc3545;
-}
+  }
 
-.badge-secondary {
+  .badge-secondary {
     background-color: #6c757d;
-}
-`
+  }
+`;
 
 const ErrorWrapper = styled.div`
   display: flex;
@@ -249,13 +251,14 @@ const ErrorWrapper = styled.div`
   align-items: center;
   height: 100%;
   flex-direction: column;
-`
+`;
 
 /**
  * Information box on the left most side, containing scores and descriptions
  * of course or professor.
  */
 
+//
 const InfoBox = ({
   data: {
     course_quality,
@@ -270,7 +273,7 @@ const InfoBox = ({
     num_sections: numSections,
   },
   data,
-  close
+  close,
 }) => {
   const hasReviews = !!(
     instructor_quality ||
@@ -285,7 +288,7 @@ const InfoBox = ({
 
   return (
     <InfoBoxCSS className={lato.className}>
-      {code ?
+      {code ? (
         <div className="box">
           <div id="banner-info" data-type="course">
             <CourseHeader
@@ -310,10 +313,13 @@ const InfoBox = ({
           )}
           <CourseDescription description={description} />
         </div>
-        : <ErrorWrapper>
-            <ErrorBox style={{ marginTop: "auto", marginBottom: "auto" }}>Course not found</ErrorBox>
-          </ErrorWrapper>
-        }
+      ) : (
+        <ErrorWrapper>
+          <ErrorBox style={{ marginTop: "auto", marginBottom: "auto" }}>
+            Course not found
+          </ErrorBox>
+        </ErrorWrapper>
+      )}
     </InfoBoxCSS>
   );
 };
