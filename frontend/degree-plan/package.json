@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "test": "echo no tests yet",
+    "codecov": "echo no codecov",
+    "lint": "next lint && tsc --noemit",
+    "lint-fix": "eslint . --fix",
+    "precommit": "lint-staged"
   },
   "dependencies": {
     "@emotion/react": "^11.10.6",
