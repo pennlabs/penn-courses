@@ -18,7 +18,7 @@ const AccountIndicator = ({
     backgroundColor,
     nameLength,
     pathname,
-    dropdownTop
+    dropdownTop = false,
 }) => {
     useEffect(() => {
         if (user) {
@@ -33,7 +33,7 @@ const AccountIndicator = ({
                 response.json().then((newUser) => login(newUser));
             })
             .catch(logout);
-    }, [user]);
+    }, [login, logout, user]);
 
     return user ? (
         <UserSelector
