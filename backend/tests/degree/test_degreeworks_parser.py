@@ -202,7 +202,9 @@ class CourseArrayParserTest(TestCase):
         course_array = [
             {"discipline": "BIBB", "number": "2000", "numberEnd": "2999"},
         ]
-        expected = Q(department__code="BIBB", code__gte=2000, code__lte=2999)
+        expected = Q(department__code="BIBB", code__gte="2000", code__lte="2999")
+        print("****TS")
+        print(expected, parse_degreeworks.parse_coursearray(course_array))
         self.assertEqual(expected, parse_degreeworks.parse_coursearray(course_array))
 
     def test_department(self):
