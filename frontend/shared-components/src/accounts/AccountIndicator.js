@@ -18,6 +18,7 @@ const AccountIndicator = ({
     backgroundColor,
     nameLength,
     pathname,
+    dropdownTop = false,
 }) => {
     useEffect(() => {
         if (user) {
@@ -43,6 +44,7 @@ const AccountIndicator = ({
                 logout();
             }}
             leftAligned={leftAligned}
+            dropdownTop={dropdownTop}
         />
     ) : (
         <LoginButton pathname={pathname} />
@@ -57,6 +59,7 @@ AccountIndicator.propTypes = {
     nameLength: PropTypes.number,
     leftAligned: PropTypes.bool,
     pathname: PropTypes.string,
+    dropdownTop: PropTypes.bool,
 };
 
 export default AccountIndicator;

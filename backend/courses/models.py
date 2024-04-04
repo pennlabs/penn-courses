@@ -154,7 +154,9 @@ class Course(models.Model):
         ),
     )
     code = models.CharField(
-        max_length=8, db_index=True, help_text="The course code, e.g. `120` for CIS-120."
+        max_length=8,
+        db_index=True,
+        help_text="The course code, e.g. `120` for CIS-120.",
     )
     semester = models.CharField(
         max_length=5,
@@ -200,6 +202,15 @@ class Course(models.Model):
         blank=True,
         db_index=True,
         help_text="The dash-joined department and code of the course, e.g. `CIS-120` for CIS-120.",
+    )
+
+    credits = models.DecimalField(
+        max_digits=4,  # some course for 2019C is 14 CR...
+        decimal_places=2,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="The number of credits this course takes. This is precomputed for efficiency.",
     )
 
     prerequisites = models.TextField(
@@ -265,7 +276,7 @@ class Course(models.Model):
         help_text=dedent(
             """
             The number of distinct activities belonging to this course (precomputed for efficiency).
-            Maintained by the registrar import / recompute_soft_state script.
+            Maintained by the registrar import / recomputestats script.
             """
         ),
     )
@@ -722,7 +733,8 @@ class Section(models.Model):
     )
 
     instructors = models.ManyToManyField(
-        Instructor, help_text="The Instructor object(s) of the instructor(s) teaching the section."
+        Instructor,
+        help_text="The Instructor object(s) of the instructor(s) teaching the section.",
     )
     associated_sections = models.ManyToManyField(
         "Section",
@@ -781,7 +793,8 @@ class Section(models.Model):
     )
 
     registration_volume = models.PositiveIntegerField(
-        default=0, help_text="The number of active PCA registrations watching this section."
+        default=0,
+        help_text="The number of active PCA registrations watching this section.",
     )  # For the set of PCA registrations for this section, use the related field `registrations`.
 
     def __str__(self):
@@ -838,7 +851,9 @@ class Section(models.Model):
                 return None
             try:
                 last_status_update = StatusUpdate.objects.filter(
-                    section=self, created_at__gt=add_drop_start, created_at__lt=add_drop_end
+                    section=self,
+                    created_at__gt=add_drop_start,
+                    created_at__lt=add_drop_end,
                 ).latest("created_at")
             except StatusUpdate.DoesNotExist:
                 last_status_update = None
@@ -883,7 +898,12 @@ class StatusUpdate(models.Model):
     A registration status update for a specific section (e.g. CIS-120-001 went from open to close)
     """
 
-    STATUS_CHOICES = (("O", "Open"), ("C", "Closed"), ("X", "Cancelled"), ("", "Unlisted"))
+    STATUS_CHOICES = (
+        ("O", "Open"),
+        ("C", "Closed"),
+        ("X", "Cancelled"),
+        ("", "Unlisted"),
+    )
     section = models.ForeignKey(
         Section,
         related_name="status_updates",
@@ -918,7 +938,8 @@ class StatusUpdate(models.Model):
     # and the save() method of StatusUpdate
 
     in_add_drop_period = models.BooleanField(
-        default=False, help_text="Was this status update created during the add/drop period?"
+        default=False,
+        help_text="Was this status update created during the add/drop period?",
     )  # This field is maintained in the save() method of alerts.models.AddDropPeriod,
     # and the save() method of StatusUpdate
 
@@ -1049,7 +1070,8 @@ class Room(models.Model):
         ),
     )
     number = models.CharField(
-        max_length=8, help_text="The room number, e.g. `101` for Wu and Chen Auditorium in Levine."
+        max_length=8,
+        help_text="The room number, e.g. `101` for Wu and Chen Auditorium in Levine.",
     )
     name = models.CharField(
         max_length=80,

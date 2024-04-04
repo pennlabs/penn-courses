@@ -268,8 +268,12 @@ def get_or_create_course(dept_code, course_id, semester, defaults=None):
 
 
 def get_or_create_course_and_section(
-    course_code, semester, section_manager=None, course_defaults=None, section_defaults=None
-):
+    course_code,
+    semester,
+    section_manager=None,
+    course_defaults=None,
+    section_defaults=None,
+) -> (Course, Section, bool, bool):
     if section_manager is None:
         section_manager = Section.objects
     dept_code, course_id, section_id = separate_course_code(course_code)
@@ -317,7 +321,10 @@ def update_percent_open(section, new_status_update):
         if last_status_update.created_at >= add_drop.estimated_end:
             return
         seconds_before_last = Decimal(
-            max((last_status_update.created_at - add_drop.estimated_start).total_seconds(), 0)
+            max(
+                (last_status_update.created_at - add_drop.estimated_start).total_seconds(),
+                0,
+            )
         )
         seconds_since_last = Decimal(
             max(
@@ -519,7 +526,9 @@ def set_crosslistings(course, crosslistings):
     for crosslisting in crosslistings:
         if crosslisting["is_primary_section"]:
             primary_course, _ = get_or_create_course(
-                crosslisting["subject_code"], crosslisting["course_number"], course.semester
+                crosslisting["subject_code"],
+                crosslisting["course_number"],
+                course.semester,
             )
             course.primary_listing = primary_course
             return
