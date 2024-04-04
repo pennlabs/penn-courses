@@ -8,7 +8,7 @@
     "start": "next start",
     "test": "echo no tests yet",
     "codecov": "echo no codecov",
-    "lint": "next lint && tsc --noemit",
+    "lint": "eslint . && tsc --noemit",
     "lint-fix": "eslint . --fix",
     "precommit": "lint-staged"
   },
