@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
-import ReqPanel from "../components/Requirements/ReqPanel";
-import PlanPanel from "../components/FourYearPlan/PlanPanel";
+import ReqPanel from "./Requirements/ReqPanel";
+import PlanPanel from "./FourYearPlan/PlanPanel";
 import {
   SearchPanel,
   SearchPanelContext,
-} from "../components/Search/SearchPanel";
+} from "./Search/SearchPanel";
 // import Plan from "../components/example/Plan";
 import styled from "@emotion/styled";
 import useSWR, { useSWRConfig } from "swr";
@@ -15,7 +15,7 @@ import DegreeModal, { ModalKey } from "@/components/FourYearPlan/DegreeModal";
 import SplitPane, { Pane } from "react-split-pane";
 import Dock from "@/components/Dock/Dock";
 import useWindowDimensions from "@/hooks/window";
-import OnboardingPage from "./OnboardingPage";
+import OnboardingPage from "../pages/OnboardingPage";
 
 const PageContainer = styled.div`
   height: 100vh;
