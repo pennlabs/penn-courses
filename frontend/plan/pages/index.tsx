@@ -10,6 +10,7 @@ import LoginModal from "pcx-shared-components/src/accounts/LoginModal";
 import styled, { createGlobalStyle } from "styled-components";
 import Schedule from "../components/schedule/Schedule";
 import { toast } from "react-toastify";
+import { useRouter } from "next/router";
 
 import {
     initGA,
@@ -29,7 +30,7 @@ import { DISABLE_MULTIPLE_TABS } from "../constants/sync_constants";
 import { User } from "../types";
 import { ToastContainer } from "react-toastify";
 import Alerts from "../components/alert/Alerts";
-import { useRouter } from "next/router";
+import { set } from "react-ga";
 
 const GlobalStyle = createGlobalStyle`
   html {
@@ -145,6 +146,12 @@ function Index() {
     const scrollTop = () => window.scrollTo(0, 0);
     const isExpanded = view === 1;
 
+    // cart vs alerts
+    const [showAlerts, setShowAlerts] = useState(false);
+    useEffect(() => {
+        const hash = router.asPath.split("#")[1];
+        setShowAlerts(hash === "alerts");
+    }, [setShowAlerts]);
 
     const [showLoginModal, setShowLoginModal] = useState(true);
 
@@ -414,21 +421,27 @@ function Index() {
                             >
                                 <div>
                                     <CartTab
-                                        active={router.query.view !== "alerts"}
-                                        onClick={() => router.replace("/", undefined, { shallow: true })}
+                                        active={!showAlerts}
+                                        onClick={() => {
+                                            setShowAlerts(false);
+                                            router.replace("/#cart", undefined, { shallow: true })
+                                        }}
                                     >
                                         Cart
                                     </CartTab>
                                     <CartTab
-                                        active={router.query.view === "alerts"}
-                                        onClick={() => router.replace("/?view=alerts", undefined, { shallow: true })}
+                                        active={showAlerts}
+                                        onClick={() => {
+                                            setShowAlerts(true);
+                                            router.replace("/#alerts", undefined, { shallow: true })
+                                        }}
                                     >
                                         Alerts
                                     </CartTab>
                                 </div>
-                                {router.query.view === "alerts" ? 
-                                    <Cart mobileView={false} /> :
-                                    <Alerts mobileView={false} />
+                                {showAlerts ? 
+                                    <Alerts mobileView={false} /> :
+                                    <Cart mobileView={false} />
                                 }
                             </div>
                             <div
