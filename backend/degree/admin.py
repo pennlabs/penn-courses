@@ -69,3 +69,9 @@ class DegreeAdmin(admin.ModelAdmin):
     def degree_editor(self, request):
         context = dict(self.admin_site.each_context(request))
         return TemplateResponse(request, "degree-editor.html", context)
+
+
+admin.site.register(PDPBetaUser, PDPBetaUserAdmin)
+admin.site.register(Fulfillment, FulfillmentAdmin)
+admin.site.register(DoubleCountRestriction, DoubleCountRestrictionAdmin)
+admin.site.register(Degree, DegreeAdmin)
