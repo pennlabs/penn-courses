@@ -71,7 +71,7 @@ class RuleSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         data = super(RuleSerializer, self).to_representation(instance)
-        data.q = ""
+        data["q"] = ""
         return data
 
 
