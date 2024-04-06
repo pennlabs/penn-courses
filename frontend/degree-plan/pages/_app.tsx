@@ -7,7 +7,7 @@ import React from "react";
 import * as Sentry from "@sentry/browser";
 
 Sentry.init({
-    dsn: "", // TODO
+    dsn: "https://0d5259a8367f96784038b18a84af8522@o1128724.ingest.us.sentry.io/4507041563148288",
 });
 
 
