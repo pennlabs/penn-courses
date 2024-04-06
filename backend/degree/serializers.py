@@ -69,7 +69,7 @@ class RuleSerializer(serializers.ModelSerializer):
         model = Rule
         fields = "__all__"
 
-    
+
 # Allow recursive serialization of rules
 RuleSerializer._declared_fields["rules"] = RuleSerializer(
     many=True, read_only=True, source="children"
