@@ -184,7 +184,8 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
 
 class DockedCourseSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(help_text="The id of the docked course")
+    person = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
         model = DockedCourse
-        fields = ["full_code", "id"]
+        fields = ["full_code", "id", "person"]
