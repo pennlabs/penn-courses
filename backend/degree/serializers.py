@@ -30,6 +30,7 @@ from degree.models import (
 
 
 
+
 class DegreeListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Degree

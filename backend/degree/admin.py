@@ -62,7 +62,6 @@ class DegreeAdmin(admin.ModelAdmin):
 
     def degree_editor(self, request):
         context = dict(self.admin_site.each_context(request))
-        return TemplateResponse(request, "degree-editor.html", context)
     
 
 class UserProfileAdmin(admin.ModelAdmin):
