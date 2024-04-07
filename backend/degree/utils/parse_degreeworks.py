@@ -25,8 +25,6 @@ def parse_coursearray(courseArray) -> Q:
                 assert "@" not in number
                 course_q &= Q(code=number)
             case discipline, number, None:
-                if discipline == "@":
-                    assert False
                 if "@" not in number:
                     course_q &= Q(full_code=f"{discipline}-{number}")
                 elif number[:-1].isdigit() and number[-1] == "@":
