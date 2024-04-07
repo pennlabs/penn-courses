@@ -17,7 +17,7 @@ const interpolate = <T,>(arr: T[], separator: T) =>
     )
 
 
-type ConditionKey = "full_code" | "semester" | "attributes__code__in" | "department__code" | "full_code__startswith" | "code__gte" | "code__lte" | "department__code__in" 
+type ConditionKey = "full_code" | "semester" | "attributes__code__in" | "department__code" | "full_code__startswith" | "code__gte" | "code__lte" | "department__code__in" | "code"
 interface Condition {
     type: 'LEAF';
     key: ConditionKey;
@@ -129,6 +129,8 @@ const SearchConditionInner = ({ q }: SearchConditionInnerProps) => {
         display.push(<div>course number &lt;= {compoundCondition['code__lte']}</div>);
     } else if ('code__gte' in compoundCondition) {
         display.push(<div>course number &gt;= {compoundCondition['code__gte']}</div>);
+    } else if ('code' in compoundCondition) {
+        display.push(<div>course number = {compoundCondition['code']}</div>)
     }
     if ('department__code__in' in compoundCondition) {
         const departments = compoundCondition['department__code__in'] as string[];
@@ -163,7 +165,7 @@ const SearchConditionInner = ({ q }: SearchConditionInnerProps) => {
     }
 
     return (
-        <Row>
+        <Row $wrap>
             {interpolate(display, <CourseOptionsSeparator>{q.type}</CourseOptionsSeparator>)}
         </Row>
     )
@@ -195,7 +197,7 @@ const SearchCondition = ({ ruleId, ruleQuery, fulfillments, ruleIsSatisfied, q, 
             }
             setSearchPanelOpen(true);
             setSearchFulfillments(fulfillments)
-        }}>
+            }}>
                 <i className="fas fa-search fa-sm"/>
             </DarkGrayIcon>
             {fulfillments.map(fulfillment => (
