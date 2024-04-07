@@ -11,7 +11,7 @@ from django.db.models.functions import Coalesce
 from django.db.models.signals import m2m_changed
 from django.utils import timezone
 
-from courses.models import Course
+from courses.models import Course, UserProfile
 from degree.utils.model_utils import json_parser, q_object_parser
 
 
@@ -547,6 +547,184 @@ class DockedCourse(models.Model):
                 name="unique docked course",
             )
         ]
+
+
+class Transcript(models.Model):
+    """
+    Not currently implemented
+    """
+
+    program = models.CharField(
+        max_length=255,
+        db_index=True,
+        help_text=dedent(
+            """
+            The user's current program (e.g. SEAS B.S.)
+            """
+        ),
+    )
+    courses = models.ForeignKey(
+        Course,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        help_text=dedent(
+            """
+            Courses already taken, prob a list of Course objects
+            """
+        ),
+    )
+
+
+class DegreeProfile(models.Model):
+    user_profile = models.OneToOneField(
+        UserProfile,
+        on_delete=models.CASCADE,
+        related_name="degree_profile",
+        help_text="extending the user profile class",
+    )
+
+    transcript = models.OneToOneField(
+        Transcript,
+        on_delete=models.CASCADE,
+        null=True,
+        related_name="degree_profile",
+        help_text="The user's uploaded transcript parsed into a Transcript object (optional)",
+    )
+
+    graduation_date = models.CharField(
+        max_length=5,
+        help_text=dedent(
+            """
+            The user's expected graduation date (of the form YYYYx where x is A [for spring],
+            B [summer], or C [fall]), e.g. `2019C` for fall 2019)
+            """
+        ),
+    )
+
+    degrees = models.ManyToManyField(
+        Degree,
+        help_text=dedent(
+            """
+            The user's current degree(s)
+            """
+        ),
+    )
+
+    transfer_credits = models.ManyToManyField(
+        Course,
+        related_name="transfer_credits_for",
+        help_text=dedent(
+            """
+            Transfer credits
+            """
+        ),
+    )
+
+    courses_taken = models.ManyToManyField(
+        Course,
+        through="CourseTaken",
+        related_name="degree_profile",
+        help_text=dedent(
+            """
+            A list of course codes that the user has already taken, matched with semester
+            """
+        ),
+    )
+
+    def calculate_total_credits(self):
+        """
+        Calculates the total credits this person has currently, both through courses taken
+        and transfer credits
+        """
+        total_credits = 0
+
+        for course in self.courses_taken.all():
+            total_credits += course.credits
+
+        for course in self.transfer_credits.all():
+            total_credits += course.credits
+
+        return total_credits
+
+    def add_course(self, course_id, semester, grade):
+        """
+        Adds a course to courses taken
+        """
+        course_instance = Course.objects.get(id=course_id)
+        CourseTaken.objects.create(
+            degree_profile=self, course=course_instance, semester=semester, grade=grade
+        )
+
+    def remove_course(self, course_id, semester):
+        """
+        Removes a course taken by a specific person
+        """
+        course_taken = CourseTaken.objects.filter(
+            degree_profile=self, course=course_id, semester=semester
+        )
+
+        if course_taken.exists():
+            course_taken.delete()
+        else:
+            print(f"Course not found for course id {course_id} in semester {semester}.")
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["user_profile"], name="unique-degree-profile")
+        ]
+
+
+class CourseTaken(models.Model):
+    """
+    An intermediate model for courses taken, which allows us to connect the course to the user,
+    the semester it was taken, and grade received.
+    """
+
+    degree_profile = models.ForeignKey(
+        DegreeProfile,
+        on_delete=models.CASCADE,
+        help_text=dedent(
+            """
+            The degree profile to which this course was taken
+            """
+        ),
+    )
+    course = models.ForeignKey(
+        Course,
+        on_delete=models.CASCADE,
+        help_text=dedent(
+            """
+            The course object of the course taken
+            """
+        ),
+    )
+    semester = models.CharField(
+        max_length=5,
+        help_text=dedent(
+            """
+            The semester taken, in the form YYYYx
+            """
+        ),
+    )
+    grade = models.CharField(
+        max_length=2,
+        help_text=dedent(
+            """
+            The user's grade for this course
+            """
+        ),
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["degree_profile", "course", "semester"], name="unique-course-taken"
+            )
+        ]
+
+
+
 
 
 # After beta: delete this (and remove the DegreeWaitlist permission class)

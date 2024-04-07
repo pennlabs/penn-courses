@@ -11,6 +11,9 @@ from degree.models import (
     PDPBetaUser,
     Rule,
     SatisfactionStatus,
+    DegreeProfile,
+    CourseTaken,
+    UserProfile
 )
 
 
@@ -59,7 +62,14 @@ class DegreeAdmin(admin.ModelAdmin):
 
     def degree_editor(self, request):
         context = dict(self.admin_site.each_context(request))
-        return TemplateResponse(request, "degree-editor.html", context)
+    
+
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ("id", "user")
+
+
+class DegreeProfileAdmin(admin.ModelAdmin):
+    list_display = ("id", "user_profile", "graduation_date")
 
 
 admin.site.register(Rule, RuleAdmin)
@@ -69,3 +79,6 @@ admin.site.register(PDPBetaUser, PDPBetaUserAdmin)
 admin.site.register(Fulfillment, FulfillmentAdmin)
 admin.site.register(DoubleCountRestriction, DoubleCountRestrictionAdmin)
 admin.site.register(Degree, DegreeAdmin)
+admin.site.register(DegreeProfile, DegreeProfileAdmin)
+admin.site.register(UserProfile, UserProfileAdmin)
+admin.site.register(CourseTaken)

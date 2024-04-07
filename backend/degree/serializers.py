@@ -4,6 +4,18 @@ from django.db.models import Q
 from rest_framework import serializers
 
 from courses.models import Course
+from courses.serializers import CourseListSerializer, CourseDetailSerializer
+from degree.models import (
+    Degree,
+    DegreePlan,
+    DoubleCountRestriction,
+    Fulfillment,
+    Rule,
+    DockedCourse,
+    CourseTaken,
+    DegreeProfile,
+    UserProfile,
+)
 from courses.util import get_current_semester
 from degree.models import (
     Degree,
@@ -12,7 +24,11 @@ from degree.models import (
     DoubleCountRestriction,
     Fulfillment,
     Rule,
+    CourseTaken,
+    DegreeProfile
 )
+
+
 
 
 class DegreeListSerializer(serializers.ModelSerializer):
@@ -188,3 +204,59 @@ class DockedCourseSerializer(serializers.ModelSerializer):
     class Meta:
         model = DockedCourse
         fields = ["full_code", "id"]
+
+
+
+class CourseTakenSerializer(serializers.ModelSerializer):
+    course = serializers.PrimaryKeyRelatedField(queryset=Course.objects.all())
+
+    class Meta:
+        model = CourseTaken
+        fields = ["course", "semester", "grade"]
+
+
+class DegreeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Degree
+        fields = "__all__"
+
+    def validate_degrees(self, degrees):
+        if not all(Degree.objects.filter(id=degree_id).exists() for degree_id in degrees):
+            raise serializers.ValidationError("Degree(s) not valid")
+        return degrees
+
+
+class DegreeProfileSerializer(serializers.ModelSerializer):
+    id = serializers.ReadOnlyField(help_text="The id of the degree profile")
+    courses_taken = CourseTakenSerializer(source="coursetaken_set", many=True, required=False)
+    degrees = DegreeSerializer(many=True, required=False)
+
+    class Meta:
+        model = DegreeProfile
+        fields = ["id", "user_profile", "graduation_date", "degrees", "courses_taken"]
+
+    def create(self, data):
+        degrees_data = data.pop("degrees", [])
+        courses_taken_data = data.pop("courses_taken", [])
+
+        user_profile_id = data.pop("user_profile")
+        user_profile = UserProfile.objects.get(id=user_profile_id)
+
+        degree_profile = DegreeProfile.objects.create(user_profile=user_profile, **data)
+
+        if degrees_data:
+            degrees = Degree.objects.filter(id__in=degrees_data)
+            degree_profile.degrees.set(degrees)
+
+        for course_taken_data in courses_taken_data:
+            CourseTaken.objects.create(degree_profile=degree_profile, **course_taken_data)
+
+        return degree_profile
+
+
+class DegreeProfilePatchSerializer(serializers.ModelSerializer):
+    degrees = serializers.PrimaryKeyRelatedField(queryset=Degree.objects.all(), many=True)
+
+    class Meta:
+        model = DegreeProfile
+        fields = ["degrees", "graduation_date"]

@@ -3,8 +3,9 @@ from django.test import TestCase
 from lark.exceptions import LarkError
 
 from courses.util import get_or_create_course_and_section
-from degree.models import Degree, Rule
+from degree.models import Degree, Rule, DegreeProfile, CourseTaken, UserProfile, Course
 from degree.utils.model_utils import q_object_parser
+from courses.models import User
 
 
 TEST_SEMESTER = "2023C"
@@ -188,3 +189,79 @@ class DoubleCountRestrictionTest(TestCase):
 
     def test_num_courses_violation(self):
         pass
+
+
+class DegreeProfileTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="ashley", password="hi", email="hi@example.com"
+        )
+        self.cis_1200, self.cis_1200_001, _, _ = get_or_create_course_and_section(
+            "CIS-1200-001", TEST_SEMESTER, course_defaults={"credits": 1}
+        )
+        self.cis_1600, self.cis_1600_001, _, _ = get_or_create_course_and_section(
+            "CIS-1600-001", TEST_SEMESTER, course_defaults={"credits": 1}
+        )
+        self.user_profile, _ = UserProfile.objects.get_or_create(
+            user=self.user,
+            defaults={'email': self.user.email, 'push_notifications': False}
+        )
+
+        self.degree = Degree.objects.create(program="EU_BSE", degree="BSE", major="CIS", year=2023, credits=37)
+
+        self.degree_profile = DegreeProfile.objects.create(
+            user_profile=self.user_profile,
+            graduation_date="2026A",
+        )
+        self.degree_profile.degrees.set([self.degree])
+
+        CourseTaken.objects.create(degree_profile=self.degree_profile, course=self.cis_1200, semester=TEST_SEMESTER, grade="A+")
+        CourseTaken.objects.create(degree_profile=self.degree_profile, course=self.cis_1600, semester=TEST_SEMESTER, grade="A+")
+    
+
+    def test_degree_profile_creation(self):
+        self.assertIsNotNone(self.degree_profile.user_profile)
+        
+        self.assertEqual(self.degree_profile.user_profile, self.user_profile)
+    
+        degrees = self.degree_profile.degrees.all()
+        self.assertIn(self.degree, degrees)
+        
+        self.assertEqual(self.degree_profile.graduation_date, '2026A')
+
+        self.assertTrue(CourseTaken.objects.filter(
+            degree_profile=self.degree_profile, 
+            course=self.cis_1200, 
+            semester=TEST_SEMESTER).exists())
+        
+        self.assertTrue(CourseTaken.objects.filter(
+            degree_profile=self.degree_profile, 
+            course=self.cis_1600, 
+            semester=TEST_SEMESTER).exists())
+
+    def test_add_course(self):
+        self.cis_3200, self.cis_3200_001, _, _ = get_or_create_course_and_section(
+            "CIS-3200-001", TEST_SEMESTER, course_defaults={"credits": 1}
+        )
+        self.degree_profile.add_course(self.cis_3200.id, TEST_SEMESTER, "A+")
+
+        self.assertTrue(CourseTaken.objects.filter(
+            degree_profile=self.degree_profile, 
+            course=self.cis_3200.id, 
+            semester=TEST_SEMESTER).exists())
+
+    def test_calculate_credits(self):
+        credits = self.degree_profile.calculate_total_credits()
+        self.assertEqual(credits, 2)
+
+    def test_remove_course(self):
+        self.cis_1210, self.cis_1210_001, _, _ = get_or_create_course_and_section(
+            "CIS-1210-001", TEST_SEMESTER, course_defaults={"credits": 1}
+        )
+        self.degree_profile.add_course(self.cis_1210.id, TEST_SEMESTER, "A+")
+        self.degree_profile.remove_course(self.cis_1210.id, TEST_SEMESTER)
+        self.assertFalse(CourseTaken.objects.filter(
+            degree_profile=self.degree_profile, 
+            course=self.cis_1210.id, 
+            semester=TEST_SEMESTER).exists())
+
