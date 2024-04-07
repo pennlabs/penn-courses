@@ -250,14 +250,14 @@ const OnboardingPage = ({
     /** Filter major options based on selected schools/degrees */
     const majorOptions =
       degrees
-        ?.filter((d) => schools.map((s) => s.value).includes(d.degree))
+        ?.filter((d) => d.year == startingYear?.value && schools.map((s) => s.value).includes(d.degree))
         .map((degree) => ({
           value: degree,
           label: createMajorLabel(degree),
         }))
-        .sort((a, b) => a.label.localeCompare(b.label)) || [];
+        .sort((a, b) => a.label.localeCompare(b.label));
     return majorOptions;
-  }, [schools]);
+  }, [schools, startingYear]);
 
   const handleAddDegrees = () => {
     createDegreeplan({ name: name })
