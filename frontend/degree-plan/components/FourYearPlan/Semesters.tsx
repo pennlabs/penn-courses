@@ -229,7 +229,7 @@ const Semesters = ({
   /** Get semesters from local storage */
   useEffect(() => {
     if (!activeDegreeplan) return;
-    if (typeof window !== "undefined") return setSemesters(getDefaultSemesters());
+    if (typeof window === "undefined") return setSemesters(getDefaultSemesters());
     const stickyValue = localStorage.getItem(
       getLocalSemestersKey(activeDegreeplan.id)
     );
@@ -237,10 +237,10 @@ const Semesters = ({
     let parsed;
     try {
       parsed = JSON.parse(stickyValue)
+      setSemesters(parsed)
     } catch {
       setSemesters(getDefaultSemesters());
     }
-    setSemesters(parsed);
   }, [activeDegreeplan, currentSemester]);
 
   /** Update semesters to local storage */
@@ -249,7 +249,7 @@ const Semesters = ({
     // if finish loading and no semesters, we go to edit mode for the user to add new semesters
     else setEditMode(false);
     if (!activeDegreeplan) return;
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && Object.keys(semesters).length) {
       localStorage.setItem(
         getLocalSemestersKey(activeDegreeplan.id),
         JSON.stringify(semesters)
