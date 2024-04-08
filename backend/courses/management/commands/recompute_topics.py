@@ -156,10 +156,8 @@ class Command(BaseCommand):
             [sem for sem in all_semesters() if not min_semester or sem >= min_semester]
         )
         recompute_topics(min_semester, verbose=True, allow_null_parent_topic=bool(min_semester))
-        if semesters:
-            recompute_historical_semester_probabilities(
-                current_semester=semesters[-1], verbose=True
-            )
+        recompute_historical_semester_probabilities(current_semester=semesters[-1], verbose=True)
+            
 
 
 def recompute_historical_semester_probabilities(current_semester, verbose=False):
