@@ -314,7 +314,6 @@ const QObject = ({ q, fulfillments, rule, satisfied, activeDegreePlanId }: QObje
         case "COURSE":
             const [fulfillment] = fulfillments.filter(fulfillment => fulfillment.full_code == q.full_code && (!q.semester || q.semester === fulfillment.semester))
             return <CourseInReq course={{...q, rules: fulfillment ? fulfillment.rules : []}} fulfillment={fulfillment} isDisabled={satisfied && !fulfillment} isUsed={!!fulfillment} rule_id={rule.id} activeDegreePlanId={activeDegreePlanId}/>;
-            // onClick={() => { console.log("fired"); createOrUpdate({ rules: [rule.id] }, q.full_code)}}
     }
 }
 
@@ -350,8 +349,6 @@ const RuleLeaf = ({ q_json, fulfillmentsForRule, rule, satisfied, activeDegreePl
     const t2 = transformCourseClauses(t1);
     const t3 = transformSearchConditions(t2)
     q_json = t3 as TransformedQObject;
-
-    // console.log(q_json)
 
     return (
         <RuleLeafWrapper $wrap>

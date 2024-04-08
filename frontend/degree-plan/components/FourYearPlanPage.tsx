@@ -74,7 +74,6 @@ const FourYearPlanPage = ({
     if (!isLoadingDegreeplans && !degreeplans?.length) {
       setShowOnboardingModal(true);
     }
-    console.log(activeDegreeplan)
     if (!degreeplans?.length) {
       setActiveDegreeplan(null);
     } else if (

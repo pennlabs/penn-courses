@@ -250,7 +250,8 @@ const OnboardingPage = ({
     /** Filter major options based on selected schools/degrees */
     const majorOptions =
       degrees
-        ?.filter((d) => d.year == startingYear?.value && schools.map((s) => s.value).includes(d.degree))
+        ?.filter((d) => schools.map((s) => s.value).includes(d.degree))
+        .sort((d) => Math.abs((startingYear ? startingYear.value : d.year) - d.year))
         .map((degree) => ({
           value: degree,
           label: createMajorLabel(degree),
@@ -265,6 +266,11 @@ const OnboardingPage = ({
         if (res) {
           if (startingYear && graduationYear) {
             window.localStorage.setItem(
+              getLocalSemestersKey(res.id),
+              JSON.stringify(interpolateSemesters(startingYear.value, graduationYear.value))
+            );
+            console.log(
+              "****",
               getLocalSemestersKey(res.id),
               JSON.stringify(interpolateSemesters(startingYear.value, graduationYear.value))
             );
