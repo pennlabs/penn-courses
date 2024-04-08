@@ -157,7 +157,6 @@ class Command(BaseCommand):
         )
         recompute_topics(min_semester, verbose=True, allow_null_parent_topic=bool(min_semester))
         recompute_historical_semester_probabilities(current_semester=semesters[-1], verbose=True)
-            
 
 
 def recompute_historical_semester_probabilities(current_semester, verbose=False):
