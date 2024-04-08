@@ -170,10 +170,11 @@ def recompute_historical_semester_probabilities(current_semester, verbose=False)
         print("Recomputing historical probabilities for all topics...")
     topics = Topic.objects.all()
     # Iterate over each Topic
-    for i, topic in tqdm(enumerate(topics)):
+    for i, topic in tqdm(enumerate(topics), disable=not verbose, total=topics.count()):
         # Calculate historical_year_probability for the current topic
         ordered_courses = topic.courses.all().order_by("semester")
-        historical_prob = historical_semester_probability(current_semester, ordered_courses)
+        ordered_semester = [course.semester for course in ordered_courses]
+        historical_prob = historical_semester_probability(current_semester, ordered_semester)
         # Update the historical_probabilities field for the current topic
         topic.historical_probabilities_spring = historical_prob[0]
         topic.historical_probabilities_summer = historical_prob[1]
