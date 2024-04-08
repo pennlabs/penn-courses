@@ -5,7 +5,6 @@ export default function Document() {
       return (
         <Html lang="en" style={{backgroundColor:'#F7F9FC'}}>
           <Head>
-            <meta name="description" content="Penn Degree Plan by Penn Labs" />
             <link
                 rel="stylesheet"
                 href="https://use.fontawesome.com/releases/v5.6.3/css/all.css"

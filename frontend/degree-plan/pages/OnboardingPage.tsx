@@ -256,9 +256,9 @@ const OnboardingPage = ({
           value: degree,
           label: createMajorLabel(degree),
         }))
-        .sort((a, b) => a.label.localeCompare(b.label)) || [];
+        .sort((a, b) => a.label.localeCompare(b.label));
     return majorOptions;
-  }, [schools]);
+  }, [schools, startingYear]);
 
   const handleAddDegrees = () => {
     createDegreeplan({ name: name })
