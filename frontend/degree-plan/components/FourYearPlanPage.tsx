@@ -16,6 +16,7 @@ import SplitPane, { Pane } from "react-split-pane";
 import Dock from "@/components/Dock/Dock";
 import useWindowDimensions from "@/hooks/window";
 import OnboardingPage from "../pages/OnboardingPage";
+import Footer from "./Footer";
 
 const PageContainer = styled.div`
   height: 100vh;
@@ -162,7 +163,8 @@ const FourYearPlanPage = ({
                   maxSize={windowWidth ? windowWidth * 0.65 : 1000}
                   defaultSize="50%"
                   style={{
-                    padding: "1.5rem"
+                    padding: "1.5rem",
+                    paddingBottom: "1rem" // less padding on bottom for penn labs footer
                   }}
                 >
                   {/*
@@ -205,6 +207,7 @@ const FourYearPlanPage = ({
               </Row>
             )}
           </BodyContainer>
+          <Footer />
           <Dock user={user} login={updateUser} logout={() => updateUser(null)} activeDegreeplanId={activeDegreeplan ? activeDegreeplan.id : null} />
         </PageContainer>
       </ReviewPanelContext.Provider>
