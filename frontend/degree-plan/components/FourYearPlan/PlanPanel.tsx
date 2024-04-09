@@ -13,6 +13,10 @@ const ShowStatsText = styled.div`
     min-width: 6rem;
 `
 
+const AddSemText = styled.div`
+    min-width: 8rem;
+`
+
 const ShowStatsButton = ({ showStats, setShowStats }: { showStats: boolean, setShowStats: (arg0: boolean) => void }) => (
     <PanelTopBarButton onClick={() => setShowStats(!showStats)}>
         <PanelTopBarIcon>
@@ -23,6 +27,22 @@ const ShowStatsButton = ({ showStats, setShowStats }: { showStats: boolean, setS
         </ShowStatsText>
     </PanelTopBarButton>
 );
+
+interface AddSemesterButtonProp {
+    editMode: boolean, 
+    setShowAddSemModal: (arg0: boolean) => void
+}
+
+const AddSemesterButton = ({editMode, setShowAddSemModal} : AddSemesterButtonProp) => editMode && (
+    <PanelTopBarButton onClick={() => setShowAddSemModal(true)}>
+        <PanelTopBarIcon>
+            <i className={`fas fa-plus fa-md`}/>
+        </PanelTopBarIcon>
+        <AddSemText>
+            Add Semester
+        </AddSemText>
+    </PanelTopBarButton>
+)
 
 interface PlanPanelProps {
     setModalKey: (arg0: ModalKey) => void;
@@ -50,6 +70,7 @@ const PlanPanel = ({
     const { copy: copyDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans');
     const [showStats, setShowStats] = useState(true);
     const [editMode, setEditMode] = useState(false);
+    const [showAddSemModal, setShowAddSemModal] = useState(false);
 
     return (
             <PanelContainer>
@@ -80,17 +101,20 @@ const PlanPanel = ({
                         isLoading={isLoading} 
                     />
                     <PanelTopBarIconList>
+                        <AddSemesterButton editMode={editMode} setShowAddSemModal={setShowAddSemModal}/>
                         <ShowStatsButton showStats={showStats} setShowStats={setShowStats} />
-                        <EditButton editMode={editMode} setEditMode={setEditMode} />
+                        <EditButton editMode={editMode} setEditMode={setEditMode}/>
                     </PanelTopBarIconList>
                 </PanelHeader>
                 {/** map to semesters */}
                 <PanelBody>
-                    <Semesters 
+                    <Semesters
                     activeDegreeplan={activeDegreeplan || undefined} 
                     showStats={showStats} 
                     editMode={editMode}
                     setEditMode={setEditMode}
+                    showAddSemModal={showAddSemModal}
+                    setShowAddSemModal={setShowAddSemModal}
                     setModalKey={setModalKey}
                     setModalObject={setModalObject}
                     isLoading={isLoading}

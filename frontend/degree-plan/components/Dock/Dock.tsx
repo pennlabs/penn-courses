@@ -38,11 +38,14 @@ const DockContainer = styled.div<{$isDroppable:boolean, $isOver: boolean}>`
 const SearchIconContainer = styled.div`
     padding: .25rem 2rem;
     padding-left: 0;
-    border-color: var(--primary-color-extra-dark);
+    border-color: var(--primary-color-xx-dark);
+    color: var(--primary-color-extra-dark);
     border-width: 0;
     border-right-width: 2px;
     border-style: solid;
     flex-shrink: 0;
+    display: flex;
+    gap: 1rem;
 `
 
 const DockedCoursesWrapper = styled.div`
@@ -106,7 +109,7 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
     // const [courseAdded, setCourseAdded] = React.useState(false);
     const { searchPanelOpen, setSearchPanelOpen, setSearchRuleQuery, setSearchRuleId } = useContext(SearchPanelContext)
     const { createOrUpdate } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
-    const {data: dockedCourses = [], isLoading} = useSWR<DockedCourse[]>(user ? `/api/degree/docked` : null); 
+    const { data: dockedCourses = [], isLoading } = useSWR<DockedCourse[]>(user ? `/api/degree/docked` : null); 
 
     // Returns a boolean that indiates whether this is the first render
     const useIsMount = () => {
@@ -117,8 +120,6 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
         return isMountRef.current;
       };
     
-    const isMount = useIsMount();
-
     const [{ isOver, canDrop }, drop] = useDrop(() => ({
         accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_REQ],
         drop: (course: DnDCourse) => {
@@ -160,8 +161,11 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
                     setSearchPanelOpen(!searchPanelOpen);
                 }}>
                     <DarkBlueIcon>
-                        <i className="fas fa-search fa-lg"/>
+                        <i className="fas fa-plus fa-lg"/>
                     </DarkBlueIcon>
+                    <div>
+                        Add Course
+                    </div>
                 </SearchIconContainer>
                 <DockedCoursesWrapper>
                     {isLoading ?
