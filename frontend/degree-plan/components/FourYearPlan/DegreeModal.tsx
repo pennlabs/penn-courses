@@ -120,6 +120,15 @@ const DegreeAddInterior = styled.div`
   padding: 1.2rem 2rem;
 `;
 
+/** Create label for major listings */
+export const createMajorLabel = (degree: DegreeListing) => {
+  const concentration =
+    degree.concentration && degree.concentration !== "NONE"
+      ? ` - ${degree.concentration_name}`
+      : "";
+  return `${degree.major_name}${concentration} (${degree.year})`;
+};
+
 interface RemoveDegreeProps {
   degreeplanId: number;
   degreeId: number;
@@ -168,15 +177,6 @@ const ModalInterior = ({
 
   const { data: degrees, isLoading: isLoadingDegrees } =
     useSWR<DegreeListing[]>(`/api/degree/degrees`);
-
-  /** Create label for major listings */
-  const createMajorLabel = (degree: DegreeListing) => {
-    const concentration =
-      degree.concentration && degree.concentration !== "NONE"
-        ? ` - ${degree.concentration_name}`
-        : "";
-    return `${degree.major_name}${concentration}`;
-  };
 
   const getMajorOptions = React.useCallback(() => {
     /** Filter major options based on selected schools/degrees */
@@ -301,7 +301,7 @@ const ModalInterior = ({
                 placeholder={
                   isLoadingDegrees
                     ? "loading programs..."
-                    : "Major - Concentration"
+                    : "Major - Concentration (Starting Year)"
                 }
                 isLoading={isLoadingDegrees}
               />

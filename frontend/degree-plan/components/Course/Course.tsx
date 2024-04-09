@@ -6,6 +6,7 @@ import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
 import { Draggable } from "../common/DnD";
 import Skeleton from "react-loading-skeleton"
 import 'react-loading-skeleton/dist/skeleton.css'
+import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
 
 const COURSE_BORDER_RADIUS = "9px";
 
@@ -103,10 +104,9 @@ const IconBadge = styled.div`
 
 `
 
-
 const SemesterIcon = ({semester}:{semester: string | null}) => {
   if (!semester) return <div></div>;
-  const year = semester.substring(2,4);
+  const year = semester === TRANSFER_CREDIT_SEMESTER_KEY ? "AP" : semester.substring(2,4);
   const sem = semester.substring(4);
 
   return (
