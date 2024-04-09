@@ -9,6 +9,7 @@ import { Course as CourseType, DnDCourse, Rule } from "@/types";
 import Skeleton from "react-loading-skeleton";
 import 'react-loading-skeleton/dist/skeleton.css'
 import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
+import CourseComponent from "../Course/Course";
 
 
 const RowSelectors = styled.li`
@@ -155,6 +156,13 @@ export default function Course({
     //         isDragging: !!monitor.isDragging(),
     //     })
     // }))
+    const [{ isDragging }, drag] = useDrag<DnDCourse, never, { isDragging: boolean }>(() => ({
+        type: ItemTypes.COURSE_IN_PLAN,
+        item: {full_code: course.id},
+        collect: (monitor) => ({
+          isDragging: !!monitor.isDragging()
+        })
+      }), [course])
 
     const [isMouseOver, setIsMouseOver] = useState(false);
 
@@ -166,12 +174,12 @@ export default function Course({
                         role="button"
                     >   
                         <CourseIdentityContainer >
-                            <CourseIDContainer>
+                            <CourseIDContainer ref={drag} className="draggable">
                                 <CourseID>{course.id.replace(/-/g, " ")}</CourseID>
-                                {isMouseOver && 
+                                {/* {isMouseOver && 
                                 <AddButton onClick={onClick}>
                                     <i className="fas fa-md fa-plus-circle" aria-hidden="true"></i>
-                                </AddButton>}
+                                </AddButton>} */}
                             </CourseIDContainer>
                             <CourseTitle>{course.title}</CourseTitle>
                         </CourseIdentityContainer>

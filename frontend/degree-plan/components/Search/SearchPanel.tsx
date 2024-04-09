@@ -79,7 +79,12 @@ const SearchPanelHeader = styled(PanelHeader)`
     font-size: 1.25rem;
 `
 
-export const SearchPanel = ({ activeDegreeplanId }: { activeDegreeplanId: DegreePlan["id"] | null }) => {
+interface SearchPanelProp {
+    activeDegreeplanId: DegreePlan["id"] | null;
+    setSearchedRuleId: (arg0: number) => void;
+}
+
+export const SearchPanel = ({ activeDegreeplanId, setSearchedRuleId }: SearchPanelProp) => {
     const { 
         setSearchPanelOpen, 
         searchRuleId: ruleId, 
@@ -95,11 +100,17 @@ export const SearchPanel = ({ activeDegreeplanId }: { activeDegreeplanId: Degree
         setQueryString("");
     }, [ruleId])
 
+    const handleCloseSearch = () => {
+        setQueryString(""); 
+        setSearchPanelOpen(false);
+        setSearchedRuleId(-1);
+    }
+
     return (
         <PanelContainer>
             <SearchPanelHeader>
                 <PanelTitle>Search</PanelTitle>
-                <label onClick={() => {setQueryString(""); setSearchPanelOpen(false);}}>
+                <label onClick={handleCloseSearch}>
                     <i className="fa fa-times" />
                 </label>
             </SearchPanelHeader>
@@ -116,7 +127,7 @@ export const SearchPanel = ({ activeDegreeplanId }: { activeDegreeplanId: Degree
                         value={queryString}
                         onChange={(e) => {setQueryString(e.target.value)}}
                         autoComplete="off"
-                        placeholder={!ruleId ? "Search for a course!" : `Filtering for ${ruleQuery ? ruleQuery : 'a requirement'}`}
+                        placeholder={!ruleId ? "Search for a course!" : `Filtering for a requirement`}
                     />
                 </SearchContainer>
                 <SearchResults ruleId={ruleId} query={queryString} activeDegreeplanId={activeDegreeplanId} fulfillments={fulfillments}/> 

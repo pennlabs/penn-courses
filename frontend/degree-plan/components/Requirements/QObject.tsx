@@ -72,7 +72,7 @@ const Attributes = ({ attributes }: { attributes: string[] }) => {
     </AttributeWrapper>
 }
 
-const SearchConditionWrapper = styled(BaseCourseContainer)`
+const SearchConditionWrapper = styled(BaseCourseContainer)<{$isSearched: boolean}>`
     display: flex;
     flex-wrap: wrap;
     gap: .5rem;
@@ -80,6 +80,10 @@ const SearchConditionWrapper = styled(BaseCourseContainer)`
     box-shadow: 0px 0px 14px 2px rgba(0, 0, 0, 0.05);
     cursor: pointer;
     padding: .5rem .75rem;
+    ${props => !!props.$isSearched && `
+        border-radius: 10px;
+        box-shadow: 8px 6px 10px 8px #00000026;
+    `}
 `
 
 const Wrap = styled.span`
@@ -174,15 +178,19 @@ interface SearchConditionProps extends SearchConditionInnerProps {
     ruleIsSatisfied: boolean,
     ruleId: Rule["id"];
     ruleQuery: string;
-    activeDegreeplanId: DegreePlan["id"]
+    activeDegreeplanId: DegreePlan["id"];
+    searchedRuleId: number;
+    setSearchedRuleId: (arg0: number) => void;
 }
-const SearchCondition = ({ ruleId, ruleQuery, fulfillments, ruleIsSatisfied, q, activeDegreeplanId}: SearchConditionProps) => {
+const SearchCondition = ({ ruleId, ruleQuery, fulfillments, ruleIsSatisfied, q, activeDegreeplanId, searchedRuleId, setSearchedRuleId}: SearchConditionProps) => {
     const { setSearchPanelOpen, setSearchRuleQuery, setSearchRuleId, setSearchFulfillments } = useContext(SearchPanelContext);
 
     return (
         <SearchConditionWrapper 
             $isDisabled={false}
             $isUsed={false}
+            $isSearched={searchedRuleId == ruleId}
+            
         >
             <SearchConditionInner q={q} />
             <DarkGrayIcon onClick={() => {
@@ -194,7 +202,8 @@ const SearchCondition = ({ ruleId, ruleQuery, fulfillments, ruleIsSatisfied, q, 
                 setSearchRuleId(ruleId)
             }
             setSearchPanelOpen(true);
-            setSearchFulfillments(fulfillments)
+            setSearchFulfillments(fulfillments);
+            setSearchedRuleId(ruleId);
         }}>
                 <i className="fas fa-search fa-sm"/>
             </DarkGrayIcon>
@@ -258,8 +267,10 @@ interface QObjectProps {
     rule: Rule;
     satisfied: boolean;
     activeDegreePlanId: number;
+    searchedRuleId: number;
+    setSearchedRuleId: (arg0: number) => void;
 }
-const QObject = ({ q, fulfillments, rule, satisfied, activeDegreePlanId }: QObjectProps) => {
+const QObject = ({ q, fulfillments, rule, satisfied, activeDegreePlanId, searchedRuleId, setSearchedRuleId }: QObjectProps) => {
 
     // recursively render
     switch (q.type) {
@@ -298,7 +309,15 @@ const QObject = ({ q, fulfillments, rule, satisfied, activeDegreePlanId }: QObje
             const displaySearchConditions = searchConditions.map(search => {
                 const courses = Array.from(fulfillmentsMap.values())
                 fulfillmentsMap.clear()
-                return <SearchCondition fulfillments={courses} q={search.q} ruleIsSatisfied={satisfied} ruleId={rule.id} ruleQuery={rule.q} activeDegreeplanId={activeDegreePlanId}/>
+                return <SearchCondition 
+                    fulfillments={courses} 
+                    q={search.q} 
+                    ruleIsSatisfied={satisfied} 
+                    ruleId={rule.id} 
+                    ruleQuery={rule.q} 
+                    activeDegreeplanId={activeDegreePlanId} 
+                    searchedRuleId={searchedRuleId}
+                    setSearchedRuleId={setSearchedRuleId}/>
             })
 
             return <Row $wrap>
@@ -308,7 +327,16 @@ const QObject = ({ q, fulfillments, rule, satisfied, activeDegreePlanId }: QObje
                 )}
                 </Row>
         case "SEARCH":
-            return <SearchCondition q={q.q} ruleIsSatisfied={satisfied} fulfillments={fulfillments} ruleId={rule.id} ruleQuery={rule.q} activeDegreeplanId={activeDegreePlanId}/>;
+            return <SearchCondition 
+                q={q.q} 
+                ruleIsSatisfied={satisfied} 
+                fulfillments={fulfillments} 
+                ruleId={rule.id} 
+                ruleQuery={rule.q} 
+                activeDegreeplanId={activeDegreePlanId}
+                searchedRuleId={searchedRuleId}
+                setSearchedRuleId={setSearchedRuleId}
+                />;
         case "COURSE":
             const [fulfillment] = fulfillments.filter(fulfillment => fulfillment.full_code == q.full_code && (!q.semester || q.semester === fulfillment.semester))
             return <CourseInReq course={{...q, rules: fulfillment ? fulfillment.rules : []}} fulfillment={fulfillment} isDisabled={satisfied && !fulfillment} isUsed={!!fulfillment} rule_id={rule.id} activeDegreePlanId={activeDegreePlanId}/>;
@@ -323,6 +351,8 @@ interface RuleLeafProps {
     rule: Rule;
     satisfied: boolean;
     activeDegreePlanId: number;
+    searchedRuleId: number;
+    setSearchedRuleId: (arg0: number) => void;
 }
 
 export const SkeletonRuleLeaf = () => (
@@ -343,7 +373,7 @@ export const SkeletonRuleLeaf = () => (
 const RuleLeafWrapper = styled(Row)`
     margin-bottom: .5rem;
 `
-const RuleLeaf = ({ q_json, fulfillmentsForRule, rule, satisfied, activeDegreePlanId }: RuleLeafProps) => {
+const RuleLeaf = ({ q_json, fulfillmentsForRule, rule, satisfied, activeDegreePlanId, searchedRuleId, setSearchedRuleId }: RuleLeafProps) => {
     const t1 = transformDepartmentInClauses(q_json);
     const t2 = transformCourseClauses(t1);
     const t3 = transformSearchConditions(t2)
@@ -353,7 +383,15 @@ const RuleLeaf = ({ q_json, fulfillmentsForRule, rule, satisfied, activeDegreePl
 
     return (
         <RuleLeafWrapper $wrap>
-            <QObject q={q_json} fulfillments={fulfillmentsForRule} rule={rule} satisfied={satisfied} activeDegreePlanId={activeDegreePlanId} />
+            <QObject 
+                q={q_json} 
+                fulfillments={fulfillmentsForRule} 
+                rule={rule} 
+                satisfied={satisfied} 
+                activeDegreePlanId={activeDegreePlanId} 
+                searchedRuleId={searchedRuleId}
+                setSearchedRuleId={setSearchedRuleId}
+                />
         </RuleLeafWrapper>
     )
 }

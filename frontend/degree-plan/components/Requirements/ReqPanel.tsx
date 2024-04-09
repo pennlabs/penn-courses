@@ -162,7 +162,7 @@ const computeRuleTree = ({ activeDegreePlanId, rule, rulesToFulfillments }: Rule
 }
 
 
-const Degree = ({degree, rulesToFulfillments, activeDegreeplan, editMode, setModalKey, setModalObject, isLoading}: any) => {
+const Degree = ({degree, rulesToFulfillments, activeDegreeplan, editMode, setModalKey, setModalObject, isLoading, searchedRuleId, setSearchedRuleId}: any) => {
   const [collapsed, setCollapsed] = useState(false);  
   if (isLoading) {
     return (
@@ -216,7 +216,9 @@ const Degree = ({degree, rulesToFulfillments, activeDegreeplan, editMode, setMod
       <DegreeBody>
         {degree && degree.rules.map((rule: any) => (
           <RuleComponent 
-          {...computeRuleTree({ activeDegreePlanId: activeDegreeplan.id, rule, rulesToFulfillments })}
+            ruleTree={{...computeRuleTree({ activeDegreePlanId: activeDegreeplan.id, rule, rulesToFulfillments })}}
+            searchedRuleId={searchedRuleId}
+            setSearchedRuleId={setSearchedRuleId}
           />
         ))}
       </DegreeBody>}
@@ -229,8 +231,10 @@ interface ReqPanelProps {
   setModalObject: (arg0: DegreePlan | null) => void;
   activeDegreeplan: DegreePlan | null;
   isLoading: boolean;
+  searchedRuleId: number;
+  setSearchedRuleId: (arg0: number) => void;
 }
-const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading}: ReqPanelProps) => {
+const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading, searchedRuleId, setSearchedRuleId}: ReqPanelProps) => {
   const [editMode, setEditMode] = React.useState(false);  
   const { data: activeDegreeplanDetail = null, isLoading: isLoadingDegrees } = useSWR<DegreePlan>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}` : null); 
   const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null); 
@@ -271,6 +275,8 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading}: Re
             setModalKey={setModalKey}
             setModalObject={setModalObject}
             isLoading={isLoading}
+            searchedRuleId={searchedRuleId}
+            setSearchedRuleId={setSearchedRuleId}
             />
           ))}
           {editMode && <AddButton role="button" onClick={() => {
