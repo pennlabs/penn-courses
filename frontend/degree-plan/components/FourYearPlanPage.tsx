@@ -161,7 +161,10 @@ const FourYearPlanPage = ({
                 // @ts-ignore */}
                 <SplitPane
                   split="vertical"
-                  maxSize={windowWidth ? windowWidth * 0.60 : 1000}
+                  // maxSize={windowWidth ? windowWidth * 0.60 : 1000}
+                  maxSize={searchPanelOpen ? 
+                            (windowWidth ? windowWidth : 1000) * 0.45 
+                          : (windowWidth ? windowWidth : 1000) * 0.6}
                   defaultSize="50%"
                   style={{
                     padding: "1.5rem"
