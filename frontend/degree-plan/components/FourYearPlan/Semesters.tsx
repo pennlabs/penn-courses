@@ -247,7 +247,6 @@ const Semesters = ({
   useEffect(() => {
     if (Object.keys(semesters).length == 0 && !isLoading) setEditMode(true);
     // if finish loading and no semesters, we go to edit mode for the user to add new semesters
-    else setEditMode(false);
     if (!activeDegreeplan) return;
     if (typeof window !== "undefined" && Object.keys(semesters).length) {
       localStorage.setItem(
