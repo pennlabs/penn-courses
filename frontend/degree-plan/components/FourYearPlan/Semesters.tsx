@@ -295,6 +295,7 @@ const Semesters = ({
                 removeSemester={removeSemester}
                 setModalKey={setModalKey}
                 setModalObject={setModalObject}
+                currentSemester={currentSemester}
               />
             ))}
       {editMode && (

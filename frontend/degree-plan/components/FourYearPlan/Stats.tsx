@@ -23,7 +23,7 @@ const ScoreCircle = styled(CircularProgressbar)`
 `;
 
 const ScoreLabel = styled.div`
-    font-size: 1rem;
+    font-size: .75rem;
     line-height: 125%;
 `;
 interface ScoreRowProps { 
@@ -44,7 +44,7 @@ const ScoreRow = ({ score, label, reverse = false }: ScoreRowProps) => {
                 text: {
                     fontSize: "2rem",
                     fill: color,
-                    fontWeight: 500
+                    fontWeight: 700
                 }
             }}
             />
