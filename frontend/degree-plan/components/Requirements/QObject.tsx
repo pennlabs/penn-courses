@@ -17,7 +17,7 @@ const interpolate = <T,>(arr: T[], separator: T) =>
     )
 
 
-type ConditionKey = "full_code" | "semester" | "attributes__code__in" | "department__code" | "full_code__startswith" | "code__gte" | "code__lte" | "department__code__in" 
+type ConditionKey = "full_code" | "semester" | "attributes__code__in" | "department__code" | "full_code__startswith" | "code__gte" | "code__lte" | "department__code__in" | "code"
 interface Condition {
     type: 'LEAF';
     key: ConditionKey;
@@ -133,6 +133,8 @@ const SearchConditionInner = ({ q }: SearchConditionInnerProps) => {
         display.push(<div>course number &lt;= {compoundCondition['code__lte']}</div>);
     } else if ('code__gte' in compoundCondition) {
         display.push(<div>course number &gt;= {compoundCondition['code__gte']}</div>);
+    } else if ('code' in compoundCondition) {
+        display.push(<div>course number = {compoundCondition['code']}</div>)
     }
     if ('department__code__in' in compoundCondition) {
         const departments = compoundCondition['department__code__in'] as string[];
@@ -167,7 +169,7 @@ const SearchConditionInner = ({ q }: SearchConditionInnerProps) => {
     }
 
     return (
-        <Row>
+        <Row $wrap>
             {interpolate(display, <CourseOptionsSeparator>{q.type}</CourseOptionsSeparator>)}
         </Row>
     )
@@ -202,9 +204,8 @@ const SearchCondition = ({ ruleId, ruleQuery, fulfillments, ruleIsSatisfied, q, 
                 setSearchRuleId(ruleId)
             }
             setSearchPanelOpen(true);
-            setSearchFulfillments(fulfillments);
-            setSearchedRuleId(ruleId);
-        }}>
+            setSearchFulfillments(fulfillments)
+            }}>
                 <i className="fas fa-search fa-sm"/>
             </DarkGrayIcon>
             {fulfillments.map(fulfillment => (
@@ -340,7 +341,6 @@ const QObject = ({ q, fulfillments, rule, satisfied, activeDegreePlanId, searche
         case "COURSE":
             const [fulfillment] = fulfillments.filter(fulfillment => fulfillment.full_code == q.full_code && (!q.semester || q.semester === fulfillment.semester))
             return <CourseInReq course={{...q, rules: fulfillment ? fulfillment.rules : []}} fulfillment={fulfillment} isDisabled={satisfied && !fulfillment} isUsed={!!fulfillment} rule_id={rule.id} activeDegreePlanId={activeDegreePlanId}/>;
-            // onClick={() => { console.log("fired"); createOrUpdate({ rules: [rule.id] }, q.full_code)}}
     }
 }
 
@@ -378,8 +378,6 @@ const RuleLeaf = ({ q_json, fulfillmentsForRule, rule, satisfied, activeDegreePl
     const t2 = transformCourseClauses(t1);
     const t3 = transformSearchConditions(t2)
     q_json = t3 as TransformedQObject;
-
-    // console.log(q_json)
 
     return (
         <RuleLeafWrapper $wrap>

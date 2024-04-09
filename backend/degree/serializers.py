@@ -69,11 +69,6 @@ class RuleSerializer(serializers.ModelSerializer):
         model = Rule
         fields = "__all__"
 
-    def to_representation(self, instance):
-        data = super(RuleSerializer, self).to_representation(instance)
-        data.q = ""
-        return data
-
 
 # Allow recursive serialization of rules
 RuleSerializer._declared_fields["rules"] = RuleSerializer(
@@ -189,7 +184,8 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
 
 class DockedCourseSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(help_text="The id of the docked course")
+    person = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
         model = DockedCourse
-        fields = ["full_code", "id"]
+        fields = ["full_code", "id", "person"]

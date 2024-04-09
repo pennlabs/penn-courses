@@ -9,6 +9,7 @@ import { ItemTypes } from '../dnd/constants';
 import { DarkBlueBackgroundSkeleton } from "../FourYearPlan/PanelCommon";
 import { DegreeYear, RuleTree } from './ReqPanel';
 import assert from 'assert';
+import SatisfiedCheck from '../FourYearPlan/SatisfiedCheck';
 
 const RuleTitleWrapper = styled.div`
     background-color: var(--primary-color);
@@ -197,7 +198,7 @@ const RuleComponent = ({ruleTree, searchedRuleId, setSearchedRuleId} : RuleCompo
                 setSearchedRuleId={setSearchedRuleId}
                 />
               <Row>
-              {!!satisfied && <i className="fas fa-check-circle" style={{color: '#5EA872'}}></i>}
+              {!!satisfied && <SatisfiedCheck />}
               <Column>
                 {rule.credits && 
                   <CusCourses><sup>{cus}</sup>/<sub>{rule.credits}</sub><div>{rule.credits > 1 ? 'cus' : 'cu'}</div></CusCourses>
@@ -219,9 +220,7 @@ const RuleComponent = ({ruleTree, searchedRuleId, setSearchedRuleId} : RuleCompo
         <PickNTitle>
           <div>Pick {num}:</div>
           {satisfied &&
-            <Icon>
-              <i className="fas fa-check-circle"></i>
-            </Icon>
+            <SatisfiedCheck />
             }
         </PickNTitle>
             {children.map((ruleTree) => (

@@ -15,34 +15,25 @@ from degree.models import (
 
 
 # Register your models here.
-@admin.register(Rule)
 class RuleAdmin(admin.ModelAdmin):
     search_fields = ["title", "id"]
     list_display = ["title", "id", "parent"]
     list_select_related = ["parent"]
 
 
-admin.site.register(DegreePlan)
-admin.site.register(SatisfactionStatus)
-
-
-@admin.register(PDPBetaUser)
 class PDPBetaUserAdmin(admin.ModelAdmin):
     search_fields = ("person__username", "person__id")
     autocomplete_fields = ("person",)
 
 
-@admin.register(Fulfillment)
 class FulfillmentAdmin(admin.ModelAdmin):
     autocomplete_fields = ["rules"]
 
 
-@admin.register(DoubleCountRestriction)
 class DoubleCountRestrictionAdmin(admin.ModelAdmin):
     autocomplete_fields = ["rule", "other_rule"]
 
 
-@admin.register(Degree)
 class DegreeAdmin(admin.ModelAdmin):
     autocomplete_fields = ["rules"]
     list_display = ["program", "degree", "major", "concentration", "year", "view_degree_editor"]
@@ -69,3 +60,12 @@ class DegreeAdmin(admin.ModelAdmin):
     def degree_editor(self, request):
         context = dict(self.admin_site.each_context(request))
         return TemplateResponse(request, "degree-editor.html", context)
+
+
+admin.site.register(Rule, RuleAdmin)
+admin.site.register(DegreePlan)
+admin.site.register(SatisfactionStatus)
+admin.site.register(PDPBetaUser, PDPBetaUserAdmin)
+admin.site.register(Fulfillment, FulfillmentAdmin)
+admin.site.register(DoubleCountRestriction, DoubleCountRestrictionAdmin)
+admin.site.register(Degree, DegreeAdmin)

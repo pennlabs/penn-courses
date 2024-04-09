@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@radix-ui/themes";
-import { PlusIcon } from "@radix-ui/react-icons";
-import { Theme } from "@radix-ui/themes";
 import styled from "@emotion/styled";
 import useSWR, { mutate } from "swr";
 import Select from "react-select";
@@ -14,6 +12,8 @@ import {
 } from "@/types";
 import { postFetcher, useSWRCrud } from "@/hooks/swrcrud";
 import { getLocalSemestersKey, interpolateSemesters } from "@/components/FourYearPlan/Semesters";
+import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
+import { createMajorLabel } from "@/components/FourYearPlan/DegreeModal";
 
 const PanelContainer = styled.div<{ $maxWidth: string; $minWidth: string }>`
   border-radius: 10px;
@@ -236,37 +236,31 @@ const OnboardingPage = ({
 
   const startingYearOptions = getYearOptions()?.startYears;
   const graduationYearOptions = getYearOptions()?.gradYears;
-
-  /** Create label for major listings */
-  const createMajorLabel = (degree: DegreeListing) => {
-    const concentration =
-      degree.concentration && degree.concentration !== "NONE"
-        ? ` - ${degree.concentration_name}`
-        : "";
-    return `${degree.major_name}${concentration}`;
-  };
-
+  
   const getMajorOptions = React.useCallback(() => {
     /** Filter major options based on selected schools/degrees */
     const majorOptions =
       degrees
         ?.filter((d) => schools.map((s) => s.value).includes(d.degree))
+        .sort((d) => Math.abs((startingYear ? startingYear.value : d.year) - d.year))
         .map((degree) => ({
           value: degree,
           label: createMajorLabel(degree),
         }))
-        .sort((a, b) => a.label.localeCompare(b.label)) || [];
+        .sort((a, b) => a.label.localeCompare(b.label));
     return majorOptions;
-  }, [schools]);
+  }, [schools, startingYear]);
 
   const handleAddDegrees = () => {
     createDegreeplan({ name: name })
       .then((res) => {
         if (res) {
           if (startingYear && graduationYear) {
+            const semesters = interpolateSemesters(startingYear.value, graduationYear.value);
+            semesters[TRANSFER_CREDIT_SEMESTER_KEY] = [];
             window.localStorage.setItem(
               getLocalSemestersKey(res.id),
-              JSON.stringify(interpolateSemesters(startingYear.value, graduationYear.value))
+              JSON.stringify(semesters)
             );
           }
           setActiveDegreeplan(res);

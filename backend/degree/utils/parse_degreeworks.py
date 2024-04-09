@@ -18,29 +18,30 @@ def parse_coursearray(courseArray) -> Q:
             case ("@", "@", end) | ("PSEUDO@", "@", end):
                 assert end is None
                 logging.info("ignoring @ course")
-                pass
             case discipline, "@", end:
                 assert end is None
                 course_q &= Q(department__code=discipline)
+            case "@", number, None:
+                assert "@" not in number
+                course_q &= Q(code=number)
             case discipline, number, None:
-                if number.isdigit():
+                if "@" not in number:
                     course_q &= Q(full_code=f"{discipline}-{number}")
                 elif number[:-1].isdigit() and number[-1] == "@":
                     course_q &= Q(full_code__startswith=f"{discipline}-{number[:-1]}")
-                else:
-                    logging.warn(f"Non-integer course number: {number}")
+            case "@", number, end:
+                assert "@" not in number and "@" not in end
+                course_q &= Q(
+                    code__gte=number.strip(),
+                    code__lte=end.strip(),
+                )
             case discipline, number, end:
-                if number.isdigit() and end.isdigit():
-                    course_q &= Q(
-                        department__code=discipline,
-                        code__gte=number.strip(),
-                        code__lte=end.strip(),
-                    )
-                else:
-                    logging.warn(
-                        f"Non-integer course number or numberEnd: "
-                        f"(number) {number} (numberEnd) {end}"
-                    )
+                assert "@" not in number and "@" not in end
+                course_q &= Q(
+                    department__code=discipline,
+                    code__gte=number.strip(),
+                    code__lte=end.strip(),
+                )
 
         connector = "AND"  # the connector to the next element; and by default
         if "withArray" in course:

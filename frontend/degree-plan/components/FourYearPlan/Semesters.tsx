@@ -8,7 +8,6 @@ import Select from "react-select";
 import { ModalKey } from "./DegreeModal";
 
 const getNextSemester = (semester: string) => {
-  console.log("GET NEXT SEMESTER");
   const year = parseInt(semester.slice(0, 4));
   const season = semester.slice(4);
   if (season === "A") {
@@ -238,10 +237,10 @@ const Semesters = ({
     let parsed;
     try {
       parsed = JSON.parse(stickyValue)
+      setSemesters(parsed)
     } catch {
       setSemesters(getDefaultSemesters());
     }
-    setSemesters(parsed);
   }, [activeDegreeplan, currentSemester]);
 
   /** Update semesters to local storage */
@@ -250,7 +249,7 @@ const Semesters = ({
     // if finish loading and no semesters, we go to edit mode for the user to add new semesters
     else setEditMode(false);
     if (!activeDegreeplan) return;
-    if (typeof window !== undefined) {
+    if (typeof window !== "undefined" && Object.keys(semesters).length) {
       localStorage.setItem(
         getLocalSemestersKey(activeDegreeplan.id),
         JSON.stringify(semesters)
@@ -296,6 +295,7 @@ const Semesters = ({
                 removeSemester={removeSemester}
                 setModalKey={setModalKey}
                 setModalObject={setModalObject}
+                currentSemester={currentSemester}
               />
             ))}
       {editMode && (

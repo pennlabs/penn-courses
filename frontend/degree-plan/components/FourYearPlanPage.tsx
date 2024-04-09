@@ -16,6 +16,7 @@ import SplitPane, { Pane } from "react-split-pane";
 import Dock from "@/components/Dock/Dock";
 import useWindowDimensions from "@/hooks/window";
 import OnboardingPage from "../pages/OnboardingPage";
+import Footer from "./Footer";
 
 const PageContainer = styled.div`
   height: 100vh;
@@ -74,7 +75,6 @@ const FourYearPlanPage = ({
     if (!isLoadingDegreeplans && !degreeplans?.length) {
       setShowOnboardingModal(true);
     }
-    console.log(activeDegreeplan)
     if (!degreeplans?.length) {
       setActiveDegreeplan(null);
     } else if (
@@ -167,7 +167,8 @@ const FourYearPlanPage = ({
                           : (windowWidth ? windowWidth : 1000) * 0.6}
                   defaultSize="50%"
                   style={{
-                    padding: "1.5rem"
+                    padding: "1.5rem",
+                    paddingBottom: "1rem" // less padding on bottom for penn labs footer
                   }}
                 >
                   {/*
@@ -212,6 +213,7 @@ const FourYearPlanPage = ({
               </Row>
             )}
           </BodyContainer>
+          <Footer />
           <Dock user={user} login={updateUser} logout={() => updateUser(null)} activeDegreeplanId={activeDegreeplan ? activeDegreeplan.id : null} />
         </PageContainer>
       </ReviewPanelContext.Provider>

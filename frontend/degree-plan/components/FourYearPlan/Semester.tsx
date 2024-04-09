@@ -11,16 +11,24 @@ import Skeleton from "react-loading-skeleton"
 import 'react-loading-skeleton/dist/skeleton.css'
 import { mutate } from "swr";
 import { ModalKey } from "./DegreeModal";
+import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
 
+const SEMESTER_REGEX = /\d{4}[ABC]/
 
 const translateSemester = (semester: Course["semester"]) => {
+    if (semester === TRANSFER_CREDIT_SEMESTER_KEY) return "AP & Transfer Credit";
     const year = semester.slice(0, 4);
     const term = semester.slice(4);
     return `${term === "A" ? "Spring" : term === "B" ? "Summer" : "Fall"} ${year}`
 }
 
-export const SemesterCard = styled.div<{$isDroppable:boolean, $isOver: boolean}>`
-    background: #FFFFFF;
+export const SemesterCard = styled.div<{
+    $isDroppable:boolean,
+    $isOver: boolean,
+    $semesterComparison: number // -1 if currentSemester is less than this semester...
+}>`
+    background: ${props => props.$semesterComparison < 0 ? "#F8F8F8" : props.$semesterComparison === 0 ? "var(--primary-color)" : "#FFFFFF"};
+    color: ${props => props.$semesterComparison === 0 ? "var(--primary-color-ultra-dark)" : "inherit"};
     box-shadow: 0px 0px 4px 2px ${props => props.$isOver ? 'var(--selected-color);' : props.$isDroppable ? 'var(--primary-color-dark);' : 'rgba(0, 0, 0, 0.05);'}
     border-radius: 10px;
     border-width: 0px;
@@ -38,7 +46,7 @@ const SemesterHeader = styled.div`
 `
 
 const SemesterLabel = styled.div`
-    font-weight: 500;
+    font-weight: 600;
 `;
 
 const SemesterContent = styled.div`
@@ -76,7 +84,7 @@ export const SkeletonSemester = ({
     showStats,
 } : { showStats: boolean }) => {
     return (
-        <SemesterCard $isDroppable={false} $isOver={false}>
+        <SemesterCard $isDroppable={false} $isOver={false} $semesterComparison={1}>
             <SemesterHeader>
                 <SemesterLabel>
                     <Skeleton width="5em" />
@@ -103,6 +111,7 @@ interface SemesterProps {
     setModalKey: (arg0: ModalKey) => void;
     setModalObject: (obj: any) => void;
     removeSemester: (sem: string) => void;
+    currentSemester?: Course["semester"];
     isLoading?: boolean
 }
 
@@ -115,6 +124,7 @@ const FlexSemester = ({
     setModalKey,
     setModalObject,
     removeSemester,
+    currentSemester,
     isLoading = false
 } : SemesterProps) => {
     const credits = fulfillments.reduce((acc, curr) => acc + (curr.course?.credits || 1), 0)
@@ -166,7 +176,12 @@ const FlexSemester = ({
     }
 
     return (
-        <SemesterCard $isDroppable={canDrop} $isOver={isOver} ref={drop}>
+        <SemesterCard
+        $isDroppable={canDrop}
+        $isOver={isOver}
+        ref={drop}
+        $semesterComparison={currentSemester ? semester.localeCompare(currentSemester) : 1}
+        >
             <SemesterHeader>
                 <SemesterLabel>
                     {translateSemester(semester)}

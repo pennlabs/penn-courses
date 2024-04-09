@@ -35,7 +35,6 @@ const CourseInReq = (props : CourseInReqProps) => {
         /** If the current rule about to be removed is the only rule 
         * the course satisfied, then we delete the fulfillment */
         if (updated_rules && updated_rules.length == 0) {
-          console.log('hwere')
           removeFulfillment(full_code);
         } else {
           updateFulfillment({rules: updated_rules}, full_code);

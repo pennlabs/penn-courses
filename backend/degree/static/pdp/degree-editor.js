@@ -78,12 +78,10 @@ const LayoutFlow = () => {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
   const onConnect = useCallback((params) => {
-    console.log("onConnect", params);
     if (params.source === params.target) return;
     const [sourceIsDegree, sourceId] = pkOfNodeId(params.source);
     const [targetIsDegree, targetId] = pkOfNodeId(params.target);
     if (sourceIsDegree || targetIsDegree) return;
-    console.log("HERE");
     const redirect = `/admin/degree/doublecountrestriction/add/?rule=${sourceId}&other_rule=${targetId}`;
     window.location.href = redirect;
   }, []);
