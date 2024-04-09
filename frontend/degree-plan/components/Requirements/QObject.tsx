@@ -81,8 +81,7 @@ const SearchConditionWrapper = styled(BaseCourseContainer)<{$isSearched: boolean
     cursor: pointer;
     padding: .5rem .75rem;
     ${props => !!props.$isSearched && `
-        border-radius: 10px;
-        box-shadow: 8px 6px 10px 8px #00000026;
+        box-shadow: 0px 0px 10px 2px var(--primary-color-dark);
     `}
 `
 
@@ -181,17 +180,15 @@ interface SearchConditionProps extends SearchConditionInnerProps {
     ruleId: Rule["id"];
     ruleQuery: string;
     activeDegreeplanId: DegreePlan["id"];
-    searchedRuleId: number;
-    setSearchedRuleId: (arg0: number) => void;
 }
-const SearchCondition = ({ ruleId, ruleQuery, fulfillments, ruleIsSatisfied, q, activeDegreeplanId, searchedRuleId, setSearchedRuleId}: SearchConditionProps) => {
-    const { setSearchPanelOpen, setSearchRuleQuery, setSearchRuleId, setSearchFulfillments } = useContext(SearchPanelContext);
+const SearchCondition = ({ ruleId, ruleQuery, fulfillments, ruleIsSatisfied, q, activeDegreeplanId}: SearchConditionProps) => {
+    const { setSearchPanelOpen, searchRuleId, setSearchRuleQuery, setSearchRuleId, setSearchFulfillments } = useContext(SearchPanelContext);
 
     return (
         <SearchConditionWrapper 
             $isDisabled={false}
             $isUsed={false}
-            $isSearched={searchedRuleId == ruleId}
+            $isSearched={searchRuleId == ruleId}
             
         >
             <SearchConditionInner q={q} />
@@ -268,10 +265,8 @@ interface QObjectProps {
     rule: Rule;
     satisfied: boolean;
     activeDegreePlanId: number;
-    searchedRuleId: number;
-    setSearchedRuleId: (arg0: number) => void;
 }
-const QObject = ({ q, fulfillments, rule, satisfied, activeDegreePlanId, searchedRuleId, setSearchedRuleId }: QObjectProps) => {
+const QObject = ({ q, fulfillments, rule, satisfied, activeDegreePlanId}: QObjectProps) => {
 
     // recursively render
     switch (q.type) {
@@ -317,8 +312,7 @@ const QObject = ({ q, fulfillments, rule, satisfied, activeDegreePlanId, searche
                     ruleId={rule.id} 
                     ruleQuery={rule.q} 
                     activeDegreeplanId={activeDegreePlanId} 
-                    searchedRuleId={searchedRuleId}
-                    setSearchedRuleId={setSearchedRuleId}/>
+                />
             })
 
             return <Row $wrap>
@@ -335,8 +329,6 @@ const QObject = ({ q, fulfillments, rule, satisfied, activeDegreePlanId, searche
                 ruleId={rule.id} 
                 ruleQuery={rule.q} 
                 activeDegreeplanId={activeDegreePlanId}
-                searchedRuleId={searchedRuleId}
-                setSearchedRuleId={setSearchedRuleId}
                 />;
         case "COURSE":
             const [fulfillment] = fulfillments.filter(fulfillment => fulfillment.full_code == q.full_code && (!q.semester || q.semester === fulfillment.semester))
@@ -351,8 +343,6 @@ interface RuleLeafProps {
     rule: Rule;
     satisfied: boolean;
     activeDegreePlanId: number;
-    searchedRuleId: number;
-    setSearchedRuleId: (arg0: number) => void;
 }
 
 export const SkeletonRuleLeaf = () => (
@@ -373,7 +363,7 @@ export const SkeletonRuleLeaf = () => (
 const RuleLeafWrapper = styled(Row)`
     margin-bottom: .5rem;
 `
-const RuleLeaf = ({ q_json, fulfillmentsForRule, rule, satisfied, activeDegreePlanId, searchedRuleId, setSearchedRuleId }: RuleLeafProps) => {
+const RuleLeaf = ({ q_json, fulfillmentsForRule, rule, satisfied, activeDegreePlanId }: RuleLeafProps) => {
     const t1 = transformDepartmentInClauses(q_json);
     const t2 = transformCourseClauses(t1);
     const t3 = transformSearchConditions(t2)
@@ -387,8 +377,6 @@ const RuleLeaf = ({ q_json, fulfillmentsForRule, rule, satisfied, activeDegreePl
                 rule={rule} 
                 satisfied={satisfied} 
                 activeDegreePlanId={activeDegreePlanId} 
-                searchedRuleId={searchedRuleId}
-                setSearchedRuleId={setSearchedRuleId}
                 />
         </RuleLeafWrapper>
     )

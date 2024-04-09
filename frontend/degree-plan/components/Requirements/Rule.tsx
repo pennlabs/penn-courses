@@ -40,7 +40,7 @@ const RuleTitle = styled.div`
 `
 
 const RuleLeafWrapper = styled.div<{$isDroppable:boolean, $isOver: boolean}>`
-  margin: .25rem;
+  padding: .5rem .5rem .5rem 0rem;
   margin-left: 0;
   display: flex;
   justify-content: space-between;
@@ -77,7 +77,7 @@ const Indented = styled.div`
 const Column = styled.div`
   display: flex;
   flex-direction: column;
-  gap: .1rem;
+  gap: 0rem;
 `
 
 const PickNWrapper = styled.div`
@@ -101,7 +101,7 @@ const RuleLeafLabel = styled.div`
 `
 
 const RuleLeafContainer = styled(Column)`
-  margin: 0.25rem;
+  margin: 0.1rem;
   }
 `
 
@@ -148,13 +148,8 @@ export const SkeletonRule: React.FC<React.PropsWithChildren> = ({ children }) =>
 /**
  * Recursive component to represent a rule.
  */
-interface RuleComponentProps {
-  ruleTree: RuleTree,
-  searchedRuleId: number,
-  setSearchedRuleId: (arg0: number) => void
-}
 
-const RuleComponent = ({ruleTree, searchedRuleId, setSearchedRuleId} : RuleComponentProps) => {
+const RuleComponent = (ruleTree : RuleTree) => {
     const { type, activeDegreePlanId, rule, progress } = ruleTree; 
     const satisfied = progress === 1;
 
@@ -194,8 +189,6 @@ const RuleComponent = ({ruleTree, searchedRuleId, setSearchedRuleId} : RuleCompo
                 fulfillmentsForRule={fulfillments} 
                 satisfied={satisfied} 
                 activeDegreePlanId={activeDegreePlanId}
-                searchedRuleId={searchedRuleId}
-                setSearchedRuleId={setSearchedRuleId}
                 />
               <Row>
               {!!satisfied && <SatisfiedCheck />}
@@ -225,7 +218,7 @@ const RuleComponent = ({ruleTree, searchedRuleId, setSearchedRuleId} : RuleCompo
         </PickNTitle>
             {children.map((ruleTree) => (
               <div>
-                <RuleComponent ruleTree={{...ruleTree}} searchedRuleId={searchedRuleId} setSearchedRuleId={setSearchedRuleId}/>
+                <RuleComponent {...ruleTree}/>
               </div>
             ))}
       </PickNWrapper>
@@ -254,7 +247,7 @@ const RuleComponent = ({ruleTree, searchedRuleId, setSearchedRuleId} : RuleCompo
             <Column>
               {children.map((ruleTree) => (
                 <div>
-                  <RuleComponent ruleTree={{...ruleTree}} searchedRuleId={searchedRuleId} setSearchedRuleId={setSearchedRuleId}/>
+                  <RuleComponent {...ruleTree}/>
                 </div>
               ))}
             </Column>

@@ -104,7 +104,6 @@ const FourYearPlanPage = ({
   const ref = useRef(null);
 
   // search panel
-  const [searchedRuleId, setSearchedRuleId] = useState(-1);
   const [searchPanelOpen, setSearchPanelOpen] = useState<boolean>(false);
   const [searchRuleId, setSearchRuleId] = useState<Rule["id"] | null>(null);
   const [searchRuleQuery, setSearchRuleQuery] = useState<string | null>(null); // a query object
@@ -198,14 +197,12 @@ const FourYearPlanPage = ({
                         setModalKey={setModalKey}
                         setModalObject={setModalObject}
                         isLoading={isLoadingDegreeplans}
-                        searchedRuleId={searchedRuleId}
-                        setSearchedRuleId={setSearchedRuleId}
                         activeDegreeplan={activeDegreeplan}
                       />
                     </PanelInteriorWrapper>
                     {searchPanelOpen && (
                       <PanelInteriorWrapper $minWidth={"40%"} $maxWidth={"43%"}>
-                        <SearchPanel activeDegreeplanId={activeDegreeplan ? activeDegreeplan.id : null} setSearchedRuleId={setSearchedRuleId}/>
+                        <SearchPanel activeDegreeplanId={activeDegreeplan ? activeDegreeplan.id : null} setSearchedRuleId={setSearchRuleId}/>
                       </PanelInteriorWrapper>
                     )}
                   </PanelWrapper>
