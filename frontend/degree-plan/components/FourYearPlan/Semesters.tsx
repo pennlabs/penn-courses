@@ -167,7 +167,7 @@ const ModifySemesters = ({
       <YearInput
         value={selectedYear}
         type="number"
-        onChange={(e) => setSelectedYear(e.value)}
+        onChange={(e) => setSelectedYear(e.target.value)}
       />
     </AddSemesterContainer>
   );
