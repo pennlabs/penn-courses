@@ -1,6 +1,6 @@
 import React from "react";
 import styled from "styled-components";
-import { Range } from "rc-slider";
+import Slider from "rc-slider";
 import {
     Column,
     CheckboxInput,
@@ -151,7 +151,8 @@ export function DayTimeFilter<
     rangeProperty,
     step,
 }: SearchFieldProps<F, K, V>) {
-    const onSliderChange = (values: [number, number]) => {
+    const onSliderChange = (_values: number | number[]) => {
+        const values = _values as [number, number];
         updateRangeFilter(values);
         startSearch({
             ...filterData,
@@ -215,7 +216,8 @@ export function DayTimeFilter<
                 </p>
                 <RangeFilterContainer>
                     <StyledRangeWrapper>
-                        <Range
+                        <Slider
+                            range
                             min={minRange}
                             max={maxRange}
                             value={filterData[rangeProperty]}

@@ -24,7 +24,7 @@ const RowSelectors = styled.li`
     padding-left: 1em;
 `;
 
-const CourseContainer = styled.div<{ $isRecCourse: boolean }>`
+const CourseContainer = styled.div<{ $isRecCourse?: boolean }>`
     padding-left: 0em;
     padding-top: 1em;
     padding-bottom: 1em;
@@ -35,15 +35,15 @@ const CourseContainer = styled.div<{ $isRecCourse: boolean }>`
 `;
 
 
-const CourseInfoContainer = styled.div<{ $isRecCourse: boolean }>`
+const CourseInfoContainer = styled.div<{ $isRecCourse?: boolean }>`
     display: flex;
     flex-direction: row;
-    width: ${({ $isRecCourse: isRecCourse }) => (isRecCourse ? "95%" : "100%")};
+    width: ${({ $isRecCourse }) => ($isRecCourse ? "95%" : "100%")};
 `;
 
-const CourseIdentityContainer = styled.div<{ $isRecCourse: boolean }>`
+const CourseIdentityContainer = styled.div<{ $isRecCourse?: boolean }>`
     overflow: hidden;
-    width: ${({ $isRecCourse: isRecCourse }) => (isRecCourse ? "58.5%" : "60%")};
+    width: ${({ $isRecCourse }) => ($isRecCourse ? "58.5%" : "60%")};
 `;
 
 // Bulma: title is-6

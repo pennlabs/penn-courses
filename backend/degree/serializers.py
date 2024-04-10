@@ -1,6 +1,6 @@
 from textwrap import dedent
 
-from django.db.models import Q
+from django.db.models import Q, Subquery
 from rest_framework import serializers
 
 from courses.models import Course
@@ -68,11 +68,6 @@ class RuleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Rule
         fields = "__all__"
-
-    def to_representation(self, instance):
-        data = super(RuleSerializer, self).to_representation(instance)
-        data.q = ""
-        return data
 
 
 # Allow recursive serialization of rules
@@ -148,13 +143,17 @@ class FulfillmentSerializer(serializers.ModelSerializer):
         for rule in rules:
             # NOTE: we don't do any validation if the course doesn't exist in DB. In future,
             # it may be better to prompt user for manual override
-            if (
-                Course.objects.filter(full_code=full_code).exists()
-                and not Course.objects.filter(rule.get_q_object(), full_code=full_code).exists()
-            ):
-                raise serializers.ValidationError(
-                    f"Course {full_code} does not satisfy rule {rule.id}"
-                )
+            if Course.objects.filter(full_code=full_code).exists():
+                satisfying_courses = Course.objects.filter(rule.get_q_object())
+                if not (
+                    Course.objects.filter(
+                        full_code=full_code,
+                        topic_id__in=Subquery(satisfying_courses.values("topic_id")),
+                    ).exists()
+                ):
+                    raise serializers.ValidationError(
+                        f"Course {full_code} does not satisfy rule {rule.id}"
+                    )
 
         # Check for double count restrictions
         double_count_restrictions = DoubleCountRestriction.objects.filter(
@@ -189,7 +188,8 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
 
 class DockedCourseSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(help_text="The id of the docked course")
+    person = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
         model = DockedCourse
-        fields = ["full_code", "id"]
+        fields = ["full_code", "id", "person"]

@@ -9,6 +9,7 @@ import { ItemTypes } from '../dnd/constants';
 import { DarkBlueBackgroundSkeleton } from "../FourYearPlan/PanelCommon";
 import { DegreeYear, RuleTree } from './ReqPanel';
 import assert from 'assert';
+import SatisfiedCheck from '../FourYearPlan/SatisfiedCheck';
 
 const RuleTitleWrapper = styled.div`
     background-color: var(--primary-color);
@@ -25,7 +26,7 @@ const ProgressBar = styled.div<{$progress: number}>`
     border-bottom-left-radius: .3rem;
 `
 
-const RuleTitle = styled.div<{$progress: number}>`
+const RuleTitle = styled.div`
   position: relative;
   font-size: 1rem;
   font-weight: 500;
@@ -126,7 +127,7 @@ export const SkeletonRule: React.FC<React.PropsWithChildren> = ({ children }) =>
       :
       <RuleTitleWrapper>
         <ProgressBar $progress={0}></ProgressBar>
-        <RuleTitle $progress={0}>
+        <RuleTitle>
           <Row>
             <DarkBlueBackgroundSkeleton width="10em" />
             <DarkBlueBackgroundSkeleton width="7em" />
@@ -164,6 +165,7 @@ const RuleComponent = (ruleTree : RuleTree) => {
         accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_DOCK], 
         drop: (course: DnDCourse) => {
           createOrUpdate({ rules: course.rules !== undefined ? [...course.rules, rule.id] : [rule.id] }, course.full_code);
+          return undefined;
         }, // TODO: this doesn't handle fulfillments that already have a rule
         canDrop: () => { return !satisfied && !!rule.q },
         collect: monitor => ({
@@ -181,7 +183,7 @@ const RuleComponent = (ruleTree : RuleTree) => {
             <RuleLeafWrapper $isDroppable={canDrop} $isOver={isOver} ref={drop}>
               <RuleLeaf q_json={rule.q_json} rule={rule} fulfillmentsForRule={fulfillments} satisfied={satisfied} activeDegreePlanId={activeDegreePlanId}/>
               <Row>
-              {!!satisfied && <i className="fas fa-check-circle" style={{color: '#5EA872'}}></i>}
+              {!!satisfied && <SatisfiedCheck />}
               <Column>
                 {rule.credits && 
                   <CusCourses><sup>{cus}</sup>/<sub>{rule.credits}</sub><div>{rule.credits > 1 ? 'cus' : 'cu'}</div></CusCourses>
@@ -203,9 +205,7 @@ const RuleComponent = (ruleTree : RuleTree) => {
         <PickNTitle>
           <div>Pick {num}:</div>
           {satisfied &&
-            <Icon>
-              <i className="fas fa-check-circle"></i>
-            </Icon>
+            <SatisfiedCheck />
             }
         </PickNTitle>
             {children.map((ruleTree) => (

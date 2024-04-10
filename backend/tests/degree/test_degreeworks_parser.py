@@ -202,7 +202,8 @@ class CourseArrayParserTest(TestCase):
         course_array = [
             {"discipline": "BIBB", "number": "2000", "numberEnd": "2999"},
         ]
-        expected = Q(department__code="BIBB", code__gte=2000, code__lte=2999)
+        expected = Q(department__code="BIBB", code__gte="2000", code__lte="2999")
+        print(expected, parse_degreeworks.parse_coursearray(course_array))
         self.assertEqual(expected, parse_degreeworks.parse_coursearray(course_array))
 
     def test_department(self):
@@ -221,16 +222,16 @@ class CourseArrayParserTest(TestCase):
 
     def test_non_int_course(self):
         course_array = [
-            {"discipline": "CIS", "number": "not-a-number"},
+            {"discipline": "CIS", "number": "4999A"},
         ]
-        expected = Q()
+        expected = Q(full_code="CIS-4999A")
         self.assertEqual(expected, parse_degreeworks.parse_coursearray(course_array))
 
     def test_non_int_course_range(self):
         course_array = [
-            {"discipline": "CIS", "number": "not-a-number", "numberEnd": "also-not-a-number"},
+            {"discipline": "CIS", "number": "4999A", "numberEnd": "4999B"},
         ]
-        expected = Q()
+        expected = Q(department__code="CIS", code__gte="4999A", code__lte="4999B")
         self.assertEqual(expected, parse_degreeworks.parse_coursearray(course_array))
 
 

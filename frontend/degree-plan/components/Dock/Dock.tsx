@@ -9,6 +9,8 @@ import { SearchPanelContext } from '../Search/SearchPanel';
 import { useSWRCrud } from '@/hooks/swrcrud';
 import useSWR, { useSWRConfig } from 'swr';
 import { DarkBlueBackgroundSkeleton } from "../FourYearPlan/PanelCommon";
+// TODO: Move shared components to typescript
+// @ts-ignore
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
 import _ from 'lodash';
 import CoursePlanned from '../FourYearPlan/CourseInPlan';
@@ -37,11 +39,14 @@ const DockContainer = styled.div<{$isDroppable:boolean, $isOver: boolean}>`
 const SearchIconContainer = styled.div`
     padding: .25rem 2rem;
     padding-left: 0;
-    border-color: var(--primary-color-extra-dark);
+    border-color: var(--primary-color-xx-dark);
+    color: var(--primary-color-extra-dark);
     border-width: 0;
     border-right-width: 2px;
     border-style: solid;
     flex-shrink: 0;
+    display: flex;
+    gap: 1rem;
 `
 
 const DockedCoursesWrapper = styled.div`
@@ -109,14 +114,14 @@ interface DockProps {
     login: (u: User) => void;
     logout: () => void;
     user: User | null;
-    activeDegreeplanId: DegreePlan["id"];
+    activeDegreeplanId: DegreePlan["id"] | null;
 }
 
 const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
     // const [courseAdded, setCourseAdded] = React.useState(false);
     const { searchPanelOpen, setSearchPanelOpen, setSearchRuleQuery, setSearchRuleId } = useContext(SearchPanelContext)
     const { createOrUpdate, remove } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
-    const {data: dockedCourses = [], isLoading} = useSWR<DockedCourse[]>(user ? `/api/degree/docked` : null); 
+    const { data: dockedCourses = [], isLoading } = useSWR<DockedCourse[]>(user ? `/api/degree/docked` : null); 
 
     // Returns a boolean that indiates whether this is the first render
     const useIsMount = () => {
@@ -127,8 +132,6 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
         return isMountRef.current;
       };
     
-    const isMount = useIsMount();
-
     const [{ isOver, canDrop }, drop] = useDrop(() => ({
         accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_REQ],
         drop: (course: DnDCourse) => {
@@ -174,8 +177,11 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
                     setSearchPanelOpen(!searchPanelOpen);
                 }}>
                     <DarkBlueIcon>
-                        <i className="fas fa-search fa-lg"/>
+                        <i className="fas fa-plus fa-lg"/>
                     </DarkBlueIcon>
+                    <div>
+                        Add Course
+                    </div>
                 </SearchIconContainer>
                 <DockedCoursesWrapper>
                     {isLoading ?

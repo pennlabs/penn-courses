@@ -1,7 +1,6 @@
 import { toast } from 'react-toastify';
 
 /* react toastify notifications */
-
 export const toastWarn = (message: string) => {
     toast.warning(message, {
         position: 'top-center',

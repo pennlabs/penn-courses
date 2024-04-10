@@ -7,6 +7,7 @@ import { useSWRCrud } from '@/hooks/swrcrud';
 import { EditButton } from './EditButton';
 import { PanelTopBarButton, PanelTopBarIcon } from "./PanelCommon";
 import { PanelContainer, PanelHeader, PanelTopBarIconList, PanelBody } from "./PanelCommon";
+import { ModalKey } from "./DegreeModal";
 
 const ShowStatsText = styled.div`
     min-width: 6rem;
@@ -24,8 +25,8 @@ const ShowStatsButton = ({ showStats, setShowStats }: { showStats: boolean, setS
 );
 
 interface PlanPanelProps {
-    setModalKey: (arg0: string) => void;
-    modalKey: string;
+    setModalKey: (arg0: ModalKey) => void;
+    modalKey: string | null;
     setModalObject: (arg0: DegreePlan | null) => void;
     setActiveDegreeplan: (arg0: DegreePlan | null) => void;
     activeDegreeplan: DegreePlan | null;
@@ -55,10 +56,10 @@ const PlanPanel = ({
                 <PanelHeader>
                     <SelectListDropdown
                         itemType="degree plan" 
-                        active={activeDegreeplan}
+                        active={activeDegreeplan || undefined}
                         getItemName={(item: DegreePlan) => item.name}
                         allItems={degreeplans || []} 
-                        selectItem={(id: DegreePlan["id"]) => setActiveDegreeplan(degreeplans?.filter(d => d.id === id)[0])}
+                        selectItem={(id: DegreePlan["id"]) => setActiveDegreeplan(degreeplans?.filter(d => d.id === id)[0] || null)}
                         mutators={{
                             copy: (item: DegreePlan) => {
                                 (copyDegreeplan({...item, name: `${item.name} (copy)`}, item.id) as Promise<any>)
@@ -86,7 +87,7 @@ const PlanPanel = ({
                 {/** map to semesters */}
                 <PanelBody>
                     <Semesters 
-                    activeDegreeplan={activeDegreeplan} 
+                    activeDegreeplan={activeDegreeplan || undefined} 
                     showStats={showStats} 
                     editMode={editMode}
                     setEditMode={setEditMode}

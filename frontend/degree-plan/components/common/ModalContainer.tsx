@@ -7,10 +7,9 @@ import styled from "@emotion/styled";
 interface ModalContainerProps {
     title: string;
     close: () => void;
-    modalProps: any;
+    modalProps?: any;
     modalKey: string | null;
-    isBig: boolean;
-    ref: React.RefObject<HTMLSelectElement>
+    isBig?: boolean;
 }
 
 const OuterModalContainer = styled.div<{ $title: string }>`
@@ -129,9 +128,8 @@ const ModalContainer = ({
     title,
     close,
     modalKey,
-    modalProps,
-    isBig: isBig,
-    ref
+    modalProps = {},
+    isBig = false,
 }: PropsWithChildren<ModalContainerProps>) => {
     const modalRef = useRef(null);
     return (

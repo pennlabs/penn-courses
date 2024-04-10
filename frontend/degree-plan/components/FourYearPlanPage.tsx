@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
-import ReqPanel from "../components/Requirements/ReqPanel";
-import PlanPanel from "../components/FourYearPlan/PlanPanel";
+import ReqPanel from "./Requirements/ReqPanel";
+import PlanPanel from "./FourYearPlan/PlanPanel";
 import {
   SearchPanel,
   SearchPanelContext,
-} from "../components/Search/SearchPanel";
+} from "./Search/SearchPanel";
 // import Plan from "../components/example/Plan";
 import styled from "@emotion/styled";
 import useSWR, { useSWRConfig } from "swr";
@@ -15,7 +15,8 @@ import DegreeModal, { ModalKey } from "@/components/FourYearPlan/DegreeModal";
 import SplitPane, { Pane } from "react-split-pane";
 import Dock from "@/components/Dock/Dock";
 import useWindowDimensions from "@/hooks/window";
-import OnboardingPage from "./OnboardingPage";
+import OnboardingPage from "../pages/OnboardingPage";
+import Footer from "./Footer";
 
 const PageContainer = styled.div`
   height: 100vh;
@@ -44,11 +45,11 @@ const PanelWrapper = styled(Pane)`
   gap: 2rem;
 `
 
-const PanelInteriorWrapper = styled.div<{ $maxWidth: string; $minWidth: string }>`
+const PanelInteriorWrapper = styled.div<{ $maxWidth?: string; $minWidth?: string }>`
   border-radius: 10px;
   box-shadow: 0px 0px 5px 1px #00000026;
   overflow: hidden; /* Hide scrollbars */
-  width: ${(props) => (props.$maxWidth || props.$maxWidth ? "auto" : "100%")};
+  width: ${(props) => (props.$maxWidth || "100%")};
   max-width: ${(props) => (props.$maxWidth ? props.$maxWidth : "auto")};
   min-width: ${(props) => (props.$minWidth ? props.$minWidth : "auto")};
   position: relative;
@@ -74,7 +75,6 @@ const FourYearPlanPage = ({
     if (!isLoadingDegreeplans && !degreeplans?.length) {
       setShowOnboardingModal(true);
     }
-    console.log(activeDegreeplan)
     if (!degreeplans?.length) {
       setActiveDegreeplan(null);
     } else if (
@@ -156,14 +156,19 @@ const FourYearPlanPage = ({
               />
             ) : (
               <Row>
+                {/*
+                // @ts-ignore */}
                 <SplitPane
                   split="vertical"
                   maxSize={windowWidth ? windowWidth * 0.65 : 1000}
                   defaultSize="50%"
                   style={{
-                    padding: "1.5rem"
+                    padding: "1.5rem",
+                    paddingBottom: "1rem" // less padding on bottom for penn labs footer
                   }}
                 >
+                  {/*
+                  // @ts-ignore */}
                   <PanelWrapper>
                     <PanelInteriorWrapper>
                       <PlanPanel
@@ -181,6 +186,8 @@ const FourYearPlanPage = ({
                       />
                     </PanelInteriorWrapper>
                   </PanelWrapper>
+                  {/*
+                  // @ts-ignore */}
                   <PanelWrapper>
                     <PanelInteriorWrapper>
                       <ReqPanel
@@ -200,6 +207,7 @@ const FourYearPlanPage = ({
               </Row>
             )}
           </BodyContainer>
+          <Footer />
           <Dock user={user} login={updateUser} logout={() => updateUser(null)} activeDegreeplanId={activeDegreeplan ? activeDegreeplan.id : null} />
         </PageContainer>
       </ReviewPanelContext.Provider>

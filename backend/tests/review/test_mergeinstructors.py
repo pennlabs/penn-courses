@@ -27,8 +27,7 @@ class BatchDuplicateTestCase(TestCase):
 
     def test_batch_duplicates(self):
         dupes = batch_duplicates(
-            Instructor.objects.all().annotate(name_lower=Lower("name")),
-            lambda x: x.name_lower,
+            Instructor.objects.all().annotate(name_lower=Lower("name")), lambda x: x.name_lower
         )
         self.assertEqual(1, len(dupes))
         self.assertEqual("a", dupes[0].pop().name.lower())

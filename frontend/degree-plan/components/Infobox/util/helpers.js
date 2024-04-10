@@ -1,4 +1,4 @@
-export const toNormalizedSemester = sem => {
+export const toNormalizedSemester = (sem) => {
   const year = sem.slice(0, 4);
   const code = sem.slice(4);
 

@@ -5,9 +5,9 @@ import { Course, DegreePlan, Fulfillment } from "@/types";
 import useSWR from "swr";
 import React, { useEffect, useState } from "react";
 import Select from "react-select";
+import { ModalKey } from "./DegreeModal";
 
 const getNextSemester = (semester: string) => {
-  console.log("GET NEXT SEMESTER");
   const year = parseInt(semester.slice(0, 4));
   const season = semester.slice(4);
   if (season === "A") {
@@ -66,10 +66,31 @@ const AddButton = styled.div`
   gap: 1rem;
 `;
 
+const YearInput = styled.input`
+  width: 9rem;
+  background-color: transparent;
+  border-color: #9FB5EF;
+  color: #C1C1C1;
+  box-shadow: none;
+  &:hover {
+    borderColor: "#9FB5EF";
+  }
+
+  padding: .75rem;
+  padding-top: .5rem;
+  padding-bottom: .5rem;
+  border-style: solid;
+  border-radius: .25rem;
+  border-width: 1px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  font-size: 1rem;
+`
+
 const selectStyles = (topOrBottom: boolean) => ({
-  control: (provided) => ({
+  control: (provided: any) => ({
     ...provided,
-    width: "130px",
+    width: "9rem",
     backgroundColor: "transparent",
     borderColor: "#9FB5EF",
     color: "#C1C1C1",
@@ -77,13 +98,11 @@ const selectStyles = (topOrBottom: boolean) => ({
     "&:hover": {
       borderColor: "#9FB5EF",
     },
-    ...(
-      topOrBottom ? 
-      { borderBottomLeftRadius: 0, borderBottomRightRadius: 0, borderBottom: 0 } : 
-      { borderTopLeftRadius: 0, borderTopRightRadius: 0 }
-    )
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+    borderBottom: 0
   }),
-  singleValue: (provided) => ({
+  singleValue: (provided: any) => ({
     ...provided,
     color: "#C1C1C1",
   }),
@@ -92,7 +111,7 @@ const selectStyles = (topOrBottom: boolean) => ({
 // TODO: get a consistent color palette across PCx
 interface ModifySemestersProps {
   addSemester: (semester: Course["semester"]) => void;
-  className: string;
+  className?: string;
   semesters: { [semester: string]: Fulfillment[] };
 }
 
@@ -126,14 +145,6 @@ const ModifySemesters = ({
     { value: "C", label: "Fall" },
   ];
 
-  // TODO: Un-hardcode years
-  const yearOptions = [
-    { value: "2024", label: "2024" },
-    { value: "2025", label: "2025" },
-    { value: "2026", label: "2026" },
-    { value: "2027", label: "2027" },
-  ];
-
   return (
     // TODO: add a modal for this
     <AddSemesterContainer className={className}>
@@ -150,14 +161,13 @@ const ModifySemesters = ({
         styles={selectStyles(true)}
         options={seasonOptions}
         value={seasonOptions.find((option) => option.value === selectedSeason)}
-        onChange={(option) => setSelectedSeason(option.value)}
+        onChange={(option) => setSelectedSeason(option ? option.value : selectedSeason)}
       />
 
-      <Select
-        styles={selectStyles(false)}
-        options={yearOptions}
-        value={yearOptions.find((option) => option.value === selectedYear)}
-        onChange={(option) => setSelectedYear(option.value)}
+      <YearInput
+        value={selectedYear}
+        type="number"
+        onChange={(e) => setSelectedYear(e.target.value)}
       />
     </AddSemesterContainer>
   );
@@ -177,7 +187,7 @@ interface SemestersProps {
   showStats: any;
   className?: string;
   editMode: boolean;
-  setModalKey: (arg0: string) => void;
+  setModalKey: (arg0: ModalKey) => void;
   setModalObject: (obj: any) => void;
   setEditMode: (arg0: boolean) => void;
   isLoading: boolean;
@@ -237,19 +247,18 @@ const Semesters = ({
     let parsed;
     try {
       parsed = JSON.parse(stickyValue)
+      setSemesters(parsed)
     } catch {
       setSemesters(getDefaultSemesters());
     }
-    setSemesters(parsed);
   }, [activeDegreeplan, currentSemester]);
 
   /** Update semesters to local storage */
   useEffect(() => {
     if (Object.keys(semesters).length == 0 && !isLoading) setEditMode(true);
     // if finish loading and no semesters, we go to edit mode for the user to add new semesters
-    else setEditMode(false);
     if (!activeDegreeplan) return;
-    if (typeof window !== undefined) {
+    if (typeof window !== "undefined" && Object.keys(semesters).length) {
       localStorage.setItem(
         getLocalSemestersKey(activeDegreeplan.id),
         JSON.stringify(semesters)
@@ -295,6 +304,7 @@ const Semesters = ({
                 removeSemester={removeSemester}
                 setModalKey={setModalKey}
                 setModalObject={setModalObject}
+                currentSemester={currentSemester}
               />
             ))}
       {editMode && (

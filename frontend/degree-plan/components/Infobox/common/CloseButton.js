@@ -1,5 +1,6 @@
-import { GrayIcon } from '@/components/common/bulma_derived_components';
-import styled from '@emotion/styled'
+import styled from "@emotion/styled";
+import React from "react";
+import { GrayIcon } from "../../common/bulma_derived_components";
 
 const CloseIcon = styled(GrayIcon)`
   pointer-events: auto;
@@ -8,12 +9,12 @@ const CloseIcon = styled(GrayIcon)`
   & :hover {
     color: #707070;
   }
-`
+`;
 
 const CloseButton = ({ close }) => (
-    <CloseIcon onClick={close}>
-        <i className="fas fa-times fa-md"></i>
-    </CloseIcon>
-)
+  <CloseIcon onClick={close}>
+    <i className="fas fa-times fa-md" />
+  </CloseIcon>
+);
 
 export default CloseButton;

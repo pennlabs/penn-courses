@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@radix-ui/themes";
-import { PlusIcon } from "@radix-ui/react-icons";
-import { Theme } from "@radix-ui/themes";
 import styled from "@emotion/styled";
 import useSWR, { mutate } from "swr";
 import Select from "react-select";
@@ -14,6 +12,8 @@ import {
 } from "@/types";
 import { postFetcher, useSWRCrud } from "@/hooks/swrcrud";
 import { getLocalSemestersKey, interpolateSemesters } from "@/components/FourYearPlan/Semesters";
+import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
+import { createMajorLabel } from "@/components/FourYearPlan/DegreeModal";
 
 const PanelContainer = styled.div<{ $maxWidth: string; $minWidth: string }>`
   border-radius: 10px;
@@ -80,7 +80,7 @@ const NextButton = styled(Button)`
   }
 `;
 
-export const Label = styled.h5`
+export const Label = styled.h5<{ required: boolean }>`
   padding-top: 3%;
   font-size: 1rem;
   &:after {
@@ -115,63 +115,63 @@ const FieldWrapper = styled.div`
 `;
 
 const customSelectStylesLeft = {
-  control: (provided) => ({
+  control: (provided: any) => ({
     ...provided,
     width: 250,
     minHeight: "35px",
     height: "35px",
   }),
-  menu: (provided) => ({
+  menu: (provided: any) => ({
     ...provided,
     width: 250,
     maxHeight: 200,
   }),
-  valueContainer: (provided) => ({
+  valueContainer: (provided: any) => ({
     ...provided,
     height: "35px",
     padding: "0 6px",
   }),
-  input: (provided) => ({
+  input: (provided: any) => ({
     ...provided,
     margin: "0px",
   }),
-  indicatorsContainer: (provided) => ({
+  indicatorsContainer: (provided: any) => ({
     ...provided,
     height: "35px",
   }),
 };
 
 const customSelectStylesRight = {
-  control: (provided) => ({
+  control: (provided: any) => ({
     ...provided,
     width: "80%",
     minHeight: "35px",
     height: "35px",
   }),
-  menu: (provided) => ({
+  menu: (provided: any) => ({
     ...provided,
     width: 500,
     maxHeight: "85rem",
   }),
-  valueContainer: (provided) => ({
+  valueContainer: (provided: any) => ({
     ...provided,
     height: "35px",
     padding: "0 6px",
   }),
-  input: (provided) => ({
+  input: (provided: any) => ({
     ...provided,
     margin: "0px",
   }),
-  indicatorsContainer: (provided) => ({
+  indicatorsContainer: (provided: any) => ({
     ...provided,
     height: "35px",
   }),
-  multiValue: (provided) => ({
+  multiValue: (provided: any) => ({
     ...provided,
     borderRadius: "8px",
     maxWidth: "200px",
   }),
-  multiValueLabel: (provided) => ({
+  multiValueLabel: (provided: any) => ({
     ...provided,
     borderRadius: "8px",
     maxWidth: "90px",
@@ -179,7 +179,7 @@ const customSelectStylesRight = {
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
   }),
-  loadingIndicator: (provided) => ({
+  loadingIndicator: (provided: any) => ({
     ...provided,
     color: "gray",
   }),
@@ -236,37 +236,31 @@ const OnboardingPage = ({
 
   const startingYearOptions = getYearOptions()?.startYears;
   const graduationYearOptions = getYearOptions()?.gradYears;
-
-  /** Create label for major listings */
-  const createMajorLabel = (degree: DegreeListing) => {
-    const concentration =
-      degree.concentration && degree.concentration !== "NONE"
-        ? ` - ${degree.concentration_name}`
-        : "";
-    return `${degree.major_name}${concentration}`;
-  };
-
+  
   const getMajorOptions = React.useCallback(() => {
     /** Filter major options based on selected schools/degrees */
     const majorOptions =
       degrees
         ?.filter((d) => schools.map((s) => s.value).includes(d.degree))
+        .sort((d) => Math.abs((startingYear ? startingYear.value : d.year) - d.year))
         .map((degree) => ({
           value: degree,
           label: createMajorLabel(degree),
         }))
-        .sort((a, b) => a.label.localeCompare(b.label)) || [];
+        .sort((a, b) => a.label.localeCompare(b.label));
     return majorOptions;
-  }, [schools]);
+  }, [schools, startingYear]);
 
   const handleAddDegrees = () => {
     createDegreeplan({ name: name })
       .then((res) => {
         if (res) {
           if (startingYear && graduationYear) {
+            const semesters = interpolateSemesters(startingYear.value, graduationYear.value);
+            semesters[TRANSFER_CREDIT_SEMESTER_KEY] = [];
             window.localStorage.setItem(
               getLocalSemestersKey(res.id),
-              JSON.stringify(interpolateSemesters(startingYear.value, graduationYear.value))
+              JSON.stringify(semesters)
             );
           }
           setActiveDegreeplan(res);
@@ -328,7 +322,7 @@ const OnboardingPage = ({
               <Select
                 options={schoolOptions}
                 value={schools}
-                onChange={(selectedOption) => setSchools(selectedOption)}
+                onChange={(selectedOptions) => setSchools([...selectedOptions])}
                 isClearable
                 isMulti
                 placeholder="Select School or Program"
@@ -342,7 +336,7 @@ const OnboardingPage = ({
               <Select
                 options={getMajorOptions()}
                 value={majors}
-                onChange={(selectedOption) => setMajors(selectedOption)}
+                onChange={(selectedOptions) => setMajors([...selectedOptions])}
                 isClearable
                 isMulti
                 isDisabled={schools.length === 0}

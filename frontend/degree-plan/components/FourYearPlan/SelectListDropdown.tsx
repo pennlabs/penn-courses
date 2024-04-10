@@ -236,7 +236,7 @@ const ScheduleDropdownHeader = styled.div`
 `
 
 const SelectedName = styled.span`
-    font-weight: 500;
+    font-weight: 700;
     min-width: 5rem;
     font-size: 1.25rem;
 `
@@ -328,7 +328,7 @@ const SelectListDropdown = <T extends DBObject,>({
                                     />
                                 );
                             })}
-                    <AddNew onClick={create} role="button" href="#" disabled={isLoading}>
+                    <AddNew onClick={create} role="button" disabled={isLoading}>
                         <GrayIcon>
                             <i className="fa fa-plus" aria-hidden="true" />
                         </GrayIcon>

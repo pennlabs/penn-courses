@@ -49,7 +49,7 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     List, retrieve, create, destroy, and update a DegreePlan.
     """
 
-    # After beta: remove DegreeWaitlist
+    # After beta: remove InPDPBeta
     permission_classes = [IsAuthenticated & InPDPBeta]
 
     def get_queryset(self):
@@ -130,7 +130,7 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
     List, retrieve, create, destroy, and update a Fulfillment.
     """
 
-    # After beta: remove DegreeWaitlist
+    # After beta: remove InPDPBeta
     permission_classes = [IsAuthenticated & InPDPBeta]
     serializer_class = FulfillmentSerializer
     http_method_names = ["get", "post", "head", "delete"]
@@ -169,7 +169,7 @@ class DockedCourseViewset(viewsets.ModelViewSet):
     List, retrieve, create, destroy, and update docked courses
     """
 
-    # After beta: remove DegreeWaitlist
+    # After beta: remove InPDPBeta
     permission_classes = [IsAuthenticated & InPDPBeta]
     serializer_class = DockedCourseSerializer
     http_method_names = ["get", "post", "head", "delete"]
@@ -184,7 +184,6 @@ class DockedCourseViewset(viewsets.ModelViewSet):
         if request.data.get("full_code") is None:
             raise ValidationError({"full_code": "This field is required."})
         self.kwargs["full_code"] = request.data["full_code"]
-        self.kwargs["person"] = self.request.user
         try:
             return self.partial_update(request, *args, **kwargs)
         except Http404:

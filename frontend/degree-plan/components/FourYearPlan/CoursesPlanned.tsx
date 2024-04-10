@@ -24,17 +24,16 @@ interface CoursesPlannedProps {
     fulfillments: Fulfillment[];
     removeCourse: (course: Course["id"]) => void;
     semester: Course["id"],
-    className: string;
-    isLoading: boolean;
+    className?: string;
+    isLoading?: boolean;
 }
 
-const CoursesPlanned = ({fulfillments, removeCourse, className, semester, isLoading}: CoursesPlannedProps) => {
+const CoursesPlanned = ({fulfillments, removeCourse, className, semester, isLoading = false}: CoursesPlannedProps) => {
     return (
         <PlannedCoursesContainer className={className}>
             {fulfillments.map(fulfillment => 
                 <CourseInPlan key={fulfillment.full_code} semester={semester} course={fulfillment} removeCourse={removeCourse} isDisabled={false}/>
             )}
-            {/* <PlannedCourseContainer $isDepressed={true}/> */}
         </PlannedCoursesContainer>
     )
 }
