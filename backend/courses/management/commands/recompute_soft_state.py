@@ -100,7 +100,7 @@ def recompute_enrollment():
 
 
 # course credits = sum(section credis for all activities for sections below 500)
-# the < 500 heuristic comes from here 
+# the < 500 heuristic comes from here:
 # https://provider.www.upenn.edu/computing/da/dw/student/enrollment_section_type.e.html
 COURSE_CREDITS_RAW_SQL = dedent(
     """
