@@ -70,7 +70,7 @@ const PanelContainer = styled.div`
 `;
 
 const PanelTitle = styled.div`
-    font-weight: 500;
+    font-weight: 700;
 `
 
 const SearchPanelHeader = styled(PanelHeader)`

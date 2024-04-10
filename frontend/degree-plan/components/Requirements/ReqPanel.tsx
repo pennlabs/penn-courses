@@ -47,7 +47,7 @@ const DegreeHeaderContainer = styled.div`
 
 const ReqPanelTitle = styled.div`
   font-size: 1.25rem;
-  font-weight: 500; 
+  font-weight: 700; 
 `
 
 const DegreeBody = styled.div`
@@ -82,7 +82,7 @@ const AddButton = styled.div`
 
 const ReqPanelBody = styled(PanelBody)`
   overflow-y: scroll;
-  padding: .75rem;
+  padding: 1.5rem;
 `
 
 interface DegreeHeaderProps {
