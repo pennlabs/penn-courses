@@ -236,7 +236,7 @@ const ScheduleDropdownHeader = styled.div`
 `
 
 const SelectedName = styled.span`
-    font-weight: 500;
+    font-weight: 700;
     min-width: 5rem;
     font-size: 1.25rem;
 `
