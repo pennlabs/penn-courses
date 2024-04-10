@@ -115,7 +115,7 @@ interface DockProps {
 const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
     // const [courseAdded, setCourseAdded] = React.useState(false);
     const { searchPanelOpen, setSearchPanelOpen, setSearchRuleQuery, setSearchRuleId } = useContext(SearchPanelContext)
-    const { createOrUpdate } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
+    const { createOrUpdate, remove } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
     const {data: dockedCourses = [], isLoading} = useSWR<DockedCourse[]>(user ? `/api/degree/docked` : null); 
 
     // Returns a boolean that indiates whether this is the first render
@@ -152,7 +152,6 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
     //     }
     // }, [isMount, dockedCourses]);
 
-    const { remove } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
     const handleRemoveCourse = (full_code: string) => {
       remove(full_code);
     }
@@ -202,7 +201,7 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
                             )}
                             <CloseIcon>
                                 <CourseXButton onClick={(e) => {
-                                    temps.forEach((course) => handleRemoveCourse(course.full_code));
+                                    dockedCourses.forEach((course) => handleRemoveCourse(course.full_code));
                                     e.stopPropagation();
                                 }} hidden={false}/>
                             </CloseIcon>
