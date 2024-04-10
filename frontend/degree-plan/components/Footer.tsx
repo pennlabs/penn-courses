@@ -25,12 +25,10 @@ const Footer = () => (
             Penn Labs
         </Link>
         . 
-        Have feedback about Penn Degree Plan? Let us know: {" "}
-        <Link href="mailto:contact@penncourses.org">contact@penncourses.org</Link>
-        {
-        // TODO: uncomment once out of beta
-        // <Link href="https://airtable.com/appFRa4NQvNMEbWsA/shrzXeuiEFF8OD89P">here!</Link>
+        Have feedback about Penn Degree Plan? Let us know {" "}
+        {// <Link href="mailto:contact@penncourses.org">contact@penncourses.org</Link>
         }
+        <Link href="https://airtable.com/appFRa4NQvNMEbWsA/shr120VUScuNJywyv">here!</Link>
     </Wrapper>
 );
 
