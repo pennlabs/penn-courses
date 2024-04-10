@@ -203,6 +203,12 @@ class RecomputeCourseCreditsTestCase(TestCase):
             "CIS-1210-001", TEST_SEMESTER
         )
 
+        # Implictly testing that we exclude sections with code > 500
+        _, self.section5, _, _ = get_or_create_course_and_section(
+            "CIS-1210-500", TEST_SEMESTER
+        )
+        self.section5.credits = 10.0
+
     def test_null_section_credits(self):
         self.assertIsNone(self.course3.credits)
         self.assertIsNone(self.section4.credits)
@@ -267,3 +273,14 @@ class RecomputeCourseCreditsTestCase(TestCase):
         recompute_course_credits()
         self.course.refresh_from_db()
         self.assertEqual(self.course.credits, 2.00)
+
+    def test_excludes_sections_with_status_besides_closed_and_open(self):
+        _, cancelled_section, _, _ = get_or_create_course_and_section(
+            "CIS-160-102", TEST_SEMESTER
+        )
+        cancelled_section.credits = 10.0
+        cancelled_section.status = "X"
+        recompute_course_credits()
+
+        self.course2.refresh_from_db()
+        self.assertEqual(self.course2.credits, 1.50)

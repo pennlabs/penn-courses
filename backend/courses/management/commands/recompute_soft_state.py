@@ -99,7 +99,8 @@ def recompute_enrollment():
         )
 
 
-# course credits = sum(section credis for all activities)
+# course credits = sum(section credis for all activities for sections below 500)
+# the < 500 heuristic comes from here https://provider.www.upenn.edu/computing/da/dw/student/enrollment_section_type.e.html
 COURSE_CREDITS_RAW_SQL = dedent(
     """
     WITH CourseCredits AS (
@@ -108,6 +109,7 @@ COURSE_CREDITS_RAW_SQL = dedent(
         INNER JOIN (
             SELECT MAX(U1."credits") AS "activity_cus", U1."course_id"
             FROM "courses_section" U1
+            WHERE U1."code" < '500' AND (U1."status" <> 'X' OR U1."status" <> '')
             GROUP BY U1."course_id", U1."activity"
         ) AS U2
         ON U0."id" = U2."course_id"
@@ -125,7 +127,6 @@ COURSE_CREDITS_RAW_SQL = dedent(
 def recompute_course_credits(
     model=Course,  # so this function can be used in migrations (see django.db.migrations.RunPython)
 ):
-
     with connection.cursor() as cursor:
         cursor.execute(COURSE_CREDITS_RAW_SQL)
 
