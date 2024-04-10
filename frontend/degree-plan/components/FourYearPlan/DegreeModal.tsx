@@ -27,7 +27,6 @@ export type ModalKey =
   | "degree-add"
   | "degree-remove"
   | "semester-remove"
-  | "semester-add"
   | null; // null is closed
 
 const getModalTitle = (modalState: ModalKey) => {
@@ -51,7 +50,7 @@ const getModalTitle = (modalState: ModalKey) => {
   }
 };
 
-export const ModalInteriorWrapper = styled.div<{ $row?: boolean }>`
+const ModalInteriorWrapper = styled.div<{ $row?: boolean }>`
   display: flex;
   flex-direction: ${(props) => (props.$row ? "row" : "column")};
   align-items: center;
@@ -75,7 +74,7 @@ const ModalText = styled.div`
   font-size: 0.87rem;
 `;
 
-export const ModalButton = styled.button`
+const ModalButton = styled.button`
   margin: 0px 0px 0px 0px;
   height: 32px;
   width: 5rem;
@@ -86,7 +85,7 @@ export const ModalButton = styled.button`
   border: none;
 `;
 
-export const ButtonRow = styled.div<{ $center?: boolean }>`
+const ButtonRow = styled.div<{ $center?: boolean }>`
   display: flex;
   width: 100%;
   flex-direction: row;
@@ -94,7 +93,7 @@ export const ButtonRow = styled.div<{ $center?: boolean }>`
   gap: 0.5rem;
 `;
 
-export const CancelButton = styled.button`
+const CancelButton = styled.button`
   margin: 0px 0px 0px 0px;
   height: 29px;
   width: 4rem;
@@ -141,12 +140,12 @@ interface RemoveSemesterProps {
 
 interface ModalInteriorProps {
   modalKey: ModalKey;
-  modalObject: DegreePlan | null | RemoveSemesterProps | RemoveDegreeProps | Degree | HTMLElement;
+  modalObject: DegreePlan | null | RemoveSemesterProps | RemoveDegreeProps | Degree;
   setActiveDegreeplan: (arg0: DegreePlan | null) => void;
   close: () => void;
   modalRef: React.RefObject<HTMLSelectElement | null>;
 }
-export const ModalInterior = ({
+const ModalInterior = ({
   modalObject,
   modalKey,
   setActiveDegreeplan,
@@ -391,4 +390,3 @@ const DegreeModal = ({
 );
 
 export default DegreeModal;
-

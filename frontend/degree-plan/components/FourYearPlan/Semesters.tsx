@@ -5,9 +5,7 @@ import { Course, DegreePlan, Fulfillment } from "@/types";
 import useSWR from "swr";
 import React, { useEffect, useState } from "react";
 import Select from "react-select";
-import { ButtonRow, CancelButton, ModalButton, ModalInterior, ModalInteriorWrapper, ModalKey } from "./DegreeModal";
-import ModalContainer from "../common/ModalContainer";
-import { Column } from "@/pages/OnboardingPage";
+import { ModalKey } from "./DegreeModal";
 
 const getNextSemester = (semester: string) => {
   const year = parseInt(semester.slice(0, 4));
@@ -68,42 +66,10 @@ const AddButton = styled.div`
   gap: 1rem;
 `;
 
-const YearInput = styled.input`
-  width: 9rem;
-  height: 2.6rem;
-  background-color: transparent;
-  border-color: #9FB5EF;
-  color: #FF;
-  box-shadow: none;
-  &:hover {
-    borderColor: "#9FB5EF";
-  }
-
-  padding: .75rem;
-  padding-top: .5rem;
-  padding-bottom: .5rem;
-  border-style: solid;
-  border-radius: .25rem;
-  border-width: 1px;
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
-  font-size: 1rem;
-`
-
-export const InputColumn = styled.div`
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  gap: 1rem;
-  padding-right: 2%;
-  margin-bottom: 1rem;
-`;
-
-const selectStyles = {
+const selectStyles = (topOrBottom: boolean) => ({
   control: (provided: any) => ({
     ...provided,
-    width: "100%",
-    height: '2.5rem',
+    width: "130px",
     backgroundColor: "transparent",
     borderColor: "#9FB5EF",
     color: "#C1C1C1",
@@ -111,22 +77,30 @@ const selectStyles = {
     "&:hover": {
       borderColor: "#9FB5EF",
     },
+    ...(
+      topOrBottom ? 
+      { borderBottomLeftRadius: 0, borderBottomRightRadius: 0, borderBottom: 0 } : 
+      { borderTopLeftRadius: 0, borderTopRightRadius: 0 }
+    )
   }),
-
-};
+  singleValue: (provided: any) => ({
+    ...provided,
+    color: "#C1C1C1",
+  }),
+});
 
 // TODO: get a consistent color palette across PCx
-interface ModifySemestersModalProps {
+interface ModifySemestersProps {
   addSemester: (semester: Course["semester"]) => void;
   className?: string;
   semesters: { [semester: string]: Fulfillment[] };
 }
 
-const ModifySemestersModal = ({
+const ModifySemesters = ({
   addSemester,
   semesters,
   className,
-}: ModifySemestersModalProps) => {
+}: ModifySemestersProps) => {
   const latestSemester =
     Object.keys(semesters).sort((a, b) => a.localeCompare(b)).pop() || "2026A"; // TODO: Change fallback value to start semester (based on onboarding?)
 
@@ -152,32 +126,40 @@ const ModifySemestersModal = ({
     { value: "C", label: "Fall" },
   ];
 
+  // TODO: Un-hardcode years
+  const yearOptions = [
+    { value: "2024", label: "2024" },
+    { value: "2025", label: "2025" },
+    { value: "2026", label: "2026" },
+    { value: "2027", label: "2027" },
+  ];
+
   return (
-    <ModalInteriorWrapper $row={false}>
-      <InputColumn>
-        <Select
-          className="basic-single"
-          classNamePrefix="select"
-          styles={selectStyles}
-          options={seasonOptions}
-          value={seasonOptions.find((option) => option.value === selectedSeason)}
-          onChange={(option) => setSelectedSeason(option ? option.value : selectedSeason)}
-        />
-        <YearInput
-          value={selectedYear}
-          type="number"
-          onChange={(e) => setSelectedYear(e.target.value)}
-        />
-      </InputColumn>
-      <ButtonRow>
-        <CancelButton onClick={close}>Cancel</CancelButton>
-        <ModalButton
-          onClick={handleAddSemester}
-        >
-          Add
-        </ModalButton>
-      </ButtonRow>
-    </ModalInteriorWrapper >
+    // TODO: add a modal for this
+    <AddSemesterContainer className={className}>
+      <AddButtonContainer role="button" onClick={handleAddSemester}>
+        <AddButton>
+          <PlusIcon>
+            <i className="fas fa-plus fa-lg"></i>
+          </PlusIcon>
+          <div>Add Semester</div>
+        </AddButton>
+      </AddButtonContainer>
+
+      <Select
+        styles={selectStyles(true)}
+        options={seasonOptions}
+        value={seasonOptions.find((option) => option.value === selectedSeason)}
+        onChange={(option) => setSelectedSeason(option ? option.value : selectedSeason)}
+      />
+
+      <Select
+        styles={selectStyles(false)}
+        options={yearOptions}
+        value={yearOptions.find((option) => option.value === selectedYear)}
+        onChange={(option) => setSelectedYear(option ? option.value : selectedYear)}
+      />
+    </AddSemesterContainer>
   );
 };
 
@@ -200,8 +182,6 @@ interface SemestersProps {
   setEditMode: (arg0: boolean) => void;
   isLoading: boolean;
   currentSemester?: string;
-  showAddSemModal: boolean;
-  setShowAddSemModal: (arg0: boolean) => void;
 }
 
 const Semesters = ({
@@ -212,8 +192,6 @@ const Semesters = ({
   setModalKey,
   setModalObject,
   setEditMode,
-  showAddSemModal,
-  setShowAddSemModal,
   currentSemester,
   isLoading,
 }: SemestersProps) => {
@@ -236,7 +214,6 @@ const Semesters = ({
   }>({});
   const addSemester = (semester: string) => {
     if (!semesters[semester]) setSemesters({ ...semesters, [semester]: [] });
-    setShowAddSemModal(false);
   };
 
   const removeSemester = (semester: string) => {
@@ -270,6 +247,7 @@ const Semesters = ({
   useEffect(() => {
     if (Object.keys(semesters).length == 0 && !isLoading) setEditMode(true);
     // if finish loading and no semesters, we go to edit mode for the user to add new semesters
+    else setEditMode(false);
     if (!activeDegreeplan) return;
     if (typeof window !== "undefined" && Object.keys(semesters).length) {
       localStorage.setItem(
@@ -320,16 +298,8 @@ const Semesters = ({
                 currentSemester={currentSemester}
               />
             ))}
-      {showAddSemModal && (
-        <ModalContainer
-        title={'Add semester'}
-        close={() => {setModalKey(null); setShowAddSemModal(false);}}
-        modalKey={'semester-add'}
-      >
-        {/*
-        // @ts-ignore */}
-          <ModifySemestersModal addSemester={addSemester} semesters={semesters} />
-      </ModalContainer>
+      {editMode && (
+        <ModifySemesters addSemester={addSemester} semesters={semesters} />
       )}
     </SemestersContainer>
   );
