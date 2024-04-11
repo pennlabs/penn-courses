@@ -66,31 +66,10 @@ const AddButton = styled.div`
   gap: 1rem;
 `;
 
-const YearInput = styled.input`
-  width: 9rem;
-  background-color: transparent;
-  border-color: #9FB5EF;
-  color: #C1C1C1;
-  box-shadow: none;
-  &:hover {
-    borderColor: "#9FB5EF";
-  }
-
-  padding: .75rem;
-  padding-top: .5rem;
-  padding-bottom: .5rem;
-  border-style: solid;
-  border-radius: .25rem;
-  border-width: 1px;
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
-  font-size: 1rem;
-`
-
 const selectStyles = (topOrBottom: boolean) => ({
   control: (provided: any) => ({
     ...provided,
-    width: "9rem",
+    width: "130px",
     backgroundColor: "transparent",
     borderColor: "#9FB5EF",
     color: "#C1C1C1",
@@ -98,9 +77,11 @@ const selectStyles = (topOrBottom: boolean) => ({
     "&:hover": {
       borderColor: "#9FB5EF",
     },
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
-    borderBottom: 0
+    ...(
+      topOrBottom ? 
+      { borderBottomLeftRadius: 0, borderBottomRightRadius: 0, borderBottom: 0 } : 
+      { borderTopLeftRadius: 0, borderTopRightRadius: 0 }
+    )
   }),
   singleValue: (provided: any) => ({
     ...provided,
@@ -145,6 +126,14 @@ const ModifySemesters = ({
     { value: "C", label: "Fall" },
   ];
 
+  // TODO: Un-hardcode years
+  const yearOptions = [
+    { value: "2024", label: "2024" },
+    { value: "2025", label: "2025" },
+    { value: "2026", label: "2026" },
+    { value: "2027", label: "2027" },
+  ];
+
   return (
     // TODO: add a modal for this
     <AddSemesterContainer className={className}>
@@ -164,10 +153,11 @@ const ModifySemesters = ({
         onChange={(option) => setSelectedSeason(option ? option.value : selectedSeason)}
       />
 
-      <YearInput
-        value={selectedYear}
-        type="number"
-        onChange={(e) => setSelectedYear(e.target.value)}
+      <Select
+        styles={selectStyles(false)}
+        options={yearOptions}
+        value={yearOptions.find((option) => option.value === selectedYear)}
+        onChange={(option) => setSelectedYear(option ? option.value : selectedYear)}
       />
     </AddSemesterContainer>
   );
@@ -257,6 +247,7 @@ const Semesters = ({
   useEffect(() => {
     if (Object.keys(semesters).length == 0 && !isLoading) setEditMode(true);
     // if finish loading and no semesters, we go to edit mode for the user to add new semesters
+    else setEditMode(false);
     if (!activeDegreeplan) return;
     if (typeof window !== "undefined" && Object.keys(semesters).length) {
       localStorage.setItem(

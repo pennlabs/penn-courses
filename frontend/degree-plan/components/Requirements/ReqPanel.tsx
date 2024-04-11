@@ -216,7 +216,7 @@ const Degree = ({degree, rulesToFulfillments, activeDegreeplan, editMode, setMod
       <DegreeBody>
         {degree && degree.rules.map((rule: any) => (
           <RuleComponent 
-          {...computeRuleTree({ activeDegreePlanId: activeDegreeplan.id, rule, rulesToFulfillments })}
+            {...computeRuleTree({ activeDegreePlanId: activeDegreeplan.id, rule, rulesToFulfillments })}
           />
         ))}
       </DegreeBody>}

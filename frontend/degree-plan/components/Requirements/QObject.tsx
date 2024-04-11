@@ -72,7 +72,7 @@ const Attributes = ({ attributes }: { attributes: string[] }) => {
     </AttributeWrapper>
 }
 
-const SearchConditionWrapper = styled(BaseCourseContainer)`
+const SearchConditionWrapper = styled(BaseCourseContainer)<{$isSearched: boolean}>`
     display: flex;
     flex-wrap: wrap;
     gap: .5rem;
@@ -80,6 +80,9 @@ const SearchConditionWrapper = styled(BaseCourseContainer)`
     box-shadow: 0px 0px 14px 2px rgba(0, 0, 0, 0.05);
     cursor: pointer;
     padding: .5rem .75rem;
+    ${props => !!props.$isSearched && `
+        box-shadow: 0px 0px 10px 2px var(--primary-color-dark);
+    `}
 `
 
 const Wrap = styled.span`
@@ -176,15 +179,17 @@ interface SearchConditionProps extends SearchConditionInnerProps {
     ruleIsSatisfied: boolean,
     ruleId: Rule["id"];
     ruleQuery: string;
-    activeDegreeplanId: DegreePlan["id"]
+    activeDegreeplanId: DegreePlan["id"];
 }
 const SearchCondition = ({ ruleId, ruleQuery, fulfillments, ruleIsSatisfied, q, activeDegreeplanId}: SearchConditionProps) => {
-    const { setSearchPanelOpen, setSearchRuleQuery, setSearchRuleId, setSearchFulfillments } = useContext(SearchPanelContext);
+    const { setSearchPanelOpen, searchRuleId, setSearchRuleQuery, setSearchRuleId, setSearchFulfillments } = useContext(SearchPanelContext);
 
     return (
         <SearchConditionWrapper 
             $isDisabled={false}
             $isUsed={false}
+            $isSearched={searchRuleId == ruleId}
+            
         >
             <SearchConditionInner q={q} />
             <DarkGrayIcon onClick={() => {
@@ -261,7 +266,7 @@ interface QObjectProps {
     satisfied: boolean;
     activeDegreePlanId: number;
 }
-const QObject = ({ q, fulfillments, rule, satisfied, activeDegreePlanId }: QObjectProps) => {
+const QObject = ({ q, fulfillments, rule, satisfied, activeDegreePlanId}: QObjectProps) => {
 
     // recursively render
     switch (q.type) {
@@ -300,7 +305,14 @@ const QObject = ({ q, fulfillments, rule, satisfied, activeDegreePlanId }: QObje
             const displaySearchConditions = searchConditions.map(search => {
                 const courses = Array.from(fulfillmentsMap.values())
                 fulfillmentsMap.clear()
-                return <SearchCondition fulfillments={courses} q={search.q} ruleIsSatisfied={satisfied} ruleId={rule.id} ruleQuery={rule.q} activeDegreeplanId={activeDegreePlanId}/>
+                return <SearchCondition 
+                    fulfillments={courses} 
+                    q={search.q} 
+                    ruleIsSatisfied={satisfied} 
+                    ruleId={rule.id} 
+                    ruleQuery={rule.q} 
+                    activeDegreeplanId={activeDegreePlanId} 
+                />
             })
 
             return <Row $wrap>
@@ -310,7 +322,14 @@ const QObject = ({ q, fulfillments, rule, satisfied, activeDegreePlanId }: QObje
                 )}
                 </Row>
         case "SEARCH":
-            return <SearchCondition q={q.q} ruleIsSatisfied={satisfied} fulfillments={fulfillments} ruleId={rule.id} ruleQuery={rule.q} activeDegreeplanId={activeDegreePlanId}/>;
+            return <SearchCondition 
+                q={q.q} 
+                ruleIsSatisfied={satisfied} 
+                fulfillments={fulfillments} 
+                ruleId={rule.id} 
+                ruleQuery={rule.q} 
+                activeDegreeplanId={activeDegreePlanId}
+                />;
         case "COURSE":
             const [fulfillment] = fulfillments.filter(fulfillment => fulfillment.full_code == q.full_code && (!q.semester || q.semester === fulfillment.semester))
             return <CourseInReq course={{...q, rules: fulfillment ? fulfillment.rules : []}} fulfillment={fulfillment} isDisabled={satisfied && !fulfillment} isUsed={!!fulfillment} rule_id={rule.id} activeDegreePlanId={activeDegreePlanId}/>;
@@ -352,7 +371,13 @@ const RuleLeaf = ({ q_json, fulfillmentsForRule, rule, satisfied, activeDegreePl
 
     return (
         <RuleLeafWrapper $wrap>
-            <QObject q={q_json} fulfillments={fulfillmentsForRule} rule={rule} satisfied={satisfied} activeDegreePlanId={activeDegreePlanId} />
+            <QObject 
+                q={q_json} 
+                fulfillments={fulfillmentsForRule} 
+                rule={rule} 
+                satisfied={satisfied} 
+                activeDegreePlanId={activeDegreePlanId} 
+                />
         </RuleLeafWrapper>
     )
 }

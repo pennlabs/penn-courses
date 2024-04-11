@@ -40,7 +40,7 @@ const RuleTitle = styled.div`
 `
 
 const RuleLeafWrapper = styled.div<{$isDroppable:boolean, $isOver: boolean}>`
-  margin: .25rem;
+  padding: .5rem .5rem .5rem 0rem;
   margin-left: 0;
   display: flex;
   justify-content: space-between;
@@ -77,7 +77,7 @@ const Indented = styled.div`
 const Column = styled.div`
   display: flex;
   flex-direction: column;
-  gap: .1rem;
+  gap: 0rem;
 `
 
 const PickNWrapper = styled.div`
@@ -101,7 +101,8 @@ const RuleLeafLabel = styled.div`
 `
 
 const RuleLeafContainer = styled(Column)`
-  margin-top: 0.25rem;
+  margin: 0.1rem;
+  }
 `
 
 
@@ -147,6 +148,7 @@ export const SkeletonRule: React.FC<React.PropsWithChildren> = ({ children }) =>
 /**
  * Recursive component to represent a rule.
  */
+
 const RuleComponent = (ruleTree : RuleTree) => {
     const { type, activeDegreePlanId, rule, progress } = ruleTree; 
     const satisfied = progress === 1;
@@ -181,7 +183,13 @@ const RuleComponent = (ruleTree : RuleTree) => {
           <RuleLeafContainer>
             <RuleLeafLabel>{rule.title}</RuleLeafLabel>
             <RuleLeafWrapper $isDroppable={canDrop} $isOver={isOver} ref={drop}>
-              <RuleLeaf q_json={rule.q_json} rule={rule} fulfillmentsForRule={fulfillments} satisfied={satisfied} activeDegreePlanId={activeDegreePlanId}/>
+              <RuleLeaf 
+                q_json={rule.q_json} 
+                rule={rule} 
+                fulfillmentsForRule={fulfillments} 
+                satisfied={satisfied} 
+                activeDegreePlanId={activeDegreePlanId}
+                />
               <Row>
               {!!satisfied && <SatisfiedCheck />}
               <Column>
@@ -210,7 +218,7 @@ const RuleComponent = (ruleTree : RuleTree) => {
         </PickNTitle>
             {children.map((ruleTree) => (
               <div>
-                <RuleComponent {...ruleTree} />
+                <RuleComponent {...ruleTree}/>
               </div>
             ))}
       </PickNWrapper>
@@ -239,7 +247,7 @@ const RuleComponent = (ruleTree : RuleTree) => {
             <Column>
               {children.map((ruleTree) => (
                 <div>
-                  <RuleComponent {...ruleTree} />
+                  <RuleComponent {...ruleTree}/>
                 </div>
               ))}
             </Column>
