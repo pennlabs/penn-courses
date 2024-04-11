@@ -99,7 +99,10 @@ class FulfillmentSerializer(serializers.ModelSerializer):
             Course.with_reviews.filter(
                 full_code=obj.full_code, semester__lte=get_current_semester()
             )
-            .order_by("-semester")
+            .order_by(
+                "credits",  # prefer that credits are not None
+                "-semester"
+            )
             .first()
         )
         if course is not None:
