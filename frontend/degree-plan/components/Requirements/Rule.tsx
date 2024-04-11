@@ -8,34 +8,46 @@ import { useDrop } from 'react-dnd';
 import { ItemTypes } from '../dnd/constants';
 import { DarkBlueBackgroundSkeleton } from "../FourYearPlan/PanelCommon";
 import { DegreeYear, RuleTree } from './ReqPanel';
-import assert from 'assert';
 import SatisfiedCheck from '../FourYearPlan/SatisfiedCheck';
 
-const RuleTitleWrapper = styled.div`
-    background-color: var(--primary-color);
+const RuleTitleWrapper = styled.div<{
+  $depth: number  // depth of the nesting of the rule
+}>`
+    background-color: ${({ $depth }) => (
+      $depth % 2 == 0 ?
+      "var(--primary-color)"
+      : "var(--pdp-green-light)"
+    )};
     position: relative;
     border-radius: var(--req-item-radius);
 `
 
-const ProgressBar = styled.div<{$progress: number}>`
+const RuleTitleProgressBar = styled.div<{
+  $progress: number,
+  $depth: number  // depth of the nesting of the rule
+}>`
     width: ${props => props.$progress * 100}%;
     height: 100%;
     position: absolute;
-    background-color: var(--primary-color-dark);
+    background-color: ${({ $depth }) => (
+      $depth % 2 == 0 ?
+      "var(--primary-color-dark)"
+      : "var(--pdp-green-dark)"
+    )};
     border-top-left-radius: .3rem;
     border-bottom-left-radius: .3rem;
 `
 
-const RuleTitle = styled.div`
+const RuleTitle = styled.div<{ $depth: number }>`
   position: relative;
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: ${({ $depth }) => $depth > 0 ? 500 : 600};
   display: flex;
   justify-content: space-between;
   align-items: center;
   width: 100%;
   color: #575757;
-  padding: 0.5rem 1.25rem;
+  padding: ${({ $depth }) => 0.9 - .3 * $depth}rem 1.25rem;
   margin-bottom: 0.5rem;
 `
 
@@ -70,7 +82,7 @@ const Row = styled.div`
 `
 
 const Indented = styled.div`
-  margin-left: .75rem;
+  margin-left: .3rem;
   margin-bottom: .5rem;
 `
 
@@ -125,9 +137,9 @@ export const SkeletonRule: React.FC<React.PropsWithChildren> = ({ children }) =>
           </div>
       </RuleLeafWrapper>
       :
-      <RuleTitleWrapper>
-        <ProgressBar $progress={0}></ProgressBar>
-        <RuleTitle>
+      <RuleTitleWrapper $depth={1}>
+        <RuleTitleProgressBar $progress={0} $depth={1}></RuleTitleProgressBar>
+        <RuleTitle $depth={1}>
           <Row>
             <DarkBlueBackgroundSkeleton width="10em" />
             <DarkBlueBackgroundSkeleton width="7em" />
@@ -219,9 +231,9 @@ const RuleComponent = (ruleTree : RuleTree) => {
 
     return (
       <>
-        <RuleTitleWrapper onClick={() => setCollapsed(!collapsed)}>
-          <ProgressBar $progress={progress}></ProgressBar>
-          <RuleTitle>
+        <RuleTitleWrapper $depth={ruleTree.depth} onClick={() => setCollapsed(!collapsed)}>
+          <RuleTitleProgressBar $progress={progress} $depth={ruleTree.depth}></RuleTitleProgressBar>
+          <RuleTitle $depth={ruleTree.depth}>
             <div>
               {rule.title}
               {" "}

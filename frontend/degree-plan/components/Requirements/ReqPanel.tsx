@@ -37,11 +37,11 @@ const DegreeHeaderContainer = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: 1.1rem;
+  font-weight: 600;
   background-color: var(--primary-color-xx-dark);
   color: #FFF;
-  padding: 0.75rem 1.25rem;
+  padding: 1rem 1.25rem;
   border-radius: var(--req-item-radius);
 `
 
@@ -138,6 +138,7 @@ interface RuleTreeInternalNode extends RuleTreeBaseNode {
   type: "INTERNAL_NODE";
   num?: number;
   children: RuleTree[];
+  depth: number;
 }
 export type RuleTree = RuleTreeLeaf | RuleTreeInternalNode;
 
@@ -146,8 +147,9 @@ interface RuleProps {
     rule: Rule;
     rulesToFulfillments: { [ruleId: string]: Fulfillment[] };
     activeDegreePlanId: number;
+    depth: number;
 }
-const computeRuleTree = ({ activeDegreePlanId, rule, rulesToFulfillments }: RuleProps): RuleTree => {
+const computeRuleTree = ({ activeDegreePlanId, rule, rulesToFulfillments, depth = 0 }: RuleProps): RuleTree => {
   if (rule.q) { // Rule leaf
     const fulfillmentsForRule: Fulfillment[] = rulesToFulfillments[rule.id] || [];
     const cus = fulfillmentsForRule.reduce((acc, f) => acc + (f.course?.credits || 1), 0); // default to 1 cu 
@@ -156,9 +158,9 @@ const computeRuleTree = ({ activeDegreePlanId, rule, rulesToFulfillments }: Rule
     return { activeDegreePlanId, type: "LEAF", progress, cus, num, rule, fulfillments: fulfillmentsForRule }
   }
   
-  const children = rule.rules.map((child) => computeRuleTree({ activeDegreePlanId, rule: child, rulesToFulfillments })) 
+  const children = rule.rules.map((child) => computeRuleTree({ activeDegreePlanId, rule: child, rulesToFulfillments, depth: depth + 1 })) 
   const progress = children.reduce((acc, { progress }) => (progress == 1 ? 1 : 0) + acc, 0) / Math.min(children.length, rule.num || Infinity);
-  return { num: rule.num || undefined, activeDegreePlanId, type: "INTERNAL_NODE", children, progress, rule } // internal node
+  return { num: rule.num || undefined, activeDegreePlanId, type: "INTERNAL_NODE", children, progress, rule, depth } // internal node
 }
 
 
