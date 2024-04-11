@@ -34,7 +34,6 @@ const CoursesPlanned = ({fulfillments, removeCourse, className, semester, isLoad
             {fulfillments.map(fulfillment => 
                 <CourseInPlan key={fulfillment.full_code} semester={semester} course={fulfillment} removeCourse={removeCourse} isDisabled={false}/>
             )}
-            {/* <PlannedCourseContainer $isDepressed={true}/> */}
         </PlannedCoursesContainer>
     )
 }

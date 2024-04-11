@@ -7,7 +7,6 @@ import { Icon } from "../common/bulma_derived_components";
 export const PanelTopBarIcon = styled(Icon)`
     width: 1rem;
     height: 1rem;
-    color: #FFFFFF;
     flex-shrink: 0;
 `;
 
@@ -28,10 +27,8 @@ export const PanelTopBarButton = styled.button`
 
     font-size: 1rem;
     font-weight: 500;
-   
-    background: var(--primary-color-xx-dark); 
     border-radius: 5px;
-    color: #FFFFFF;
+    color: var(--primary-color-xxx-dark);
 `;
 export const DarkBlueBackgroundSkeleton: React.FC<{ width?: string; }> = (props) => (
     <Skeleton
@@ -44,6 +41,7 @@ export const PanelHeader = styled.div`
     justify-content: space-between;
     align-items: center;
     background-color: var(--primary-color);
+    color: var(--primary-color-ultra-dark);
     padding: 0.5rem 1rem;
     flex-grow: 0;
     font-weight: 300;

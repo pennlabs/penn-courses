@@ -18,6 +18,7 @@ from degree.models import (
     SatisfactionStatus,
 )
 from degree.serializers import SimpleCourseSerializer
+from tests.courses.util import fill_course_soft_state
 
 
 TEST_SEMESTER = "2023C"
@@ -98,6 +99,7 @@ class FulfillmentViewsetTest(TestCase):
         self.cis_1930, self.cis_1930_001, _, _ = get_or_create_course_and_section(
             "CIS-1920-001", TEST_SEMESTER, course_defaults={"credits": 1}
         )
+        fill_course_soft_state()
 
         self.degree = Degree.objects.create(program="EU_BSE", degree="BSE", major="CIS", year=2023)
         self.parent_rule = Rule.objects.create()
