@@ -8,7 +8,7 @@ interface AlertButtonProps {
     inAlerts: boolean;
 }
 
-const Bell = styled.button`
+const Button = styled.button`
     color: gray;
     padding: 0;
     border: none;
@@ -21,7 +21,7 @@ const Bell = styled.button`
 
 const AlertButton: React.FC<AlertButtonProps> = ({ alerts, inAlerts }) => {
     return(
-        <Bell
+        <Button
             role="button"
             onClick={(event) => {
                 event.stopPropagation();
@@ -36,7 +36,7 @@ const AlertButton: React.FC<AlertButtonProps> = ({ alerts, inAlerts }) => {
                 style={{ fontSize: "1rem" }}
                 className={inAlerts ? "fas fa-bell": "far fa-bell"}
             />
-        </Bell>
+        </Button>
     )
 }
 

@@ -13,7 +13,6 @@ const CourseDetailsContainer = styled.div`
     flex-grow: 0;
     display: flex;
     flex-direction: column;
-    max-width: 70%;
     text-align: left;
     align-items: left;
 `;
@@ -108,14 +107,10 @@ const AlertItem = styled.div<{ isMobile: boolean }>`
     transition: 250ms ease background;
     user-select: none;
 
-    display: ${(props) => (props.isMobile ? "grid" : "flex")};
-    flex-direction: row;
-    justify-content: space-around;
+    display: grid;
     padding: 0.8rem;
     border-bottom: 1px solid #e5e8eb;
-    grid-template-columns: ${(props) =>
-        props.isMobile ? "20% 50% 15% 15%" : ""};
-
+    grid-template-columns: 20% 50% 15% 15%;
     * {
         user-select: none;
     }
@@ -142,15 +137,10 @@ const AlertSection: React.FC<AlertSectionProps> = ({
             aria-checked="false"
             isMobile={isMobile}
         >
-            <div style={{
-                alignItems: "center",
-                display: "flex",
-            }}>
                 <AlertButton
                     alerts={alerts}
                     inAlerts={inAlerts}
                 />
-            </div>
             <CourseDetails alert={alert} />
             <CourseInfoButton courseInfo={courseInfo} />
             <CourseTrashCan remove={(event) => {

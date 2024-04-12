@@ -850,7 +850,6 @@ export const deleteAlertItem = (sectionId, alertId) => (dispatch) => {
             dispatch(deleteAlertFrontend(sectionId));
         }
     });
-    //     // .catch((error) => console.log(error));
 };
 
 export const fetchAlerts = () => (dispatch) => {
@@ -929,7 +928,6 @@ export const updateContactInfo = (contactInfo) => (dispatch) => {
         if (!res.ok) {
             throw new Error(JSON.stringify(res));
         } else {
-            // update on front end
             dispatch(updateContactInfoFrontend(profile));
         }
     });

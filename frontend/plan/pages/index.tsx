@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import Head from "next/head";
 import { Provider } from "react-redux";
-import { applyMiddleware, createStore } from "redux";
+import { applyMiddleware, compose, createStore } from "redux";
 import thunkMiddleware from "redux-thunk";
 import SwipeableViews from "react-swipeable-views";
 import Tabs from "@material-ui/core/Tabs";
@@ -95,7 +95,7 @@ const Toast = styled(ToastContainer)`
     }
 `;
 
-const CartTab = styled.h3<{ active: boolean }>`
+const CartTab = styled.a<{ active: boolean }>`
     display: inline-flex;
     font-weight: bold;
     margin-bottom: 0.5rem;
@@ -123,6 +123,15 @@ export function showToast(text: string, error: boolean) {
     }
 }
 
+enum TabItem {
+    Cart = "cart-tab",
+    Alerts = "alerts-tab"
+}
+
+const tabItems = [
+    { item: TabItem.Cart, name: "Cart", component: Cart},
+    { item: TabItem.Alerts, name: "Alerts", component: Alerts},]
+
 function Index() {
     const router = useRouter();
     
@@ -146,12 +155,11 @@ function Index() {
     const scrollTop = () => window.scrollTo(0, 0);
     const isExpanded = view === 1;
 
-    // cart vs alerts
-    const [showAlerts, setShowAlerts] = useState(false);
+    const [selectedTab, setSelectedTab] = useState<TabItem>(TabItem.Cart);
     useEffect(() => {
-        const hash = router.asPath.split("#")[1];
-        setShowAlerts(hash === "alerts");
-    }, [setShowAlerts]);
+        setSelectedTab(router.asPath.split("#")[1] === TabItem.Alerts ? TabItem.Alerts : TabItem.Cart);
+    }, []);
+    
 
     const [showLoginModal, setShowLoginModal] = useState(true);
 
@@ -202,6 +210,8 @@ function Index() {
             });
         }
     }, [store]);
+
+    const TabContent = tabItems.find(({item}) => item === selectedTab)?.component
 
     const headPreamble = (
         <Head>
@@ -420,29 +430,17 @@ function Index() {
                                 }}
                             >
                                 <div>
+                                    {tabItems.map(({item, name}) => (
                                     <CartTab
-                                        active={!showAlerts}
-                                        onClick={() => {
-                                            setShowAlerts(false);
-                                            router.replace("/#cart", undefined, { shallow: true })
-                                        }}
+                                        key={item}
+                                        href={`/#${item}`}
+                                        active={selectedTab === item}
+                                        onClick={() => setSelectedTab(item)}
                                     >
-                                        Cart
-                                    </CartTab>
-                                    <CartTab
-                                        active={showAlerts}
-                                        onClick={() => {
-                                            setShowAlerts(true);
-                                            router.replace("/#alerts", undefined, { shallow: true })
-                                        }}
-                                    >
-                                        Alerts
-                                    </CartTab>
+                                        {name}
+                                        </CartTab>))}
                                 </div>
-                                {showAlerts ? 
-                                    <Alerts mobileView={false} /> :
-                                    <Cart mobileView={false} />
-                                }
+                                {typeof TabContent !== "undefined" && <TabContent mobileView={false} />}
                             </div>
                             <div
                                 style={{
