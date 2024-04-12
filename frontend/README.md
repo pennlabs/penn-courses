@@ -8,7 +8,7 @@ houses 3 projects, namely `Penn Course Alert`, `Penn Course Plan` and
 that are used in both PCA and PCP. 
 
 ## Setting Up Development Environment 
-Make sure you have `node` (with a version that is <= 16.9.0) and `yarn` installed.
+Make sure you have `node` (with a version that is ^18) and `yarn` installed.
 We use [Yarn Workspaces](https://classic.yarnpkg.com/en/docs/workspaces/) 
 to handle development dependency installation/resolution. In 
 `frontend/package.json`, we have defined the directories of each project 

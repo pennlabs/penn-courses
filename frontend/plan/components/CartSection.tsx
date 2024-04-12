@@ -126,8 +126,8 @@ interface CartSectionProps {
     lastAdded: boolean;
 }
 
-const CourseCartItem = styled.div<{ lastAdded: boolean; isMobile: boolean }>`
-    background: ${(props) => (props.lastAdded ? "#e1e3f7" : "white")};
+const CourseCartItem = styled.div<{ $lastAdded: boolean; $isMobile: boolean }>`
+    background: ${(props) => (props.$lastAdded ? "#e1e3f7" : "white")};
     transition: 250ms ease background;
     cursor: pointer;
     user-select: none;
@@ -166,8 +166,8 @@ const CartSection = ({
         role="switch"
         id={code}
         aria-checked="false"
-        lastAdded={lastAdded}
-        isMobile={isMobile}
+        $lastAdded={lastAdded}
+        $isMobile={isMobile}
         onClick={toggleCheck}
     >
         <CourseCheckbox checked={checked} />

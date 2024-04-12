@@ -82,7 +82,7 @@ const ScheduleBox = styled.div`
     }
 `;
 
-const ScheduleContents = styled.div`
+const ScheduleContents = styled.div<{ $notEmpty: boolean, $dims: any }>`
     display: grid;
     height: calc(100% - 10em);
     margin-bottom: 5px;
@@ -92,22 +92,16 @@ const ScheduleContents = styled.div`
 
     background-color: white;
     font-family: "Inter";
-    padding: ${({ notEmpty, dims }: { notEmpty: boolean; dims: any }) =>
-        notEmpty ? dims.padding : "1rem"};
+    padding: ${({ $notEmpty, $dims }) =>
+        $notEmpty ? $dims.padding : "1rem"};
     grid-template-columns: ${({
-            notEmpty,
-            dims,
-        }: {
-            notEmpty: boolean;
-            dims: any;
-        }) => (notEmpty ? dims.gridTemplateColumns : "none")};
+            $notEmpty,
+            $dims,
+        }) => ($notEmpty ? $dims.gridTemplateColumns : "none")};
     grid-template-rows: ${({
-            notEmpty,
-            dims,
-        }: {
-            notEmpty: boolean;
-            dims: any;
-        }) => (notEmpty ? dims.gridTemplateRows : "none")};
+            $notEmpty,
+            $dims,
+        }) => ($notEmpty ? $dims.gridTemplateRows : "none")};
 
     @media only screen and (max-width: 480px) {
         height: 100%;
@@ -266,7 +260,7 @@ const ScheduleDisplay = ({
 
     return (
         <ScheduleBox>
-            <ScheduleContents dims={dims} notEmpty={notEmpty}>
+            <ScheduleContents $dims={dims} $notEmpty={notEmpty}>
                 {notEmpty && <Days offset={colOffset} weekend={showWeekend} />}
                 {notEmpty && (
                     <Times

@@ -2,7 +2,7 @@ import React from "react";
 import "react-app-polyfill/ie11";
 import "react-app-polyfill/stable";
 
-import ReactDOM from "react-dom";
+import { createRoot } from "react-dom/client";
 import { Route, Switch, BrowserRouter as Router } from "react-router-dom";
 import {
   AboutPage,
@@ -20,7 +20,9 @@ if (window.location.hostname !== "localhost") {
   ).install();
 }
 
-ReactDOM.render(
+const container = document.getElementById("root");
+const root = createRoot(container);
+root.render(
   <Router>
     <Switch>
       <Route exact path="/" component={ReviewPage} />
@@ -34,6 +36,5 @@ ReactDOM.render(
       <Route component={ErrorPage} />
     </Switch>
     <GoogleAnalytics />
-  </Router>,
-  document.getElementById("root")
+  </Router>
 );
