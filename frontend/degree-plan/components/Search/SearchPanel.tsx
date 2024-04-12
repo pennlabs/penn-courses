@@ -81,10 +81,10 @@ const SearchPanelHeader = styled(PanelHeader)`
 
 interface SearchPanelProp {
     activeDegreeplanId: DegreePlan["id"] | null;
-    setSearchedRuleId: (arg0: number) => void;
+    setSearchRuleId: (arg0: number | null) => void;
 }
 
-export const SearchPanel = ({ activeDegreeplanId, setSearchedRuleId }: SearchPanelProp) => {
+export const SearchPanel = ({ activeDegreeplanId, setSearchRuleId }: SearchPanelProp) => {
     const { 
         setSearchPanelOpen, 
         searchRuleId: ruleId, 
@@ -103,7 +103,7 @@ export const SearchPanel = ({ activeDegreeplanId, setSearchedRuleId }: SearchPan
     const handleCloseSearch = () => {
         setQueryString(""); 
         setSearchPanelOpen(false);
-        setSearchedRuleId(-1);
+        setSearchRuleId(null);
     }
 
     return (
@@ -127,6 +127,7 @@ export const SearchPanel = ({ activeDegreeplanId, setSearchedRuleId }: SearchPan
                         value={queryString}
                         onChange={(e) => {setQueryString(e.target.value)}}
                         autoComplete="off"
+                        // placeholder={!ruleId ? "Search for a course!" : `Filtering for ${ruleQuery ? ruleQuery : 'a requirement'}`}
                         placeholder={!ruleId ? "Search for a course!" : `Filtering for a requirement`}
                     />
                 </SearchContainer>

@@ -149,13 +149,6 @@ export default function Course({
     isStar,
 }: CourseProps) {
     /** React dnd */
-    // const [{ isDragging }, drag, dragPreview] = useDrag<DnDCourse>(() => ({
-    //     type: ItemTypes.COURSE_IN_REQ,
-    //     item: {full_code: course.id, semester:-1, rule_id: ruleId},
-    //     collect: (monitor) => ({
-    //         isDragging: !!monitor.isDragging(),
-    //     })
-    // }))
     const [{ isDragging }, drag] = useDrag<DnDCourse, never, { isDragging: boolean }>(() => ({
         type: ItemTypes.COURSE_IN_PLAN,
         item: {full_code: course.id},
@@ -171,6 +164,8 @@ export default function Course({
             <ReviewPanelTrigger full_code={course.id} triggerType="click">
                 <CourseContainer onMouseEnter={() => setIsMouseOver(true)} onMouseLeave={() => setIsMouseOver(false)}>
                     <CourseInfoContainer
+                        ref={drag} 
+                        className="draggable"
                         role="button"
                     >   
                         <CourseIdentityContainer >

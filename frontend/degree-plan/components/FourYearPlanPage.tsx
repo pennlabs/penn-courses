@@ -42,7 +42,11 @@ const PanelWrapper = styled(Pane)`
   height: 100%;
   display: flex;
   flex-direction: row;
+<<<<<<< HEAD
   gap: 0.8rem;
+=======
+  gap: 1rem;
+>>>>>>> 2744e72b (resolve merge conflict)
 `
 
 const PanelInteriorWrapper = styled.div<{ $maxWidth?: string; $minWidth?: string }>`
@@ -160,11 +164,10 @@ const FourYearPlanPage = ({
                 // @ts-ignore */}
                 <SplitPane
                   split="vertical"
-                  // maxSize={windowWidth ? windowWidth * 0.60 : 1000}
                   maxSize={searchPanelOpen ? 
-                            (windowWidth ? windowWidth : 1000) * 0.5 
-                          : (windowWidth ? windowWidth : 1000) * 0.6}
-                  defaultSize="50%"
+                    (windowWidth ? windowWidth : 1000) * 0.45 
+                  : (windowWidth ? windowWidth : 1000) * 0.6}
+                  defaultSize="60%"
                   style={{
                     padding: "1.5rem",
                     paddingBottom: "1rem" // less padding on bottom for penn labs footer
@@ -201,8 +204,10 @@ const FourYearPlanPage = ({
                       />
                     </PanelInteriorWrapper>
                     {searchPanelOpen && (
-                      <PanelInteriorWrapper $minWidth={"40%"} $maxWidth={"43%"}>
-                        <SearchPanel activeDegreeplanId={activeDegreeplan ? activeDegreeplan.id : null} setSearchedRuleId={setSearchRuleId}/>
+                      <PanelInteriorWrapper $minWidth={"40%"} $maxWidth={"45%"}>
+                        <SearchPanel 
+                        activeDegreeplanId={activeDegreeplan ? activeDegreeplan.id : null} 
+                        setSearchRuleId={setSearchRuleId}/>
                       </PanelInteriorWrapper>
                     )}
                   </PanelWrapper>

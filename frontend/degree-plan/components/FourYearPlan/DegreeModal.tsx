@@ -124,9 +124,9 @@ const DegreeAddInterior = styled.div`
 export const createMajorLabel = (degree: DegreeListing) => {
   const concentration =
     degree.concentration && degree.concentration !== "NONE"
-      ? ` - ${degree.concentration_name}`
+      ? ` - ${degree.concentration}`
       : "";
-  return `${degree.major_name}${concentration} (${degree.year})`;
+  return `${degree.major}${concentration} (${degree.year})`;
 };
 
 interface RemoveDegreeProps {

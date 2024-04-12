@@ -189,7 +189,6 @@ const SearchCondition = ({ ruleId, ruleQuery, fulfillments, ruleIsSatisfied, q, 
             $isDisabled={false}
             $isUsed={false}
             $isSearched={searchRuleId == ruleId}
-            
         >
             <SearchConditionInner q={q} />
             <DarkGrayIcon onClick={() => {
