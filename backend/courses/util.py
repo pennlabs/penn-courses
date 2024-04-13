@@ -721,3 +721,53 @@ def get_semesters(semesters: str = None) -> list[str]:
             if s not in possible_semesters:
                 raise ValueError(f"Provided semester {s} was not found in the db.")
     return sorted(semesters)
+
+
+def historical_semester_probability(current_semester: str, semesters: list[str]):
+    """
+    :param current: The current semester represented in the 20XX(A|B|C) format.
+    :type current: str
+    :param courses: A list of Course objects sorted by date in ascending order.
+    :type courses: list
+    :returns: A list of 3 probabilities representing the likelihood of
+    taking a course in each semester.
+    :rtype: list
+    """
+    PROB_DISTRIBUTION = [0.4, 0.3, 0.15, 0.1, 0.05]
+
+    def normalize_and_round(prob, i):
+        """Modifies the probability distribution to account for the
+        fact that the last course was taken i years ago."""
+        truncate = PROB_DISTRIBUTION[:i]
+        total = sum(truncate)
+        return list(map(lambda x: round(x / total, 3), truncate))
+
+    semester_probabilities = {"A": 0.0, "B": 0.0, "C": 0.0}
+    current_year = int(current_semester[:-1])
+    semesters = [
+        semester
+        for semester in semesters
+        if semester < str(current_year) and semester > str(current_year - 5)
+    ]
+    if not semesters:
+        return [0, 0, 0]
+    if current_year - int(semesters[0][:-1]) < 5:
+        # If the class hasn't been offered in the last 5 years,
+        # we make sure the resulting probabilities sum to 1
+        modified_prob_distribution = normalize_and_round(
+            PROB_DISTRIBUTION, current_year - int(semesters[0][:-1])
+        )
+    else:
+        modified_prob_distribution = PROB_DISTRIBUTION
+    for historical_semester in semesters:
+        historical_year = int(historical_semester[:-1])
+        sem_char = historical_semester[-1].upper()  # A, B, C
+        semester_probabilities[sem_char] += modified_prob_distribution[
+            current_year - historical_year - 1
+        ]
+    return list(
+        map(
+            lambda x: min(round(x, 2), 1.00),
+            [semester_probabilities["A"], semester_probabilities["B"], semester_probabilities["C"]],
+        )
+    )
