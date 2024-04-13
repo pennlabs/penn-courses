@@ -9,7 +9,6 @@ import { Course as CourseType, DnDCourse, Rule } from "@/types";
 import Skeleton from "react-loading-skeleton";
 import 'react-loading-skeleton/dist/skeleton.css'
 import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
-import CourseComponent from "../Course/Course";
 
 
 const RowSelectors = styled.li`
@@ -149,13 +148,6 @@ export default function Course({
     isStar,
 }: CourseProps) {
     /** React dnd */
-    // const [{ isDragging }, drag, dragPreview] = useDrag<DnDCourse>(() => ({
-    //     type: ItemTypes.COURSE_IN_REQ,
-    //     item: {full_code: course.id, semester:-1, rule_id: ruleId},
-    //     collect: (monitor) => ({
-    //         isDragging: !!monitor.isDragging(),
-    //     })
-    // }))
     const [{ isDragging }, drag] = useDrag<DnDCourse, never, { isDragging: boolean }>(() => ({
         type: ItemTypes.COURSE_IN_PLAN,
         item: {full_code: course.id},
@@ -171,10 +163,12 @@ export default function Course({
             <ReviewPanelTrigger full_code={course.id} triggerType="click">
                 <CourseContainer onMouseEnter={() => setIsMouseOver(true)} onMouseLeave={() => setIsMouseOver(false)}>
                     <CourseInfoContainer
+                        ref={drag} 
+                        className="draggable"
                         role="button"
                     >   
                         <CourseIdentityContainer >
-                            <CourseIDContainer ref={drag} className="draggable">
+                            <CourseIDContainer>
                                 <CourseID>{course.id.replace(/-/g, " ")}</CourseID>
                                 {/* {isMouseOver && 
                                 <AddButton onClick={onClick}>
