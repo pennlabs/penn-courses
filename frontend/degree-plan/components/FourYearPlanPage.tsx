@@ -163,7 +163,7 @@ const FourYearPlanPage = ({
                   maxSize={searchPanelOpen ? 
                     (windowWidth ? windowWidth : 1000) * 0.33 
                   : (windowWidth ? windowWidth : 1000) * 0.66}
-                  minSize="33%"
+                  minSize={(windowWidth ? windowWidth : 400) * 0.20 }
                   defaultSize="50%"
                   style={{
                     padding: "1.5rem",
@@ -201,7 +201,7 @@ const FourYearPlanPage = ({
                       />
                     </PanelInteriorWrapper>
                     {searchPanelOpen && (
-                      <PanelInteriorWrapper $minWidth={"40%"} $maxWidth={"45%"}>
+                      <PanelInteriorWrapper $minWidth={"45%"} $maxWidth={"45%"}>
                         <SearchPanel 
                         activeDegreeplanId={activeDegreeplan ? activeDegreeplan.id : null} 
                         setSearchRuleId={setSearchRuleId}/>
