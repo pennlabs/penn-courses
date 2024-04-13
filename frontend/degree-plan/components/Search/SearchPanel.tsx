@@ -81,13 +81,13 @@ const SearchPanelHeader = styled(PanelHeader)`
 
 interface SearchPanelProp {
     activeDegreeplanId: DegreePlan["id"] | null;
-    setSearchRuleId: (arg0: number | null) => void;
 }
 
-export const SearchPanel = ({ activeDegreeplanId, setSearchRuleId }: SearchPanelProp) => {
+export const SearchPanel = ({ activeDegreeplanId }: SearchPanelProp) => {
     const { 
         setSearchPanelOpen, 
         searchRuleId: ruleId, 
+        setSearchRuleId,
         searchRuleQuery: ruleQuery,
         searchFulfillments: fulfillments
     } = useContext(SearchPanelContext); 
@@ -127,7 +127,6 @@ export const SearchPanel = ({ activeDegreeplanId, setSearchRuleId }: SearchPanel
                         value={queryString}
                         onChange={(e) => {setQueryString(e.target.value)}}
                         autoComplete="off"
-                        // placeholder={!ruleId ? "Search for a course!" : `Filtering for ${ruleQuery ? ruleQuery : 'a requirement'}`}
                         placeholder={!ruleId ? "Search for a course!" : `Filtering for a requirement`}
                     />
                 </SearchContainer>

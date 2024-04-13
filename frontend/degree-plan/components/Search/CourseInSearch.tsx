@@ -162,12 +162,8 @@ export default function Course({
         <RowSelectors>
             <ReviewPanelTrigger full_code={course.id} triggerType="click">
                 <CourseContainer onMouseEnter={() => setIsMouseOver(true)} onMouseLeave={() => setIsMouseOver(false)}>
-                    <CourseInfoContainer
-                        ref={drag} 
-                        className="draggable"
-                        role="button"
-                    >   
-                        <CourseIdentityContainer >
+                    <CourseInfoContainer>   
+                        <CourseIdentityContainer ref={drag} className="draggable">
                             <CourseIDContainer>
                                 <CourseID>{course.id.replace(/-/g, " ")}</CourseID>
                                 {/* {isMouseOver && 
