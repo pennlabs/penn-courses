@@ -44,7 +44,7 @@ const LoginButton: React.FC<{
 }> = ({ noMargin, pathname }) => {
     return (
         <LoginButtonStyles
-            $noMargin={noMargin}
+            $noMargin={noMargin ?? false}
             href={`/accounts/login/?next=${pathname}`}
         >
             Login
