@@ -670,9 +670,7 @@ export const createScheduleOnBackend = (name, sections = []) => (dispatch) => {
         .then(({ id }) => {
             dispatch(createScheduleOnFrontend(name, id, sections));
         })
-        .catch((error) => {
-            return error.json();
-        });
+        .catch((error) => console.log(error));
 };
 
 export const deleteScheduleOnBackend = (user, scheduleName, scheduleId) => (
@@ -705,9 +703,7 @@ export const deleteScheduleOnBackend = (user, scheduleName, scheduleId) => (
                 })
             );
         })
-        .catch((error) => {
-            return error.json();
-        });
+        .catch((error) => console.log(error));
 };
 
 export const findOwnPrimarySchedule = (user) => (dispatch) => {
@@ -724,9 +720,7 @@ export const findOwnPrimarySchedule = (user) => (dispatch) => {
                     setPrimaryScheduleIdOnFrontend(foundSched?.schedule.id)
                 );
             })
-            .catch((error) => {
-                return error.json();
-            })
+            .catch((error) => console.log(error))
     );
 };
 
@@ -752,7 +746,7 @@ export const setCurrentUserPrimarySchedule = (user, scheduleId) => (
         .then(() => {
             dispatch(findOwnPrimarySchedule(user));
         })
-        .catch((error) => error.json());
+        .catch((error) => console.log(error));
 };
 
 export const registerAlertItem = (sectionId) => (dispatch) => {
@@ -879,7 +873,7 @@ export const fetchAlerts = () => (dispatch) => {
                 );
             });
         })
-        .catch((error) => error.json());
+        .catch((error) => console.log(error));
 };
 
 export const fetchContactInfo = () => (dispatch) => {
