@@ -63,7 +63,7 @@ const LogoutButton = styled.div`
 `;
 
 const TriangleUp = styled.div`
-    transform: ${({ down }) => down ? "rotate(180deg)" : "rotate(0)"};
+    transform: ${({ down }) => (down ? "rotate(180deg)" : "rotate(0)")};
     width: 0;
     height: 0;
     border-left: 5px solid transparent;
@@ -86,9 +86,10 @@ const LogoutDropdownMenu = styled.div`
     display: ${({ selected }) => (selected ? "block" : "none")};
     left: 0;
     min-width: 12rem;
-    ${({ floatTop }) => floatTop ? "padding-bottom: 4px" : "padding-top: 4px"};
+    ${({ floatTop }) =>
+        floatTop ? "padding-bottom: 4px" : "padding-top: 4px"};
     position: absolute;
-    ${({ floatTop }) => floatTop ? "bottom: 100%" : "top: 100%"};
+    ${({ floatTop }) => (floatTop ? "bottom: 100%" : "top: 100%")};
     z-index: 20;
 `;
 
@@ -113,7 +114,7 @@ const UserSelector = ({
     dropdownTop, // whether the dropdown menu should appear above or below
 }) => {
     const [selected, setSelected] = useState(false);
-    
+
     const firstName = rest.first_name;
     const lastName = rest.last_name;
 
@@ -138,7 +139,7 @@ const UserSelector = ({
             </NameBubble>
             <LogoutDropdownMenu selected={selected} floatTop={dropdownTop}>
                 <LogoutDropdownContainer className="dropdown-menu-container">
-                    <TriangleUp down={dropdownTop} /> 
+                    <TriangleUp down={dropdownTop} />
                     <InnerMenu $leftAligned={leftAligned}>
                         <NameContainer>
                             {" "}

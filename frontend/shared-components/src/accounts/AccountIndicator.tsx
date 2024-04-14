@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
-import PropTypes from "prop-types";
 import UserSelector from "./UserSelector";
 import LoginButton from "./LoginButton";
+import type { User } from "../../../plan/types";
 
 /**
  * An indicator of whether the user is logged in, and what account they are logged into.
@@ -10,7 +10,16 @@ import LoginButton from "./LoginButton";
  * information.
  */
 
-const AccountIndicator = ({
+const AccountIndicator: React.FC<{
+    user: User;
+    login: (user: any) => void;
+    logout: () => void;
+    leftAligned?: boolean;
+    backgroundColor?: string;
+    nameLength?: number;
+    pathname: string;
+    dropdownTop?: boolean;
+}> = ({
     user,
     login,
     logout,
@@ -49,17 +58,6 @@ const AccountIndicator = ({
     ) : (
         <LoginButton pathname={pathname} />
     );
-};
-
-AccountIndicator.propTypes = {
-    user: PropTypes.objectOf(PropTypes.any),
-    login: PropTypes.func.isRequired,
-    logout: PropTypes.func.isRequired,
-    backgroundColor: PropTypes.string,
-    nameLength: PropTypes.number,
-    leftAligned: PropTypes.bool,
-    pathname: PropTypes.string,
-    dropdownTop: PropTypes.bool,
 };
 
 export default AccountIndicator;

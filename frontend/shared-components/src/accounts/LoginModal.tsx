@@ -12,7 +12,7 @@ const LoginButtonContainer = styled.div`
 
 interface LoginModalProps {
     pathname: string;
-    siteName: String;
+    siteName: string;
 }
 
 const LoginModal = ({pathname, siteName}: LoginModalProps) => (

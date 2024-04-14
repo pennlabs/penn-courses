@@ -15,7 +15,6 @@ const CourseDetailsContainer = styled.div`
     flex-grow: 0;
     display: flex;
     flex-direction: column;
-    max-width: 70%;
     text-align: left;
     align-items: left;
 `;
@@ -133,14 +132,11 @@ const CourseCartItem = styled.div<{ $lastAdded: boolean; $isMobile: boolean }>`
     cursor: pointer;
     user-select: none;
 
-    display: ${(props) => (props.$isMobile ? "grid" : "flex")};
+    display: grid;
     flex-direction: row;
-    justify-content: space-around;
     padding: 0.8rem;
     border-bottom: 1px solid #e5e8eb;
-    grid-template-columns: ${(props) =>
-        props.$isMobile ? "20% 50% 15% 15%" : ""};
-
+    grid-template-columns: 20% 50% 15% 15%;
     * {
         user-select: none;
     }

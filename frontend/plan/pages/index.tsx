@@ -21,6 +21,7 @@ import SearchBar from "../components/search/SearchBar";
 import Selector from "../components/selector/Selector";
 import Footer from "../components/footer";
 import Cart from "../components/Cart";
+import Alerts from "../components/alert/Alerts";
 import ModalContainer from "../components/modals/generic_modal_container";
 import SearchSortDropdown from "../components/search/SearchSortDropdown";
 import { openModal } from "../actions";
@@ -28,6 +29,7 @@ import { preventMultipleTabs } from "../components/syncutils";
 import { DISABLE_MULTIPLE_TABS } from "../constants/sync_constants";
 import { User } from "../types";
 import { ToastContainer } from "react-toastify";
+import { useRouter } from "next/router";
 
 const GlobalStyle = createGlobalStyle`
   html {
@@ -63,6 +65,15 @@ const CustomTabs = styled(Tabs)`
         color: #7b84e6;
         background-color: #7b84e6;
     }
+`;
+
+const CartTab = styled.a<{ active: boolean }>`
+    display: inline-flex;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    margin-right: 1rem;
+    color: ${(props) => (props.active ? "black" : "gray")};
 `;
 
 const Box = styled.div`
@@ -111,7 +122,18 @@ export function showToast(text: string, error: boolean) {
     }
 }
 
+enum TabItem {
+    Cart = "cart-tab",
+    Alerts = "alerts-tab"
+}
+
+const tabItems = [
+    { item: TabItem.Cart, name: "Cart", component: Cart},
+    { item: TabItem.Alerts, name: "Alerts", component: Alerts},]
+
 function Index() {
+    const router = useRouter();
+    
     const [tab, setTab] = useState(0);
     const [view, setView] = useState(0);
     // FIXME: Hacky, maybe look into redux-persist?
@@ -134,6 +156,13 @@ function Index() {
 
     const [showLoginModal, setShowLoginModal] = useState<boolean>(true);
     const [user, setUser] = useState<User | null>(null);
+
+    const [selectedTab, setSelectedTab] = useState<TabItem>(TabItem.Cart);
+    useEffect(() => {
+        setSelectedTab(router.asPath.split("#")[1] === TabItem.Alerts ? TabItem.Alerts : TabItem.Cart);
+    }, []);
+
+    const TabContent = tabItems.find(({item}) => item === selectedTab)?.component
 
     useEffect(() => {
         setInnerWidth(window.innerWidth);
@@ -307,6 +336,9 @@ function Index() {
                                 <Cart setTab={setTab} mobileView={true} />
                             </div>
                             <div style={{ padding: "10px" }}>
+                                <Alerts mobileView={true} />
+                            </div>
+                            <div style={{ padding: "10px" }}>
                                 {/* Unfortunately running into a weird issue with connected components and TS. */}
                                 {/* @ts-ignore */}
                                 <Schedule setTab={setTab} mobileView={true} />
@@ -390,16 +422,18 @@ function Index() {
                                         flexDirection: "column",
                                     }}
                                 >
-                                    <h3
-                                        style={{
-                                            display: "flex",
-                                            fontWeight: "bold",
-                                            marginBottom: "0.5rem",
-                                        }}
-                                    >
-                                        Cart
-                                    </h3>
-                                    <Cart mobileView={false} />
+                                    <div>
+                                        {tabItems.map(({item, name}) => (
+                                        <CartTab
+                                            key={item}
+                                            href={`/#${item}`}
+                                            active={selectedTab === item}
+                                            onClick={() => setSelectedTab(item)}
+                                        >
+                                            {name}
+                                            </CartTab>))}
+                                    </div>
+                                    {typeof TabContent !== "undefined" && <TabContent mobileView={false} />}
                                 </div>
                                 <div
                                     style={{
