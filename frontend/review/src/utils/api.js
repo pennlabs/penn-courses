@@ -123,6 +123,79 @@ export function apiReviewData(type, code, semester) {
   );
 }
 
+export function apiComments(code) {
+  if(code === "CIS-1200") {
+    return Promise.resolve({
+      comments: [
+        {
+          title: "Hi 1",
+          content: "I love this course :)",
+          id: 10,
+          created_at: new Date(),
+          modified_at: new Date(),
+          author_name: "Luke Tong",
+          likes: 69,
+          course: "CIS-1200",
+          semester: "2024A",
+          parent_id: null,
+          path: "10",
+        },
+        {
+          title: "Hi 2",
+          content: "Luke is so cool and awesome",
+          id: 11,
+          created_at: new Date(new Date() - 10),
+          modified_at: new Date(new Date() - 10),
+          author_name: "Penn Labs",
+          likes: 100,
+          course: "CIS-1200",
+          semester: "2024A",
+          parent_id: 10,
+          path: "10.11",
+        },
+        {
+          title: "Hi 3",
+          content: "I hate this course :(",
+          id: 20,
+          created_at: new Date(new Date() - 10),
+          modified_at: new Date(new Date() - 10),
+          author_name: "Shiva Mehta",
+          likes: 0,
+          course: "CIS-1200",
+          semester: "2022A",
+          parent_id: null,
+          path: "20",
+        },
+        {
+          title: "Hi 4",
+          content: "I TA this course :|",
+          id: 30,
+          created_at: new Date(new Date() - 5),
+          modified_at: new Date(new Date() - 5),
+          author_name: "Eunsoo Shin",
+          likes: 10,
+          course: "CIS-1200",
+          semester: "2022A",
+          parent_id: null,
+          path: "30",
+        },
+      ],
+    });
+  } else {
+    return Promise.resolve({
+      comments: [],
+    })
+  }
+  
+  /*
+  return apiFetch(
+    `${API_DOMAIN}/api/review/${encodeURIComponent(type)}/${encodeURIComponent(
+      code
+    )}/comments?token=${encodeURIComponent(API_TOKEN)}` + getSemesterQParam(semester)
+  );
+  */
+}
+
 export function apiContact(name) {
   return apiFetch(
     `https://api.pennlabs.org/directory/search?name=${encodeURIComponent(name)}`

@@ -8,7 +8,7 @@ import {
   orderColumns,
   toNormalizedSemester
 } from "../utils/helpers";
-import { apiHistory } from "../utils/api";
+import { apiComments, apiHistory } from "../utils/api";
 import { PROF_IMAGE_URL } from "../constants/routes";
 import { REGISTRATION_METRICS_COLUMNS } from "../constants";
 
@@ -83,6 +83,161 @@ const formsCol = {
  */
 export const DetailsBox = forwardRef(
   ({ course, instructor, url_semester, type, isCourseEval }, ref) => {
+    if((type === "course" && instructor) || (type === "instructor")) {
+      return (
+        <SelectedDetailsBox
+          course={course}
+          instructor={instructor}
+          url_semester={url_semester}
+          type={type}
+          isCourseEval={isCourseEval}
+          ref={ref}
+        />
+      );
+    } else {
+      return (
+        <UnselectedDetailsBox
+          course={course}
+          instructor={instructor}
+          url_semester={url_semester}
+          type={type}
+          isCourseEval={isCourseEval}
+          ref={ref}
+        />
+      );
+    }
+  }
+)
+
+const UnselectedDetailsBox = forwardRef(
+  ({ course, instructor, url_semester, type, isCourseEval }, ref) => {
+    const [data, setData] = useState({});
+    const [isLoading, setIsLoading] = useState(false);
+
+    const [selectedSemester, setSelectedSemester] = useState(null);
+    const [semesterList, setSemesterList] = useState([]);
+
+    useEffect(() => {
+      setIsLoading(true);
+      apiComments(course)
+        .then(res => {
+          console.log(res);
+          const semesterSet = new Set(
+            res.comments
+              .map(c => c.semester)
+              .sort(compareSemesters)
+          );
+          const semesters = [...semesterSet];
+          setData(res);
+          setSemesterList(semesters);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    }, [course]);
+    
+    const hasData = Boolean(Object.keys(data).length) && data.comments.length > 0;
+
+    if (!hasData) {
+      if(isLoading) {
+        // Loading spinner
+        return (
+          <div
+            id="course-details"
+            className="box"
+            style={{ textAlign: "center", padding: 45 }}
+            ref={ref}
+          >
+            <i
+              className="fa fa-spin fa-cog fa-fw"
+              style={{ fontSize: "150px", color: "#aaa" }}
+            />
+            <h1 style={{ fontSize: "2em", marginTop: 15 }}>Loading...</h1>
+          </div>
+        );
+      } else {
+        // Return placeholder image.
+        return (
+          <div
+            id="course-details"
+            className="box"
+            ref={ref}
+            style={{ textAlign: "center" }}
+          >
+            <div>
+              <div>
+                <object
+                  type="image/svg+xml"
+                  id="select-course-icon"
+                  data="/static/image/books-and-bag.svg"
+                  width="250"
+                >
+                  <img alt="Class Icon" src="/static/image/books-and-bag.png" />
+                </object>
+              </div>
+            </div>
+            <h3
+              style={{ color: "#b2b2b2", margin: "1.5em", marginBottom: ".5em" }}
+            >
+              No one's commented yet! Be the first to share your thoughts.
+            </h3>
+          </div>
+        );
+
+      }
+    }
+
+    return (
+      <div
+        id="course-details"
+        className="box"
+        ref={ref}
+      >
+        <div id="course-details-wrapper">
+          <h3>
+            Comments
+          </h3>
+          <div id="course-details-comments" className="clearfix mt-2">
+            <div className="list">
+                <div
+                  onClick={() => setSelectedSemester(null)}
+                  className={selectedSemester === null ? "selected" : ""}
+                >
+                  Overall
+                </div>
+              {semesterList.map(sem => (
+                <div
+                  key={sem}
+                  onClick={() => setSelectedSemester(sem)}
+                  className={selectedSemester === sem ? "selected" : ""}
+                >
+                  {sem}
+                </div>
+              ))}
+            </div>
+            <div className="comments">
+              {data.comments
+                .filter(c => !selectedSemester || c.semester === selectedSemester)
+                .map(c =>
+                  <div key={c.id} className="comment">
+                    <div className="top">
+                      <b>{c.title}</b>
+                      <sub>{c.modified_at.toLocaleString("en-US")}</sub>
+                    </div>
+                    <p>{c.content}</p>
+                  </div>
+                )
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+);
+
+const SelectedDetailsBox = forwardRef(
+  ({ course, instructor, url_semester, type, isCourseEval }, ref) => {
     const [data, setData] = useState({});
     const [viewingRatings, setViewingRatings] = useState(true);
     const [selectedSemester, setSelectedSemester] = useState(null);
@@ -129,6 +284,7 @@ export const DetailsBox = forwardRef(
       if (instructor !== null && course !== null) {
         apiHistory(course, instructor, url_semester)
           .then(res => {
+            console.log(res);
             const sections = Object.values(res.sections);
             const fields = [
               ...new Set(
@@ -174,7 +330,7 @@ export const DetailsBox = forwardRef(
     const isCourse = type === "course";
 
     // Return loading component. TODO: Add spinner/ghost loader.
-    if (!hasData && hasSelection && isLoading)
+    if (!hasData && hasSelection && isLoading) {
       return (
         <div
           id="course-details"
@@ -189,9 +345,9 @@ export const DetailsBox = forwardRef(
           <h1 style={{ fontSize: "2em", marginTop: 15 }}>Loading...</h1>
         </div>
       );
-
+    }
     // Return placeholder image.
-    if (!hasData || !hasSelection)
+    if (!hasData || !hasSelection) {
       return (
         <div
           id="course-details"
@@ -226,7 +382,8 @@ export const DetailsBox = forwardRef(
           </h3>
         </div>
       );
-
+    }
+    
     const {
       instructor: { name },
       sections

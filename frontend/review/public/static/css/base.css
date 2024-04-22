@@ -439,13 +439,13 @@ input {
 }
 
 #course-details-comments .list {
-    width: 200px;
+    width: 100px;
     float: left;
     padding-right: 10px;
 }
 
 #course-details-comments .list div {
-    padding: 5px;
+    padding: 10px;
     font-size: 1.1em;
     border-radius: 3px;
     cursor: pointer;
@@ -458,9 +458,29 @@ input {
 
 #course-details-comments .comments {
     width: calc(100% - 200px);
-    padding-left: 10px;
     float: left;
-    border-left: 1px solid #eee;
+    border: 1px solid #eee;
+    border-radius: 5px;
+}
+
+#course-details-comments .comment {
+    border-bottom: 1px solid #eee;
+    padding: 10px 20px;
+}
+
+#course-details-comments .comment .top {
+    display: flex;
+    align-items: center;
+}
+
+#course-details-comments .comment .top b {
+    color: black;
+    font-size: 1.2em;
+}
+
+#course-details-comments .comment .top sub {
+    color: #b2b2b2;
+    margin-left: 10px;
 }
 
 .table-search {
