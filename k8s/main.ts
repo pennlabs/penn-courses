@@ -85,7 +85,7 @@ export class MyChart extends PennLabsChart {
     });
 
     new CronJob(this, 'load-courses', {
-      schedule: cronTime.everyDayAt(3),
+      schedule: cronTime.everySundayAt(4, 30),
       image: backendImage,
       secret,
       cmd: ['python', 'manage.py', 'registrarimport'],

@@ -14,11 +14,6 @@ def precompute_pcr_views(verbose=False, is_new_data=False):
     if verbose:
         print("Now precomputing PCR reviews.")
 
-    # Mark all reviews in the table as expired.
-    # all processes should do this simultaneously
-        
-
-    
     CachedReviewResponse.objects.all().update(expired=True)
     responses = CachedReviewResponse.objects.all()
     topic_set = {response.topic_id: response for response in responses}
