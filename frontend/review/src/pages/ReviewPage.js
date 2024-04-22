@@ -279,10 +279,10 @@ export class ReviewPage extends Component {
                   <DetailsBox
                     type={type}
                     course={code}
-                    url_semester={url_semester}
                     instructor={rowCode}
                     isCourseEval={isCourseEval}
                     ref={this.tableRef}
+                    url_semester={url_semester}
                   />
                 )}
 
