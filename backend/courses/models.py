@@ -1560,9 +1560,13 @@ class Comment(models.Model):
         null=True,
         related_name="comments"
     )
-    likes = models.ManyToManyField(
+    upvotes = models.ManyToManyField(
         get_user_model(),
-        help_text="The number of likes a comment gets."
+        help_text="The number of upvotes a comment gets."
+    )
+    downvotes = models.ManyToManyField(
+        get_user_model(),
+        help_text="The number of downvotes a comment gets."
     )
     course = models.ForeignKey(
         Course,
