@@ -3,17 +3,17 @@ import { toast } from "react-toastify";
 import styled from "styled-components";
 
 interface RowProps {
-    align?: "flex-start" | "flex-end" | "center" | "baseline" | "stretch";
+    $align?: "flex-start" | "flex-end" | "center" | "baseline" | "stretch";
 }
 
 const Row = styled.div<RowProps>`
     display: flex;
     flex-wrap: wrap;
-    align-items: ${(props) => props.align || "stretch"};
+    align-items: ${(props) => props.$align || "stretch"};
 `;
 
 interface ColProps {
-    span?: number;
+    $span?: number;
 }
 
 const Outer = styled.div`
@@ -21,7 +21,7 @@ const Outer = styled.div`
 `;
 
 const Col = styled.div<ColProps>`
-    flex: ${(props) => props.span || 1};
+    flex: ${(props) => props.$span || 1};
     padding: 0;
     box-sizing: border-box;
 `;
@@ -45,10 +45,10 @@ const FixedInput = styled.input`
 `
 
 interface CalendarModalProps {
-    schedulePk: number;
+    $schedulePk: number;
 }
 
-const CalendarModal = ({ schedulePk }: CalendarModalProps) => {
+const CalendarModal = ({ $schedulePk: schedulePk }: CalendarModalProps) => {
     const [url, setUrl] = useState<string>("INVALID");
 
     useEffect(() => {
@@ -67,11 +67,11 @@ const CalendarModal = ({ schedulePk }: CalendarModalProps) => {
                 others.
             </BigText>
             <br />
-            <Row align="center" className="row field has-addons is-expanded">
+            <Row $align="center" className="row field has-addons is-expanded">
                 <Col className="col control">
                     <a className="button is-static">ICS URL</a>
                 </Col>
-                <Col span={8}>
+                <Col $span={8}>
                     <FixedInput
                         type="text"
                         readOnly

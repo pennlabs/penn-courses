@@ -41,7 +41,8 @@ export class MyChart extends PennLabsChart {
       ingressProps,
       domains: [{ host: 'penncourseplan.com', paths: ["/api", "/admin", "/accounts", "/assets"] },
       { host: 'penncoursealert.com', paths: ["/api", "/admin", "/accounts", "/assets", "/webhook"] },
-      { host: 'penncoursereview.com', paths: ["/api", "/admin", "/accounts", "/assets"] }],
+      { host: 'penncoursereview.com', paths: ["/api", "/admin", "/accounts", "/assets"] },
+      { host: 'penndegreeplan.com', paths: ["/api", "/admin", "/accounts", "/assets"] }]
     });
 
     new DjangoApplication(this, 'backend-asgi', {
@@ -82,6 +83,13 @@ export class MyChart extends PennLabsChart {
         image: 'pennlabs/pcr-frontend',
       },
       domain: { host: 'penncoursereview.com', paths: ['/'] },
+    });
+
+    new ReactApplication(this, 'degree', {
+      deployment: {
+        image: 'pennlabs/pdp-frontend',
+      },
+      domain: { host: 'penndegreeplan.com', paths: ['/'] },
     });
 
     new CronJob(this, 'load-courses', {

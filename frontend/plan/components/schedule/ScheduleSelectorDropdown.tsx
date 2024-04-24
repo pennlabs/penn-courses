@@ -6,7 +6,7 @@ import { nextAvailable } from "../../reducers/schedule";
 import NewLabel from "../common/NewLabel";
 import { PATH_REGISTRATION_SCHEDULE_NAME } from "../../constants/constants";
 
-const ButtonContainer = styled.div<{ isActive: boolean; isPrimary?: boolean }>`
+const ButtonContainer = styled.div<{ $isActive: boolean; $isPrimary?: boolean }>`
     line-height: 1.5;
     position: relative;
     border-radius: 0 !important;
@@ -16,7 +16,7 @@ const ButtonContainer = styled.div<{ isActive: boolean; isPrimary?: boolean }>`
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-    background: ${(props) => (props.isActive ? "#F5F6F8" : "#FFF")};
+    background: ${(props) => (props.$isActive ? "#F5F6F8" : "#FFF")};
     align-items: center;
 
     &:hover {
@@ -38,12 +38,12 @@ const ButtonContainer = styled.div<{ isActive: boolean; isPrimary?: boolean }>`
     }
 
     .option-icon i.primary {
-        color: ${(props) => (props.isPrimary ? "#669afb" : "#b2b2b2")};
+        color: ${(props) => (props.$isPrimary ? "#669afb" : "#b2b2b2")};
     }
 
     .option-icon i.primary:hover {
         color: ${(props) =>
-        props.isPrimary ? "#295FCE" : "#7E7E7E"}; !important;
+        props.$isPrimary ? "#295FCE" : "#7E7E7E"}; !important;
     }
 
     .initial-icon {
@@ -52,20 +52,20 @@ const ButtonContainer = styled.div<{ isActive: boolean; isPrimary?: boolean }>`
     }
 `;
 
-const ButtonLabelContainer = styled.div<{ width: number }>`
+const ButtonLabelContainer = styled.div<{ $width: number }>`
     display: flex;
     flex-grow: 1;
     font-weight: 400;
     justify-content: start;
-    max-width: ${(props) => props.width}%;
+    max-width: ${(props) => props.$width}%;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 `;
 
-const InitialIcon = styled.div<{ color: Color }>`
+const InitialIcon = styled.div<{ $color: Color }>`
     color: white;
-    background-color: ${(props) => props.color};
+    background-color: ${(props) => props.$color};
     opacity: 65%;
     justify-content: center;
     align-items: center;
@@ -96,11 +96,11 @@ const FriendButton = ({
     removeFriend,
     color
 }: FriendButtonProps) => (
-    <ButtonContainer isActive={isActive} onClick={display}>
-        <InitialIcon color={color}>
+    <ButtonContainer $isActive={isActive} onClick={display}>
+        <InitialIcon $color={color}>
             <div className="initial-icon">{friendName.split(" ")[0][0]}</div>
         </InitialIcon>
-        <ButtonLabelContainer width={65}>{friendName}</ButtonLabelContainer>
+        <ButtonLabelContainer $width={65}>{friendName}</ButtonLabelContainer>
         <Icon
             onClick={(e) => {
                 removeFriend();
@@ -156,10 +156,10 @@ const DropdownButton = ({
                 makeActive();
             }
         }}
-        isActive={isActive}
-        isPrimary={isPrimary}
+        $isActive={isActive}
+        $isPrimary={isPrimary}
     >
-        <ButtonLabelContainer width={50}>{text}</ButtonLabelContainer>
+        <ButtonLabelContainer $width={50}>{text}</ButtonLabelContainer>
         <ScheduleOptionsContainer>
             {hasFriends && (
                 <Icon
@@ -235,11 +235,6 @@ const ScheduleDropdownContainer = styled.div`
         border: 0;
         outline: none;
     }
-
-    i.fa.fa-chevron-down::before {
-        content: ${({ isActive }: { isActive: boolean }) =>
-        isActive ? '"\f077"' : ""} !important;
-    }
 `;
 
 const DropdownTrigger = styled.div`
@@ -252,10 +247,9 @@ const DropdownTrigger = styled.div`
     background: transparent;
 `;
 
-const DropdownMenu = styled.div`
+const DropdownMenu = styled.div<{ $isActive: boolean }>`
     margin-top: 0.1rem !important;
-    display: ${({ isActive }: { isActive: boolean }) =>
-        isActive ? "block" : "none"};
+    display: ${({ $isActive }) => $isActive ? "block" : "none"};
     left: 0;
     min-width: 15rem;
     padding-top: 4px;
@@ -384,11 +378,11 @@ const ReceivedRequestNotice = styled.div`
     right: 0.2rem;
 `
 
-const DropdownTriggerContainer = styled.div`
+const DropdownTriggerContainer = styled.div<{ $isActive: boolean }>`
     display: flex;
 
-    background: ${({ isActive }: { isActive: boolean }) =>
-        isActive ? "rgba(162, 180, 237, 0.38) !important" : "none"};
+    background: ${({ $isActive }: { $isActive: boolean }) =>
+        $isActive ? "rgba(162, 180, 237, 0.38) !important" : "none"};
 
     :hover {
         background: rgba(175, 194, 255, 0.27);
@@ -512,10 +506,10 @@ const ScheduleSelectorDropdown = ({
     });
 
     return (
-        <ScheduleDropdownContainer ref={ref} isActive={isActive}>
+        <ScheduleDropdownContainer ref={ref}>
             <ScheduleDropdownHeader>
                 <DropdownTriggerContainer 
-                    isActive={isActive}
+                    $isActive={isActive}
                         onClick={() => {
                             fetchBackendFriendships(
                                 user);
@@ -530,7 +524,7 @@ const ScheduleSelectorDropdown = ({
                     <DropdownTrigger>
                         <div aria-haspopup={true} aria-controls="dropdown-menu">
                             <Icon>
-                                <i className="fa fa-chevron-down" aria-hidden="true" />
+                                <i className={`fa fa-chevron-${isActive ? "up" : "down"}`} aria-hidden="true"/>
                             </Icon>
                         </div>
                     </DropdownTrigger>
@@ -548,7 +542,7 @@ const ScheduleSelectorDropdown = ({
                     </ShareSchedulePromo>
                 </ShareSchedulePromoContainer>}
             </ScheduleDropdownHeader>
-            <DropdownMenu isActive={isActive} role="menu">
+            <DropdownMenu $isActive={isActive} role="menu">
                 <DropdownContent>
                     {allSchedules &&
                         Object.entries(allSchedules)

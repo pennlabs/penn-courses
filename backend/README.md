@@ -146,7 +146,7 @@ prompts, add the `--force` flag.
 If you don't want to use docker alone, you can also set up and run the dev environment more natively.
 
 ### Prerequisites
-- Python 3.10 ([`pyenv`](https://github.com/pyenv/pyenv) is recommended)
+- Python 3.11 ([`pyenv`](https://github.com/pyenv/pyenv) is recommended)
 - [`pipenv`](https://pipenv.pypa.io/en/latest/)
 - [`docker` and `docker-compose`](https://docs.docker.com/get-docker/)
 
