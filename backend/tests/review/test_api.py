@@ -1,7 +1,6 @@
 from unittest import mock
 
 from django.contrib.auth.models import User
-from django.core.cache import caches
 from django.db.models.signals import post_save
 from django.test import TestCase
 from django.urls import reverse
@@ -10,10 +9,9 @@ from options.models import Option
 from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
-from courses.models import Course, Instructor, PreNGSSRestriction, Section, StatusUpdate, Topic
+from courses.models import Course, Instructor, PreNGSSRestriction, Section, StatusUpdate
 from courses.util import get_or_create_course_and_section, invalidate_current_semester_cache
 from review.import_utils.import_to_db import import_review
-from review.management.commands.precompute_pcr_views import precompute_pcr_views
 from review.models import Review
 from tests.courses.util import create_mock_data, fill_course_soft_state
 

@@ -190,7 +190,6 @@ def manual_course_reviews(course_code, request_semester, semester=None):
     """
     semester = request_semester
     try:
-        semester = request_semester
         course = most_recent_course_from_code(course_code, request_semester)
     except Course.DoesNotExist:
         raise Http404()
