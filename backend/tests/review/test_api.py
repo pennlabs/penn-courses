@@ -413,7 +413,7 @@ class TwoSectionsOneSemesterTestCase(TestCase, PCRTestMixin):
         self.assertRequestContainsAppx(
             "course-history",
             ["CIS-120", Instructor.objects.get(name=self.instructor_name).pk],
-            {"sections": [rating(2), rating(4)]},
+            {"sections": [rating(4), rating(2)]},
         )
 
 

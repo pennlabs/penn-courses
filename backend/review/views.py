@@ -138,8 +138,11 @@ def course_reviews(request, course_code, semester=None):
     request_semester = request.GET.get("semester")
     topic_id = cache.get(course_code)
     if topic_id is None:
-        recent_course = most_recent_course_from_code(course_code, request_semester)
-        topic = Topic.objects.filter(most_recent__full_code=recent_course.full_code).first()
+        try:
+            recent_course = most_recent_course_from_code(course_code, request_semester)
+        except Course.DoesNotExist:
+            raise Http404()
+        topic = recent_course.topic
         course_id_list = list(topic.courses.values_list("id"))
         topic_id = ".".join([str(id[0]) for id in sorted(course_id_list)])
         cache.set(course_code, topic_id, MONTH_IN_SECONDS)
