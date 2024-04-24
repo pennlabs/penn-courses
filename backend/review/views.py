@@ -139,7 +139,8 @@ def course_reviews(request, course_code, semester=None):
     topic_id = cache.get(course_code)
     if topic_id is None:
         print("No topic id found. Recalculating.")
-        topic = Topic.objects.filter(most_recent__full_code=course_code).first()
+        recent_course = most_recent_course_from_code(course_code, request_semester)
+        topic = Topic.objects.filter(most_recent__full_code=recent_course.full_code).first()
         course_id_list = list(topic.courses.values_list("id"))
         topic_id = ".".join([str(id[0]) for id in sorted(course_id_list)])
         cache.set(course_code, topic_id, MONTH_IN_SECONDS)
@@ -162,6 +163,24 @@ def course_reviews(request, course_code, semester=None):
 
     return Response(response)
 
+def most_recent_course_from_code(course_code, semester):
+    return (
+        Course.objects.filter(
+            course_filters_pcr,
+            **(
+                {"topic__courses__full_code": course_code, "topic__courses__semester": semester}
+                if semester
+                else {"full_code": course_code}
+            ),
+        )
+        .order_by("-semester")[:1]
+        .annotate(
+            branched_from_full_code=F("topic__branched_from__most_recent__full_code"),
+            branched_from_semester=F("topic__branched_from__most_recent__semester"),
+        )
+        .select_related("topic__most_recent")
+        .get()
+    )
 
 def manual_course_reviews(course_code, request_semester, semester=None):
     """
@@ -169,25 +188,10 @@ def manual_course_reviews(course_code, request_semester, semester=None):
     Different aggregation views are provided, such as reviews spanning all semesters,
     only the most recent semester, and instructor-specific views.
     """
+    semester = request_semester
     try:
         semester = request_semester
-        course = (
-            Course.objects.filter(
-                course_filters_pcr,
-                **(
-                    {"topic__courses__full_code": course_code, "topic__courses__semester": semester}
-                    if semester
-                    else {"full_code": course_code}
-                ),
-            )
-            .order_by("-semester")[:1]
-            .annotate(
-                branched_from_full_code=F("topic__branched_from__most_recent__full_code"),
-                branched_from_semester=F("topic__branched_from__most_recent__semester"),
-            )
-            .select_related("topic__most_recent")
-            .get()
-        )
+        course = most_recent_course_from_code(course_code, request_semester)
     except Course.DoesNotExist:
         raise Http404()
 

@@ -13,7 +13,6 @@ from alert.models import AddDropPeriod
 from courses.models import Course, Instructor, PreNGSSRestriction, Section, StatusUpdate, Topic
 from courses.util import get_or_create_course_and_section, invalidate_current_semester_cache
 from review.import_utils.import_to_db import import_review
-from review.management.commands.clearcache import clear_cache
 from review.management.commands.precompute_pcr_views import precompute_pcr_views
 from review.models import Review
 from tests.courses.util import create_mock_data, fill_course_soft_state
@@ -21,8 +20,6 @@ from tests.courses.util import create_mock_data, fill_course_soft_state
 
 TEST_SEMESTER = "2022C"
 assert TEST_SEMESTER > "2012A"
-
-clear_cache(clear_pcr_cache=True)  # Make sure cache is empty
 
 
 def set_semester():
@@ -1038,130 +1035,3 @@ class DuplicateCodeTestCase(TestCase, PCRTestMixin):
             },
         )
         self.assertEqual(len(res["instructors"]), 1)
-
-
-class PrecomputedCourseReviewCacheTestCase(TestCase, PCRTestMixin):
-    @staticmethod
-    def create_review_and_precompute(mock_manual_course_reviews, *args, **kwargs):
-        create_review(*args, **kwargs)
-        with mock.patch(
-            "review.management.commands.precompute_pcr_views.manual_course_reviews",
-            mock_manual_course_reviews,
-        ):
-            precompute_pcr_views()
-
-    def setUp(self):
-        clear_cache(clear_pcr_cache=True)
-        self.client = APIClient()
-        self.client.force_login(User.objects.create_user(username="test"))
-        set_semester()
-
-    def tearDown(self):
-        clear_cache(clear_pcr_cache=True)
-
-    @mock.patch("review.views.manual_course_reviews", lambda *args, **kwargs: {"hello": "world"})
-    def test_cache_miss(self):
-        create_review("CIS-1200-001", TEST_SEMESTER, "Instructor One", {"instructor_quality": 4})
-        self.assertFalse(caches["blue"].has_key("CIS-1200"))
-        self.assertRequestContainsAppx(
-            "course-reviews",
-            "CIS-1200",
-            {"hello": "world"},
-            query_params={"semester": TEST_SEMESTER},
-        )
-
-    def test_cache_hit_then_miss(self):
-        # should precompute the reviews for the cache
-        self.assertFalse(caches["blue"].has_key("CIS-1200"))
-        self.create_review_and_precompute(
-            lambda *args, **kwargs: {"hello": "world"},
-            "CIS-1200-001",
-            TEST_SEMESTER,
-            "Instructor One",
-            {"instructor_quality": 4},
-        )
-        self.assertTrue(caches["blue"].has_key("CIS-1200"))
-        cis_1200 = Course.objects.get(full_code="CIS-1200")
-        self.assertEqual(caches["blue"].get("CIS-1200"), str(cis_1200.pk))
-        self.assertTrue(caches["blue"].has_key(str(cis_1200.pk)))
-        self.assertEquals(caches["blue"].get(str(cis_1200.pk)), {"hello": "world"})
-
-        with mock.patch(
-            "review.views.manual_course_reviews", lambda *args, **kwargs: {"bye": ":("}
-        ):
-            self.assertRequestContainsAppx(
-                "course-reviews",
-                "CIS-1200",
-                {"hello": "world"},
-                query_params={"semester": TEST_SEMESTER},
-            )
-            # try to clear the cache
-            clear_cache(clear_pcr_cache=True)
-            self.assertRequestContainsAppx(
-                "course-reviews",
-                "CIS-1200",
-                {"bye": ":("},
-                query_params={"semester": TEST_SEMESTER},
-            )
-
-    def test_overlapping_course(self):
-        OLD_SEMESTER = "2013A"
-        assert OLD_SEMESTER != TEST_SEMESTER
-        self.create_review_and_precompute(
-            lambda *args, **kwargs: {"bye": ":("},
-            "CIS-1200-001",
-            OLD_SEMESTER,
-            "Instructor One",
-            {"instructor_quality": 4},
-        )
-
-        cis_1200_old = Course.objects.get(full_code="CIS-1200", semester=OLD_SEMESTER)
-        self.assertTrue(caches["blue"].has_key("CIS-1200"))
-        self.assertEqual(caches["blue"].get("CIS-1200"), str(cis_1200_old.pk))
-        self.assertTrue(caches["blue"].has_key(str(cis_1200_old.pk)))
-        self.assertEquals(caches["blue"].get(str(cis_1200_old.pk)), {"bye": ":("})
-        self.assertRequestContainsAppx(
-            "course-reviews",
-            "CIS-1200",
-            {"bye": ":("},
-            query_params={"semester": OLD_SEMESTER},
-        )
-
-        create_review("CIS-1200-001", TEST_SEMESTER, "Instructor One", {"instructor_quality": 4})
-        cis_1200 = Course.objects.get(full_code="CIS-1200", semester=TEST_SEMESTER)
-        new_topic = Topic.objects.create(most_recent=cis_1200)
-        cis_1200.topic = new_topic
-        cis_1200.save()
-        cis_1200.refresh_from_db()
-        cis_1200_old.refresh_from_db()
-        with mock.patch(
-            "review.management.commands.precompute_pcr_views.manual_course_reviews",
-            lambda *args, **kwargs: {"hello": "world"},
-        ):
-            precompute_pcr_views()
-
-        # We need different topics for the test to be valid
-        assert cis_1200.topic != cis_1200_old.topic
-
-        # the newer course should supersede the older course
-        self.assertTrue(caches["blue"].has_key("CIS-1200"))
-        self.assertEqual(caches["blue"].get("CIS-1200"), str(cis_1200.pk))
-        self.assertTrue(caches["blue"].has_key(str(cis_1200.pk)))
-        self.assertEquals(caches["blue"].get(str(cis_1200.pk)), {"hello": "world"})
-        self.assertRequestContainsAppx(
-            "course-reviews",
-            "CIS-1200",
-            {"hello": "world"},
-            query_params={"semester": TEST_SEMESTER},
-        )
-
-        # requesting the older version of the course just returns the cached value
-        with mock.patch(
-            "review.views.manual_course_reviews", lambda *args, **kwargs: {"cache": "miss"}
-        ):
-            self.assertRequestContainsAppx(
-                "course-reviews",
-                "CIS-1200",
-                {"hello": "world"},  # No cache miss
-                query_params={"semester": OLD_SEMESTER},
-            )

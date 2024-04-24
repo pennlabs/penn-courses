@@ -18,7 +18,6 @@ def precompute_pcr_views(verbose=False, is_new_data=False):
     responses = CachedReviewResponse.objects.all()
     topic_set = {response.topic_id: response for response in responses}
 
-    missing_objects = []
     objs_to_insert = []
     objs_to_update = []
     cache_deletes = set()
@@ -46,7 +45,6 @@ def precompute_pcr_views(verbose=False, is_new_data=False):
                     response_obj.expired = False
                     objs_to_update.append(response_obj)
                 except Http404:
-                    missing_objects.append((topic_id, topic.most_recent.full_code))
                     logging.info(
                         f"Topic returned 404 (topic_id {topic_id}, "
                         f"course_code {course_code_list[0]}, semester {topic.most_recent.semester})"
@@ -65,7 +63,6 @@ def precompute_pcr_views(verbose=False, is_new_data=False):
                             cache_deletes.add(curr_topic_id)
                         cache_deletes.add(course_code)
                 except Http404:
-                    missing_objects.append((topic_id, topic.most_recent.full_code))
                     logging.info(
                         f"Topic returned 404 (topic_id {topic_id}, "
                         f"course_code {course_code_list[0]}, semester {topic.most_recent.semester})"
@@ -86,14 +83,12 @@ def precompute_pcr_views(verbose=False, is_new_data=False):
         CachedReviewResponse.objects.filter(expired=True).delete()
         cache.delete_many(cache_deletes)
 
-        print(missing_objects)
-
 class Command(BaseCommand):
     help = "Precompute PCR views for all topics"
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--new_data", action="store_false", help="Include this flag to recalculate review data."
+            "--new_data", action="store_true", help="Include this flag to recalculate review data."
         )
 
     def handle(self, *args, **kwargs):
