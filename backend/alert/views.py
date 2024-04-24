@@ -110,16 +110,12 @@ def accept_webhook(request):
 
         # Ignore duplicate updates
         last_status_update = section.last_status_update
-        current_status = section.status
-        if current_status == course_status:
+        if last_status_update and last_status_update.new_status == course_status:
             raise ValidationError(
                 f"Status update received changing section {section} from "
                 f"{prev_status} to {course_status}, "
-                f"with a current section status of {current_status},"
-                "after previous status update from "
-                f"{last_status_update.old_status if last_status_update else 'None'} to"
-                f"{last_status_update.new_status if last_status_update else 'None'}"
-                " (duplicate or erroneous).",
+                f"after previous status update from {last_status_update.old_status} "
+                f"to {last_status_update.new_status} (duplicate or erroneous).",
             )
 
         alert_for_course_called = False
