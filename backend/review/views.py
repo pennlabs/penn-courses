@@ -138,30 +138,23 @@ def course_reviews(request, course_code, semester=None):
     request_semester = request.GET.get("semester")
     topic_id = cache.get(course_code)
     if topic_id is None:
-        print("No topic id found. Recalculating.")
         recent_course = most_recent_course_from_code(course_code, request_semester)
         topic = Topic.objects.filter(most_recent__full_code=recent_course.full_code).first()
         course_id_list = list(topic.courses.values_list("id"))
         topic_id = ".".join([str(id[0]) for id in sorted(course_id_list)])
         cache.set(course_code, topic_id, MONTH_IN_SECONDS)
-    else:
-        print("Topic id found in cache.")
 
     response = cache.get(topic_id)
     if response is None:
-        print("No response found in cache.")
         cached_response = CachedReviewResponse.objects.filter(topic_id=topic_id).first()
         if cached_response is None:
-            print("No response stored in table. Recalculating now.")
             response = manual_course_reviews(course_code, request_semester, semester)
         else:
-            print("Using stored table response.")
             response = cached_response.response
         cache.set(topic_id, response, MONTH_IN_SECONDS)
-    else:
-        print("Response found in cache.")
 
     return Response(response)
+
 
 def most_recent_course_from_code(course_code, semester):
     return (
@@ -181,6 +174,7 @@ def most_recent_course_from_code(course_code, semester):
         .select_related("topic__most_recent")
         .get()
     )
+
 
 def manual_course_reviews(course_code, request_semester, semester=None):
     """

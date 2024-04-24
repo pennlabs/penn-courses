@@ -2,13 +2,14 @@ import logging
 
 from django.core.cache import cache
 from django.core.management.base import BaseCommand
+from django.db import transaction
 from django.http import Http404
 from tqdm import tqdm
 
 from courses.models import Topic
 from review.models import CachedReviewResponse
 from review.views import manual_course_reviews
-from django.db import transaction
+
 
 def precompute_pcr_views(verbose=False, is_new_data=False):
     if verbose:
@@ -51,11 +52,11 @@ def precompute_pcr_views(verbose=False, is_new_data=False):
                     )
             else:
                 try:
-                    review_json = manual_course_reviews(topic.most_recent.full_code, topic.most_recent.semester)
+                    review_json = manual_course_reviews(
+                        topic.most_recent.full_code, topic.most_recent.semester
+                    )
                     objs_to_insert.append(
-                        CachedReviewResponse(
-                            topic_id=topic_id, response=review_json, expired=False
-                        )
+                        CachedReviewResponse(topic_id=topic_id, response=review_json, expired=False)
                     )
                     for course_code in course_code_list:
                         curr_topic_id = cache.get(course_code)
@@ -69,7 +70,11 @@ def precompute_pcr_views(verbose=False, is_new_data=False):
                     )
 
         if verbose:
-            print(f"{total_count} course reviews covered, {has_count} of which were already in the database. {len(objs_to_insert)} course reviews were created. {len(objs_to_update)} course reviews were updated.")
+            print(
+                f"{total_count} course reviews covered, {has_count} of which were already in the",
+                f" database. {len(objs_to_insert)} course reviews were created.",
+                f" {len(objs_to_update)} course reviews were updated."
+            )
 
         # Bulk create / update objects.
         if verbose:
@@ -82,6 +87,7 @@ def precompute_pcr_views(verbose=False, is_new_data=False):
             print("Deleting expired objects.")
         CachedReviewResponse.objects.filter(expired=True).delete()
         cache.delete_many(cache_deletes)
+
 
 class Command(BaseCommand):
     help = "Precompute PCR views for all topics"
