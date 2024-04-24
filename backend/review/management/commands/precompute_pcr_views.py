@@ -73,7 +73,7 @@ def precompute_pcr_views(verbose=False, is_new_data=False):
             print(
                 f"{total_count} course reviews covered, {has_count} of which were already in the",
                 f" database. {len(objs_to_insert)} course reviews were created.",
-                f" {len(objs_to_update)} course reviews were updated."
+                f" {len(objs_to_update)} course reviews were updated.",
             )
 
         # Bulk create / update objects.
