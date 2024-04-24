@@ -16,7 +16,6 @@ from courses.models import (
     NGSSRestriction,
     PreNGSSRestriction,
     Section,
-    Topic,
 )
 from courses.util import get_current_semester, get_or_create_add_drop_period, prettify_semester
 from PennCourses.docs_settings import PcxAutoSchema
