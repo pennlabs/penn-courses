@@ -10,7 +10,6 @@ export const Comment = forwardRef(({ comment, isReply }, ref) => {
   useEffect(() => {
     if (showReplies && replies.length === 0 && comment.replies > 0) {
       apiReplies(comment.id).then(res => {
-        console.log(res);
         setReplies(res.replies);
       });
     }
@@ -18,7 +17,6 @@ export const Comment = forwardRef(({ comment, isReply }, ref) => {
 
   return (
     <div className={`comment ${isReply ? "reply" : ""}`} ref={ref}>
-      <div className="left">
         <div className="top">
           <b>{comment.author_name}</b>
           <sub>{formatDate(comment.modified_at)}</sub>
@@ -36,6 +34,10 @@ export const Comment = forwardRef(({ comment, isReply }, ref) => {
             </button>
           </>
         )}
+        <div>
+          <button className="btn-borderless btn">Like</button>
+          <span>{comment.likes} Likes</span>
+        </div>
         {comment.replies > 0 && (
           <>
             <button
@@ -50,11 +52,6 @@ export const Comment = forwardRef(({ comment, isReply }, ref) => {
               ))}
           </>
         )}
-      </div>
-      <div className="right">
-        <i className="fas fa-thumbs-up"></i>
-        <span>{comment.likes}</span>
-      </div>
     </div>
   );
 });
