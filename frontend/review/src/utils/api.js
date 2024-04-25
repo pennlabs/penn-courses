@@ -123,70 +123,126 @@ export function apiReviewData(type, code, semester) {
   );
 }
 
-export function apiComments(code) {
-  if(code === "CIS-1200") {
-    return Promise.resolve({
-      comments: [
-        {
-          title: "Hi 1",
-          content: "I love this course :)",
-          id: 10,
-          created_at: new Date(),
-          modified_at: new Date(),
-          author_name: "Luke Tong",
-          likes: 69,
-          course: "CIS-1200",
-          semester: "2024A",
-          parent_id: null,
-          path: "10",
-        },
-        {
-          title: "Hi 2",
-          content: "Luke is so cool and awesome",
-          id: 11,
-          created_at: new Date(new Date() - 10),
-          modified_at: new Date(new Date() - 10),
-          author_name: "Penn Labs",
-          likes: 100,
-          course: "CIS-1200",
-          semester: "2024A",
-          parent_id: 10,
-          path: "10.11",
-        },
-        {
-          title: "Hi 3",
-          content: "I hate this course :(",
-          id: 20,
-          created_at: new Date(new Date() - 10),
-          modified_at: new Date(new Date() - 10),
-          author_name: "Shiva Mehta",
-          likes: 0,
-          course: "CIS-1200",
-          semester: "2022A",
-          parent_id: null,
-          path: "20",
-        },
-        {
-          title: "Hi 4",
-          content: "I TA this course :|",
-          id: 30,
-          created_at: new Date(new Date() - 5),
-          modified_at: new Date(new Date() - 5),
-          author_name: "Eunsoo Shin",
-          likes: 10,
-          course: "CIS-1200",
-          semester: "2022A",
-          parent_id: null,
-          path: "30",
-        },
-      ],
-    });
-  } else {
-    return Promise.resolve({
-      comments: [],
-    })
+const fakeComments = {
+  comments: [
+    {
+      content:
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla mollis commodo ligula sit amet pharetra.",
+      id: 10,
+      created_at: new Date(new Date() - 1000000),
+      modified_at: new Date(new Date() - 1000),
+      author_name: "Luke Tong",
+      likes: 69,
+      course: "CIS-1200",
+      semester: "2024A",
+      professorId: 6,
+      parent_id: null,
+      path: "10",
+      replies: 1
+    },
+    {
+      content:
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla mollis commodo ligula sit amet pharetra. Nunc accumsan nec mi eget sagittis.",
+      id: 20,
+      created_at: new Date(new Date() - 1000000),
+      modified_at: new Date(new Date() - 1000000),
+      author_name: "Shiva Mehta",
+      likes: 0,
+      course: "CIS-1200",
+      semester: "2022A",
+      professorId: 6,
+      parent_id: null,
+      path: "20",
+      replies: 0
+    },
+    {
+      content:
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla mollis commodo ligula sit amet pharetra. Nunc accumsan nec mi eget sagittis. Mauris rutrum hendrerit est, a interdum ipsum convallis et. Etiam vel est ac mauris congue sollicitudin ut quis nulla. Mauris rutrum hendrerit est, a interdum ipsum convallis et. Etiam vel est ac mauris congue sollicitudin ut quis nulla.",
+      id: 30,
+      created_at: new Date(new Date() - 5000000),
+      modified_at: new Date(new Date() - 5000000),
+      author_name: "Eunsoo Shin",
+      likes: 10,
+      course: "CIS-1200",
+      semester: "2022A",
+      professorId: 6,
+      parent_id: null,
+      path: "30",
+      replies: 0
+    }
+  ]
+}
+
+const fakeSemesters = {
+  semesters: [
+    "2024A",
+    "2022A",
+  ],
+}
+
+const fakeReplies = {
+  replies: [
+    {
+      content:
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla mollis commodo ligula sit amet pharetra.",
+      id: 12,
+      created_at: new Date(),
+      modified_at: new Date(),
+      author_name: "Shiva Mehta",
+      likes: 100,
+      course: "CIS-1200",
+      semester: "2024A",
+      professorId: 6,
+      parent_id: 11,
+      path: "10.11",
+      replies: 0
+    },
+    {
+      title: "Luke is so cool and awesome",
+      content:
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla mollis commodo ligula sit amet pharetra. Nunc accumsan nec mi eget sagittis.",
+      id: 11,
+      created_at: new Date(),
+      modified_at: new Date(),
+      author_name: "Penn Courses",
+      likes: 100,
+      course: "CIS-1200",
+      semester: "2024A",
+      professorId: 6,
+      parent_id: 10,
+      path: "10.11",
+      replies: 1
+    }
+  ]
+
+}
+
+const fakeUserComment = {
+  content: 
+    "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla mollis commodo ligula sit amet pharetra. Nunc accumsan nec mi eget sagittis. Mauris rutrum hendrerit est, a interdum ipsum convallis et. Etiam vel est ac mauris congue sollicitudin ut quis nulla. Mauris rutrum hendrerit est, a interdum ipsum convallis et. Etiam vel est ac mauris congue sollicitudin ut quis nulla.",
+  id: 40,
+  created_at: new Date(),
+  modified_at: new Date(),
+  author_name: "Penn Labs",
+  likes: 1,
+  course: "CIS-1200",
+  semester: "2024A",
+  professorId: 6,
+  parent_id: null,
+  path: "30",
+  replies: 0
+}
+
+export function apiComments(course, semester, professorId, sortBy) {
+  if(!semester && !professorId && !sortBy) {
+    return Promise.resolve({ ...fakeComments, ...fakeSemesters})
   }
-  
+  return Promise.resolve({ comments: fakeComments.comments.filter((comment) => {
+    return (course == null || comment.course === course) && 
+    (semester == null || comment.semester === semester) && 
+    (professorId == null || comment.professorId === professorId)
+  })})
+
   /*
   return apiFetch(
     `${API_DOMAIN}/api/review/${encodeURIComponent(type)}/${encodeURIComponent(
@@ -194,6 +250,16 @@ export function apiComments(code) {
     )}/comments?token=${encodeURIComponent(API_TOKEN)}` + getSemesterQParam(semester)
   );
   */
+}
+
+
+export function apiReplies(commentId) {
+  return Promise.resolve({ replies: fakeReplies.replies.filter(reply => reply.parent_id === commentId)} );
+}
+
+export function apiUserComment(course) {
+  return Promise.resolve(fakeUserComment);
+
 }
 
 export function apiContact(name) {

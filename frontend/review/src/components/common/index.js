@@ -4,3 +4,4 @@ export * from "./ErrorBox";
 export * from "./GoogleAnalytics";
 export * from "./Popover";
 export * from "./ScoreTable";
+export * from "./Comment";

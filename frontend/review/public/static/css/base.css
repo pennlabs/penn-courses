@@ -163,6 +163,16 @@ body {
     border: 1px solid #9ed2d4;
 }
 
+.btn-borderless {
+    all: unset;
+    color: #abaaf1;
+}
+
+.btn-borderless:hover {
+    cursor: pointer;
+    text-decoration: underline;
+}
+
 .btn-action {
     background-color: #ccc;
     color: white;
@@ -466,6 +476,16 @@ input {
 #course-details-comments .comment {
     border-bottom: 1px solid #eee;
     padding: 10px 20px;
+    display: grid;
+    grid-template-columns: 8fr 1fr;
+}
+
+#course-details-comments .comment .reply {
+    border: none;
+}
+
+#course-details-comments .comment .left {
+    justify-content: right;
 }
 
 #course-details-comments .comment .top {
@@ -473,9 +493,9 @@ input {
     align-items: center;
 }
 
+/* maybe move the bottom 2 rules to general.css */
 #course-details-comments .comment .top b {
     color: black;
-    font-size: 1.2em;
 }
 
 #course-details-comments .comment .top sub {
