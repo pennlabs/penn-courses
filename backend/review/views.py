@@ -847,11 +847,12 @@ class CommentList(generics.ListAPIView):
     def get(self, request, course_code, sort_by):
         queryset = self.get_queryset()
         l =  queryset.count()
-        if sort_by == "newest":
-            returnset = queryset.order_by("likes", "path")
+        print(queryset)
+        if sort_by == "popular":
+            returnset = queryset.all().order_by("likes", "path")
         elif sort_by == "oldest":
-            returnset = queryset.order_by("path")
-        elif sort_by == "popular":
+            returnset = queryset.all().order_by("path")
+        elif sort_by == "newest":
             returnset = queryset.annotate(
                 path_sort = l - Cast(
                     Substr("path", 
@@ -859,10 +860,10 @@ class CommentList(generics.ListAPIView):
                            StrIndex("path", Value("."))-1
                            ), IntegerField()
                     )
-                ).order_by("path_sort", "path")
-        return Response(returnset, status=status.HTTP_200_OK)
+                ).all().order_by("path_sort", "path")
+        return Response(CommentSerializer(returnset, many=True).data, status=status.HTTP_200_OK)
     def get_queryset(self):
-        return Comment.objects.filter(course__code=self.kwargs["course_code"])
+        return Comment.objects.filter(course__full_code=self.kwargs["course_code"])
 
 # CommentViewSet
 class CommentViewSet(viewsets.ModelViewSet):
