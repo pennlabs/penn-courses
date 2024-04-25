@@ -1,7 +1,7 @@
 import React, { forwardRef, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
-import { ColumnSelector, ScoreTable } from "./common";
+import { ColumnSelector, ScoreTable, Comment } from "./common";
 import {
   compareSemesters,
   getColumnName,
@@ -83,7 +83,7 @@ const formsCol = {
  */
 export const DetailsBox = forwardRef(
   ({ course, instructor, url_semester, type, isCourseEval }, ref) => {
-    if((type === "course" && instructor) || (type === "instructor")) {
+    if ((type === "course" && instructor) || type === "instructor") {
       return (
         <SelectedDetailsBox
           course={course}
@@ -107,39 +107,33 @@ export const DetailsBox = forwardRef(
       );
     }
   }
-)
+);
 
 const UnselectedDetailsBox = forwardRef(
   ({ course, instructor, url_semester, type, isCourseEval }, ref) => {
-    const [data, setData] = useState({});
+    const [semesterList, setSemesterList] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
 
+    const [comments, setComments] = useState({});
+
     const [selectedSemester, setSelectedSemester] = useState(null);
-    const [semesterList, setSemesterList] = useState([]);
 
     useEffect(() => {
       setIsLoading(true);
-      apiComments(course)
+      apiComments(course, null, null, null)
         .then(res => {
-          console.log(res);
-          const semesterSet = new Set(
-            res.comments
-              .map(c => c.semester)
-              .sort(compareSemesters)
-          );
-          const semesters = [...semesterSet];
-          setData(res);
-          setSemesterList(semesters);
+          setComments(res.comments);
+          setSemesterList(res.semesters);
         })
         .finally(() => {
           setIsLoading(false);
         });
     }, [course]);
-    
-    const hasData = Boolean(Object.keys(data).length) && data.comments.length > 0;
+
+    const hasData = comments.length > 0;
 
     if (!hasData) {
-      if(isLoading) {
+      if (isLoading) {
         // Loading spinner
         return (
           <div
@@ -177,34 +171,31 @@ const UnselectedDetailsBox = forwardRef(
               </div>
             </div>
             <h3
-              style={{ color: "#b2b2b2", margin: "1.5em", marginBottom: ".5em" }}
+              style={{
+                color: "#b2b2b2",
+                margin: "1.5em",
+                marginBottom: ".5em"
+              }}
             >
               No one's commented yet! Be the first to share your thoughts.
             </h3>
           </div>
         );
-
       }
     }
 
     return (
-      <div
-        id="course-details"
-        className="box"
-        ref={ref}
-      >
+      <div id="course-details" className="box" ref={ref}>
         <div id="course-details-wrapper">
-          <h3>
-            Comments
-          </h3>
+          <h3>Comments</h3>
           <div id="course-details-comments" className="clearfix mt-2">
             <div className="list">
-                <div
-                  onClick={() => setSelectedSemester(null)}
-                  className={selectedSemester === null ? "selected" : ""}
-                >
-                  Overall
-                </div>
+              <div
+                onClick={() => setSelectedSemester(null)}
+                className={selectedSemester === null ? "selected" : ""}
+              >
+                Overall
+              </div>
               {semesterList.map(sem => (
                 <div
                   key={sem}
@@ -216,23 +207,18 @@ const UnselectedDetailsBox = forwardRef(
               ))}
             </div>
             <div className="comments">
-              {data.comments
-                .filter(c => !selectedSemester || c.semester === selectedSemester)
-                .map(c =>
-                  <div key={c.id} className="comment">
-                    <div className="top">
-                      <b>{c.title}</b>
-                      <sub>{c.modified_at.toLocaleString("en-US")}</sub>
-                    </div>
-                    <p>{c.content}</p>
-                  </div>
+              {comments
+                .filter(
+                  c => !selectedSemester || c.semester === selectedSemester
                 )
-              }
+                .map(c => (
+                  <Comment comment={c} replies={[]} />
+                ))}
             </div>
           </div>
         </div>
       </div>
-    )
+    );
   }
 );
 
@@ -322,7 +308,7 @@ const SelectedDetailsBox = forwardRef(
             setIsLoading(false);
           });
       }
-    }, [course, instructor, selectedSemester]);
+    }, [course, generateCol, instructor, selectedSemester, url_semester]);
 
     const hasData = Boolean(Object.keys(data).length);
     const hasSelection =
@@ -383,7 +369,7 @@ const SelectedDetailsBox = forwardRef(
         </div>
       );
     }
-    
+
     const {
       instructor: { name },
       sections
