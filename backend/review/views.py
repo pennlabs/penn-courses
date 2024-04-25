@@ -1,7 +1,8 @@
 from collections import Counter, defaultdict
 
 from dateutil.tz import gettz
-from django.db.models import F, Max, OuterRef, Q, Subquery, Value
+from django.db.models import F, Max, OuterRef, Q, Subquery, Value, IntegerField
+from django.db.models.functions import Concat, Substr, StrIndex, Cast
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, viewsets, status
@@ -843,8 +844,25 @@ class CommentList(generics.ListAPIView):
     http_method_names = ["get"]
     # permission_classes = [IsAuthenticated]
 
+    def get(self, request, course_code, sort_by):
+        queryset = self.get_queryset()
+        l =  queryset.count()
+        if sort_by == "newest":
+            returnset = queryset.order_by("likes", "path")
+        elif sort_by == "oldest":
+            returnset = queryset.order_by("path")
+        elif sort_by == "popular":
+            returnset = queryset.annotate(
+                path_sort = l - Cast(
+                    Substr("path", 
+                           1, 
+                           StrIndex("path", Value("."))-1
+                           ), IntegerField()
+                    )
+                ).order_by("path_sort", "path")
+        return Response(returnset, status=status.HTTP_200_OK)
     def get_queryset(self):
-        return Comment.objects.filter(course__code=self.request.get("course_code"))
+        return Comment.objects.filter(course__code=self.kwargs["course_code"])
 
 # CommentViewSet
 class CommentViewSet(viewsets.ModelViewSet):
@@ -930,19 +948,36 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def retrieve(self, request, pk=None):
         comment = get_object_or_404(Comment, pk=pk)
-        return Response(comment, status=status.HTTP_200_SUCCESS)
+        return Response(comment, status=status.HTTP_200_OK)
     
     def create(self, request):
         if Comment.objects.filter(id=request.data.get("id")).exists():
             return self.update(request, request.data.get("id"))
-
-        if all(["text", "parent_id"], lambda x: x in request.data):
-            comment = Comment.objects.create(
-                text=request.data.get("text"),
-                parent_id=request.data.get("parent_id")
+        if not request.data.get("course_code"):
+            return Response(
+                {"message": "No course code provided."}, status=status.HTTP_400_BAD_REQUEST
             )
-
-            return Response({comment}, status=status.HTTP_201_CREATED)
+        course = Course.objects.filter(full_code = request.data.get("course_code")).first()
+        if not course:
+            return Response(
+                {"message": "Invalid course code."}, status=status.HTTP_404_NOT_FOUND
+            )
+        if (request.data.get("text")):
+            if (request.data.get("parent_id")):
+                comment = Comment.objects.create(
+                    text=request.data.get("text"),
+                    course = Course.objects.filter(full_code = request.data.get("course_code")).first(),
+                    parent_id=Comment.objects.filter(id = request.data.get("parent_id")).first()
+                )
+            else:
+                comment = Comment.objects.create(
+                    text=request.data.get("text"),
+                    course = Course.objects.filter(full_code = request.data.get("course_code")).first(),
+                )
+            prefix = comment.parent_id.path + '.' if comment.parent_id else ''
+            comment.path = prefix + '{:0{}d}'.format(comment.id, comment._N)
+            comment.save()
+            return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
         else:
             return Response(
                 {"message": "Insufficient fields presented."}, status=status.HTTP_400_BAD_REQUEST

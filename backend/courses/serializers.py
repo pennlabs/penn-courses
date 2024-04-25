@@ -475,6 +475,8 @@ class CommentSerializer(serializers.ModelSerializer):
     def get_likes(self, obj):
         return len(obj.likes.values_list('id'))
     def get_parent_id(self, obj):
+        if obj.parent_id is None:
+            return None
         return obj.parent_id.id
 
     class Meta:

@@ -1532,10 +1532,14 @@ class Comment(models.Model):
 
     def level(self):
         return len(self.path.split('.'))
-    def save(self, **kwargs):
-        prefix = self.parent.path + '.' if self.parent else ''
-        self.path = prefix + '{:0{}d}'.format(self.id, self._N)
-        super().save(**kwargs)
+    #def save(self, **kwargs):
+      #  parent_comment = Comment.objects.filter(id=self.parent_id).first()
+        #prefix = parent_comment.path + '.' if parent_comment else ''
+       # super().save(**kwargs)
+        #print(self.id)
+       # self.path = prefix + '{:0{}d}'.format(self.id, self._N)
+       # super().save(**kwargs)
+
     def delete(self, **kwargs):
         if Comment.objects.filter(parent_id=self).exists():
             self.text = "This comment has been removed."
