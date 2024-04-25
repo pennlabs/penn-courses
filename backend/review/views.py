@@ -18,7 +18,7 @@ from courses.models import (
     Section,
     Comment
 )
-from courses.util import get_current_semester, get_or_create_add_drop_period, prettify_semester
+from courses.util import get_current_semester, get_or_create_add_drop_period, prettify_semester, get_section_from_course_professor_semester
 from PennCourses.docs_settings import PcxAutoSchema
 from PennCourses.settings.base import TIME_ZONE, WAITLIST_DEPARTMENT_CODES
 from review.annotations import annotate_average_and_recent, review_averages
@@ -828,7 +828,9 @@ class CommentList(generics.ListAPIView):
     """
     Retrieve a list of all comments for the provided course.
     """
-
+    # this needs to be annotated with the users likes
+    # this also needs to support pagination (query params)
+    # this also needs to support filtering (query params)
     schema = PcxAutoSchema(
         response_codes={
             "review-coursecomments": {
@@ -925,30 +927,25 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     serializer_class = CommentSerializer
     http_method_names = ["get", "post", "delete", "put"]
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
     queryset = Comment.objects.all()
 
     def retrieve(self, request, pk=None):
         comment = get_object_or_404(Comment, pk=pk)
         return Response(comment, status=status.HTTP_200_SUCCESS)
     
-    # we are going to require professor and semseter to be specified, then derive the section from that
     def create(self, request):
         if Comment.objects.filter(id=request.data.get("id")).exists():
             return self.update(request, request.data.get("id"))
         
-        if not all(["text", "user", "course_code", "professor", "semester"], lambda x: x in request.data):
+        if not all(["text", "course_code", "professor", "semester"], lambda x: x in request.data):
             return Response(
                 {"message": "Insufficient fields presented."}, status=status.HTTP_400_BAD_REQUEST
             )
-
-        # we want to derive section from professor and semester
-        def get_section_from_course_professor_semester(course_code, professor, semester):
-            pass
         
         try:
             section = get_section_from_course_professor_semester(request.data.get("course_code"), request.data.get("professor"), request.data.get("semester"))
-        except Section.DoesNotExist:
+        except Exception:
             return Response(
                 {"message": "Insufficient fields presented."}, status=status.HTTP_400_BAD_REQUEST
             )
@@ -966,7 +963,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
         if request.user != comment.user:
             return Response(
-                {"message": "Not authorized to modify this comment.."}, status=status.HTTP_403_FORBIDDEN
+                {"message": "Not authorized to modify this comment."}, status=status.HTTP_403_FORBIDDEN
             )
 
         if "text" in request.data:
@@ -987,4 +984,22 @@ class CommentViewSet(viewsets.ModelViewSet):
         
         comment.delete()
         return Response({"message": "Successfully deleted."}, status=status.HTTP_204_NO_CONTENT)
+
+def handle_vote(request):
+    """
+    Handles an incoming request that changes the vote of a comment.
+    """
+    if not all(["id", "vote_type"], lambda x: x in request.data):
+        return Response(
+            {"message": "Insufficient fields presented."}, status=status.HTTP_400_BAD_REQUEST
+        )  
     
+    user = request.user
+    comment = get_object_or_404(Comment, request.data.get("id"))
+    vote_type = request.data.get("vote_type")
+    if vote_type == "upvote":
+        comment.downvotes.remove(user)
+        comment.upvotes.add(user)
+    if vote_type == "downvote":
+        comment.upvotes.remove(user)
+        comment.downvotes.add(user)
