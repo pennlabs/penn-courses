@@ -1562,15 +1562,18 @@ class Comment(models.Model):
     )
     upvotes = models.ManyToManyField(
         get_user_model(),
+        related_name="upvotes",
         help_text="The number of upvotes a comment gets."
     )
     downvotes = models.ManyToManyField(
         get_user_model(),
+        related_name="downvotes",
         help_text="The number of downvotes a comment gets."
     )
     section = models.ForeignKey(
         Section,
         on_delete=models.CASCADE,
+        default=None,
         help_text=dedent(
             """
         The section with which a comment is associated. Section was chosen instead of courses
