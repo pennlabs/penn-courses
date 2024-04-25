@@ -198,6 +198,26 @@ body {
     opacity: 70%;
 }
 
+.tab-wrapper {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.tab {
+    background-color: white;
+    color: #abaaf1;
+    border: none;
+    display: inline;
+    width: 100%;
+    padding-block: 10px;
+}
+
+.tab.active {
+    background-color: #abaaf1;
+    color: white;
+}
+
 #header {
     background-color: white;
     min-height: 80px;
@@ -476,16 +496,10 @@ input {
 #course-details-comments .comment {
     border-bottom: 1px solid #eee;
     padding: 10px 20px;
-    display: grid;
-    grid-template-columns: 8fr 1fr;
 }
 
 #course-details-comments .comment .reply {
     border: none;
-}
-
-#course-details-comments .comment .left {
-    justify-content: right;
 }
 
 #course-details-comments .comment .top {
