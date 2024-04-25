@@ -932,21 +932,34 @@ class CommentViewSet(viewsets.ModelViewSet):
         comment = get_object_or_404(Comment, pk=pk)
         return Response(comment, status=status.HTTP_200_SUCCESS)
     
+    # we are going to require professor and semseter to be specified, then derive the section from that
     def create(self, request):
         if Comment.objects.filter(id=request.data.get("id")).exists():
             return self.update(request, request.data.get("id"))
-
-        if all(["text", "parent_id"], lambda x: x in request.data):
-            comment = Comment.objects.create(
-                text=request.data.get("text"),
-                parent_id=request.data.get("parent_id")
-            )
-
-            return Response({comment}, status=status.HTTP_201_CREATED)
-        else:
+        
+        if not all(["text", "user", "course_code", "professor", "semester"], lambda x: x in request.data):
             return Response(
                 {"message": "Insufficient fields presented."}, status=status.HTTP_400_BAD_REQUEST
             )
+
+        # we want to derive section from professor and semester
+        def get_section_from_course_professor_semester(course_code, professor, semester):
+            pass
+        
+        try:
+            section = get_section_from_course_professor_semester(request.data.get("course_code"), request.data.get("professor"), request.data.get("semester"))
+        except Section.DoesNotExist:
+            return Response(
+                {"message": "Insufficient fields presented."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        comment = Comment.objects.create(
+            text=request.data.get("text"),
+            author=request.user,
+            section=section,
+            parent_id=request.data.get("parent_id"),
+        )
+        return Response({comment}, status=status.HTTP_201_CREATED)
 
     def update(self, request, pk=None):
         comment = get_object_or_404(Comment, pk=pk)

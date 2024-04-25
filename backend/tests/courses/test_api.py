@@ -1351,7 +1351,6 @@ class CommentsTestCase(TestCase):
         self.downvote("user2", self.id2)
     
     def get_comments(self, code, ordering):
-        # ordering specified through query parameter
         self.client.get(reverse("comment", kwargs={"course_code": code, "ordering": ordering}))
 
     def create_comment(self, username, code, semester, parent_id):

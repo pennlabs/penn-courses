@@ -1568,13 +1568,13 @@ class Comment(models.Model):
         get_user_model(),
         help_text="The number of downvotes a comment gets."
     )
-    course = models.ForeignKey(
-        Course,
+    section = models.ForeignKey(
+        Section,
         on_delete=models.CASCADE,
         help_text=dedent(
             """
-        The course with which a comment is associated. Course was chosen instead of topics for
-        hosting comments because topics are SOFT STATE and are recomputed regularly.
+        The section with which a comment is associated. Section was chosen instead of courses
+        for hosting topics to support lower levels of filtering.
         """
         )
     )

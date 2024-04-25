@@ -771,3 +771,14 @@ def historical_semester_probability(current_semester: str, semesters: list[str])
             [semester_probabilities["A"], semester_probabilities["B"], semester_probabilities["C"]],
         )
     )
+
+
+def get_section_from_course_professor_semester(course_code, professor, semester):
+    """
+    Attempts to return a course section that matches the given parameters.
+    ValueError is raised if the section does not exist.
+    """
+    # a section has multiple professors
+    section = Section.objects.annotate("course__full_code").filter(course__full_code=course_code, ).order_by("code").first()
+    return None
+    raise ValueError(f"No section exists with course code ({course_code}), professor ({professor}), semester ({semester})")
