@@ -1573,32 +1573,36 @@ class Comment(models.Model):
     section = models.ForeignKey(
         Section,
         on_delete=models.CASCADE,
-        default=None,
         help_text=dedent(
             """
-        The section with which a comment is associated. Section was chosen instead of courses
-        for hosting topics to support lower levels of filtering.
+        The section with which a comment is associated. Section was chosen instead of topics for
+        hosting comments because topics are SOFT STATE and are recomputed regularly.
         """
-        )
+        ),
+        null=True
     )
 
-    parent_id = models.ForeignKey(
+    base = models.ForeignKey(
         "self",
         on_delete=models.SET_NULL, # redundant due to special deletion conditions
-        null=True
+        null=True,
+    )
+    parent = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL, # similarly redundant
+        null=True,
+        related_name="children"
     )
     path = models.TextField(db_index=True)
 
     def level(self):
         return len(self.path.split('.'))
-    def save(self, **kwargs):
-        prefix = self.parent.path + '.' if self.parent else ''
-        self.path = prefix + '{:0{}d}'.format(self.id, self._N)
-        super().save(**kwargs)
+    
     def delete(self, **kwargs):
         if Comment.objects.filter(parent_id=self).exists():
             self.text = "This comment has been removed."
-            self.likes.clear()
+            self.upvotes.clear()
+            self.downvotes.clear()
             self.author = None
             self.save()
         else:

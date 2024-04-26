@@ -479,15 +479,46 @@ class FriendshipRequestSerializer(serializers.Serializer):
 
 class CommentSerializer(serializers.ModelSerializer):
     author_name = serializers.CharField(source="author.username", read_only=True)
-    likes = serializers.SerializerMethodField()
-    course = serializers.CharField(source="course.full_code", read_only=True)
-    parent_id = serializers.SerializerMethodField()
+    votes = serializers.SerializerMethodField()
+    section = serializers.CharField(source="section.full_code", read_only=True)
+    base = serializers.SerializerMethodField()
+    parent = serializers.SerializerMethodField()
 
-    def get_likes(self, obj):
-        return len(obj.likes.values_list('id'))
-    def get_parent_id(self, obj):
-        return obj.parent_id.id
+    def get_votes(self, obj):
+        return len(obj.upvotes.values_list('id')) - len(obj.downvotes.values_list('id'))
+    def get_base(self, obj):
+        if obj.base is None:
+            return None
+        return obj.base.id
+    def get_parent(self, obj):
+        if obj.parent is None:
+            return None
+        return obj.parent.id
 
     class Meta:
         model = Comment
-        fields = ['id', 'text', 'created_at', 'modified_at', 'author_name', 'likes', 'course', 'parent_id', 'path']
+        fields = ['id', 'text', 'created_at', 'modified_at', 'author_name', 'votes', 'section', 'base', 'parent', 'path']
+
+class CommentListSerializer(serializers.ModelSerializer):
+    author_name = serializers.CharField(source="author.username", read_only=True)
+    votes = serializers.SerializerMethodField()
+    section = serializers.CharField(source="section.full_code", read_only=True)
+    base = serializers.SerializerMethodField()
+    parent = serializers.SerializerMethodField()
+    user_upvoted = serializers.BooleanField()
+    user_downvoted = serializers.BooleanField()
+
+    def get_votes(self, obj):
+        return len(obj.upvotes.values_list('id')) - len(obj.downvotes.values_list('id'))
+    def get_base(self, obj):
+        if obj.base is None:
+            return None
+        return obj.base.id
+    def get_parent(self, obj):
+        if obj.parent is None:
+            return None
+        return obj.parent.id
+
+    class Meta:
+        model = Comment
+        fields = ['id', 'text', 'created_at', 'modified_at', 'author_name', 'votes', 'section', 'base', 'parent', 'path', 'user_upvoted', 'user_downvoted']
