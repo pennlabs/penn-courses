@@ -20,6 +20,7 @@ const getColor = (num: number, reverse: boolean) => {
 
 const ScoreCircle = styled(CircularProgressbar)`
     aspect-ratio: 1;
+    min-width: 1.7rem;
 `;
 
 const ScoreLabel = styled.div`
@@ -58,6 +59,7 @@ const Stack = styled.div`
     gap: 1rem .75rem;
     justify-items: left;
     align-items: center;
+
 `;
 
 type StatsType = "course_quality" | "instructor_quality" | "difficulty" | "work_required";

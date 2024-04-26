@@ -2,13 +2,14 @@ import React, { forwardRef, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { ColumnSelector, ScoreTable } from "./common";
+import { Comment, WriteComment } from "./Comments";
 import {
   compareSemesters,
   getColumnName,
   orderColumns,
   toNormalizedSemester
 } from "../utils/helpers";
-import { apiComments, apiHistory } from "../utils/api";
+import { apiComments, apiHistory, apiComment } from "../utils/api";
 import { PROF_IMAGE_URL } from "../constants/routes";
 import { REGISTRATION_METRICS_COLUMNS } from "../constants";
 
@@ -83,78 +84,76 @@ const formsCol = {
  */
 export const DetailsBox = forwardRef(
   ({ course, instructor, url_semester, type, isCourseEval }, ref) => {
-    if((type === "course" && instructor) || (type === "instructor")) {
-      return (
-        <SelectedDetailsBox
-          course={course}
-          instructor={instructor}
-          url_semester={url_semester}
-          type={type}
-          isCourseEval={isCourseEval}
-          ref={ref}
-        />
-      );
-    } else {
-      return (
-        <UnselectedDetailsBox
-          course={course}
-          instructor={instructor}
-          url_semester={url_semester}
-          type={type}
-          isCourseEval={isCourseEval}
-          ref={ref}
-        />
-      );
-    }
-  }
-)
+    const [ viewRatings, setViewRatings ] = useState(false);
 
-const UnselectedDetailsBox = forwardRef(
-  ({ course, instructor, url_semester, type, isCourseEval }, ref) => {
-    const [data, setData] = useState({});
+    return (
+      <>
+        <div className="tab-wrapper">
+          <button className={`btn tab ${viewRatings ? "active" : ""}`} onClick={() => setViewRatings(true)}>Ratings</button>
+          <button className={`btn tab ${viewRatings ? "" : "active"}`} onClick={() => setViewRatings(false)}>Comments</button>
+        </div>
+        <RatingsTab 
+          course={course} 
+          instructor={instructor} 
+          url_semester={url_semester} 
+          type={type} 
+          isCourseEval={isCourseEval}
+          ref={ref} 
+          active={viewRatings}
+        />
+        <CommentsTab 
+          course={course} 
+          instructor={instructor} 
+          url_semester={url_semester} 
+          type={type} 
+          isCourseEval={isCourseEval}
+          ref={ref}
+          active={!viewRatings}
+        />
+      </>
+    )
+  }
+);
+
+const CommentsTab = forwardRef(
+  ({ course, instructor, url_semester, type, isCourseEval, active }, ref) => {
+    const [semesterList, setSemesterList] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
 
+    const [comments, setComments] = useState({});
+    const [userComment, setUserComment] = useState({});
+
     const [selectedSemester, setSelectedSemester] = useState(null);
-    const [semesterList, setSemesterList] = useState([]);
 
     useEffect(() => {
       setIsLoading(true);
-      apiComments(course)
+      apiComments(course, "all", null, null)
         .then(res => {
-          console.log(res);
-          const semesterSet = new Set(
-            res.comments
-              .map(c => c.semester)
-              .sort(compareSemesters)
-          );
-          const semesters = [...semesterSet];
-          setData(res);
-          setSemesterList(semesters);
+          console.log("fetching comments", res);
+          setComments(res.comments);
+          setSemesterList(res.semesters);
         })
         .finally(() => {
           setIsLoading(false);
         });
     }, [course]);
-    
-    const hasData = Boolean(Object.keys(data).length) && data.comments.length > 0;
 
-    if (!hasData) {
-      if(isLoading) {
+    useEffect(() => {
+      // TODO: HARDCODED USER ID BC CANT YET FETCH WHICH COMMENT BELONGS TO WHICH USER
+      apiComment("10").then(res => {
+        setUserComment(res);
+      });
+    }, [course]);
+
+    const hasComments = comments.length > 0;
+    const hasUserComment = Object.keys(userComment).length > 0;
+
+    if(!active) return <></>
+
+    if (!hasComments && !hasUserComment) {
+      if (isLoading) {
         // Loading spinner
-        return (
-          <div
-            id="course-details"
-            className="box"
-            style={{ textAlign: "center", padding: 45 }}
-            ref={ref}
-          >
-            <i
-              className="fa fa-spin fa-cog fa-fw"
-              style={{ fontSize: "150px", color: "#aaa" }}
-            />
-            <h1 style={{ fontSize: "2em", marginTop: 15 }}>Loading...</h1>
-          </div>
-        );
+        return <Loading />
       } else {
         // Return placeholder image.
         return (
@@ -164,6 +163,11 @@ const UnselectedDetailsBox = forwardRef(
             ref={ref}
             style={{ textAlign: "center" }}
           >
+            <WriteComment 
+              course={course} 
+              semesters={semesterList} 
+              setUserComment={setUserComment} 
+            />
             <div>
               <div>
                 <object
@@ -177,34 +181,37 @@ const UnselectedDetailsBox = forwardRef(
               </div>
             </div>
             <h3
-              style={{ color: "#b2b2b2", margin: "1.5em", marginBottom: ".5em" }}
+              style={{
+                color: "#b2b2b2",
+                margin: "1.5em",
+                marginBottom: ".5em"
+              }}
             >
               No one's commented yet! Be the first to share your thoughts.
             </h3>
           </div>
         );
-
       }
     }
 
     return (
-      <div
-        id="course-details"
-        className="box"
-        ref={ref}
-      >
+      <div id="course-details" className="box" ref={ref}>
         <div id="course-details-wrapper">
-          <h3>
-            Comments
-          </h3>
+          <h3>Comments</h3>
           <div id="course-details-comments" className="clearfix mt-2">
+            {hasUserComment || 
+              <WriteComment 
+                course={course} 
+                semesters={semesterList} 
+                setUserComment={setUserComment} 
+              />}
             <div className="list">
-                <div
-                  onClick={() => setSelectedSemester(null)}
-                  className={selectedSemester === null ? "selected" : ""}
-                >
-                  Overall
-                </div>
+              <div
+                onClick={() => setSelectedSemester(null)}
+                className={selectedSemester === null ? "selected" : ""}
+              >
+                Overall
+              </div>
               {semesterList.map(sem => (
                 <div
                   key={sem}
@@ -216,36 +223,35 @@ const UnselectedDetailsBox = forwardRef(
               ))}
             </div>
             <div className="comments">
-              {data.comments
-                .filter(c => !selectedSemester || c.semester === selectedSemester)
-                .map(c =>
-                  <div key={c.id} className="comment">
-                    <div className="top">
-                      <b>{c.title}</b>
-                      <sub>{c.modified_at.toLocaleString("en-US")}</sub>
-                    </div>
-                    <p>{c.content}</p>
-                  </div>
+              {hasUserComment && <Comment comment={userComment} isUserComment />}
+              {comments
+                .filter(
+                  c => !selectedSemester || c.semester === selectedSemester
                 )
-              }
+                .map(c => (
+                  <Comment comment={c} />
+                ))}
             </div>
           </div>
         </div>
       </div>
-    )
+    );
   }
 );
 
-const SelectedDetailsBox = forwardRef(
-  ({ course, instructor, url_semester, type, isCourseEval }, ref) => {
+const RatingsTab = forwardRef(
+  ({ course, instructor, url_semester, type, isCourseEval, active }, ref) => {
+    const hasSelection =
+      (type === "course" && instructor) || (type === "instructor" && course);
+    // Return placeholder image.
+    if (!hasSelection && active) {
+      return <Placeholder type={type} ref={ref} />
+    }
+
     const [data, setData] = useState({});
-    const [viewingRatings, setViewingRatings] = useState(true);
-    const [selectedSemester, setSelectedSemester] = useState(null);
-    const [semesterList, setSemesterList] = useState([]);
     const [columns, setColumns] = useState([]);
     const [filtered, setFiltered] = useState([]);
     const [filterAll, setFilterAll] = useState("");
-    const [emptyStateImg, setEmptyStateImg] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
     const showCol = info =>
@@ -276,15 +282,11 @@ const SelectedDetailsBox = forwardRef(
     };
 
     useEffect(() => {
-      const num = Math.floor(Math.random() * 5 + 1);
-      setEmptyStateImg(PROF_IMAGE_URL(num));
-    }, []);
-    useEffect(() => {
       setIsLoading(true);
       if (instructor !== null && course !== null) {
         apiHistory(course, instructor, url_semester)
           .then(res => {
-            console.log(res);
+            console.log("fetching ratings");
             const sections = Object.values(res.sections);
             const fields = [
               ...new Set(
@@ -294,13 +296,6 @@ const SelectedDetailsBox = forwardRef(
             const ratingCols = orderColumns(fields)
               .map(generateCol)
               .filter(col => col);
-            const semesterSet = new Set(
-              sections
-                .filter(a => a.comments)
-                .map(a => a.semester)
-                .sort(compareSemesters)
-            );
-            const semesters = [...semesterSet];
             setData(res);
             setColumns([
               semesterCol,
@@ -310,80 +305,28 @@ const SelectedDetailsBox = forwardRef(
               formsCol,
               ...ratingCols
             ]);
-            setSemesterList(semesters);
-            setSelectedSemester(() => {
-              if (!semesters.length) return null;
-              return semesterSet.has(selectedSemester)
-                ? selectedSemester
-                : semesters[0];
-            });
           })
           .finally(() => {
             setIsLoading(false);
           });
       }
-    }, [course, instructor, selectedSemester]);
+    }, [course, instructor, url_semester]);
 
     const hasData = Boolean(Object.keys(data).length);
-    const hasSelection =
-      (type === "course" && instructor) || (type === "instructor" && course);
     const isCourse = type === "course";
+
+
+    if(!active) return <></>
 
     // Return loading component. TODO: Add spinner/ghost loader.
     if (!hasData && hasSelection && isLoading) {
-      return (
-        <div
-          id="course-details"
-          className="box"
-          style={{ textAlign: "center", padding: 45 }}
-          ref={ref}
-        >
-          <i
-            className="fa fa-spin fa-cog fa-fw"
-            style={{ fontSize: "150px", color: "#aaa" }}
-          />
-          <h1 style={{ fontSize: "2em", marginTop: 15 }}>Loading...</h1>
-        </div>
-      );
+      return <Loading />
     }
     // Return placeholder image.
-    if (!hasData || !hasSelection) {
-      return (
-        <div
-          id="course-details"
-          className="box"
-          ref={ref}
-          style={{ textAlign: "center" }}
-        >
-          <div>
-            <div>
-              {isCourse ? (
-                <object type="image/svg+xml" data={emptyStateImg} width="175">
-                  <img alt="Professor Icon" src={emptyStateImg} />
-                </object>
-              ) : (
-                <object
-                  type="image/svg+xml"
-                  id="select-course-icon"
-                  data="/static/image/books-and-bag.svg"
-                  width="250"
-                >
-                  <img alt="Class Icon" src="/static/image/books-and-bag.png" />
-                </object>
-              )}
-            </div>
-          </div>
-          <h3
-            style={{ color: "#b2b2b2", margin: "1.5em", marginBottom: ".5em" }}
-          >
-            {isCourse
-              ? "Select an instructor to see individual sections, comments, and more details."
-              : "Select a course to see individual sections, comments, and more details."}
-          </h3>
-        </div>
-      );
+    if (!hasData) {
+      return <Placeholder type={type} ref={ref} />;
     }
-    
+
     const {
       instructor: { name },
       sections
@@ -402,111 +345,120 @@ const SelectedDetailsBox = forwardRef(
             </Link>
           </h3>
           <div className="clearfix">
-            <div className="btn-group">
-              <button
-                onClick={() => setViewingRatings(true)}
-                id="view_ratings"
-                className={`btn btn-sm ${
-                  viewingRatings ? "btn-sub-primary" : "btn-sub-secondary"
-                }`}
-              >
-                Ratings
-              </button>
-              <button
-                onClick={() => setViewingRatings(false)}
-                id="view_comments"
-                className={`btn btn-sm ${
-                  viewingRatings ? "btn-sub-secondary" : "btn-sub-primary"
-                }`}
-              >
-                Comments
-              </button>
-            </div>
             <ColumnSelector
               name="details"
               onSelect={setColumns}
               columns={columns}
               buttonStyle="btn-sub"
             />
-            {viewingRatings && (
-              <div className="float-right">
-                <label className="table-search">
-                  <input
-                    type="search"
-                    className="form-control form-control-sm"
-                    value={filterAll}
-                    onChange={({ target: { value } }) => {
-                      setFiltered([{ id: "name", value }]);
-                      setFilterAll(value);
-                    }}
-                  />
-                </label>
-              </div>
-            )}
+            <div className="float-right">
+              <label className="table-search">
+                <input
+                  type="search"
+                  className="form-control form-control-sm"
+                  value={filterAll}
+                  onChange={({ target: { value } }) => {
+                    setFiltered([{ id: "name", value }]);
+                    setFilterAll(value);
+                  }}
+                />
+              </label>
+            </div>
           </div>
-          {viewingRatings ? (
-            <div id="course-details-data">
-              <ScoreTable
-                alternating
-                ignoreSelect
-                sorted={[{ id: "semester", desc: false }]}
-                filtered={filtered}
-                data={sectionsList.map(
-                  ({
-                    ratings,
-                    semester,
-                    course_name: name,
-                    course_code,
-                    activity,
-                    forms_produced,
-                    forms_returned
-                  }) => ({
-                    ...ratings,
-                    semester: toNormalizedSemester(semester),
-                    name,
-                    course_code,
-                    activity,
-                    forms_produced,
-                    forms_returned
-                  })
-                )}
-                columns={columns}
-                noun="section"
-              />
-            </div>
-          ) : (
-            <div id="course-details-comments" className="clearfix mt-2">
-              <div className="list">
-                {semesterList.map(sem => (
-                  <div
-                    key={sem}
-                    onClick={() => setSelectedSemester(sem)}
-                    className={selectedSemester === sem ? "selected" : ""}
-                  >
-                    {sem}
-                  </div>
-                ))}
-              </div>
-              <div
-                className="comments"
-                dangerouslySetInnerHTML={{
-                  __html:
-                    sectionsList
-                      .filter(
-                        ({ semester, comments }) =>
-                          semester === selectedSemester && comments
-                      )
-                      .map(info => info.comments)
-                      .join(", ") ||
-                    "This instructor does not have any comments for this course."
-                }}
-              />
-            </div>
-          )}
+          <div id="course-details-data">
+            <ScoreTable
+              alternating
+              ignoreSelect
+              sorted={[{ id: "semester", desc: false }]}
+              filtered={filtered}
+              data={sectionsList.map(
+                ({
+                  ratings,
+                  semester,
+                  course_name: name,
+                  course_code,
+                  activity,
+                  forms_produced,
+                  forms_returned
+                }) => ({
+                  ...ratings,
+                  semester: toNormalizedSemester(semester),
+                  name,
+                  course_code,
+                  activity,
+                  forms_produced,
+                  forms_returned
+                })
+              )}
+              columns={columns}
+              noun="section"
+            />
+          </div>
         </div>
       </div>
     );
   }
 );
+
+const Placeholder = forwardRef(({ type }, ref) => {
+  const [emptyStateImg, setEmptyStateImg] = useState("");
+
+  useEffect(() => {
+    const num = Math.floor(Math.random() * 5 + 1);
+    setEmptyStateImg(PROF_IMAGE_URL(num));
+  }, []);
+
+  return (
+    <div
+      id="course-details"
+      className="box"
+      ref={ref}
+      style={{ textAlign: "center" }}
+    >
+      <div>
+        <div>
+          {type === "course" ? (
+            <object type="image/svg+xml" data={emptyStateImg} width="175">
+              <img alt="Professor Icon" src={emptyStateImg} />
+            </object>
+          ) : (
+            <object
+              type="image/svg+xml"
+              id="select-course-icon"
+              data="/static/image/books-and-bag.svg"
+              width="250"
+            >
+              <img alt="Class Icon" src="/static/image/books-and-bag.png" />
+            </object>
+          )}
+        </div>
+      </div>
+      <h3
+        style={{ color: "#b2b2b2", margin: "1.5em", marginBottom: ".5em" }}
+      >
+        {type === "course"
+          ? "Select an instructor to see individual sections, comments, and more details."
+          : "Select a course to see individual sections, comments, and more details."}
+      </h3>
+    </div>
+  );
+})
+
+const Loading = forwardRef(({ type }, ref) => {
+  return (
+    <div
+      id="course-details"
+      className="box"
+      style={{ textAlign: "center", padding: 45 }}
+      ref={ref}
+    >
+      <i
+        className="fa fa-spin fa-cog fa-fw"
+        style={{ fontSize: "150px", color: "#aaa" }}
+      />
+      <h1 style={{ fontSize: "2em", marginTop: 15 }}>Loading...</h1>
+    </div>
+  );
+});
 
 export default DetailsBox;

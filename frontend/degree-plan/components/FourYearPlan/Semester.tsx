@@ -35,7 +35,7 @@ export const SemesterCard = styled.div<{
     padding: 1rem;
     display: flex;
     flex-direction: column;
-    flex: 1 1 15rem;
+    flex: 1 1 11rem;
 `;
 
 const SemesterHeader = styled.div`
