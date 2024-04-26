@@ -8,9 +8,10 @@ from review.views import (
     department_reviews,
     instructor_for_course_reviews,
     instructor_reviews,
+    handle_vote,
+    get_comment_children,
     CommentList,
-    CommentViewSet,
-    handle_vote
+    CommentViewSet
 )
 
 
@@ -47,17 +48,27 @@ urlpatterns = [
     path("autocomplete", cache_page(MONTH_IN_SECONDS)(autocomplete), name="review-autocomplete"),
     path(
         "<slug:semester>/course_comments/<slug:course_code>",
-        cache_page(DAY_IN_SECONDS)(CommentList),
+        CommentList.as_view(),
         name="course-comments"
     ),
     path(
-        "comments/votes/",
+        "comment/vote/",
         handle_vote,
-        name="comment-votes"
+        name="comment-vote"
+    ),
+    path(
+        "comment/<slug:pk>",
+        CommentViewSet.as_view(actions={'get': 'retrieve', "delete": "destroy", "put": "update"}),
+        name="comment"
+    ),
+    path(
+        "comment/children/<slug:pk>",
+        get_comment_children,
+        name="comment-children"
     ),
     path(
         "comment",
-        cache_page(DAY_IN_SECONDS)(CommentViewSet),
+        CommentViewSet.as_view(actions={"post": "create"}),
         name="comment"
     )
 ]

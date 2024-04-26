@@ -1,7 +1,7 @@
 from collections import Counter, defaultdict
 
 from dateutil.tz import gettz
-from django.db.models import F, Max, OuterRef, Q, Subquery, Value
+from django.db.models import F, Max, OuterRef, Q, Subquery, Value, Exists, Count
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from rest_framework import generics, viewsets, status
@@ -18,7 +18,7 @@ from courses.models import (
     Section,
     Comment
 )
-from courses.util import get_current_semester, get_or_create_add_drop_period, prettify_semester, get_section_from_course_professor_semester
+from courses.util import get_current_semester, get_or_create_add_drop_period, prettify_semester, get_section_from_course_instructor_semester
 from PennCourses.docs_settings import PcxAutoSchema
 from PennCourses.settings.base import TIME_ZONE, WAITLIST_DEPARTMENT_CODES
 from review.annotations import annotate_average_and_recent, review_averages
@@ -42,7 +42,7 @@ from review.util import (
     get_status_updates_map,
     make_subdict,
 )
-from courses.serializers import CommentSerializer
+from courses.serializers import CommentSerializer, CommentListSerializer
 
 """
 You might be wondering why these API routes are using the @api_view function decorator
@@ -823,14 +823,31 @@ def autocomplete(request):
         {"courses": course_set, "departments": department_set, "instructors": instructor_set}
     )
 
+def get_course_from_code_semester(course_code, semester):
+    return (
+        Course.objects.filter(
+            course_filters_pcr,
+            **(
+                {"topic__courses__full_code": course_code, "topic__courses__semester": semester}
+                if semester
+                else {"full_code": course_code}
+            ),
+        )
+        .order_by("-semester")[:1]
+        .annotate(
+            branched_from_full_code=F("topic__branched_from__most_recent__full_code"),
+            branched_from_semester=F("topic__branched_from__most_recent__semester"),
+        )
+        .select_related("topic__most_recent")
+        .get()
+    )
+
 # CommentsList
 class CommentList(generics.ListAPIView):
     """
     Retrieve a list of all comments for the provided course.
     """
-    # this needs to be annotated with the users likes
-    # this also needs to support pagination (query params)
-    # this also needs to support filtering (query params)
+
     schema = PcxAutoSchema(
         response_codes={
             "review-coursecomments": {
@@ -843,10 +860,63 @@ class CommentList(generics.ListAPIView):
     )
     serializer_class = CommentSerializer
     http_method_names = ["get"]
-    # permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
+    def get(self, request, semester, course_code):
+        semester_arg = request.query_params.get("semester") or "all"
+        instructor = request.query_params.get("instructor") or "all"
+        sort_by = request.query_params.get("sort_by") or "oldest"
+        page = request.query_params.get("page") or 0
+        page_size = request.query_params.get("page_size") or 10
+
+        queryset = og_queryset = self.get_queryset()
+
+        # add filters
+        if semester_arg != "all":
+            queryset = queryset.all().filter(semester=semester_arg)
+        if instructor != "all":
+            queryset = queryset.all().filter(instructor=instructor)
+       
+        # apply ordering
+        if sort_by == "top":
+            # probably not right as is at the moment – likes are marked on a per comment basis not group basis
+            queryset = queryset.annotate(
+                base_votes=Count("base__upvotes")-Count("base__downvotes")
+            ).order_by("-base_votes", "base_id", "path")
+        elif sort_by == "oldest":
+            queryset = queryset.all().order_by("path")
+        elif sort_by == "newest":
+            queryset = queryset.all().order_by("-base_id", "path")
+        
+        # apply pagination (not sure how django handles OOB errors)
+        user_upvotes = queryset.filter(upvotes=request.user, id=OuterRef('id'))
+        user_downvotes = queryset.filter(downvotes=request.user, id=OuterRef('id'))
+        queryset = queryset.annotate(
+            user_upvoted=Exists(user_upvotes),
+            user_downvoted=Exists(user_downvotes)
+        )
+        queryset = queryset.all()[page*page_size:(page+1)*page_size]
+
+        response_body = {"comments": CommentListSerializer(queryset, many=True).data}
+        if semester_arg == "all":
+            response_body["semesters"] = list(og_queryset.values_list("section__course__semester", flat=True).distinct())
+        
+        return Response(response_body, status=status.HTTP_200_OK)
+    
     def get_queryset(self):
-        return Comment.objects.filter(course__code=self.request.get("course_code"))
+        course_code = self.kwargs["course_code"]
+        semester = self.kwargs["semester"] or "all"
+        try:
+            if semester == "all":
+                course = Course.objects.filter(full_code=course_code).latest("semester")
+            else:
+                course = get_course_from_code_semester(course_code, semester)
+        except Http404:
+            return Response(
+                {"message": "Course not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+        topic = course.topic
+        return Comment.objects.filter(section__course__topic=topic)
 
 # CommentViewSet
 class CommentViewSet(viewsets.ModelViewSet):
@@ -880,7 +950,6 @@ class CommentViewSet(viewsets.ModelViewSet):
     logic.
     """
 
-    # can implement a character count if desired
     request_body = {
         "id": {
             "type": "integer",
@@ -932,36 +1001,53 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def retrieve(self, request, pk=None):
         comment = get_object_or_404(Comment, pk=pk)
-        return Response(comment, status=status.HTTP_200_SUCCESS)
+        return Response(comment, status=status.HTTP_200_OK)
     
     def create(self, request):
+        # check if comment already exists
         if Comment.objects.filter(id=request.data.get("id")).exists():
             return self.update(request, request.data.get("id"))
         
-        if not all(["text", "course_code", "professor", "semester"], lambda x: x in request.data):
+        if not all(map(lambda x: x in request.data, ["text", "course_code", "instructor", "semester"])):
             return Response(
-                {"message": "Insufficient fields presented."}, status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        try:
-            section = get_section_from_course_professor_semester(request.data.get("course_code"), request.data.get("professor"), request.data.get("semester"))
-        except Exception:
-            return Response(
-                {"message": "Insufficient fields presented."}, status=status.HTTP_400_BAD_REQUEST
+                {"message": "Insufficient fields provided."}, status=status.HTTP_400_BAD_REQUEST
             )
 
+        # verify section is real
+        try:
+            section = get_section_from_course_instructor_semester(
+                request.data.get("course_code"),
+                request.data.get("instructor"),
+                request.data.get("semester")
+            )
+        except Exception as e:
+            print(e)
+            return Response(
+                {"message": "Section not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # create comment and send response
+        parent_id = request.data.get("parent")
+        parent = get_object_or_404(Comment, pk=parent_id) if parent_id != None else None
         comment = Comment.objects.create(
             text=request.data.get("text"),
             author=request.user,
             section=section,
-            parent_id=request.data.get("parent_id"),
+            parent=parent
         )
-        return Response({comment}, status=status.HTTP_201_CREATED)
+        base = parent.base if parent else comment
+        prefix = parent.path + "." if parent else ""
+        path = prefix + '{:0{}d}'.format(comment.id, 10)
+        comment.base = base
+        comment.path = path
+        comment.save()
+
+        return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
 
     def update(self, request, pk=None):
         comment = get_object_or_404(Comment, pk=pk)
 
-        if request.user != comment.user:
+        if request.user != comment.author:
             return Response(
                 {"message": "Not authorized to modify this comment."}, status=status.HTTP_403_FORBIDDEN
             )
@@ -969,6 +1055,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         if "text" in request.data:
             comment.text = request.data.get("text")
             comment.save()
+            return Response({"message": "Successfully edited."}, status=status.HTTP_201_CREATED)
         else:
             return Response(
                 {"message": "Insufficient fields presented."}, status=status.HTTP_400_BAD_REQUEST
@@ -977,29 +1064,43 @@ class CommentViewSet(viewsets.ModelViewSet):
     def destroy(self, request, pk=None):
         comment = get_object_or_404(Comment, pk=pk)
 
-        if request.user != comment.user:
+        if request.user != comment.author:
             return Response(
-                {"message": "Not authorized to modify this comment.."}, status=status.HTTP_403_FORBIDDEN
+                {"message": "Not authorized to modify this comment."}, status=status.HTTP_403_FORBIDDEN
             )
         
         comment.delete()
         return Response({"message": "Successfully deleted."}, status=status.HTTP_204_NO_CONTENT)
-
+    
+@api_view(["POST"])
 def handle_vote(request):
     """
     Handles an incoming request that changes the vote of a comment.
     """
-    if not all(["id", "vote_type"], lambda x: x in request.data):
+    if not all(map(lambda x: x in request.data, ["id", "vote_type"])):
         return Response(
             {"message": "Insufficient fields presented."}, status=status.HTTP_400_BAD_REQUEST
         )  
     
     user = request.user
-    comment = get_object_or_404(Comment, request.data.get("id"))
+    comment = get_object_or_404(Comment, pk=request.data.get("id"))
     vote_type = request.data.get("vote_type")
     if vote_type == "upvote":
         comment.downvotes.remove(user)
         comment.upvotes.add(user)
-    if vote_type == "downvote":
+    elif vote_type == "downvote":
         comment.upvotes.remove(user)
         comment.downvotes.add(user)
+    elif vote_type == "clear":
+        comment.upvotes.remove(user)
+        comment.downvotes.remove(user)
+    
+    return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
+
+@api_view(["GET"])
+def get_comment_children(request, pk):
+    """
+    Gets all DIRECT children for a comment.
+    """
+    queryset = Comment.objects.filter(parent__id=pk)
+    return Response(CommentSerializer(queryset, many=True).data, status=status.HTTP_200_OK)
