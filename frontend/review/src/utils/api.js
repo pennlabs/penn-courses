@@ -161,8 +161,8 @@ export function apiPostComment(course, semester, content) {
       },
       body: JSON.stringify({
         text: content,
-        course_code: course,
-        instructor: [6],
+        course_code: "CIS-1600",
+        instructor: [130],
         semester: semester,
       })
     }
