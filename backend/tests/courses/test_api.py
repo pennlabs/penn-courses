@@ -1427,6 +1427,7 @@ class CommentsTestCase(TestCase):
         self.client.logout()
     
     def test_comment_count(self):
+        print(self.get_comments("all", self._COURSE_CODE, "newest"))
         self.assertEqual(len(self.get_comments("all", self._COURSE_CODE, "newest")), 4)
     
     # def test_time_ordering_new(self):

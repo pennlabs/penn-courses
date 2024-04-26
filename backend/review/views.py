@@ -870,6 +870,8 @@ class CommentList(generics.ListAPIView):
 
         queryset = self.get_queryset()
 
+        print(len(queryset))
+
         # add filters
         if semester_arg != "all":
             queryset = queryset.all().filter(semester=semester_arg)
@@ -895,14 +897,21 @@ class CommentList(generics.ListAPIView):
     
     def get_queryset(self):
         course_code = self.kwargs["course_code"]
-        semester = self.kwargs["semester"]
+        semester = self.kwargs["semester"] or "all"
+        print(course_code)
+        print(semester)
         try:
-            course = get_course_from_code_semester(course_code, semester)
+            if semester == "all":
+                course = Course.objects.filter(full_code=course_code).latest("semester")
+            else:
+                course = get_course_from_code_semester(course_code, semester)
         except Http404:
             return Response(
                 {"message": "Course not found."}, status=status.HTTP_404_NOT_FOUND
             )
         topic = course.topic
+        print("TOPIC")
+        print(topic)
         return Comment.objects.filter(section__course__topic=topic)
 
 # CommentViewSet
