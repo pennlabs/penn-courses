@@ -8,6 +8,7 @@ from decimal import Decimal
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import connection
+from django.db.models import Q
 from django.db.models.aggregates import Count
 from django.db.models.expressions import Subquery, Value
 from django.db.models.functions.comparison import Coalesce
@@ -723,9 +724,9 @@ def get_section_from_course_instructor_semester(course_code, professors, semeste
         course__semester=semester
     )
     
-    professors_query = Q(instructors__username=professors[0])
+    professors_query = Q(instructors__name=professors[0])
     for professor in professors[1:]:
-        professors_query &= Q(instructors__username=professor)
+        professors_query &= Q(instructors__name=professor)
     matching_sections = sections.filter(professors_query).distinct()
     
     if matching_sections.count() == 1:

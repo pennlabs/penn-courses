@@ -900,7 +900,7 @@ class CommentList(generics.ListAPIView):
             course = get_course_from_code_semester(course_code, semester)
         except Http404:
             return Response(
-                {"message": "Course not found."}, status=status.HTTP_404_BAD_REQUEST
+                {"message": "Course not found."}, status=status.HTTP_404_NOT_FOUND
             )
         topic = course.topic
         return Comment.objects.filter(section__course__topic=topic)
@@ -995,7 +995,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         if Comment.objects.filter(id=request.data.get("id")).exists():
             return self.update(request, request.data.get("id"))
         
-        if not all(["text", "course_code", "instructor", "semester"], lambda x: x in request.data):
+        if not all(map(lambda x: x in request.data, ["text", "course_code", "instructor", "semester"])):
             return Response(
                 {"message": "Insufficient fields provided."}, status=status.HTTP_400_BAD_REQUEST
             )
@@ -1008,8 +1008,9 @@ class CommentViewSet(viewsets.ModelViewSet):
                 request.data.get("semester")
             )
         except Exception as e:
+            print(e)
             return Response(
-                {"message": "Section not found."}, status=status.HTTP_404_BAD_REQUEST
+                {"message": "Section not found."}, status=status.HTTP_404_NOT_FOUND
             )
         
         # create comment and send response

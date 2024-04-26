@@ -1342,12 +1342,12 @@ class CommentsTestCase(TestCase):
         self.section.instructors.add(Instructor.objects.get_or_create(name="default prof")[0])
 
         # Create Base Level Comments
-        self.id1 = self.create_comment("user1", "default prof", self._COURSE_CODE, TEST_SEMESTER, None)
-        self.id2 = self.create_comment("user2", "default prof", self._COURSE_CODE, "2012A", None)
+        self.id1 = self.create_comment("user1", ["default prof"], self._COURSE_CODE, TEST_SEMESTER, None)
+        self.id2 = self.create_comment("user2", ["default prof"], self._COURSE_CODE, "2012A", None)
 
         # Reply to Comment
-        self.id3 = self.create_comment("user3", "default prof", self._COURSE_CODE, TEST_SEMESTER, self.id1)
-        self.id4 = self.create_comment("user1", "default prof", self._COURSE_CODE, TEST_SEMESTER, self.id1)
+        self.id3 = self.create_comment("user3", ["default prof"], self._COURSE_CODE, TEST_SEMESTER, self.id1)
+        self.id4 = self.create_comment("user1", ["default prof"], self._COURSE_CODE, TEST_SEMESTER, self.id1)
 
         # Add Vote Counts
         self.upvote("user1", self.id2)
@@ -1377,7 +1377,7 @@ class CommentsTestCase(TestCase):
         if parent_id != None:
             data["parent_id"] = parent_id
         
-        response = self.client.post(reverse("comment"), data)
+        response = self.client.post(reverse("comment"), data, format="json")
         self.client.logout()
         print(response.data)
         return response.data["id"]
