@@ -861,8 +861,8 @@ class CommentList(generics.ListAPIView):
     http_method_names = ["get"]
     permission_classes = [IsAuthenticated]
 
-    def get(self, semester_arg, request, course_code):
-        semester = request.query_params.get("semester") or "all"
+    def get(self, request, semester, course_code):
+        semester_arg = request.query_params.get("semester") or "all"
         instructor = request.query_params.get("instructor") or "all"
         sort_by = request.query_params.get("sort_by") or "oldest"
         page = request.query_params.get("page") or 0
@@ -871,8 +871,8 @@ class CommentList(generics.ListAPIView):
         queryset = self.get_queryset()
 
         # add filters
-        if semester != "all":
-            queryset = queryset.all().filter(semester=semester)
+        if semester_arg != "all":
+            queryset = queryset.all().filter(semester=semester_arg)
         if instructor != "all":
             queryset = queryset.all().filter(instructor=instructor)
         

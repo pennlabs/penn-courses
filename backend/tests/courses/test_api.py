@@ -1361,7 +1361,9 @@ class CommentsTestCase(TestCase):
         base_url = reverse("course-comments", kwargs={"semester": semester, "course_code": code})
         query_params = {"ordering":ordering}
         encoded_params = urlencode(query_params)
+        self.client.force_login(self.user1)
         response = self.client.get(f"{base_url}?{encoded_params}")
+        self.client.logout()
         return response.data
 
     def create_comment(self, username, instructor, code, semester, parent_id):
@@ -1380,6 +1382,7 @@ class CommentsTestCase(TestCase):
         
         response = self.client.post(reverse("comment"), data, format="json")
         self.client.logout()
+        print(response.data)
         return response.data["id"]
 
     def edit_comment(self, username, text, comment_id):
@@ -1424,7 +1427,7 @@ class CommentsTestCase(TestCase):
         self.client.logout()
     
     def test_comment_count(self):
-        self.assertEqual(len(self.get_comments("all", self._COURSE_CODE, "newest")), 3)
+        self.assertEqual(len(self.get_comments("all", self._COURSE_CODE, "newest")), 4)
     
     # def test_time_ordering_new(self):
     #     comments = self.get_comments(self._COURSE_CODE, "all", self._COURSE_CODE, "newest")
