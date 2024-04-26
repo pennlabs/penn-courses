@@ -135,7 +135,7 @@ const fakeComments = {
       likes: 69,
       course: "CIS-1200",
       semester: "2024A",
-      professorId: 6,
+      professorId: [6],
       parent_id: null,
       path: "10",
       replies: 1
@@ -150,7 +150,7 @@ const fakeComments = {
       likes: 0,
       course: "CIS-1200",
       semester: "2022A",
-      professorId: 6,
+      professorId: [6],
       parent_id: null,
       path: "20",
       replies: 0
@@ -165,7 +165,7 @@ const fakeComments = {
       likes: 10,
       course: "CIS-1200",
       semester: "2022A",
-      professorId: 6,
+      professorId: [6],
       parent_id: null,
       path: "30",
       replies: 0
@@ -192,7 +192,7 @@ const fakeReplies = {
       likes: 100,
       course: "CIS-1200",
       semester: "2024A",
-      professorId: 6,
+      professorIds: [6],
       parent_id: 11,
       path: "10.11",
       replies: 0
@@ -208,7 +208,7 @@ const fakeReplies = {
       likes: 100,
       course: "CIS-1200",
       semester: "2024A",
-      professorId: 6,
+      professorId: [6],
       parent_id: 10,
       path: "10.11",
       replies: 1
@@ -227,13 +227,14 @@ const fakeUserComment = {
   likes: 1,
   course: "CIS-1200",
   semester: "2024A",
-  professorId: 6,
+  professorId: [6],
   parent_id: null,
   path: "30",
   replies: 0
 }
 
 export function apiComments(course, semester, professorId, sortBy) {
+  console.log("fetching comments");
   if(!semester && !professorId && !sortBy) {
     return Promise.resolve({ ...fakeComments, ...fakeSemesters})
   }
@@ -252,14 +253,20 @@ export function apiComments(course, semester, professorId, sortBy) {
   */
 }
 
-
 export function apiReplies(commentId) {
+  console.log("fetching replies");
   return Promise.resolve({ replies: fakeReplies.replies.filter(reply => reply.parent_id === commentId)} );
 }
 
-export function apiUserComment(course) {
-  return Promise.resolve(fakeUserComment);
+export function apiPostComment(course, semester, content) {
+  console.log('posting comment');
+  return Promise.resolve({...fakeUserComment, content: content, semester: semester, course: course});
+}
 
+export function apiUserComment(course) {
+  console.log("fetching user comment");
+  return Promise.resolve({});
+  if(course === "CIS-120") return Promise.resolve(fakeUserComment);
 }
 
 export function apiContact(name) {
