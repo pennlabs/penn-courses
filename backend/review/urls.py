@@ -9,6 +9,7 @@ from review.views import (
     instructor_for_course_reviews,
     instructor_reviews,
     handle_vote,
+    get_comment_children,
     CommentList,
     CommentViewSet
 )
@@ -57,12 +58,17 @@ urlpatterns = [
     ),
     path(
         "comment/<slug:pk>",
-        CommentViewSet.as_view(actions={"delete": "destroy", "put": "update"}),
+        CommentViewSet.as_view(actions={'get': 'retrieve', "delete": "destroy", "put": "update"}),
         name="comment"
     ),
     path(
+        "comment/children/<slug:pk>",
+        get_comment_children,
+        name="comment-children"
+    ),
+    path(
         "comment",
-        CommentViewSet.as_view(actions={'get': 'list', "post": "create"}),
+        CommentViewSet.as_view(actions={"post": "create"}),
         name="comment"
     )
 ]

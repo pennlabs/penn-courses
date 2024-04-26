@@ -1364,6 +1364,13 @@ class CommentsTestCase(TestCase):
         self.client.force_login(self.user1)
         response = self.client.get(f"{base_url}?{encoded_params}")
         self.client.logout()
+        return response.data["comments"]
+
+    def get_comment_children(self, id):
+        base_url = reverse("comment-children", kwargs={"pk": id})
+        self.client.force_login(self.user1)
+        response = self.client.get(base_url)
+        self.client.logout()
         return response.data
 
     def create_comment(self, username, instructor, code, semester, parent_id):
@@ -1506,3 +1513,7 @@ class CommentsTestCase(TestCase):
             if comment["text"] == "new comment!":
                 return
         self.assertFalse(True)
+    
+    def test_get_comment_children(self):
+        comments = self.get_comment_children(self.id1)
+        self.assertEqual(len(comments), 2)

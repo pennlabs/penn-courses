@@ -1,7 +1,7 @@
 from collections import Counter, defaultdict
 
 from dateutil.tz import gettz
-from django.db.models import F, Max, OuterRef, Q, Subquery, Value, IntegerField, Count
+from django.db.models import F, Max, OuterRef, Q, Subquery, Value, IntegerField, Count, Exists
 from django.db.models.functions import Concat, Substr, StrIndex, Cast
 from django.http import Http404
 from django.shortcuts import get_object_or_404
@@ -43,7 +43,7 @@ from review.util import (
     get_status_updates_map,
     make_subdict,
 )
-from courses.serializers import CommentSerializer
+from courses.serializers import CommentSerializer, CommentListSerializer
 
 """
 You might be wondering why these API routes are using the @api_view function decorator
@@ -868,7 +868,7 @@ class CommentList(generics.ListAPIView):
         page = request.query_params.get("page") or 0
         page_size = request.query_params.get("page_size") or 10
 
-        queryset = self.get_queryset()
+        queryset = og_queryset = self.get_queryset()
 
         # add filters
         if semester_arg != "all":
@@ -888,9 +888,19 @@ class CommentList(generics.ListAPIView):
             queryset = queryset.all().order_by("-base_id", "path")
         
         # apply pagination (not sure how django handles OOB errors)
+        user_upvotes = queryset.filter(upvotes=request.user, id=OuterRef('id'))
+        user_downvotes = queryset.filter(downvotes=request.user, id=OuterRef('id'))
+        queryset = queryset.annotate(
+            user_upvoted=Exists(user_upvotes),
+            user_downvoted=Exists(user_downvotes)
+        )
         queryset = queryset.all()[page*page_size:(page+1)*page_size]
+
+        response_body = {"comments": CommentListSerializer(queryset, many=True).data}
+        if semester_arg == "all":
+            response_body["semesters"] = list(og_queryset.values_list("section__course__semester", flat=True).distinct())
         
-        return Response(CommentSerializer(queryset, many=True).data, status=status.HTTP_200_OK)
+        return Response(response_body, status=status.HTTP_200_OK)
     
     def get_queryset(self):
         course_code = self.kwargs["course_code"]
@@ -1085,3 +1095,11 @@ def handle_vote(request):
         comment.downvotes.remove(user)
     
     return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
+
+@api_view(["GET"])
+def get_comment_children(request, pk):
+    """
+    Gets all DIRECT children for a comment.
+    """
+    queryset = Comment.objects.filter(parent__id=pk)
+    return Response(CommentSerializer(queryset, many=True).data, status=status.HTTP_200_OK)
