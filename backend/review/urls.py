@@ -57,7 +57,7 @@ urlpatterns = [
     ),
     path(
         "comment",
-        CommentViewSet.as_view(),
+        CommentViewSet.as_view(actions={'get': 'list', "post": "create", "delete": "destroy", "put": "update"}),
         name="comment"
     )
 ]

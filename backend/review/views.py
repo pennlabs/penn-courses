@@ -906,7 +906,7 @@ class CommentList(generics.ListAPIView):
         return Comment.objects.filter(section__course__topic=topic)
 
 # CommentViewSet
-class CommentViewSet(generics.ListAPIView):
+class CommentViewSet(viewsets.ModelViewSet):
     """
     get:
     Get a comment by a given `id` path parameter. If the id is not valid, a 404 is returned.

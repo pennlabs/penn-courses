@@ -1358,7 +1358,7 @@ class CommentsTestCase(TestCase):
         self.downvote("user2", self.id2)
     
     def get_comments(self, semester, code, ordering):
-        base_url = reverse("comment", kwargs={"semester": semester, "course_code": code})
+        base_url = reverse("course-comments", kwargs={"semester": semester, "course_code": code})
         query_params = {"ordering":ordering}
         encoded_params = urlencode(query_params)
         self.client.get(f"{base_url}?{encoded_params}")
@@ -1379,6 +1379,7 @@ class CommentsTestCase(TestCase):
         
         response = self.client.post(reverse("comment"), data)
         self.client.logout()
+        print(response.data)
         return response.data["id"]
 
     def edit_comment(self, username, text, comment_id):
