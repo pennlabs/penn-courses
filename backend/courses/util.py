@@ -712,3 +712,22 @@ def get_semesters(semesters: str = None) -> list[str]:
             if s not in possible_semesters:
                 raise ValueError(f"Provided semester {s} was not found in the db.")
     return sorted(semesters)
+
+def get_section_from_course_instructor_semester(course_code, professors, semester):
+    """
+    Attempts to return a course section that matches the given parameters.
+    ValueError is raised if the section does not exist.
+    """
+    sections = Section.objects.prefetch_related('instructors').filter(
+        course__full_code=course_code,
+        course__semester=semester
+    )
+    
+    professors_query = Q(instructors__username=professors[0])
+    for professor in professors[1:]:
+        professors_query &= Q(instructors__username=professor)
+    matching_sections = sections.filter(professors_query).distinct()
+    
+    if matching_sections.count() == 1:
+        return matching_sections.first()
+    raise ValueError(f"No section exists with course code ({course_code}), professor ({professor}), semester ({semester})")

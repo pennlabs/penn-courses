@@ -1508,37 +1508,52 @@ class Comment(models.Model):
         null=True,
         related_name="comments"
     )
-    likes = models.ManyToManyField(
+    upvotes = models.ManyToManyField(
         get_user_model(),
-        help_text="The number of likes a comment gets."
+        related_name="upvotes",
+        help_text="The number of upvotes a comment gets."
     )
-    course = models.ForeignKey(
-        Course,
+    downvotes = models.ManyToManyField(
+        get_user_model(),
+        related_name="downvotes",
+        help_text="The number of downvotes a comment gets."
+    )
+    section = models.ForeignKey(
+        Section,
         on_delete=models.CASCADE,
         help_text=dedent(
             """
-        The course with which a comment is associated. Course was chosen instead of topics for
+        The section with which a comment is associated. Section was chosen instead of topics for
         hosting comments because topics are SOFT STATE and are recomputed regularly.
         """
-        )
+        ),
+        null=True
     )
 
-    parent_id = models.ForeignKey(
+    base = models.ForeignKey(
         "self",
         on_delete=models.SET_NULL, # redundant due to special deletion conditions
-        null=True
+        null=True,
+    )
+    parent = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL, # similarly redundant
+        null=True,
+        related_name="children"
     )
     path = models.TextField(db_index=True)
 
     def level(self):
         return len(self.path.split('.'))
-    #def save(self, **kwargs):
-      #  parent_comment = Comment.objects.filter(id=self.parent_id).first()
-        #prefix = parent_comment.path + '.' if parent_comment else ''
-       # super().save(**kwargs)
-        #print(self.id)
-       # self.path = prefix + '{:0{}d}'.format(self.id, self._N)
-       # super().save(**kwargs)
+    
+    def save(self, **kwargs):
+        parent_comment = Comment.objects.filter(id=self.parent_id).first()
+        prefix = parent_comment.path + '.' if parent_comment else ''
+        super().save(**kwargs)
+        self.path = prefix + '{:0{}d}'.format(self.id, self._N)
+        if self.base is None:
+            self.base = self
+        super().save(**kwargs)
 
     def delete(self, **kwargs):
         if Comment.objects.filter(parent_id=self).exists():
