@@ -5,7 +5,7 @@ import { apiPostComment } from '../../utils/api';
 export const WriteComment = forwardRef(({ course, semesters, setUserComment }, ref) => {
     const [isEditing, setIsEditing] = useState(false);
     const [content, setContent] = useState("");
-    const [semester, setSemester] = useState(semesters[0]);
+    const [semester, setSemester] = useState(semesters[0] ?? "2020A");
 
     const handleSubmit = () => {
         console.log("Comment submitted");
