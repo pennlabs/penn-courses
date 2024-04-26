@@ -1546,14 +1546,15 @@ class Comment(models.Model):
     def level(self):
         return len(self.path.split('.'))
     
-    def save(self, **kwargs):
-        parent_comment = Comment.objects.filter(id=self.parent_id).first()
-        prefix = parent_comment.path + '.' if parent_comment else ''
-        super().save(**kwargs)
-        self.path = prefix + '{:0{}d}'.format(self.id, self._N)
-        if self.base is None:
-            self.base = self
-        super().save(**kwargs)
+    # def save(self, **kwargs):
+    #     pass
+        # parent_comment = Comment.objects.filter(id=self.parent_id).first()
+        # prefix = parent_comment.path + '.' if parent_comment else ''
+        # super().save(**kwargs)
+        # self.path = prefix + '{:0{}d}'.format(self.id, self._N)
+        # if self.base is None:
+        #     self.base = self
+        # super().save(**kwargs)
 
     def delete(self, **kwargs):
         if Comment.objects.filter(parent_id=self).exists():

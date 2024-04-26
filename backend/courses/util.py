@@ -731,4 +731,4 @@ def get_section_from_course_instructor_semester(course_code, professors, semeste
     
     if matching_sections.count() == 1:
         return matching_sections.first()
-    raise ValueError(f"No section exists with course code ({course_code}), professor ({professor}), semester ({semester})")
+    raise ValueError(f"No section exists with course code ({course_code}), professor ({professors[0]}), semester ({semester})")

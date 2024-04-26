@@ -1024,7 +1024,7 @@ class CommentViewSet(viewsets.ModelViewSet):
             base=base,
             parent=parent
         )
-        return Response({comment}, status=status.HTTP_201_CREATED)
+        return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
 
     def update(self, request, pk=None):
         comment = get_object_or_404(Comment, pk=pk)
@@ -1053,11 +1053,12 @@ class CommentViewSet(viewsets.ModelViewSet):
         comment.delete()
         return Response({"message": "Successfully deleted."}, status=status.HTTP_204_NO_CONTENT)
     
+@api_view(["GET"])
 def handle_vote(request):
     """
     Handles an incoming request that changes the vote of a comment.
     """
-    if not all(["id", "vote_type"], lambda x: x in request.data):
+    if not all(map(lambda x: x in request.data, ["id", "vote_type"])):
         return Response(
             {"message": "Insufficient fields presented."}, status=status.HTTP_400_BAD_REQUEST
         )  
