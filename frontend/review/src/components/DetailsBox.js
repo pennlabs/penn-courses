@@ -140,9 +140,9 @@ const CommentsTab = forwardRef(
 
     useEffect(() => {
       // TODO: HARDCODED USER ID BC CANT YET FETCH WHICH COMMENT BELONGS TO WHICH USER
-      apiComment("10").then(res => {
-        setUserComment(res);
-      });
+      // apiComment("10").then(res => {
+      //   setUserComment(res);
+      // });
     }, [course]);
 
     const hasComments = comments.length > 0;
