@@ -8,9 +8,10 @@ import {
   orderColumns,
   toNormalizedSemester
 } from "../utils/helpers";
-import { apiComments, apiHistory } from "../utils/api";
+import { apiComments, apiHistory, apiUserComment } from "../utils/api";
 import { PROF_IMAGE_URL } from "../constants/routes";
 import { REGISTRATION_METRICS_COLUMNS } from "../constants";
+import { WriteComment } from "./Comments/WriteComment";
 
 /*
  * Settings objects/object generators for the columns of the DetailsBox
@@ -120,6 +121,7 @@ const CommentsTab = forwardRef(
     const [isLoading, setIsLoading] = useState(false);
 
     const [comments, setComments] = useState({});
+    const [userComment, setUserComment] = useState({});
 
     const [selectedSemester, setSelectedSemester] = useState(null);
 
@@ -136,11 +138,18 @@ const CommentsTab = forwardRef(
         });
     }, [course]);
 
-    const hasData = comments.length > 0;
+    useEffect(() => {
+      apiUserComment(course).then(res => {
+        setUserComment(res);
+      });
+    }, [course]);
+
+    const hasComments = comments.length > 0;
+    const hasUserComment = Object.keys(userComment).length > 0;
 
     if(!active) return <></>
 
-    if (!hasData) {
+    if (!hasComments && !hasUserComment) {
       if (isLoading) {
         // Loading spinner
         return <Loading />
@@ -184,6 +193,12 @@ const CommentsTab = forwardRef(
         <div id="course-details-wrapper">
           <h3>Comments</h3>
           <div id="course-details-comments" className="clearfix mt-2">
+            {hasUserComment || 
+              <WriteComment 
+                course={course} 
+                semesters={semesterList} 
+                setUserComment={setUserComment} 
+              />}
             <div className="list">
               <div
                 onClick={() => setSelectedSemester(null)}
@@ -202,12 +217,13 @@ const CommentsTab = forwardRef(
               ))}
             </div>
             <div className="comments">
+              {hasUserComment && <Comment comment={userComment} isUserComment />}
               {comments
                 .filter(
                   c => !selectedSemester || c.semester === selectedSemester
                 )
                 .map(c => (
-                  <Comment comment={c} replies={[]} />
+                  <Comment comment={c} />
                 ))}
             </div>
           </div>
