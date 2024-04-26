@@ -98,7 +98,7 @@ def get_courses(query, semester):
         "section_id": query,
         "term": semester,
         "page_number": 1,
-        "number_of_results_per_page": 500,
+        "number_of_results_per_page": 200,
     }
 
     results = []

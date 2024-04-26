@@ -269,8 +269,12 @@ def get_or_create_course(dept_code, course_id, semester, defaults=None):
 
 
 def get_or_create_course_and_section(
-    course_code, semester, section_manager=None, course_defaults=None, section_defaults=None
-):
+    course_code,
+    semester,
+    section_manager=None,
+    course_defaults=None,
+    section_defaults=None,
+) -> (Course, Section, bool, bool):
     if section_manager is None:
         section_manager = Section.objects
     dept_code, course_id, section_id = separate_course_code(course_code)
@@ -318,7 +322,10 @@ def update_percent_open(section, new_status_update):
         if last_status_update.created_at >= add_drop.estimated_end:
             return
         seconds_before_last = Decimal(
-            max((last_status_update.created_at - add_drop.estimated_start).total_seconds(), 0)
+            max(
+                (last_status_update.created_at - add_drop.estimated_start).total_seconds(),
+                0,
+            )
         )
         seconds_since_last = Decimal(
             max(
@@ -520,7 +527,9 @@ def set_crosslistings(course, crosslistings):
     for crosslisting in crosslistings:
         if crosslisting["is_primary_section"]:
             primary_course, _ = get_or_create_course(
-                crosslisting["subject_code"], crosslisting["course_number"], course.semester
+                crosslisting["subject_code"],
+                crosslisting["course_number"],
+                course.semester,
             )
             course.primary_listing = primary_course
             return
@@ -732,3 +741,52 @@ def get_section_from_course_instructor_semester(course_code, professors, semeste
     if matching_sections.count() == 1:
         return matching_sections.first()
     raise ValueError(f"No section exists with course code ({course_code}), professor ({professors[0]}), semester ({semester})")
+
+def historical_semester_probability(current_semester: str, semesters: list[str]):
+    """
+    :param current: The current semester represented in the 20XX(A|B|C) format.
+    :type current: str
+    :param courses: A list of Course objects sorted by date in ascending order.
+    :type courses: list
+    :returns: A list of 3 probabilities representing the likelihood of
+    taking a course in each semester.
+    :rtype: list
+    """
+    PROB_DISTRIBUTION = [0.4, 0.3, 0.15, 0.1, 0.05]
+
+    def normalize_and_round(prob, i):
+        """Modifies the probability distribution to account for the
+        fact that the last course was taken i years ago."""
+        truncate = PROB_DISTRIBUTION[:i]
+        total = sum(truncate)
+        return list(map(lambda x: round(x / total, 3), truncate))
+
+    semester_probabilities = {"A": 0.0, "B": 0.0, "C": 0.0}
+    current_year = int(current_semester[:-1])
+    semesters = [
+        semester
+        for semester in semesters
+        if semester < str(current_year) and semester > str(current_year - 5)
+    ]
+    if not semesters:
+        return [0, 0, 0]
+    if current_year - int(semesters[0][:-1]) < 5:
+        # If the class hasn't been offered in the last 5 years,
+        # we make sure the resulting probabilities sum to 1
+        modified_prob_distribution = normalize_and_round(
+            PROB_DISTRIBUTION, current_year - int(semesters[0][:-1])
+        )
+    else:
+        modified_prob_distribution = PROB_DISTRIBUTION
+    for historical_semester in semesters:
+        historical_year = int(historical_semester[:-1])
+        sem_char = historical_semester[-1].upper()  # A, B, C
+        semester_probabilities[sem_char] += modified_prob_distribution[
+            current_year - historical_year - 1
+        ]
+    return list(
+        map(
+            lambda x: min(round(x, 2), 1.00),
+            [semester_probabilities["A"], semester_probabilities["B"], semester_probabilities["C"]],
+        )
+    )

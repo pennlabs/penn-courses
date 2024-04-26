@@ -1,0 +1,11 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+    {% load static %}
+    <meta charset="utf-8">
+    <link href='https://fonts.googleapis.com/css?family=Space+Mono' rel='stylesheet'>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/reactflow@11.7.4/dist/style.min.css" rel="stylesheet">
+    <link href="{% static 'pdp/degree-editor-style.css' %}" rel="stylesheet" type="text/css" />
+    <div id="app" style="height: 100%; width: 100%;"></div>
+    <script src="{% static 'pdp/degree-editor.js' %}" type="text/babel" data-type="module"></script>
+{% endblock %}

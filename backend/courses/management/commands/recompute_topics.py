@@ -1,9 +1,10 @@
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.db.models import Count, OuterRef, Subquery
+from tqdm import tqdm
 
 from courses.models import Course, Topic
-from courses.util import all_semesters
+from courses.util import all_semesters, historical_semester_probability
 
 
 def garbage_collect_topics():
@@ -151,5 +152,28 @@ class Command(BaseCommand):
             assert (
                 min_semester in all_semesters()
             ), f"--min-semester={min_semester} is not a valid semester."
-
+        semesters = sorted(
+            [sem for sem in all_semesters() if not min_semester or sem >= min_semester]
+        )
         recompute_topics(min_semester, verbose=True, allow_null_parent_topic=bool(min_semester))
+        recompute_historical_semester_probabilities(current_semester=semesters[-1], verbose=True)
+
+
+def recompute_historical_semester_probabilities(current_semester, verbose=False):
+    """
+    Recomputes the historical probabilities for all topics.
+    """
+    if verbose:
+        print("Recomputing historical probabilities for all topics...")
+    topics = Topic.objects.all()
+    # Iterate over each Topic
+    for i, topic in tqdm(enumerate(topics), disable=not verbose, total=topics.count()):
+        # Calculate historical_year_probability for the current topic
+        ordered_courses = topic.courses.all().order_by("semester")
+        ordered_semester = [course.semester for course in ordered_courses]
+        historical_prob = historical_semester_probability(current_semester, ordered_semester)
+        # Update the historical_probabilities field for the current topic
+        topic.historical_probabilities_spring = historical_prob[0]
+        topic.historical_probabilities_summer = historical_prob[1]
+        topic.historical_probabilities_fall = historical_prob[2]
+        topic.save()

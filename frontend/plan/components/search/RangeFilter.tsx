@@ -1,5 +1,5 @@
 import React from "react";
-import { Range } from "rc-slider";
+import Slider from "rc-slider";
 // import { FilterData } from "../../types";
 import styled from "styled-components";
 
@@ -55,7 +55,8 @@ export function RangeFilter<
     rangeProperty,
     step,
 }: RangeFilterProps<F, K>) {
-    const onSliderChange = (values: [number, number]) => {
+    const onSliderChange = (_values: number | number[]) => {
+        const values = _values as [number, number];
         updateRangeFilter(values);
         startSearch({
             ...filterData,
@@ -66,7 +67,8 @@ export function RangeFilter<
     return (
         <RangeFilterContainer>
             <StyledRangeWrapper>
-                <Range
+                <Slider
+                    range
                     min={minRange}
                     max={maxRange}
                     value={filterData[rangeProperty]}
