@@ -81,13 +81,13 @@ const SearchPanelHeader = styled(PanelHeader)`
 
 interface SearchPanelProp {
     activeDegreeplanId: DegreePlan["id"] | null;
-    setSearchedRuleId: (arg0: number) => void;
 }
 
-export const SearchPanel = ({ activeDegreeplanId, setSearchedRuleId }: SearchPanelProp) => {
+export const SearchPanel = ({ activeDegreeplanId }: SearchPanelProp) => {
     const { 
         setSearchPanelOpen, 
         searchRuleId: ruleId, 
+        setSearchRuleId,
         searchRuleQuery: ruleQuery,
         searchFulfillments: fulfillments
     } = useContext(SearchPanelContext); 
@@ -103,7 +103,7 @@ export const SearchPanel = ({ activeDegreeplanId, setSearchedRuleId }: SearchPan
     const handleCloseSearch = () => {
         setQueryString(""); 
         setSearchPanelOpen(false);
-        setSearchedRuleId(-1);
+        setSearchRuleId(null);
     }
 
     return (

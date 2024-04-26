@@ -42,7 +42,7 @@ const PanelWrapper = styled(Pane)`
   height: 100%;
   display: flex;
   flex-direction: row;
-  gap: 0.8rem;
+  gap: 1rem;
 `
 
 const PanelInteriorWrapper = styled.div<{ $maxWidth?: string; $minWidth?: string }>`
@@ -160,10 +160,10 @@ const FourYearPlanPage = ({
                 // @ts-ignore */}
                 <SplitPane
                   split="vertical"
-                  // maxSize={windowWidth ? windowWidth * 0.60 : 1000}
                   maxSize={searchPanelOpen ? 
-                            (windowWidth ? windowWidth : 1000) * 0.5 
-                          : (windowWidth ? windowWidth : 1000) * 0.6}
+                    (windowWidth ? windowWidth : 1000) * 0.5 
+                  : (windowWidth ? windowWidth : 1000) * 0.66}
+                  minSize={(windowWidth ? windowWidth : 400) * 0.33 }
                   defaultSize="50%"
                   style={{
                     padding: "1.5rem",
@@ -201,8 +201,8 @@ const FourYearPlanPage = ({
                       />
                     </PanelInteriorWrapper>
                     {searchPanelOpen && (
-                      <PanelInteriorWrapper $minWidth={"40%"} $maxWidth={"43%"}>
-                        <SearchPanel activeDegreeplanId={activeDegreeplan ? activeDegreeplan.id : null} setSearchedRuleId={setSearchRuleId}/>
+                      <PanelInteriorWrapper $minWidth={"48%"} $maxWidth={"48%"}>
+                        <SearchPanel activeDegreeplanId={activeDegreeplan ? activeDegreeplan.id : null} />
                       </PanelInteriorWrapper>
                     )}
                   </PanelWrapper>
