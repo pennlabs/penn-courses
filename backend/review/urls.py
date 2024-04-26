@@ -56,8 +56,13 @@ urlpatterns = [
         name="comment-vote"
     ),
     path(
+        "comment/<slug:pk>",
+        CommentViewSet.as_view(actions={"delete": "destroy", "put": "update"}),
+        name="comment"
+    ),
+    path(
         "comment",
-        CommentViewSet.as_view(actions={'get': 'list', "post": "create", "delete": "destroy", "put": "update"}),
+        CommentViewSet.as_view(actions={'get': 'list', "post": "create"}),
         name="comment"
     )
 ]

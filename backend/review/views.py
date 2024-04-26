@@ -870,36 +870,31 @@ class CommentList(generics.ListAPIView):
 
         queryset = self.get_queryset()
 
-        print(len(queryset))
-
         # add filters
         if semester_arg != "all":
             queryset = queryset.all().filter(semester=semester_arg)
         if instructor != "all":
             queryset = queryset.all().filter(instructor=instructor)
-        
+       
         # apply ordering
         if sort_by == "top":
             # probably not right as is at the moment – likes are marked on a per comment basis not group basis
             queryset = queryset.annotate(
-                base_votes=Count("base__upvotes")-Count("base__downvotes"),
-                base_id=F("base__id")
-            ).order_by("base_votes", "base_id", "path")
+                base_votes=Count("base__upvotes")-Count("base__downvotes")
+            ).order_by("-base_votes", "base_id", "path")
         elif sort_by == "oldest":
             queryset = queryset.all().order_by("path")
         elif sort_by == "newest":
-            queryset = queryset.annotate(base_id=F("base__id")).all().order_by("-base_id", "path")
+            queryset = queryset.all().order_by("-base_id", "path")
         
         # apply pagination (not sure how django handles OOB errors)
-        queryset = queryset.all()[page*page_size:page*(page_size+1)]
+        queryset = queryset.all()[page*page_size:(page+1)*page_size]
         
         return Response(CommentSerializer(queryset, many=True).data, status=status.HTTP_200_OK)
     
     def get_queryset(self):
         course_code = self.kwargs["course_code"]
         semester = self.kwargs["semester"] or "all"
-        print(course_code)
-        print(semester)
         try:
             if semester == "all":
                 course = Course.objects.filter(full_code=course_code).latest("semester")
@@ -910,8 +905,6 @@ class CommentList(generics.ListAPIView):
                 {"message": "Course not found."}, status=status.HTTP_404_NOT_FOUND
             )
         topic = course.topic
-        print("TOPIC")
-        print(topic)
         return Comment.objects.filter(section__course__topic=topic)
 
 # CommentViewSet
@@ -1025,20 +1018,25 @@ class CommentViewSet(viewsets.ModelViewSet):
         # create comment and send response
         parent_id = request.data.get("parent")
         parent = get_object_or_404(Comment, pk=parent_id) if parent_id != None else None
-        base = parent.base if parent else None
         comment = Comment.objects.create(
             text=request.data.get("text"),
             author=request.user,
             section=section,
-            base=base,
             parent=parent
         )
+        base = parent.base if parent else comment
+        prefix = parent.path + "." if parent else ""
+        path = prefix + '{:0{}d}'.format(comment.id, 10)
+        comment.base = base
+        comment.path = path
+        comment.save()
+
         return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
 
     def update(self, request, pk=None):
         comment = get_object_or_404(Comment, pk=pk)
 
-        if request.user != comment.user:
+        if request.user != comment.author:
             return Response(
                 {"message": "Not authorized to modify this comment."}, status=status.HTTP_403_FORBIDDEN
             )
@@ -1046,6 +1044,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         if "text" in request.data:
             comment.text = request.data.get("text")
             comment.save()
+            return Response({"message": "Successfully edited."}, status=status.HTTP_201_CREATED)
         else:
             return Response(
                 {"message": "Insufficient fields presented."}, status=status.HTTP_400_BAD_REQUEST
@@ -1054,7 +1053,7 @@ class CommentViewSet(viewsets.ModelViewSet):
     def destroy(self, request, pk=None):
         comment = get_object_or_404(Comment, pk=pk)
 
-        if request.user != comment.user:
+        if request.user != comment.author:
             return Response(
                 {"message": "Not authorized to modify this comment."}, status=status.HTTP_403_FORBIDDEN
             )
@@ -1062,7 +1061,7 @@ class CommentViewSet(viewsets.ModelViewSet):
         comment.delete()
         return Response({"message": "Successfully deleted."}, status=status.HTTP_204_NO_CONTENT)
     
-@api_view(["GET"])
+@api_view(["POST"])
 def handle_vote(request):
     """
     Handles an incoming request that changes the vote of a comment.
@@ -1073,11 +1072,16 @@ def handle_vote(request):
         )  
     
     user = request.user
-    comment = get_object_or_404(Comment, request.data.get("id"))
+    comment = get_object_or_404(Comment, pk=request.data.get("id"))
     vote_type = request.data.get("vote_type")
     if vote_type == "upvote":
         comment.downvotes.remove(user)
         comment.upvotes.add(user)
-    if vote_type == "downvote":
+    elif vote_type == "downvote":
         comment.upvotes.remove(user)
         comment.downvotes.add(user)
+    elif vote_type == "clear":
+        comment.upvotes.remove(user)
+        comment.downvotes.remove(user)
+    
+    return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)

@@ -1351,15 +1351,15 @@ class CommentsTestCase(TestCase):
 
         # Add Vote Counts
         self.upvote("user1", self.id2)
-        self.upvote("user1", self.id3)
-        self.upvote("user2", self.id3)
+        self.upvote("user1", self.id2)
+        self.upvote("user2", self.id2)
         self.upvote("user3", self.id3)
-        self.downvote("user1", self.id2)
-        self.downvote("user2", self.id2)
+        self.downvote("user1", self.id1)
+        self.downvote("user2", self.id1)
     
     def get_comments(self, semester, code, ordering):
         base_url = reverse("course-comments", kwargs={"semester": semester, "course_code": code})
-        query_params = {"ordering":ordering}
+        query_params = {"sort_by":ordering}
         encoded_params = urlencode(query_params)
         self.client.force_login(self.user1)
         response = self.client.get(f"{base_url}?{encoded_params}")
@@ -1378,11 +1378,10 @@ class CommentsTestCase(TestCase):
             "semester": semester,
         }
         if parent_id != None:
-            data["parent_id"] = parent_id
+            data["parent"] = parent_id
         
         response = self.client.post(reverse("comment"), data, format="json")
         self.client.logout()
-        print(response.data)
         return response.data["id"]
 
     def edit_comment(self, username, text, comment_id):
@@ -1391,7 +1390,7 @@ class CommentsTestCase(TestCase):
         user = self.usermap[username]
         self.client.force_login(user)
         self.client.put(
-            reverse("comment", kwargs={"comment_id": comment_id}),
+            reverse("comment", kwargs={"pk": comment_id}),
             {"text": text}
         )
         self.client.logout()
@@ -1401,7 +1400,7 @@ class CommentsTestCase(TestCase):
             return
         user = self.usermap[username]
         self.client.force_login(user)
-        self.client.delete(reverse("comment", kwargs={"comment_id": comment_id}))
+        self.client.delete(reverse("comment", kwargs={"pk": comment_id}))
         self.client.logout()
 
     def upvote(self, username, comment_id):
@@ -1411,7 +1410,7 @@ class CommentsTestCase(TestCase):
         self.client.force_login(user)
         self.client.post(
             reverse("comment-vote"),
-            {"vote_type": "upvote", "comment_id": comment_id}
+            {"vote_type": "upvote", "id": comment_id}
         )
         self.client.logout()
 
@@ -1422,91 +1421,88 @@ class CommentsTestCase(TestCase):
         self.client.force_login(user)
         self.client.post(
             reverse("comment-vote"),
-            {"vote_type": "downvote", "comment_id": comment_id}
+            {"vote_type": "downvote", "id": comment_id}
         )
         self.client.logout()
     
     def test_comment_count(self):
-        print(self.get_comments("all", self._COURSE_CODE, "newest"))
         self.assertEqual(len(self.get_comments("all", self._COURSE_CODE, "newest")), 4)
     
-    # def test_time_ordering_new(self):
-    #     comments = self.get_comments(self._COURSE_CODE, "all", self._COURSE_CODE, "newest")
-    #     self.assertEqual(len(comments), 4)
-    #     self.assertEqual(comments[0].id, self.id2)
-    #     self.assertEqual(comments[1].id, self.id1)
-    #     self.assertEqual(comments[2].id, self.id3)
-    #     self.assertEqual(comments[3].id, self.id4)
+    def test_time_ordering_new(self):
+        comments = self.get_comments("all", self._COURSE_CODE, "newest")
+        self.assertEqual(len(comments), 4)
+        self.assertEqual(comments[0]["id"], self.id2)
+        self.assertEqual(comments[1]["id"], self.id1)
+        self.assertEqual(comments[2]["id"], self.id3)
+        self.assertEqual(comments[3]["id"], self.id4)
 
-    # def test_time_ordering_old(self):
-    #     comments = self.get_comments(self._COURSE_CODE, "all", "CIS-1200", "oldest")
-    #     self.assertEqual(len(comments), 4)
-    #     self.assertEqual(comments[0].id, self.id1)
-    #     self.assertEqual(comments[1].id, self.id3)
-    #     self.assertEqual(comments[2].id, self.id4)
-    #     self.assertEqual(comments[3].id, self.id2)
+    def test_time_ordering_old(self):
+        comments = self.get_comments("all", self._COURSE_CODE, "oldest")
+        self.assertEqual(len(comments), 4)
+        self.assertEqual(comments[0]["id"], self.id1)
+        self.assertEqual(comments[1]["id"], self.id3)
+        self.assertEqual(comments[2]["id"], self.id4)
+        self.assertEqual(comments[3]["id"], self.id2)
         
-    # def test_popularity_ordering(self):
-    #     comments = self.get_comments(self._COURSE_CODE, "all", self._COURSE_CODE, "top")
-    #     self.assertEqual(len(comments), 4)
-    #     self.assertEqual(comments[0].id, self.id2)
-    #     self.assertEqual(comments[1].id, self.id1)
-    #     self.assertEqual(comments[2].id, self.id3)
-    #     self.assertEqual(comments[3].id, self.id4)
+    def test_popularity_ordering(self):
+        comments = self.get_comments("all", self._COURSE_CODE, "top")
+        self.assertEqual(len(comments), 4)
+        self.assertEqual(comments[0]["id"], self.id2)
+        self.assertEqual(comments[1]["id"], self.id1)
+        self.assertEqual(comments[2]["id"], self.id3)
+        self.assertEqual(comments[3]["id"], self.id4)
 
-    # def test_delete_base(self):
-    #     self.delete_comment("user2", self.id2)
-    #     comments = self.get_comments(self._COURSE_CODE, "all", self._COURSE_CODE, "newest")
-    #     self.assertEqual(len(comments), 3)
+    def test_delete_base(self):
+        self.delete_comment("user2", self.id2)
+        comments = self.get_comments("all", self._COURSE_CODE, "newest")
+        self.assertEqual(len(comments), 3)
 
-    # def test_delete_base_with_reply(self):
-    #     self.delete_comment("user1", self.id1)
-    #     comments = self.get_comments(self._COURSE_CODE, "all", self._COURSE_CODE, "newest")
-    #     self.assertEqual(len(comments), 4)
-    #     for comment in comments:
-    #         if comment.id == self.id1:
-    #             self.assertTrue(comment.text, "This comment has been removed.")
-    #             return
-    #     self.assertFalse()
+    def test_delete_base_with_reply(self):
+        self.delete_comment("user1", self.id1)
+        comments = self.get_comments("all", self._COURSE_CODE, "newest")
+        self.assertEqual(len(comments), 4)
+        for comment in comments:
+            if comment["id"] == self.id1:
+                self.assertTrue(comment["text"], "This comment has been removed.")
+                return
+        self.assertFalse(True)
     
-    # def test_delete_reply(self):
-    #     self.delete_comment("user1", self.id4)
-    #     comments = self.get_comments(self._COURSE_CODE, "all", self._COURSE_CODE, "newest")
-    #     self.assertEqual(len(comments), 3)
-    #     self.assertFalse()
+    def test_delete_reply(self):
+        self.delete_comment("user1", self.id4)
+        comments = self.get_comments("all", self._COURSE_CODE, "newest")
+        self.assertEqual(len(comments), 3)
 
-    # def test_new_upvote_downvote(self):
-    #     self.upvote("user2", self.id4)
-    #     comments = self.get_comments(self._COURSE_CODE, "all", self._COURSE_CODE, "newest")
-    #     for comment in comments:
-    #         if comment.id == self.id4:
-    #             self.assertTrue(comment.vote_count, 1)
-    #             return
-    #     self.assertFalse()
+    def test_new_upvote_downvote(self):
+        self.upvote("user2", self.id4)
+        comments = self.get_comments("all", self._COURSE_CODE, "newest")
+        for comment in comments:
+            if comment["id"] == self.id4:
+                self.assertTrue(comment["votes"], 1)
+                return
+        self.assertFalse(True)
 
-    # def test_old_upvote_downvote(self):
-    #     self.upvote("user2", self.id3)
-    #     comments = self.get_comments(self._COURSE_CODE, "all", self._COURSE_CODE, "newest")
-    #     for comment in comments:
-    #         if comment.id == self.id3:
-    #             self.assertTrue(comment.vote_count, 3)
-    #             return
-    #     self.assertFalse()
+    def test_old_upvote_downvote(self):
+        self.upvote("user2", self.id3)
+        comments = self.get_comments("all", self._COURSE_CODE, "newest")
+        for comment in comments:
+            if comment["id"] == self.id3:
+                self.assertTrue(comment["votes"], 3)
+                return
+        self.assertFalse(True)
 
-    # def test_switch_votes(self):
-    #     self.upvote("user2", self.id2)
-    #     comments = self.get_comments(self._COURSE_CODE, "all", self._COURSE_CODE, "newest")
-    #     for comment in comments:
-    #         if comment.id == self.id2:
-    #             self.assertTrue(comment.vote_count, 2)
-    #             return
-    #     self.assertFalse()
+    def test_switch_votes(self):
+        self.upvote("user2", self.id2)
+        comments = self.get_comments("all", self._COURSE_CODE, "newest")
+        for comment in comments:
+            if comment["id"] == self.id2:
+                self.assertTrue(comment["votes"], 2)
+                return
+        self.assertFalse(True)
     
-    # def test_edit_comment(self):
-    #     self.edit_comment("user1", "new comment!", self.id2)
-    #     comments = self.get_comments(self._COURSE_CODE, "all", self._COURSE_CODE, "newest")
-    #     for comment in comments:
-    #         if comment.text == "new comment!":
-    #             self.assertTrue()
-    #             return
-    #     self.assertFalse()
+    def test_edit_comment(self):
+        self.edit_comment("user2", "new comment!", self.id2)
+        comments = self.get_comments("all", self._COURSE_CODE, "newest")
+        for comment in comments:
+            if comment["text"] == "new comment!":
+                return
+        self.assertFalse(True)
