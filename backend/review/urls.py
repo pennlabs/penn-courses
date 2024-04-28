@@ -42,10 +42,6 @@ urlpatterns = [
         cache_page(MONTH_IN_SECONDS)(instructor_for_course_reviews),
         name="course-history",
     ),
-    path(
-        "instructors/analysis/", 
-        instructors_analysis,
-        name="instructors-analysis"
-    ), 
+    path("instructors/analysis/", instructors_analysis, name="instructors-analysis"),
     path("autocomplete", cache_page(MONTH_IN_SECONDS)(autocomplete), name="review-autocomplete"),
 ]
