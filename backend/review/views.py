@@ -590,6 +590,66 @@ def department_reviews(request, department_code):
 
     return Response({"code": department.code, "name": department.name, "courses": courses})
 
+@api_view(["GET"])
+@schema(
+    PcxAutoSchema(
+        response_codes={
+            "instructors-analysis": {
+                "GET": {
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Instructors retrieved successfully.",
+                }
+            }
+        },
+        override_response_schema=instructor_reviews_response_schema,
+    )
+)
+def instructors_analysis(request): 
+    # Get parameters from request
+    start_semester = request.GET.get("start_semester")
+    end_semester = request.GET.get("end_semester", get_current_semester()) # default to current semester
+    num_results = int(request.GET.get("num_results", 5)) # default to top 5 instructors
+    department = request.GET.get("department", None) # Optional filter by department
+
+    # Building the base queryset
+    reviews = Review.objects.all()
+    if department:
+        reviews = reviews.filter(section__course__department__code=department)
+        print("Filtered by Department:", reviews.query)
+    if start_semester:
+        reviews = reviews.filter(section__course__semester__gte=start_semester)
+        print("Filtered by Start Semester:", reviews.query)
+    if end_semester != get_current_semester():
+        reviews = reviews.filter(section__course__semester__lte=end_semester)
+        print("Filtered by End Semester:", reviews.query)
+    
+    # Aggregating the reviews 
+    instructor_stats = review_averages(
+        reviews,
+        reviewbit_subfilters=Q(review_id=OuterRef("id")),
+        section_subfilters=Q(id=OuterRef("section_id")),
+        fields=ALL_FIELD_SLUGS,
+        prefix="bit_",
+        extra_metrics=True,
+    ).annotate(
+        instructor_id_annotation=F("instructor_id"),
+        instructor_name=F("instructor__name"),
+        semester=F("section__course__semester"),
+    ).values()
+
+    # Aggregating the instructors
+    instructors = aggregate_reviews(instructor_stats, "instructor_id_annotation", name="instructor_name")
+    print(instructors.items()) 
+    # Sorting the instructors by average instructor quality
+    # instructors = dict(sorted(instructors.items(), key=lambda item: item[1]["average_instructor_quality"], reverse=True)[:num_results])
+    sorted_instructors = dict(sorted(
+    instructors.items(),
+    key=lambda item: item[1]['average_reviews'].get("rInstructorQuality", 0),
+    reverse=True
+    )[:num_results])
+
+    print("Sorted Instructors:", sorted_instructors)
+
+    return Response(sorted_instructors)
 
 @api_view(["GET"])
 @schema(

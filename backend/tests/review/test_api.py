@@ -314,7 +314,6 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
             },
         )
 
-
 class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
     def setUp(self):
         set_semester()
@@ -1031,3 +1030,57 @@ class DuplicateCodeTestCase(TestCase, PCRTestMixin):
             },
         )
         self.assertEqual(len(res["instructors"]), 1)
+
+class InstructorAnalysisTestCase(TestCase, PCRTestMixin):
+    def setUp(self):
+        set_semester()
+        self.client = APIClient()
+        self.client.force_login(User.objects.create_user(username="test"))
+
+        # Setup departments and instructors
+        departments = ["CIS", "MATH", "PHYS"]
+        instructors_info = [
+            ("Alice", "CIS", "CIS-120", 4),
+            ("Bob", "CIS", "CIS-160", 3),
+            ("Charlie", "MATH", "MATH-114", 5),
+            ("Dave", "PHYS", "PHYS-101", 2),
+            ("Eve", "PHYS", "PHYS-150", 4)
+        ]
+
+        for name, dept, course, quality in instructors_info:
+            instructor, _ = Instructor.objects.get_or_create(name=name)
+            _, section = create_mock_data(f"{course}-001", TEST_SEMESTER)
+            create_review(f"{course}-001", TEST_SEMESTER, name, {"instructor_quality": quality})
+            Review.objects.all().update(enrollment=100)  # Simulate enrollments
+
+    def test_department_specific(self):
+        # Test for CIS department
+        response = self.client.get(reverse('instructors-analysis') + '?department=CIS')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+
+    def test_no_department_specified(self):
+        # Test without a specified department
+        response = self.client.get(reverse('instructors-analysis'))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 5)
+
+    def test_time_period_within_department(self):
+        # Test for MATH department during a specific semester
+        response = self.client.get(reverse('instructors-analysis') + '?department=MATH&start_semester=2022C&end_semester=2022C')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+
+    def test_invalid_department(self):
+        # Test for an invalid department
+        response = self.client.get(reverse('instructors-analysis') + '?department=ART')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
+    def test_sorted_by_quality(self):
+        # Test results are sorted by quality within a department
+        response = self.client.get(reverse('instructors-analysis') + '?department=PHYS')
+        self.assertEqual(response.status_code, 200)
+        results = list(response.data.values())
+        self.assertGreaterEqual(results[0]['average_reviews']['rInstructorQuality'], results[-1]['average_reviews']['rInstructorQuality'])
+
