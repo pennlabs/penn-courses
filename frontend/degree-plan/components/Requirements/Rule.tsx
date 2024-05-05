@@ -154,7 +154,7 @@ const RuleComponent = (ruleTree : RuleTree) => {
     const [collapsed, setCollapsed] = useState(false);
 
     // hooks for LEAFs
-    const { createOrUpdate } = useSWRCrud<Fulfillment>(
+    const { createOrUpdate: createOrUpdateFulfillment } = useSWRCrud<Fulfillment>(
         `/api/degree/degreeplans/${activeDegreePlanId}/fulfillments`,
         { idKey: "full_code",
         createDefaultOptimisticData: { semester: null, rules: [] }
@@ -163,7 +163,7 @@ const RuleComponent = (ruleTree : RuleTree) => {
     const [{ isOver, canDrop }, drop] = useDrop<DnDCourse, never, { isOver: boolean, canDrop: boolean }>({
         accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_DOCK], 
         drop: (course: DnDCourse) => {
-          createOrUpdate({ rules: course.rules !== undefined ? [...course.rules, rule.id] : [rule.id] }, course.full_code);
+          createOrUpdateFulfillment({ rules: course.rules !== undefined ? [...course.rules, rule.id] : [rule.id] }, course.full_code);
           return undefined;
         }, // TODO: this doesn't handle fulfillments that already have a rule
         canDrop: () => { return !satisfied && !!rule.q },
@@ -171,7 +171,7 @@ const RuleComponent = (ruleTree : RuleTree) => {
           isOver: !!monitor.isOver() && !satisfied,
           canDrop: !!monitor.canDrop()
         }),
-    }, [createOrUpdate, satisfied]);
+    }, [createOrUpdateFulfillment, satisfied]);
 
 
     if (type === "LEAF") {
