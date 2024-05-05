@@ -134,11 +134,24 @@ class FulfillmentSerializer(serializers.ModelSerializer):
         model = Fulfillment
         fields = ["id", "degree_plan", "full_code", "course", "semester", "rules"]
 
+    @staticmethod
+    def _check_fulfills_rule(full_code: str, rule: Rule) -> bool:
+        # TODO: this fn should probably be moved to Rule model
+
+        # NOTE: we don't do any validation if the course doesn't exist in DB. In future,
+        # it may be better to prompt user for manual override.
+        return (
+            not Course.objects.filter(full_code=full_code).exists()
+            or Course.objects.filter(rule.get_q_object(), full_code=full_code).exists()
+        )
+
     def validate(self, data):
         data = super().validate(data)
         rules = data.get("rules")  # for patch requests without a rules field
         full_code = data.get("full_code")
         degree_plan = data.get("degree_plan")
+        request = self.context['request']
+        rules_to_try = request.query_params.getList("try_rule")
 
         if rules is None and full_code is None and degree_plan is None:
             return data  # Nothing to validate
@@ -151,17 +164,22 @@ class FulfillmentSerializer(serializers.ModelSerializer):
         if degree_plan is None:
             degree_plan = self.instance.degree_plan
 
-        # TODO: check that rules belong to this degree plan
+        # TODO: check that rules belong to this degree plan's degrees
         for rule in rules:
-            # NOTE: we don't do any validation if the course doesn't exist in DB. In future,
-            # it may be better to prompt user for manual override
-            if (
-                Course.objects.filter(full_code=full_code).exists()
-                and not Course.objects.filter(rule.get_q_object(), full_code=full_code).exists()
-            ):
+            if not self._check_fulfills_rule(full_code, rule):
                 raise serializers.ValidationError(
                     f"Course {full_code} does not satisfy rule {rule.id}"
                 )
+        
+        for rule_pk in rules_to_try:
+            try:
+                # TODO: check that rules belong to this degree plan's degrees
+                rule = Rule.objects.get(pk=rule_pk)
+            except Rule.DoesNotExist:
+                continue
+            if self._check_fulfills_rule(full_code, rule):
+                rules.append(rule)  # Add the rule to the list of rules
+                
 
         # Check for double count restrictions
         double_count_restrictions = DoubleCountRestriction.objects.filter(
