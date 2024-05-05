@@ -9,6 +9,7 @@ import { ItemTypes } from '../dnd/constants';
 import { DarkBlueBackgroundSkeleton } from "../FourYearPlan/PanelCommon";
 import { DegreeYear, RuleTree } from './ReqPanel';
 import assert from 'assert';
+import { expectedDoubleCounts } from '@/utils';
 
 const RuleTitleWrapper = styled.div`
     background-color: var(--primary-color);
@@ -163,9 +164,12 @@ const RuleComponent = (ruleTree : RuleTree) => {
     const [{ isOver, canDrop }, drop] = useDrop<DnDCourse, never, { isOver: boolean, canDrop: boolean }>({
         accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_DOCK], 
         drop: (course: DnDCourse) => {
-          createOrUpdateFulfillment({ rules: course.rules !== undefined ? [...course.rules, rule.id] : [rule.id] }, course.full_code);
+          createOrUpdateFulfillment({ 
+            rules: course.rules !== undefined ? [...course.rules, rule.id] : [rule.id] }, course.full_code,
+            try_rules: [] // TODO: <aadalal> // courses we want to try
+          );
           return undefined;
-        }, // TODO: this doesn't handle fulfillments that already have a rule
+        },
         canDrop: () => { return !satisfied && !!rule.q },
         collect: monitor => ({
           isOver: !!monitor.isOver() && !satisfied,

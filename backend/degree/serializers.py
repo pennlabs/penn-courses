@@ -151,7 +151,9 @@ class FulfillmentSerializer(serializers.ModelSerializer):
         full_code = data.get("full_code")
         degree_plan = data.get("degree_plan")
         request = self.context['request']
-        rules_to_try = request.query_params.getList("try_rule")
+        rules_to_try = request.data.get("try_rules", [])
+
+        print(rules_to_try)
 
         if rules is None and full_code is None and degree_plan is None:
             return data  # Nothing to validate
