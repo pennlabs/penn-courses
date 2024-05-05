@@ -1,13 +1,13 @@
 import type { DegreePlan, Fulfillment, Rule } from "@/types";
 import styled from "@emotion/styled";
 import { Icon } from "../common/bulma_derived_components";
-import CourseInPlan from "../FourYearPlan/CourseInPlan";
 import { SkeletonCourse } from "../Course/Course";
 import { BaseCourseContainer } from "../Course/Course";
 import assert from "assert";
 import { useContext } from "react";
 import { SearchPanelContext } from "../Search/SearchPanel";
 import CourseInReq from "./CourseInReq";
+import { QCourse, Search, Or, ParsedQObj, Condition, Compound, ConditionKey } from "@/types";
 
 const interpolate = <T,>(arr: T[], separator: T) => 
     arr.flatMap(
@@ -16,36 +16,6 @@ const interpolate = <T,>(arr: T[], separator: T) =>
         : [elem]
     )
 
-
-type ConditionKey = "full_code" | "semester" | "attributes__code__in" | "department__code" | "full_code__startswith" | "code__gte" | "code__lte" | "department__code__in" | "code"
-interface Condition {
-    type: 'LEAF';
-    key: ConditionKey;
-    value: string | number | boolean | null | string[];
-}
-
-// represents a course requirement
-interface QCourse {
-    type: 'COURSE';
-    full_code: string;
-    semester?: string;
-}
-interface Search {
-    type: 'SEARCH';
-    q: ParsedQObj
-} 
-interface And {
-    type: 'AND';
-    clauses: (Compound | Condition | QCourse | Search)[];
-}
-
-interface Or {
-    type: 'OR';
-    clauses: (Compound | Condition | QCourse | Search)[];
-}
-type Compound = Or | And;
-
-type ParsedQObj = Condition | Compound | QCourse | Search;
 type TransformedQObject = QCourse | Search | Or;
 
 

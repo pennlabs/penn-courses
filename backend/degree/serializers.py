@@ -4,6 +4,7 @@ from django.db.models import Q
 from rest_framework import serializers
 
 from courses.models import Course
+from courses.serializers import AttributeListSerializer
 from courses.util import get_current_semester
 from degree.models import (
     Degree,
@@ -31,6 +32,17 @@ class SimpleCourseSerializer(serializers.ModelSerializer):
         ),
     )
 
+    attributes = AttributeListSerializer(
+        many=True,
+        read_only=True,
+        help_text=dedent(
+            """
+        A list of attributes this course has. Attributes are typically
+        used to mark courses which students in a program/major should
+        take.
+        """
+        ),
+    )
     course_quality = serializers.DecimalField(
         max_digits=4, decimal_places=3, read_only=True, help_text="course_quality_help"
     )

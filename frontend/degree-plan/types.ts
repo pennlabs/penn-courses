@@ -5,7 +5,7 @@ export interface DBObject {
 export interface Rule extends DBObject {
   id: number;
   q: string; // could be blank
-  q_json: any;
+  q_json: ParsedQObj;
   title: string; // could be blank
   credits: number | null;
   parent: Rule["id"],
@@ -85,7 +85,6 @@ export interface Options {
   SEND_FROM_WEBHOOK: boolean;
 }
 
-// TODO: differentiate between course and course detail
 export interface Course {
   title: string;
   id: string;
@@ -96,6 +95,7 @@ export interface Course {
   work_required: number;
   difficulty: number;
   credits: number;
+  attributes: string[];
 }
 
 // The interface we use with React DND
@@ -125,3 +125,31 @@ export function assertValueType<T, K extends keyof T>(obj: T, idKey: K, value: a
         throw new Error(`Value ${value} is not of type ${typeof obj[idKey]}`);
     }
 }
+
+export type ConditionKey = "full_code" | "semester" | "attributes__code__in" | "department__code" | "full_code__startswith" | "code__gte" | "code__lte" | "department__code__in" | "code";
+export interface Condition {
+    type: 'LEAF';
+    key: ConditionKey;
+    value: string | number | boolean | null | string[];
+}
+// represents a course requirement
+export interface QCourse {
+    type: 'COURSE';
+    full_code: string;
+    semester?: string;
+}
+export interface Search {
+    type: 'SEARCH';
+    q: ParsedQObj;
+}
+interface And {
+    type: 'AND';
+    clauses: (Compound | Condition | QCourse | Search)[];
+}
+export interface Or {
+    type: 'OR';
+    clauses: (Compound | Condition | QCourse | Search)[];
+}
+export type Compound = Or | And;
+export type ParsedQObj = Condition | Compound | QCourse | Search;
+
