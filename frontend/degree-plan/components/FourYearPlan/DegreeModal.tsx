@@ -132,29 +132,26 @@ interface RemoveSemesterProps {
 interface ModalInteriorProps {
   modalKey: ModalKey;
   modalObject: DegreePlan | null | RemoveSemesterProps | RemoveDegreeProps | Degree;
-  setActiveDegreeplan: (arg0: DegreePlan | null) => void;
+  setActiveDegreeplanId: (arg0: DegreePlan["id"] | null) => void;
   close: () => void;
   modalRef: React.RefObject<HTMLSelectElement | null>;
 }
 const ModalInterior = ({
   modalObject,
   modalKey,
-  setActiveDegreeplan,
+  setActiveDegreeplanId,
   close,
   modalRef
 }: ModalInteriorProps) => {
-  const {
-    create: createDegreeplan,
-    update: updateDegreeplan,
-    remove: deleteDegreeplan,
-  } = useSWRCrud<DegreePlan>("/api/degree/degreeplans");
-
+  const { update: updateDegreeplan } = useSWRCrud<DegreePlan>("/api/degree/degreeplans");
   const { mutate } = useSWRConfig();
 
+  // TODO: this fetch is not efficient since it requires refetching all the degreeplans
+  // so we should try in place changes
   const add_degreeplan = async (name: string) => {
-    const _new = await postFetcher("/api/degree/degreeplans", { name: name });
+    const _new = await postFetcher("/api/degree/degreeplans", { name });
     await mutate("/api/degree/degreeplans"); // use updated degree plan returned
-    setActiveDegreeplan(_new);
+    setActiveDegreeplanId(_new.id);
   };
 
   const delete_degreeplan = async (id: number) => {
@@ -366,13 +363,13 @@ interface DegreeModalProps {
   setModalKey: (arg0: ModalKey) => void;
   modalKey: ModalKey;
   modalObject: DegreePlan | null;
-  setActiveDegreeplan: (arg0: DegreePlan | null) => void;
+  setActiveDegreeplanId: (arg0: DegreePlan["id"] | null) => void;
 }
 const DegreeModal = ({
   setModalKey,
   modalKey,
   modalObject,
-  setActiveDegreeplan,
+  setActiveDegreeplanId,
 }: DegreeModalProps) => (
   <ModalContainer
     title={getModalTitle(modalKey)}
@@ -383,7 +380,7 @@ const DegreeModal = ({
     // @ts-ignore */}
     <ModalInterior
       modalObject={modalObject}
-      setActiveDegreeplan={setActiveDegreeplan}
+      setActiveDegreeplanId={setActiveDegreeplanId}
       close={() => setModalKey(null)}
     />
   </ModalContainer>

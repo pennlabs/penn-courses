@@ -185,13 +185,14 @@ const customSelectStylesRight = {
   }),
 };
 
+interface OnboardingPageProps {
+  setShowOnboardingModal: (arg0: boolean) => void;
+  setActiveDegreeplanId: (arg0: DegreePlan["id"]) => void;
+}
 const OnboardingPage = ({
   setShowOnboardingModal,
-  setActiveDegreeplan,
-}: {
-  setShowOnboardingModal: (arg0: boolean) => void;
-  setActiveDegreeplan: (arg0: DegreePlan) => void;
-}) => {
+  setActiveDegreeplanId,
+}: OnboardingPageProps) => {
   const [startingYear, setStartingYear] = useState<{ label: any, value: number } | null>(null);
   const [graduationYear, setGraduationYear] = useState<{ label: any, value: number } | null>(null);
   const [schools, setSchools] = useState<SchoolOption[]>([]);
@@ -260,30 +261,24 @@ const OnboardingPage = ({
     return majorOptions;
   }, [schools, startingYear]);
 
-  const handleAddDegrees = () => {
-    createDegreeplan({ name: name })
-      .then((res) => {
-        if (res) {
-          if (startingYear && graduationYear) {
-            window.localStorage.setItem(
-              getLocalSemestersKey(res.id),
-              JSON.stringify(interpolateSemesters(startingYear.value, graduationYear.value))
-            );
-            console.log(
-              "****",
-              getLocalSemestersKey(res.id),
-              JSON.stringify(interpolateSemesters(startingYear.value, graduationYear.value))
-            );
-          }
-          setActiveDegreeplan(res);
-          const updated = postFetcher(
-            `/api/degree/degreeplans/${res.id}/degrees`,
-            { degree_ids: majors.map((m) => m.value.id) }
-          ); // add degree
-          setActiveDegreeplan(res);
-          setShowOnboardingModal(false);
-        }
-      });
+  const handleAddDegrees = async () => {
+    const created = await createDegreeplan({ name: name })
+    if (created) {
+      if (startingYear && graduationYear) {
+        window.localStorage.setItem(
+          getLocalSemestersKey(created.id),
+          JSON.stringify(interpolateSemesters(startingYear.value, graduationYear.value))
+        );
+      }
+      setActiveDegreeplanId((created as DegreePlan).id);
+      // TODO: why do we do this separately?
+      const updated = await postFetcher(
+        `/api/degree/degreeplans/${created.id}/degrees`,
+        { degree_ids: majors.map((m) => m.value.id) }
+      ); // add degree
+      setActiveDegreeplanId((updated as DegreePlan).id);
+      setShowOnboardingModal(false);
+    }
   };
 
   return (

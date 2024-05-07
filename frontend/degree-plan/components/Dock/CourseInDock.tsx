@@ -1,11 +1,7 @@
 import { useDrag } from "react-dnd";
-import { ItemTypes } from "../dnd/constants";
-import { GrayIcon } from '../common/bulma_derived_components';
-import styled from '@emotion/styled';
-import { Course, DnDCourse, DockedCourse, Fulfillment } from "@/types";
-import { Draggable } from "../common/DnD";
-import CourseComponent, { PlannedCourseContainer } from "../Course/Course";
-import { CourseXButton } from "../Course/Course";
+import { DnDItemTypes } from "../../constants";
+import { DnDCourse, DockedCourse } from "@/types";
+import CourseComponent from "../Course/Course";
 import { useSWRCrud } from "@/hooks/swrcrud";
 
 interface CourseInDockProps {
@@ -24,7 +20,7 @@ const CourseInDock = (props : CourseInDockProps) => {
     }
 
     const [{ isDragging }, drag] = useDrag<DnDCourse, never, { isDragging: boolean }>(() => ({
-      type: ItemTypes.COURSE_IN_DOCK,
+      type: DnDItemTypes.COURSE_IN_DOCK,
       item: course,
       collect: (monitor) => ({
         isDragging: !!monitor.isDragging()

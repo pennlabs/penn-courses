@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import ReqPanel from "./Requirements/ReqPanel";
 import PlanPanel from "./FourYearPlan/PlanPanel";
 import {
@@ -17,6 +17,7 @@ import Dock from "@/components/Dock/Dock";
 import useWindowDimensions from "@/hooks/window";
 import OnboardingPage from "../pages/OnboardingPage";
 import Footer from "./Footer";
+import { expectedDoubleCounts } from "@/utils";
 
 const PageContainer = styled.div`
   height: 100vh;
@@ -64,11 +65,14 @@ const FourYearPlanPage = ({
   const [modalKey, setModalKey] = useState<ModalKey>(null);
   const [modalObject, setModalObject] = useState<DegreePlan | null>(null); // stores the which degreeplan is being updated using the modal
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
-  const [activeDegreeplan, setActiveDegreeplan] = React.useState<DegreePlan | null>(null);
+  const [activeDegreeplanId, setActiveDegreeplanId] = React.useState<DegreePlan["id"] | null>(null);
 
   const { data: degreeplans, isLoading: isLoadingDegreeplans } = useSWR<
     DegreePlan[]
   >("/api/degree/degreeplans");
+  const { data: activeDegreeplan, isLoading: isLoadingActiveDegreeplan } = useSWR<
+    DegreePlan
+  >(activeDegreeplanId === null ? "/api/degree/degreeplans/${activeDegreePlanId}" : null);
   
   useEffect(() => {
     // recompute the active degreeplan id on changes to the degreeplans
@@ -76,16 +80,17 @@ const FourYearPlanPage = ({
       setShowOnboardingModal(true);
     }
     if (!degreeplans?.length) {
-      setActiveDegreeplan(null);
+      setActiveDegreeplanId(null);
     } else if (
-      !activeDegreeplan || !degreeplans.find((d) => d.id === activeDegreeplan.id)
+      !activeDegreeplanId || !degreeplans.find((d) => d.id === activeDegreeplanId)
     ) {
       const mostRecentUpdated = degreeplans.reduce((a, b) =>
         a.updated_at > b.updated_at ? a : b
       );
-      setActiveDegreeplan(mostRecentUpdated);
+      setActiveDegreeplanId(mostRecentUpdated.id);
     }
   }, [degreeplans, isLoadingDegreeplans]);
+  const getExpectedDoubleCounts = useCallback((() => expectedDoubleCounts(activeDegreeplan)), [activeDegreeplan])
 
   const windowWidth = useWindowDimensions()["width"];
 
@@ -144,7 +149,7 @@ const FourYearPlanPage = ({
             setModalKey={setModalKey}
             modalKey={modalKey}
             modalObject={modalObject}
-            setActiveDegreeplan={setActiveDegreeplan}
+            setActiveDegreeplanId={setActiveDegreeplanId}
           />
         )}
         <PageContainer>
@@ -152,7 +157,7 @@ const FourYearPlanPage = ({
             {!!showOnboardingModal ? (
               <OnboardingPage
                 setShowOnboardingModal={setShowOnboardingModal}
-                setActiveDegreeplan={setActiveDegreeplan}
+                setActiveDegreeplanId={setActiveDegreeplanId}
               />
             ) : (
               <Row>
@@ -181,7 +186,7 @@ const FourYearPlanPage = ({
                         }
                         activeDegreeplan={activeDegreeplan}
                         degreeplans={degreeplans}
-                        setActiveDegreeplan={setActiveDegreeplan}
+                        setActiveDegreeplanId={setActiveDegreeplanId}
                         setShowOnboardingModal={setShowOnboardingModal}
                       />
                     </PanelInteriorWrapper>
@@ -199,7 +204,7 @@ const FourYearPlanPage = ({
                     </PanelInteriorWrapper>
                     {searchPanelOpen && (
                       <PanelInteriorWrapper $minWidth={"40%"} $maxWidth={"45%"}>
-                        <SearchPanel activeDegreeplanId={activeDegreeplan ? activeDegreeplan.id : null} />
+                        <SearchPanel activeDegreeplanId={activeDegreeplanId} />
                       </PanelInteriorWrapper>
                     )}
                   </PanelWrapper>
@@ -208,7 +213,7 @@ const FourYearPlanPage = ({
             )}
           </BodyContainer>
           <Footer />
-          <Dock user={user} login={updateUser} logout={() => updateUser(null)} activeDegreeplanId={activeDegreeplan ? activeDegreeplan.id : null} />
+          <Dock user={user} login={updateUser} logout={() => updateUser(null)} activeDegreeplanId={activeDegreeplanId} />
         </PageContainer>
       </ReviewPanelContext.Provider>
     </SearchPanelContext.Provider>

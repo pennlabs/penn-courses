@@ -5,7 +5,7 @@ import styled from '@emotion/styled';
 import { Icon } from '../common/bulma_derived_components';
 import { useSWRCrud } from '@/hooks/swrcrud';
 import { useDrop } from 'react-dnd';
-import { ItemTypes } from '../dnd/constants';
+import { DnDItemTypes } from '../../constants';
 import { DarkBlueBackgroundSkeleton } from "../FourYearPlan/PanelCommon";
 import { DegreeYear, RuleTree } from './ReqPanel';
 import assert from 'assert';
@@ -162,7 +162,7 @@ const RuleComponent = (ruleTree : RuleTree) => {
     });
 
     const [{ isOver, canDrop }, drop] = useDrop<DnDCourse, never, { isOver: boolean, canDrop: boolean }>({
-        accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_DOCK], 
+        accept: [DnDItemTypes.COURSE_IN_PLAN, DnDItemTypes.COURSE_IN_DOCK], 
         drop: (course: DnDCourse) => {
           createOrUpdateFulfillment({ 
             rules: course.rules !== undefined ? [...course.rules, rule.id] : [rule.id] }, course.full_code,

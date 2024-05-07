@@ -1,4 +1,4 @@
-export const ItemTypes = {
+export const DnDItemTypes = {
   MAJOR: "major",
   COURSE_IN_PLAN: "course-in-plan",
   COURSE_IN_REQ: "course-in-req",

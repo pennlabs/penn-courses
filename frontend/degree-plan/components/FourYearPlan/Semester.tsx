@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useDrag, useDrop } from "react-dnd";
-import { ItemTypes } from "../dnd/constants";
+import { DnDItemTypes } from "../../constants";
 import CoursesPlanned, { SkeletonCoursesPlanned } from "./CoursesPlanned";
 import Stats from "./Stats";
 import styled from '@emotion/styled';
@@ -122,7 +122,7 @@ const FlexSemester = ({
     const { createOrUpdate: addToDock } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
 
     // the fulfillments api uses the POST method for updates (it creates if it doesn't exist, and updates if it does)
-    const { createOrUpdate, remove } = useSWRCrud<Fulfillment>(
+    const { createOrUpdate: createOrUpdateFulfillment, remove } = useSWRCrud<Fulfillment>(
         `/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`,
         { 
             idKey: "full_code",
@@ -131,13 +131,13 @@ const FlexSemester = ({
     );
 
     const [{ isOver, canDrop }, drop] = useDrop<DnDCourse, never, { isOver: boolean, canDrop: boolean }>(() => ({
-        accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_DOCK, ItemTypes.COURSE_IN_REQ],
+        accept: [DnDItemTypes.COURSE_IN_PLAN, DnDItemTypes.COURSE_IN_DOCK, DnDItemTypes.COURSE_IN_REQ],
         drop: (course: DnDCourse) => {
             if (course.rule_id === undefined || course.rule_id == null) { // moved from plan or dock
-                createOrUpdate({ semester }, course.full_code);
+                createOrUpdateFulfillment({ semester }, course.full_code);
             } else { // moved from req panel
                 const prev_rules = fulfillments.find((fulfillment) => fulfillment.full_code === course.full_code)?.rules || []
-                createOrUpdate({ rules: [...prev_rules, course.rule_id], semester }, course.full_code);
+                createOrUpdateFulfillment({ rules: [...prev_rules, course.rule_id], semester }, course.full_code);
             }
             return undefined;
         },
@@ -145,7 +145,7 @@ const FlexSemester = ({
           isOver: !!monitor.isOver(),
           canDrop: !!monitor.canDrop()
         }),
-    }), [createOrUpdate, semester]);
+    }), [createOrUpdateFulfillment, semester]);
 
     const handleRemoveCourse = async (full_code: Course["id"]) => {
         remove(full_code);
@@ -156,7 +156,7 @@ const FlexSemester = ({
     const removeSemesterHelper = () => {
         removeSemester(semester);
         for (var i = 0; i < fulfillments.length; i++) {
-            createOrUpdate({ semester: null }, fulfillments[i].full_code);
+            createOrUpdateFulfillment({ semester: null }, fulfillments[i].full_code);
         }
     }
 

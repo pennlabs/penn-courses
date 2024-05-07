@@ -4,7 +4,7 @@ import { DarkBlueIcon } from '../Requirements/QObject';
 import React, { useContext, useEffect } from "react";
 import { useDrop } from "react-dnd";
 import { Course, DegreePlan, DnDCourse, DockedCourse, Fulfillment, User } from "@/types";
-import { ItemTypes } from "../dnd/constants";
+import { DnDItemTypes } from "../../constants";
 import { SearchPanelContext } from '../Search/SearchPanel';
 import { useSWRCrud } from '@/hooks/swrcrud';
 import useSWR, { useSWRConfig } from 'swr';
@@ -120,7 +120,7 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
     const isMount = useIsMount();
 
     const [{ isOver, canDrop }, drop] = useDrop(() => ({
-        accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_REQ],
+        accept: [DnDItemTypes.COURSE_IN_PLAN, DnDItemTypes.COURSE_IN_REQ],
         drop: (course: DnDCourse) => {
            createOrUpdate({"full_code": course.full_code}, course.full_code);
         },

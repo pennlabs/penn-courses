@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import RuleComponent, { SkeletonRule } from './Rule';
 import { Degree as DegreeType, DegreePlan, Fulfillment, Rule, Course, QCourse, ParsedQObj } from '@/types';
 import styled from '@emotion/styled';
@@ -224,12 +224,11 @@ const Degree = ({degree, rulesToFulfillments, activeDegreeplan, editMode, setMod
 interface ReqPanelProps {
   setModalKey: (arg0: ModalKey) => void;
   setModalObject: (arg0: DegreePlan | null) => void;
-  activeDegreeplan: DegreePlan | null;
+  activeDegreeplan?: DegreePlan;
   isLoading: boolean;
 }
 const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading}: ReqPanelProps) => {
   const [editMode, setEditMode] = React.useState(false);  
-  const { data: activeDegreeplanDetail = null } = useSWR<DegreePlan>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}` : null); 
   const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null); 
 
   const rulesToFulfillments = useMemo(() => {
@@ -256,10 +255,10 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading}: Re
       </PanelHeader>
       {!activeDegreeplan ? <ReqPanelBody><Degree isLoading={true}/></ReqPanelBody> :
       <>
-        {activeDegreeplanDetail && 
+        {activeDegreeplan && 
         <ReqPanelBody>
-          {activeDegreeplanDetail.degrees.length == 0 && !editMode && <EmptyPanel />}
-          {activeDegreeplanDetail.degrees.map(degree => (
+          {activeDegreeplan.degrees.length == 0 && !editMode && <EmptyPanel />}
+          {activeDegreeplan.degrees.map(degree => (
             <Degree 
             degree={degree} 
             rulesToFulfillments={rulesToFulfillments} 

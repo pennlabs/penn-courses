@@ -2,8 +2,8 @@ import { Course, DegreePlan, ParsedQObj, Rule } from "./types";
 
 // Returns a callback that returns the rules a courses is expected to fulfill. This list of expected double counts should be a superset of the actual double counts
 // (and a superset that is as tight as possible to the actual double counts)
-export const expectedDoubleCounts = (activeDegreeplanDetail: DegreePlan) => {  // a flat list of rules
-    if (!activeDegreeplanDetail) return [];
+export const expectedDoubleCounts = (activeDegreeplanDetail?: DegreePlan) => {  // a flat list of rules
+    if (!activeDegreeplanDetail) return () => [];
     const flatten: (rules: Rule[]) => Rule[] = (rules: Rule[]) => rules.flatMap(rule => [rule, ...flatten(rule.rules)] as Rule[]);
     const rulesList = activeDegreeplanDetail.degrees.flatMap(degree => flatten(degree.rules));
 
@@ -36,3 +36,5 @@ export const expectedDoubleCounts = (activeDegreeplanDetail: DegreePlan) => {  /
     }
     return (course: Course) => rulesList.filter(rule => courseSatisfiesQ(course, rule.q_json)).map(rule => rule.id);
 }
+
+export type ExpectedDoubleCountsCallback = ReturnType<typeof expectedDoubleCounts>; 
