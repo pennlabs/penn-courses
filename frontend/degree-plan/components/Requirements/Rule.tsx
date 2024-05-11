@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import RuleLeaf, { SkeletonRuleLeaf } from './QObject';
-import { Course, DnDCourse, Fulfillment, Rule } from '@/types';
+import { DnDCourse, Fulfillment, Rule } from '@/types';
 import styled from '@emotion/styled';
 import { Icon } from '../common/bulma_derived_components';
 import { useSWRCrud } from '@/hooks/swrcrud';
@@ -8,8 +8,7 @@ import { useDrop } from 'react-dnd';
 import { DnDItemTypes } from '../../constants';
 import { DarkBlueBackgroundSkeleton } from "../FourYearPlan/PanelCommon";
 import { DegreeYear, RuleTree } from './ReqPanel';
-import assert from 'assert';
-import { expectedDoubleCounts } from '@/utils';
+import { ExpectedDoubleCountsContext } from '../FourYearPlanPage';
 
 const RuleTitleWrapper = styled.div`
     background-color: var(--primary-color);
@@ -161,13 +160,20 @@ const RuleComponent = (ruleTree : RuleTree) => {
         createDefaultOptimisticData: { semester: null, rules: [] }
     });
 
+    const getExpectedDoubleCounts = useContext(ExpectedDoubleCountsContext);
+
     const [{ isOver, canDrop }, drop] = useDrop<DnDCourse, never, { isOver: boolean, canDrop: boolean }>({
         accept: [DnDItemTypes.COURSE_IN_PLAN, DnDItemTypes.COURSE_IN_DOCK], 
         drop: (course: DnDCourse) => {
           createOrUpdateFulfillment({ 
-            rules: course.rules !== undefined ? [...course.rules, rule.id] : [rule.id] }, course.full_code,
-            try_rules: [] // TODO: <aadalal> // courses we want to try
-          );
+              rules: course.rules !== undefined ? [...course.rules, rule.id] : [rule.id],
+            },
+            course.full_code,
+          )
+          .then((fulfillment) => { 
+            if (fulfillment?.course) createOrUpdateFulfillment({ try_rules: getExpectedDoubleCounts(fulfillment.course) }, course.full_code);
+            return undefined;
+          })
           return undefined;
         },
         canDrop: () => { return !satisfied && !!rule.q },

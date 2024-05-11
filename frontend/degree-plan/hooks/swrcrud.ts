@@ -87,7 +87,7 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
 
     const { mutate } = useSWRConfig();
 
-    const create = (newItem: Partial<T>) => {
+    const create = async (newItem: Partial<T>) => {
         const created = createFetcher(endpoint, newItem);
         const optimistic = {...createDefaultOptimisticData, ...newItem} as T;
         mutate(endpoint, created, {
@@ -99,7 +99,7 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
         return created;
     }
 
-    const copy = (optimisticData: T, id: idType) => {
+    const copy = async (optimisticData: T, id: idType) => {
         if (!id) return;
         const key = normalizeFinalSlash(endpoint) + id + "/copy"; // assume copy endpoint is `${listEndpoint}/${id}/copy`
         const copied = copyFetcher(key, optimisticData); // the copy endpoint will pull out whatever data it needs
@@ -115,7 +115,7 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
         return copied;
     }
 
-    const update = (updatedData: Partial<T>, id: idType) => {
+    const update = async (updatedData: Partial<T>, id: idType) => {
         if (!id) return;
         const key = normalizeFinalSlash(endpoint) + id;
         const updated = updateFetcher(key, updatedData);
@@ -163,7 +163,7 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
     const remove = async (id: idType) => {
         if (!id) return;
         const key = normalizeFinalSlash(endpoint) + id;
-        const removed = await removeFetcher(key)
+        const removed = removeFetcher(key)
         mutate(endpoint, removed, {
             optimisticData: (list?: Array<T>) => list ? list.filter((item: T) => String(item[idKey]) !== id) : [],
             populateCache: (_, list?: Array<T>) => {
@@ -182,12 +182,13 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
     }
 
     const createOrUpdate = (data: Partial<T>, id: any) => {
-        if (!id) return;
+        if (!id) return new Promise.resolve(undefined); // TODO: need to find a better interface for this
         const updated: Partial<T> = {...data}
         updated[idKey] = id;
+        const upserted = createOrUpdateFetcher(endpoint, updated)
         mutate(
             endpoint,
-            createOrUpdateFetcher(endpoint, updated), 
+            upserted,
             {
                 optimisticData: (list: Array<T> | undefined) => {
                     if (!list) return [];
@@ -203,6 +204,7 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
                 revalidate: false,
             }
         )
+        return upserted
     }
     
     return { create, copy, update, remove, createOrUpdate };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, createContext } from "react";
 import ReqPanel from "./Requirements/ReqPanel";
 import PlanPanel from "./FourYearPlan/PlanPanel";
 import {
@@ -57,6 +57,8 @@ const PanelInteriorWrapper = styled.div<{ $maxWidth?: string; $minWidth?: string
   height: 100%;
 `;
 
+export const ExpectedDoubleCountsContext = createContext<ReturnType<typeof expectedDoubleCounts>>(() => ([]))
+
 const FourYearPlanPage = ({
   updateUser,
   user
@@ -70,10 +72,6 @@ const FourYearPlanPage = ({
   const { data: degreeplans, isLoading: isLoadingDegreeplans } = useSWR<
     DegreePlan[]
   >("/api/degree/degreeplans");
-  const { data: activeDegreeplan, isLoading: isLoadingActiveDegreeplan } = useSWR<
-    DegreePlan
-  >(activeDegreeplanId === null ? "/api/degree/degreeplans/${activeDegreePlanId}" : null);
-  
   useEffect(() => {
     // recompute the active degreeplan id on changes to the degreeplans
     if (!isLoadingDegreeplans && !degreeplans?.length) {
@@ -90,7 +88,11 @@ const FourYearPlanPage = ({
       setActiveDegreeplanId(mostRecentUpdated.id);
     }
   }, [degreeplans, isLoadingDegreeplans]);
-  const getExpectedDoubleCounts = useCallback((() => expectedDoubleCounts(activeDegreeplan)), [activeDegreeplan])
+  const { data: activeDegreeplan, isLoading: isLoadingActiveDegreeplan } = useSWR<
+    DegreePlan
+  >(activeDegreeplanId !== null ? `/api/degree/degreeplans/${activeDegreeplanId}` : null);
+
+  const getExpectedDoubleCounts = useCallback((expectedDoubleCounts(activeDegreeplan)), [activeDegreeplan])
 
   const windowWidth = useWindowDimensions()["width"];
 
@@ -135,86 +137,88 @@ const FourYearPlanPage = ({
           setPosition: setReviewPanelCoords,
         }}
       >
-        {reviewPanelFullCode && (
-          <ReviewPanel
-            currentSemester={options?.SEMESTER}
-            full_code={reviewPanelFullCode}
-            set_full_code={setReviewPanelFullCode}
-            position={reviewPanelCoords}
-            setPosition={setReviewPanelCoords}
-          />
-        )}
-        {modalKey && (
-          <DegreeModal
-            setModalKey={setModalKey}
-            modalKey={modalKey}
-            modalObject={modalObject}
-            setActiveDegreeplanId={setActiveDegreeplanId}
-          />
-        )}
-        <PageContainer>
-          <BodyContainer ref={ref}>
-            {!!showOnboardingModal ? (
-              <OnboardingPage
-                setShowOnboardingModal={setShowOnboardingModal}
-                setActiveDegreeplanId={setActiveDegreeplanId}
-              />
-            ) : (
-              <Row>
-                {/*
-                // @ts-ignore */}
-                <SplitPane
-                  split="vertical"
-                  maxSize={windowWidth ? windowWidth * 0.65 : 1000}
-                  defaultSize="50%"
-                  style={{
-                    padding: "1.5rem",
-                    paddingBottom: "1rem" // less padding on bottom for penn labs footer
-                  }}
-                >
+        <ExpectedDoubleCountsContext.Provider value={getExpectedDoubleCounts}>
+          {reviewPanelFullCode && (
+            <ReviewPanel
+              currentSemester={options?.SEMESTER}
+              full_code={reviewPanelFullCode}
+              set_full_code={setReviewPanelFullCode}
+              position={reviewPanelCoords}
+              setPosition={setReviewPanelCoords}
+            />
+          )}
+          {modalKey && (
+            <DegreeModal
+              setModalKey={setModalKey}
+              modalKey={modalKey}
+              modalObject={modalObject}
+              setActiveDegreeplanId={setActiveDegreeplanId}
+            />
+          )}
+          <PageContainer>
+            <BodyContainer ref={ref}>
+              {!!showOnboardingModal ? (
+                <OnboardingPage
+                  setShowOnboardingModal={setShowOnboardingModal}
+                  setActiveDegreeplanId={setActiveDegreeplanId}
+                />
+              ) : (
+                <Row>
                   {/*
                   // @ts-ignore */}
-                  <PanelWrapper>
-                    <PanelInteriorWrapper>
-                      <PlanPanel
-                        currentSemester={options?.SEMESTER}
-                        setModalKey={setModalKey}
-                        modalKey={modalKey}
-                        setModalObject={setModalObject}
-                        isLoading={
-                          isLoadingDegreeplans // || isLoadingActiveDegreePlan
-                        }
-                        activeDegreeplan={activeDegreeplan}
-                        degreeplans={degreeplans}
-                        setActiveDegreeplanId={setActiveDegreeplanId}
-                        setShowOnboardingModal={setShowOnboardingModal}
-                      />
-                    </PanelInteriorWrapper>
-                  </PanelWrapper>
-                  {/*
-                  // @ts-ignore */}
-                  <PanelWrapper>
-                    <PanelInteriorWrapper>
-                      <ReqPanel
-                        setModalKey={setModalKey}
-                        setModalObject={setModalObject}
-                        isLoading={isLoadingDegreeplans}
-                        activeDegreeplan={activeDegreeplan}
-                      />
-                    </PanelInteriorWrapper>
-                    {searchPanelOpen && (
-                      <PanelInteriorWrapper $minWidth={"40%"} $maxWidth={"45%"}>
-                        <SearchPanel activeDegreeplanId={activeDegreeplanId} />
+                  <SplitPane
+                    split="vertical"
+                    maxSize={windowWidth ? windowWidth * 0.65 : 1000}
+                    defaultSize="50%"
+                    style={{
+                      padding: "1.5rem",
+                      paddingBottom: "1rem" // less padding on bottom for penn labs footer
+                    }}
+                  >
+                    {/*
+                    // @ts-ignore */}
+                    <PanelWrapper>
+                      <PanelInteriorWrapper>
+                        <PlanPanel
+                          currentSemester={options?.SEMESTER}
+                          setModalKey={setModalKey}
+                          modalKey={modalKey}
+                          setModalObject={setModalObject}
+                          isLoading={
+                            isLoadingDegreeplans // || isLoadingActiveDegreePlan
+                          }
+                          activeDegreeplan={activeDegreeplan}
+                          degreeplans={degreeplans}
+                          setActiveDegreeplanId={setActiveDegreeplanId}
+                          setShowOnboardingModal={setShowOnboardingModal}
+                        />
                       </PanelInteriorWrapper>
-                    )}
-                  </PanelWrapper>
-                </SplitPane>
-              </Row>
-            )}
-          </BodyContainer>
-          <Footer />
-          <Dock user={user} login={updateUser} logout={() => updateUser(null)} activeDegreeplanId={activeDegreeplanId} />
-        </PageContainer>
+                    </PanelWrapper>
+                    {/*
+                    // @ts-ignore */}
+                    <PanelWrapper>
+                      <PanelInteriorWrapper>
+                        <ReqPanel
+                          setModalKey={setModalKey}
+                          setModalObject={setModalObject}
+                          isLoading={isLoadingDegreeplans}
+                          activeDegreeplan={activeDegreeplan}
+                        />
+                      </PanelInteriorWrapper>
+                      {searchPanelOpen && (
+                        <PanelInteriorWrapper $minWidth={"40%"} $maxWidth={"45%"}>
+                          <SearchPanel activeDegreeplanId={activeDegreeplanId} />
+                        </PanelInteriorWrapper>
+                      )}
+                    </PanelWrapper>
+                  </SplitPane>
+                </Row>
+              )}
+            </BodyContainer>
+            <Footer />
+            <Dock user={user} login={updateUser} logout={() => updateUser(null)} activeDegreeplanId={activeDegreeplanId} />
+          </PageContainer>
+        </ExpectedDoubleCountsContext.Provider>
       </ReviewPanelContext.Provider>
     </SearchPanelContext.Provider>
   );

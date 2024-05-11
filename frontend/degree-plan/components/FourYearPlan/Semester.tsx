@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
-import { useDrag, useDrop } from "react-dnd";
+import React, { useContext } from "react";
+import { useDrop } from "react-dnd";
 import { DnDItemTypes } from "../../constants";
 import CoursesPlanned, { SkeletonCoursesPlanned } from "./CoursesPlanned";
 import Stats from "./Stats";
@@ -11,6 +11,7 @@ import Skeleton from "react-loading-skeleton"
 import 'react-loading-skeleton/dist/skeleton.css'
 import { mutate } from "swr";
 import { ModalKey } from "./DegreeModal";
+import { ExpectedDoubleCountsContext } from "../FourYearPlanPage";
 
 
 const translateSemester = (semester: Course["semester"]) => {
@@ -130,14 +131,20 @@ const FlexSemester = ({
         }
     );
 
+    const getExpectedDoubleCounts = useContext(ExpectedDoubleCountsContext)
+
     const [{ isOver, canDrop }, drop] = useDrop<DnDCourse, never, { isOver: boolean, canDrop: boolean }>(() => ({
         accept: [DnDItemTypes.COURSE_IN_PLAN, DnDItemTypes.COURSE_IN_DOCK, DnDItemTypes.COURSE_IN_REQ],
         drop: (course: DnDCourse) => {
             if (course.rule_id === undefined || course.rule_id == null) { // moved from plan or dock
                 createOrUpdateFulfillment({ semester }, course.full_code);
-            } else { // moved from req panel
-                const prev_rules = fulfillments.find((fulfillment) => fulfillment.full_code === course.full_code)?.rules || []
-                createOrUpdateFulfillment({ rules: [...prev_rules, course.rule_id], semester }, course.full_code);
+            } else {
+                const prev_rules = fulfillments.find((fulfillment) => fulfillment.full_code === course.full_code)?.rules || [];
+                createOrUpdateFulfillment({ rules: [...prev_rules, course.rule_id], semester }, course.full_code)
+                .then((fulfillment) => { 
+                    if (fulfillment?.course) createOrUpdateFulfillment({ try_rules: getExpectedDoubleCounts(fulfillment.course) }, course.full_code);
+                    return undefined;
+                })
             }
             return undefined;
         },

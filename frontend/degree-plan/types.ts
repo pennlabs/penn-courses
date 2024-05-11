@@ -112,6 +112,7 @@ export interface Fulfillment extends DBObject {
   id: number;
   degree_plan: number; // id
   full_code: string;
+  try_rules?: number[]; // only used in requests (never returned) TODO: this is a hack we should fix
 }
 
 // Internal representation of a plan (this is derived from fulfillments)
