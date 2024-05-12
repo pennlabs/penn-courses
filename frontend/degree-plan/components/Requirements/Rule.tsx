@@ -171,7 +171,7 @@ const RuleComponent = (ruleTree : RuleTree) => {
             course.full_code,
           )
           .then((fulfillment) => { 
-            if (fulfillment?.course) createOrUpdateFulfillment({ try_rules: getExpectedDoubleCounts(fulfillment.course) }, course.full_code);
+            if (fulfillment?.course) createOrUpdateFulfillment({ rules: fulfillment.rules, try_rules: getExpectedDoubleCounts(fulfillment.course) }, course.full_code);
             return undefined;
           })
           return undefined;

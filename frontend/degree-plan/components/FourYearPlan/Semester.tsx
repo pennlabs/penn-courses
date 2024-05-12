@@ -142,7 +142,7 @@ const FlexSemester = ({
                 const prev_rules = fulfillments.find((fulfillment) => fulfillment.full_code === course.full_code)?.rules || [];
                 createOrUpdateFulfillment({ rules: [...prev_rules, course.rule_id], semester }, course.full_code)
                 .then((fulfillment) => { 
-                    if (fulfillment?.course) createOrUpdateFulfillment({ try_rules: getExpectedDoubleCounts(fulfillment.course) }, course.full_code);
+                    if (fulfillment?.course) createOrUpdateFulfillment({ rules: fulfillment.rules, try_rules: getExpectedDoubleCounts(fulfillment.course) }, course.full_code);
                     return undefined;
                 })
             }
