@@ -5,7 +5,7 @@ import { Course, DegreePlan, ParsedQObj, Rule } from "./types";
 export const expectedDoubleCounts = (activeDegreeplanDetail?: DegreePlan) => {  // a flat list of rules
     if (!activeDegreeplanDetail) return () => [];
     const flatten: (rules: Rule[]) => Rule[] = (rules: Rule[]) => rules.flatMap(rule => [rule, ...flatten(rule.rules)] as Rule[]);
-    const rulesList = activeDegreeplanDetail.degrees.flatMap(degree => flatten(degree.rules));
+    const rulesList = activeDegreeplanDetail.degrees.flatMap(degree => flatten(degree.rules)).filter(rule => rule.q_json);
 
     // evaluate whether the course is expected to fulfill
     const courseSatisfiesQ = (course: Course, q_json: ParsedQObj): boolean => {
@@ -34,6 +34,7 @@ export const expectedDoubleCounts = (activeDegreeplanDetail?: DegreePlan) => {  
             return q_json.clauses.some(clause => courseSatisfiesQ(course, clause));
         }
     }
+
     return (course: Course) => rulesList.filter(rule => courseSatisfiesQ(course, rule.q_json)).map(rule => rule.id);
 }
 

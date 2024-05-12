@@ -70,6 +70,7 @@ class SimpleCourseSerializer(serializers.ModelSerializer):
             "instructor_quality",
             "difficulty",
             "work_required",
+            "attributes",
         ]
         read_only_fields = fields
 
@@ -147,13 +148,12 @@ class FulfillmentSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         data = super().validate(data)
-        rules = data.get("rules")  # for patch requests without a rules field
+        rules = list(data.get("rules", []))  # for patch requests without a rules field
+        data["rules"] = rules
         full_code = data.get("full_code")
         degree_plan = data.get("degree_plan")
-        request = self.context['request']
+        request = self.context["request"]
         rules_to_try = request.data.get("try_rules", [])
-
-        print(rules_to_try)
 
         if rules is None and full_code is None and degree_plan is None:
             return data  # Nothing to validate
