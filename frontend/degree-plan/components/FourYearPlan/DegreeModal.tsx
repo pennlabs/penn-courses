@@ -170,9 +170,9 @@ const ModalInterior = ({
   const createMajorLabel = (degree: DegreeListing) => {
     const concentration =
       degree.concentration && degree.concentration !== "NONE"
-        ? ` - ${degree.concentration_name}`
+        ? ` - ${degree.concentration_name ?? degree.concentration}`
         : "";
-    return `${degree.major_name}${concentration}`;
+    return `${degree.major_name ?? degree.major}${concentration}`;
   };
 
   const getMajorOptions = React.useCallback(() => {

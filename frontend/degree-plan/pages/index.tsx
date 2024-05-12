@@ -6,6 +6,7 @@ import React, { useEffect, useState } from "react";
 import { DegreePlan, type User } from "../types";
 import LoginModal from "pcx-shared-components/src/accounts/LoginModal";
 import { SWRConfig } from "swr";
+import { getFetcher } from "@/hooks/swrcrud";
 
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
@@ -27,8 +28,7 @@ export default function Home() {
       <DndProvider backend={HTML5Backend}>
         <SWRConfig
           value={{
-            fetcher: (resource, init) =>
-              fetch(resource, init).then((res) => res.json()),
+            fetcher: (resource: string) => getFetcher(resource),
             provider: () => new Map(),
             onError: (error, key) => {
               // if (error.status !== 403 && error.status !== 404) {

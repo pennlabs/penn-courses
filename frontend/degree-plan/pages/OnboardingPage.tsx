@@ -242,13 +242,14 @@ const OnboardingPage = ({
   const createMajorLabel = (degree: DegreeListing) => {
     const concentration =
       degree.concentration && degree.concentration !== "NONE"
-        ? ` - ${degree.concentration_name}`
+        ? ` - ${degree.concentration_name ?? degree.concentration}`
         : "";
-    return `${degree.major_name}${concentration}`;
+    return `${degree.major_name ?? degree.major}${concentration}`;
   };
 
   const getMajorOptions = React.useCallback(() => {
     /** Filter major options based on selected schools/degrees */
+    console.log(degrees)
     const majorOptions =
       degrees
         ?.filter((d) => schools.map((s) => s.value).includes(d.degree))
@@ -259,7 +260,7 @@ const OnboardingPage = ({
         }))
         .sort((a, b) => a.label.localeCompare(b.label));
     return majorOptions;
-  }, [schools, startingYear]);
+  }, [degrees, schools, startingYear]);
 
   const handleAddDegrees = async () => {
     const created = await createDegreeplan({ name: name })

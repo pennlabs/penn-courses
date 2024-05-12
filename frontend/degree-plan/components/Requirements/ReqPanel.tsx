@@ -95,7 +95,7 @@ interface DegreeHeaderProps {
 }
 
 const DegreeHeader = ({ degree, remove, setCollapsed, collapsed, editMode, skeleton }: DegreeHeaderProps) => {
-  const degreeName = !skeleton ? `${degree.degree} in ${degree.major_name} ${degree.concentration ? `(${degree.concentration_name})` : ''}` : <DarkBlueBackgroundSkeleton width="10em" />;
+  const degreeName = !skeleton ? `${degree.degree} in ${degree.major_name ?? degree.major} ${degree.concentration ? `(${degree.concentration_name ?? degree.concentration})` : ''}` : <DarkBlueBackgroundSkeleton width="10em" />;
   return (
     <DegreeHeaderContainer onClick={() => setCollapsed(!collapsed)}>
       <DegreeTitleWrapper>
