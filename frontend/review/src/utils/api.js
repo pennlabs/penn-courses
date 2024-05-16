@@ -123,6 +123,115 @@ export function apiReviewData(type, code, semester) {
     )}?token=${encodeURIComponent(API_TOKEN)}` + getSemesterQParam(semester)
   );
 }
+const fakeComments = {
+  comments: [
+    {
+      content:
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla mollis commodo ligula sit amet pharetra.",
+      id: 10,
+      created_at: new Date(new Date() - 1000000),
+      modified_at: new Date(new Date() - 1000),
+      author_name: "Luke Tong",
+      likes: 42,
+      course: "CIS-1200",
+      semester: "2024A",
+      professorId: [6],
+      parent_id: null,
+      path: "10",
+      replies: 1
+    },
+    {
+      content:
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla mollis commodo ligula sit amet pharetra. Nunc accumsan nec mi eget sagittis.",
+      id: 20,
+      created_at: new Date(new Date() - 1000000),
+      modified_at: new Date(new Date() - 1000000),
+      author_name: "Shiva Menta",
+      likes: 0,
+      course: "CIS-1200",
+      semester: "2022A",
+      professorId: [6],
+      parent_id: null,
+      path: "20",
+      replies: 0
+    },
+    {
+      content:
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla mollis commodo ligula sit amet pharetra. Nunc accumsan nec mi eget sagittis. Mauris rutrum hendrerit est, a interdum ipsum convallis et. Etiam vel est ac mauris congue sollicitudin ut quis nulla. Mauris rutrum hendrerit est, a interdum ipsum convallis et. Etiam vel est ac mauris congue sollicitudin ut quis nulla.",
+      id: 30,
+      created_at: new Date(new Date() - 5000000),
+      modified_at: new Date(new Date() - 5000000),
+      author_name: "Eunsoo Shin",
+      likes: 10,
+      course: "CIS-1200",
+      semester: "2022A",
+      professorId: [6],
+      parent_id: null,
+      path: "30",
+      replies: 0
+    }
+  ]
+}
+
+const fakeSemesters = {
+  semesters: [
+    "2024A",
+    "2022A",
+  ],
+}
+
+const fakeReplies = {
+  replies: [
+    {
+      content:
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla mollis commodo ligula sit amet pharetra.",
+      id: 12,
+      created_at: new Date(),
+      modified_at: new Date(),
+      author_name: "Shiva Menta",
+      likes: 100,
+      course: "CIS-1200",
+      semester: "2024A",
+      professorIds: [6],
+      parent_id: 11,
+      path: "10.11",
+      replies: 0
+    },
+    {
+      title: "Luke is so cool and awesome",
+      content:
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla mollis commodo ligula sit amet pharetra. Nunc accumsan nec mi eget sagittis.",
+      id: 11,
+      created_at: new Date(),
+      modified_at: new Date(),
+      author_name: "Penn Courses",
+      likes: 100,
+      course: "CIS-1200",
+      semester: "2024A",
+      professorId: [6],
+      parent_id: 10,
+      path: "10.11",
+      replies: 1
+    }
+  ]
+
+}
+
+const fakeUserComment = {
+  content: 
+    "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla mollis commodo ligula sit amet pharetra. Nunc accumsan nec mi eget sagittis. Mauris rutrum hendrerit est, a interdum ipsum convallis et. Etiam vel est ac mauris congue sollicitudin ut quis nulla. Mauris rutrum hendrerit est, a interdum ipsum convallis et. Etiam vel est ac mauris congue sollicitudin ut quis nulla.",
+  id: 40,
+  created_at: new Date(),
+  modified_at: new Date(),
+  author_name: "Penn Labs",
+  likes: 1,
+  course: "CIS-1200",
+  semester: "2024A",
+  professorId: [6],
+  parent_id: null,
+  path: "30",
+  replies: 0
+}
 
 export function apiComments(course, semester, professorId, sortBy) {
   console.log("fetching comments");
@@ -150,23 +259,8 @@ export function apiReplies(commentId) {
 }
 
 export function apiPostComment(course, semester, content) {
-  return apiFetch(
-    `${API_DOMAIN}/api/review/comment`,
-    {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": getCsrf(),
-      },
-      body: JSON.stringify({
-        text: content,
-        course_code: course,
-        instructor: ["Val Breazu. Tannen"],
-        semester: semester,
-      })
-    }
-  );
+  console.log('posting comment');
+  return Promise.resolve({...fakeUserComment, content: content, semester: semester, course: course});
 }
 
 export function apiUserComment(course) {
@@ -174,6 +268,44 @@ export function apiUserComment(course) {
   return Promise.resolve({});
   if(course === "CIS-120") return Promise.resolve(fakeUserComment);
 }
+
+// export function apiComments(course, semester, professorId, sortBy) {
+//   return apiFetch(
+//     `${API_DOMAIN}/api/review/${encodeURIComponent(semester)}/course_comments/${encodeURIComponent(course)}`
+//   );
+// }
+
+// export function apiReplies(commentId) {
+//   return apiFetch(
+//     `${API_DOMAIN}/api/review/comment/children/${commentId}`
+//   );
+// }
+
+// export function apiPostComment(course, semester, content) {
+//   return apiFetch(
+//     `${API_DOMAIN}/api/review/comment`,
+//     {
+//       method: "POST",
+//       credentials: "include",
+//       headers: {
+//         "Content-Type": "application/json",
+//         "X-CSRFToken": getCsrf(),
+//       },
+//       body: JSON.stringify({
+//         text: content,
+//         course_code: course,
+//         instructor: ["Val Breazu. Tannen"],
+//         semester: semester,
+//       })
+//     }
+//   );
+// }
+
+// export function apiComment(commentId) {
+//   return apiFetch(
+//     `${API_DOMAIN}/api/review/comment/${commentId}`
+//   );
+// }
 
 export function apiContact(name) {
   return apiFetch(

@@ -162,6 +162,10 @@ const CommentsTab = forwardRef(
             ref={ref}
             style={{ textAlign: "center" }}
           >
+            <WriteComment 
+              course={course} 
+              setUserComment={setUserComment} 
+            />
             <div>
               <div>
                 <object

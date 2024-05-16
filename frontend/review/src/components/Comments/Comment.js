@@ -9,6 +9,9 @@ export const Comment = forwardRef(({ comment, isReply, isUserComment }, ref) => 
   const [replies, setReplies] = useState([]);
   const [seeMore, setSeeMore] = useState(comment.content.length < 150);
 
+  const [liked, setLiked] = useState(false);
+  const [disliked, setDisliked] = useState(false);
+
   useEffect(() => {
     if (showReplies && replies.length === 0 && comment.replies > 0) {
       apiReplies(comment.id).then(res => {
@@ -37,9 +40,9 @@ export const Comment = forwardRef(({ comment, isReply, isUserComment }, ref) => 
           </>
         )}
         <div className="icon-wrapper">
-          <button className={`btn icon `}><FontAwesomeIcon icon={faThumbsUp} /></button>
-          <span>{comment.likes}</span>
-          <button className={`btn icon`}><FontAwesomeIcon icon={faThumbsDown} /></button>
+          <button className={`btn icon ${liked ? "active" : ""}`} onClick={() => {setLiked(!liked); disliked && setDisliked(false)}}><FontAwesomeIcon icon={faThumbsUp} /></button>
+          <span>{comment.likes + liked - disliked}</span>
+          <button className={`btn icon ${disliked ? "active" : ""}`} onClick={() => {setDisliked(!disliked); liked && setLiked(false)}}><FontAwesomeIcon icon={faThumbsDown} /></button>
         </div>
         {comment.replies > 0 && (
           <>

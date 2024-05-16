@@ -1,11 +1,18 @@
-import React, { useState, forwardRef } from 'react';
+import React, { useState, forwardRef, useEffect } from 'react';
 import { Dropdown } from '../common/Dropdown';
-import { apiPostComment } from '../../utils/api';
+import { apiPostComment, apiLive } from '../../utils/api';
+import { compareSemesters } from '../../utils/helpers';
 
-export const WriteComment = forwardRef(({ course, semesters, setUserComment }, ref) => {
+export const WriteComment = forwardRef(({ course, setUserComment }, ref) => {
     const [isEditing, setIsEditing] = useState(false);
     const [content, setContent] = useState("");
-    const [semester, setSemester] = useState(semesters[0] ?? "2022A");
+    const [semester, setSemester] = useState("2022A");
+    const [semestersList, setSemestersList] = useState(["2024A", "2023B", "2023A"]);
+
+    useEffect(() => {
+        if (isEditing) {
+        }
+    }, [course, isEditing])
 
     const handleSubmit = () => {
         console.log("Comment submitted");
@@ -24,7 +31,7 @@ export const WriteComment = forwardRef(({ course, semesters, setUserComment }, r
         >
             {isEditing &&
                 <Dropdown name={semester}>
-                    {semesters.map((s, i) => (
+                    {semestersList.map((s, i) => (
                         <button
                             key={i}
                             className="btn"
