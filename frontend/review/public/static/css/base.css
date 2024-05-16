@@ -200,8 +200,7 @@ body {
 
 .dropdown {
     position: relative;
-    display: inline-block;
-
+    float: left;
 }
 
 .dropdown .btn-dropdown {

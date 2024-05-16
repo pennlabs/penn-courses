@@ -127,7 +127,7 @@ const CommentsTab = forwardRef(
 
     useEffect(() => {
       setIsLoading(true);
-      apiComments(course, "all", null, null)
+      apiComments(course, null, null, null)
         .then(res => {
           console.log("fetching comments", res);
           setComments(res.comments);
@@ -165,7 +165,6 @@ const CommentsTab = forwardRef(
           >
             <WriteComment 
               course={course} 
-              semesters={semesterList} 
               setUserComment={setUserComment} 
             />
             <div>

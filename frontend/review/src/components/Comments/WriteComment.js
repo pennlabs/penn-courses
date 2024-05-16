@@ -1,17 +1,38 @@
-import React, { useState, forwardRef } from 'react';
+import React, { useState, forwardRef, useEffect } from 'react';
 import { Dropdown } from '../common/Dropdown';
-import { apiPostComment } from '../../utils/api';
+import { apiPostComment, apiLive } from '../../utils/api';
+import { compareSemesters } from '../../utils/helpers';
 
-export const WriteComment = forwardRef(({ course, semesters, setUserComment }, ref) => {
+export const WriteComment = forwardRef(({ course, setUserComment }, ref) => {
     const [isEditing, setIsEditing] = useState(false);
     const [content, setContent] = useState("");
-    const [semester, setSemester] = useState(semesters[0] ?? "2022A");
+    const [semester, setSemester] = useState("2022A");
+    const [semestersList, setSemestersList] = useState(["2024A", "2023B", "2023A"]);
+
+    useEffect(() => {
+        if (isEditing) {
+        }
+    }, [course, isEditing])
 
     const handleSubmit = () => {
         console.log("Comment submitted");
-        apiPostComment(course, semester, content).then(res => {
-            setUserComment(res)
-        })
+        // apiPostComment(course, semester, content).then(res => {
+        //     setUserComment(res)
+        // });
+        setUserComment({
+            content: content,
+            id: 1,
+            created_at: new Date(),
+            modified_at: new Date(),
+            author_name: "Engineering Student",
+            likes: 0,
+            course: course,
+            semester: semester,
+            professorId: [130],
+            parent_id: null,
+            path: "1",
+            replies: 0
+          })
     }
 
     return(
@@ -23,7 +44,7 @@ export const WriteComment = forwardRef(({ course, semesters, setUserComment }, r
         >
             {isEditing &&
                 <Dropdown name={semester}>
-                    {semesters.map((s, i) => (
+                    {semestersList.map((s, i) => (
                         <button
                             key={i}
                             className="btn"
