@@ -93,7 +93,7 @@ const ResultsList = ({
                     // star means the course is a fulfillment
                     isStar={!!fulfillments.find((fulfillment) => fulfillment.full_code == course.id)}
                 />) :
-                Array.from(Array(5).keys()).map(() => <SkeletonCourse />)
+                Array.from(Array(6).keys()).map(() => <SkeletonCourse />)
                 }
             </CoursesContainer>
         </CourseListContainer>
