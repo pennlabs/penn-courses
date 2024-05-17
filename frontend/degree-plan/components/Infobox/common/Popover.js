@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Popover as Popover_ } from "react-tiny-popover";
+import { Popover as TinyPopover } from "react-tiny-popover";
 
 /**
  * A component that represents a button and a box that appears when the button is clicked/hovered over.
@@ -10,7 +10,7 @@ const Popover = ({ hover, button, style, children }) => {
     setIsShown(!val ? !isShown : val);
   };
   return (
-    <Popover_
+    <TinyPopover
       isOpen={isShown}
       positions={["left", "bottom", "right", "up"]}
       content={
@@ -32,7 +32,7 @@ const Popover = ({ hover, button, style, children }) => {
       >
         {button || <button type="button">Toggle</button>}
       </span>
-    </Popover_>
+    </TinyPopover>
   );
 };
 
