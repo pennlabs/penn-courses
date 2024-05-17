@@ -147,7 +147,7 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
             <DockContainer $isDroppable={canDrop} $isOver={isOver}>
                 <AccountIndicator
                 leftAligned={true}
-                user={user}
+                user={user!} // TODO: Fix this
                 backgroundColor="light"
                 nameLength={2}
                 login={login}
