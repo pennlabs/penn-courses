@@ -1,0 +1,57 @@
+Summary Statistics
+{"missing_data": 0, "section_not_found": 0, "duplicate_updates": 5711, "unsynced_updates": 49}
+
+Courses Out of Sync
+Course Code / Last Update Status /Our Stored Status / Actual Status
+Our Status Matches Last Update
+ANTH-2550-401 / C / C / O
+BE-2000-201 / O / O / C
+BE-5650-001 / C / C / O
+BEPP-2020-402 / C / C / O
+BEPP-2030-001 / C / C / O
+CHEM-2412-142 / C / C / O
+CHEM-2510-220 / O / O / C
+COMM-6030-401 / O / O / C
+EDUC-5256-001 / C / C / O
+ESE-2040-001 / O / O / X
+ESE-2040-201 / O / O / X
+ESE-2180-001 / C / C / O
+ESE-2180-101 / C / C / O
+FNAR-1070-402 / C / C / O
+FNAR-5011-402 / C / C / O
+FNCE-2020-402 / C / C / O
+GRMN-1800-001 / O / O / C
+HSOC-2002-403 / C / C / O
+LGST-2190-001 / O / O / C
+LGST-2920-402 / O / O / C
+MGMT-2920-402 / O / O / C
+MGMT-3010-001 / C / C / O
+MGMT-3010-005 / C / C / O
+NURS-1640-110 / C / C / O
+OIDD-2920-402 / O / O / C
+PSCI-1800-204 / C / C / O
+PSYC-1777-001 / C / C / O
+SAST-2550-401 / C / C / O
+SOCI-2000-403 / C / C / O
+SPAN-1800-303 / C / C / O
+SSPP-6030-401 / O / O / C
+SWRK-6020-001 / C / C / O
+SWRK-6030-003 / C / C / O
+SWRK-7770-001 / O / O / C
+
+Our Status Does Not Match Last Update
+ANTH-0120-404 / C / O / C
+BIOL-1101-102 / O / C / O
+CHEM-1102-185 / O / C / O
+CIS-1210-214 / C / O / C
+EALC-0730-406 / C / O / C
+HIST-0550-406 / C / O / C
+LALS-4240-401 / C / O / C
+MEAM-2100-202 / O / C / O
+MEAM-2470-101 / O / C / O
+MSSP-6340-001 / C / O / C
+PHIL-1380-301 / C / O / C
+PSCI-0200-202 / O / C / O
+SOCI-2910-404 / C / O / C
+SOCI-2931-401 / C / O / C
+SWRK-6020-005 / O / C / O
