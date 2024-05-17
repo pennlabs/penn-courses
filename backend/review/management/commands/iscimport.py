@@ -278,7 +278,7 @@ class Command(BaseCommand):
 
         print("Recomputing Section.has_reviews...")
         recompute_has_reviews()
-        precompute_pcr_views(True, True)
+        precompute_pcr_views(verbose=True, is_new_data=True)
 
         print("Done.")
         return 0

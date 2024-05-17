@@ -46,7 +46,7 @@ def registrar_import(semester=None, query=""):
         # (cron job only does current semester, which is either fall or spring)
         registrar_import(semester=semester[:-1] + "B", query=query)
 
-    precompute_pcr_views(True, False)
+    precompute_pcr_views(verbose=True, is_new_data=False)
 
 
 class Command(BaseCommand):

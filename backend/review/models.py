@@ -101,7 +101,7 @@ class CachedReviewResponse(models.Model):
     reviews).
     """
 
-    topic_id = models.CharField(max_length=1000, db_index=True)
+    topic_id = models.CharField(max_length=1000, db_index=True, unique=True)
     response = models.JSONField()
     expired = models.BooleanField(default=True)
 

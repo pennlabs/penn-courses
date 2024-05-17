@@ -15,29 +15,32 @@ def precompute_pcr_views(verbose=False, is_new_data=False):
     if verbose:
         print("Now precomputing PCR reviews.")
 
-    CachedReviewResponse.objects.all().update(expired=True)
-    responses = CachedReviewResponse.objects.all()
-    topic_set = {response.topic_id: response for response in responses}
-
     objs_to_insert = []
     objs_to_update = []
     cache_deletes = set()
     has_count = total_count = 0
 
-    # Iterate through all topics.
     with transaction.atomic():
+        # Mark all the topics as expired.
+        CachedReviewResponse.objects.all().update(expired=True)
+        cached_responses = CachedReviewResponse.objects.all()
+        topic_map = {response.topic_id: response for response in cached_responses}
+
+        # Iterate through all topics.
         for topic in tqdm(
             Topic.objects.all().select_related("most_recent").order_by("most_recent__semester"),
             disable=not verbose,
         ):
+            # get topic id
             course_id_list, course_code_list = zip(*topic.courses.values_list("id", "full_code"))
             topic_id = ".".join([str(id) for id in sorted(course_id_list)])
             total_count += 1
 
-            if topic_id in topic_set:
+            if topic_id in topic_map:
+                # current topic id is already cached
+                has_count += 1
+                response_obj = topic_map[topic_id]
                 try:
-                    has_count += 1
-                    response_obj = topic_set[topic_id]
                     if is_new_data:
                         response_obj.response = manual_course_reviews(
                             topic.most_recent.full_code, topic.most_recent.semester
@@ -51,6 +54,7 @@ def precompute_pcr_views(verbose=False, is_new_data=False):
                         f"course_code {course_code_list[0]}, semester {topic.most_recent.semester})"
                     )
             else:
+                # current topic id is not cached
                 try:
                     review_json = manual_course_reviews(
                         topic.most_recent.full_code, topic.most_recent.semester
