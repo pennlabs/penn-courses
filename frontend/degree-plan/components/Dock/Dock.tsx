@@ -15,6 +15,7 @@ import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicato
 import _ from 'lodash';
 import CoursePlanned from '../FourYearPlan/CourseInPlan';
 import CourseInDock from './CourseInDock';
+import { useRouter } from 'next/router';
 
 const DockWrapper = styled.div`
     z-index: 1;
@@ -143,6 +144,8 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
     //     }
     // }, [isMount, dockedCourses]);
 
+    const { asPath } = useRouter();
+
     return (
         <DockWrapper ref={drop} >
             <DockContainer $isDroppable={canDrop} $isOver={isOver}>
@@ -154,7 +157,7 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
                 login={login}
                 logout={logout}
                 dropdownTop={true}
-                pathname={window.location.pathname}
+                pathname={asPath}
                 />
                 <SearchIconContainer onClick={() => {
                     setSearchRuleQuery("");
