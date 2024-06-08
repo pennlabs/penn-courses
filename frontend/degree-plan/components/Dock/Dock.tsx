@@ -154,6 +154,7 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
                 login={login}
                 logout={logout}
                 dropdownTop={true}
+                pathname={window.location.pathname}
                 />
                 <SearchIconContainer onClick={() => {
                     setSearchRuleQuery("");

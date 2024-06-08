@@ -11,7 +11,7 @@ import type { User } from "../../../plan/types";
  */
 
 const AccountIndicator: React.FC<{
-    user: User;
+    user: User | null | undefined;
     login: (user: any) => void;
     logout: () => void;
     leftAligned?: boolean;
