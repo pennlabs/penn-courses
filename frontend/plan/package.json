@@ -25,6 +25,7 @@
     "bulma-popover": "^1.0.0",
     "cross-fetch": "^3.0.4",
     "express": "^4.17.1",
+    "fuzzysort": "^2.0.4",
     "http-proxy-middleware": "^1.0.4",
     "ics": "^2.37.0",
     "libphonenumber-js": "^1.10.57",

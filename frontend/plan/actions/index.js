@@ -24,9 +24,9 @@ export const COURSE_SEARCH_ERROR = "COURSE_SEARCH_ERROR";
 export const COURSE_SEARCH_LOADING = "COURSE_SEARCH_LOADING";
 export const COURSE_SEARCH_SUCCESS = "COURSE_SEARCH_SUCCESS";
 
-export const LOAD_REQUIREMENTS = "LOAD_REQUIREMENTS";
-export const ADD_SCHOOL_REQ = "ADD_SCHOOL_REQ";
-export const REM_SCHOOL_REQ = "REM_SCHOOL_REQ";
+export const LOAD_ATTRIBUTES = "LOAD_ATTRIBUTES";
+export const ADD_SCHOOL_ATTR = "ADD_SCHOOL_ATTR";
+export const REM_SCHOOL_ATTR = "REM_SCHOOL_ATTR";
 export const UPDATE_SEARCH_TEXT = "UPDATE_SEARCH_TEXT";
 
 export const UPDATE_RANGE_FILTER = "UPDATE_RANGE_FILTER";
@@ -197,8 +197,8 @@ export const checkForDefaultSchedules = (schedulesFromBackend) => (
     }
 };
 
-export const loadRequirements = () => (dispatch) =>
-    doAPIRequest("/base/current/requirements/").then(
+export const loadAttributes = () => (dispatch) =>
+    doAPIRequest("/base/attributes/").then(
         (response) =>
             response.json().then(
                 (data) => {
@@ -207,16 +207,28 @@ export const loadRequirements = () => (dispatch) =>
                         SEAS: [],
                         WH: [],
                         NURS: [],
+                        LPS: [],
+                        DSGN: [],
+                        GSE: [],
+                        LAW: [],
+                        MED: [],
+                        VET: [],
+                        MODE: [],
                     };
-                    const selObj = {};
+                    const selAttrs = {};
                     data.forEach((element) => {
-                        obj[element.school].push(element);
-                        selObj[element.id] = 0;
+                        const school =
+                            element.school === "NUR" ? "NURS" : element.school;
+                        if (obj[school] === undefined) {
+                            return;
+                        }
+                        obj[school].push(element);
+                        selAttrs[element.code] = 0;
                     });
                     dispatch({
-                        type: LOAD_REQUIREMENTS,
+                        type: LOAD_ATTRIBUTES,
                         obj,
-                        selObj,
+                        selObj: selAttrs,
                     });
                 },
                 (error) => {
@@ -233,19 +245,19 @@ export const loadRequirements = () => (dispatch) =>
 function buildCourseSearchUrl(filterData) {
     let queryString = `/base/current/search/courses/?search=${filterData.searchString}`;
 
-    // Requirements filter
-    const reqs = [];
-    if (filterData.selectedReq) {
-        for (const key of Object.keys(filterData.selectedReq)) {
-            if (filterData.selectedReq[key]) {
-                reqs.push(key);
+    // Course attribute filter (e.g., filter by Wharton CCP requirements)
+    const attributes = [];
+    if (filterData.selectedAttrs) {
+        for (const code of Object.keys(filterData.selectedAttrs)) {
+            if (filterData.selectedAttrs[code]) {
+                attributes.push(code);
             }
         }
 
-        if (reqs.length > 0) {
-            queryString += `&requirements=${reqs[0]}`;
-            for (let i = 1; i < reqs.length; i += 1) {
-                queryString += `,${reqs[i]}`;
+        if (attributes.length > 0) {
+            queryString += `&attributes=${attributes[0]}`;
+            for (let i = 1; i < attributes.length; i += 1) {
+                queryString += `*${attributes[i]}`;
             }
         }
     }
@@ -407,17 +419,17 @@ export function sectionInfoSearchError(error) {
     };
 }
 
-export function addSchoolReq(reqID) {
+export function addSchoolAttr(attrCode) {
     return {
-        type: ADD_SCHOOL_REQ,
-        reqID,
+        type: ADD_SCHOOL_ATTR,
+        attrCode,
     };
 }
 
-export function remSchoolReq(reqID) {
+export function remSchoolAttr(attrCode) {
     return {
-        type: REM_SCHOOL_REQ,
-        reqID,
+        type: REM_SCHOOL_ATTR,
+        attrCode,
     };
 }
 
