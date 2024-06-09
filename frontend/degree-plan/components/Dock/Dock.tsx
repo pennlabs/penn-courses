@@ -15,6 +15,7 @@ import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicato
 import _ from 'lodash';
 import CoursePlanned from '../FourYearPlan/CourseInPlan';
 import CourseInDock from './CourseInDock';
+import { CourseXButton } from "../Course/Course";
 
 const DockWrapper = styled.div`
     z-index: 1;
@@ -79,6 +80,17 @@ const DockedCourses = styled.div`
     overflow: auto;
 `
 
+const CloseIcon = styled.div`
+    cursor: pointer;
+    opacity: 0.5;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    &:hover {
+        opacity: 1;
+    }
+`;
+
 const CenteringCourseDock = styled.div`
     color: var(--primary-color-extra-dark);
     margin-left: auto;
@@ -108,7 +120,7 @@ interface DockProps {
 const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
     // const [courseAdded, setCourseAdded] = React.useState(false);
     const { searchPanelOpen, setSearchPanelOpen, setSearchRuleQuery, setSearchRuleId } = useContext(SearchPanelContext)
-    const { createOrUpdate } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
+    const { createOrUpdate, remove } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
     const { data: dockedCourses = [], isLoading } = useSWR<DockedCourse[]>(user ? `/api/degree/docked` : null); 
 
     // Returns a boolean that indiates whether this is the first render
@@ -142,6 +154,10 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
     //         console.log('first render');
     //     }
     // }, [isMount, dockedCourses]);
+
+    const handleRemoveCourse = (full_code: string) => {
+      remove(full_code);
+    }
 
     return (
         <DockWrapper ref={drop} >
@@ -189,6 +205,12 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
                             {dockedCourses.map((course) => 
                                 <AnimatedDockedCourseItem course={course} isDisabled={false} />
                             )}
+                            <CloseIcon>
+                                <CourseXButton onClick={(e) => {
+                                    dockedCourses.forEach((course) => handleRemoveCourse(course.full_code));
+                                    e.stopPropagation();
+                                }} hidden={false}/>
+                            </CloseIcon>
                         </DockedCourses>}
                 </DockedCoursesWrapper>
                 <Logo src='pdp-logo.svg' width='30' height='45'/>
