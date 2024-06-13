@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import UserSelector from "./UserSelector";
 import LoginButton from "./LoginButton";
-import type { User } from "../../../plan/types";
+import type { User } from "../types";
 
 /**
  * An indicator of whether the user is logged in, and what account they are logged into.
