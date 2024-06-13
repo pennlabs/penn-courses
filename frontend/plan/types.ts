@@ -1,4 +1,4 @@
-import { type User } from "pcx-shared-components/src/types";
+export { type User } from "pcx-shared-components/src/types";
 
 export enum School {
     SEAS = "SEAS",
