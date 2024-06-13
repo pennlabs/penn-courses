@@ -1,3 +1,5 @@
+import { type User } from "pcx-shared-components/src/types";
+
 export enum School {
     SEAS = "SEAS",
     WHARTON = "WH",
@@ -123,11 +125,6 @@ export interface MeetingBlock {
     id?: number;
 }
 
-export interface Profile {
-    email: string | null;
-    phone: string | null;
-}
-
 export interface Requirement {
     id: string;
     code: string;
@@ -166,13 +163,6 @@ export interface Schedule {
     name: string;
     created_at: string;
     updated_at: string;
-}
-
-export interface User {
-    username: string;
-    first_name: string;
-    last_name: string;
-    profile: Profile;
 }
 
 export interface Friendship {
