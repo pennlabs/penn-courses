@@ -21,6 +21,9 @@ def set_all_status(semester=None, add_status_update=False):
     if not statuses:
         return
     for status in tqdm(statuses):
+        statuses_out_of_sync = []
+        status_updates_out_of_sync = []
+
         section_code = status.get("section_id_normalized")
         if section_code is None:
             continue
@@ -47,11 +50,13 @@ def set_all_status(semester=None, add_status_update=False):
 
         # Change status attribute of section model (might want to use bulk update)
         if current_status != course_status:
+            statuses_out_of_sync.append(section_code)
             section.status = course_status
             section.save()
 
         # Add corresponding status update object
         if add_status_update and last_status_update.new_status != course_status:
+            status_updates_out_of_sync.append(section_code)
             record_update(
                 section,
                 course_term,
@@ -61,6 +66,11 @@ def set_all_status(semester=None, add_status_update=False):
                 json.dumps(status),
             )
 
+    print(f"{len(statuses_out_of_sync)} statuses were out of sync.")
+    print(statuses_out_of_sync)
+
+    print(f"{len(status_updates_out_of_sync)} status updates were out of sync.")
+    print(status_updates_out_of_sync)
 
 class Command(BaseCommand):
     help = "Load course status for courses in the DB. Conditionally adds StatusUpdate objects."
@@ -68,13 +78,15 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("--semester", default=None, type=str)
         parser.add_argument(
-            "--create-status-updates", action="store_false", help="Create status updates if set"
+            "--create-status-updates", action="store_true", help="Create status updates if set"
         )
 
     def handle(self, *args, **kwargs):
         root_logger = logging.getLogger("")
         root_logger.setLevel(logging.DEBUG)
 
+        print(f"Create status updates is {kwargs['create_status_updates']}")
+
         set_all_status(
-            semester=kwargs["semester"], add_status_update=kwargs["create-status-updates"]
+            semester=kwargs["semester"], add_status_update=kwargs["create_status_updates"]
         )
