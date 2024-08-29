@@ -80,6 +80,7 @@ const Nav = ({ login, logout, user, page, setPage }: NavProps) => (
                 nameLength={2}
                 login={login}
                 logout={logout}
+                pathname="/"
             />
         </NavElt>
         <NavElt
