@@ -72,6 +72,7 @@ def set_all_status(semester=None, add_status_update=False):
     print(f"{len(status_updates_out_of_sync)} status updates were out of sync.")
     print(status_updates_out_of_sync)
 
+
 class Command(BaseCommand):
     help = "Load course status for courses in the DB. Conditionally adds StatusUpdate objects."
 
