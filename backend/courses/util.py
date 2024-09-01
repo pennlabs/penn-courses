@@ -723,12 +723,13 @@ def get_semesters(semesters: str = None) -> list[str]:
                 raise ValueError(f"Provided semester {s} was not found in the db.")
     return sorted(semesters)
 
+
 def get_section_from_course_instructor_semester(course_code, professors, semester):
     """
     Attempts to return a course section that matches the given parameters.
     ValueError is raised if the section does not exist.
     """
-    
+
     course_candidate = Course.objects.filter(full_code=course_code).first()
     if not course_candidate:
         raise ValueError(f"No course exists with code ({course_code})")
@@ -736,9 +737,8 @@ def get_section_from_course_instructor_semester(course_code, professors, semeste
     if not course_topic:
         raise ValueError(f"No topic exists for course with code ({course_code})")
     course_topic_parent = course_topic.most_recent.full_code
-    sections = Section.objects.prefetch_related('instructors').filter(
-        course__topic__most_recent__full_code = course_topic_parent,
-        course__semester = semester
+    sections = Section.objects.prefetch_related("instructors").filter(
+        course__topic__most_recent__full_code=course_topic_parent, course__semester=semester
     )
     professors_query = Q(instructors__name=professors[0])
     for professor in professors[1:]:
@@ -746,7 +746,11 @@ def get_section_from_course_instructor_semester(course_code, professors, semeste
     matching_sections = sections.filter(professors_query).distinct()
     if matching_sections.count() == 1:
         return matching_sections.first()
-    raise ValueError(f"No section exists with course code ({course_code}), professor ({professors[0]}), semester ({semester})")
+    raise ValueError(
+        f"""No section exists with course code ({course_code}), professor ({professors[0]}),
+        semester ({semester})"""
+    )
+
 
 
 def historical_semester_probability(current_semester: str, semesters: list[str]):
