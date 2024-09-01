@@ -359,6 +359,11 @@
     exec-sh "^0.3.2"
     minimist "^1.2.0"
 
+"@esinx/prettier-config@^1.0.0-3":
+  version "1.0.0-3"
+  resolved "https://registry.yarnpkg.com/@esinx/prettier-config/-/prettier-config-1.0.0-3.tgz#985bf542b3a914cba6e57d4907d6520b1423ae4d"
+  integrity sha512-Y/cI8Qia6piZca5DCRclsrjRXjIYNZ6GUBySRgvLlN5WliAPe0oiDFmaJJDdSoXtPQYijkPBstIUJR5gylU+wg==
+
 "@istanbuljs/load-nyc-config@^1.0.0":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@istanbuljs/load-nyc-config/-/load-nyc-config-1.1.0.tgz#fd3db1d59ecf7cf121e80650bb86712f9b55eced"
@@ -3576,6 +3581,11 @@ prelude-ls@~1.1.2:
   version "1.1.2"
   resolved "https://registry.yarnpkg.com/prelude-ls/-/prelude-ls-1.1.2.tgz#21932a549f5e52ffd9a827f570e04be62a97da54"
   integrity sha1-IZMqVJ9eUv/ZqCf1cOBL5iqX2lQ=
+
+prettier@^3.3.3:
+  version "3.3.3"
+  resolved "https://registry.yarnpkg.com/prettier/-/prettier-3.3.3.tgz#30c54fe0be0d8d12e6ae61dbb10109ea00d53105"
+  integrity sha512-i2tDNA0O5IrMO757lfrdQZCc2jPNDVntV0m/+4whiDfWaTKfMNgR7Qz0NAeGz/nRqF4m5/6CLzbP4/liHt12Ew==
 
 pretty-format@^26.0.0, pretty-format@^26.6.2:
   version "26.6.2"
