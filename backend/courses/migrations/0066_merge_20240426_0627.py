@@ -6,9 +6,8 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('courses', '0064_auto_20240120_1914'),
-        ('courses', '0065_topic_historical_probabilities_fall_and_more'),
+        ("courses", "0064_auto_20240120_1914"),
+        ("courses", "0065_topic_historical_probabilities_fall_and_more"),
     ]
 
-    operations = [
-    ]
+    operations = []

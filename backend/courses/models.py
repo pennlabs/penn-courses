@@ -15,6 +15,7 @@ from django.utils import timezone
 from PennCourses.settings.base import FIRST_BANNER_SEM, PRE_NGSS_PERMIT_REQ_RESTRICTION_CODES
 from review.annotations import review_averages
 
+
 User = get_user_model()
 
 
@@ -1540,6 +1541,7 @@ class Friendship(models.Model):
             f"Friendship(Sender: {self.sender}, Recipient: {self.recipient}, Status: {self.status})"
         )
 
+
 class Comment(models.Model):
     """
     A single comment associated with a topic to be displayed on PCR. Comments support replies
@@ -1555,20 +1557,15 @@ class Comment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     modified_at = models.DateTimeField(auto_now=True)
     author = models.ForeignKey(
-        get_user_model(),
-        on_delete = models.SET_NULL,
-        null=True,
-        related_name="comments"
+        get_user_model(), on_delete=models.SET_NULL, null=True, related_name="comments"
     )
     upvotes = models.ManyToManyField(
-        get_user_model(),
-        related_name="upvotes",
-        help_text="The number of upvotes a comment gets."
+        get_user_model(), related_name="upvotes", help_text="The number of upvotes a comment gets."
     )
     downvotes = models.ManyToManyField(
         get_user_model(),
         related_name="downvotes",
-        help_text="The number of downvotes a comment gets."
+        help_text="The number of downvotes a comment gets.",
     )
     section = models.ForeignKey(
         Section,
@@ -1579,25 +1576,22 @@ class Comment(models.Model):
         hosting comments because topics are SOFT STATE and are recomputed regularly.
         """
         ),
-        null=True
+        null=True,
     )
 
     base = models.ForeignKey(
         "self",
-        on_delete=models.SET_NULL, # redundant due to special deletion conditions
+        on_delete=models.SET_NULL,  # redundant due to special deletion conditions
         null=True,
     )
     parent = models.ForeignKey(
-        "self",
-        on_delete=models.SET_NULL, # similarly redundant
-        null=True,
-        related_name="children"
+        "self", on_delete=models.SET_NULL, null=True, related_name="children"  # similarly redundant
     )
     path = models.TextField(db_index=True)
 
     def level(self):
-        return len(self.path.split('.'))
-    
+        return len(self.path.split("."))
+
     def delete(self, **kwargs):
         if Comment.objects.filter(parent_id=self).exists():
             self.text = "This comment has been removed."
@@ -1607,5 +1601,6 @@ class Comment(models.Model):
             self.save()
         else:
             super().delete(**kwargs)
+
     def __str__(self):
         return f"{self.author}: {self.text}"

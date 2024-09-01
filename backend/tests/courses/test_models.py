@@ -10,7 +10,15 @@ from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
 from courses.management.commands.recompute_soft_state import recompute_precomputed_fields
-from courses.models import Course, Department, PreNGSSRequirement, Section, Topic, UserProfile, Instructor
+from courses.models import (
+    Course,
+    Department,
+    Instructor,
+    PreNGSSRequirement,
+    Section,
+    Topic,
+    UserProfile,
+)
 from courses.util import (
     get_or_create_course,
     get_or_create_course_and_section,
@@ -69,6 +77,7 @@ class SepCourseCodeTest(TestCase):
         with self.assertRaises(ValueError):
             separate_course_code("BLAH BLAH BLAH")
 
+
 class GetSectionFromInstructorTestCase(TestCase):
     def setUp(self):
         set_semester()
@@ -86,7 +95,7 @@ class GetSectionFromInstructorTestCase(TestCase):
         self.s1.save()
         self.s1.instructors.add(self.i1)
         self.s1.save()
-        
+
         self.c2 = Course(
             department=Department.objects.get_or_create(code="PSCI")[0],
             code="1310",
@@ -109,13 +118,15 @@ class GetSectionFromInstructorTestCase(TestCase):
         self.c2.manually_set_parent_course = True
         self.c2.save()
         fill_course_soft_state()
-    
+
     def testSectionAndSemesterMatch(self):
         section = get_section_from_course_instructor_semester("PSCI-131", ["Mickey Mouse"], "2020A")
         self.assertEqual(section, self.s1)
-    
+
     def testSectionAndSemesterDoNotMatch(self):
-        section = get_section_from_course_instructor_semester("PSCI-1310", ["Mickey Mouse"], "2020A")
+        section = get_section_from_course_instructor_semester(
+            "PSCI-1310", ["Mickey Mouse"], "2020A"
+        )
         self.assertEqual(section, self.s1)
         section = get_section_from_course_instructor_semester("PSCI-131", ["Donald Duck"], "2021A")
         self.assertEqual(section, self.s2)

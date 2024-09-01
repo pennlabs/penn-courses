@@ -1,24 +1,30 @@
 from collections import Counter, defaultdict
 
 from dateutil.tz import gettz
-from django.db.models import F, Max, OuterRef, Q, Subquery, Value, Exists, Count
+from django.db.models import Count, Exists, F, Max, OuterRef, Q, Subquery, Value
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-from rest_framework import generics, viewsets, status
+from rest_framework import generics, status, viewsets
 from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from courses.models import (
+    Comment,
     Course,
     Department,
     Instructor,
     NGSSRestriction,
     PreNGSSRestriction,
     Section,
-    Comment
 )
-from courses.util import get_current_semester, get_or_create_add_drop_period, prettify_semester, get_section_from_course_instructor_semester
+from courses.serializers import CommentListSerializer, CommentSerializer
+from courses.util import (
+    get_current_semester,
+    get_or_create_add_drop_period,
+    get_section_from_course_instructor_semester,
+    prettify_semester,
+)
 from PennCourses.docs_settings import PcxAutoSchema
 from PennCourses.settings.base import TIME_ZONE, WAITLIST_DEPARTMENT_CODES
 from review.annotations import annotate_average_and_recent, review_averages
@@ -42,7 +48,7 @@ from review.util import (
     get_status_updates_map,
     make_subdict,
 )
-from courses.serializers import CommentSerializer, CommentListSerializer
+
 
 """
 You might be wondering why these API routes are using the @api_view function decorator
@@ -823,6 +829,7 @@ def autocomplete(request):
         {"courses": course_set, "departments": department_set, "instructors": instructor_set}
     )
 
+
 def get_course_from_code_semester(course_code, semester):
     return (
         Course.objects.filter(
@@ -841,6 +848,7 @@ def get_course_from_code_semester(course_code, semester):
         .select_related("topic__most_recent")
         .get()
     )
+
 
 # CommentsList
 class CommentList(generics.ListAPIView):
@@ -876,33 +884,37 @@ class CommentList(generics.ListAPIView):
             queryset = queryset.all().filter(semester=semester_arg)
         if instructor != "all":
             queryset = queryset.all().filter(instructor=instructor)
-       
+
         # apply ordering
         if sort_by == "top":
-            # probably not right as is at the moment – likes are marked on a per comment basis not group basis
+            """
+            probably not right as is at the moment –
+            likes are marked on a per comment basis not group basis
+            """
             queryset = queryset.annotate(
-                base_votes=Count("base__upvotes")-Count("base__downvotes")
+                base_votes=Count("base__upvotes") - Count("base__downvotes")
             ).order_by("-base_votes", "base_id", "path")
         elif sort_by == "oldest":
             queryset = queryset.all().order_by("path")
         elif sort_by == "newest":
             queryset = queryset.all().order_by("-base_id", "path")
-        
+
         # apply pagination (not sure how django handles OOB errors)
-        user_upvotes = queryset.filter(upvotes=request.user, id=OuterRef('id'))
-        user_downvotes = queryset.filter(downvotes=request.user, id=OuterRef('id'))
+        user_upvotes = queryset.filter(upvotes=request.user, id=OuterRef("id"))
+        user_downvotes = queryset.filter(downvotes=request.user, id=OuterRef("id"))
         queryset = queryset.annotate(
-            user_upvoted=Exists(user_upvotes),
-            user_downvoted=Exists(user_downvotes)
+            user_upvoted=Exists(user_upvotes), user_downvoted=Exists(user_downvotes)
         )
-        queryset = queryset.all()[page*page_size:(page+1)*page_size]
+        queryset = queryset.all()[page * page_size: (page + 1) * page_size]
 
         response_body = {"comments": CommentListSerializer(queryset, many=True).data}
         if semester_arg == "all":
-            response_body["semesters"] = list(og_queryset.values_list("section__course__semester", flat=True).distinct())
-        
+            response_body["semesters"] = list(
+                og_queryset.values_list("section__course__semester", flat=True).distinct()
+            )
+
         return Response(response_body, status=status.HTTP_200_OK)
-    
+
     def get_queryset(self):
         course_code = self.kwargs["course_code"]
         semester = self.kwargs["semester"] or "all"
@@ -912,11 +924,10 @@ class CommentList(generics.ListAPIView):
             else:
                 course = get_course_from_code_semester(course_code, semester)
         except Http404:
-            return Response(
-                {"message": "Course not found."}, status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({"message": "Course not found."}, status=status.HTTP_404_NOT_FOUND)
         topic = course.topic
         return Comment.objects.filter(section__course__topic=topic)
+
 
 # CommentViewSet
 class CommentViewSet(viewsets.ModelViewSet):
@@ -927,14 +938,15 @@ class CommentViewSet(viewsets.ModelViewSet):
     create:
     Create a comment for the authenticated user.
     This route will return a 201 if it succeeds with a JSON in the same format as if you were
-    to get the comment you just posted. If not all fields are specified (text, parent_id), a 400 is returned.
+    to get the comment you just posted. If not all fields are specified (text, parent_id),
+    a 400 is returned.
 
     update:
     Send a put request to this route to update / edit a specific comment.
     The `id` path parameter (an integer) specifies which comment you want to update. If a comment
     with the specified id does not exist, a 404 is returned. If a comment is not owned by the
     authenticated user, a 403 is returned. If a user edits their comment to leave a blank comment,
-    a 400 is returned. Otherwise, if the request succeeds, it will return a 200 and a JSON in the 
+    a 400 is returned. Otherwise, if the request succeeds, it will return a 200 and a JSON in the
     same format as if you were to get the comment you just posted.
 
     delete:
@@ -944,53 +956,38 @@ class CommentViewSet(viewsets.ModelViewSet):
     a 403 is returned. If the delete is successful, a 204 is returned.
 
     Note that difference in behavior for deletion of childless comments and comments with no
-    children. If a comment X has no children comments (other comments that have parent_id = comment X),
+    children. If a comment X has no children comments
+    (other comments that have parent_id = comment X),
     it can be safely deleted from the database. If a comment X has children, the comment's author
     and text are wiped, but the comment stays in the database to maintain indentation and response
     logic.
     """
 
     request_body = {
-        "id": {
-            "type": "integer",
-            "description": "The id of the current comment."
-        },
-        "text": {
-            "type": "string",
-            "description": "The text-content of a comment."
-        },
-        "parent_id": {
-            "type": "integer",
-            "description": "The parent id of the current comment."
-        }
+        "id": {"type": "integer", "description": "The id of the current comment."},
+        "text": {"type": "string", "description": "The text-content of a comment."},
+        "parent_id": {"type": "integer", "description": "The parent id of the current comment."},
     }
     schema = PcxAutoSchema(
         response_codes={
-            "comments-list": {
-                "GET": {
-                    200: "Comments listed successfully."
-                }
-            },
+            "comments-list": {"GET": {200: "Comments listed successfully."}},
             "comments-detail": {
                 "GET": {
                     200: "Comment retrieved successfully.",
-                    404: "No comment with given id found."
+                    404: "No comment with given id found.",
                 },
-                "POST": {
-                    201: "Comment created successfully.",
-                    400: "Invalid parent id."
-                },
+                "POST": {201: "Comment created successfully.", 400: "Invalid parent id."},
                 "PUT": {
                     200: "Comment updated successfully.",
                     403: "User doesn't have permission to edit comment.",
-                    404: "No comment with given id found."
+                    404: "No comment with given id found.",
                 },
                 "DELETE": {
                     204: "Comment deleted successfully.",
                     403: "User doesn't have permission to delete this comment.",
-                    404: "No comment with given id found."
-                }
-            }
+                    404: "No comment with given id found.",
+                },
+            },
         }
     )
 
@@ -1002,13 +999,15 @@ class CommentViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, pk=None):
         comment = get_object_or_404(Comment, pk=pk)
         return Response(comment, status=status.HTTP_200_OK)
-    
+
     def create(self, request):
         # check if comment already exists
         if Comment.objects.filter(id=request.data.get("id")).exists():
             return self.update(request, request.data.get("id"))
-        
-        if not all(map(lambda x: x in request.data, ["text", "course_code", "instructor", "semester"])):
+
+        if not all(
+            map(lambda x: x in request.data, ["text", "course_code", "instructor", "semester"])
+        ):
             return Response(
                 {"message": "Insufficient fields provided."}, status=status.HTTP_400_BAD_REQUEST
             )
@@ -1018,26 +1017,21 @@ class CommentViewSet(viewsets.ModelViewSet):
             section = get_section_from_course_instructor_semester(
                 request.data.get("course_code"),
                 request.data.get("instructor"),
-                request.data.get("semester")
+                request.data.get("semester"),
             )
         except Exception as e:
             print(e)
-            return Response(
-                {"message": "Section not found."}, status=status.HTTP_404_NOT_FOUND
-            )
-        
+            return Response({"message": "Section not found."}, status=status.HTTP_404_NOT_FOUND)
+
         # create comment and send response
         parent_id = request.data.get("parent")
-        parent = get_object_or_404(Comment, pk=parent_id) if parent_id != None else None
+        parent = get_object_or_404(Comment, pk=parent_id) if parent_id is None else None
         comment = Comment.objects.create(
-            text=request.data.get("text"),
-            author=request.user,
-            section=section,
-            parent=parent
+            text=request.data.get("text"), author=request.user, section=section, parent=parent
         )
         base = parent.base if parent else comment
         prefix = parent.path + "." if parent else ""
-        path = prefix + '{:0{}d}'.format(comment.id, 10)
+        path = prefix + "{:0{}d}".format(comment.id, 10)
         comment.base = base
         comment.path = path
         comment.save()
@@ -1049,7 +1043,8 @@ class CommentViewSet(viewsets.ModelViewSet):
 
         if request.user != comment.author:
             return Response(
-                {"message": "Not authorized to modify this comment."}, status=status.HTTP_403_FORBIDDEN
+                {"message": "Not authorized to modify this comment."},
+                status=status.HTTP_403_FORBIDDEN,
             )
 
         if "text" in request.data:
@@ -1066,12 +1061,14 @@ class CommentViewSet(viewsets.ModelViewSet):
 
         if request.user != comment.author:
             return Response(
-                {"message": "Not authorized to modify this comment."}, status=status.HTTP_403_FORBIDDEN
+                {"message": "Not authorized to modify this comment."},
+                status=status.HTTP_403_FORBIDDEN,
             )
-        
+
         comment.delete()
         return Response({"message": "Successfully deleted."}, status=status.HTTP_204_NO_CONTENT)
-    
+
+
 @api_view(["POST"])
 def handle_vote(request):
     """
@@ -1080,8 +1077,8 @@ def handle_vote(request):
     if not all(map(lambda x: x in request.data, ["id", "vote_type"])):
         return Response(
             {"message": "Insufficient fields presented."}, status=status.HTTP_400_BAD_REQUEST
-        )  
-    
+        )
+
     user = request.user
     comment = get_object_or_404(Comment, pk=request.data.get("id"))
     vote_type = request.data.get("vote_type")
@@ -1094,8 +1091,9 @@ def handle_vote(request):
     elif vote_type == "clear":
         comment.upvotes.remove(user)
         comment.downvotes.remove(user)
-    
+
     return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
+
 
 @api_view(["GET"])
 def get_comment_children(request, pk):

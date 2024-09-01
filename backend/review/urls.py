@@ -2,16 +2,16 @@ from django.urls import path
 from django.views.decorators.cache import cache_page
 
 from review.views import (
+    CommentList,
+    CommentViewSet,
     autocomplete,
     course_plots,
     course_reviews,
     department_reviews,
+    get_comment_children,
+    handle_vote,
     instructor_for_course_reviews,
     instructor_reviews,
-    handle_vote,
-    get_comment_children,
-    CommentList,
-    CommentViewSet
 )
 
 
@@ -49,26 +49,14 @@ urlpatterns = [
     path(
         "<slug:semester>/course_comments/<slug:course_code>",
         CommentList.as_view(),
-        name="course-comments"
+        name="course-comments",
     ),
-    path(
-        "comment/vote/",
-        handle_vote,
-        name="comment-vote"
-    ),
+    path("comment/vote/", handle_vote, name="comment-vote"),
     path(
         "comment/<slug:pk>",
-        CommentViewSet.as_view(actions={'get': 'retrieve', "delete": "destroy", "put": "update"}),
-        name="comment"
+        CommentViewSet.as_view(actions={"get": "retrieve", "delete": "destroy", "put": "update"}),
+        name="comment",
     ),
-    path(
-        "comment/children/<slug:pk>",
-        get_comment_children,
-        name="comment-children"
-    ),
-    path(
-        "comment",
-        CommentViewSet.as_view(actions={"post": "create"}),
-        name="comment"
-    )
+    path("comment/children/<slug:pk>", get_comment_children, name="comment-children"),
+    path("comment", CommentViewSet.as_view(actions={"post": "create"}), name="comment"),
 ]

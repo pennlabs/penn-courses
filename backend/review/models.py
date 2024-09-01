@@ -1,7 +1,7 @@
+
 from django.db import models
 from django.db.models import Avg, Q
-from django.contrib.auth import get_user_model
-from textwrap import dedent
+
 
 class Review(models.Model):
     """
