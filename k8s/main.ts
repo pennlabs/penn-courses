@@ -27,7 +27,7 @@ export class MyChart extends PennLabsChart {
 		}
 
 		new RedisApplication(this, 'redis', {
-			persistData: true,
+			persistData: false,
 		})
 
 		new DjangoApplication(this, 'celery', {
