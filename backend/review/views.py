@@ -868,9 +868,10 @@ class CommentList(generics.ListAPIView):
     )
     serializer_class = CommentSerializer
     http_method_names = ["get"]
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
 
     def get(self, request, semester, course_code):
+        print("HELLO")
         semester_arg = request.query_params.get("semester") or "all"
         instructor = request.query_params.get("instructor") or "all"
         sort_by = request.query_params.get("sort_by") or "oldest"
@@ -894,18 +895,22 @@ class CommentList(generics.ListAPIView):
             queryset = queryset.annotate(
                 base_votes=Count("base__upvotes") - Count("base__downvotes")
             ).order_by("-base_votes", "base_id", "path")
+            queryset = queryset.annotate(
+                semester=F("section__course__semester"),
+            )
         elif sort_by == "oldest":
             queryset = queryset.all().order_by("path")
         elif sort_by == "newest":
             queryset = queryset.all().order_by("-base_id", "path")
-
+        print(queryset)
         # apply pagination (not sure how django handles OOB errors)
-        user_upvotes = queryset.filter(upvotes=request.user, id=OuterRef("id"))
-        user_downvotes = queryset.filter(downvotes=request.user, id=OuterRef("id"))
-        queryset = queryset.annotate(
-            user_upvoted=Exists(user_upvotes), user_downvoted=Exists(user_downvotes)
-        )
-        queryset = queryset.all()[page * page_size: (page + 1) * page_size]
+        if queryset:
+            user_upvotes = queryset.filter(upvotes=request.user, id=OuterRef("id"))
+            user_downvotes = queryset.filter(downvotes=request.user, id=OuterRef("id"))
+            queryset = queryset.annotate(
+                user_upvoted=Exists(user_upvotes), user_downvoted=Exists(user_downvotes)
+            )
+            queryset = queryset.all()[page * page_size: (page + 1) * page_size]
 
         response_body = {"comments": CommentListSerializer(queryset, many=True).data}
         if semester_arg == "all":
@@ -922,7 +927,7 @@ class CommentList(generics.ListAPIView):
             if semester == "all":
                 course = Course.objects.filter(full_code=course_code).latest("semester")
             else:
-                course = get_course_from_code_semester(course_code, semester)
+                course = get_course_from_code_semester(course_code, None)
         except Http404:
             return Response({"message": "Course not found."}, status=status.HTTP_404_NOT_FOUND)
         topic = course.topic
@@ -993,7 +998,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     serializer_class = CommentSerializer
     http_method_names = ["get", "post", "delete", "put"]
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
     queryset = Comment.objects.all()
 
     def retrieve(self, request, pk=None):
@@ -1019,16 +1024,20 @@ class CommentViewSet(viewsets.ModelViewSet):
                 request.data.get("instructor"),
                 request.data.get("semester"),
             )
+            print(section)
         except Exception as e:
             print(e)
+            print("hi")
             return Response({"message": "Section not found."}, status=status.HTTP_404_NOT_FOUND)
 
         # create comment and send response
         parent_id = request.data.get("parent")
-        parent = get_object_or_404(Comment, pk=parent_id) if parent_id is None else None
+        print(parent_id)
+        parent = get_object_or_404(Comment, pk=parent_id) if parent_id is not None else None
         comment = Comment.objects.create(
             text=request.data.get("text"), author=request.user, section=section, parent=parent
         )
+        print("this is a commnet lol")
         base = parent.base if parent else comment
         prefix = parent.path + "." if parent else ""
         path = prefix + "{:0{}d}".format(comment.id, 10)

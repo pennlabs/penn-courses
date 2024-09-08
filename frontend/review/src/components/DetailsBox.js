@@ -127,10 +127,10 @@ const CommentsTab = forwardRef(
 
     useEffect(() => {
       setIsLoading(true);
-      apiComments(course, null, null, null)
+      apiComments(course, "2022A", null, null)
         .then(res => {
           console.log("fetching comments", res);
-          setComments(res.comments);
+          setComments(res.comments.map(c => ({ ...c, created_at: new Date(c.created_at), modified_at: new Date(c.modified_at) })));
           setSemesterList(res.semesters);
         })
         .finally(() => {
