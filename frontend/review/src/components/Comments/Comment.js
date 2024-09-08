@@ -7,7 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 export const Comment = forwardRef(({ comment, isReply, isUserComment }, ref) => {
   const [showReplies, setShowReplies] = useState(false);
   const [replies, setReplies] = useState([]);
-  const [seeMore, setSeeMore] = useState(comment.content.length < 150);
+  const [seeMore, setSeeMore] = useState(comment.text.length < 150);
 
   const [liked, setLiked] = useState(false);
   const [disliked, setDisliked] = useState(false);
@@ -27,10 +27,10 @@ export const Comment = forwardRef(({ comment, isReply, isUserComment }, ref) => 
           <sub>{formatDate(comment.modified_at)}</sub>
         </div>
         {seeMore ? (
-          <p>{comment.content}</p>
+          <p>{comment.text}</p>
         ) : (
           <>
-            <p>{truncateText(comment.content, 150)}</p>
+            <p>{truncateText(comment.text, 150)}</p>
             <button
               className=" btn-borderless btn"
               onClick={() => setSeeMore(true)}
@@ -41,7 +41,7 @@ export const Comment = forwardRef(({ comment, isReply, isUserComment }, ref) => 
         )}
         <div className="icon-wrapper">
           <button className={`btn icon ${liked ? "active" : ""}`} onClick={() => {setLiked(!liked); disliked && setDisliked(false)}}><FontAwesomeIcon icon={faThumbsUp} /></button>
-          <span>{comment.likes + liked - disliked}</span>
+          <span>{comment.votes + liked - disliked}</span>
           <button className={`btn icon ${disliked ? "active" : ""}`} onClick={() => {setDisliked(!disliked); liked && setLiked(false)}}><FontAwesomeIcon icon={faThumbsDown} /></button>
         </div>
         {comment.replies > 0 && (
