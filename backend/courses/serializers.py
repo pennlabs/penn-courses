@@ -484,6 +484,7 @@ class CommentSerializer(serializers.ModelSerializer):
     section = serializers.CharField(source="section.full_code", read_only=True)
     base = serializers.SerializerMethodField()
     parent = serializers.SerializerMethodField()
+    semester = serializers.CharField(source="section.course.semester", read_only=True)
 
     def get_votes(self, obj):
         return len(obj.upvotes.values_list("id")) - len(obj.downvotes.values_list("id"))
@@ -511,6 +512,7 @@ class CommentSerializer(serializers.ModelSerializer):
             "base",
             "parent",
             "path",
+            "semester"
         ]
 
 
@@ -522,6 +524,7 @@ class CommentListSerializer(serializers.ModelSerializer):
     parent = serializers.SerializerMethodField()
     user_upvoted = serializers.BooleanField()
     user_downvoted = serializers.BooleanField()
+    semester = serializers.CharField(source="section.course.semester", read_only=True)
 
     def get_votes(self, obj):
         return len(obj.upvotes.values_list("id")) - len(obj.downvotes.values_list("id"))
@@ -551,4 +554,5 @@ class CommentListSerializer(serializers.ModelSerializer):
             "path",
             "user_upvoted",
             "user_downvoted",
+            "semester",
         ]
