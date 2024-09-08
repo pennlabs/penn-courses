@@ -17,9 +17,24 @@ export const WriteComment = forwardRef(({ course, setUserComment }, ref) => {
     const handleSubmit = () => {
         console.log("Comment submitted");
         apiPostComment(course, semester, content).then(res => {
+            console.log(res)
+            res = {...res, created_at: new Date(res.created_at), modified_at: new Date(res.modified_at)}
             setUserComment(res)
-        })
-
+        });
+        // setUserComment({
+        //     content: content,
+        //     id: 1,
+        //     created_at: new Date(),
+        //     modified_at: new Date(),
+        //     author_name: "Engineering Student",
+        //     likes: 0,
+        //     course: course,
+        //     semester: semester,
+        //     professorId: [130],
+        //     parent_id: null,
+        //     path: "1",
+        //     replies: 0
+        //   })
     }
 
     return(
