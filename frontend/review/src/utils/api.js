@@ -266,12 +266,19 @@ export function apiReplies(commentId) {
 export function apiUserComment(course) {
   console.log("fetching user comment");
   return Promise.resolve({});
-  if(course === "CIS-120") return Promise.resolve(fakeUserComment);
 }
+
+// export function apiUserComment(course, semester) {
+//   return apiFetch(
+//     `${API_DOMAIN}/api/review/${semester ? encodeURIComponent(semester) : "all"}/course_comments/${encodeURIComponent(course)}`
+//   )
+// }
 
 export function apiComments(course, semester, professorId, sortBy) {
   return apiFetch(
-    `${API_DOMAIN}/api/review/${encodeURIComponent(semester)}/course_comments/${encodeURIComponent(course)}`
+    
+    `${API_DOMAIN}/api/review/${semester ? encodeURIComponent(semester) : "all"}/course_comments/${encodeURIComponent(course)}`
+    
   )
 }
 

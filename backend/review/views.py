@@ -872,17 +872,20 @@ class CommentList(generics.ListAPIView):
 
     def get(self, request, semester, course_code):
         print("HELLO")
-        semester_arg = request.query_params.get("semester") or "all"
+        print(semester)
+        # semester_arg = request.query_params.get("semester") or "all"
+        semester_arg = semester or "all"
         instructor = request.query_params.get("instructor") or "all"
-        sort_by = request.query_params.get("sort_by") or "oldest"
+        sort_by = request.query_params.get("sort_by") or "newest"
         page = request.query_params.get("page") or 0
-        page_size = request.query_params.get("page_size") or 10
+        page_size = request.query_params.get("page_size") or 20
 
         queryset = og_queryset = self.get_queryset()
 
+        print(queryset)
         # add filters
         if semester_arg != "all":
-            queryset = queryset.all().filter(semester=semester_arg)
+            queryset = queryset.all().filter(section__course__semester=semester_arg)
         if instructor != "all":
             queryset = queryset.all().filter(instructor=instructor)
 
@@ -923,11 +926,14 @@ class CommentList(generics.ListAPIView):
     def get_queryset(self):
         course_code = self.kwargs["course_code"]
         semester = self.kwargs["semester"] or "all"
+        print("I MADE IT HERE", semester)
         try:
             if semester == "all":
                 course = Course.objects.filter(full_code=course_code).latest("semester")
             else:
+                print("HI1")
                 course = get_course_from_code_semester(course_code, None)
+                print("HI2")
         except Http404:
             return Response({"message": "Course not found."}, status=status.HTTP_404_NOT_FOUND)
         topic = course.topic
