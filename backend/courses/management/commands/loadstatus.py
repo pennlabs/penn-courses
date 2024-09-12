@@ -17,6 +17,7 @@ from courses.util import (
 def set_all_status(semester=None, add_status_update=False):
     if semester is None:
         semester = get_current_semester()
+    print(semester)
     statuses = registrar.get_all_course_status(semester)
     if not statuses:
         return
@@ -51,20 +52,20 @@ def set_all_status(semester=None, add_status_update=False):
         # Change status attribute of section model (might want to use bulk update)
         if current_status != course_status:
             statuses_out_of_sync.append(section_code)
-            section.status = course_status
-            section.save()
+            # section.status = course_status
+            # section.save()
 
         # Add corresponding status update object
-        if add_status_update and last_status_update.new_status != course_status:
+        if last_status_update.new_status != course_status:
             status_updates_out_of_sync.append(section_code)
-            record_update(
-                section,
-                course_term,
-                last_status_update.new_status,
-                course_status,
-                False,
-                json.dumps(status),
-            )
+            # record_update(
+            #     section,
+            #     course_term,
+            #     last_status_update.new_status,
+            #     course_status,
+            #     False,
+            #     json.dumps(status),
+            # )
 
     print(f"{len(statuses_out_of_sync)} statuses were out of sync.")
     print(statuses_out_of_sync)
@@ -85,8 +86,6 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         root_logger = logging.getLogger("")
         root_logger.setLevel(logging.DEBUG)
-
-        print(f"Create status updates is {kwargs['create_status_updates']}")
 
         set_all_status(
             semester=kwargs["semester"], add_status_update=kwargs["create_status_updates"]

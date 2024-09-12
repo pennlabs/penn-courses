@@ -18,9 +18,6 @@ from urllib.parse import quote
 
 
 def status_on_path_at_penn(course_code, path_at_penn_semester="202430"):
-    # Note: this api is actually unauthenticated as far as I can tell
-    # so no cookies needed!
-
     headers = {
         "accept": "application/json, text/javascript, */*; q=0.01",
         "accept-language": "en-US,en;q=0.9",
@@ -60,13 +57,15 @@ def status_on_path_at_penn(course_code, path_at_penn_semester="202430"):
 def map_opendata_to_path(course_status):
     return "A" if course_status == "O" else "F"
 
+def map_path_to_opendata(course_status):
+    return "O" if course_status == "A" else "C"
 
 def get_path_code(section_code):
     parts = section_code.split("-")
     return f"{parts[0]} {parts[1]}"
 
 
-def find_diff(semester=None, add_status_update=False):
+def resolve_path_differences(semester=None, add_status_update=False):
     if semester is None:
         semester = get_current_semester()
     statuses = registrar.get_all_course_status(semester)
@@ -91,9 +90,10 @@ def find_diff(semester=None, add_status_update=False):
         if course_term != "2024C":
             continue
 
-        course_map[section_code] = map_opendata_to_path(course_status)
+        course_map[section_code] = course_status
 
     out_of_sync = []
+    status_updates_out_of_sync = []
     visited = set()
     for section_code in tqdm(course_map):
         if section_code in visited:
@@ -102,20 +102,47 @@ def find_diff(semester=None, add_status_update=False):
         results = status_on_path_at_penn(path_code)
 
         for result in results:
-            visited.add(result)
-            path_status = results[result]
-            if path_status != "A" and path_status != "F":
+            if result in visited:
                 continue
+            visited.add(result)
+
+            try:
+                _, section = get_course_and_section(result, semester)
+            except (Section.DoesNotExist, Course.DoesNotExist):
+                continue
+
+            # Resync database (doesn't need to be atomic)
+            last_status_update = section.last_status_update
+            current_status = section.status
+
+            path_status = map_path_to_opendata(results[result])
             section_status = course_map[result]
+            if path_status not in "OC" or section_status not in "OC":
+                continue
 
-            if path_status != section_status:
-                out_of_sync.append((result, section_status, path_status))
+            if path_status != current_status:
+                out_of_sync.append((result, section_status, path_status, last_status_update.new_status, current_status))
+                # section.status = path_status
+                # section.save()
+            
+            if last_status_update.new_status != path_status:
+                status_updates_out_of_sync.append((result, section_status, path_status, last_status_update.new_status, current_status))
+                # record_update(
+                #     section,
+                #     "2024C",
+                #     last_status_update.new_status,
+                #     path_status,
+                #     False,
+                #     json.dumps(path_status),
+                # )
 
-    for code, status1, status2 in out_of_sync:
-        print(
-            f"{code} is out of sync. OpenData has status {status1} and Path has status {status2}."
-        )
+    print(f"{len(out_of_sync)} statuses were out of sync.")
+    for line in out_of_sync:
+        print(line)
 
+    print(f"{len(status_updates_out_of_sync)} status updates were out of sync.")
+    for line in status_updates_out_of_sync:
+        print(line)
 
 class Command(BaseCommand):
     help = "Report the difference between OpenData and Path registrations."
@@ -127,4 +154,4 @@ class Command(BaseCommand):
         root_logger = logging.getLogger("")
         root_logger.setLevel(logging.DEBUG)
 
-        find_diff(semester=kwargs["semester"])
+        resolve_path_differences(semester=kwargs["semester"])
