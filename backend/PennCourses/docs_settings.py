@@ -353,6 +353,7 @@ subpath_abbreviations = {
     "review": "PCR",
     "base": "PCx",
     "accounts": "Accounts",
+    "degree": "PDP",
 }
 assert all(
     [isinstance(key, str) and isinstance(val, str) for key, val in subpath_abbreviations.items()]
