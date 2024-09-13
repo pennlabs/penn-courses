@@ -1017,7 +1017,7 @@ class PcxAutoSchema(AutoSchema):
         return result
 
     # Overrides, uses overridden method
-    # (https://www.django-rest-framework.org/api-guide/schemas/#map_serializer)
+    # (https://www.django-rest-framework.org/api-guide/schemas/#map_field)
     def map_field(self, field):
 
         # Nested Serializers, `many` or not.
