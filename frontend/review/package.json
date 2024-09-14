@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^6.5.2",
+    "@fortawesome/free-solid-svg-icons": "^6.5.2",
+    "@fortawesome/react-fontawesome": "^0.2.0",
     "chart.js": "^2.9.3",
     "fuzzysort": "^1.1.4",
     "http-proxy-middleware": "^0.20.0",

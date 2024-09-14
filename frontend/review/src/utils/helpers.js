@@ -89,3 +89,20 @@ export const toNormalizedSemester = sem => {
       return sem;
   }
 };
+
+export const formatDate = date => {
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric"
+  });
+};
+
+export const truncateText = (text, length) => {
+  if (text.length > length) {
+    return (
+      text.substring(0, text.substring(0, length).lastIndexOf(" ")) + "..."
+    );
+  }
+  return text;
+};
