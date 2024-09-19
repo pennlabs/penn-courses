@@ -90,7 +90,6 @@ section_filters_pcr = Q(has_reviews=True) | (
     (~Q(course__title="") | ~Q(course__description="")) & ~Q(activity="REC") & ~Q(status="X")
 )
 
-
 @api_view(["GET"])
 @schema(
     PcxAutoSchema(
@@ -129,51 +128,65 @@ section_filters_pcr = Q(has_reviews=True) | (
 )
 @permission_classes([IsAuthenticated])
 def course_reviews(request, course_code, semester=None):
+    request_semester = request.GET.get("semester")
+    reviews = manual_course_reviews(course_code, request_semester, semester)
+    if not reviews:
+        raise Http404()
+
+    return Response(reviews)
+
+
+def most_recent_course_from_code(course_code, semester):
+    return (
+        Course.objects.filter(
+            course_filters_pcr,
+            **(
+                {"topic__courses__full_code": course_code, "topic__courses__semester": semester}
+                if semester
+                else {"full_code": course_code}
+            ),
+        )
+        .order_by("-semester")[:1]
+        .annotate(
+            branched_from_full_code=F("topic__branched_from__most_recent__full_code"),
+            branched_from_semester=F("topic__branched_from__most_recent__semester"),
+        )
+        .select_related("topic__most_recent")
+        .get()
+    )
+
+
+def manual_course_reviews(course_code, request_semester, semester=None):
     """
     Get all reviews for the topic of a given course and other relevant information.
     Different aggregation views are provided, such as reviews spanning all semesters,
     only the most recent semester, and instructor-specific views.
     """
+    semester = request_semester
     try:
-        semester = request.GET.get("semester")
-        course = (
-            Course.objects.filter(
-                course_filters_pcr,
-                **(
-                    {"topic__courses__full_code": course_code, "topic__courses__semester": semester}
-                    if semester
-                    else {"full_code": course_code}
-                ),
-            )
-            .order_by("-semester")[:1]
-            .annotate(
-                branched_from_full_code=F("topic__branched_from__most_recent__full_code"),
-                branched_from_semester=F("topic__branched_from__most_recent__semester"),
-            )
-            .select_related("topic__most_recent")
-            .get()
-        )
+        course = most_recent_course_from_code(course_code, request_semester)
     except Course.DoesNotExist:
-        raise Http404()
+        return None
 
     topic = course.topic
     branched_from_full_code = course.branched_from_full_code
     branched_from_semester = course.branched_from_semester
     course = topic.most_recent
     course_code = course.full_code
-    aliases = course.crosslistings.values_list("full_code", flat=True)
+    aliases = list(course.crosslistings.values_list("full_code", flat=True))
 
-    superseded = (
-        Course.objects.filter(
-            course_filters_pcr,
-            full_code=course_code,
+    superseded = False
+    if semester:
+        max_semester = (
+            Course.objects.filter(
+                course_filters_pcr,
+                full_code=course_code,
+            )
+            .aggregate(max_semester=Max("semester"))
+            .get("max_semester")
         )
-        .aggregate(max_semester=Max("semester"))
-        .get("max_semester")
-        > course.semester
-        if semester
-        else False
-    )
+        if max_semester:
+            superseded = max_semester > course.semester
     last_offered_sem_if_superceded = course.semester if superseded else None
 
     topic_codes = list(
@@ -248,23 +261,103 @@ def course_reviews(request, course_code, semester=None):
         course__topic=topic,
     )
 
-    return Response(
-        {
-            "code": course["full_code"],
-            "last_offered_sem_if_superceded": last_offered_sem_if_superceded,
-            "name": course["title"],
-            "description": course["description"],
-            "aliases": aliases,
-            "historical_codes": historical_codes,
-            "latest_semester": course["semester"],
-            "num_sections": num_sections,
-            "num_sections_recent": num_sections_recent,
-            "instructors": instructors,
-            "registration_metrics": num_registration_metrics > 0,
-            **get_average_and_recent_dict_single(course),
-        }
-    )
+    return {
+        "code": course["full_code"],
+        "last_offered_sem_if_superceded": last_offered_sem_if_superceded,
+        "name": course["title"],
+        "description": course["description"],
+        "aliases": aliases,
+        "historical_codes": historical_codes,
+        "latest_semester": course["semester"],
+        "num_sections": num_sections,
+        "num_sections_recent": num_sections_recent,
+        "instructors": instructors,
+        "registration_metrics": num_registration_metrics > 0,
+        **get_average_and_recent_dict_single(course),
+    }
 
+def manual_course_plots(semester, instructor_ids, course_code):
+    try:
+        semester = semester
+        course = most_recent_course_from_code(course_code, semester)
+    except Course.DoesNotExist:
+        return None
+
+    current_semester = get_current_semester()
+
+    # Compute set of sections to include in plot data
+    filtered_sections = (
+        Section.objects.filter(
+            extra_metrics_section_filters_pcr(current_semester),
+            course__topic_id=course.topic_id,
+        )
+        .annotate(efficient_semester=F("course__semester"))
+        .distinct()
+    )
+    if instructor_ids:
+        instructor_ids = [int(id) for id in instructor_ids.split(",")]
+        filtered_sections = filtered_sections.filter(
+            instructors__id__in=instructor_ids,
+        ).distinct()
+
+    section_map = defaultdict(dict)  # a dict mapping semester to section id to section object
+    for section in filtered_sections:
+        section_map[section.efficient_semester][section.id] = section
+
+    (
+        avg_demand_plot,
+        avg_demand_plot_min_semester,
+        recent_demand_plot,
+        recent_demand_plot_semester,
+        avg_percent_open_plot,
+        avg_percent_open_plot_min_semester,
+        recent_percent_open_plot,
+        recent_percent_open_plot_semester,
+    ) = tuple([None] * 8)
+    avg_demand_plot_num_semesters, avg_percent_open_plot_num_semesters = (0, 0)
+    if section_map:
+        status_updates_map = get_status_updates_map(section_map)
+        (
+            avg_demand_plot,
+            avg_demand_plot_min_semester,
+            avg_demand_plot_num_semesters,
+            recent_demand_plot,
+            recent_demand_plot_semester,
+        ) = avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.005)
+        (
+            avg_percent_open_plot,
+            avg_percent_open_plot_min_semester,
+            avg_percent_open_plot_num_semesters,
+            recent_percent_open_plot,
+            recent_percent_open_plot_semester,
+        ) = avg_and_recent_percent_open_plots(section_map, status_updates_map)
+
+    current_adp = get_or_create_add_drop_period(current_semester)
+    local_tz = gettz(TIME_ZONE)
+
+    return {
+        "code": course_code,
+        "current_add_drop_period": {
+            "start": current_adp.estimated_start.astimezone(tz=local_tz),
+            "end": current_adp.estimated_end.astimezone(tz=local_tz),
+        },
+        "average_plots": {
+            "pca_demand_plot_since_semester": avg_demand_plot_min_semester,
+            "pca_demand_plot_num_semesters": avg_demand_plot_num_semesters,
+            "pca_demand_plot": avg_demand_plot,
+            "percent_open_plot_since_semester": avg_percent_open_plot_min_semester,
+            "percent_open_plot_num_semesters": avg_percent_open_plot_num_semesters,
+            "percent_open_plot": avg_percent_open_plot,
+        },
+        "recent_plots": {
+            "pca_demand_plot_since_semester": recent_demand_plot_semester,
+            "pca_demand_plot_num_semesters": 1 if recent_demand_plot is not None else 0,
+            "pca_demand_plot": recent_demand_plot,
+            "percent_open_plot_since_semester": recent_percent_open_plot_semester,
+            "percent_open_plot_num_semesters": 1 if recent_demand_plot is not None else 0,
+            "percent_open_plot": recent_percent_open_plot,
+        },
+    }
 
 @api_view(["GET"])
 @schema(
@@ -313,102 +406,14 @@ def course_plots(request, course_code):
     """
     Get all PCR plots for a given course.
     """
-    try:
-        semester = request.query_params.get("semester")
-        course = (
-            Course.objects.filter(
-                course_filters_pcr,
-                **(
-                    {"topic__courses__full_code": course_code, "topic__courses__semester": semester}
-                    if semester
-                    else {"full_code": course_code}
-                ),
-            )
-            .order_by("-semester")[:1]
-            .select_related("topic__most_recent")
-            .get()
-        ).topic.most_recent
-    except Course.DoesNotExist:
-        raise Http404()
-
-    current_semester = get_current_semester()
-
-    # Compute set of sections to include in plot data
-    filtered_sections = (
-        Section.objects.filter(
-            extra_metrics_section_filters_pcr(current_semester),
-            course__topic_id=course.topic_id,
-        )
-        .annotate(efficient_semester=F("course__semester"))
-        .distinct()
-    )
+    semester = request.query_params.get("semester")
     instructor_ids = request.GET.get("instructor_ids")
-    if instructor_ids:
-        instructor_ids = [int(id) for id in instructor_ids.split(",")]
-        filtered_sections = filtered_sections.filter(
-            instructors__id__in=instructor_ids,
-        ).distinct()
+    course_plots = manual_course_plots(semester, instructor_ids, course_code)
 
-    section_map = defaultdict(dict)  # a dict mapping semester to section id to section object
-    for section in filtered_sections:
-        section_map[section.efficient_semester][section.id] = section
+    if not course_plots:
+        return None
 
-    (
-        avg_demand_plot,
-        avg_demand_plot_min_semester,
-        recent_demand_plot,
-        recent_demand_plot_semester,
-        avg_percent_open_plot,
-        avg_percent_open_plot_min_semester,
-        recent_percent_open_plot,
-        recent_percent_open_plot_semester,
-    ) = tuple([None] * 8)
-    avg_demand_plot_num_semesters, avg_percent_open_plot_num_semesters = (0, 0)
-    if section_map:
-        status_updates_map = get_status_updates_map(section_map)
-        (
-            avg_demand_plot,
-            avg_demand_plot_min_semester,
-            avg_demand_plot_num_semesters,
-            recent_demand_plot,
-            recent_demand_plot_semester,
-        ) = avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.005)
-        (
-            avg_percent_open_plot,
-            avg_percent_open_plot_min_semester,
-            avg_percent_open_plot_num_semesters,
-            recent_percent_open_plot,
-            recent_percent_open_plot_semester,
-        ) = avg_and_recent_percent_open_plots(section_map, status_updates_map)
-
-    current_adp = get_or_create_add_drop_period(current_semester)
-    local_tz = gettz(TIME_ZONE)
-
-    return Response(
-        {
-            "code": course_code,
-            "current_add_drop_period": {
-                "start": current_adp.estimated_start.astimezone(tz=local_tz),
-                "end": current_adp.estimated_end.astimezone(tz=local_tz),
-            },
-            "average_plots": {
-                "pca_demand_plot_since_semester": avg_demand_plot_min_semester,
-                "pca_demand_plot_num_semesters": avg_demand_plot_num_semesters,
-                "pca_demand_plot": avg_demand_plot,
-                "percent_open_plot_since_semester": avg_percent_open_plot_min_semester,
-                "percent_open_plot_num_semesters": avg_percent_open_plot_num_semesters,
-                "percent_open_plot": avg_percent_open_plot,
-            },
-            "recent_plots": {
-                "pca_demand_plot_since_semester": recent_demand_plot_semester,
-                "pca_demand_plot_num_semesters": 1 if recent_demand_plot is not None else 0,
-                "pca_demand_plot": recent_demand_plot,
-                "percent_open_plot_since_semester": recent_percent_open_plot_semester,
-                "percent_open_plot_num_semesters": 1 if recent_demand_plot is not None else 0,
-                "percent_open_plot": recent_percent_open_plot,
-            },
-        }
-    )
+    return Response(course_plots)
 
 
 def check_instructor_id(instructor_id):
@@ -425,37 +430,11 @@ INSTRUCTOR_COURSE_REVIEW_FIELDS = [
     "difficulty",
 ]
 
+def manual_instructor_reviews(instructor_id):
+    instructor = Instructor.objects.get(id=instructor_id).first()
+    if not instructor:
+        return None
 
-@api_view(["GET"])
-@schema(
-    PcxAutoSchema(
-        response_codes={
-            "instructor-reviews": {
-                "GET": {
-                    200: "[DESCRIBE_RESPONSE_SCHEMA]Reviews retrieved successfully.",
-                    404: "Instructor with given instructor_id not found.",
-                },
-            },
-        },
-        custom_path_parameter_desc={
-            "instructor-reviews": {
-                "GET": {
-                    "instructor_id": (
-                        "The integer id of the instructor you want reviews for. Note that you can get the relative path for any instructor including this id by using the `url` field of objects in the `instructors` list returned by Retrieve Autocomplete Data."  # noqa E501
-                    )
-                }
-            },
-        },
-        override_response_schema=instructor_reviews_response_schema,
-    )
-)
-@permission_classes([IsAuthenticated])
-def instructor_reviews(request, instructor_id):
-    """
-    Get all reviews for a given instructor, aggregated by course.
-    """
-    check_instructor_id(instructor_id)
-    instructor = get_object_or_404(Instructor, id=instructor_id)
     instructor_qs = annotate_average_and_recent(
         Instructor.objects.filter(id=instructor_id),
         match_review_on=Q(instructor_id=instructor_id),
@@ -506,46 +485,54 @@ def instructor_reviews(request, instructor_id):
                 r, full_code="most_recent_full_code", code="most_recent_full_code", name="title"
             )
 
-    return Response(
-        {
-            "name": instructor.name,
-            "num_sections_recent": num_sections_recent,
-            "num_sections": num_sections,
-            "courses": courses_res,
-            **get_average_and_recent_dict_single(inst),
-        }
-    )
-
+    return {
+        "name": instructor.name,
+        "num_sections_recent": num_sections_recent,
+        "num_sections": num_sections,
+        "courses": courses_res,
+        **get_average_and_recent_dict_single(inst),
+    }
 
 @api_view(["GET"])
 @schema(
     PcxAutoSchema(
         response_codes={
-            "department-reviews": {
+            "instructor-reviews": {
                 "GET": {
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Reviews retrieved successfully.",
-                    404: "Department with the given department_code not found.",
-                }
-            }
+                    404: "Instructor with given instructor_id not found.",
+                },
+            },
         },
         custom_path_parameter_desc={
-            "department-reviews": {
+            "instructor-reviews": {
                 "GET": {
-                    "department_code": (
-                        "The department code you want reviews for, e.g. `CIS` for the CIS department."  # noqa E501
+                    "instructor_id": (
+                        "The integer id of the instructor you want reviews for. Note that you can get the relative path for any instructor including this id by using the `url` field of objects in the `instructors` list returned by Retrieve Autocomplete Data."  # noqa E501
                     )
                 }
             },
         },
-        override_response_schema=department_reviews_response_schema,
+        override_response_schema=instructor_reviews_response_schema,
     )
 )
 @permission_classes([IsAuthenticated])
-def department_reviews(request, department_code):
+def instructor_reviews(request, instructor_id):
     """
-    Get reviews for all courses in a department.
+    Get all reviews for a given instructor, aggregated by course.
     """
-    department = get_object_or_404(Department, code=department_code)
+    check_instructor_id(instructor_id)
+    reviews = manual_instructor_reviews(instructor_id)
+    if not reviews:
+        raise Http404()
+
+    return Response(reviews)
+
+
+def manual_department_reviews(department_code):
+    department = Department.objects.get(code=department_code).first()
+    if department is None:
+        return department
 
     topic_id_to_course = dict()
     recent_courses = list(
@@ -588,8 +575,127 @@ def department_reviews(request, department_code):
     all_courses = reviews + list(topic_id_to_course.values())
     courses = aggregate_reviews(all_courses, "course_code", code="course_code", name="course_title")
 
-    return Response({"code": department.code, "name": department.name, "courses": courses})
+    return {
+        "code": department.code,
+        "name": department.name,
+        "courses": courses,
+    }
 
+@api_view(["GET"])
+@schema(
+    PcxAutoSchema(
+        response_codes={
+            "department-reviews": {
+                "GET": {
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Reviews retrieved successfully.",
+                    404: "Department with the given department_code not found.",
+                }
+            }
+        },
+        custom_path_parameter_desc={
+            "department-reviews": {
+                "GET": {
+                    "department_code": (
+                        "The department code you want reviews for, e.g. `CIS` for the CIS department."  # noqa E501
+                    )
+                }
+            },
+        },
+        override_response_schema=department_reviews_response_schema,
+    )
+)
+@permission_classes([IsAuthenticated])
+def department_reviews(request, department_code):
+    """
+    Get reviews for all courses in a department.
+    """
+    results = manual_department_reviews(department_code)
+    if not results:
+        raise Http404()
+
+    return Response(results)
+
+def manual_instructor_for_course_reviews(semester, course_code, instructor_id):
+    if not semester:
+        return None
+    try:
+        course = (
+            Course.objects.filter(
+                course_filters_pcr,
+                **(
+                    {"topic__courses__full_code": course_code, "topic__courses__semester": semester}
+                    if semester
+                    else {"full_code": course_code}
+                ),
+            )
+            .order_by("-semester")[:1]
+            .select_related("topic__most_recent")
+            .get()
+        )
+        course = course.topic.most_recent
+    except Course.DoesNotExist:
+        return None
+    
+    instructor = Instructor.objects.get(id=instructor_id)
+    reviews = review_averages(
+        Review.objects.filter(
+            section__course__topic_id=course.topic_id, instructor_id=instructor_id
+        ),
+        reviewbit_subfilters=Q(review_id=OuterRef("id")),
+        section_subfilters=Q(id=OuterRef("section_id")),
+        fields=ALL_FIELD_SLUGS,
+        prefix="bit_",
+        extra_metrics=True,
+    )
+    reviews = list(
+        reviews.annotate(
+            course_code=F("section__course__full_code"),
+            course_title=F("section__course__title"),
+            activity=F("section__activity"),
+            efficient_semester=F("section__course__semester"),
+        ).values()
+    )
+    existing_sections = {r["section_id"] for r in reviews}
+    all_sections = reviews + [
+        s
+        for s in Section.objects.filter(
+            section_filters_pcr,
+            course__topic_id=course.topic_id,
+            instructors__id=instructor_id,
+        )
+        .distinct()
+        .values(
+            "id",
+            "activity",
+            course_code=F("course__full_code"),
+            course_title=F("course__title"),
+            efficient_semester=F("course__semester"),
+        )
+        if s["id"] not in existing_sections
+    ]
+    all_sections.sort(key=lambda s: s["efficient_semester"], reverse=True)
+
+    return {
+        "instructor": {
+            "id": instructor_id,
+            "name": instructor.name,
+        },
+        "course_code": course.full_code,
+        "sections": [
+            {
+                "course_code": section["course_code"],
+                "course_name": section["course_title"],
+                "activity": ACTIVITY_CHOICES.get(section["activity"]),
+                "semester": section["efficient_semester"],
+                "forms_returned": section.get("responses"),
+                "forms_produced": section.get("enrollment"),
+                "ratings": make_subdict("bit_", section),
+                "comments": section.get("comments"),
+            }
+            for section in all_sections
+        ],
+    }
+    
 
 @api_view(["GET"])
 @schema(
@@ -633,88 +739,12 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
     """
     Get the review history of an instructor teaching a course.
     """
-    try:
-        semester = request.GET.get("semester")
-        course = (
-            Course.objects.filter(
-                course_filters_pcr,
-                **(
-                    {"topic__courses__full_code": course_code, "topic__courses__semester": semester}
-                    if semester
-                    else {"full_code": course_code}
-                ),
-            )
-            .order_by("-semester")[:1]
-            .select_related("topic__most_recent")
-            .get()
-        )
-        course = course.topic.most_recent
-    except Course.DoesNotExist:
+    check_instructor_id(instructor_id)
+    reviews = manual_instructor_for_course_reviews(request.GET.get("semester"), course_code, instructor_id)
+    if not reviews:
         raise Http404()
 
-    check_instructor_id(instructor_id)
-    instructor = get_object_or_404(Instructor, id=instructor_id)
-
-    reviews = review_averages(
-        Review.objects.filter(
-            section__course__topic_id=course.topic_id, instructor_id=instructor_id
-        ),
-        reviewbit_subfilters=Q(review_id=OuterRef("id")),
-        section_subfilters=Q(id=OuterRef("section_id")),
-        fields=ALL_FIELD_SLUGS,
-        prefix="bit_",
-        extra_metrics=True,
-    )
-    reviews = list(
-        reviews.annotate(
-            course_code=F("section__course__full_code"),
-            course_title=F("section__course__title"),
-            activity=F("section__activity"),
-            efficient_semester=F("section__course__semester"),
-        ).values()
-    )
-    existing_sections = {r["section_id"] for r in reviews}
-    all_sections = reviews + [
-        s
-        for s in Section.objects.filter(
-            section_filters_pcr,
-            course__topic_id=course.topic_id,
-            instructors__id=instructor_id,
-        )
-        .distinct()
-        .values(
-            "id",
-            "activity",
-            course_code=F("course__full_code"),
-            course_title=F("course__title"),
-            efficient_semester=F("course__semester"),
-        )
-        if s["id"] not in existing_sections
-    ]
-    all_sections.sort(key=lambda s: s["efficient_semester"], reverse=True)
-
-    return Response(
-        {
-            "instructor": {
-                "id": instructor_id,
-                "name": instructor.name,
-            },
-            "course_code": course.full_code,
-            "sections": [
-                {
-                    "course_code": section["course_code"],
-                    "course_name": section["course_title"],
-                    "activity": ACTIVITY_CHOICES.get(section["activity"]),
-                    "semester": section["efficient_semester"],
-                    "forms_returned": section.get("responses"),
-                    "forms_produced": section.get("enrollment"),
-                    "ratings": make_subdict("bit_", section),
-                    "comments": section.get("comments"),
-                }
-                for section in all_sections
-            ],
-        }
-    )
+    return Response(reviews)
 
 
 @api_view(["GET"])
