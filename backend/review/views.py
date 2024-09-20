@@ -3,7 +3,6 @@ from collections import Counter, defaultdict
 from dateutil.tz import gettz
 from django.db.models import F, Max, OuterRef, Q, Subquery, Value
 from django.http import Http404
-from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -89,6 +88,7 @@ course_filters_pcr = ~Q(title="") | ~Q(description="") | Q(sections__has_reviews
 section_filters_pcr = Q(has_reviews=True) | (
     (~Q(course__title="") | ~Q(course__description="")) & ~Q(activity="REC") & ~Q(status="X")
 )
+
 
 @api_view(["GET"])
 @schema(
@@ -276,6 +276,7 @@ def manual_course_reviews(course_code, request_semester):
         **get_average_and_recent_dict_single(course),
     }
 
+
 def manual_course_plots(semester, instructor_ids, course_code):
     try:
         semester = semester
@@ -359,6 +360,7 @@ def manual_course_plots(semester, instructor_ids, course_code):
         },
     }
 
+
 @api_view(["GET"])
 @schema(
     PcxAutoSchema(
@@ -430,6 +432,7 @@ INSTRUCTOR_COURSE_REVIEW_FIELDS = [
     "difficulty",
 ]
 
+
 def manual_instructor_reviews(instructor_id):
     instructor = Instructor.objects.get(id=instructor_id)
     if not instructor:
@@ -492,6 +495,7 @@ def manual_instructor_reviews(instructor_id):
         "courses": courses_res,
         **get_average_and_recent_dict_single(inst),
     }
+
 
 @api_view(["GET"])
 @schema(
@@ -581,6 +585,7 @@ def manual_department_reviews(department_code):
         "courses": courses,
     }
 
+
 @api_view(["GET"])
 @schema(
     PcxAutoSchema(
@@ -615,13 +620,14 @@ def department_reviews(request, department_code):
 
     return Response(results)
 
+
 def manual_instructor_for_course_reviews(semester, course_code, instructor_id):
     try:
         course = most_recent_course_from_code(course_code, semester)
         course = course.topic.most_recent
     except Course.DoesNotExist:
         return None
-    
+
     instructor = Instructor.objects.get(id=instructor_id)
     reviews = review_averages(
         Review.objects.filter(
@@ -681,7 +687,7 @@ def manual_instructor_for_course_reviews(semester, course_code, instructor_id):
             for section in all_sections
         ],
     }
-    
+
 
 @api_view(["GET"])
 @schema(
@@ -726,7 +732,9 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
     Get the review history of an instructor teaching a course.
     """
     check_instructor_id(instructor_id)
-    reviews = manual_instructor_for_course_reviews(request.GET.get("semester"), course_code, instructor_id)
+    reviews = manual_instructor_for_course_reviews(
+        request.GET.get("semester"), course_code, instructor_id
+    )
     if not reviews:
         raise Http404()
 
