@@ -129,7 +129,7 @@ section_filters_pcr = Q(has_reviews=True) | (
 @permission_classes([IsAuthenticated])
 def course_reviews(request, course_code, semester=None):
     request_semester = request.GET.get("semester")
-    reviews = manual_course_reviews(course_code, request_semester, semester)
+    reviews = manual_course_reviews(course_code, request_semester)
     if not reviews:
         raise Http404()
 
@@ -156,7 +156,7 @@ def most_recent_course_from_code(course_code, semester):
     )
 
 
-def manual_course_reviews(course_code, request_semester, semester=None):
+def manual_course_reviews(course_code, request_semester):
     """
     Get all reviews for the topic of a given course and other relevant information.
     Different aggregation views are provided, such as reviews spanning all semesters,
@@ -431,7 +431,7 @@ INSTRUCTOR_COURSE_REVIEW_FIELDS = [
 ]
 
 def manual_instructor_reviews(instructor_id):
-    instructor = Instructor.objects.get(id=instructor_id).first()
+    instructor = Instructor.objects.get(id=instructor_id)
     if not instructor:
         return None
 
@@ -530,7 +530,7 @@ def instructor_reviews(request, instructor_id):
 
 
 def manual_department_reviews(department_code):
-    department = Department.objects.get(code=department_code).first()
+    department = Department.objects.get(code=department_code)
     if department is None:
         return department
 
@@ -616,22 +616,8 @@ def department_reviews(request, department_code):
     return Response(results)
 
 def manual_instructor_for_course_reviews(semester, course_code, instructor_id):
-    if not semester:
-        return None
     try:
-        course = (
-            Course.objects.filter(
-                course_filters_pcr,
-                **(
-                    {"topic__courses__full_code": course_code, "topic__courses__semester": semester}
-                    if semester
-                    else {"full_code": course_code}
-                ),
-            )
-            .order_by("-semester")[:1]
-            .select_related("topic__most_recent")
-            .get()
-        )
+        course = most_recent_course_from_code(course_code, semester)
         course = course.topic.most_recent
     except Course.DoesNotExist:
         return None
