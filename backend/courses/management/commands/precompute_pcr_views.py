@@ -35,7 +35,7 @@ def precompute_instructors(verbose=False, sample_size=0):
     for instructor in tqdm(Instructor.objects.all()):
         if count == sample_size:
             return
-        
+
         instructor_id = instructor.id
         reviews = manual_instructor_reviews(instructor_id)
 
@@ -84,7 +84,7 @@ def precompute_courses(verbose=False, semester=None, sample_size=0):
     for course in tqdm(Course.objects.all()):
         if count == sample_size:
             return
-        
+
         course_code = course.full_code
 
         # Fetch Course Summary
