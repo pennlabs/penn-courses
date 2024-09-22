@@ -413,7 +413,7 @@ def course_plots(request, course_code):
     course_plots = manual_course_plots(semester, instructor_ids, course_code)
 
     if not course_plots:
-        return None
+        raise Http404()
 
     return Response(course_plots)
 
@@ -434,8 +434,9 @@ INSTRUCTOR_COURSE_REVIEW_FIELDS = [
 
 
 def manual_instructor_reviews(instructor_id):
-    instructor = Instructor.objects.get(id=instructor_id)
-    if not instructor:
+    try:
+        instructor = Instructor.objects.get(id=instructor_id)
+    except:
         return None
 
     instructor_qs = annotate_average_and_recent(
@@ -534,9 +535,10 @@ def instructor_reviews(request, instructor_id):
 
 
 def manual_department_reviews(department_code):
-    department = Department.objects.get(code=department_code)
-    if department is None:
-        return department
+    try:
+        department = Department.objects.get(code=department_code)
+    except:
+        return None
 
     topic_id_to_course = dict()
     recent_courses = list(
