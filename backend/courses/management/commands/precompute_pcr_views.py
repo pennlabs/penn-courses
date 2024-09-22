@@ -15,20 +15,27 @@ from review.views import (
 )
 
 
-def save_object(id, data):
+def save_object(id, type, data):
     """
     Common save object method to act as interface for any precomputation
     – either as S3 objects or storing directly in PostgreSQL.
     """
-    with open(os.path.expanduser(f"~/Desktop/test_data/{id}.json"), "w") as f:
+    with open(os.path.expanduser(f"~/Desktop/pcr_test_data/{type}-{id}.json"), "w") as f:
         json.dump(data, f, indent=4)
 
 
-def precompute_instructors(verbose=False):
+def precompute_instructors(verbose=False, sample_size=0):
+    """
+    Precompute all JSON data needed for PCR instructor views.
+    """
     if verbose:
         print("Precomputing instructor view data.")
 
+    count = 0
     for instructor in tqdm(Instructor.objects.all()):
+        if count == sample_size:
+            return
+        
         instructor_id = instructor.id
         reviews = manual_instructor_reviews(instructor_id)
 
@@ -43,25 +50,41 @@ def precompute_instructors(verbose=False):
             if section_reviews:
                 review_json["sections"][course_code] = section_reviews
 
-        save_object(instructor_id, review_json)
+        save_object(instructor_id, "INSTR", review_json)
+        count += 1
 
 
-def precompute_departments(verbose=False):
+def precompute_departments(verbose=False, sample_size=0):
+    """
+    Precompute all JSON data needed for PCR department views.
+    """
     if verbose:
         print("Precomputing department view data.")
 
+    count = 0
     for department in tqdm(Department.objects.all()):
+        if count == sample_size:
+            return
+
         department_code = department.code
         reviews = manual_department_reviews(department_code)
         if reviews:
-            save_object(department_code, reviews)
+            save_object(department_code, "DEPT", reviews)
+            count += 1
 
 
-def precompute_courses(verbose=False, semester=None):
+def precompute_courses(verbose=False, semester=None, sample_size=0):
+    """
+    Precompute all JSON data needed for PCR courses views.
+    """
     if verbose:
         print("Precomputing course view data.")
 
+    count = 0
     for course in tqdm(Course.objects.all()):
+        if count == sample_size:
+            return
+        
         course_code = course.full_code
 
         # Fetch Course Summary
@@ -89,7 +112,8 @@ def precompute_courses(verbose=False, semester=None):
                 review_json["plots"]["current_add_drop_period"]["end"]
             )
 
-        save_object(course_code, review_json)
+        save_object(course_code, "COURSE", review_json)
+        count += 1
 
 
 class Command(BaseCommand):
@@ -101,7 +125,12 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         root_logger = logging.getLogger("")
         root_logger.setLevel(logging.DEBUG)
+        sample_size = 5
 
-        # precompute_instructors(verbose=True)
-        # precompute_departments(verbose=True)
-        precompute_courses(verbose=True, semester=kwargs["semester"])
+        test_path = os.path.expanduser("~/Desktop/pcr_test_data/")
+        if not os.path.exists(test_path):
+            os.makedirs(test_path)
+
+        precompute_instructors(verbose=True, sample_size=sample_size)
+        precompute_departments(verbose=True, sample_size=sample_size)
+        precompute_courses(verbose=True, semester=kwargs["semester"], sample_size=sample_size)
