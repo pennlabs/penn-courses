@@ -436,7 +436,7 @@ INSTRUCTOR_COURSE_REVIEW_FIELDS = [
 def manual_instructor_reviews(instructor_id):
     try:
         instructor = Instructor.objects.get(id=instructor_id)
-    except Course.DoesNotExist:
+    except Instructor.DoesNotExist:
         return None
 
     instructor_qs = annotate_average_and_recent(
