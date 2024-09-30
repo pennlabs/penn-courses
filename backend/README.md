@@ -4,59 +4,45 @@ Welcome to the Penn Courses Backend (PCX)!
 
 ### Prerequisites
 
-- [`docker` and `docker-compose`](https://docs.docker.com/get-docker/)
-- `psql` (usually packaged as `postgresql-client`)
+Our default mode of running PCx backend is through using Dev Containers, outlined in `penn-courses/README.md`. Follow the steps outlined there for ensuring your container gets initialized properly, then proceed with the following steps.
 
 ### Running the Backend with Docker-Compose
 
-1. Build the docker image (the `[sudo]` part means try running without sudo first)
-```sh
-cd backend
-[sudo] docker-compose down
-[sudo] docker-compose build --no-cache development
-```
-> :warning: Depending on your system configuration, you may have to start `docker` manually. If this is the case (ie, if you cannot get `docker-compose run` to work due to a docker connection error) try this:
->
-> - linux `[sudo] systemctl start docker`
-> - WSL `[sudo] service docker start`
-2. Run shell inside the container
-```sh
-[sudo] docker-compose run --service-ports development /bin/bash # launch shell inside container
-pipenv shell # activate shell with python packages
-python manage.py makemigrations
-python manage.py migrate # database migrations
-python manage.py test # run tests
-python manage.py test tests.review.test_api.OneReviewTestCase.test_course # re-run a specific test
-runserver # optionally, run the server from within the shell
-exit # leave pipenv shell 
-exit # leave docker shell
-```
-3. Run the server on `127.0.0.1:8000` (use `CTRL+C` to stop running this)
-```
-[sudo] docker-compose --profile dev up
-```
+1. `cd backend`
+2. Running Docker
+   1. Open a new terminal window (also in the `backend` directory) and run `docker-compose up`
+      > :warning: The default behavior of our Dev Container is for the docker daemon to be running automatically. However, if this is not the case (ie, if you cannot get `docker-compose up` to work due to a Docker connection error), try the following steps: 
+      > - NEED TO FIND FIX
+3. Set up Django Development Environment
+   1. `pipenv install --dev` – Downloads necessary packages.
+   2. `pipenv shell` – Enters virtual environment for development.
+   3. `python manage.py makemigrations` – Creates files that correspond with Model changes.
+   4. `python manage.py migrate` – Applies migration files to database (requires running database).
+   5. `python manage.py test` – Run test suite.
+   6. `python manage.py test tests.review.test_api.OneReviewTestCase.test_course` – Run a specific test, or a set of tests by specifying a prefix path (e.g. `tests.review.test_api`).
+4. Load test data into DB, following steps in [Loading Courses Data](#loading-courses-data).
+5. Run the backend server.
+   - Run the backend in development mode with the command `python manage.py runserver`. This will start the server at port `8000`.
+   - Once the server is running, you can access the admin console at `localhost:8000/admin`, browse auto-generated API documentation from the code on your branch at `localhost:8000/api/documentation`, or use any of the other routes supported by this backend (comprehensively described by the API documentation), usually of the form `localhost:8000/api/...`
+     
+      > :warning: NOTE: if you don't need documentation specific to your branch, it is usually more convenient to browse the API docs at [penncoursereview.com/api/documentation](https://penncoursereview.com/api/documentation)
+   - With the backend server running, you can also run the frontend for any of our PCX products by following the instructions in the `frontend` README.
+     
+      > :warning: NOTE: If you have not loaded the test data from the previous step (Step 4), ensure that you have created a local user named "Penn-Courses" with the password "postgres" in your PostgreSQL. To add the user, navigate to your pgAdmin, and follow the path of Object -> Create -> Login/Group Role and create the appropriate user.
+      
+      > :warning: NOTE: If you ever encounter a `pg_hba.conf` entry error, open the `~/var/lib/postgresql/data/pg_hba.conf` file in your docker container and append the line `host  all  all 0.0.0.0/0 md5` into the file.
 
-**If you're a frontend developer** you'll want to use #2 from now on (only re-running #2 or #1 when you see a problem)
+**If you're a frontend developer** you'll want to use #5 from now on (only re-running #2 or #1 when you see a problem)
 
-**If you're a backend developer** you'll often want to open the shell as we did in #2 (you'll only need to re-run #1 if you see a problem).
+**If you're a backend developer** you'll often want to rerun #3 and #5, in the case that you are making DB changes, etc.
 
-> *If you want to run the backend natively (ie, outside of docker-compose), see the [Running the Backend Natively](#running-the-backend-natively) section. You might want to do this if, for example, you really like your local shell set up*
-
-### Attaching to Docker from IDE
-
-Many IDEs allow attachment to running docker containers, which allows for nice features like intellisense.
-1. [VSCode](https://code.visualstudio.com/docs/devcontainers/attach-container)
->  1. `CTRL-SHIFT-P` and type "Attach to Running Container"
->  2. Select the `backend_development_1` container (or a similarly named one). This should open a new VSCode window attached to the container
->  3. Open the `/backend` folder within the container
-2. [PyCharm](https://www.jetbrains.com/help/pycharm/using-docker-as-a-remote-interpreter.html#config-docker)
+> *If you don't want to use a Dev Container, see the [Running the Backend Natively](#running-the-backend-natively) section. You might want to do this if, for example, you really like your local shell set up.*
 
 
 ## Environment Variables
 
 If you are in Penn Labs, reach out to a Penn Courses team lead for a .env file to
-put in your `backend` directory. This will contain some sensitive credentials (which is why the file contents are not
-pasted in this public README). If you are not in Penn Labs, see the "Loading Course Data on Demand" section below for instructions on how to get your own credentials.
+put in your `backend` directory. This will contain some sensitive credentials (which is why the file contents are not pasted in this public README). If you are not in Penn Labs, see the "Loading Course Data on Demand" section below for instructions on how to get your own credentials.
 
 NOTE: when using `pipenv`, environment variables are only refreshed when you exit your shell and rerun `pipenv shell` (this is a common source of confusing behavior, so it's good to know about).
 
@@ -143,14 +129,12 @@ prompts, add the `--force` flag.
 
 ## Running the Backend Natively
 
-If you don't want to use docker alone, you can also set up and run the dev environment more natively.
+If you don't want to develop within a Docker container, you can also choose to run the dev environment natively.
 
 ### Prerequisites
 - Python 3.11 ([`pyenv`](https://github.com/pyenv/pyenv) is recommended)
 - [`pipenv`](https://pipenv.pypa.io/en/latest/)
 - [`docker` and `docker-compose`](https://docs.docker.com/get-docker/)
-
-`psql` is required to load data into the db, but it should be installed when you install `postgres`/`psycopg2`.
 
 1. `cd backend`
 2. Compiling postgres (`psycopg2`)
@@ -169,34 +153,4 @@ If you don't want to use docker alone, you can also set up and run the dev envir
    - **Windows (WSL) or Linux:**
      - `apt-get install gcc python3-dev libpq-dev`
 
-3. Running Docker
-   1. Open a new terminal window (also in the `backend` directory) and run `docker-compose up`
-      > :warning: Depending on your system configuration, you may have to start `docker` manually. If this is the case (ie, if you cannot get `docker-compose up` to work due to a docker connection error) try this:
-      >
-      > - (linux) `[sudo] systemctl start docker`
-      > - (WSL) `[sudo] service docker start`
-
-4. Setting up your Penn Courses development environment
-
-   1. `pipenv install --dev`
-   2. `pipenv shell`
-   3. `python manage.py migrate`
-
-5. Loading test data (if you are a member of Penn Labs). If you are not a member of Penn Labs, you can skip this section and load in course data from the registrar, as explained below.
-
-
-6. Running the backend
-
-   - Run the backend in development mode with the command `python manage.py runserver`. This will start the server at port `8000`.
-   - Once the server is running, you can access the admin console at `localhost:8000/admin`, browse auto-generated API documentation from the code on your branch at `localhost:8000/api/documentation`, or use any of the other routes supported by this backend (comprehensively described by the API documentation), usually of the form `localhost:8000/api/...`
-     
-      > :warning: NOTE: if you don't need documentation specific to your branch, it is usually more convenient to browse the API docs at [penncoursereview.com/api/documentation](https://penncoursereview.com/api/documentation)
-   - With the backend server running, you can also run the frontend for any of our PCX products by following the instructions in the `frontend` README.
-     
-      > :warning: NOTE: If you have not loaded the test data from the previous step (Step 4), ensure that you have created a local user named "Penn-Courses" with the password "postgres" in your PostgreSQL. To add the user, navigate to your pgAdmin, and follow the path of Object -> Create -> Login/Group Role and create the appropriate user.
-      
-      > :warning: NOTE: If you ever encounter a `pg_hba.conf` entry error, open the `~/var/lib/postgresql/data/pg_hba.conf` file in your docker container and append the line `host  all  all 0.0.0.0/0 md5` into the file.
-
-7. Running tests
-   - Run `python manage.py test` to run our test suite.
-   - To run a specific test, you can use the format `python manage.py test tests.review.test_api.OneReviewTestCase.test_course` (also note that in this example, you can use any prefix of that path to run a larger set of tests).
+3. Follow steps #3 onwards in the [Running the Backend with Docker-Compose](#running-the-backend-with-docker-compose) section.
