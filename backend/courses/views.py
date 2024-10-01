@@ -211,6 +211,7 @@ class CourseListSearch(CourseList):
         in `backend/tests/__init__.py`.
         """
         context = super().get_serializer_context()
+        return context
 
         if self.request is None or not self.request.user or not self.request.user.is_authenticated:
             return context
@@ -286,9 +287,11 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
                     "associated_sections",
                     "meetings__room",
                     "instructors",
+                    "meetings__room__building",
                 ),
             )
         )
+        
         check_offered_in = self.request.query_params.get("check_offered_in")
         if check_offered_in:
             if "@" not in check_offered_in:

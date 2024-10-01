@@ -31,6 +31,35 @@ class MeetingSerializer(serializers.ModelSerializer):
         model = Meeting
         fields = ("day", "start", "end", "room")
 
+class MeetingWithBuildingSerializer(serializers.ModelSerializer):
+    room = serializers.StringRelatedField(
+        help_text=dedent(
+            """
+        The room in which the meeting is taking place, in the form '{building code} {room number}'.
+        """
+        )
+    )
+    latitude = serializers.SerializerMethodField(
+        read_only=True,
+        help_text="Latitude of building.",
+    )
+    longitude = serializers.SerializerMethodField(
+        read_only=True,
+        help_text="Longitude of building.",
+    )
+
+
+    @staticmethod
+    def get_latitude(obj):
+        return obj.room.building.latitude
+
+    @staticmethod
+    def get_longitude(obj):
+        return obj.room.building.longitude
+
+    class Meta:
+        model = Meeting
+        fields = ("day", "start", "end", "room", "latitude", "longitude")
 
 class SectionIdSerializer(serializers.ModelSerializer):
     id = serializers.CharField(source="full_code")
@@ -123,7 +152,7 @@ class SectionDetailSerializer(serializers.ModelSerializer):
             """
         ),
     )
-    meetings = MeetingSerializer(
+    meetings = MeetingWithBuildingSerializer(
         many=True,
         read_only=True,
         help_text=dedent(
