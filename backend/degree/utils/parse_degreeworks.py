@@ -245,7 +245,7 @@ def parse_rulearray(
                         rules,
                         parent=parent,
                     )
-                elif "elsePart" in rule_req:  # assume unknown evaluation goes to else
+                elif "elsePart" in rule_req and "ruleArray" in rule_req["elsePart"]:  # assume unknown evaluation goes to else
                     parse_rulearray(
                         rule_req["elsePart"]["ruleArray"],
                         degree,
