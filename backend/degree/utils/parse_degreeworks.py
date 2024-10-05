@@ -2,6 +2,7 @@ import logging
 
 from django.db.models import Q
 
+from courses.util import prettify_semester
 from degree.models import Degree, Rule
 from degree.utils.departments import ENG_DEPTS, SAS_DEPTS, WH_DEPTS
 
@@ -52,6 +53,8 @@ def parse_coursearray(courseArray) -> Q:
                         sub_q = Q(attributes__code__in=filter["valueList"])
                     case "DWTERM":
                         assert len(filter["valueList"]) == 1
+                        if len(filter["valueList"][0].split()) == 1:
+                            filter["valueList"][0] = prettify_semester(filter["valueList"][0][:-1])
                         semester, year = filter["valueList"][0].split()
                         match semester:
                             case "Spring":
