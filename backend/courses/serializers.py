@@ -51,11 +51,15 @@ class MeetingWithBuildingSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def get_latitude(obj):
-        return obj.room.building.latitude
+        if obj.room and obj.room.building:
+            return obj.room.building.latitude
+        return None
 
     @staticmethod
     def get_longitude(obj):
-        return obj.room.building.longitude
+        if obj.room and obj.room.building:
+            return obj.room.building.longitude
+        return None
 
     class Meta:
         model = Meeting
