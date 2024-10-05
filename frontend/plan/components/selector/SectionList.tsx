@@ -3,7 +3,13 @@ import styled from "styled-components";
 import { connect } from "react-redux";
 import Section from "./Section";
 import { Section as SectionType, Alert as AlertType } from "../../types";
-import { addCartItem, openModal, deleteAlertItem, removeCartItem, deactivateAlertItem } from "../../actions";
+import {
+    addCartItem,
+    openModal,
+    deleteAlertItem,
+    removeCartItem,
+    deactivateAlertItem,
+} from "../../actions";
 
 interface SectionListProps {
     sections: SectionType[];
@@ -22,8 +28,9 @@ interface SectionListDispatchProps {
     ) => { add: () => void; remove: () => void };
     manageAlerts: (
         section: SectionType,
-        alerts: AlertType[],
+        alerts: AlertType[]
     ) => { add: () => void; remove: () => void };
+    toggleMap: (section: SectionType) => { open: () => void };
     onContactInfoChange: (email: string, phone: string) => void;
 }
 
@@ -37,15 +44,18 @@ function SectionList({
     sections,
     cartSections,
     manageCart,
+    toggleMap,
     alerts,
     manageAlerts,
     view,
 }: SectionListProps & SectionListStateProps & SectionListDispatchProps) {
     const isInCart = ({ id }: SectionType) => cartSections.indexOf(id) !== -1;
-    const isInAlerts = ({ id }: SectionType) => alerts
-        .filter((alert: AlertType) => alert.cancelled === false)
-        .map((alert: AlertType) => alert.section)
-        .indexOf(id) !== -1;
+    const isInAlerts = ({ id }: SectionType) =>
+        alerts
+            .filter((alert: AlertType) => alert.cancelled === false)
+            .map((alert: AlertType) => alert.section)
+            .indexOf(id) !== -1;
+    console.log(sections);
     return (
         <ResultsContainer>
             <ul>
@@ -55,6 +65,7 @@ function SectionList({
                         section={s}
                         cart={manageCart(s)}
                         inCart={isInCart(s)}
+                        toggleMap={toggleMap(s)}
                         alerts={manageAlerts(s, alerts)}
                         inAlerts={isInAlerts(s)}
                     />
@@ -77,13 +88,37 @@ const mapDispatchToProps = (dispatch: (payload: any) => void) => ({
     }),
     manageAlerts: (section: SectionType, alerts: AlertType[]) => ({
         add: () => {
-            const alertId = alerts.find((a: AlertType) => a.section === section.id)?.id;
-            dispatch(openModal("ALERT_FORM", { sectionId: section.id, alertId: alertId }, "Sign up for Alerts"))
+            const alertId = alerts.find(
+                (a: AlertType) => a.section === section.id
+            )?.id;
+            dispatch(
+                openModal(
+                    "ALERT_FORM",
+                    { sectionId: section.id, alertId: alertId },
+                    "Sign up for Alerts"
+                )
+            );
         },
         remove: () => {
-            const alertId = alerts.find((a: AlertType) => a.section === section.id)?.id;
+            const alertId = alerts.find(
+                (a: AlertType) => a.section === section.id
+            )?.id;
             dispatch(deactivateAlertItem(section.id, alertId));
-        }
+        },
+    }),
+    toggleMap: (section: SectionType) => ({
+        open: () => {
+            dispatch(
+                openModal(
+                    "MAP",
+                    {
+                        src: { latitude: 39.95302, longitude: -75.19815 },
+                        // tgt: { latitude: 39.95184, longitude: -75.19092 },
+                    }, // hard-coded for now
+                    `LOCATION FOR ${section.id}`
+                )
+            );
+        },
     }),
 });
 

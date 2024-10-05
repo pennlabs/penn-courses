@@ -1,4 +1,5 @@
 import React from "react";
+import dynamic from "next/dynamic";
 import {
     renameSchedule,
     downloadSchedule,
@@ -28,6 +29,10 @@ import AlertFormModal from "./AlertFormModal";
  * @returns A component
  */
 export const generateModalInterior = (reduxState) => {
+    const Map = dynamic(() => import("./MapModal"), {
+        ssr: false,
+    });
+
     switch (reduxState.modals.modalKey) {
         case "SEMESTER_FETCH_ERROR":
             return (
@@ -102,6 +107,8 @@ export const generateModalInterior = (reduxState) => {
             return (
                 <AlertFormModal contactInfo={reduxState.alerts.contactInfo} />
             );
+        case "MAP":
+            return <Map />;
         default:
             return null;
     }

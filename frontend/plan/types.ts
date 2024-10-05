@@ -228,3 +228,8 @@ export type FilterType =
     export interface ColorsMap {
         [key: string]: Color
     }
+
+    export type GeoLocation = {
+        latitude: number;
+        longitude: number;
+    }

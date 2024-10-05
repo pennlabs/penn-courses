@@ -124,7 +124,6 @@ const ModalCardBody = styled.section`
     flex-grow: 1;
     flex-shrink: 1;
     overflow: auto;
-    padding: 20px;
     padding-left: 2rem;
     padding-right: 2rem;
     padding-bottom: 1.5rem;

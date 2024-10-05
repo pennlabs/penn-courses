@@ -15,6 +15,9 @@ interface SectionProps {
         add: () => void;
         remove: () => void;
     };
+    toggleMap: {
+        open: () => void;
+    };
     inCart: boolean;
     alerts: {
         add: () => void;
@@ -130,7 +133,7 @@ const HoverSwitch = styled.div`
     }
 `;
 
-export default function Section({ section, cart, inCart, alerts, inAlerts }: SectionProps) {
+export default function Section({ section, cart, inCart, toggleMap, alerts, inAlerts }: SectionProps) {
     const { instructors, meetings, status } = section;
 
     const { schedules, scheduleSelected } = useSelector(
@@ -225,7 +228,9 @@ export default function Section({ section, cart, inCart, alerts, inAlerts }: Sec
                                         style={{ color: "#c6c6c6" }}
                                     />
                                     &nbsp;
-                                    {cleanedRooms.join(", ")}
+                                    <span onClick={toggleMap.open} style={{ color: "#878ED8", textDecoration: "underline", cursor: "pointer" }}>
+                                        {cleanedRooms.join(", ")}
+                                    </span>
                                 </div>
                             ) : null}
                         </div>
@@ -246,17 +251,14 @@ export default function Section({ section, cart, inCart, alerts, inAlerts }: Sec
                     </div>
                     {status === "C" ? (
                         <div className={`popover is-popover-left`}>
-                            <AlertButton
-                                alerts={alerts}
-                                inAlerts={inAlerts}
-                            />
-        
-                            {inAlerts ||
+                            <AlertButton alerts={alerts} inAlerts={inAlerts} />
+
+                            {inAlerts || (
                                 <span className="popover-content">
                                     {" "}
                                     Course is closed. Sign up for an alert!{" "}
                                 </span>
-                            }
+                            )}
                         </div>
                     ) : (
                         <div />
