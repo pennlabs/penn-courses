@@ -6,6 +6,8 @@ import {
     updateSchedulesOnFrontend,
     findOwnPrimarySchedule,
     checkForDefaultSchedules,
+    fetchContactInfo,
+    fetchAlerts,
 } from "../actions";
 import { fetchBackendFriendships } from "../actions/friendshipUtil";
 import { SYNC_INTERVAL } from "../constants/sync_constants";
@@ -53,7 +55,6 @@ const initiateSync = async (store) => {
                             )
                         );
                     }
-
                     store.dispatch(
                         updateSchedulesOnFrontend(schedulesFromBackend)
                     );
@@ -136,6 +137,9 @@ const initiateSync = async (store) => {
     };
 
     const startSyncLoop = async () => {
+        // run on initial page load, but not during sync loop
+        await store.dispatch(fetchContactInfo());
+        await store.dispatch(fetchAlerts());
         while (store.getState().login.user) {
             // ensure that the minimum distance between syncs is SYNC_INTERVAL
             // eslint-disable-next-line no-await-in-loop
@@ -147,10 +151,7 @@ const initiateSync = async (store) => {
 
     window.addEventListener("beforeunload", (e) => {
         if (!allPushed(store.getState().schedule)) {
-            // If the schedules aren't pushed, notify the user that they have unsaved changes
-            // and push the schedules.
-            e.preventDefault();
-            e.returnValue = "";
+            // If the schedules aren't pushed, push the changes before reloading.
             cloudPush();
         }
     });

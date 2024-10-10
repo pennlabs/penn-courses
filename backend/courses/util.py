@@ -29,6 +29,7 @@ from courses.models import (
     StatusUpdate,
     User,
 )
+from review.management.commands.mergeinstructors import resolve_duplicates
 
 
 logger = logging.getLogger(__name__)
@@ -44,38 +45,74 @@ semester_suffix_map = {
     "C": "30",
 }
 semester_suffix_map_inv = {v: k for k, v in semester_suffix_map.items()}
+semester_suffix_map_hum = {"A": "Spring", "B": "Summer", "C": "Fall"}
 
 
-def translate_semester(semester):
+semester_pattern = re.compile(r"^(\d{4})([ABC])$")
+path_semester_pattern = re.compile(r"^(\d{4})(10|20|30)$")
+
+
+def translate_semester(semester, ignore_error=False):
     """
-    Translates a semester string (e.g. "2022C") to the format accepted by the new
-    OpenData API (e.g. "202230").
+    Translates a semester string (e.g., "2022C") to the format accepted by
+    the new OpenData API (e.g., "202230").
     """
-    if not semester:
+    if semester is None:
         return None
-    old_suffix = semester[-1].upper()
-    if old_suffix not in semester_suffix_map:
-        raise ValueError(
-            f"Invalid semester suffix {old_suffix} (semester must have "
-            "suffix A, B, or C; e.g. '2022C')."
-        )
-    return semester[:-1] + semester_suffix_map[old_suffix]
+
+    match = semester_pattern.match(semester)
+    if not match:
+        if ignore_error:
+            return semester
+        raise ValueError(f"Invalid semester '{semester}' (should be of the form '2022C').")
+
+    year, suffix = match.groups()
+    return year + semester_suffix_map[suffix]
 
 
-def translate_semester_inv(semester):
+def translate_semester_inv(semester, ignore_error=False):
     """
-    Translates a semester string in the format of the new OpenData API (e.g. "202230")
-    to the format used by our backend (e.g. "2022C")
+    Translates a semester string in the format of Path / Banner / OpenData (e.g., "202230")
+    to the format used by our backend (e.g., "2022C")
     """
-    if not semester:
+    if semester is None:
         return None
-    new_suffix = semester[-2:]
-    if new_suffix not in semester_suffix_map_inv:
-        raise ValueError(
-            f"Invalid semester suffix {new_suffix} (semester must have "
-            "suffix '10', '20', or '30'; e.g. '202230')."
-        )
-    return semester[:-2] + semester_suffix_map_inv[new_suffix]
+
+    match = path_semester_pattern.match(semester)
+    if not match:
+        if ignore_error:
+            return semester
+        raise ValueError(f"Invalid semester '{semester}' (should be of the form '202210').")
+
+    year, suffix = match.groups()
+    return year + semester_suffix_map_inv[suffix]
+
+
+def normalize_semester(semester):
+    """
+    Translates a semester from Path format (e.g. "202230")
+    to to the format used by our backend (e.g. "2022C"),
+    or leaves the same if not in Path format.
+    """
+    return translate_semester_inv(semester, ignore_error=True) or semester
+
+
+def prettify_semester(semester):
+    """
+    Translates a semester in either Path format (e.g. "202230") or internal format
+    (e.g. "2022C") to human readable format (e.g. "Fall 2022").
+    """
+    if semester is None:
+        return None
+
+    semester = normalize_semester(semester)
+
+    match = semester_pattern.match(semester)
+    if not match:
+        raise ValueError(f"Invalid semester '{semester}'.")
+
+    year, suffix = match.groups()
+    return f"{semester_suffix_map_hum[suffix]} {year}"
 
 
 def get_current_semester(allow_not_found=False):
@@ -231,8 +268,12 @@ def get_or_create_course(dept_code, course_id, semester, defaults=None):
 
 
 def get_or_create_course_and_section(
-    course_code, semester, section_manager=None, course_defaults=None, section_defaults=None
-):
+    course_code,
+    semester,
+    section_manager=None,
+    course_defaults=None,
+    section_defaults=None,
+) -> (Course, Section, bool, bool):
     if section_manager is None:
         section_manager = Section.objects
     dept_code, course_id, section_id = separate_course_code(course_code)
@@ -247,13 +288,21 @@ def get_or_create_course_and_section(
     return course, section, course_c, section_c
 
 
-def get_course_and_section(course_code, semester, section_manager=None):
+def get_course_and_section(course_code_or_crn, semester, section_manager=None):
     if section_manager is None:
         section_manager = Section.objects
 
-    dept_code, course_id, section_id = separate_course_code(course_code)
-    course = Course.objects.get(department__code=dept_code, code=course_id, semester=semester)
-    section = section_manager.get(course=course, code=section_id)
+    try:
+        dept_code, course_id, section_id = separate_course_code(str(course_code_or_crn))
+        course = Course.objects.get(department__code=dept_code, code=course_id, semester=semester)
+        section = section_manager.get(course=course, code=section_id)
+    except ValueError:
+        section = (
+            section_manager.prefetch_related("course")
+            .exclude(status="X")
+            .get(crn=course_code_or_crn, course__semester=semester)
+        )
+        course = section.course
     return course, section
 
 
@@ -272,7 +321,10 @@ def update_percent_open(section, new_status_update):
         if last_status_update.created_at >= add_drop.estimated_end:
             return
         seconds_before_last = Decimal(
-            max((last_status_update.created_at - add_drop.estimated_start).total_seconds(), 0)
+            max(
+                (last_status_update.created_at - add_drop.estimated_start).total_seconds(),
+                0,
+            )
         )
         seconds_since_last = Decimal(
             max(
@@ -322,25 +374,49 @@ def record_update(section, semester, old_status, new_status, alerted, req, creat
     return u
 
 
-def merge_instructors(user, name):
-    """
-    Merge the instructor corresponding to the given user into the
-    instructor with the given name, if both exist.
-    """
-    from review.management.commands.mergeinstructors import resolve_duplicates
-
-    def stat(key, amt=1, element=None):
-        return
-
-    try:
-        user_instructor = Instructor.objects.get(user=user)
-        name_instructor = Instructor.objects.get(name=name)
-        duplicates = {user_instructor, name_instructor}
-        if len(duplicates) == 1:
-            return
-        resolve_duplicates([duplicates], dry_run=False, stat=stat)
-    except Instructor.DoesNotExist:
-        pass
+def import_instructor(pennid, name, stat=None):
+    if not stat:
+        stat = lambda key, amt=1, element=None: None  # noqa E731
+    if not pennid:
+        instructor_ob = Instructor.objects.filter(name=name).order_by("-updated_at").first()
+        if not instructor_ob:
+            stat("instructors_created")
+            instructor_ob = Instructor.objects.create(name=name)
+    else:
+        try:
+            instructor_ob = Instructor.objects.get(user_id=pennid)
+            if instructor_ob.name != name:
+                stat("instructor_names_updated")
+                instructor_ob.name = name
+                instructor_ob.save()
+        except Instructor.DoesNotExist:
+            user, user_created = User.objects.get_or_create(
+                id=pennid, defaults={"username": uuid.uuid4()}
+            )
+            if user_created:
+                stat("users_created")
+                user.set_unusable_password()
+                user.save()
+            instructor_ob = (
+                Instructor.objects.filter(name=name, user__isnull=True)
+                .order_by("-updated_at")
+                .first()
+            )
+            if instructor_ob:
+                stat("instructor_users_updated")
+                instructor_ob.user = user
+                instructor_ob.save()
+            else:
+                stat("instructors_created")
+                instructor_ob = Instructor.objects.create(user=user, name=name)
+    dups = set(Instructor.objects.filter(name=name, user__isnull=True)) | {instructor_ob}
+    if len(dups) > 1:
+        resolve_duplicates(
+            [dups],
+            dry_run=False,
+            stat=stat,
+        )
+    return instructor_ob
 
 
 def set_instructors(section, instructors):
@@ -355,23 +431,8 @@ def set_instructors(section, instructors):
             instructor["last_name"],
         )
         name = " ".join([c for c in name_components if c])
-        penn_id = int(instructor["penn_id"])
-        try:
-            merge_instructors(User.objects.get(id=penn_id), name)
-            instructor_ob = Instructor.objects.get(user_id=penn_id)
-            instructor_ob.name = name
-            instructor_ob.save()
-        except (Instructor.DoesNotExist, User.DoesNotExist):
-            user, user_created = User.objects.get_or_create(
-                id=penn_id, defaults={"username": uuid.uuid4()}
-            )
-            if user_created:
-                user.set_unusable_password()
-                user.save()
-            instructor_ob, _ = Instructor.objects.get_or_create(name=name)
-            instructor_ob.user = user
-            instructor_ob.save()
-        instructor_obs.append(instructor_ob)
+        pennid = int(instructor["penn_id"])
+        instructor_obs.append(import_instructor(pennid, name))
     section.instructors.set(instructor_obs)
 
 
@@ -465,7 +526,9 @@ def set_crosslistings(course, crosslistings):
     for crosslisting in crosslistings:
         if crosslisting["is_primary_section"]:
             primary_course, _ = get_or_create_course(
-                crosslisting["subject_code"], crosslisting["course_number"], course.semester
+                crosslisting["subject_code"],
+                crosslisting["course_number"],
+                course.semester,
             )
             course.primary_listing = primary_course
             return
@@ -481,7 +544,6 @@ def upsert_course_from_opendata(info, semester, missing_sections=None):
     course.description = (info["course_description"] or "").strip()
     if info.get("additional_section_narrative"):
         course.description += (course.description and "\n") + info["additional_section_narrative"]
-    # course.prerequisites = "\n".join(info["prerequisite_notes"])  # TODO: get prerequisite info
     course.syllabus_url = info.get("syllabus_url") or None
 
     # set course primary listing
@@ -489,23 +551,24 @@ def upsert_course_from_opendata(info, semester, missing_sections=None):
 
     section.crn = info["crn"]
     section.credits = Decimal(info["credits"] or "0") if "credits" in info else None
-    section.capacity = int(info["max_enrollment"] or 0)
-    section.activity = info["activity"] or "***"
+    section.code_specific_enrollment = int(info["section_enrollment"] or 0)
+    section.code_specific_capacity = int(info["max_enrollment"] or 0)
+    section.capacity = int(info["max_enrollment_crosslist"] or section.code_specific_capacity)
+    section.activity = info["activity"] or ""
 
     set_meetings(section, info["meetings"])
 
     set_instructors(section, info["instructors"])
     add_associated_sections(section, info["linked_courses"])
+    add_restrictions(section, info["course_restrictions"])
 
     add_attributes(course, info["attributes"])
-    add_restrictions(course, info["course_restrictions"])
-    # add_grade_modes(section, info["grade_modes"])  # TODO: save grade modes
 
     section.save()
     course.save()
 
     if missing_sections:
-        missing_sections.discard(section.full_code)
+        missing_sections.discard(section.id)
 
 
 def add_attributes(course, attributes):
@@ -550,12 +613,11 @@ def identify_school(attribute_code):
     return None
 
 
-def add_restrictions(course, restrictions):
+def add_restrictions(section, restrictions):
     """
-    Add restrictions to course of section.
+    Add restrictions to section.
     Create restriction if it does not exist.
     """
-    course.ngss_restrictions.clear()
     for restriction in restrictions:
         code = restriction.get("restriction_code")
         description = restriction.get("restriction_desc")
@@ -569,7 +631,7 @@ def add_restrictions(course, restrictions):
                 "inclusive": inclusive,
             },
         )
-        res.courses.add(course)
+        section.ngss_restrictions.add(res)
 
 
 def update_course_from_record(update):
@@ -637,14 +699,16 @@ def does_object_pass_filter(obj, filter):
     return True
 
 
-def all_semesters():
+def all_semesters() -> set[str]:
     return set(Course.objects.values_list("semester", flat=True).distinct())
 
 
-def get_semesters(semesters=None, verbose=False):
+def get_semesters(semesters: str = None) -> list[str]:
     """
     Validate a given string semesters argument, and return a list of the individual string semesters
     specified by the argument.
+    Expects a comma-separated string of semesters, or "all" to return all semesters in the DB.
+    Defaults to the current semester only.
     """
     possible_semesters = all_semesters()
     if semesters is None:
@@ -656,19 +720,54 @@ def get_semesters(semesters=None, verbose=False):
         for s in semesters:
             if s not in possible_semesters:
                 raise ValueError(f"Provided semester {s} was not found in the db.")
-    if verbose:
-        if len(semesters) > 1:
-            print(
-                "This script's updates for each semester are atomic, i.e. either all the "
-                "updates for a certain semester are accepted by the database, or none of them are "
-                "(if an error is encountered). If an error is encountered during the "
-                "processing of a certain semester, any correctly completed updates for previously "
-                "processed semesters will have already been accepted by the database."
-            )
-        else:
-            print(
-                "This script's updates for the given semester are atomic, i.e. either all the "
-                "updates will be accepted by the database, or none of them will be "
-                "(if an error is encountered)."
-            )
-    return semesters
+    return sorted(semesters)
+
+
+def historical_semester_probability(current_semester: str, semesters: list[str]):
+    """
+    :param current: The current semester represented in the 20XX(A|B|C) format.
+    :type current: str
+    :param courses: A list of Course objects sorted by date in ascending order.
+    :type courses: list
+    :returns: A list of 3 probabilities representing the likelihood of
+    taking a course in each semester.
+    :rtype: list
+    """
+    PROB_DISTRIBUTION = [0.4, 0.3, 0.15, 0.1, 0.05]
+
+    def normalize_and_round(prob, i):
+        """Modifies the probability distribution to account for the
+        fact that the last course was taken i years ago."""
+        truncate = PROB_DISTRIBUTION[:i]
+        total = sum(truncate)
+        return list(map(lambda x: round(x / total, 3), truncate))
+
+    semester_probabilities = {"A": 0.0, "B": 0.0, "C": 0.0}
+    current_year = int(current_semester[:-1])
+    semesters = [
+        semester
+        for semester in semesters
+        if semester < str(current_year) and semester > str(current_year - 5)
+    ]
+    if not semesters:
+        return [0, 0, 0]
+    if current_year - int(semesters[0][:-1]) < 5:
+        # If the class hasn't been offered in the last 5 years,
+        # we make sure the resulting probabilities sum to 1
+        modified_prob_distribution = normalize_and_round(
+            PROB_DISTRIBUTION, current_year - int(semesters[0][:-1])
+        )
+    else:
+        modified_prob_distribution = PROB_DISTRIBUTION
+    for historical_semester in semesters:
+        historical_year = int(historical_semester[:-1])
+        sem_char = historical_semester[-1].upper()  # A, B, C
+        semester_probabilities[sem_char] += modified_prob_distribution[
+            current_year - historical_year - 1
+        ]
+    return list(
+        map(
+            lambda x: min(round(x, 2), 1.00),
+            [semester_probabilities["A"], semester_probabilities["B"], semester_probabilities["C"]],
+        )
+    )

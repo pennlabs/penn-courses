@@ -1,3 +1,5 @@
+from textwrap import dedent
+
 import arrow
 from accounts.authentication import PlatformAuthentication
 from django.core.exceptions import ObjectDoesNotExist
@@ -18,7 +20,7 @@ from rest_framework.views import APIView
 
 from courses.models import Course, Meeting, Section
 from courses.serializers import CourseListSerializer
-from courses.util import get_course_and_section, get_current_semester
+from courses.util import get_course_and_section, get_current_semester, normalize_semester
 from courses.views import get_accepted_friends
 from PennCourses.docs_settings import PcxAutoSchema
 from PennCourses.settings.base import PATH_REGISTRATION_SCHEDULE_NAME
@@ -55,7 +57,7 @@ from plan.serializers import PrimaryScheduleSerializer, ScheduleSerializer
                             "description": (
                                 "An array of courses the user is currently planning to "
                                 "take, each specified by its string full code, of the form "
-                                "DEPT-XXX, e.g. CIS-120."
+                                "DEPT-XXXX, e.g. CIS-1200."
                             ),
                             "items": {"type": "string"},
                         },
@@ -63,8 +65,8 @@ from plan.serializers import PrimaryScheduleSerializer, ScheduleSerializer
                             "type": "array",
                             "description": (
                                 "An array of courses the user has previously taken, each "
-                                "specified by its string full code, of the form DEPT-XXX, "
-                                "e.g. CIS-120."
+                                "specified by its string full code, of the form DEPT-XXXX, "
+                                "e.g. CIS-1200."
                             ),
                             "items": {"type": "string"},
                         },
@@ -292,26 +294,8 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     This route will return a 201 if it succeeds (or a 200 if the POST specifies an id which already
     is associated with a schedule, causing that schedule to be updated), with a JSON in the same
     format as if you were to get the schedule you just posted (the 200 response schema for Retrieve
-    Schedule). At a minimum, you must include the `name` and `sections` list (`meetings` can be
-    substituted for `sections`; if you don't know why, ignore this and just use `sections`,
-    or see below for an explanation... TLDR: it is grandfathered in from the old version of PCP).
-    The `name` is the name of the schedule (all names must be distinct for a single user in a
-    single semester; otherwise the response will be a 400). The sections list must be a list of
-    objects with minimum fields `id` (dash-separated, e.g. `CIS-121-001`) and `semester`
-    (5 character string, e.g. `2020A`).  If any of the sections are invalid, a 404 is returned
-    with data `{"detail": "One or more sections not found in database."}`.  If any two sections in
-    the `sections` list have differing semesters, a 400 is returned.
-
-    Optionally, you can also include a `semester` field (5 character string, e.g. `2020A`) in the
-    posted object, which will set the academic semester which the schedule is planning.  If the
-    `semester` field is omitted, the semester of the first section in the `sections` list will be
-    used (or if the `sections` list is empty, the current semester will be used).  If the
-    schedule's semester differs from any of the semesters of the sections in the `sections` list,
-    a 400 will be returned.
-
-    Optionally, you can also include an `id` field (an integer) in the posted object; if you
-    include it, it will update the schedule with the given id (if such a schedule exists),
-    or if the schedule does not exist, it will create a new schedule with that id.
+    Schedule). If any of the given sections are invalid, a 404 is returned.  If any two sections
+    in the `sections` list have differing semesters, a 400 is returned.
 
     Note that your posted object can include either a `sections` field or a `meetings` field to
     list all sections you would like to be in the schedule (mentioned above).
@@ -325,13 +309,13 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     Send a put request to this route to update a specific schedule.
     The `id` path parameter (an integer) specifies which schedule you want to update. [You can also
     pass `path` for the `id` path parameter, in order to create/update a Path Registration schedule
-    for the user (the name of the schedule must be `Path Registration`, and you must be
-    authenticated via Platform's token auth for IPC, e.g. from Penn Mobile).] If a schedule with
+    for the user. But to do this, you must be authenticated via Platform's token auth for IPC,
+    e.g. from Penn Mobile - otherwise a 403 is returned.] If a schedule with
     the specified id does not exist, a 404 is returned. In the body of the PUT, use the same format
     as a POST request (see the Create Schedule docs).
     This is an alternate way to update schedules (you can also just include the id field
     in a schedule when you post and it will update that schedule if the id exists).  Note that in a
-    put request the  id field in the putted object is ignored; the id taken from the route
+    put request the id field in the putted object is ignored; the id taken from the route
     always takes precedence. If the request succeeds, it will return a 200 and a JSON in the same
     format as if you were to get the schedule you just updated (in the same format as returned by
     the GET /schedules/ route).
@@ -341,6 +325,60 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     (an integer) specifies which schedule you want to update.  If a schedule with the specified
     id does not exist, a 404 is returned.  If the delete is successful, a 204 is returned.
     """
+
+    request_body = {
+        "semester": {
+            "type": "string",
+            "description": dedent(
+                """
+                The semester of the schedule (of the form YYYYx where x is
+                A [for spring], B [summer], or C [fall]), e.g. 2019C for fall 2019.
+                Can also be specified in Path format (YYYYxx, where xx is
+                10 [for spring], 20 [summer], or 30 [fall]), e.g. 201930 for fall 2019.
+                You can omit this field and the first semester found in the
+                sections/meetings list will be used instead (or if no semester
+                is specified in the request, the current semester open for registration
+                will be used).
+                """
+            ),
+        },
+        "sections": {
+            "type": "array",
+            "description": ('The sections in the schedule (can also be called "meetings").'),
+            "items": {
+                "type": "object",
+                "required": ["id"],
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "description": (
+                            "A course code of the form DEPT-XXXX (e.g. CIS-1200), " "or a Path CRN"
+                        ),
+                    },
+                    "semester": {
+                        "type": "string",
+                        "description": dedent(
+                            """
+                            Optionally specify a section semester if you want the
+                            backend to validate that all sections have the same
+                            semester as the claimed schedule semester (taking the
+                            first section semester as the schedule semester if none
+                            is specified). Format is same as schedule semester.
+                            """
+                        ),
+                    },
+                },
+            },
+        },
+        "name": {
+            "type": "string",
+            "maxLength": 255,
+            "description": (
+                "The user's nick-name for the schedule. No two schedules can match "
+                "in all of the fields [name, semester, person]. Optional for PUT path registration."
+            ),
+        },
+    }
 
     schema = PcxAutoSchema(
         response_codes={
@@ -372,6 +410,35 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 },
             },
         },
+        override_request_schema={
+            "schedules-list": {
+                "POST": {
+                    "type": "object",
+                    "required": ["sections", "name"],
+                    "properties": {
+                        "id": {
+                            "required": False,
+                            "type": "string",
+                            "description": dedent(
+                                """
+                                Optionally include an `id` to update the schedule
+                                with the given id (if such a schedule exists),
+                                or otherwise create a new schedule with that id.
+                                """
+                            ),
+                        },
+                        **request_body,
+                    },
+                },
+            },
+            "schedules-detail": {
+                "PUT": {
+                    "type": "object",
+                    "required": ["sections", "name"],
+                    "properties": request_body,
+                },
+            },
+        },
     )
 
     serializer_class = ScheduleSerializer
@@ -379,7 +446,25 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     @staticmethod
-    def get_sections(data, skip_missing=False):
+    def get_semester(data):
+        semester = normalize_semester(data.get("semester"))
+        for s in data.get("sections", []) + data.get("meetings", []):
+            id = s.get("id")
+            if s.get("semester"):
+                section_sem = normalize_semester(s["semester"])
+                if not semester:
+                    semester = section_sem
+                elif section_sem != semester:
+                    raise ValueError(
+                        f"Section with id={id} specifies semester={section_sem}, "
+                        f"conflicting with semester={semester}."
+                    )
+        if not semester:
+            semester = get_current_semester()
+        return semester
+
+    @staticmethod
+    def get_sections(data, semester, skip_missing=False):
         raw_sections = []
         if "meetings" in data:
             raw_sections = data.get("meetings")
@@ -388,7 +473,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         sections = []
         for s in raw_sections:
             try:
-                _, section = get_course_and_section(s.get("id"), s.get("semester"))
+                _, section = get_course_and_section(s.get("id"), semester)
                 sections.append(section)
             except ObjectDoesNotExist as e:
                 if skip_missing:
@@ -397,20 +482,10 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     raise e
         return sections
 
-    @staticmethod
-    def check_semester(data, sections):
-        for i, s in enumerate(sections):
-            if i == 0 and "semester" not in data:
-                data["semester"] = s.course.semester
-            elif s.course.semester != data.get("semester"):
-                return Response(
-                    {"detail": "Semester uniformity invariant violated."},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
     def validate_name(self, request, existing_schedule=None, allow_path=False):
+        name = request.data.get("name")
         if PATH_REGISTRATION_SCHEDULE_NAME in [
-            request.data.get("name"),
+            name,
             existing_schedule and existing_schedule.name,
         ] and not (
             allow_path and isinstance(request.successful_authenticator, PlatformAuthentication)
@@ -419,6 +494,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 "You cannot create/update/delete a schedule with the name "
                 + PATH_REGISTRATION_SCHEDULE_NAME
             )
+        return name
 
     def destroy(self, request, *args, **kwargs):
         self.validate_name(request, existing_schedule=self.get_object())
@@ -428,40 +504,40 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         from_path = pk == "path"
         if not from_path and (not pk or not Schedule.objects.filter(id=pk).exists()):
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            semester = self.get_semester(request.data)
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             if from_path:
-                schedule, _ = self.get_queryset().get_or_create(
+                schedule, _ = self.get_queryset(semester).get_or_create(
                     name=PATH_REGISTRATION_SCHEDULE_NAME,
-                    defaults={"person": self.request.user, "semester": get_current_semester},
+                    defaults={"person": self.request.user, "semester": semester},
                 )
             else:
-                schedule = self.get_queryset().get(id=pk)
+                schedule = self.get_queryset(semester).get(id=pk)
         except Schedule.DoesNotExist:
             return Response(
                 {"detail": "You do not have access to the specified schedule."},
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        self.validate_name(request, existing_schedule=schedule, allow_path=from_path)
+        name = self.validate_name(request, existing_schedule=schedule, allow_path=from_path)
 
         try:
-            sections = self.get_sections(request.data, skip_missing=from_path)
+            sections = self.get_sections(request.data, semester, skip_missing=from_path)
         except ObjectDoesNotExist:
             return Response(
                 {"detail": "One or more sections not found in database."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        semester_check_response = self.check_semester(request.data, sections)
-        if semester_check_response is not None:
-            return semester_check_response
-
         try:
             schedule.person = request.user
-            schedule.semester = request.data.get("semester", get_current_semester())
-            schedule.name = (
-                PATH_REGISTRATION_SCHEDULE_NAME if from_path else request.data.get("name")
-            )
+            schedule.semester = semester
+            schedule.name = PATH_REGISTRATION_SCHEDULE_NAME if from_path else name
             schedule.save()
             schedule.sections.set(sections)
             return Response({"message": "success", "id": schedule.id}, status=status.HTTP_200_OK)
@@ -478,35 +554,35 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         if Schedule.objects.filter(id=request.data.get("id")).exists():
             return self.update(request, request.data.get("id"))
 
-        self.validate_name(request)
+        name = self.validate_name(request)
+        try:
+            semester = self.get_semester(request.data)
+        except ValueError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            sections = self.get_sections(request.data)
+            sections = self.get_sections(request.data, semester)
         except ObjectDoesNotExist:
             return Response(
                 {"detail": "One or more sections not found in database."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        semester_check_response = self.check_semester(request.data, sections)
-        if semester_check_response is not None:
-            return semester_check_response
-
         try:
             if (
                 "id" in request.data
             ):  # Also from above we know that this id does not conflict with existing schedules.
-                schedule = self.get_queryset().create(
+                schedule = self.get_queryset(semester).create(
                     person=request.user,
-                    semester=request.data.get("semester", get_current_semester()),
-                    name=request.data.get("name"),
+                    semester=semester,
+                    name=name,
                     id=request.data.get("id"),
                 )
             else:
-                schedule = self.get_queryset().create(
+                schedule = self.get_queryset(semester).create(
                     person=request.user,
-                    semester=request.data.get("semester", get_current_semester()),
-                    name=request.data.get("name"),
+                    semester=semester,
+                    name=name,
                 )
             schedule.sections.set(sections)
             return Response(
@@ -523,9 +599,10 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
     queryset = Schedule.objects.none()  # included redundantly for docs
 
-    def get_queryset(self):
-        sem = get_current_semester()
-        queryset = Schedule.objects.filter(person=self.request.user, semester=sem)
+    def get_queryset(self, semester=None):
+        if not semester:
+            semester = get_current_semester()
+        queryset = Schedule.objects.filter(person=self.request.user, semester=semester)
         queryset = queryset.prefetch_related(
             Prefetch("sections", Section.with_reviews.all()),
             "sections__associated_sections",

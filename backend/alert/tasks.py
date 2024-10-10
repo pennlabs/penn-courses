@@ -11,8 +11,8 @@ from django.db import models, transaction
 from django.db.models import Case, Q, When
 from django.db.models.functions import Cast
 
-from alert.management.commands.recomputestats import recompute_percent_open
 from alert.models import PcaDemandDistributionEstimate, Registration
+from courses.management.commands.recompute_soft_state import recompute_percent_open
 from courses.models import Section, StatusUpdate
 from courses.util import (
     get_course_and_section,
@@ -68,7 +68,7 @@ def send_course_alerts(course_code, course_status, semester=None, sent_by=""):
 
 @shared_task(name="pca.tasks.recompute_percent_open")
 def recompute_percent_open_async(semester):
-    recompute_percent_open(semesters=[semester], semesters_precomputed=True)
+    recompute_percent_open(semesters=[semester])
 
 
 @shared_task(name="pca.tasks.registration_update")

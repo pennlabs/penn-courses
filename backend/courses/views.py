@@ -1,9 +1,12 @@
+from textwrap import dedent
+
 from django.contrib.auth import get_user_model
 from django.db.models import Prefetch, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import generics, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -39,7 +42,10 @@ from plan.management.commands.recommendcourses import retrieve_course_clusters, 
 SEMESTER_PARAM_DESCRIPTION = (
     "The semester of the course (of the form YYYYx where x is A [for spring], "
     "B [summer], or C [fall]), e.g. '2019C' for fall 2019. Alternatively, you "
-    "can just pass 'current' for the current semester."
+    "can just pass 'current' for the current semester. Finally, you can pass 'all' "
+    "to always return the most recent course for each full_code, no matter which "
+    "semester it is from. The 'all' option can be significantly more expensive, so use "
+    "only where needed. "
 )
 
 class BaseCourseMixin(AutoPrefetchViewSetMixin, generics.GenericAPIView):
@@ -60,6 +66,12 @@ class BaseCourseMixin(AutoPrefetchViewSetMixin, generics.GenericAPIView):
         semester = self.get_semester()
         if semester != "all":
             queryset = queryset.filter(**{self.get_semester_field(): semester})
+        else:  # Only used for Penn Degree Plan (as of 4/10/2024)
+            queryset = (
+                queryset.exclude(credits=None)  # heuristic: if the credits are empty, then ignore
+                .order_by("full_code", "-semester")
+                .distinct("full_code")
+            )
         return queryset
 
     def get_queryset(self):
@@ -231,6 +243,27 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
         custom_path_parameter_desc={
             "courses-detail": {"GET": {"semester": SEMESTER_PARAM_DESCRIPTION}}
         },
+        custom_parameters={
+            "courses-detail": {
+                "GET": [
+                    {
+                        "name": "check_offered_in",
+                        "in": "query",
+                        "description": dedent(
+                            """
+                            Check that the desired course was offered under the specified
+                            code in the specified semester.
+                            Format is `course_code@semester`, e.g. `CIS-1210@2022A`.
+                            404 will be returned if the course
+                            does not exist, or was not offered in that semester.
+                            """
+                        ),
+                        "schema": {"type": "string"},
+                        "required": False,
+                    }
+                ]
+            }
+        },
     )
 
     serializer_class = CourseDetailSerializer
@@ -247,9 +280,32 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
                 .filter(Q(status="O") | Q(status="C"))
                 .distinct()
                 .prefetch_related(
-                    "course", "meetings", "associated_sections", "meetings__room", "instructors"
+                    "course",
+                    "meetings",
+                    "associated_sections",
+                    "meetings__room",
+                    "instructors",
                 ),
             )
+        )
+        check_offered_in = self.request.query_params.get("check_offered_in")
+        if check_offered_in:
+            if "@" not in check_offered_in:
+                raise ValidationError(
+                    "check_offered_in expects an argument of the form `CIS-1210@2022C`."
+                )
+            check_offered_in = check_offered_in.split("@")
+            if len(check_offered_in) != 2:
+                raise ValidationError(
+                    "check_offered_in expects an argument of the form `CIS-1210@2022C`."
+                )
+        queryset = (
+            queryset.filter(
+                topic__courses__full_code=check_offered_in[0],
+                topic__courses__semester=check_offered_in[1],
+            )
+            if check_offered_in
+            else queryset
         )
         queryset = self.filter_by_semester(queryset)
         return queryset
@@ -257,7 +313,7 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
 
 class PreNGSSRequirementList(generics.ListAPIView, BaseCourseMixin):
     """
-    Retrieve a list of all pre-NGSS (deprecated since 2022C) academic requirements
+    Retrieve a list of all pre-NGSS (deprecated since 2022B) academic requirements
     in the database for this semester.
     """
 

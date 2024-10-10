@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
 import { Icon } from "../bulma_derived_components";
-import { User, Schedule as ScheduleType, Color, FriendshipState } from "../../types";
+import { User, Schedule as ScheduleType, Color, FriendshipState, Section } from "../../types";
 import { nextAvailable } from "../../reducers/schedule";
 import NewLabel from "../common/NewLabel";
 import { PATH_REGISTRATION_SCHEDULE_NAME } from "../../constants/constants";
 
-const ButtonContainer = styled.div<{ isActive: boolean; isPrimary?: boolean }>`
+const ButtonContainer = styled.div<{ $isActive: boolean; $isPrimary?: boolean }>`
     line-height: 1.5;
     position: relative;
     border-radius: 0 !important;
@@ -16,7 +16,7 @@ const ButtonContainer = styled.div<{ isActive: boolean; isPrimary?: boolean }>`
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-    background: ${(props) => (props.isActive ? "#F5F6F8" : "#FFF")};
+    background: ${(props) => (props.$isActive ? "#F5F6F8" : "#FFF")};
     align-items: center;
 
     &:hover {
@@ -38,12 +38,12 @@ const ButtonContainer = styled.div<{ isActive: boolean; isPrimary?: boolean }>`
     }
 
     .option-icon i.primary {
-        color: ${(props) => (props.isPrimary ? "#669afb" : "#b2b2b2")};
+        color: ${(props) => (props.$isPrimary ? "#669afb" : "#b2b2b2")};
     }
 
     .option-icon i.primary:hover {
         color: ${(props) =>
-        props.isPrimary ? "#295FCE" : "#7E7E7E"}; !important;
+        props.$isPrimary ? "#295FCE" : "#7E7E7E"}; !important;
     }
 
     .initial-icon {
@@ -52,20 +52,20 @@ const ButtonContainer = styled.div<{ isActive: boolean; isPrimary?: boolean }>`
     }
 `;
 
-const ButtonLabelContainer = styled.div<{ width: number }>`
+const ButtonLabelContainer = styled.div<{ $width: number }>`
     display: flex;
     flex-grow: 1;
     font-weight: 400;
     justify-content: start;
-    max-width: ${(props) => props.width}%;
+    max-width: ${(props) => props.$width}%;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 `;
 
-const InitialIcon = styled.div<{ color: Color }>`
+const InitialIcon = styled.div<{ $color: Color }>`
     color: white;
-    background-color: ${(props) => props.color};
+    background-color: ${(props) => props.$color};
     opacity: 65%;
     justify-content: center;
     align-items: center;
@@ -96,11 +96,11 @@ const FriendButton = ({
     removeFriend,
     color
 }: FriendButtonProps) => (
-    <ButtonContainer isActive={isActive} onClick={display}>
-        <InitialIcon color={color}>
+    <ButtonContainer $isActive={isActive} onClick={display}>
+        <InitialIcon $color={color}>
             <div className="initial-icon">{friendName.split(" ")[0][0]}</div>
         </InitialIcon>
-        <ButtonLabelContainer width={65}>{friendName}</ButtonLabelContainer>
+        <ButtonLabelContainer $width={65}>{friendName}</ButtonLabelContainer>
         <Icon
             onClick={(e) => {
                 removeFriend();
@@ -156,10 +156,10 @@ const DropdownButton = ({
                 makeActive();
             }
         }}
-        isActive={isActive}
-        isPrimary={isPrimary}
+        $isActive={isActive}
+        $isPrimary={isPrimary}
     >
-        <ButtonLabelContainer width={50}>{text}</ButtonLabelContainer>
+        <ButtonLabelContainer $width={50}>{text}</ButtonLabelContainer>
         <ScheduleOptionsContainer>
             {hasFriends && (
                 <Icon
@@ -235,11 +235,6 @@ const ScheduleDropdownContainer = styled.div`
         border: 0;
         outline: none;
     }
-
-    i.fa.fa-chevron-down::before {
-        content: ${({ isActive }: { isActive: boolean }) =>
-        isActive ? '"\f077"' : ""} !important;
-    }
 `;
 
 const DropdownTrigger = styled.div`
@@ -250,21 +245,11 @@ const DropdownTrigger = styled.div`
     outline: none !important;
     border: none !important;
     background: transparent;
-
-    div {
-        background: ${({ isActive }: { isActive: boolean }) =>
-        isActive ? "rgba(162, 180, 237, 0.38) !important" : "none"};
-    }
-
-    div:hover {
-        background: rgba(175, 194, 255, 0.27);
-    }
 `;
 
-const DropdownMenu = styled.div`
+const DropdownMenu = styled.div<{ $isActive: boolean }>`
     margin-top: 0.1rem !important;
-    display: ${({ isActive }: { isActive: boolean }) =>
-        isActive ? "block" : "none"};
+    display: ${({ $isActive }) => $isActive ? "block" : "none"};
     left: 0;
     min-width: 15rem;
     padding-top: 4px;
@@ -382,6 +367,28 @@ const ShareSchedulePromo = styled.div`
     margin-left: 0.5rem;
 `
 
+const ReceivedRequestNotice = styled.div`
+    background-color: #e58d8d;
+    border-radius: 50%;
+    align-items: center;
+    width: 0.4rem;
+    height: 0.4rem;
+    position: relative;
+    top: 0;
+    right: 0.2rem;
+`
+
+const DropdownTriggerContainer = styled.div<{ $isActive: boolean }>`
+    display: flex;
+
+    background: ${({ $isActive }: { $isActive: boolean }) =>
+        $isActive ? "rgba(162, 180, 237, 0.38) !important" : "none"};
+
+    :hover {
+        background: rgba(175, 194, 255, 0.27);
+    }
+`
+
 interface ScheduleSelectorDropdownProps {
     user: User;
     activeName: string;
@@ -398,7 +405,7 @@ interface ScheduleSelectorDropdownProps {
             friendPennkey: string) => void;
     };
     schedulesMutators: {
-        copy: (scheduleName: string) => void;
+        copy: (scheduleName: string, sections: Section[]) => void;
         download: (scheduleName: string) => void;
         remove: (user: User, scheduleName: string, scheduleId: string) => void;
         rename: (oldName: string) => void;
@@ -499,28 +506,30 @@ const ScheduleSelectorDropdown = ({
     });
 
     return (
-        <ScheduleDropdownContainer ref={ref} isActive={isActive}>
+        <ScheduleDropdownContainer ref={ref}>
             <ScheduleDropdownHeader>
-                <span className="selected_name">
-                    {readOnly && friendshipState.activeFriend
-                        ? friendshipState.activeFriend.first_name + "'s Schedule"
-                        : activeName}
-                </span>
-                <DropdownTrigger
-                    isActive={isActive}
-                    onClick={() => {
-                        fetchBackendFriendships(
-                            user);
-                        setIsActive(!isActive);
-                    }}
-                    role="button"
-                >
-                    <div aria-haspopup={true} aria-controls="dropdown-menu">
-                        <Icon>
-                            <i className="fa fa-chevron-down" aria-hidden="true" />
-                        </Icon>
-                    </div>
-                </DropdownTrigger>
+                <DropdownTriggerContainer 
+                    $isActive={isActive}
+                        onClick={() => {
+                            fetchBackendFriendships(
+                                user);
+                            setIsActive(!isActive);
+                        }}
+                        role="button">
+                    <span className="selected_name">
+                        {readOnly && friendshipState.activeFriend
+                            ? friendshipState.activeFriend.first_name + "'s Schedule"
+                            : activeName}
+                    </span>
+                    <DropdownTrigger>
+                        <div aria-haspopup={true} aria-controls="dropdown-menu">
+                            <Icon>
+                                <i className={`fa fa-chevron-${isActive ? "up" : "down"}`} aria-hidden="true"/>
+                            </Icon>
+                        </div>
+                    </DropdownTrigger>
+                    {numRequests > 0 && <ReceivedRequestNotice/>}
+                </DropdownTriggerContainer>
                 {(!readOnly || !friendshipState.activeFriend) && <ShareSchedulePromoContainer>
                     <NewLabel />
                     <ShareSchedulePromo onClick={() => setIsActive(!isActive)}>
@@ -533,12 +542,22 @@ const ScheduleSelectorDropdown = ({
                     </ShareSchedulePromo>
                 </ShareSchedulePromoContainer>}
             </ScheduleDropdownHeader>
-            <DropdownMenu isActive={isActive} role="menu">
+            <DropdownMenu $isActive={isActive} role="menu">
                 <DropdownContent>
                     {allSchedules &&
                         Object.entries(allSchedules)
-                            .sort(([nameA], [nameB]) => // Always put the path registration schedule at the top
-                                (nameA === PATH_REGISTRATION_SCHEDULE_NAME ? -1 : nameB === PATH_REGISTRATION_SCHEDULE_NAME ? 1 : 0))
+                            .sort(([nameA, dataA], [nameB, dataB]) => {
+                                /* Always putting primary schedule at the top, followed by the path registration schedule,
+                                 * then rest of schedules should be ordered by created_at
+                                */ 
+                                
+                                if (dataA.id === primaryScheduleId) return -1;
+                                if (dataB.id === primaryScheduleId) return 1;
+                                if (nameA == PATH_REGISTRATION_SCHEDULE_NAME) return -1; 
+                                if (nameB === PATH_REGISTRATION_SCHEDULE_NAME) return -1; 
+                                
+                                return dataA.created_at < dataB.created_at ? -1 : 1;
+                            })
                             .map(([name, data]) => {
                                 const mutable = name !== PATH_REGISTRATION_SCHEDULE_NAME;
                                 return (
@@ -560,13 +579,15 @@ const ScheduleSelectorDropdown = ({
                                                     setPrimary(user, data.id);
                                                 }
                                             },
-                                            copy: () =>
+                                            copy: () => {
                                                 copy(
                                                     nextAvailable(
                                                         name,
                                                         allSchedules
-                                                    )
-                                                ),
+                                                    ),
+                                                    data.sections
+                                                )
+                                            },
                                             download: () => download(name),
                                             remove: mutable ? (() => remove(user, name, data.id)) : null,
                                             rename: mutable ? (() => rename(name)) : null,

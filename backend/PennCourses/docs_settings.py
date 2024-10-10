@@ -6,12 +6,15 @@ from inspect import getdoc
 from textwrap import dedent
 
 import jsonref
+from django.db import models
 from django.urls import get_resolver
 from rest_framework import serializers
+from rest_framework.fields import _UnvalidatedField
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import JSONOpenAPIRenderer
 from rest_framework.schemas.openapi import AutoSchema
 from rest_framework.schemas.utils import is_list_view
+from rest_framework.settings import api_settings
 
 
 """
@@ -167,7 +170,7 @@ http://spec.openapis.org/oas/v3.0.3.html#request-body-object).  An example:
                         ),
                         "items": {
                             "type": "string",
-                            "description": "A course code of the form DEPT-XXX, e.g. CIS-120"
+                            "description": "A course code of the form DEPT-XXXX, e.g. CIS-120"
                         }
                     }
                 }
@@ -198,7 +201,7 @@ An example:
                     "items": {
                         "type": "string",
                         "description": "The full code of the recommended course, in the form "
-                                       "DEPT-XXX, e.g. CIS-120"
+                                       "DEPT-XXXX, e.g. CIS-1200"
                     }
                 }
             }
@@ -353,6 +356,7 @@ subpath_abbreviations = {
     "review": "PCR",
     "base": "PCx",
     "accounts": "Accounts",
+    "degree": "PDP",
 }
 assert all(
     [isinstance(key, str) and isinstance(val, str) for key, val in subpath_abbreviations.items()]
@@ -451,7 +455,7 @@ custom_tag_descriptions = {
     ),
     "[PCP] Pre-NGSS Requirements": dedent(
         """
-        These routes expose the pre-NGSS (deprecated since 2022C) academic requirements for the
+        These routes expose the pre-NGSS (deprecated since 2022B) academic requirements for the
         current semester which are stored on our backend (hopefully comprehensive).
         """
     ),
@@ -569,52 +573,6 @@ def make_manual_schema_changes(data):
 
     data["info"]["x-logo"] = {"url": labs_logo_url, "altText": "Labs Logo"}
     data["info"]["contact"] = {"email": "contact@pennlabs.org"}
-
-    # Remove ID from the documented PUT request body for /api/plan/schedules/
-    # (the id field in the request body is ignored in favor of the id path parameter)
-    schedules_detail_url = get_url_by_name("schedules-detail")
-    data["paths"][schedules_detail_url]["put"] = deepcopy(
-        data["paths"][schedules_detail_url]["put"]
-    )
-    for content_ob in data["paths"][schedules_detail_url]["put"]["requestBody"]["content"].values():
-        content_ob["schema"]["properties"].pop("id", None)
-
-    # Make the name and sections fields of the PCP schedule request body required,
-    # make the id field optionally show up. Also, make the id and semester fields
-    # show up under the sections field, and make id required.
-    for path, path_ob in data["paths"].items():
-        if get_url_by_name("schedules-list") not in path:
-            continue
-        for method_ob in path_ob.values():
-            if "requestBody" not in method_ob.keys():
-                continue
-            for content_ob in method_ob["requestBody"]["content"].values():
-                properties_ob = content_ob["schema"]["properties"]
-                if "sections" in properties_ob.keys():
-                    section_ob = properties_ob["sections"]
-                    if "required" not in section_ob["items"].keys():
-                        section_ob["items"]["required"] = []
-                    required = section_ob["items"]["required"]
-                    section_ob["items"]["required"] = list(set(required + ["id", "semester"]))
-                    for field, field_ob in section_ob["items"]["properties"].items():
-                        if field == "id" or field == "semester":
-                            field_ob["readOnly"] = False
-                if "semester" in properties_ob.keys():
-                    properties_ob["semester"]["description"] = dedent(
-                        """
-                        The semester of the course (of the form YYYYx where x is A [for spring],
-                        B [summer], or C [fall]), e.g. `2019C` for fall 2019. You can omit this
-                        field and the semester of the first section in the sections list will be
-                        used instead (or if the sections list is empty, the current semester will
-                        be used). If this field differs from any of the semesters of the sections
-                        in the sections list, a 400 will be returned.
-                        """
-                    )
-                if "id" in properties_ob.keys():
-                    properties_ob["id"]["description"] = (
-                        "The id of the schedule, if you want to explicitly set this (on create) "
-                        "or update an existing schedule by id (optional)."
-                    )
 
     # Make application/json the only content type
     def delete_other_content_types_dfs(dictionary):
@@ -1037,6 +995,7 @@ class PcxAutoSchema(AutoSchema):
         """
 
         result = super().map_serializer(serializer)
+
         properties = result["properties"]
         model = None
         if hasattr(serializer, "Meta") and hasattr(serializer.Meta, "model"):
@@ -1056,6 +1015,130 @@ class PcxAutoSchema(AutoSchema):
                 schema["description"] = dedent(getattr(model, field.field_name).__doc__)
 
         return result
+
+    # Overrides, uses overridden method
+    # (https://www.django-rest-framework.org/api-guide/schemas/#map_field)
+    def map_field(self, field):
+
+        # Nested Serializers, `many` or not.
+        if isinstance(field, serializers.ListSerializer):
+            return {"type": "array", "items": []}
+        if isinstance(field, serializers.Serializer):
+            data = self.map_serializer(field)
+            data["type"] = "object"
+            return data
+
+        # Related fields.
+        if isinstance(field, serializers.ManyRelatedField):
+            return {"type": "array", "items": self.map_field(field.child_relation)}
+        if isinstance(field, serializers.PrimaryKeyRelatedField):
+            if getattr(field, "pk_field", False):
+                return self.map_field(field=field.pk_field)
+            model = getattr(field.queryset, "model", None)
+            if model is not None:
+                model_field = model._meta.pk
+                if isinstance(model_field, models.AutoField):
+                    return {"type": "integer"}
+
+        # ChoiceFields (single and multiple).
+        # Q:
+        # - Is 'type' required?
+        # - can we determine the TYPE of a choicefield?
+        if isinstance(field, serializers.MultipleChoiceField):
+            return {"type": "array", "items": self.map_choicefield(field)}
+
+        if isinstance(field, serializers.ChoiceField):
+            return self.map_choicefield(field)
+
+        # ListField.
+        if isinstance(field, serializers.ListField):
+            mapping = {
+                "type": "array",
+                "items": {},
+            }
+            if not isinstance(field.child, _UnvalidatedField):
+                mapping["items"] = self.map_field(field.child)
+            return mapping
+
+        # DateField and DateTimeField type is string
+        if isinstance(field, serializers.DateField):
+            return {
+                "type": "string",
+                "format": "date",
+            }
+
+        if isinstance(field, serializers.DateTimeField):
+            return {
+                "type": "string",
+                "format": "date-time",
+            }
+
+        # "Formats such as "email", "uuid", and so on, MAY be used even though undefined by this
+        # specification."
+        # see: https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#data-types
+        # see also: https://swagger.io/docs/specification/data-models/data-types/#string
+        if isinstance(field, serializers.EmailField):
+            return {"type": "string", "format": "email"}
+
+        if isinstance(field, serializers.URLField):
+            return {"type": "string", "format": "uri"}
+
+        if isinstance(field, serializers.UUIDField):
+            return {"type": "string", "format": "uuid"}
+
+        if isinstance(field, serializers.IPAddressField):
+            content = {
+                "type": "string",
+            }
+            if field.protocol != "both":
+                content["format"] = field.protocol
+            return content
+
+        if isinstance(field, serializers.DecimalField):
+            if getattr(field, "coerce_to_string", api_settings.COERCE_DECIMAL_TO_STRING):
+                content = {
+                    "type": "string",
+                    "format": "decimal",
+                }
+            else:
+                content = {"type": "number"}
+
+            if field.decimal_places:
+                content["multipleOf"] = float("." + (field.decimal_places - 1) * "0" + "1")
+            if field.max_whole_digits:
+                content["maximum"] = int(field.max_whole_digits * "9") + 1
+                content["minimum"] = -content["maximum"]
+            self._map_min_max(field, content)
+            return content
+
+        if isinstance(field, serializers.FloatField):
+            content = {
+                "type": "number",
+            }
+            self._map_min_max(field, content)
+            return content
+
+        if isinstance(field, serializers.IntegerField):
+            content = {"type": "integer"}
+            self._map_min_max(field, content)
+            # 2147483647 is max for int32_size, so we use int64 for format
+            if int(content.get("maximum", 0)) > 2147483647:
+                content["format"] = "int64"
+            if int(content.get("minimum", 0)) > 2147483647:
+                content["format"] = "int64"
+            return content
+
+        if isinstance(field, serializers.FileField):
+            return {"type": "string", "format": "binary"}
+
+        # Simplest cases, default to 'string' type:
+        FIELD_CLASS_SCHEMA_TYPE = {
+            serializers.BooleanField: "boolean",
+            serializers.JSONField: "object",
+            serializers.DictField: "object",
+            serializers.HStoreField: "object",
+        }
+        return {"type": FIELD_CLASS_SCHEMA_TYPE.get(field.__class__, "string")}
 
     # Helper method
     def get_action(self, path, method):

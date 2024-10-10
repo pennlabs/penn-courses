@@ -5,6 +5,7 @@ from django.template import loader
 from django.urls import reverse
 from django.utils.html import format_html, format_html_join
 
+from courses.management.commands.recompute_topics import recompute_topics
 from courses.models import (
     APIKey,
     APIPrivilege,
@@ -48,6 +49,7 @@ class DepartmentAdmin(admin.ModelAdmin):
 
 class InstructorAdmin(admin.ModelAdmin):
     search_fields = ("name",)
+    autocomplete_fields = ("user",)
 
 
 class AttributeAdmin(admin.ModelAdmin):
@@ -71,13 +73,27 @@ class NGSSRestrictionAdmin(admin.ModelAdmin):
 
 class CourseAdmin(admin.ModelAdmin):
     search_fields = ("full_code", "department__code", "code", "semester", "title")
-    autocomplete_fields = ("department", "primary_listing")
+    autocomplete_fields = ("department", "primary_listing", "parent_course")
     readonly_fields = ("topic", "crosslistings", "course_attributes")
     exclude = ("attributes",)
     list_filter = ("semester",)
     list_display = ("full_code", "semester", "title")
 
-    list_select_related = ("department", "topic")
+    list_select_related = ("department",)
+
+    def save_model(self, request, obj, form, change):
+        """
+        Overridden to set `manually_set_parent_course` to True if `parent_course` is modified.
+        """
+        must_recompute_topics = False
+        if "parent_course" in form.changed_data:
+            obj.manually_set_parent_course = True
+            must_recompute_topics = True
+
+        super().save_model(request, obj, form, change)
+
+        if must_recompute_topics:
+            recompute_topics(min_semester=obj.semester, verbose=True)
 
     def crosslistings(self, instance):
         return format_html_join(
@@ -118,7 +134,9 @@ class TopicAdmin(admin.ModelAdmin):
     list_select_related = ("most_recent",)
 
     def get_queryset(self, request):
-        return super().get_queryset(request).prefetch_related("courses")
+        return (
+            super().get_queryset(request).select_related("most_recent").prefetch_related("courses")
+        )
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         # Hack to limit most_recent choices to courses of the same Topic

@@ -52,13 +52,13 @@ const NavContainer = styled.nav`
     width: 95%;
 `;
 
-const NavElt = styled.span<{ active?: boolean }>`
+const NavElt = styled.span<{ $active?: boolean }>`
     padding: 20px;
     color: #4a4a4a;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    font-weight: ${(props) => (props.active ? "bold" : "normal")};
+    font-weight: ${(props) => (props.$active ? "bold" : "normal")};
     cursor: pointer;
 `;
 
@@ -80,10 +80,11 @@ const Nav = ({ login, logout, user, page, setPage }: NavProps) => (
                 nameLength={2}
                 login={login}
                 logout={logout}
+                pathname="/"
             />
         </NavElt>
         <NavElt
-            active={page === "home"}
+            $active={page === "home"}
             onClick={(e) => {
                 e.preventDefault();
                 setPage("home");
@@ -92,7 +93,7 @@ const Nav = ({ login, logout, user, page, setPage }: NavProps) => (
             Home
         </NavElt>
         <NavElt
-            active={page === "manage"}
+            $active={page === "manage"}
             onClick={(e) => {
                 e.preventDefault();
                 setPage("manage");
@@ -258,7 +259,7 @@ function App() {
 
                 <Heading />
                 {page === "home" ? (
-                    <Flex col grow={1}>
+                    <Flex $col $grow={1}>
                         {user ? (
                             <AlertForm
                                 user={user}

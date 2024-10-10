@@ -72,7 +72,7 @@ We use `black`, `flake8`, and 'isort' to lint our code. Once you are in the `bac
 ### Via Database Dump (Penn Labs members)
 
 - To get going quickly with a local database loaded with lots of test data,
-   you can download this [pcx_test.sql](https://files.slack.com/files-pri/T4EM1119V-F04FPSTNF46/download/pcx_test_12_2022.sql) SQL dump file. You will only be able to access this if you are a member of labs; if you still need access to data, read on.
+   you can download this [pcx_test.sql](https://penn-labs.slack.com/files/U02FND52FLJ/F06GLQP0UF2/pcx_test_1_2024.sql) SQL dump file. You will only be able to access this if you are a member of labs; if you still need access to data, read on.
 - First you'll need to install `psql` (see [Prerequisites](#prerequisites))
 - Clear the existing contents of your local database with `psql template1 -c 'drop database postgres;' -h localhost -U penn-courses` (the password is `postgres`)
 - Create a new database with `psql template1 -c 'create database postgres with owner "penn-courses";' -h localhost -U penn-courses` (same password).
@@ -108,7 +108,7 @@ You then can make authenticated requests to the API by providing a request heade
 
 See [courses/registrar.py](https://github.com/pennlabs/penn-courses/blob/master/backend/courses/registrar.py) to understand which OpenData API endpoints are used by PCX, and how.
 
-For example, you can try out: `https://3scale-public-prod-open-data.apps.k8s.upenn.edu/api/v1/course_section_search?section_id=CIS&term=2023C&page_number=1&number_of_results_per_page=100` (remember to set the `Authorization` header).
+For example, you can try out: `https://3scale-public-prod-open-data.apps.k8s.upenn.edu/api/v1/course_section_search?section_id=CIS&term=202410&page_number=1&number_of_results_per_page=100` (remember to set the `Authorization` header).
 
 #### Registrar
 
@@ -146,7 +146,7 @@ prompts, add the `--force` flag.
 If you don't want to use docker alone, you can also set up and run the dev environment more natively.
 
 ### Prerequisites
-- Python 3.10 ([`pyenv`](https://github.com/pyenv/pyenv) is recommended)
+- Python 3.11 ([`pyenv`](https://github.com/pyenv/pyenv) is recommended)
 - [`pipenv`](https://pipenv.pypa.io/en/latest/)
 - [`docker` and `docker-compose`](https://docs.docker.com/get-docker/)
 

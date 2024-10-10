@@ -36,6 +36,7 @@ const StatsToggleContainer = styled.div`
 
 const InfoBox = ({
   type,
+  semester,
   data: {
     average_reviews: average = {},
     recent_reviews: recent = {},
@@ -125,6 +126,7 @@ const InfoBox = ({
           <CourseHeader
             aliases={aliases}
             code={code}
+            semester={semester}
             data={data}
             name={name}
             notes={notes}

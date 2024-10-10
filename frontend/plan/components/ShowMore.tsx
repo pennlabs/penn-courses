@@ -22,6 +22,11 @@ const ShowMore = ({
         <>{children}</>
     ) : (
         <>
+            {/* 
+            We nee this ts-ignore because the Truncate component comes
+            from a library that is too old to support the PropsWithChildren type
+            so it typeerrors with modern react types.
+            // @ts-ignore */}
             <Truncate
                 ellipsis={
                     <>

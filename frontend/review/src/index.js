@@ -2,8 +2,8 @@ import React from "react"
 import "react-app-polyfill/ie11"
 import "react-app-polyfill/stable"
 
-import ReactDOM from "react-dom"
-import { Route, Switch, BrowserRouter as Router } from "react-router-dom"
+import { createRoot } from "react-dom/client";
+import { Route, Switch, BrowserRouter as Router } from "react-router-dom";
 import {
 	AboutPage,
 	AuthPage,
@@ -21,21 +21,22 @@ if (window.location.hostname !== "localhost") {
 	).install()
 }
 
-ReactDOM.render(
-	<Router>
-		<Switch>
-			<Route exact path="/" component={ReviewPage} />
-			<Route exact path="/search" component={Search} />
-			<Route exact path="/about" component={AboutPage} />
-			<Route exact path="/faq" component={FAQPage} />
-			<Route exact path="/cart" component={CartPage} />
-			<Route
-				path="/:type(course|department|instructor)/:code"
-				component={AuthPage}
-			/>
-			<Route component={ErrorPage} />
-		</Switch>
-		<GoogleAnalytics />
-	</Router>,
-	document.getElementById("root")
-)
+const container = document.getElementById("root");
+const root = createRoot(container);
+root.render(
+  <Router>
+    <Switch>
+      <Route exact path="/" component={ReviewPage} />
+	  <Route exact path="/search" component={Search} />
+      <Route exact path="/about" component={AboutPage} />
+      <Route exact path="/faq" component={FAQPage} />
+      <Route exact path="/cart" component={CartPage} />
+      <Route
+        path="/:type(course|department|instructor)/:code/:semester?"
+        component={AuthPage}
+      />
+      <Route component={ErrorPage} />
+    </Switch>
+    <GoogleAnalytics />
+  </Router>
+);

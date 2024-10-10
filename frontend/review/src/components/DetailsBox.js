@@ -82,7 +82,7 @@ const formsCol = {
  * The box below the course ratings table that contains student comments and semester information.
  */
 export const DetailsBox = forwardRef(
-  ({ course, instructor, type, isCourseEval }, ref) => {
+  ({ course, instructor, url_semester, type, isCourseEval }, ref) => {
     const [data, setData] = useState({});
     const [viewingRatings, setViewingRatings] = useState(true);
     const [selectedSemester, setSelectedSemester] = useState(null);
@@ -127,7 +127,7 @@ export const DetailsBox = forwardRef(
     useEffect(() => {
       setIsLoading(true);
       if (instructor !== null && course !== null) {
-        apiHistory(course, instructor)
+        apiHistory(course, instructor, url_semester)
           .then(res => {
             const sections = Object.values(res.sections);
             const fields = [

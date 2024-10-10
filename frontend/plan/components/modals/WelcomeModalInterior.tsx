@@ -24,7 +24,7 @@ const WelcomeModalInterior = ({ close }: WelcomeModalInteriorProps) => (
             If you have any feedback, please let us know{" "}
             <a
                 target="_blank"
-                href="https://airtable.com/shra6mktROZJzcDIS"
+                href="https://airtable.com/appFRa4NQvNMEbWsA/shrjygX5BhK2yuLYg"
                 rel="noopener noreferrer"
             >
                 here!

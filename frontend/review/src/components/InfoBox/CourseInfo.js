@@ -189,7 +189,7 @@ const TagsWhenOffered = ({
   );
 };
 
-const RelatedCodes = styled.div`
+const CourseCodeQualifier = styled.div`
   display: flex;
   flex-direction: row;
   color: #4a4a4a;
@@ -217,78 +217,133 @@ export const CourseHeader = ({
     <div className="title">
       {code.replace("-", " ")}
 
-      <span className="float-right">
-        {inCourseCart ? (
-          <span
-            onClick={handleRemove}
-            className="courseCart btn btn-action"
-            title="Remove from Cart"
-          >
-            <i className="fa fa-fw fa-trash-alt" />
-          </span>
-        ) : (
-          <Popover
-            button={
-              <span className="courseCart btn btn-action" title="Add to Cart">
-                <i className="fa fa-fw fa-cart-plus" />
-              </span>
-            }
-          >
-            <div className="popover-title">Add to Cart</div>
-            <div
-              className="popover-content"
-              style={{ maxHeight: 400, overflowY: "auto" }}
+      {!data?.last_offered_sem_if_superceded && (
+        <span className="float-right">
+          {inCourseCart ? (
+            <span
+              onClick={handleRemove}
+              className="courseCart btn btn-action"
+              title="Remove from Cart"
             >
-              <div id="divList">
-                <ul className="professorList">
-                  <li>
-                    <button onClick={() => handleAdd("average")}>
-                      Average Professor
-                    </button>
-                  </li>
-                  {Object.keys(instructors)
-                    .sort((a, b) =>
-                      instructors[a].name.localeCompare(instructors[b].name)
-                    )
-                    .map(key => (
-                      <li key={key}>
-                        <button onClick={() => handleAdd(key)}>
-                          {instructors[key].name}
-                        </button>
-                      </li>
-                    ))}
-                </ul>
+              <i className="fa fa-fw fa-trash-alt" />
+            </span>
+          ) : (
+            <Popover
+              button={
+                <span className="courseCart btn btn-action" title="Add to Cart">
+                  <i className="fa fa-fw fa-cart-plus" />
+                </span>
+              }
+            >
+              <div className="popover-title">Add to Cart</div>
+              <div
+                className="popover-content"
+                style={{ maxHeight: 400, overflowY: "auto" }}
+              >
+                <div id="divList">
+                  <ul className="professorList">
+                    <li>
+                      <button onClick={() => handleAdd("average")}>
+                        Average Professor
+                      </button>
+                    </li>
+                    {Object.keys(instructors)
+                      .sort((a, b) =>
+                        instructors[a].name.localeCompare(instructors[b].name)
+                      )
+                      .map(key => (
+                        <li key={key}>
+                          <button onClick={() => handleAdd(key)}>
+                            {instructors[key].name}
+                          </button>
+                        </li>
+                      ))}
+                  </ul>
+                </div>
               </div>
-            </div>
-          </Popover>
-        )}{" "}
-        <a
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Get Alerted"
-          href={`https://penncoursealert.com/?course=${code}&source=pcr`}
-          className="btn btn-action"
-        >
-          <i className="fas fa-fw fa-bell" />
-        </a>
-      </span>
+            </Popover>
+          )}{" "}
+          <a
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Get Alerted"
+            href={`https://penncoursealert.com/?course=${code}&source=pcr`}
+            className="btn btn-action"
+          >
+            <i className="fas fa-fw fa-bell" />
+          </a>
+        </span>
+      )}
     </div>
-    {aliases && Boolean(aliases.length) && (
-      <RelatedCodes>
+    {data.last_offered_sem_if_superceded && (
+      <CourseCodeQualifier>
+        <Link to={`/course/${code}`}>Superseded</Link>
+        &nbsp;
+        <span data-tip data-for="superseded-tooltip">
+          <i
+            className="fa fa-question-circle"
+            style={{
+              color: "#c6c6c6",
+              fontSize: "13px",
+              marginBottom: "0.3rem"
+            }}
+          />
+        </span>
+        <ReactTooltip
+          id="superseded-tooltip"
+          place="right"
+          className="opaque"
+          type="light"
+          effect="solid"
+          border={true}
+          borderColor="#ededed"
+          textColor="#4a4a4a"
+        >
+          <span className="tooltip-text">
+            This course was last offered in{" "}
+            {toNormalizedSemester(data.last_offered_sem_if_superceded)}.
+            <br />
+            It has more recently been superseeded by another course
+            <br />
+            with the same full code. Click to visit the most recent
+            <br />
+            course with this full code.
+          </span>
+        </ReactTooltip>
+      </CourseCodeQualifier>
+    )}
+    {data.last_offered_sem_if_superceded && (
+      <CourseCodeQualifier>
+        <strong>Last offered:&nbsp;</strong>
+        {toNormalizedSemester(data.last_offered_sem_if_superceded)}
+      </CourseCodeQualifier>
+    )}
+    {!!aliases?.length && (
+      <CourseCodeQualifier>
         <strong>Also:&nbsp;</strong>
         {aliases.map((cls, i) => [
           i > 0 && <div>&#44;&nbsp;</div>,
-          <div>{cls}</div>
+          <Link to={`/course/${cls}/${data.latest_semester}`} key={i}>
+            {cls}
+          </Link>
         ])}
-      </RelatedCodes>
+      </CourseCodeQualifier>
     )}
-    {data.historical_codes && Boolean(data.historical_codes.length) && (
-      <RelatedCodes>
+    {!!data?.historical_codes?.length && (
+      <CourseCodeQualifier>
         <strong>Previously:&nbsp;</strong>
         {data.historical_codes.map((obj, i) => [
           i > 0 && <div>&#44;&nbsp;</div>,
           obj.branched_from ? (
-            <Link to={`/course/${obj.full_code}`}>{obj.full_code} </Link>
+            <Link to={`/course/${obj.full_code}/${obj.semester}`}>
+              {obj.full_code}
+              {data.historical_codes.some(
+                (other, otherI) =>
+                  other.full_code === obj.full_code && i !== otherI
+              )
+                ? ` (${toNormalizedSemester(obj.semester)})`
+                : ""}
+            </Link>
           ) : (
             <div>{obj.full_code}</div>
           )
@@ -325,7 +380,7 @@ export const CourseHeader = ({
             academic planning or fulfilling requirements.
           </span>
         </ReactTooltip>
-      </RelatedCodes>
+      </CourseCodeQualifier>
     )}
     <Spacer />
     <p className="subtitle">{name}</p>

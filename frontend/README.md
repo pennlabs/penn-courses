@@ -8,7 +8,7 @@ houses 3 projects, namely `Penn Course Alert`, `Penn Course Plan` and
 that are used in both PCA and PCP. 
 
 ## Setting Up Development Environment 
-Make sure you have `node` (with a version that is <= 16.9.0) and `yarn` installed.
+Make sure you have `node` (with a version that is ^18) and `yarn` installed.
 We use [Yarn Workspaces](https://classic.yarnpkg.com/en/docs/workspaces/) 
 to handle development dependency installation/resolution. In 
 `frontend/package.json`, we have defined the directories of each project 
@@ -26,7 +26,7 @@ To run a frontend development server,
 2. `yarn` to ensure dependencies are up-to-date.
 3. `cd [alert|plan|review]` depending on which frontend you'd like to run.
 4. `yarn` once more (just to be sure `:)`)
-5. `yarn dev` to run the frontend (or `yarn start` for PCR).
+5. `yarn dev` to run the frontend.
 
 Feel free to leave out the `yarn`s when you know dependencies are up-to-date.
 
