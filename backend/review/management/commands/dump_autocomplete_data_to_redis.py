@@ -1,18 +1,14 @@
-import json
-import time
-
-import redis
-from django.conf import settings
 from django.core.management.base import BaseCommand
-from django.db.models import F, Q, Subquery
-from redis.commands.json.path import Path
-from redis.commands.search.field import NumericField, TextField
-from redis.commands.search.indexDefinition import IndexDefinition, IndexType
+from django.db.models import Q, Subquery
 
 from courses.models import Course, Topic, Department, Instructor, Section
 from review.annotations import annotate_average_and_recent
 from review.util import get_average_and_recent_dict_single
-from review.views import course_filters_pcr, section_filters_pcr, review_filters_pcr
+from review.views import section_filters_pcr
+
+from review.utils.pcs_client import PcsClient
+
+pcs_client = PcsClient()
 
 def get_department_objs():
     departments = Department.objects.all()
@@ -24,7 +20,7 @@ def get_department_objs():
 
 def get_course_objs():
     topics = (
-        Topic.objects.filter(most_recent__semester="2022C")[:100]
+        Topic.objects.filter(most_recent__semester="2022C")[:10]
         .select_related("most_recent")
         .prefetch_related("most_recent__primary_listing__listing_set__sections__instructors")
     )
@@ -36,7 +32,7 @@ def get_course_objs():
         course_qs = Course.objects.filter(pk=course.pk)
         course_qs = annotate_average_and_recent(
             course_qs,
-            match_review_on=Q(section__course__topic=topic) & review_filters_pcr,
+            match_review_on=Q(section__course__topic=topic),
             match_section_on=Q(course__topic=topic) & section_filters_pcr,
             extra_metrics=True,
         )
@@ -71,7 +67,7 @@ def get_instructor_objs():
         Instructor.objects.filter(
             id__in=Subquery(Section.objects.filter(section_filters_pcr).values("instructors__id"))
         )
-        .distinct()[:100]
+        .distinct()[:10]
         .values("name", "id", "section__course__department__code")
     )
     instructor_set = {}
@@ -91,105 +87,37 @@ def get_instructor_objs():
             "id": str(instructor["id"])
         }
 
-def initialize_schema():
-    r = redis.Redis().from_url(settings.REDIS_URL)
-
-    # Department Schema
-    department_schema = (
-        TextField("$.code", as_name="code", weight=1, no_stem=True),
-        TextField("$.name", as_name="name", weight=1, no_stem=True)
-    )
-
-    # Course Schema
-    course_schema = (
-        TextField("$.code", as_name="code", weight=20, no_stem=True),
-        TextField("$.crosslistings", as_name="crosslistings", weight=3, no_stem=True),
-        TextField("$.instructors", as_name="instructors", weight=2, no_stem=True, phonetic_matcher="dm:en"),
-        TextField("$.title", as_name="title", weight=10),
-        TextField("$.description", as_name="description", weight=2),
-        TextField("$.semester", as_name="semester", no_stem=True, weight=0),
-        NumericField("$.course_quality", as_name="course_quality", sortable=True),
-        NumericField("$.work_required", as_name="work_required", sortable=True),
-        NumericField("$.difficulty", as_name="difficulty", sortable=True),
-    )
-
-    # Instructor Schema
-    instructor_schema = (
-        TextField("$.id", as_name="id", weight=0),
-        TextField("$.name", as_name="name", weight=4, no_stem=True, phonetic_matcher="dm:en"),
-        TextField("$.desc", as_name="desc", weight=1, no_stem=True)
-    )
-
-    # check if schema exists, else create schema
-    try:
-        r.ft("departments").info()
-    except Exception:
-        r.ft("departments").create_index(
-            department_schema, definition=IndexDefinition(prefix=["department:"], index_type=IndexType.JSON)
-        )
-    try:
-        r.ft("courses").info()
-    except Exception:
-        r.ft("courses").create_index(
-            course_schema, definition=IndexDefinition(prefix=["course:"], index_type=IndexType.JSON)
-        )
-    try:
-        r.ft("instructors").info()
-    except Exception:
-        r.ft("instructors").create_index(
-            instructor_schema, definition=IndexDefinition(prefix=["instructor:"], index_type=IndexType.JSON)
-        )
-
-
-def dump_data(department_data, course_data, instructor_data):
-    r = redis.Redis().from_url(settings.REDIS_URL)
-    p = r.pipeline()
-
-    # department data
-    for department in department_data:
-        p.json().set(name=f"department:{department['code']}", path=Path.root_path(), obj=department)
-
-    # course data
-    for course in course_data:
-        p.json().set(name=f"course:{course['code']}", path=Path.root_path(), obj=course)
-
-    # instructor data
-    for instructor in instructor_data:
-        p.json().set(name=f"instructor:{instructor['id']}", path=Path.root_path(), obj=instructor)
-    
-    print(
-        "Error while loading metadata into Redis"
-        if False in p.execute()
-        else "Successfully loaded metadata into Redis"
-    )
-
-def reset_database():
-    r = redis.Redis().from_url(settings.REDIS_URL)
-    r.flushdb()
 
 def dump_autocomplete_data_to_redis(verbose=True):
     if verbose:
         print("\n=== Dumping data into Redis ===")
-    reset_database()
+    pcs_client.clear_redis_db()
     if verbose:
-        print("Cleared Redis database...")
-    initialize_schema()
+        print("  Cleared Redis database...")
+    pcs_client.initialize_redis_schema()
     if verbose:
         print("  Initialized Redis schema...")
+
     department_data = get_department_objs()
     if verbose:
-        print("  Fetch departments...")
+        print("  Fetched departments...")
     course_data = get_course_objs()
     if verbose:
-        print("  Fetch courses...")
+        print("  Fetched courses...")
     instructor_data = get_instructor_objs()
     if verbose:
-        print("  Fetch instructors...")
-    dump_data(
-        department_data,
-        course_data,
-        instructor_data
-    )
+        print("  Fetched instructors...")
+    
+    pcs_client.upload_data(department_data, 100)
+    if verbose:
+        print("  Uploaded departments...")
+    pcs_client.upload_data(course_data, 25)
+    if verbose:
+        print("  Uploaded courses...")
+    pcs_client.upload_data(instructor_data, 100)
+    if verbose:
+        print("  Uploaded instructors...")
+
     if verbose:
         print("=== Done ===")
 
