@@ -291,7 +291,7 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
                 ),
             )
         )
-        
+
         check_offered_in = self.request.query_params.get("check_offered_in")
         if check_offered_in:
             if "@" not in check_offered_in:

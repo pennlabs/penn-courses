@@ -31,6 +31,7 @@ class MeetingSerializer(serializers.ModelSerializer):
         model = Meeting
         fields = ("day", "start", "end", "room")
 
+
 class MeetingWithBuildingSerializer(serializers.ModelSerializer):
     room = serializers.StringRelatedField(
         help_text=dedent(
@@ -48,7 +49,6 @@ class MeetingWithBuildingSerializer(serializers.ModelSerializer):
         help_text="Longitude of building.",
     )
 
-
     @staticmethod
     def get_latitude(obj):
         if obj.room and obj.room.building:
@@ -64,6 +64,7 @@ class MeetingWithBuildingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Meeting
         fields = ("day", "start", "end", "room", "latitude", "longitude")
+
 
 class SectionIdSerializer(serializers.ModelSerializer):
     id = serializers.CharField(source="full_code")
