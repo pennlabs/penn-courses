@@ -107,15 +107,17 @@ const mapDispatchToProps = (dispatch: (payload: any) => void) => ({
         },
     }),
     toggleMap: (section: SectionType) => ({
-        open: () => {
+        open: (room: string, latitude: number, longitude: number) => {
             dispatch(
                 openModal(
                     "MAP",
                     {
-                        src: { latitude: 39.95302, longitude: -75.19815 },
-                        // tgt: { latitude: 39.95184, longitude: -75.19092 },
-                    }, // hard-coded for now
-                    `LOCATION FOR ${section.id}`
+                        lat: latitude,
+                        lng: longitude,
+                        room: room,
+                        title: section.id,
+                    },
+                    `Find Your Class: ${section.id}`
                 )
             );
         },

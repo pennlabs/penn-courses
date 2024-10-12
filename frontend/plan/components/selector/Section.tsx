@@ -16,13 +16,13 @@ interface SectionProps {
         remove: () => void;
     };
     toggleMap: {
-        open: () => void;
+        open: (room: string, latitude: number, longitude: number) => void;
     };
     inCart: boolean;
     alerts: {
         add: () => void;
         remove: () => void;
-    }
+    };
     inAlerts: boolean;
 }
 
@@ -133,7 +133,14 @@ const HoverSwitch = styled.div`
     }
 `;
 
-export default function Section({ section, cart, inCart, toggleMap, alerts, inAlerts }: SectionProps) {
+export default function Section({
+    section,
+    cart,
+    inCart,
+    toggleMap,
+    alerts,
+    inAlerts,
+}: SectionProps) {
     const { instructors, meetings, status } = section;
 
     const { schedules, scheduleSelected } = useSelector(
@@ -164,15 +171,20 @@ export default function Section({ section, cart, inCart, toggleMap, alerts, inAl
             }
         }, 50);
     };
-    const cleanedRooms =
+
+    const cleanedMeetings =
         meetings &&
         Array.from(
-            new Set(
+            new Map(
                 meetings
-                    .filter(({ room }) => room)
-                    .map(({ room }) => room.trim())
-            )
+                    .filter(({ room }) => room) 
+                    .map(({ room, latitude, longitude }) => [
+                        room.trim(), 
+                        { room: room.trim(), latitude, longitude }, 
+                    ])
+            ).values() 
         );
+
     return (
         <SectionContainer>
             <SectionInfoContainer
@@ -221,16 +233,46 @@ export default function Section({ section, cart, inCart, toggleMap, alerts, inAl
                         </div>
                         <div>{`${section.credits} CU`}</div>
                         <div>
-                            {cleanedRooms && cleanedRooms.length > 0 ? (
-                                <div>
+                            {cleanedMeetings && cleanedMeetings.length > 0 ? (
+                                <div style={{ display: "flex" }}>
                                     <i
                                         className="fas fa-map-marker-alt grey-text"
                                         style={{ color: "#c6c6c6" }}
                                     />
                                     &nbsp;
-                                    <span onClick={toggleMap.open} style={{ color: "#878ED8", textDecoration: "underline", cursor: "pointer" }}>
-                                        {cleanedRooms.join(", ")}
-                                    </span>
+                                    <div style={{ display: "flex" }}>
+                                        {cleanedMeetings.map(
+                                            (
+                                                { room, latitude, longitude },
+                                                i
+                                            ) => (
+                                                <div key={room}>
+                                                    <span
+                                                        onClick={() =>
+                                                            toggleMap.open(
+                                                                room,
+                                                                39.95302,
+                                                                -75.19815
+                                                            )
+                                                        }
+                                                        style={{
+                                                            color: "#878ED8",
+                                                            textDecoration:
+                                                                "underline",
+                                                            cursor: "pointer",
+                                                        }}
+                                                    >
+                                                        {room}
+                                                    </span>
+                                                    {i <
+                                                        cleanedMeetings.length -
+                                                            1 && (
+                                                        <span>,&nbsp;</span>
+                                                    )}
+                                                </div>
+                                            )
+                                        )}
+                                    </div>
                                 </div>
                             ) : null}
                         </div>

@@ -107,6 +107,8 @@ export interface Meeting {
     start: number;
     end: number;
     room: string;
+    latitude: number;
+    longitude: number;
 }
 
 // Represents a single colored block on the schedule
@@ -227,9 +229,4 @@ export type FilterType =
 
     export interface ColorsMap {
         [key: string]: Color
-    }
-
-    export type GeoLocation = {
-        latitude: number;
-        longitude: number;
     }
