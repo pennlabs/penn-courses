@@ -211,7 +211,6 @@ class CourseListSearch(CourseList):
         in `backend/tests/__init__.py`.
         """
         context = super().get_serializer_context()
-        return context
 
         if self.request is None or not self.request.user or not self.request.user.is_authenticated:
             return context
@@ -272,8 +271,27 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
     lookup_field = "full_code"
     queryset = Course.with_reviews.all()  # included redundantly for docs
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        include_location_str = self.request.query_params.get("include_location", "False")
+        context.update({"include_location": eval(include_location_str)})
+        return context
+
     def get_queryset(self):
         queryset = Course.with_reviews.all()
+        include_location = self.request.query_params.get("include_location", False)
+
+        prefetch_list = [
+            "course",
+            "meetings",
+            "associated_sections",
+            "meetings__room",
+            "instructors",
+            "meetings__room__building",
+        ]
+        if include_location:
+            prefetch_list.append("meetings__room__building")
+
         queryset = queryset.prefetch_related(
             Prefetch(
                 "sections",
@@ -281,14 +299,7 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
                 .filter(credits__isnull=False)
                 .filter(Q(status="O") | Q(status="C"))
                 .distinct()
-                .prefetch_related(
-                    "course",
-                    "meetings",
-                    "associated_sections",
-                    "meetings__room",
-                    "instructors",
-                    "meetings__room__building",
-                ),
+                .prefetch_related(*prefetch_list),
             )
         )
 

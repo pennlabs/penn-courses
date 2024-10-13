@@ -157,8 +157,7 @@ class SectionDetailSerializer(serializers.ModelSerializer):
             """
         ),
     )
-    meetings = MeetingWithBuildingSerializer(
-        many=True,
+    meetings = serializers.SerializerMethodField(
         read_only=True,
         help_text=dedent(
             """
@@ -219,6 +218,15 @@ class SectionDetailSerializer(serializers.ModelSerializer):
             "registration_volume",
         ]
         read_only_fields = fields
+
+    def get_meetings(self, obj):
+        include_location = self.context.get("include_location", False)
+        if include_location:
+            meetings_serializer = MeetingWithBuildingSerializer(obj.meetings, many=True)
+        else:
+            meetings_serializer = MeetingSerializer(obj.meetings, many=True)
+
+        return meetings_serializer.data
 
 
 class PreNGSSRequirementListSerializer(serializers.ModelSerializer):
