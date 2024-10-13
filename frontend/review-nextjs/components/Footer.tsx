@@ -1,11 +1,12 @@
-//import { getLogoutUrl } from "@/lib/api";
+"use client";
+import { getLogoutUrl } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Heart } from "lucide-react";
 import Link from "next/link";
 
 export default function Footer() {
     return (
-        <footer className={cn("block", "w-full", "text-xs")}>
+        <footer className={cn("block", "text-xs", "mx-auto")}>
             <Link href="/about">About</Link> | <Link href="/faq">FAQs</Link> |{" "}
             <a
                 target="_blank"
@@ -14,7 +15,7 @@ export default function Footer() {
             >
                 Feedback
             </a>{" "}
-            | <a href={"TODO"}>Logout</a>
+            | <a href={getLogoutUrl()}>Logout</a>
             <p id="copyright" className={cn("mx-4")}>
                 Made with{" "}
                 <Heart color="#F56F71" size={14} className={cn("inline")} /> by{" "}
