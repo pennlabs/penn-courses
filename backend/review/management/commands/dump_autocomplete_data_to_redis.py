@@ -20,7 +20,7 @@ def get_department_objs():
 
 def get_course_objs():
     topics = (
-        Topic.objects.filter(most_recent__semester="2022C")[:10]
+        Topic.objects.filter(most_recent__semester="2024A")
         .select_related("most_recent")
         .prefetch_related("most_recent__primary_listing__listing_set__sections__instructors")
     )
@@ -67,7 +67,7 @@ def get_instructor_objs():
         Instructor.objects.filter(
             id__in=Subquery(Section.objects.filter(section_filters_pcr).values("instructors__id"))
         )
-        .distinct()[:10]
+        .distinct()
         .values("name", "id", "section__course__department__code")
     )
     instructor_set = {}

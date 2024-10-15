@@ -98,7 +98,7 @@ export const Search = () => {
 		DEFAULT_OPTIONS
 	)
 
-	const { query, setQuery, results, isLoading, error } = useCourseSearch(
+	const { query, setQuery, results } = useCourseSearch(
 		search,
 		queryOptions
 	)

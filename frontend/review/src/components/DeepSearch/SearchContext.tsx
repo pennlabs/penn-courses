@@ -7,7 +7,8 @@ export interface SearchContextType {
 const SearchContext = React.createContext<SearchContextType>({})
 
 export const SearchContextProvider: React.FC<{
-	query?: string
+	query?: string;
+	children: React.ReactNode;
 }> = ({ query, children }) => {
 	return (
 		<SearchContext.Provider value={{ query }}>

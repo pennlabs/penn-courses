@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { Course } from "../types/course"
 import { Department } from "../types/department"
 import { Instructor } from "../types/instructor"
-import { API_DOMAIN } from "../utils/api"
+import { API_DOMAIN, PCS_API_DOMAIN } from "../utils/api"
 import { useDebouncedValue } from "./debounced-value"
 
 enum FetchStatus {
@@ -58,7 +58,7 @@ const fetchQuery = async (
 		Object.entries(options).map(([k, v]) => [k, v.toString()])
 	)
 	const res = await fetch(
-		`${API_DOMAIN}/api/review/search?q=${encodeURIComponent(
+		`${PCS_API_DOMAIN}/search?q=${encodeURIComponent(
 			normalizedQuery
 		)}&${urlParams.toString()}`
 	)

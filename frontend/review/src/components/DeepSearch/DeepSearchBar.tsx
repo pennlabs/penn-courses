@@ -1,11 +1,10 @@
 import React, { PropsWithChildren, useMemo, useState } from "react"
 import { useHistory } from "react-router-dom"
 import { CoursePreview } from "./CoursePreview"
-import { Range } from "rc-slider"
+import Slider from "rc-slider"
 import "rc-slider/assets/index.css"
 import styled from "styled-components"
 import { CodeDecoration } from "./CommonStyles"
-import SearchContextProvider from "./SearchContext"
 import { CourseSearchOptions } from "../../hooks/course-search"
 
 const PCAGreen = (opacity = 1) => `rgba(90, 144, 147, ${opacity})`
@@ -82,7 +81,7 @@ const SliderDropDown = styled.div`
 	box-shadow: 0 0 25px 0 rgb(0 0 0 / 10%);
 `
 
-const RANGE_PROPS: React.ComponentProps<typeof Range> = {
+const RANGE_PROPS: React.ComponentProps<typeof Slider> = {
 	min: 0,
 	max: 4,
 	step: 0.1,
@@ -162,9 +161,9 @@ const DeepSearchBar: React.FC<DeepSearchBarProps> = (props) => {
 				}}>
 				<FlexRow>
 					<ConstWidthText>Quality</ConstWidthText>
-					<Range
+					<Slider
 						value={[queryOptions.qualityLow, queryOptions.qualityHigh]}
-						onChange={([low, high]) => {
+						onChange={([low, high]: any) => {
 							const newOpts = {
 								...queryOptions,
 								qualityLow: low,
@@ -178,9 +177,9 @@ const DeepSearchBar: React.FC<DeepSearchBarProps> = (props) => {
 				</FlexRow>
 				<FlexRow>
 					<ConstWidthText>Difficulty</ConstWidthText>
-					<Range
+					<Slider
 						value={[queryOptions.difficultyLow, queryOptions.difficultyHigh]}
-						onChange={([low, high]) => {
+						onChange={([low, high]: any) => {
 							const newOpts = {
 								...queryOptions,
 								difficultyLow: low,
@@ -194,9 +193,9 @@ const DeepSearchBar: React.FC<DeepSearchBarProps> = (props) => {
 				</FlexRow>
 				<FlexRow>
 					<ConstWidthText>Work</ConstWidthText>
-					<Range
+					<Slider
 						value={[queryOptions.workLow, queryOptions.workHigh]}
-						onChange={([low, high]) => {
+						onChange={([low, high]: any) => {
 							const newOpts = {
 								...queryOptions,
 								workLow: low,
