@@ -5,7 +5,7 @@ const compressAutocomplete = autocompleteWorkerInstance.compress
 const decompressAutocomplete = autocompleteWorkerInstance.decompress
 
 export const API_DOMAIN = `${window.location.protocol}//${window.location.host}`
-export const PCS_API_DOMAIN = "http://localhost:8080"
+export const PCS_API_DOMAIN = "https://penn-course-search-fly.fly.dev"
 export const PUBLIC_API_TOKEN = "public"
 export const API_TOKEN = "platform"
 

@@ -3,7 +3,7 @@ from tqdm import tqdm
 
 from requests import Session
 
-BASE_URL = "http://127.0.0.1:8080"
+BASE_URL = "https://penn-course-search-fly.fly.dev"
 
 class PcsClient:
     def __init__(self):
