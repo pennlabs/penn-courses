@@ -12,7 +12,7 @@ services:
     volumes:
       - ./postgres:/var/lib/postgresql/pgdata
   redis:
-    image: redis:4.0
+    image: redis/redis-stack # TODO: make sure this is not a breaking version
     ports:
       - "6379:6379"
   development:
@@ -29,6 +29,6 @@ services:
     volumes:
       - .:/backend
     environment:
-      - REDIS_URL=redis://redis:6379/1
+      - REDIS_URL=redis://redis:6379/0
       - DATABASE_URL=postgres://penn-courses:postgres@db:5432/postgres
     command: pipenv run python manage.py runserver 0.0.0.0:8000
