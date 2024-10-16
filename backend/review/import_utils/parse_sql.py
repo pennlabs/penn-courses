@@ -98,14 +98,42 @@ class SQLDumpTransformer(Transformer):
         (n,) = n
         return float(n)
 
+    def _convert_dd_mon_rr_format(self, date_str: str) -> datetime:
+        """
+        Implemented RR year format logic.
+        """
+        datetime_elems = date_str.split("-")
+        arg_year_last_digits = int(datetime_elems[-1])
+
+        current_year = datetime.now().year
+        current_year_first_digits = current_year // 100
+        current_year_last_digits = current_year % 100
+
+        arg_year_first_digits = current_year_first_digits
+        if arg_year_last_digits <= 49:
+            if current_year_last_digits > 49:
+                arg_year_first_digits += 1
+        else:
+            if current_year_first_digits <= 49:
+                arg_year_first_digits -= 1
+
+        datetime_elems[-1] = str(arg_year_first_digits * 100 + arg_year_last_digits)
+        return datetime.strptime("-".join(datetime_elems), "%d-%b-%Y")
+
     def date(self, items):
         """
         The dump includes the format (parsed at items[1] in this function),
-        but it's not the same parse tokens that Python uses. From observation,
-        all the dates are in the same format. If that changes, and dates start
-        being off, here's a good place to look.
+        but it's not the same parse tokens that Python uses. We've previously
+        seen dates in two different formats, but if you encounter a format
+        not of type '%m/%d/%Y %H:%M:%S' or 'DD-MON-RR', then this function
+        will need to be modified.
         """
-        return datetime.strptime(items[0], "%m/%d/%Y %H:%M:%S")
+        if items[1] == "MM/DD/YYYY HH24:MI:SS":
+            return datetime.strptime(items[0], "%m/%d/%Y %H:%M:%S")
+        elif items[1] == "DD-MON-RR":
+            return self._convert_dd_mon_rr_format(items[0])
+
+        raise ValueError("Received invalid date format.")
 
 
 class TypeTransformer(SQLDumpTransformer):
