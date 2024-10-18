@@ -1,19 +1,39 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@radix-ui/themes";
 import styled from "@emotion/styled";
 import useSWR, { mutate } from "swr";
 import Select from "react-select";
+import { Document, Page, DocumentProps } from "react-pdf";
+import { pdfjs } from "react-pdf";
+import "react-pdf/dist/esm/Page/AnnotationLayer.css";
+import "react-pdf/dist/esm/Page/TextLayer.css";
 import {
   DegreeListing,
   DegreePlan,
+  DockedCourse,
+  Fulfillment,
   MajorOption,
   Options,
   SchoolOption,
 } from "@/types";
 import { postFetcher, useSWRCrud } from "@/hooks/swrcrud";
-import { getLocalSemestersKey, interpolateSemesters } from "@/components/FourYearPlan/Semesters";
-import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
+import {
+  getLocalSemestersKey,
+  interpolateSemesters,
+} from "@/components/FourYearPlan/Semesters";
+import { maxWidth, TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
 import { createMajorLabel } from "@/components/FourYearPlan/DegreeModal";
+import { polyfillPromiseWithResolvers } from "./polyfilsResolver";
+
+import "core-js/full/promise/with-resolvers.js";
+import {
+  UploadIcon,
+  ArrowLeftIcon,
+  ArrowRightIcon,
+} from "@radix-ui/react-icons";
+polyfillPromiseWithResolvers();
+
+pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.mjs`;
 
 const PanelContainer = styled.div<{ $maxWidth: string; $minWidth: string }>`
   border-radius: 10px;
@@ -27,6 +47,25 @@ const PanelContainer = styled.div<{ $maxWidth: string; $minWidth: string }>`
   min-width: ${(props) => (props.$minWidth ? props.$minWidth : "auto")};
   position: relative;
   padding-bottom: "5%";
+`;
+
+const ChooseContainer = styled.div<{ $maxWidth: string; $minWidth: string }>`
+  padding-top: 5%;
+  border-radius: 10px;
+  box-shadow: 0px 0px 10px 6px rgba(0, 0, 0, 0.05);
+  background-color: #ffffff;
+  margin: 1rem;
+  min-height: 85%;
+  overflow: hidden; /* Hide scrollbars */
+  width: ${(props) => (props.$maxWidth || props.$maxWidth ? "auto" : "100%")};
+  max-width: ${(props) => (props.$maxWidth ? props.$maxWidth : "auto")};
+  min-width: ${(props) => (props.$minWidth ? props.$minWidth : "auto")};
+  position: relative;
+  padding-bottom: "5%";
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
 `;
 
 const CenteredFlexContainer = styled.div`
@@ -54,7 +93,7 @@ export const Column = styled.div`
   display: flex;
   flex-direction: column;
   flex: 1;
-  gap: 2rem;
+  gap: 1rem;
   padding-right: 2%;
 `;
 
@@ -72,11 +111,29 @@ const NextButtonContainer = styled.div`
   }
 `;
 
-const NextButton = styled(Button)`
-  background-color: var(--primary-color-dark);
+const NextButton = styled(Button)<{ disabled: boolean }>`
+  background-color: ${({ disabled }) =>
+    disabled ? "var(--primary-color-dark)" : "#0000ff"};
+
   @media (max-width: 768px) {
     width: 80%;
     margin: 0 auto;
+  }
+`;
+
+const Upload = styled.div`
+  width: 350px;
+  height: 100px;
+  border: 1px dashed #808080;
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  gap: 10px;
+  transition: all 0.25s;
+  &:hover {
+    background-color: #f6f6f6;
   }
 `;
 
@@ -92,10 +149,10 @@ export const Label = styled.h5<{ required: boolean }>`
 
 export const schoolOptions = [
   { value: "BA", label: "Arts & Sciences" },
-  { value: "BSE", label: "Engineering BSE" }, 
+  { value: "BSE", label: "Engineering BSE" },
   { value: "BAS", label: "Engineering BAS" },
   { value: "BS", label: "Wharton" },
-  { value: "BSN", label: "Nursing" }
+  { value: "BSN", label: "Nursing" },
 ];
 
 const TextInput = styled.input`
@@ -112,6 +169,19 @@ const FieldWrapper = styled.div`
   flex-direction: column;
   gap: 0.4rem;
   align-items: left;
+`;
+
+const TextButton = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: fit-content;
+  border-bottom: 1px solid #aaaaaa00;
+  &:hover {
+    // text-decoration: underline;
+    border-bottom: 1px solid #aaa;
+    cursor: pointer;
+  }
 `;
 
 const customSelectStylesLeft = {
@@ -185,6 +255,53 @@ const customSelectStylesRight = {
   }),
 };
 
+const customSelectStylesCourses = {
+  control: (provided: any) => ({
+    ...provided,
+    width: "80%",
+    minHeight: "35px",
+    // height: "65px",
+  }),
+  menu: (provided: any) => ({
+    ...provided,
+    width: 500,
+    maxHeight: "85rem",
+  }),
+  valueContainer: (provided: any) => ({
+    ...provided,
+    // height: "55px",
+    // padding: "0 6px",
+  }),
+  input: (provided: any) => ({
+    ...provided,
+    margin: "0px",
+  }),
+  indicatorsContainer: (provided: any) => ({
+    ...provided,
+    // height: "65px",
+    display: "none",
+  }),
+  multiValue: (provided: any) => ({
+    ...provided,
+    borderRadius: "8px",
+    maxWidth: "200px",
+    paddingRight: 4,
+    marginRight: 3,
+  }),
+  multiValueLabel: (provided: any) => ({
+    ...provided,
+    borderRadius: "8px",
+    maxWidth: "90px",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
+    whiteSpace: "nowrap",
+  }),
+  loadingIndicator: (provided: any) => ({
+    ...provided,
+    color: "gray",
+  }),
+};
+
 const OnboardingPage = ({
   setShowOnboardingModal,
   setActiveDegreeplan,
@@ -192,25 +309,72 @@ const OnboardingPage = ({
   setShowOnboardingModal: (arg0: boolean) => void;
   setActiveDegreeplan: (arg0: DegreePlan) => void;
 }) => {
-  const [startingYear, setStartingYear] = useState<{ label: any, value: number } | null>(null);
-  const [graduationYear, setGraduationYear] = useState<{ label: any, value: number } | null>(null);
+  const [startingYear, setStartingYear] = useState<{
+    label: any;
+    value: number;
+  } | null>(null);
+  const [graduationYear, setGraduationYear] = useState<{
+    label: any;
+    value: number;
+  } | null>(null);
   const [schools, setSchools] = useState<SchoolOption[]>([]);
   const [majors, setMajors] = useState<MajorOption[]>([]);
   const [minor, setMinor] = useState([]);
   const [name, setName] = useState("");
 
+  const [PDF, setPDF] = useState<File | null>(null);
+  const [numPages, setNumPages] = useState<number | null>(null);
+  const [scrapedCourses, setScrapedCourses] = useState<any>([]);
+  const [scrapedTransfer, setScrapedTransfer] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState<number>(0);
+
   const { create: createDegreeplan } = useSWRCrud<DegreePlan>(
     "/api/degree/degreeplans"
   );
 
-  const complete = startingYear !== null &&
-        graduationYear !== null &&
-        schools.length > 0 &&
-        majors.length > 0 &&
-        name !== "";
+  const [degreeID, setDegreeID] = useState<number | null>(null);
 
-  const { data: degrees, isLoading: isLoadingDegrees } =
-    useSWR<DegreeListing[]>(`/api/degree/degrees`);
+  const { createOrUpdate, remove } = useSWRCrud<Fulfillment>(
+    `/api/degree/degreeplans/${degreeID}/fulfillments`,
+    {
+      idKey: "full_code",
+      createDefaultOptimisticData: { semester: null, rules: [] },
+    }
+  );
+
+  // Workaround solution to only input courses once degree has been created and degreeID exists.
+  // Will likely change in the future!
+  useEffect(() => {
+    if (degreeID) {
+      for (let sem of scrapedCourses) {
+        let semCode = sem.sem.match(/(\d+)/)[0];
+        if (sem.sem.includes("spring")) semCode += "A";
+        else if (sem.sem.includes("summer")) semCode += "B";
+        else semCode += "C";
+        for (let course of sem.courses) {
+          let code = course.replace(" ", "-").toUpperCase();
+          createOrUpdate({ semester: semCode }, code);
+        }
+      }
+      for (let course of scrapedTransfer) {
+        let code = course.replace(" ", "-").toUpperCase();
+        createOrUpdate({ semester: "_TRAN" }, code);
+      }
+      setShowOnboardingModal(false);
+      location.reload();
+    }
+  }, [degreeID]);
+
+  const complete =
+    startingYear !== null &&
+    graduationYear !== null &&
+    schools.length > 0 &&
+    majors.length > 0 &&
+    name !== "";
+
+  const { data: degrees, isLoading: isLoadingDegrees } = useSWR<
+    DegreeListing[]
+  >(`/api/degree/degrees`);
 
   const { data: options } = useSWR<Options>("/api/options");
 
@@ -236,119 +400,313 @@ const OnboardingPage = ({
 
   const startingYearOptions = getYearOptions()?.startYears;
   const graduationYearOptions = getYearOptions()?.gradYears;
-  
+
   const getMajorOptions = React.useCallback(() => {
     /** Filter major options based on selected schools/degrees */
-    const majorOptions =
-      degrees
-        ?.filter((d) => schools.map((s) => s.value).includes(d.degree))
-        .sort((d) => Math.abs((startingYear ? startingYear.value : d.year) - d.year))
-        .map((degree) => ({
-          value: degree,
-          label: createMajorLabel(degree),
-        }))
-        .sort((a, b) => a.label.localeCompare(b.label));
+    const majorOptions = degrees
+      ?.filter((d) => schools.map((s) => s.value).includes(d.degree))
+      .sort((d) =>
+        Math.abs((startingYear ? startingYear.value : d.year) - d.year)
+      )
+      .map((degree) => ({
+        value: degree,
+        label: createMajorLabel(degree),
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
     return majorOptions;
   }, [schools, startingYear]);
 
   const handleAddDegrees = () => {
-    createDegreeplan({ name: name })
-      .then((res) => {
-        if (res) {
-          if (startingYear && graduationYear) {
-            const semesters = interpolateSemesters(startingYear.value, graduationYear.value);
-            semesters[TRANSFER_CREDIT_SEMESTER_KEY] = [];
-            window.localStorage.setItem(
-              getLocalSemestersKey(res.id),
-              JSON.stringify(semesters)
-            );
-          }
-          setActiveDegreeplan(res);
-          const updated = postFetcher(
-            `/api/degree/degreeplans/${res.id}/degrees`,
-            { degree_ids: majors.map((m) => m.value.id) }
-          ); // add degree
-          setActiveDegreeplan(res);
-          setShowOnboardingModal(false);
+    createDegreeplan({ name: name }).then((res) => {
+      if (res) {
+        if (startingYear && graduationYear) {
+          const semesters = interpolateSemesters(
+            startingYear.value,
+            graduationYear.value
+          );
+          semesters[TRANSFER_CREDIT_SEMESTER_KEY] = [];
+          window.localStorage.setItem(
+            getLocalSemestersKey(res.id),
+            JSON.stringify(semesters)
+          );
         }
-      });
+        setActiveDegreeplan(res);
+        const updated = postFetcher(
+          `/api/degree/degreeplans/${res.id}/degrees`,
+          { degree_ids: majors.map((m) => m.value.id) }
+        ); // add degree
+        setActiveDegreeplan(res);
+
+        setDegreeID(res.id);
+      }
+    });
   };
 
-  return (
-    <CenteredFlexContainer>
-      <PanelContainer $maxWidth="90%" $minWidth="90%">
-        <h1 style={{ paddingLeft: "5%", paddingTop: "5%" }}>
-          Enter your degree(s):
-        </h1>
-        <ColumnsContainer>
-          <Column>
-            <FieldWrapper>
-              <Label required>Degree Plan Name</Label>
-              <TextInput
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder=""
-              />
-            </FieldWrapper>
+  // TRANSCRIPT PARSING
+  const handleTranscript = (items: any) => {
+    let allText: any = {};
+    for (let i in items) {
+      let pos = items[i]?.transform[5];
+      if (pos in allText) allText[pos].push(items[i]?.str);
+      else allText[pos] = [items[i]?.str];
+    }
+    let poses = Object.keys(allText).reverse();
+    let textResult = [];
+    for (let i in poses) {
+      textResult.push(allText[poses[i]].join("").toLowerCase());
+    }
 
-            <FieldWrapper>
-              <Label required>Starting Year</Label>
-              <Select
-                options={startingYearOptions}
-                value={startingYear}
-                onChange={(selectedOption) => setStartingYear(selectedOption)}
-                isClearable
-                placeholder="Select Year Started"
-                styles={customSelectStylesLeft}
-              />
-            </FieldWrapper>
+    let separatedCourses: any = {};
 
-            <FieldWrapper>
-              <Label required>Graduation Year</Label>
-              <Select
-                options={graduationYearOptions}
-                value={graduationYear}
-                onChange={(selectedOption) => setGraduationYear(selectedOption)}
-                isClearable
-                placeholder="Select Year of Graduation"
-                styles={customSelectStylesLeft}
-              />
-            </FieldWrapper>
-          </Column>
+    for (let l in textResult) {
+      // SCRAPE SCHOOL
+      if (textResult[l].includes("program")) {
+        let program = textResult[l].replace(/^.*?:\s*/, "");
+        let tempSchools = [];
+        if (program.includes("arts"))
+          tempSchools.push({ value: "BA", label: "Arts & Sciences" });
+        // TODO: Ensure these are right!
+        if (program.includes("bachelor of science in engineering"))
+          tempSchools.push({ value: "BSE", label: "Engineering BSE" });
+        if (program.includes("bachelor of applied science"))
+          tempSchools.push({ value: "BAS", label: "Engineering BAS" });
+        if (program.includes("wharton"))
+          tempSchools.push({ value: "BS", label: "Wharton" });
+        if (program.includes("nursing"))
+          tempSchools.push({ value: "BSN", label: "Nursing" });
+        setSchools(tempSchools);
+      }
 
-          <Column>
-            <FieldWrapper>
-              <Label required>School(s) or Program(s)</Label>
-              <Select
-                options={schoolOptions}
-                value={schools}
-                onChange={(selectedOptions) => setSchools([...selectedOptions])}
-                isClearable
-                isMulti
-                placeholder="Select School or Program"
-                styles={customSelectStylesRight}
-                isLoading={isLoadingDegrees}
-              />
-            </FieldWrapper>
+      // SCRAPE MAJOR
+      if (textResult[l].includes("major")) {
+        let major = textResult[l].replace(/^.*?:\s*/, "");
+        console.log(major);
+      }
 
-            <FieldWrapper>
-              <Label required>Major(s)</Label>
-              <Select
-                options={getMajorOptions()}
-                value={majors}
-                onChange={(selectedOptions) => setMajors([...selectedOptions])}
-                isClearable
-                isMulti
-                isDisabled={schools.length === 0}
-                placeholder={
-                  "Major - Concentration"
-                }
-                styles={customSelectStylesRight}
-                isLoading={isLoadingDegrees}
-              />
-            </FieldWrapper>
+      // Regex gets an array for total institution values -> [Earned Hours, GPA Hours, Points, GPA]
+      if (textResult[l].includes("total institution")) {
+        let totalNums = textResult[l].match(/\d+\.\d+/g);
+        if (totalNums) {
+          let credit_hours = totalNums[0];
+          let gpa = totalNums[3];
+          console.log(credit_hours);
+          console.log(gpa);
+        }
+      }
 
-            {/* <h5>Concentration</h5>
+      // Regex gets array for total transfer values -> [Earned Hours]
+      if (textResult[l].includes("total transfer")) {
+        let totalNums = textResult[l].match(/\d+\.\d+/g);
+        if (totalNums) {
+          let transfer_hours = totalNums[0];
+          console.log(transfer_hours);
+        }
+      }
+
+      // SCRAPE AP AND TRANSFER CREDIT
+      if (textResult[l].includes("transfer credit")) {
+        let truncatedTranscript = textResult.slice(parseInt(l) + 1);
+        let courses = [];
+        for (let line of truncatedTranscript) {
+          let courseMatch = line.match(/\b\w+\s\d{3,4}\b/);
+          if (
+            courseMatch &&
+            !/(fall|spring|summer)\s\d{4}/i.test(courseMatch)
+          ) {
+            courses.push(courseMatch[0]);
+          } else if (line.includes("institution credit")) {
+            setScrapedTransfer(courses);
+            console.log(courses);
+            break;
+          }
+        }
+      }
+
+      // SCRAPE COURSES (BY SEM)
+      if (textResult[l].includes("institution credit")) {
+        let truncatedTranscript = textResult.slice(parseInt(l) + 1);
+        let currentSem = "";
+        for (let line of truncatedTranscript) {
+          if (/(fall|spring|summer)\s\d{4}/i.test(line)) {
+            currentSem = line;
+            separatedCourses[currentSem] = [];
+          } else {
+            let courseMatch = line.match(/\b\w+\s\d{3,4}\b/);
+            if (courseMatch) {
+              separatedCourses[currentSem].push(courseMatch[0]);
+            }
+          }
+        }
+        separatedCourses = Object.keys(separatedCourses).map(
+          (key) => [{ sem: key, courses: separatedCourses[key] }][0]
+        );
+        console.log(separatedCourses);
+
+        setScrapedCourses(separatedCourses);
+
+        // ADD TO DOCK
+        // for (let sem of separatedCourses) {
+        //   console.log(sem);
+        //   for (let course of sem.courses) {
+        //     let code = course.replace(" ", "-").toUpperCase();
+        //     console.log(course.replace(" ", "-").toUpperCase());
+        //     // createOrUpdate({ full_code: code }, code);
+        //   }
+        // }
+
+        // SCRAPE START YEAR AND INFER GRAD YEAR
+        let years = separatedCourses.map((e, i) => {
+          return parseInt(e.sem.replace(/\D/g, ""));
+        });
+        let startYear = Math.min(...years);
+        setStartingYear({
+          value: startYear,
+          label: startYear,
+        });
+        setGraduationYear({
+          value: startYear + 4,
+          label: startYear + 4,
+        });
+      }
+    }
+  };
+
+  if (currentPage === 0)
+    return (
+      <CenteredFlexContainer>
+        <ChooseContainer $maxWidth="90%" $minWidth="90%">
+          <h1>Welcome to Penn Degree Plan!</h1>
+          <label>
+            <input
+              type="file"
+              accept=".pdf"
+              hidden
+              onChange={(event) => {
+                if (event.target.files) setPDF(event.target.files[0]);
+              }}
+            />
+            <Upload>
+              <p style={{ fontSize: "1.2rem" }}>Upload Transcript</p>
+              {PDF?.name ? (
+                <p>{PDF?.name}</p>
+              ) : (
+                <UploadIcon width={20} height={20} />
+              )}
+            </Upload>
+          </label>
+          <NextButton
+            onClick={() => {
+              setCurrentPage(1);
+            }}
+            disabled={PDF ? false : true}
+            style={{
+              height: "45px",
+              width: "100px",
+              borderRadius: "7px",
+              color: PDF ? "white" : "",
+              transition: "all 0.25s",
+            }}
+          >
+            Next
+          </NextButton>
+          <TextButton
+            onClick={() => {
+              setCurrentPage(2);
+            }}
+            style={{ borderBottom: "1px solid #aaa" }}
+          >
+            <p>Enter information manually</p>
+            <ArrowRightIcon />
+          </TextButton>
+        </ChooseContainer>
+      </CenteredFlexContainer>
+    );
+
+  if (currentPage === 1)
+    return (
+      <CenteredFlexContainer>
+        <PanelContainer $maxWidth="90%" $minWidth="90%">
+          <TextButton
+            onClick={() => {
+              setCurrentPage(0);
+            }}
+            style={{ marginLeft: "5%", marginTop: "3%" }}
+          >
+            <ArrowLeftIcon />
+            <p>Back</p>
+          </TextButton>
+          <ColumnsContainer>
+            <Column>
+              <h1 style={{ paddingTop: "1.25%" }}>Enter your degree(s):</h1>
+              <FieldWrapper>
+                <Label required>Degree Plan Name</Label>
+                <TextInput
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder=""
+                />
+              </FieldWrapper>
+
+              <FieldWrapper>
+                <Label required>Starting Year</Label>
+                <Select
+                  options={startingYearOptions}
+                  value={startingYear}
+                  onChange={(selectedOption) => setStartingYear(selectedOption)}
+                  isClearable
+                  placeholder="Select Year Started"
+                  styles={customSelectStylesLeft}
+                />
+              </FieldWrapper>
+
+              <FieldWrapper>
+                <Label required>Graduation Year</Label>
+                <Select
+                  options={graduationYearOptions}
+                  value={graduationYear}
+                  onChange={(selectedOption) =>
+                    setGraduationYear(selectedOption)
+                  }
+                  isClearable
+                  placeholder="Select Year of Graduation"
+                  styles={customSelectStylesLeft}
+                />
+              </FieldWrapper>
+
+              <FieldWrapper>
+                <Label required>School(s) or Program(s)</Label>
+                <Select
+                  options={schoolOptions}
+                  value={schools}
+                  onChange={(selectedOptions) =>
+                    setSchools([...selectedOptions])
+                  }
+                  isClearable
+                  isMulti
+                  placeholder="Select School or Program"
+                  styles={customSelectStylesRight}
+                  isLoading={isLoadingDegrees}
+                />
+              </FieldWrapper>
+
+              <FieldWrapper>
+                <Label required>Major(s)</Label>
+                <Select
+                  options={getMajorOptions()}
+                  value={majors}
+                  onChange={(selectedOptions) =>
+                    setMajors([...selectedOptions])
+                  }
+                  isClearable
+                  isMulti
+                  isDisabled={schools.length === 0}
+                  placeholder={"Major - Concentration"}
+                  styles={customSelectStylesRight}
+                  isLoading={isLoadingDegrees}
+                />
+              </FieldWrapper>
+
+              {/* <h5>Concentration</h5>
               <Select
                 options={getConcentrationOptions()}
                 value={concentrations}
@@ -360,7 +718,7 @@ const OnboardingPage = ({
                 isLoading={isLoadingDegrees}
               /> */}
 
-            {/* <h5>Minor(s)</h5>
+              {/* <h5>Minor(s)</h5>
               <Select
                 options={startingYearOptions}
                 value={minor}
@@ -371,24 +729,237 @@ const OnboardingPage = ({
                 styles={customSelectStylesRight}
                 isLoading={isLoadingDegreeplans}
               /> */}
-            <NextButtonContainer>
-              <NextButton
-                onClick={handleAddDegrees}
-                disabled={!complete}
+
+              <div style={{ display: "none" }}>
+                <Document
+                  file={PDF}
+                  onLoadSuccess={(pdf) => {
+                    setNumPages(pdf.numPages);
+                  }}
+                >
+                  {Array.from(new Array(numPages), (el, index) => (
+                    <Page
+                      key={`page_${index + 1}`}
+                      pageNumber={index + 1}
+                      onGetTextSuccess={({ items, styles }) =>
+                        handleTranscript(items)
+                      }
+                      renderTextLayer={true}
+                    />
+                  ))}
+                </Document>
+              </div>
+            </Column>
+
+            <Column>
+              <div
                 style={{
-                  height: "35px",
-                  width: "90px",
-                  borderRadius: "7px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 5,
+                  paddingTop: "1.25%",
                 }}
               >
-                Next
-              </NextButton>
-            </NextButtonContainer>
-          </Column>
-        </ColumnsContainer>
-      </PanelContainer>
-    </CenteredFlexContainer>
-  );
+                <h2>Your Courses</h2>
+                <p>You can make edits on the next page.</p>
+              </div>
+              {scrapedCourses.map((e, i) => {
+                const semCourses = e.courses.map(
+                  (course, _) =>
+                    [
+                      {
+                        value: course.toUpperCase(),
+                        label: course.toUpperCase(),
+                      },
+                    ][0]
+                );
+                return (
+                  <FieldWrapper style={{ display: "flex" }}>
+                    <Label>{e.sem[0].toUpperCase() + e.sem.slice(1)}</Label>
+                    <Select
+                      components={{ MultiValueRemove: () => null }}
+                      options={semCourses}
+                      value={semCourses}
+                      // onChange={(selectedOptions) => console.log(selectedOptions)}
+                      // isClearable
+                      isMulti
+                      placeholder="Courses"
+                      styles={customSelectStylesCourses}
+                      isLoading={isLoadingDegrees}
+                      isDisabled
+                    />
+                  </FieldWrapper>
+                );
+              })}
+              <NextButtonContainer>
+                <NextButton
+                  onClick={handleAddDegrees}
+                  disabled={!complete}
+                  style={{
+                    height: "35px",
+                    width: "90px",
+                    borderRadius: "7px",
+                    color: PDF ? "white" : "",
+                    transition: "all 0.25s",
+                  }}
+                >
+                  Next
+                </NextButton>
+              </NextButtonContainer>
+            </Column>
+          </ColumnsContainer>
+        </PanelContainer>
+      </CenteredFlexContainer>
+    );
+
+  if (currentPage === 2)
+    return (
+      <CenteredFlexContainer>
+        <PanelContainer $maxWidth="90%" $minWidth="90%">
+          <TextButton
+            onClick={() => {
+              setCurrentPage(0);
+            }}
+            style={{ marginLeft: "5%", marginTop: "3%" }}
+          >
+            <ArrowLeftIcon />
+            <p>Back</p>
+          </TextButton>
+          <h1 style={{ paddingLeft: "5%", paddingTop: "1.25%" }}>
+            Enter your degree(s):
+          </h1>
+          <ColumnsContainer>
+            <Column>
+              <FieldWrapper>
+                <Label required>Degree Plan Name</Label>
+                <TextInput
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder=""
+                />
+              </FieldWrapper>
+
+              <FieldWrapper>
+                <Label required>Starting Year</Label>
+                <Select
+                  options={startingYearOptions}
+                  value={startingYear}
+                  onChange={(selectedOption) => setStartingYear(selectedOption)}
+                  isClearable
+                  placeholder="Select Year Started"
+                  styles={customSelectStylesLeft}
+                />
+              </FieldWrapper>
+
+              <FieldWrapper>
+                <Label required>Graduation Year</Label>
+                <Select
+                  options={graduationYearOptions}
+                  value={graduationYear}
+                  onChange={(selectedOption) =>
+                    setGraduationYear(selectedOption)
+                  }
+                  isClearable
+                  placeholder="Select Year of Graduation"
+                  styles={customSelectStylesLeft}
+                />
+              </FieldWrapper>
+            </Column>
+
+            <Column>
+              <FieldWrapper>
+                <Label required>School(s) or Program(s)</Label>
+                <Select
+                  options={schoolOptions}
+                  value={schools}
+                  onChange={(selectedOptions) =>
+                    setSchools([...selectedOptions])
+                  }
+                  isClearable
+                  isMulti
+                  placeholder="Select School or Program"
+                  styles={customSelectStylesRight}
+                  isLoading={isLoadingDegrees}
+                />
+              </FieldWrapper>
+
+              <FieldWrapper>
+                <Label required>Major(s)</Label>
+                <Select
+                  options={getMajorOptions()}
+                  value={majors}
+                  onChange={(selectedOptions) =>
+                    setMajors([...selectedOptions])
+                  }
+                  isClearable
+                  isMulti
+                  isDisabled={schools.length === 0}
+                  placeholder={"Major - Concentration"}
+                  styles={customSelectStylesRight}
+                  isLoading={isLoadingDegrees}
+                />
+              </FieldWrapper>
+
+              {/* <h5>Concentration</h5>
+              <Select
+                options={getConcentrationOptions()}
+                value={concentrations}
+                onChange={(selectedOption) => setConcentrations(selectedOption)}
+                isClearable
+                isMulti
+                placeholder="Concentration"
+                styles={customSelectStylesRight}
+                isLoading={isLoadingDegrees}
+              /> */}
+
+              {/* <h5>Minor(s)</h5>
+              <Select
+                options={startingYearOptions}
+                value={minor}
+                onChange={(selectedOption) => setMinor(selectedOption)}
+                isClearable
+                isMulti
+                placeholder="Minor Name"
+                styles={customSelectStylesRight}
+                isLoading={isLoadingDegreeplans}
+              /> */}
+              <NextButtonContainer>
+                <NextButton
+                  onClick={handleAddDegrees}
+                  disabled={!complete}
+                  style={{
+                    height: "35px",
+                    width: "90px",
+                    borderRadius: "7px",
+                  }}
+                >
+                  Next
+                </NextButton>
+              </NextButtonContainer>
+              <div style={{ display: "none" }}>
+                <Document
+                  file={PDF}
+                  onLoadSuccess={(pdf) => {
+                    setNumPages(pdf.numPages);
+                  }}
+                >
+                  {Array.from(new Array(numPages), (el, index) => (
+                    <Page
+                      key={`page_${index + 1}`}
+                      pageNumber={index + 1}
+                      onGetTextSuccess={({ items, styles }) =>
+                        handleTranscript(items)
+                      }
+                      renderTextLayer={true}
+                    />
+                  ))}
+                </Document>
+              </div>
+            </Column>
+          </ColumnsContainer>
+        </PanelContainer>
+      </CenteredFlexContainer>
+    );
 };
 
 export default OnboardingPage;

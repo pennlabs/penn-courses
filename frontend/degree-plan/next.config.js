@@ -10,6 +10,15 @@ const nextConfig = {
       displayName: true,
     },
   },
+  webpack(config) {
+    Object.defineProperty(config, 'devtool', {
+        get() {
+            return 'source-map';
+        },
+        set() {},
+    });
+    return config;
+},
   async rewrites() {
     if (process.env.node !== "production") {
       return [

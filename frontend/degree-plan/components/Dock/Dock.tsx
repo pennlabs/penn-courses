@@ -112,6 +112,8 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
     const { createOrUpdate } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
     const { data: dockedCourses = [], isLoading } = useSWR<DockedCourse[]>(user ? `/api/degree/docked` : null); 
 
+    // console.log(dockedCourses)
+
     // Returns a boolean that indiates whether this is the first render
     const useIsMount = () => {
         const isMountRef = React.useRef(true);
