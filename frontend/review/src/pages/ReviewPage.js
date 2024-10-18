@@ -1,14 +1,14 @@
-import React, { Component } from "react";
-import Cookies from "universal-cookie";
-import InfoBox from "../components/InfoBox";
-import ScoreBox from "../components/ScoreBox";
-import GraphBox from "../components/GraphBox";
-import Navbar from "../components/Navbar";
-import DetailsBox from "../components/DetailsBox";
-import SearchBar from "../components/SearchBar";
-import Footer from "../components/Footer";
-import { ErrorBox } from "../components/common";
-import { apiReviewData, apiLive } from "../utils/api";
+import React, { Component } from "react"
+import Cookies from "universal-cookie"
+import InfoBox from "../components/InfoBox"
+import ScoreBox from "../components/ScoreBox"
+import GraphBox from "../components/GraphBox"
+import Navbar from "../components/Navbar"
+import DetailsBox from "../components/DetailsBox"
+import Footer from "../components/Footer"
+import { ErrorBox } from "../components/common"
+import { apiReviewData, apiLive } from "../utils/api"
+import { Redirect } from "react-router-dom"
 
 /**
  * Represents a course, instructor, or department review page.
@@ -50,17 +50,22 @@ export class ReviewPage extends Component {
     this.showDepartmentGraph = this.showDepartmentGraph.bind(this);
   }
 
-  componentDidMount() {
-    this.getReviewData();
+	componentDidMount() {
+		this.getReviewData()
+		window.history.replaceState(null, "")
 
-    fetch("https://platform.pennlabs.org/options/")
-      .then(response => response.json())
-      .then(options =>
-        this.setState({
-          showBanner: options.RECRUITING && !this.cookies.get("hide_pcr_banner")
-        })
-      );
-  }
+		fetch("https://platform.pennlabs.org/options/")
+			.then((response) => response.json())
+			.then((options) =>
+				this.setState({
+					showBanner:
+						options.RECRUITING && !this.cookies.get("hide_pcr_banner"),
+				})
+			)
+			.catch(() =>
+				console.error("Could not fetch https://platform.pennlabs.org/options/")
+			)
+	}
 
   componentDidUpdate(prevProps) {
     if (
@@ -87,27 +92,27 @@ export class ReviewPage extends Component {
     }
   }
 
-  setIsAverage(isAverage) {
-    this.setState({ isAverage }, () =>
-      localStorage.setItem("meta-column-type", isAverage ? "average" : "recent")
-    );
-  }
+	setIsAverage(isAverage) {
+		this.setState({ isAverage }, () =>
+			localStorage.setItem("meta-column-type", isAverage ? "average" : "recent")
+		)
+	}
 
-  //add to local storage?
-  setIsCourseEval(isCourseEval) {
-    this.setState({ isCourseEval });
-  }
+	//add to local storage?
+	setIsCourseEval(isCourseEval) {
+		this.setState({ isCourseEval })
+	}
 
-  getPageInfo() {
-    const pageInfo = window.location.pathname.substring(1).split("/");
+	getPageInfo() {
+		const pageInfo = window.location.pathname.substring(1).split("/")
 
-    if (["course", "instructor", "department"].indexOf(pageInfo[0]) === -1) {
-      pageInfo[0] = null;
-      pageInfo[1] = null;
-    }
+		if (["course", "instructor", "department"].indexOf(pageInfo[0]) === -1) {
+			pageInfo[0] = null
+			pageInfo[1] = null
+		}
 
-    return pageInfo;
-  }
+		return pageInfo
+	}
 
   getReviewData() {
     const { type, code, url_code, url_semester } = this.state;
@@ -138,96 +143,53 @@ export class ReviewPage extends Component {
     }
   }
 
-  navigateToPage(value) {
-    if (!value) {
-      return;
-    }
-    this.props.history.push(value);
-  }
+	navigateToPage(value) {
+		if (!value) {
+			return
+		}
+		this.props.history.push(value)
+	}
 
-  showRowHistory(nextCode) {
-    const { rowCode } = this.state;
-    if (nextCode === rowCode) {
-      this.setState({ rowCode: null });
-      return;
-    }
-    this.setState({ rowCode: nextCode }, () => {
-      if (nextCode) {
-        window.scrollTo({
-          behavior: "smooth",
-          top: this.tableRef.current.offsetTop
-        });
-      }
-    });
-  }
+	showRowHistory(nextCode) {
+		const { rowCode } = this.state
+		if (nextCode === rowCode) {
+			this.setState({ rowCode: null })
+			return
+		}
+		this.setState({ rowCode: nextCode }, () => {
+			if (nextCode) {
+				window.scrollTo({
+					behavior: "smooth",
+					top: this.tableRef.current.offsetTop,
+				})
+			}
+		})
+	}
 
-  showDepartmentGraph(selectedCourses) {
-    this.setState({ selectedCourses });
-  }
+	showDepartmentGraph(selectedCourses) {
+		this.setState({ selectedCourses })
+	}
 
-  static getDerivedStateFromError() {
-    return { error: "An unknown error occurred." };
-  }
+	static getDerivedStateFromError() {
+		return { error: "An unknown error occurred." }
+	}
 
-  render() {
-    if (this.state.error) {
-      return (
-        <div>
-          <Navbar />
-          <ErrorBox detail={this.state.error_detail}>
-            {this.state.error}
-          </ErrorBox>
-          <Footer />
-        </div>
-      );
-    }
+	render() {
+		if (this.state.error) {
+			return (
+				<div>
+					<Navbar />
+					<ErrorBox detail={this.state.error_detail}>
+						{this.state.error}
+					</ErrorBox>
+					<Footer />
+				</div>
+			)
+		}
 
-    if (!this.state.code) {
-      return (
-        <div id="content" className="row">
-          {this.state.showBanner && (
-            <div id="banner">
-              <span role="img" aria-label="Party Popper Emoji">
-                🎉
-              </span>{" "}
-              <b>Want to build impactful products like Penn Course Review?</b>{" "}
-              Join Penn Labs this spring! Apply{" "}
-              <a
-                href="https://pennlabs.org/apply"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                here
-              </a>
-              !{" "}
-              <span role="img" aria-label="Party Popper Emoji">
-                🎉
-              </span>
-              <span
-                className="close"
-                onClick={e => {
-                  this.setState({ showBanner: false });
-                  this.cookies.set("hide_pcr_banner", true, {
-                    expires: new Date(Date.now() + 12096e5)
-                  });
-                  e.preventDefault();
-                }}
-              >
-                <i className="fa fa-times" />
-              </span>
-            </div>
-          )}
-          <div className="col-md-12">
-            <div id="title">
-              <img src="/static/image/logo.png" alt="Penn Course Review" />{" "}
-              <span className="title-text">Penn Course Review</span>
-            </div>
-          </div>
-          <SearchBar isTitle />
-          <Footer style={{ marginTop: 150 }} />
-        </div>
-      );
-    }
+		if (!this.state.code) {
+			return <Redirect to="/search" />
+		}
 
     const {
       code,
@@ -241,11 +203,11 @@ export class ReviewPage extends Component {
       type
     } = this.state;
 
-    const handleSelect = {
-      instructor: this.showRowHistory,
-      course: this.showRowHistory,
-      department: this.showDepartmentGraph
-    }[type];
+		const handleSelect = {
+			instructor: this.showRowHistory,
+			course: this.showRowHistory,
+			department: this.showDepartmentGraph,
+		}[type]
 
     return (
       <div>

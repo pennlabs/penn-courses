@@ -130,7 +130,7 @@ export class MyChart extends PennLabsChart {
 			schedule: cronTime.everyDayAt(3),
 			image: backendImage,
 			secret,
-			cmd: ['python', 'manage.py', 'registrarimport'],
+			cmd: ['python', 'manage.py', 'registrarimport', '&&', 'python', 'manage.py', 'dump_autocomplete_data_to_redis'],
 		})
 
 		new CronJob(this, 'report-stats', {

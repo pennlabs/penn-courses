@@ -3,6 +3,7 @@ from django.views.decorators.cache import cache_page
 
 from review.views import (
     autocomplete,
+    deep_search,
     course_plots,
     course_reviews,
     department_reviews,
@@ -42,4 +43,5 @@ urlpatterns = [
         name="course-history",
     ),
     path("autocomplete", cache_page(MONTH_IN_SECONDS)(autocomplete), name="review-autocomplete"),
+    path("search", deep_search, name="review-deep-search")
 ]

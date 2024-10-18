@@ -48,7 +48,6 @@ SEMESTER_PARAM_DESCRIPTION = (
     "only where needed. "
 )
 
-
 class BaseCourseMixin(AutoPrefetchViewSetMixin, generics.GenericAPIView):
     @staticmethod
     def get_semester_field():

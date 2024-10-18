@@ -1,102 +1,103 @@
-import autocompleteWorker from "workerize-loader!../workers/autocomplete.worker"; // eslint-disable-line import/no-webpack-loader-syntax
+import autocompleteWorker from "workerize-loader!../workers/autocomplete.worker" // eslint-disable-line import/no-webpack-loader-syntax
 
-const autocompleteWorkerInstance = autocompleteWorker();
-const compressAutocomplete = autocompleteWorkerInstance.compress;
-const decompressAutocomplete = autocompleteWorkerInstance.decompress;
+const autocompleteWorkerInstance = autocompleteWorker()
+const compressAutocomplete = autocompleteWorkerInstance.compress
+const decompressAutocomplete = autocompleteWorkerInstance.decompress
 
-const API_DOMAIN = `${window.location.protocol}//${window.location.host}`;
-const PUBLIC_API_TOKEN = "public";
-const API_TOKEN = "platform";
+export const API_DOMAIN = `${window.location.protocol}//${window.location.host}`
+export const PCS_API_DOMAIN = "https://penn-course-search-fly.fly.dev"
+export const PUBLIC_API_TOKEN = "public"
+export const API_TOKEN = "platform"
 
 function apiFetch(url) {
-  return fetch(url).then(res => res.json());
+	return fetch(url).then((res) => res.json())
 }
 
 export function redirectForAuth() {
-  window.location.href = `${API_DOMAIN}/accounts/login/?next=${encodeURIComponent(
-    window.location.pathname
-  )}`;
+	window.location.href = `${API_DOMAIN}/accounts/login/?next=${encodeURIComponent(
+		window.location.pathname
+	)}`
 }
 
 export function getLogoutUrl() {
-  return `${API_DOMAIN}/accounts/logout/?next=${encodeURIComponent(
-    `${window.location.origin}/logout`
-  )}`;
+	return `${API_DOMAIN}/accounts/logout/?next=${encodeURIComponent(
+		`${window.location.origin}/logout`
+	)}`
 }
 
 // Necessary for backwards compatibility (we used to just store uncompressed
 // JSON stringified autocomplete data)
-const isCompressedAutocomplete = data => {
-  return data.startsWith("compressed:");
-};
+const isCompressedAutocomplete = (data) => {
+	return data.startsWith("compressed:")
+}
 
 // Cache the decompressed autocomplete dump as a global variable
-var uncompressedAutocompleteData = null;
+var uncompressedAutocompleteData = null
 
 export function apiAutocomplete() {
-  // If we have decompressed autocomplete data since last page refresh, return previous data.
-  if (uncompressedAutocompleteData) {
-    return Promise.resolve(uncompressedAutocompleteData);
-  }
-  // Cache the autocomplete JSON in local storage using the stale-while-revalidate
-  // strategy.
-  const key = "meta-pcr-autocomplete";
-  const cached_autocomplete = localStorage.getItem(key);
-  if (cached_autocomplete) {
-    // If a cached version exists, replace it in the cache asynchronously and return the old cache.
-    apiFetch(`${API_DOMAIN}/api/review/autocomplete`)
-      .then(compressAutocomplete)
-      .then(compressed => {
-        try {
-          localStorage.setItem(key, compressed);
-        } catch (e) {
-          localStorage.removeItem(key);
-        }
-      });
-    return isCompressedAutocomplete(cached_autocomplete)
-      ? decompressAutocomplete(cached_autocomplete)
-      : Promise.resolve(cached_autocomplete);
-  } else {
-    // If no cached data exists, fetch, set the cache and return in the same promise.
-    return new Promise((resolve, reject) => {
-      apiFetch(`${API_DOMAIN}/api/review/autocomplete`)
-        .then(data => {
-          resolve(data);
-          return compressAutocomplete(data);
-        })
-        .then(compressed => {
-          try {
-            localStorage.setItem(key, compressed);
-          } catch (e) {
-            localStorage.removeItem(key);
-          }
-        });
-    });
-  }
+	// If we have decompressed autocomplete data since last page refresh, return previous data.
+	if (uncompressedAutocompleteData) {
+		return Promise.resolve(uncompressedAutocompleteData)
+	}
+	// Cache the autocomplete JSON in local storage using the stale-while-revalidate
+	// strategy.
+	const key = "meta-pcr-autocomplete"
+	const cached_autocomplete = localStorage.getItem(key)
+	if (cached_autocomplete) {
+		// If a cached version exists, replace it in the cache asynchronously and return the old cache.
+		apiFetch(`${API_DOMAIN}/api/review/autocomplete`)
+			.then(compressAutocomplete)
+			.then((compressed) => {
+				try {
+					localStorage.setItem(key, compressed)
+				} catch (e) {
+					localStorage.removeItem(key)
+				}
+			})
+		return isCompressedAutocomplete(cached_autocomplete)
+			? decompressAutocomplete(cached_autocomplete)
+			: Promise.resolve(cached_autocomplete)
+	} else {
+		// If no cached data exists, fetch, set the cache and return in the same promise.
+		return new Promise((resolve, reject) => {
+			apiFetch(`${API_DOMAIN}/api/review/autocomplete`)
+				.then((data) => {
+					resolve(data)
+					return compressAutocomplete(data)
+				})
+				.then((compressed) => {
+					try {
+						localStorage.setItem(key, compressed)
+					} catch (e) {
+						localStorage.removeItem(key)
+					}
+				})
+		})
+	}
 }
 
 export async function apiCheckAuth() {
-  const res = await fetch(`${API_DOMAIN}/accounts/me/`);
-  if (res.status < 300 && res.status >= 200) {
-    return true;
-  } else {
-    return false;
-  }
+	const res = await fetch(`${API_DOMAIN}/accounts/me/`)
+	if (res.status < 300 && res.status >= 200) {
+		return true
+	} else {
+		return false
+	}
 }
 
 export function apiIsAuthenticated(func) {
-  apiFetch(
-    `${API_DOMAIN}/api/review/auth?token=${encodeURIComponent(
-      PUBLIC_API_TOKEN
-    )}`
-  ).then(data => {
-    if (data.authed == null) {
-      window.Raven.captureMessage(`Auth check error: ${JSON.stringify(data)}`, {
-        level: "error"
-      });
-    }
-    func(data.authed);
-  });
+	apiFetch(
+		`${API_DOMAIN}/api/review/auth?token=${encodeURIComponent(
+			PUBLIC_API_TOKEN
+		)}`
+	).then((data) => {
+		if (data.authed == null) {
+			window.Raven.captureMessage(`Auth check error: ${JSON.stringify(data)}`, {
+				level: "error",
+			})
+		}
+		func(data.authed)
+	})
 }
 
 // To check that the course was offered as a certain code@semester,
@@ -160,4 +161,28 @@ export function apiFetchPCADemandChartData(course, semester) {
       course
     )}?token=${encodeURIComponent(API_TOKEN)}` + getSemesterQParam(semester)
   );
+}
+
+const urlParamsOfObj = (obj) => {
+	return Object.keys(obj)
+		.map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(obj[key])}`)
+		.join("&")
+}
+
+export const apiSearch = (
+	q,
+	ranges = {
+		workLow: 0,
+		workHigh: 4,
+		difficultyLow: 0,
+		difficultyHigh: 4,
+		qualityLow: 0,
+		qualityHigh: 4,
+	}
+) => {
+	return apiFetch(
+		`${API_DOMAIN}/api/review/search?q=${encodeURIComponent(
+			q
+		)}&${urlParamsOfObj(ranges)}`
+	)
 }
