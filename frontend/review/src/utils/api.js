@@ -277,7 +277,7 @@ export function apiUserComment(course) {
 export function apiComments(course, semester, professorId, sortBy) {
   return apiFetch(
     
-    `${API_DOMAIN}/api/review/${semester ? encodeURIComponent(semester) : "all"}/course_comments/${encodeURIComponent(course)}`
+    `${API_DOMAIN}/api/review/${"all"}/course_comments/${encodeURIComponent(course)}?instructor=${encodeURIComponent(professorId)}`
     
   )
 }
@@ -289,7 +289,7 @@ export function apiComments(course, semester, professorId, sortBy) {
 
 // }
 
-export function apiPostComment(course, semester, content) {
+export function apiPostComment(course, semester, content, instructor) {
   return apiFetch(
     `${API_DOMAIN}/api/review/comment`,
     {
@@ -302,7 +302,7 @@ export function apiPostComment(course, semester, content) {
       body: JSON.stringify({
         text: content,
         course_code: course,
-        instructor: ["Val Breazu. Tannen"],
+        instructor: [instructor],
         semester: semester,
       })
     }

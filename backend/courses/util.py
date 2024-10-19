@@ -30,6 +30,7 @@ from courses.models import (
     StatusUpdate,
     User,
 )
+
 from review.management.commands.mergeinstructors import resolve_duplicates
 
 
@@ -738,11 +739,10 @@ def get_section_from_course_instructor_semester(course_code, professors, semeste
     if not course_topic:
         raise ValueError(f"No topic exists for course with code ({course_code})")
     course_topic_parent = course_topic.most_recent.full_code
-    sections = Section.objects.prefetch_related("instructors").filter(
+    sections = Section.objects.all().prefetch_related("instructors").filter(
         course__topic__most_recent__full_code=course_topic_parent, course__semester=semester
     )
-    print(sections.first())
-    print(sections[0].instructors)
+    print(sections)
     print("HIGH")
     professors_query = Q(instructors__name=professors[0])
     for professor in professors[1:]:
