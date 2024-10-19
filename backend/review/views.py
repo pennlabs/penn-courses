@@ -18,7 +18,7 @@ from courses.models import (
     PreNGSSRestriction,
     Section,
 )
-from courses.serializers import CommentListSerializer, CommentSerializer
+from courses.serializers import CommentListSerializer, CommentSerializer, CourseDetailSerializer
 from courses.util import (
     get_current_semester,
     get_or_create_add_drop_period,
@@ -882,7 +882,7 @@ class CommentList(generics.ListAPIView):
 
         queryset = og_queryset = self.get_queryset()
 
-        print(queryset)
+        print("I AM INSTRUCTOR", instructor)
         # add filters
         if semester_arg != "all":
             queryset = queryset.all().filter(section__course__semester=semester_arg)
@@ -925,18 +925,25 @@ class CommentList(generics.ListAPIView):
 
     def get_queryset(self):
         course_code = self.kwargs["course_code"]
+        
         semester = self.kwargs["semester"] or "all"
+
+        print(semester)
+
         print("I MADE IT HERE", semester)
         try:
             if semester == "all":
-                course = Course.objects.filter(full_code=course_code).latest("semester")
+                course = Course.objects.all().filter(full_code=course_code).first()
             else:
                 print("HI1")
                 course = get_course_from_code_semester(course_code, None)
                 print("HI2")
         except Http404:
             return Response({"message": "Course not found."}, status=status.HTTP_404_NOT_FOUND)
+        print(CourseDetailSerializer(course).data)
+
         topic = course.topic
+        print("this is a topic", topic)
         return Comment.objects.filter(section__course__topic=topic)
 
 
@@ -1009,6 +1016,7 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     def retrieve(self, request, pk=None):
         comment = get_object_or_404(Comment, pk=pk)
+        print("this is a comment")
         return Response(comment, status=status.HTTP_200_OK)
 
     def create(self, request):
@@ -1030,6 +1038,7 @@ class CommentViewSet(viewsets.ModelViewSet):
                 request.data.get("instructor"),
                 request.data.get("semester"),
             )
+            print("ran this")
             print(section)
         except Exception as e:
             print(e)
@@ -1038,12 +1047,13 @@ class CommentViewSet(viewsets.ModelViewSet):
 
         # create comment and send response
         parent_id = request.data.get("parent")
-        print(parent_id)
+        print("new section", section)
+        print("new comment section", section.course.topic)
         parent = get_object_or_404(Comment, pk=parent_id) if parent_id is not None else None
         comment = Comment.objects.create(
             text=request.data.get("text"), author=request.user, section=section, parent=parent
         )
-        print("this is a commnet lol")
+        print("this is a commnet lol", comment)
         base = parent.base if parent else comment
         prefix = parent.path + "." if parent else ""
         path = prefix + "{:0{}d}".format(comment.id, 10)
