@@ -8,6 +8,7 @@ from decimal import Decimal
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import connection
+from django.db.models import Q
 from django.db.models.aggregates import Count
 from django.db.models.expressions import Subquery, Value
 from django.db.models.functions.comparison import Coalesce
@@ -29,7 +30,9 @@ from courses.models import (
     StatusUpdate,
     User,
 )
+
 from review.management.commands.mergeinstructors import resolve_duplicates
+
 
 
 logger = logging.getLogger(__name__)
@@ -721,6 +724,37 @@ def get_semesters(semesters: str = None) -> list[str]:
             if s not in possible_semesters:
                 raise ValueError(f"Provided semester {s} was not found in the db.")
     return sorted(semesters)
+
+
+def get_section_from_course_instructor_semester(course_code, professors, semester):
+    """
+    Attempts to return a course section that matches the given parameters.
+    ValueError is raised if the section does not exist.
+    """
+
+    course_candidate = Course.objects.filter(full_code=course_code).first()
+    if not course_candidate:
+        raise ValueError(f"No course exists with code ({course_code})")
+    course_topic = course_candidate.topic
+    if not course_topic:
+        raise ValueError(f"No topic exists for course with code ({course_code})")
+    course_topic_parent = course_topic.most_recent.full_code
+    sections = Section.objects.all().prefetch_related("instructors").filter(
+        course__topic__most_recent__full_code=course_topic_parent, course__semester=semester
+    )
+    print(sections)
+    print("HIGH")
+    professors_query = Q(instructors__name=professors[0])
+    for professor in professors[1:]:
+        professors_query &= Q(instructors__name=professor)
+    matching_sections = sections.filter(professors_query).distinct()
+    if matching_sections.count() == 1:
+        return matching_sections.first()
+    return matching_sections.first()
+    raise ValueError(
+        f"""No section exists with course code ({course_code}), professor ({professors[0]}),
+        semester ({semester})"""
+    )
 
 
 def historical_semester_probability(current_semester: str, semesters: list[str]):

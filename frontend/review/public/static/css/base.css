@@ -163,6 +163,16 @@ body {
     border: 1px solid #9ed2d4;
 }
 
+.btn-borderless {
+    all: unset;
+    color: #abaaf1;
+}
+
+.btn-borderless:hover {
+    cursor: pointer;
+    text-decoration: underline;
+}
+
 .btn-action {
     background-color: #ccc;
     color: white;
@@ -186,6 +196,43 @@ body {
 .btn:hover img,
 .btn:focus img {
     opacity: 70%;
+}
+
+.dropdown {
+    position: relative;
+    float: left;
+}
+
+.dropdown .btn-dropdown {
+    color: #868686;
+}
+
+.dropdown .dropdown-content {
+    display: block;
+    position: absolute;
+    box-shadow: 0px 8px 16px 0px gray;
+    background-color: white;
+    z-index: 1000000;
+}
+
+.tab-wrapper {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.tab {
+    background-color: white;
+    color: #abaaf1;
+    border: none;
+    display: inline;
+    width: 100%;
+    padding-block: 10px;
+}
+
+.tab.active {
+    background-color: #abaaf1;
+    color: white;
 }
 
 #header {
@@ -438,14 +485,30 @@ input {
     margin-bottom: 20px;
 }
 
+#course-details.write-comment {
+    margin-bottom: 10px;
+}
+
+#course-details .write-comment.active {
+    padding-bottom: 8vh;
+}
+
+#course-details .write-comment textarea {
+    font: 0.9em Lato, Helvetica, sans-serif;
+}
+
+#course-details .write-comment.active textarea {
+    font: 0.9em Lato, Helvetica, sans-serif;
+    height: 100px;
+}
 #course-details-comments .list {
-    width: 200px;
+    width: 100px;
     float: left;
     padding-right: 10px;
 }
 
 #course-details-comments .list div {
-    padding: 5px;
+    padding: 10px;
     font-size: 1.1em;
     border-radius: 3px;
     cursor: pointer;
@@ -458,9 +521,54 @@ input {
 
 #course-details-comments .comments {
     width: calc(100% - 200px);
-    padding-left: 10px;
     float: left;
-    border-left: 1px solid #eee;
+    border: 1px solid #eee;
+    border-radius: 5px;
+}
+
+#course-details-comments .comment {
+    border-bottom: 1px solid #eee;
+    padding: 10px 20px;
+}
+
+#course-details-comments .comment .reply {
+    border: none;
+    padding-left: 0;
+}
+
+#course-details-comments .comment.user {
+    box-shadow: rgba(6, 24, 44, 0.4) 0px 0px 0px 2px, rgba(6, 24, 44, 0.65) 0px 4px 6px -1px, rgba(255, 255, 255, 0.08) 0px 1px 0px inset;
+}
+
+#course-details-comments .comment.user .top b {
+    color: #abaaf1;
+}
+
+#course-details-comments .comment .top {
+    display: flex;
+    align-items: center;
+}
+
+/* maybe move the bottom 2 rules to general.css */
+#course-details-comments .comment .top b {
+    color: black;
+}
+
+#course-details-comments .comment .top sub {
+    color: #b2b2b2;
+    margin-left: 10px;
+}
+
+#course-details-comments .comment .icon {
+    color: #868686;
+}
+
+#course-details-comments .comment .icon:hover {
+    color: #90b8cb;
+}
+
+#course-details-comments .comment .icon.active {
+    color: #90b8cb;
 }
 
 .table-search {

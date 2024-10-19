@@ -2,13 +2,14 @@ import React, { forwardRef, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { ColumnSelector, ScoreTable } from "./common";
+import { Comment, WriteComment } from "./Comments";
 import {
   compareSemesters,
   getColumnName,
   orderColumns,
-  toNormalizedSemester
+  toNormalizedSemester,
 } from "../utils/helpers";
-import { apiHistory } from "../utils/api";
+import { apiComments, apiHistory, apiComment } from "../utils/api";
 import { PROF_IMAGE_URL } from "../constants/routes";
 import { REGISTRATION_METRICS_COLUMNS } from "../constants";
 
@@ -24,7 +25,7 @@ const semesterCol = {
   Cell: ({ value, original }) => <center>{value}</center>,
   sortMethod: compareSemesters,
   show: true,
-  required: true
+  required: true,
 };
 
 const nameCol = {
@@ -37,7 +38,7 @@ const nameCol = {
   filterMethod: ({ value }, { name, semester }) =>
     value === "" || // If the filter value is blank, all
     name.toLowerCase().includes(value.toLowerCase()) ||
-    semester.toLowerCase().includes(value.toLowerCase())
+    semester.toLowerCase().includes(value.toLowerCase()),
 };
 
 const codeCol = {
@@ -46,7 +47,7 @@ const codeCol = {
   Header: "Course Code",
   accessor: "course_code",
   Cell: ({ value, original }) => <center>{value}</center>,
-  show: true
+  show: true,
 };
 
 const activityCol = {
@@ -55,7 +56,7 @@ const activityCol = {
   accessor: "activity",
   width: 150,
   Cell: ({ value, original }) => <center>{value}</center>,
-  show: true
+  show: true,
 };
 
 const formsCol = {
@@ -75,7 +76,7 @@ const formsCol = {
           ({((value / original.forms_produced) * 100).toFixed(1)}%)
         </small>
       </center>
-    )
+    ),
 };
 
 /**
@@ -83,20 +84,270 @@ const formsCol = {
  */
 export const DetailsBox = forwardRef(
   ({ course, instructor, url_semester, type, isCourseEval }, ref) => {
-    const [data, setData] = useState({});
-    const [viewingRatings, setViewingRatings] = useState(true);
-    const [selectedSemester, setSelectedSemester] = useState(null);
+    const [viewRatings, setViewRatings] = useState(false);
+
+    return (
+      <>
+        <div className="tab-wrapper">
+          <button
+            className={`btn tab ${viewRatings ? "active" : ""}`}
+            onClick={() => setViewRatings(true)}
+          >
+            Ratings
+          </button>
+          <button
+            className={`btn tab ${viewRatings ? "" : "active"}`}
+            onClick={() => setViewRatings(false)}
+          >
+            Comments
+          </button>
+        </div>
+        <RatingsTab
+          course={course}
+          instructor={instructor}
+          url_semester={url_semester}
+          type={type}
+          isCourseEval={isCourseEval}
+          ref={ref}
+          active={viewRatings}
+        />
+        <CommentsTab
+          course={course}
+          instructor={instructor}
+          url_semester={url_semester}
+          type={type}
+          isCourseEval={isCourseEval}
+          ref={ref}
+          active={!viewRatings}
+        />
+      </>
+    );
+  }
+);
+
+const CommentsTab = forwardRef(
+  ({ course, instructor, url_semester, type, isCourseEval, active }, ref) => {
     const [semesterList, setSemesterList] = useState([]);
+    const [isLoading1, setIsLoading1] = useState(false);
+    const [isLoading2, setIsLoading2] = useState(false);
+
+    const [data, setData] = useState({});
+
+    const [comments, setComments] = useState({});
+    const [userComment, setUserComment] = useState({});
+
+    const [selectedSemester, setSelectedSemester] = useState(null);
+
+    console.log("CHECKPOINT 1")
+
+    const hasSelection =
+      (type === "course" && instructor) || (type === "instructor" && course);
+
+      
+    useEffect(() => {
+      console.log("tihs is instructor", instructor);
+      setIsLoading2(true);
+      apiComments(course, "all", instructor, null)
+        .then((res) => {
+          console.log("fetching comments now", res);
+          setComments(
+            res.comments.map((c) => ({
+              ...c,
+              created_at: new Date(c.created_at),
+              modified_at: new Date(c.modified_at),
+            }))
+          );
+          setSemesterList(res.semesters);
+        })
+        .finally(() => {
+          setIsLoading2(false);
+        });
+    }, [course, instructor]);
+
+    useEffect(() => {
+      console.log("CHECKPOINT 2")
+      setIsLoading1(true);
+      if (instructor !== null && course !== null) {
+        apiHistory(course, instructor, url_semester)
+          .then((res) => {
+            console.log("fetching ratings");
+
+            console.log(res);
+            setData(res);
+          })
+          .finally(() => {
+            setIsLoading1(false);
+          });
+      }
+    }, [course, instructor, url_semester]);
+
+    useEffect(() => {
+      // TODO: HARDCODED USER ID BC CANT YET FETCH WHICH COMMENT BELONGS TO WHICH USER
+      // apiComment("10").then(res => {
+      //   setUserComment(res);
+      // });
+    }, [course]);
+
+
+    console.log("CHECKPOINT 2")
+    const hasData = Boolean(Object.keys(data).length);
+    const isCourse = type === "course";
+
+    if (!hasSelection && active) {
+      return <Placeholder type={type} ref={ref} />;
+    }
+
+
+    if (!active) return <></>;
+
+    // Return loading component. TODO: Add spinner/ghost loader.
+    if (!hasData && hasSelection && isLoading2) {
+      return <Loading />;
+    }
+    // Return placeholder image.
+    if (!hasData) {
+      return <Placeholder type={type} ref={ref} />;
+    }
+
+    // const {
+    //   instructor: { name },
+    //   sections,
+    // } = data;
+    // const sectionsList = Object.values(sections);
+
+    const hasComments = comments.length > 0;
+    const hasUserComment = Object.keys(userComment).length > 0;
+
+    // if (!active) return <></>;
+
+    if (!hasComments && !hasUserComment) {
+      if (isLoading2) {
+        // Loading spinner
+        return <Loading />;
+      } else {
+        // Return placeholder image.
+        return (
+          <div
+            id="course-details"
+            className="box"
+            ref={ref}
+            style={{ textAlign: "center" }}
+          >
+            <div id="course-details-wrapper">
+              <h3>
+                <Link
+                  style={{ color: "#b2b2b2", textDecoration: "none" }}
+                  to={data ? `/instructor/${instructor}` : `/course/${course}`}
+                >
+                  {isCourse ? data.instructor.name : course}
+                </Link>
+              </h3>
+
+              <WriteComment course={course} instructor={data.instructor.name} setUserComment={setUserComment} semestersList={data.sections}/>
+              <div>
+                <div>
+                  <object
+                    type="image/svg+xml"
+                    id="select-course-icon"
+                    data="/static/image/books-and-bag.svg"
+                    width="250"
+                  >
+                    <img
+                      alt="Class Icon"
+                      src="/static/image/books-and-bag.png"
+                    />
+                  </object>
+                </div>
+              </div>
+              <h3
+                style={{
+                  color: "#b2b2b2",
+                  margin: "1.5em",
+                  marginBottom: ".5em",
+                }}
+              >
+                
+                No one's commented yet! Be the first to share your thoughts.
+              </h3>
+            </div>
+          </div>
+        );
+      }
+    }
+
+    return (
+      <div id="course-details" className="box" ref={ref}>
+        <div id="course-details-wrapper">
+          <h3>{isCourse ? data.instructor.name : "Comments"}</h3>
+          <div id="course-details-comments" className="clearfix mt-2">
+            {hasUserComment || (
+              <WriteComment
+                course={course}
+                semesters={semesterList}
+                setUserComment={setUserComment}
+              />
+            )}
+            <div className="list">
+              <div
+                onClick={() => setSelectedSemester(null)}
+                className={selectedSemester === null ? "selected" : ""}
+              >
+                Overall
+              </div>
+              {semesterList.map((sem, i) => (
+                <div
+                  key={sem}
+                  onClick={() => setSelectedSemester(sem)}
+                  className={selectedSemester === sem ? "selected" : ""}
+                >
+                  {sem}
+                </div>
+              ))}
+            </div>
+            <div className="comments">
+              {hasUserComment && (
+                <Comment comment={userComment} isUserComment />
+              )}
+              {comments
+                .filter(
+                  (c) => !selectedSemester || c.semester === selectedSemester
+                )
+                .map((c) => (
+                  <Comment comment={c} />
+                ))}
+            </div>
+          </div>
+          <div>
+            <button className="btn">1</button>
+            <button className="btn">2</button>
+            <button className="btn">3</button>
+            <button className="btn">4</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+);
+
+const RatingsTab = forwardRef(
+  ({ course, instructor, url_semester, type, isCourseEval, active }, ref) => {
+    const hasSelection =
+      (type === "course" && instructor) || (type === "instructor" && course);
+    // Return placeholder image.
+    if (!hasSelection && active) {
+      return <Placeholder type={type} ref={ref} />;
+    }
+
+    const [data, setData] = useState({});
     const [columns, setColumns] = useState([]);
     const [filtered, setFiltered] = useState([]);
     const [filterAll, setFilterAll] = useState("");
-    const [emptyStateImg, setEmptyStateImg] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
-    const showCol = info =>
+    const showCol = (info) =>
       REGISTRATION_METRICS_COLUMNS.includes(info) === isCourseEval;
 
-    const generateCol = info => {
+    const generateCol = (info) => {
       if (!showCol(info)) {
         return null;
       }
@@ -116,35 +367,25 @@ export const DetailsBox = forwardRef(
               ? value
               : value.toFixed(2)}
           </center>
-        )
+        ),
       };
     };
 
     useEffect(() => {
-      const num = Math.floor(Math.random() * 5 + 1);
-      setEmptyStateImg(PROF_IMAGE_URL(num));
-    }, []);
-    useEffect(() => {
       setIsLoading(true);
       if (instructor !== null && course !== null) {
         apiHistory(course, instructor, url_semester)
-          .then(res => {
+          .then((res) => {
+            console.log("fetching ratings");
             const sections = Object.values(res.sections);
             const fields = [
               ...new Set(
                 sections.reduce((r, s) => [...r, ...Object.keys(s.ratings)], [])
-              )
+              ),
             ]; // union of all keys of objects in sections
             const ratingCols = orderColumns(fields)
               .map(generateCol)
-              .filter(col => col);
-            const semesterSet = new Set(
-              sections
-                .filter(a => a.comments)
-                .map(a => a.semester)
-                .sort(compareSemesters)
-            );
-            const semesters = [...semesterSet];
+              .filter((col) => col);
             setData(res);
             setColumns([
               semesterCol,
@@ -152,84 +393,32 @@ export const DetailsBox = forwardRef(
               codeCol,
               activityCol,
               formsCol,
-              ...ratingCols
+              ...ratingCols,
             ]);
-            setSemesterList(semesters);
-            setSelectedSemester(() => {
-              if (!semesters.length) return null;
-              return semesterSet.has(selectedSemester)
-                ? selectedSemester
-                : semesters[0];
-            });
           })
           .finally(() => {
             setIsLoading(false);
           });
       }
-    }, [course, instructor, selectedSemester]);
+    }, [course, instructor, url_semester]);
 
     const hasData = Boolean(Object.keys(data).length);
-    const hasSelection =
-      (type === "course" && instructor) || (type === "instructor" && course);
     const isCourse = type === "course";
 
-    // Return loading component. TODO: Add spinner/ghost loader.
-    if (!hasData && hasSelection && isLoading)
-      return (
-        <div
-          id="course-details"
-          className="box"
-          style={{ textAlign: "center", padding: 45 }}
-          ref={ref}
-        >
-          <i
-            className="fa fa-spin fa-cog fa-fw"
-            style={{ fontSize: "150px", color: "#aaa" }}
-          />
-          <h1 style={{ fontSize: "2em", marginTop: 15 }}>Loading...</h1>
-        </div>
-      );
+    if (!active) return <></>;
 
+    // Return loading component. TODO: Add spinner/ghost loader.
+    if (!hasData && hasSelection && isLoading) {
+      return <Loading />;
+    }
     // Return placeholder image.
-    if (!hasData || !hasSelection)
-      return (
-        <div
-          id="course-details"
-          className="box"
-          ref={ref}
-          style={{ textAlign: "center" }}
-        >
-          <div>
-            <div>
-              {isCourse ? (
-                <object type="image/svg+xml" data={emptyStateImg} width="175">
-                  <img alt="Professor Icon" src={emptyStateImg} />
-                </object>
-              ) : (
-                <object
-                  type="image/svg+xml"
-                  id="select-course-icon"
-                  data="/static/image/books-and-bag.svg"
-                  width="250"
-                >
-                  <img alt="Class Icon" src="/static/image/books-and-bag.png" />
-                </object>
-              )}
-            </div>
-          </div>
-          <h3
-            style={{ color: "#b2b2b2", margin: "1.5em", marginBottom: ".5em" }}
-          >
-            {isCourse
-              ? "Select an instructor to see individual sections, comments, and more details."
-              : "Select a course to see individual sections, comments, and more details."}
-          </h3>
-        </div>
-      );
+    if (!hasData) {
+      return <Placeholder type={type} ref={ref} />;
+    }
 
     const {
       instructor: { name },
-      sections
+      sections,
     } = data;
     const sectionsList = Object.values(sections);
 
@@ -245,111 +434,118 @@ export const DetailsBox = forwardRef(
             </Link>
           </h3>
           <div className="clearfix">
-            <div className="btn-group">
-              <button
-                onClick={() => setViewingRatings(true)}
-                id="view_ratings"
-                className={`btn btn-sm ${
-                  viewingRatings ? "btn-sub-primary" : "btn-sub-secondary"
-                }`}
-              >
-                Ratings
-              </button>
-              <button
-                onClick={() => setViewingRatings(false)}
-                id="view_comments"
-                className={`btn btn-sm ${
-                  viewingRatings ? "btn-sub-secondary" : "btn-sub-primary"
-                }`}
-              >
-                Comments
-              </button>
-            </div>
             <ColumnSelector
               name="details"
               onSelect={setColumns}
               columns={columns}
               buttonStyle="btn-sub"
             />
-            {viewingRatings && (
-              <div className="float-right">
-                <label className="table-search">
-                  <input
-                    type="search"
-                    className="form-control form-control-sm"
-                    value={filterAll}
-                    onChange={({ target: { value } }) => {
-                      setFiltered([{ id: "name", value }]);
-                      setFilterAll(value);
-                    }}
-                  />
-                </label>
-              </div>
-            )}
+            <div className="float-right">
+              <label className="table-search">
+                <input
+                  type="search"
+                  className="form-control form-control-sm"
+                  value={filterAll}
+                  onChange={({ target: { value } }) => {
+                    setFiltered([{ id: "name", value }]);
+                    setFilterAll(value);
+                  }}
+                />
+              </label>
+            </div>
           </div>
-          {viewingRatings ? (
-            <div id="course-details-data">
-              <ScoreTable
-                alternating
-                ignoreSelect
-                sorted={[{ id: "semester", desc: false }]}
-                filtered={filtered}
-                data={sectionsList.map(
-                  ({
-                    ratings,
-                    semester,
-                    course_name: name,
-                    course_code,
-                    activity,
-                    forms_produced,
-                    forms_returned
-                  }) => ({
-                    ...ratings,
-                    semester: toNormalizedSemester(semester),
-                    name,
-                    course_code,
-                    activity,
-                    forms_produced,
-                    forms_returned
-                  })
-                )}
-                columns={columns}
-                noun="section"
-              />
-            </div>
-          ) : (
-            <div id="course-details-comments" className="clearfix mt-2">
-              <div className="list">
-                {semesterList.map(sem => (
-                  <div
-                    key={sem}
-                    onClick={() => setSelectedSemester(sem)}
-                    className={selectedSemester === sem ? "selected" : ""}
-                  >
-                    {sem}
-                  </div>
-                ))}
-              </div>
-              <div
-                className="comments"
-                dangerouslySetInnerHTML={{
-                  __html:
-                    sectionsList
-                      .filter(
-                        ({ semester, comments }) =>
-                          semester === selectedSemester && comments
-                      )
-                      .map(info => info.comments)
-                      .join(", ") ||
-                    "This instructor does not have any comments for this course."
-                }}
-              />
-            </div>
-          )}
+          <div id="course-details-data">
+            <ScoreTable
+              alternating
+              ignoreSelect
+              sorted={[{ id: "semester", desc: false }]}
+              filtered={filtered}
+              data={sectionsList.map(
+                ({
+                  ratings,
+                  semester,
+                  course_name: name,
+                  course_code,
+                  activity,
+                  forms_produced,
+                  forms_returned,
+                }) => ({
+                  ...ratings,
+                  semester: toNormalizedSemester(semester),
+                  name,
+                  course_code,
+                  activity,
+                  forms_produced,
+                  forms_returned,
+                })
+              )}
+              columns={columns}
+              noun="section"
+            />
+          </div>
         </div>
       </div>
     );
   }
 );
+
+const Placeholder = forwardRef(({ type }, ref) => {
+  const [emptyStateImg, setEmptyStateImg] = useState("");
+
+  useEffect(() => {
+    const num = Math.floor(Math.random() * 5 + 1);
+    setEmptyStateImg(PROF_IMAGE_URL(num));
+  }, []);
+
+  return (
+    <div
+      id="course-details"
+      className="box"
+      ref={ref}
+      style={{ textAlign: "center" }}
+    >
+      <div>
+        <div>
+          {type === "course" ? (
+            <object type="image/svg+xml" data={emptyStateImg} width="175">
+              <img alt="Professor Icon" src={emptyStateImg} />
+            </object>
+          ) : (
+            <object
+              type="image/svg+xml"
+              id="select-course-icon"
+              data="/static/image/books-and-bag.svg"
+              width="250"
+            >
+              <img alt="Class Icon" src="/static/image/books-and-bag.png" />
+            </object>
+          )}
+        </div>
+      </div>
+      <h3 style={{ color: "#b2b2b2", margin: "1.5em", marginBottom: ".5em" }}>
+        {type === "course"
+          ? "Select an instructor to see individual sections, comments, and more details."
+          : "Select a course to see individual sections, comments, and more details."}
+      </h3>
+    </div>
+  );
+});
+
+const Loading = forwardRef(({ type }, ref) => {
+  return (
+    <div
+      id="course-details"
+      className="box"
+      style={{ textAlign: "center", padding: 45 }}
+      ref={ref}
+    >
+      <i
+        className="fa fa-spin fa-cog fa-fw"
+        style={{ fontSize: "150px", color: "#aaa" }}
+      />
+      <h1 style={{ fontSize: "2em", marginTop: 15 }}>Loading...</h1>
+    </div>
+  );
+});
 
 export default DetailsBox;
