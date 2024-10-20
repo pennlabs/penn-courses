@@ -36,9 +36,9 @@ export class MyChart extends PennLabsChart {
 				secret,
 				cmd: [
 					'celery',
-					'worker',
 					'-A',
 					'PennCourses',
+					'worker',
 					'-Q',
 					'alerts,celery',
 					'-linfo',
