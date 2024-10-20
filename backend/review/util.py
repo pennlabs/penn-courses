@@ -88,24 +88,6 @@ def get_average_and_recent_dict_single(values_dict, extra_fields=None, **extra_f
     }
 
 
-def course_is_hot(courseName, registrationMetrics):
-    
-    from courses.models import Course
-
-    #hot_courses = Course.objects.filter(count_for_hot_course=threshold)
-    hot_courses = courseName
-    ############################################################### ^ this does not work
-    courses_data = [
-        {
-            "full_code": course.full_code,
-            "title": course.title,
-            "count_for_hot_course": course.count_for_hot_course,
-        }
-        for course in hot_courses
-    ]
-    return(True)
-
-
 
 def get_historical_codes(topic, exclude_codes):
     historical_codes = dict()
