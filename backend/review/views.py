@@ -39,7 +39,6 @@ from review.util import (
     get_single_dict_from_qs,
     get_status_updates_map,
     make_subdict,
-    course_is_hot,
 )
 
 

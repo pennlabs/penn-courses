@@ -77,9 +77,9 @@ class Command(BaseCommand):
         print("----")
         print(top_score_courses)
         print("----")
-        hot_courses_ids = top_alert_courses_set.intersection(top_score_courses_ids)
+        #hot_courses_ids = top_alert_courses_set.intersection(top_score_courses_ids)
 
-        print(hot_courses_ids)
+        #print(hot_courses_ids)
 
         Course.objects.filter(id__in=top_score_courses_ids).update(is_hot_course=True)
 
