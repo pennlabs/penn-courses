@@ -11,7 +11,7 @@ Our default mode of running PCx backend is through using Dev Containers, outline
 1. `cd backend`
 2. Running Docker
    1. Open a new terminal window (also in the `backend` directory) and run `docker-compose up`
-      > :warning: The default behavior of our Dev Container is for the docker daemon to be running automatically. However, if this is not the case (ie, if you cannot get `docker-compose up` to work due to a Docker connection error), try the following steps: 
+      > :warning: The default behavior of our Dev Container is for the docker daemon to be running automatically. However, if this is not the case (ie, if you cannot get `docker-compose up` to work due to a Docker connection error), or you get some Docker error along the lines of 
       > - NEED TO FIND FIX
 3. Set up Django Development Environment
    1. `pipenv install --dev` – Downloads necessary packages.
