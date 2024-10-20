@@ -8,6 +8,7 @@ from dateutil.tz.tz import gettz
 from ddt import data, ddt, unpack
 from django.contrib.auth.models import User
 from django.core.cache import cache
+from django.core.management import call_command
 from django.db.models.signals import post_save
 from django.test import Client, TestCase
 from django.urls import reverse
@@ -31,7 +32,7 @@ from PennCourses.settings.base import TIME_ZONE
 from tests.courses.util import create_mock_data
 
 
-TEST_SEMESTER = "2019A"
+TEST_SEMESTER = "2024A"
 
 celeryapp.conf.update(CELERY_ALWAYS_EAGER=True)  # run asynchronous tasks synchronously
 
@@ -2892,3 +2893,90 @@ class AlertRegistrationTestCase(TestCase):
                 reverse("registrations-detail", args=[ids[specific_ids + "_id"]])
             )
             self.assertIsNone(response.data.get("last_notification_sent_at"))
+
+
+class UpdateHotCoursesTestCase(TestCase):
+    def setUp(self):
+        self.current_semester = "2024A"
+        Option.objects.update_or_create(
+            key="SEMESTER",
+            defaults={"value": self.current_semester, "value_type": "TXT"},
+        )
+
+        self.user1 = User.objects.create_user(username="user1", password="password")
+        self.user2 = User.objects.create_user(username="user2", password="password")
+
+        self.course1, self.section1, _, _ = get_or_create_course_and_section("CIS-1200-001", self.current_semester)
+        self.course2, self.section2, _, _ = get_or_create_course_and_section("CIS-1600-001", self.current_semester)
+        self.course3, self.section3, _, _ = get_or_create_course_and_section("MATH-1140-001", self.current_semester)
+        self.course4, self.section4, _, _ = get_or_create_course_and_section("PHYS-1400-001", self.current_semester)
+
+       
+        self.section1.capacity = 100
+        self.section1.enrollment = 90
+        self.section1.registration_volume = 80
+        self.section1.save()
+
+        self.section2.capacity = 80
+        self.section2.enrollment = 70
+        self.section2.registration_volume = 60
+        self.section2.save()
+
+        self.section3.capacity = 120
+        self.section3.enrollment = 50
+        self.section3.registration_volume = 40
+        self.section3.save()
+
+        self.section4.capacity = 150
+        self.section4.enrollment = 20
+        self.section4.registration_volume = 10
+        self.section4.save()
+
+        
+        for _ in range(8):
+            Registration.objects.create(
+                user=self.user1,
+                section=self.section1,
+                resubscribed_from=None,
+                created_at=timezone.now(),
+            )
+
+        for _ in range(60):
+            Registration.objects.create(
+                user=self.user2,
+                section=self.section2,
+                resubscribed_from=None,
+                created_at=timezone.now(),
+            )
+
+        for _ in range(40):
+            Registration.objects.create(
+                user=self.user1,
+                section=self.section3,
+                resubscribed_from=None,
+                created_at=timezone.now(),
+            )
+
+        for _ in range(10):
+            Registration.objects.create(
+                user=self.user2,
+                section=self.section4,
+                resubscribed_from=None,
+                created_at=timezone.now(),
+            )
+
+    def test_update_hot_courses_command(self):
+        
+        call_command('alertstats', 5)
+
+ 
+        self.course1.refresh_from_db()
+        self.course2.refresh_from_db()
+        self.course3.refresh_from_db()
+        self.course4.refresh_from_db()
+
+        
+        self.assertTrue(self.course1.is_hot_course)
+        self.assertTrue(self.course2.is_hot_course)
+        self.assertFalse(self.course3.is_hot_course)
+        self.assertFalse(self.course4.is_hot_course)

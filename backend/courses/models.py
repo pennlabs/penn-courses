@@ -281,6 +281,11 @@ class Course(models.Model):
         ),
     )
 
+    is_hot_course = models.BooleanField(
+        default=False,
+        help_text="is this course a hot course right now?"
+    )
+
     class Meta:
         unique_together = (
             ("department", "code", "semester"),

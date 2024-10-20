@@ -580,3 +580,4 @@ class FriendshipView(generics.ListAPIView):
             res["message"] = "Friendship request already rejected."
             return JsonResponse(res, status=status.HTTP_409_CONFLICT)
         return JsonResponse(res, status=status.HTTP_200_OK)
+

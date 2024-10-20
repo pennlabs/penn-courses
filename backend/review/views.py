@@ -39,6 +39,7 @@ from review.util import (
     get_single_dict_from_qs,
     get_status_updates_map,
     make_subdict,
+    course_is_hot,
 )
 
 
@@ -127,7 +128,7 @@ section_filters_pcr = Q(has_reviews=True) | (
         override_response_schema=course_reviews_response_schema,
     )
 )
-@permission_classes([IsAuthenticated])
+#@permission_classes([IsAuthenticated])
 def course_reviews(request, course_code, semester=None):
     """
     Get all reviews for the topic of a given course and other relevant information.
@@ -153,6 +154,9 @@ def course_reviews(request, course_code, semester=None):
             .select_related("topic__most_recent")
             .get()
         )
+        course.count_for_hot_course = F("count_for_hot_course") + 1
+        course.save()  # Save the updated course object
+
     except Course.DoesNotExist:
         raise Http404()
 
@@ -248,6 +252,13 @@ def course_reviews(request, course_code, semester=None):
         course__topic=topic,
     )
 
+    ##add hot courses here please ... 
+        ## registration metrics??
+
+    is_hot = course_is_hot(topic, num_registration_metrics)
+    ######################################################################################### ^ does not work
+
+
     return Response(
         {
             "code": course["full_code"],
@@ -262,6 +273,7 @@ def course_reviews(request, course_code, semester=None):
             "instructors": instructors,
             "registration_metrics": num_registration_metrics > 0,
             **get_average_and_recent_dict_single(course),
+            "is_hot": is_hot, 
         }
     )
 
