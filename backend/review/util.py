@@ -103,7 +103,7 @@ def course_is_hot(courseName, registrationMetrics):
         }
         for course in hot_courses
     ]
-    return(courses_data)
+    return(True)
 
 
 

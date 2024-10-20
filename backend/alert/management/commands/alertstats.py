@@ -29,18 +29,18 @@ class Command(BaseCommand):
         Course.objects.update(is_hot_course = False)
         max_hot_courses = 2
 
-        course_registration_counts = (
-            qs
-            .values('section__course')
-            .annotate(num_registrations=Count('id'))
-            .order_by('-num_registrations')
-        )
+        # course_registration_counts = (
+        #     qs
+        #     .values('section__course')
+        #     .annotate(num_registrations=Count('id'))
+        #     .order_by('-num_registrations')
+        # )
 
-        top_alert_courses = [
-            item['section__course'] for item in course_registration_counts[:max_hot_courses]
-        ]
+        # top_alert_courses = [
+        #     item['section__course'] for item in course_registration_counts[:max_hot_courses]
+        # ]
 
-        top_alert_courses_set = set(top_alert_courses)
+        # top_alert_courses_set = set(top_alert_courses)
 
         courses = Course.objects.filter(semester=get_current_semester()).prefetch_related('sections')
 
