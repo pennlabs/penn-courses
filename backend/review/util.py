@@ -7,11 +7,18 @@ import scipy.stats as stats
 from django.db.models import Count, F
 from django.http import Http404
 
+import openai
+from dotenv import load_dotenv
+import os
+
 from courses.models import Section
 from PennCourses.settings.base import (
     PCA_REGISTRATIONS_RECORDED_SINCE,
     STATUS_UPDATES_RECORDED_SINCE,
 )
+
+# Load environment variables from .env file
+load_dotenv()
 
 
 def titleize(name):
@@ -587,3 +594,60 @@ def avg_and_recent_percent_open_plots(section_map, status_updates_map):
         recent_percent_open_plot,
         recent_percent_open_plot_semester,
     )
+
+# Set the OpenAI API key from the environment variable
+openai.api_key = os.getenv("OPENAI_API_KEY")
+
+def check_text_moderation(text, model="omni-moderation-latest", thresholds=None):
+    """
+    Wrapper function to moderate text using OpenAI's moderation API with adjustable thresholds.
+    
+    Parameters:
+    - text (str): The text input to be moderated.
+    - model (str): The model to use for moderation, default is 'omni-moderation-latest'.
+    - thresholds (dict): A dictionary where keys are category names and values are threshold scores (0-1).
+    
+    Returns:
+    - flagged (bool): True if any category score exceeds its threshold, False otherwise.
+    - results (dict): Detailed results of the moderation check including category scores.
+    """
+    # Set default thresholds if none are provided
+    if thresholds is None:
+        thresholds = {
+            "sexual": 0.5,
+            "sexual/minors": 0.5,
+            "harassment": 0.5,
+            "harassment/threatening": 0.5,
+            "hate": 0.5,
+            "hate/threatening": 0.5,
+            "illicit": 0.5,
+            "illicit/violent": 0.5,
+            "self-harm": 0.5,
+            "self-harm/intent": 0.5,
+            "self-harm/instructions": 0.5,
+            "violence": 0.5,
+            "violence/graphic": 0.5
+        }
+    
+    # Call the OpenAI moderation endpoint
+    response = openai.Moderation.create(
+        model=model,
+        input=text
+    )
+
+    # Extract results from the response
+    moderation_results = response['results'][0]
+    categories = moderation_results['categories']
+    category_scores = moderation_results['category_scores']
+    
+    # Check if any category score exceeds its threshold
+    flagged = False
+    for category, score in category_scores.items():
+        if score >= thresholds.get(category):
+            flagged = True
+            break
+
+    return flagged, {
+        "categories": categories,
+        "category_scores": category_scores
+    }
