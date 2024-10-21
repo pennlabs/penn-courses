@@ -10,9 +10,10 @@ Our default mode of running PCx backend is through using Dev Containers, outline
 
 1. `cd backend`
 2. Running Docker
-   1. Open a new terminal window (also in the `backend` directory) and run `docker-compose up`
-      > :warning: The default behavior of our Dev Container is for the docker daemon to be running automatically. However, if this is not the case (ie, if you cannot get `docker-compose up` to work due to a Docker connection error), or you get some Docker error along the lines of 
-      > - NEED TO FIND FIX
+   1. Open a new terminal window (also in the `backend` directory) and run `docker compose up`
+   
+      > :warning: The default behavior of our Dev Container is for the docker daemon to be running automatically. However, if this is not the case (ie, if you cannot get `docker-compose up` to work due to a Docker connection error), or you get some Docker error along the lines of `unable to start container process`, follow the appendix steps for running the backend natively.
+      
 3. Set up Django Development Environment
    1. `pipenv install --dev` – Downloads necessary packages.
    2. `pipenv shell` – Enters virtual environment for development.
@@ -24,8 +25,9 @@ Our default mode of running PCx backend is through using Dev Containers, outline
 5. Run the backend server.
    - Run the backend in development mode with the command `python manage.py runserver`. This will start the server at port `8000`.
    - Once the server is running, you can access the admin console at `localhost:8000/admin`, browse auto-generated API documentation from the code on your branch at `localhost:8000/api/documentation`, or use any of the other routes supported by this backend (comprehensively described by the API documentation), usually of the form `localhost:8000/api/...`
-     
+
       > :warning: NOTE: if you don't need documentation specific to your branch, it is usually more convenient to browse the API docs at [penncoursereview.com/api/documentation](https://penncoursereview.com/api/documentation)
+
    - With the backend server running, you can also run the frontend for any of our PCX products by following the instructions in the `frontend` README.
      
       > :warning: NOTE: If you have not loaded the test data from the previous step (Step 4), ensure that you have created a local user named "Penn-Courses" with the password "postgres" in your PostgreSQL. To add the user, navigate to your pgAdmin, and follow the path of Object -> Create -> Login/Group Role and create the appropriate user.
@@ -41,8 +43,7 @@ Our default mode of running PCx backend is through using Dev Containers, outline
 
 ## Environment Variables
 
-If you are in Penn Labs, reach out to a Penn Courses team lead for a .env file to
-put in your `backend` directory. This will contain some sensitive credentials (which is why the file contents are not pasted in this public README). If you are not in Penn Labs, see the "Loading Course Data on Demand" section below for instructions on how to get your own credentials.
+If you are in Penn Labs, reach out to a Penn Courses team lead for a .env file to put in your `backend` directory. This will contain some sensitive credentials (which is why the file contents are not pasted in this public README). If you are not in Penn Labs, see the "Loading Course Data on Demand" section below for instructions on how to get your own credentials.
 
 NOTE: when using `pipenv`, environment variables are only refreshed when you exit your shell and rerun `pipenv shell` (this is a common source of confusing behavior, so it's good to know about).
 
@@ -57,13 +58,13 @@ We use `black`, `flake8`, and 'isort' to lint our code. Once you are in the `bac
 
 ### Via Database Dump (Penn Labs members)
 
-- To get going quickly with a local database loaded with lots of test data,
-   you can download this [pcx_test.sql](https://penn-labs.slack.com/files/U02FND52FLJ/F06GLQP0UF2/pcx_test_1_2024.sql) SQL dump file. You will only be able to access this if you are a member of labs; if you still need access to data, read on.
+- To get going quickly with a local database loaded with lots of test data, you can download this [pcx_test.sql](https://penn-labs.slack.com/files/U04NPQQ2WRF/F07SHJSUKHT/pcx_test_10_2024.sql.zip) SQL dump file. You will only be able to access this if you are a member of Labs; if you still need access to data, read on.
 - First you'll need to install `psql` (see [Prerequisites](#prerequisites))
 - Clear the existing contents of your local database with `psql template1 -c 'drop database postgres;' -h localhost -U penn-courses` (the password is `postgres`)
 - Create a new database with `psql template1 -c 'create database postgres with owner "penn-courses";' -h localhost -U penn-courses` (same password).
    
    > :warning: NOTE: If this is giving you permission denied, try running `psql template1` and enter the following query `CREATE DATABASE postgres WITH OWNER "penn-courses"`.
+
 - Finally, run `psql -h localhost -d postgres -U penn-courses -f pcx_test.sql` (replacing `pcx_test.sql` with the full path to that file on your computer) to load
    the contents of the test database (this might take a while).
 - For accessing the Django admin site, the admin username is `admin` and the password is `admin` if you use this test db.
