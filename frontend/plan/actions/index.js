@@ -564,11 +564,35 @@ const rateLimitedFetch = (url, init) =>
         }
     });
 
+export const deduplicateCourseMeetings = (course) => {
+    course.sections.forEach((section) => {
+        const meetings = [];
+        section.meetings.forEach((meeting) => {
+            const exists = meetings.some(
+                (existingMeeting) =>
+                    existingMeeting.day === meeting.day &&
+                    existingMeeting.start === meeting.start &&
+                    existingMeeting.end === meeting.end
+            );
+
+            if (!exists) {
+                section.push(meeting);
+            }
+        });
+
+        section.meetings = meetings;
+    });
+};
+
 export function fetchCourseDetails(courseId) {
     return (dispatch) => {
         dispatch(updateCourseInfoRequest());
         doAPIRequest(`/base/current/courses/${courseId}/`)
             .then((res) => res.json())
+            .then((data) => {
+                deduplicateCourseMeetings(data);
+                return data;
+            })
             .then((course) => dispatch(updateCourseInfo(course)))
             .catch((error) => dispatch(sectionInfoSearchError(error)));
     };
@@ -583,6 +607,10 @@ export function fetchCourseDetails(courseId) {
 export const fetchBackendSchedules = (onComplete) => (dispatch) => {
     doAPIRequest("/plan/schedules/")
         .then((res) => res.json())
+        .then((data) => {
+            data.forEach(deduplicateCourseMeetings);
+            return data;
+        })
         .then((schedules) => {
             onComplete(schedules);
         })
