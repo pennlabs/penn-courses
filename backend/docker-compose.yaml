@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres
+    image: postgres:15.8
     environment:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=penn-courses
