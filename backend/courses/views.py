@@ -520,7 +520,8 @@ class FriendshipView(generics.ListAPIView):
 
     def post(self, request):
         sender = request.user
-        recipient = get_object_or_404(User, username=request.data.get("pennkey"))
+
+        recipient = get_object_or_404(User, username=request.data.get("pennkey").lower())
 
         existing_friendship = (
             self.get_all_friendships().filter(Q(recipient=recipient) | Q(sender=recipient)).first()
@@ -556,7 +557,7 @@ class FriendshipView(generics.ListAPIView):
         # (depends on who sends the request)
         res = {}
         sender = request.user
-        recipient = get_object_or_404(User, username=request.data.get("pennkey"))
+        recipient = get_object_or_404(User, username=request.data.get("pennkey").lower())
 
         existing_friendship = (
             self.get_all_friendships().filter(Q(recipient=recipient) | Q(sender=recipient)).first()

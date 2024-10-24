@@ -27,7 +27,7 @@ class FriendshipModelTest(TestCase):
         self.assertTrue(UserProfile.objects.filter(user=u2).exists())
         self.assertTrue(UserProfile.objects.filter(user=u1).exists())
 
-        make_friends = self.client1.post(reverse("friendship"), {"pennkey": u2.username})
+        make_friends = self.client1.post(reverse("friendship"), {"pennkey": u2.username.upper()})
 
         self.assertEquals(make_friends.status_code, 201)
         self.assertTrue(
