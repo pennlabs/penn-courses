@@ -520,8 +520,14 @@ class FriendshipView(generics.ListAPIView):
 
     def post(self, request):
         sender = request.user
+        res = {}
 
-        recipient = get_object_or_404(User, username=request.data.get("pennkey").lower())
+        username = request.data.get("pennkey")
+        if not username:
+            res["message"] = "User not found"
+            return Response(res, status=status.HTTP_404_NOT_FOUND)
+
+        recipient = get_object_or_404(User, username = username.lower())
 
         existing_friendship = (
             self.get_all_friendships().filter(Q(recipient=recipient) | Q(sender=recipient)).first()
@@ -555,9 +561,18 @@ class FriendshipView(generics.ListAPIView):
     def delete(self, request):
         # either deletes a friendship or cancels/rejects a friendship request
         # (depends on who sends the request)
-        res = {}
+        
         sender = request.user
-        recipient = get_object_or_404(User, username=request.data.get("pennkey").lower())
+
+        res = {}
+
+        username = request.data.get("pennkey")
+        if not username:
+            res["message"] = "User not found."
+            return Response(res, status=status.HTTP_404_NOT_FOUND)
+
+        recipient = get_object_or_404(User, username = username.lower())
+        
 
         existing_friendship = (
             self.get_all_friendships().filter(Q(recipient=recipient) | Q(sender=recipient)).first()
