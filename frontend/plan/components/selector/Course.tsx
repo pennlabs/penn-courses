@@ -17,8 +17,8 @@ const RowSelectors = styled.li`
     }
 `;
 
-const CourseContainer = styled.div<{ isRecCourse: boolean }>`
-    padding-left: ${({ isRecCourse }) => (isRecCourse ? "1.5em" : "2.85em")};
+const CourseContainer = styled.div<{ $isRecCourse: boolean }>`
+    padding-left: ${({ $isRecCourse: isRecCourse }) => (isRecCourse ? "1.5em" : "2.85em")};
     padding-top: 1em;
     padding-bottom: 1em;
     align-items: center;
@@ -26,7 +26,7 @@ const CourseContainer = styled.div<{ isRecCourse: boolean }>`
     flex-direction: row;
 `;
 
-const DeleteContainer = styled.div<{ isRecCourse: boolean }>`
+const DeleteContainer = styled.div<{ $isRecCourse: boolean }>`
     overflow: hidden;
     width: 5%;
     display: flex;
@@ -41,15 +41,15 @@ const DeleteContainer = styled.div<{ isRecCourse: boolean }>`
     }
 `;
 
-const CourseInfoContainer = styled.div<{ isRecCourse: boolean }>`
+const CourseInfoContainer = styled.div<{ $isRecCourse: boolean }>`
     display: flex;
     flex-direction: row;
-    width: ${({ isRecCourse }) => (isRecCourse ? "95%" : "100%")};
+    width: ${({ $isRecCourse: isRecCourse }) => (isRecCourse ? "95%" : "100%")};
 `;
 
-const CourseIdentityContainer = styled.div<{ isRecCourse: boolean }>`
+const CourseIdentityContainer = styled.div<{ $isRecCourse: boolean }>`
     overflow: hidden;
-    width: ${({ isRecCourse }) => (isRecCourse ? "58.5%" : "60%")};
+    width: ${({ $isRecCourse: isRecCourse }) => (isRecCourse ? "58.5%" : "60%")};
 `;
 
 // Bulma: title is-6
@@ -75,13 +75,13 @@ const CourseTitle = styled.span`
     color: #888888;
 `;
 
-const CourseQualityContainer = styled.div<{ isRecCourse: boolean }>`
+const CourseQualityContainer = styled.div<{ $isRecCourse: boolean }>`
     margin-right: 2px;
-    width: ${({ isRecCourse }) => (isRecCourse ? "20.75%" : "20%")};
+    width: ${({ $isRecCourse: isRecCourse }) => (isRecCourse ? "20.75%" : "20%")};
 `;
 
-const CourseDifficultyContainer = styled.div<{ isRecCourse: boolean }>`
-    width: ${({ isRecCourse }) => (isRecCourse ? "20.75%" : "20%")};
+const CourseDifficultyContainer = styled.div<{ $isRecCourse: boolean }>`
+    width: ${({ $isRecCourse: isRecCourse }) => (isRecCourse ? "20.75%" : "20%")};
 `;
 
 const StarIcon = styled(Icon)`
@@ -90,10 +90,10 @@ const StarIcon = styled(Icon)`
     font-size: 0.6875rem;
 `;
 
-const InfoPopup = styled.div<{ show: boolean }>`
+const InfoPopup = styled.div<{ $show: boolean }>`
     position: absolute;
-    display: ${({ show }) => (show ? "flex" : "none")};
-    visibility: ${({ show }) => (show ? "visible" : "hidden")};
+    display: ${({ $show: show }) => (show ? "flex" : "none")};
+    visibility: ${({ $show: show }) => (show ? "visible" : "hidden")};
     text-align: center;
     z-index: 20;
     background-color: white;
@@ -137,13 +137,13 @@ export default function Course({
                         position: "relative",
                     }}
                 >
-                    <InfoPopup show={showInfo}>Recommended Course</InfoPopup>
+                    <InfoPopup $show={showInfo}>Recommended Course</InfoPopup>
                 </div>
             )}
-            <CourseContainer isRecCourse={existIsRecCourse}>
+            <CourseContainer $isRecCourse={existIsRecCourse}>
                 {isRecCourse && (
                     <DeleteContainer
-                        isRecCourse={isRecCourse}
+                        $isRecCourse={isRecCourse}
                         onClick={onClickDelete}
                         role="button"
                     >
@@ -156,11 +156,11 @@ export default function Course({
                     </DeleteContainer>
                 )}
                 <CourseInfoContainer
-                    isRecCourse={existIsRecCourse}
+                    $isRecCourse={existIsRecCourse}
                     onClick={onClick}
                     role="button"
                 >
-                    <CourseIdentityContainer isRecCourse={existIsRecCourse}>
+                    <CourseIdentityContainer $isRecCourse={existIsRecCourse}>
                         <CourseIDContainer>
                             <CourseID>{course.id.replace(/-/g, " ")}</CourseID>
                             {isStar && (
@@ -186,10 +186,10 @@ export default function Course({
 
                         <CourseTitle>{course.title}</CourseTitle>
                     </CourseIdentityContainer>
-                    <CourseQualityContainer isRecCourse={existIsRecCourse}>
+                    <CourseQualityContainer $isRecCourse={existIsRecCourse}>
                         <Badge value={course.course_quality} />
                     </CourseQualityContainer>
-                    <CourseDifficultyContainer isRecCourse={existIsRecCourse}>
+                    <CourseDifficultyContainer $isRecCourse={existIsRecCourse}>
                         <Badge value={course.difficulty} />
                     </CourseDifficultyContainer>
                 </CourseInfoContainer>

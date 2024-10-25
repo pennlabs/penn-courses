@@ -18,14 +18,14 @@ const NameBubble = styled.div`
     transition: 150ms ease background;
     margin-right: 0.85rem;
     background: ${(props) => {
-        if (props.color === "purple") {
-            return props.selected ? "#6B73D0" : "#c8cbed";
+        if (props.$color === "purple") {
+            return props.$selected ? "#6B73D0" : "#c8cbed";
         }
-        return props.selected ? "#9a9a9a" : "#656565";
+        return props.$selected ? "#9a9a9a" : "#656565";
     }};
     &:hover {
         background: ${(props) =>
-            props.color === "purple" ? "#9399DB" : "#444444"};
+            props.$color === "purple" ? "#9399DB" : "#444444"};
     }
 `;
 
@@ -37,7 +37,7 @@ const InnerMenu = styled.div`
     padding: 0.32rem;
     font-size: 0.85rem;
     box-shadow: 0 0 5px 0 lightgrey;
-    right: ${(props) => (props.leftAligned ? "0%" : "61%")};
+    right: ${(props) => (props.$leftAligned ? "0%" : "61%")};
 `;
 
 const NameContainer = styled.p`
@@ -63,6 +63,7 @@ const LogoutButton = styled.div`
 `;
 
 const TriangleUp = styled.div`
+    transform: ${({ down }) => (down ? "rotate(180deg)" : "rotate(0)")};
     width: 0;
     height: 0;
     border-left: 5px solid transparent;
@@ -85,9 +86,10 @@ const LogoutDropdownMenu = styled.div`
     display: ${({ selected }) => (selected ? "block" : "none")};
     left: 0;
     min-width: 12rem;
-    padding-top: 4px;
+    ${({ floatTop }) =>
+        floatTop ? "padding-bottom: 4px" : "padding-top: 4px"};
     position: absolute;
-    top: 100%;
+    ${({ floatTop }) => (floatTop ? "bottom: 100%" : "top: 100%")};
     z-index: 20;
 `;
 
@@ -109,6 +111,7 @@ const UserSelector = ({
     leftAligned,
     backgroundColor,
     nameLength,
+    dropdownTop, // whether the dropdown menu should appear above or below
 }) => {
     const [selected, setSelected] = useState(false);
 
@@ -122,8 +125,8 @@ const UserSelector = ({
     return (
         <Dropdown ref={onClickOutside}>
             <NameBubble
-                selected={selected}
-                color={backgroundColor}
+                $selected={selected}
+                $color={backgroundColor}
                 role="button"
                 id="user-selector"
                 onClick={() => setSelected(!selected)}
@@ -134,10 +137,10 @@ const UserSelector = ({
                         "U"}{" "}
                 </span>
             </NameBubble>
-            <LogoutDropdownMenu selected={selected}>
+            <LogoutDropdownMenu selected={selected} floatTop={dropdownTop}>
                 <LogoutDropdownContainer className="dropdown-menu-container">
-                    <TriangleUp />
-                    <InnerMenu leftAligned={leftAligned}>
+                    <TriangleUp down={dropdownTop} />
+                    <InnerMenu $leftAligned={leftAligned}>
                         <NameContainer>
                             {" "}
                             {firstName} {lastName}{" "}
@@ -170,6 +173,7 @@ UserSelector.propTypes = {
     leftAligned: PropTypes.bool,
     backgroundColor: PropTypes.string,
     nameLength: PropTypes.number,
+    dropdownTop: PropTypes.bool,
 };
 
 export default UserSelector;

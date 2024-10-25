@@ -1,3 +1,7 @@
+import { type User } from "pcx-shared-components/src/types";
+
+export { type User } from "pcx-shared-components/src/types";
+
 export enum School {
     SEAS = "SEAS",
     WHARTON = "WH",
@@ -88,6 +92,15 @@ export interface Section {
     associated_sections: Section[];
 }
 
+export interface Alert {
+    id: string;
+    section: string;
+    cancelled: boolean;
+    auto_resubscribe: boolean;
+    close_notification: boolean;
+    status: string;
+}
+
 export interface Meeting {
     id: string;
     day: string;
@@ -112,11 +125,6 @@ export interface MeetingBlock {
     };
     // used for finding course conflicts
     id?: number;
-}
-
-export interface Profile {
-    email: string | null;
-    phone: string | null;
 }
 
 export interface Requirement {
@@ -157,13 +165,6 @@ export interface Schedule {
     name: string;
     created_at: string;
     updated_at: string;
-}
-
-export interface User {
-    username: string;
-    first_name: string;
-    last_name: string;
-    profile: Profile;
 }
 
 export interface Friendship {

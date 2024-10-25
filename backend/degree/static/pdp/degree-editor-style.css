@@ -1,0 +1,28 @@
+.editor {
+    height: 100%;
+    width: 100%;
+    font-family: "Space Mono", "Arial", sans-serif;
+}
+
+.react-flow__handle-top	{
+    background-color: blue;
+}
+
+.react-flow__handle-bottom	{
+    background-color: red;
+}
+
+.react-flow__handle-connecting .react-flow__handle-valid {
+    width: 8px;
+    height: 8px;
+}
+
+.react-flow__handle-connecting:not(.react-flow__handle-valid) {
+    background-color: darkgray;
+}
+
+#content {
+    width: 100%;
+    height: 80vh;
+    padding: 0;   
+}

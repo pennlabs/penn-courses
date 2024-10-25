@@ -39,7 +39,7 @@ const ModalCard = styled.div`
 `;
 
 interface ModalCardHeadProps {
-    center: boolean;
+    $center: boolean;
 }
 
 const ModalCardHead = styled.header<ModalCardHeadProps>`
@@ -51,7 +51,7 @@ const ModalCardHead = styled.header<ModalCardHeadProps>`
     align-items: center;
     display: flex;
     flex-shrink: 0;
-    justify-content: ${({ center }) => (center ? "center" : "space-between")};
+    justify-content: ${({ $center }) => ($center ? "center" : "space-between")};
     padding: 20px;
     padding-bottom: 0.2rem;
     position: relative;
@@ -83,7 +83,7 @@ const Modal = ({
     <ModalContainer>
         <ModalBackground />
         <ModalCard>
-            <ModalCardHead center={!headerIcon}>
+            <ModalCardHead $center={!headerIcon}>
                 <header>{title}</header>
                 {headerIcon && <img alt="" src={headerIcon} />}
             </ModalCardHead>

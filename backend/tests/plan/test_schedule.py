@@ -865,7 +865,7 @@ class ScheduleTest(TestCase):
     def test_schedule_dne(self):
         response = self.client.get("/api/plan/schedules/1000/")
         self.assertEqual(response.status_code, 404)
-        self.assertEqual(response.data["detail"], "Not found.")
+        self.assertEqual(response.data["detail"].code, "not_found")
 
     def test_name_already_exists(self):
         create_mock_data_with_reviews("CIS-121-001", TEST_SEMESTER, 2)

@@ -1,6 +1,7 @@
 import fetch from "cross-fetch";
 import AwesomeDebouncePromise from "awesome-debounce-promise";
 import { batch } from "react-redux";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
 import getCsrf from "../components/csrf";
 import { MIN_FETCH_INTERVAL } from "../constants/sync_constants";
 import { PATH_REGISTRATION_SCHEDULE_NAME } from "../constants/constants";
@@ -41,6 +42,14 @@ export const SECTION_INFO_SEARCH_SUCCESS = "SECTION_INFO_SEARCH_SUCCESS";
 export const ADD_CART_ITEM = "ADD_CART_ITEM";
 export const REMOVE_CART_ITEM = "REMOVE_CART_ITEM";
 export const CHANGE_SORT_TYPE = "CHANGE_SORT_TYPE";
+
+export const REGISTER_ALERT_ITEM = "REGISTER_ALERT_ITEM";
+export const REACTIVATE_ALERT_ITEM = "REACTIVATE_ALERT_ITEM";
+export const DEACTIVATE_ALERT_ITEM = "DEACTIVATE_ALERT_ITEM";
+export const DELETE_ALERT_ITEM = "DELETE_ALERT_ITEM";
+export const UPDATE_CONTACT_INFO = "UPDATE_CONTACT_INFO";
+
+export const MARK_ALERTS_SYNCED = "MARK_ALERTS_SYNCED";
 
 export const TOGGLE_CHECK = "TOGGLE_CHECK";
 export const REMOVE_SCHED_ITEM = "REMOVE_SCHED_ITEM";
@@ -493,6 +502,35 @@ export const removeCartItem = (sectionId) => ({
     sectionId,
 });
 
+export const registerAlertFrontend = (alert) => ({
+    type: REGISTER_ALERT_ITEM,
+    alert,
+});
+
+export const reactivateAlertFrontend = (sectionId) => ({
+    type: REACTIVATE_ALERT_ITEM,
+    sectionId,
+});
+
+export const deactivateAlertFrontend = (sectionId) => ({
+    type: DEACTIVATE_ALERT_ITEM,
+    sectionId,
+});
+
+export const deleteAlertFrontend = (sectionId) => ({
+    type: DELETE_ALERT_ITEM,
+    sectionId,
+});
+
+export const updateContactInfoFrontend = (contactInfo) => ({
+    type: UPDATE_CONTACT_INFO,
+    contactInfo,
+});
+
+export const markAlertsSynced = () => ({
+    type: MARK_ALERTS_SYNCED,
+});
+
 export const changeSortType = (sortMode) => ({
     type: CHANGE_SORT_TYPE,
     sortMode,
@@ -526,11 +564,38 @@ const rateLimitedFetch = (url, init) =>
         }
     });
 
+export const deduplicateCourseMeetings = (course) => {
+    const deduplicatedCourse = {
+        ...course,
+        sections: course.sections.map((section) => {
+            const meetings = [];
+
+            section.meetings.forEach((meeting) => {
+                const exists = meetings.some(
+                    (existingMeeting) =>
+                        existingMeeting.day === meeting.day &&
+                        existingMeeting.start === meeting.start &&
+                        existingMeeting.end === meeting.end
+                );
+
+                if (!exists) {
+                    meetings.push(meeting);
+                }
+            });
+
+            return { ...section, meetings };
+        }),
+    };
+
+    return deduplicatedCourse;
+};
+
 export function fetchCourseDetails(courseId) {
     return (dispatch) => {
         dispatch(updateCourseInfoRequest());
         doAPIRequest(`/base/current/courses/${courseId}/`)
             .then((res) => res.json())
+            .then((data) => deduplicateCourseMeetings(data))
             .then((course) => dispatch(updateCourseInfo(course)))
             .catch((error) => dispatch(sectionInfoSearchError(error)));
     };
@@ -545,6 +610,7 @@ export function fetchCourseDetails(courseId) {
 export const fetchBackendSchedules = (onComplete) => (dispatch) => {
     doAPIRequest("/plan/schedules/")
         .then((res) => res.json())
+        .then((data) => data.map((course) => deduplicateCourseMeetings(course)))
         .then((schedules) => {
             onComplete(schedules);
         })
@@ -632,9 +698,7 @@ export const createScheduleOnBackend = (name, sections = []) => (dispatch) => {
         .then(({ id }) => {
             dispatch(createScheduleOnFrontend(name, id, sections));
         })
-        .catch((error) => {
-            console.log(error);
-        });
+        .catch((error) => console.log(error));
 };
 
 export const deleteScheduleOnBackend = (user, scheduleName, scheduleId) => (
@@ -667,9 +731,7 @@ export const deleteScheduleOnBackend = (user, scheduleName, scheduleId) => (
                 })
             );
         })
-        .catch((error) => {
-            console.log(error);
-        });
+        .catch((error) => console.log(error));
 };
 
 export const findOwnPrimarySchedule = (user) => (dispatch) => {
@@ -686,9 +748,7 @@ export const findOwnPrimarySchedule = (user) => (dispatch) => {
                     setPrimaryScheduleIdOnFrontend(foundSched?.schedule.id)
                 );
             })
-            .catch((error) => {
-                console.log(error);
-            })
+            .catch((error) => console.log(error))
     );
 };
 
@@ -715,4 +775,182 @@ export const setCurrentUserPrimarySchedule = (user, scheduleId) => (
             dispatch(findOwnPrimarySchedule(user));
         })
         .catch((error) => console.log(error));
+};
+
+export const registerAlertItem = (sectionId) => (dispatch) => {
+    const registrationObj = {
+        section: sectionId,
+        auto_resubscribe: true,
+        close_notification: false,
+    };
+    const init = {
+        method: "POST",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+        body: JSON.stringify(registrationObj),
+    };
+    doAPIRequest("/alert/registrations/", init)
+        .then((res) => res.json())
+        .then((data) => {
+            dispatch(
+                registerAlertFrontend({
+                    ...registrationObj,
+                    id: data.id,
+                    cancelled: false,
+                    status: "C",
+                })
+            );
+        });
+};
+
+export const reactivateAlertItem = (sectionId, alertId) => (dispatch) => {
+    const updateObj = {
+        resubscribe: true,
+    };
+    const init = {
+        method: "PUT",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+        body: JSON.stringify(updateObj),
+    };
+    doAPIRequest(`/alert/registrations/${alertId}/`, init).then((res) => {
+        if (res.ok) {
+            dispatch(reactivateAlertFrontend(sectionId));
+        }
+    });
+};
+
+export const deactivateAlertItem = (sectionId, alertId) => (dispatch) => {
+    const updateObj = {
+        cancelled: true,
+    };
+    const init = {
+        method: "PUT",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+        body: JSON.stringify(updateObj),
+    };
+    doAPIRequest(`/alert/registrations/${alertId}/`, init).then((res) => {
+        if (res.ok) {
+            dispatch(deactivateAlertFrontend(sectionId));
+        }
+    });
+};
+
+export const deleteAlertItem = (sectionId, alertId) => (dispatch) => {
+    const updateObj = {
+        deleted: true,
+    };
+    const init = {
+        method: "PUT",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+        body: JSON.stringify(updateObj),
+    };
+    doAPIRequest(`/alert/registrations/${alertId}/`, init).then((res) => {
+        if (res.ok) {
+            dispatch(deleteAlertFrontend(sectionId));
+        }
+    });
+};
+
+export const fetchAlerts = () => (dispatch) => {
+    const init = {
+        method: "GET",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+    };
+    doAPIRequest("/alert/registrations/", init)
+        .then((res) => res.json())
+        .then((alerts) => {
+            alerts.forEach((alert) => {
+                dispatch(
+                    registerAlertFrontend({
+                        id: alert.id,
+                        section: alert.section,
+                        cancelled: alert.cancelled,
+                        auto_resubscribe: alert.auto_resubscribe,
+                        close_notification: alert.close_notification,
+                        status: alert.section_status,
+                    })
+                );
+            });
+        })
+        .catch((error) => console.log(error));
+};
+
+export const fetchContactInfo = () => (dispatch) => {
+    fetch("/accounts/me/", {
+        method: "GET",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+    })
+        .then((res) => res.json())
+        .then((data) => {
+            dispatch(
+                updateContactInfoFrontend({
+                    email: data.profile.email,
+                    phone: data.profile.phone,
+                })
+            );
+        })
+        // eslint-disable-next-line no-console
+        .catch((error) => console.log(error));
+};
+
+export const updateContactInfo = (contactInfo) => (dispatch) => {
+    const profile = {
+        email: contactInfo.email,
+        phone:
+            parsePhoneNumberFromString(contactInfo.phone, "US")?.number ?? "",
+    };
+    fetch("/accounts/me/", {
+        method: "PATCH",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+        body: JSON.stringify({
+            profile,
+        }),
+    }).then((res) => {
+        if (!res.ok) {
+            throw new Error(JSON.stringify(res));
+        } else {
+            dispatch(updateContactInfoFrontend(profile));
+        }
+    });
 };

@@ -4,7 +4,8 @@
     "shared-components",
     "alert",
     "plan",
-    "review"
+    "review",
+    "degree-plan"
   ],
   "private": true,
   "scripts": {
@@ -22,5 +23,9 @@
     }
   },
   "dependencies": {
+  },
+  "resolutions": {
+    "**/@types/react": "^18.2.0",
+    "**/@types/react-dom": "^18.2.0"
   }
 }

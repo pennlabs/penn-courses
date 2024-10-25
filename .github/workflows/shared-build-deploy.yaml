@@ -15,7 +15,7 @@ jobs:
       path: backend
       flake: true
       black: true
-      pythonVersion: 3.10-buster
+      pythonVersion: 3.11-buster
 
   publish-backend:
     uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@v0.1
@@ -52,16 +52,17 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        product: [review, plan, alert]
+        product: [review, plan, alert, degree-plan]
     with:
       path: frontend/${{ matrix.product }}
+      nodeVersion: 18.19.0
 
   publish-frontend:
     uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@v0.1
     strategy:
       fail-fast: true
       matrix:
-        product: [{name: pcr, path: review}, {name: pcp, path: plan}, {name: pca, path: alert}]
+        product: [{name: pcr, path: review}, {name: pcp, path: plan}, {name: pca, path: alert}, {name: pdp, path: degree-plan}]
     with:
       # Inputs
       imageName: "${{ matrix.product.name }}-frontend"

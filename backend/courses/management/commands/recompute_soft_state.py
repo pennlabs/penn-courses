@@ -99,10 +99,44 @@ def recompute_enrollment():
         )
 
 
+# course credits = sum(section credis for all activities for sections below 500)
+# the < 500 heuristic comes from here:
+# https://provider.www.upenn.edu/computing/da/dw/student/enrollment_section_type.e.html
+COURSE_CREDITS_RAW_SQL = dedent(
+    """
+    WITH CourseCredits AS (
+        SELECT U0."id", SUM(U2."activity_cus") AS total_credits
+        FROM "courses_course" U0
+        INNER JOIN (
+            SELECT MAX(U1."credits") AS "activity_cus", U1."course_id"
+            FROM "courses_section" U1
+            WHERE U1."code" < '500' AND (U1."status" <> 'X' OR U1."status" <> '')
+            GROUP BY U1."course_id", U1."activity"
+        ) AS U2
+        ON U0."id" = U2."course_id"
+        GROUP BY U0."id"
+    )
+
+    UPDATE "courses_course" U0
+    SET "credits" = CourseCredits.total_credits
+    FROM CourseCredits
+    WHERE U0."id" = CourseCredits."id";
+"""
+)
+
+
+def recompute_course_credits(
+    model=Course,  # so this function can be used in migrations (see django.db.migrations.RunPython)
+):
+    with connection.cursor() as cursor:
+        cursor.execute(COURSE_CREDITS_RAW_SQL)
+
+
 def recompute_precomputed_fields(verbose=False):
     """
     Recomputes the following precomputed fields:
         - Course.num_activities
+        - Course.credits
         - Section.num_meetings
         - Section.has_reviews
         - Section.has_status_updates
@@ -115,6 +149,9 @@ def recompute_precomputed_fields(verbose=False):
     if verbose:
         print("\tRecomputing Course.num_activities")
     recompute_num_activities()
+    if verbose:
+        print("\tRecomputing Course.credits")
+    recompute_course_credits()
     if verbose:
         print("\tRecomputing Section.num_meetings")
     recompute_meeting_count()
@@ -164,7 +201,9 @@ def recompute_percent_open(semesters: list[str], verbose=False):
             num_total_updates = 0
             for section in sections:
                 status_updates = StatusUpdate.objects.filter(
-                    section=section, created_at__gt=add_drop_start, created_at__lt=add_drop_end
+                    section=section,
+                    created_at__gt=add_drop_start,
+                    created_at__lt=add_drop_end,
                 ).order_by("created_at")
                 num_total_updates += len(status_updates)
                 total_open_seconds = 0
@@ -415,7 +454,12 @@ def recompute_demand_distribution_estimates(semesters: list[str], verbose=False)
                     closed_sections_demand_values = np.asarray(
                         [val for sec_id, val in demands.items() if section_status[sec_id] == "C"]
                     )
-                    csrdv_frac_zero, fit_shape, fit_loc, fit_scale = (None, None, None, None)
+                    csrdv_frac_zero, fit_shape, fit_loc, fit_scale = (
+                        None,
+                        None,
+                        None,
+                        None,
+                    )
                     if len(closed_sections_demand_values) > 0:
                         closed_sections_positive_demand_values = closed_sections_demand_values[
                             np.where(closed_sections_demand_values > 0)

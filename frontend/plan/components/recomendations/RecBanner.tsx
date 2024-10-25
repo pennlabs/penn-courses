@@ -16,13 +16,13 @@ recommendations section will take into account any changes
 you have made to your Penn Course Plan schedules since the 
 last refresh.`;
 
-const BannerContainer = styled.div<{ collapse: boolean }>`
+const BannerContainer = styled.div<{ $collapse: boolean }>`
     display: flex;
     align-items: center;
     flex-direction: row;
     justify-content: space-between;
-    margin-top: ${({ collapse }) => (collapse ? "1.5625rem" : "2.5rem")};
-    margin-bottom: ${({ collapse }) => (collapse ? "0px" : "0.625rem")};
+    margin-top: ${({ $collapse: collapse }) => (collapse ? "1.5625rem" : "2.5rem")};
+    margin-bottom: ${({ $collapse: collapse }) => (collapse ? "0px" : "0.625rem")};
     transition: all 0.7s;
     padding: 0 0.9375rem;
 `;
@@ -74,7 +74,7 @@ const RecBanner = ({ show, setShow, setRefresh }: RecBannerProps) => {
         }, TIME_OUT_DURATION);
     };
     return (
-        <BannerContainer collapse={!show}>
+        <BannerContainer $collapse={!show}>
             {/* left side */}
             <BannerLeft>
                 <NewLabel />

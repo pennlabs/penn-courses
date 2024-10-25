@@ -1,4 +1,4 @@
-FROM node:10-buster as build-deps
+FROM node:18-bookworm as build-deps
 
 WORKDIR /app/
 

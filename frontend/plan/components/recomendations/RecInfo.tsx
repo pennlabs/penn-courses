@@ -7,10 +7,10 @@ const InfoIcon = styled(Icon)`
     font-size: 0.8125rem;
 `;
 
-const InfoPopup = styled.div<{ show: boolean }>`
+const InfoPopup = styled.div<{ $show: boolean }>`
     position: absolute;
-    display: ${({ show }) => (show ? "flex" : "none")};
-    visibility: ${({ show }) => (show ? "visible" : "hidden")};
+    display: ${({ $show: show }) => (show ? "flex" : "none")};
+    visibility: ${({ $show: show }) => (show ? "visible" : "hidden")};
     text-align: center;
     z-index: 20;
     background-color: white;
@@ -37,7 +37,7 @@ const RecInfo = () => {
                     position: "relative",
                 }}
             >
-                <InfoPopup show={showInfo}>
+                <InfoPopup $show={showInfo}>
                     Recommendations are generated based on course descriptions
                     and courses taken by users with similar mock schedules
                     (voluntarily sent to Penn Labs for use in course

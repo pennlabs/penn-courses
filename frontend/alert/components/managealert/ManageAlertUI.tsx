@@ -51,7 +51,7 @@ const AlertGrid = styled.div`
 `;
 
 export const ManageAlertHeader = () => (
-    <Flex margin="-3.4rem 0rem 0rem 0rem">
+    <Flex $margin="-3.4rem 0rem 0rem 0rem">
         <img
             alt="Penn Course Alert logo"
             src="/svg/PCA_logo.svg"
@@ -103,7 +103,7 @@ export const ManageAlert = ({
             clearTimeout(searchTimeout);
         }
         setSearchTimeout(
-            setTimeout(() => {
+            window.setTimeout(() => {
                 setFilter({ search: searchText });
             }, 100)
         );
@@ -111,7 +111,7 @@ export const ManageAlert = ({
 
     return (
         <Container>
-            <Flex margin="0.2rem 2rem 0.1rem 2rem" center valign spaceBetween>
+            <Flex $margin="0.2rem 2rem 0.1rem 2rem" $center $valign $spaceBetween>
                 <TitleText>Alert Management</TitleText>
                 <AlertSearch value={searchValue} onChange={handleChange} />
             </Flex>

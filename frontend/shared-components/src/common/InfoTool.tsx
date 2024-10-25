@@ -16,10 +16,10 @@ const InfoIcon = styled(Icon)`
     font-size: 0.8125rem;
 `;
 
-const InfoPopup = styled.div<{ show: boolean }>`
+const InfoPopup = styled.div<{ $show: boolean }>`
     position: absolute;
-    display: ${({ show }) => (show ? "flex" : "none")};
-    visibility: ${({ show }) => (show ? "visible" : "hidden")};
+    display: ${({ $show }) => ($show ? "flex" : "none")};
+    visibility: ${({ $show }) => ($show ? "visible" : "hidden")};
     text-align: center;
     z-index: 20;
     background-color: white;
@@ -50,7 +50,7 @@ const InfoTool = ({ text }: InfoToolProps) => {
                     position: "relative",
                 }}
             >
-                <InfoPopup show={showInfo}>{text}</InfoPopup>
+                <InfoPopup $show={showInfo}>{text}</InfoPopup>
             </div>
             <span
                 onMouseEnter={() => setShowInfo(true)}

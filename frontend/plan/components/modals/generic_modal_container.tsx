@@ -16,9 +16,9 @@ interface ModalContainerProps {
     isBig: boolean;
 }
 
-const OuterModalContainer = styled.div<{ title: string }>`
+const OuterModalContainer = styled.div<{ $title: string }>`
     align-items: center;
-    display: ${(props) => (props.title ? "flex " : "none ")} !important;
+    display: ${(props) => (props.$title ? "flex " : "none ")} !important;
     flex-direction: column;
     justify-content: center;
     overflow: hidden;
@@ -52,10 +52,10 @@ const ModalBackground = styled.div`
     top: 0;
 `;
 
-const ModalCard = styled.div<{ isBig: boolean }>`
+const ModalCard = styled.div<{ $isBig: boolean }>`
     border-radius: 4px;
-    max-width: ${(props) => (props.isBig ? "400px" : "700px")} !important;
-    max-height: ${(props) => (props.isBig ? "275px" : "400px")} !important;
+    max-width: ${(props) => (props.$isBig ? "400px" : "700px")} !important;
+    max-height: ${(props) => (props.$isBig ? "275px" : "400px")} !important;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -145,11 +145,11 @@ const ModalContainer = ({
     dispatch,
     modalKey,
     modalProps,
-    isBig,
+    isBig: isBig,
 }: PropsWithChildren<ModalContainerProps> & DispatchProp) => (
-    <OuterModalContainer title={title}>
+    <OuterModalContainer $title={title}>
         <ModalBackground />
-        <ModalCard isBig={isBig}>
+        <ModalCard $isBig={isBig}>
             <ModalCardHead>
                 <ModalCardTitle>{title}</ModalCardTitle>
                 <div

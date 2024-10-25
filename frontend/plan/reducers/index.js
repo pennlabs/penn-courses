@@ -5,6 +5,7 @@ import { modals } from "./modals";
 import { filters } from "./filters";
 import { login } from "./login";
 import { friendships } from "./friendships";
+import { alerts } from "./alerts";
 
 const coursePlanApp = combineReducers({
     schedule,
@@ -13,6 +14,7 @@ const coursePlanApp = combineReducers({
     filters,
     login,
     friendships,
+    alerts,
 });
 
 export default coursePlanApp;

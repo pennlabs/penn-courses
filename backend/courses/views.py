@@ -15,7 +15,6 @@ from courses.models import (
     Attribute,
     Course,
     Friendship,
-    Comment,
     NGSSRestriction,
     PreNGSSRequirement,
     Section,
@@ -27,7 +26,6 @@ from courses.serializers import (
     AttributeListSerializer,
     CourseDetailSerializer,
     CourseListSerializer,
-    CommentSerializer,
     FriendshipSerializer,
     MiniSectionSerializer,
     NGSSRestrictionListSerializer,
@@ -44,7 +42,10 @@ from plan.management.commands.recommendcourses import retrieve_course_clusters, 
 SEMESTER_PARAM_DESCRIPTION = (
     "The semester of the course (of the form YYYYx where x is A [for spring], "
     "B [summer], or C [fall]), e.g. '2019C' for fall 2019. Alternatively, you "
-    "can just pass 'current' for the current semester."
+    "can just pass 'current' for the current semester. Finally, you can pass 'all' "
+    "to always return the most recent course for each full_code, no matter which "
+    "semester it is from. The 'all' option can be significantly more expensive, so use "
+    "only where needed. "
 )
 
 
@@ -66,6 +67,12 @@ class BaseCourseMixin(AutoPrefetchViewSetMixin, generics.GenericAPIView):
         semester = self.get_semester()
         if semester != "all":
             queryset = queryset.filter(**{self.get_semester_field(): semester})
+        else:  # Only used for Penn Degree Plan (as of 4/10/2024)
+            queryset = (
+                queryset.exclude(credits=None)  # heuristic: if the credits are empty, then ignore
+                .order_by("full_code", "-semester")
+                .distinct("full_code")
+            )
         return queryset
 
     def get_queryset(self):
@@ -274,7 +281,11 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
                 .filter(Q(status="O") | Q(status="C"))
                 .distinct()
                 .prefetch_related(
-                    "course", "meetings", "associated_sections", "meetings__room", "instructors"
+                    "course",
+                    "meetings",
+                    "associated_sections",
+                    "meetings__room",
+                    "instructors",
                 ),
             )
         )
@@ -569,6 +580,3 @@ class FriendshipView(generics.ListAPIView):
             res["message"] = "Friendship request already rejected."
             return JsonResponse(res, status=status.HTTP_409_CONFLICT)
         return JsonResponse(res, status=status.HTTP_200_OK)
-
-
-   

@@ -1,12 +1,11 @@
 import React from "react";
 import styled from "styled-components";
-import PropTypes from "prop-types";
 
-const LoginButtonStyles = styled.a`
+const LoginButtonStyles = styled.a<{ $noMargin: boolean }>`
     font-size: 0.85rem !important;
     padding: 0 1rem 0 1rem;
-    margin-right: ${({ noMargin }) => (noMargin ? 0 : "1rem")};
-    font-size: .85rem!important;
+    margin-right: ${({ $noMargin }) => ($noMargin ? 0 : "1rem")};
+    font-size: 0.85rem !important;
     background-color: #3273dc;
     border-color: transparent;
     color: #fff;
@@ -26,33 +25,31 @@ const LoginButtonStyles = styled.a`
     position: relative;
     vertical-align: top;
     text-decoration: none;
-    padding: 0 1rem!important;
+    padding: 0 1rem !important;
     &:hover {
         background-color: #276cda;
     }
     &:active {
         background-color: #2366d1;
     }
-    padding: "0.5rem",
-    fontSize: "1rem!important",
-    paddingRight: "1rem",
-    paddingLeft: "1rem",
+    padding: "0.5rem";
+    font-size: "1rem!important";
+    padding-right: "1rem";
+    padding-left: "1rem";
 `;
 
-const LoginButton = ({ noMargin, pathname }) => {
+const LoginButton: React.FC<{
+    noMargin?: boolean;
+    pathname: string;
+}> = ({ noMargin, pathname }) => {
     return (
         <LoginButtonStyles
-            noMargin={noMargin}
+            $noMargin={noMargin ?? false}
             href={`/accounts/login/?next=${pathname}`}
         >
             Login
         </LoginButtonStyles>
     );
-};
-
-LoginButton.propTypes = {
-    noMargin: PropTypes.bool,
-    pathname: PropTypes.string,
 };
 
 export default LoginButton;

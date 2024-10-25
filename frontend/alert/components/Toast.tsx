@@ -9,16 +9,16 @@ import { faTimes } from "@fortawesome/free-solid-svg-icons";
 import { between, TABLET, SMALLDESKTOP } from "../constants";
 
 interface BorderProps {
-    border: string;
-    background: string;
+    $border: string;
+    $background: string;
 }
 
 const Rectangle = styled.div<BorderProps>`
     display: flex;
     flex-direction: row;
     border-radius: 0.5rem;
-    border: solid 1px ${(props) => props.border};
-    background-color: ${(props) => props.background};
+    border: solid 1px ${(props) => props.$border};
+    background-color: ${(props) => props.$background};
     float: right;
     width: 20rem;
     min-height: 4rem;
@@ -41,14 +41,14 @@ const Icon = styled.img`
 `;
 
 interface IconDivProps {
-    background: string;
+    $background: string;
 }
 const IconDiv = styled.div<IconDivProps>`
     width: 1.5rem;
     height: 1.5rem;
     margin-left: 1rem;
     margin-top: 1rem;
-    background-color: ${(props) => props.background};
+    background-color: ${(props) => props.$background};
     border-radius: 1rem;
     position: relative;
 `;
@@ -62,8 +62,8 @@ const CloseButton = styled(FontAwesomeIcon).attrs((props) => ({
     cursor: pointer;
 `;
 
-const ToastText = styled.p`
-    color: ${(props) => props.color};
+const ToastText = styled.p<{ $color: string }>`
+    color: ${(props) => props.$color};
     width: 60%;
     font-size: 0.8rem;
     font-weight: 500;
@@ -114,13 +114,14 @@ const Toast = ({ onClose, children, type }: PropsWithChildren<ToastProps>) => {
 
     return (
         <RightItem>
-            <Rectangle border={primary} background={secondary}>
-                <IconDiv background={primary}>
+            <Rectangle $border={primary} $background={secondary}>
+                <IconDiv $background={primary}>
                     <Icon src={image} />
                 </IconDiv>
-                <ToastText color={textcolor}>{children}</ToastText>
+                <ToastText $color={textcolor}>{children}</ToastText>
                 <CloseButton
                     // src="/svg/close.svg"
+                    icon={faTimes} // TODO: we shouldn't need to do this
                     color={textcolor}
                     onClick={onClose}
                 />

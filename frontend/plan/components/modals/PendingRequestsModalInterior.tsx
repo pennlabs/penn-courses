@@ -3,9 +3,9 @@ import styled from "styled-components";
 import { User, Friendship, Color } from "../../types";
 import { Icon } from "../bulma_derived_components";
 
-const InitialIcon = styled.div<{ color: Color }>`
+const InitialIcon = styled.div<{ $color: Color }>`
     color: white;
-    background-color: ${(props) => props.color};
+    background-color: ${(props) => props.$color};
     opacity: 65%;
     justify-content: center;
     align-items: center;
@@ -67,14 +67,14 @@ const FriendName = styled.div`
     color: #4a4a4a;
 `;
 
-const ActionContainer = styled.div<{ mode: string }>`
-    background-color: ${(props) => props.mode === "sent" ? "white" : "#7878eb"};
-    color: ${(props) => props.mode === "sent" ? "#4A4A4A" : "white"};
+const ActionContainer = styled.div<{ $mode: string }>`
+    background-color: ${(props) => props.$mode === "sent" ? "white" : "#7878eb"};
+    color: ${(props) => props.$mode === "sent" ? "#4A4A4A" : "white"};
     font-weight: 600;
     padding: 0.3rem;
     border-radius: 0.3rem;
     width: 5rem;
-    cursor: ${(props) => props.mode === "sent" ? "default" : "pointer"};
+    cursor: ${(props) => props.$mode === "sent" ? "default" : "pointer"};
     justify-self: end;
 `;
 
@@ -94,13 +94,13 @@ const FriendRequest = ({
     cancel,
 }: FriendRequestProps) => (
     <FriendRequestContainer>
-        <InitialIcon color={color}>
+        <InitialIcon $color={color}>
             <div>{friend.first_name.substring(0, 1)}</div>
         </InitialIcon>
         <FriendName>
             {friend.first_name} {friend.last_name}
         </FriendName>
-        <ActionContainer mode={mode}>
+        <ActionContainer $mode={mode}>
             {mode === "sent" ? (
                 <span>Pending</span>
             ) : (
