@@ -39,6 +39,7 @@ def precompute_pcr_views(verbose=False, is_new_data=False):
                 # current topic id is already cached
                 valid_reviews_in_db += 1
                 response_obj = topic_id_to_response_obj[topic_id]
+                response_obj.expired = False
 
                 if is_new_data:
                     cache_deletes.add(topic_id)
@@ -53,10 +54,8 @@ def precompute_pcr_views(verbose=False, is_new_data=False):
                             f"semester={topic.most_recent.semester})"
                         )
                         continue
-
                     response_obj.response = review_data
-                    response_obj.expired = False
-                    objs_to_update.append(response_obj)
+                objs_to_update.append(response_obj)
             else:
                 # current topic id is not cached
                 review_data = manual_course_reviews(
@@ -82,10 +81,10 @@ def precompute_pcr_views(verbose=False, is_new_data=False):
 
         if verbose:
             print(
-                f"{total_reviews} course reviews covered,"
-                f"{valid_reviews_in_db} of which were already in the",
-                f"database. {len(objs_to_insert)} course reviews were created.",
-                f" {len(objs_to_update)} course reviews were updated.",
+                f"{total_reviews} course reviews covered, "
+                f"{valid_reviews_in_db} of which were already in the database. "
+                f"{len(objs_to_insert)} course reviews were created. "
+                f"{len(objs_to_update)} course reviews were updated."
             )
 
         # Bulk create / update objects.
