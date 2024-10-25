@@ -27,7 +27,7 @@ class Command(BaseCommand):
         
         print("updating hot_courses")
         Course.objects.update(is_hot_course = False)
-        max_hot_courses = 2
+        max_hot_courses = 50
 
         # course_registration_counts = (
         #     qs
@@ -54,7 +54,7 @@ class Command(BaseCommand):
             for section in sections:
                 capacity = section.capacity or 0
                 if capacity <= 0:
-                    continue  # Skip sections with zero or negative capacity
+                    continue
 
                 enrollment = section.enrollment or 0
                 enrollment_ratio = enrollment / capacity
@@ -74,9 +74,9 @@ class Command(BaseCommand):
         top_score_courses = sorted(course_scores, key=lambda x: x[1], reverse=True)[:max_hot_courses]
         top_score_courses_ids = set(course_id for course_id, _ in top_score_courses)
 
-        print("----")
-        print(top_score_courses)
-        print("----")
+        # print("----")
+        # print(top_score_courses)
+        # print("----")
         #hot_courses_ids = top_alert_courses_set.intersection(top_score_courses_ids)
 
         #print(hot_courses_ids)
