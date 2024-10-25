@@ -527,7 +527,7 @@ class FriendshipView(generics.ListAPIView):
             res["message"] = "User not found"
             return Response(res, status=status.HTTP_404_NOT_FOUND)
 
-        recipient = get_object_or_404(User, username = username.lower())
+        recipient = get_object_or_404(User, username=username.lower())
 
         existing_friendship = (
             self.get_all_friendships().filter(Q(recipient=recipient) | Q(sender=recipient)).first()
