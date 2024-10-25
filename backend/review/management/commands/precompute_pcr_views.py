@@ -3,7 +3,6 @@ import logging
 from django.core.cache import cache
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from django.http import Http404
 from tqdm import tqdm
 
 from courses.models import Topic
@@ -18,13 +17,13 @@ def precompute_pcr_views(verbose=False, is_new_data=False):
     objs_to_insert = []
     objs_to_update = []
     cache_deletes = set()
-    has_count = total_count = 0
+    valid_reviews_in_db = total_reviews = 0
 
     with transaction.atomic():
         # Mark all the topics as expired.
         CachedReviewResponse.objects.all().update(expired=True)
         cached_responses = CachedReviewResponse.objects.all()
-        topic_map = {response.topic_id: response for response in cached_responses}
+        topic_id_to_response_obj = {response.topic_id: response for response in cached_responses}
 
         # Iterate through all topics.
         for topic in tqdm(
@@ -34,49 +33,58 @@ def precompute_pcr_views(verbose=False, is_new_data=False):
             # get topic id
             course_id_list, course_code_list = zip(*topic.courses.values_list("id", "full_code"))
             topic_id = ".".join([str(id) for id in sorted(course_id_list)])
-            total_count += 1
+            total_reviews += 1
 
-            if topic_id in topic_map:
+            if topic_id in topic_id_to_response_obj:
                 # current topic id is already cached
-                has_count += 1
-                response_obj = topic_map[topic_id]
-                try:
-                    if is_new_data:
-                        response_obj.response = manual_course_reviews(
-                            topic.most_recent.full_code, topic.most_recent.semester
-                        )
-                        cache_deletes.add(topic_id)
-                    response_obj.expired = False
-                    objs_to_update.append(response_obj)
-                except Http404:
-                    logging.info(
-                        f"Topic returned 404 (topic_id {topic_id}, "
-                        f"course_code {course_code_list[0]}, semester {topic.most_recent.semester})"
-                    )
-            else:
-                # current topic id is not cached
-                try:
-                    review_json = manual_course_reviews(
+                valid_reviews_in_db += 1
+                response_obj = topic_id_to_response_obj[topic_id]
+
+                if is_new_data:
+                    cache_deletes.add(topic_id)
+                    review_data = manual_course_reviews(
                         topic.most_recent.full_code, topic.most_recent.semester
                     )
-                    objs_to_insert.append(
-                        CachedReviewResponse(topic_id=topic_id, response=review_json, expired=False)
-                    )
-                    for course_code in course_code_list:
-                        curr_topic_id = cache.get(course_code)
-                        if curr_topic_id:
-                            cache_deletes.add(curr_topic_id)
-                        cache_deletes.add(course_code)
-                except Http404:
+                    if not review_data:
+                        logging.info(
+                            f"Invalid review data for ("
+                            f"topic_id={topic_id},"
+                            f"course_code={course_code_list[0]},"
+                            f"semester={topic.most_recent.semester})"
+                        )
+                        continue
+
+                    response_obj.response = review_data
+                    response_obj.expired = False
+                    objs_to_update.append(response_obj)
+            else:
+                # current topic id is not cached
+                review_data = manual_course_reviews(
+                    topic.most_recent.full_code, topic.most_recent.semester
+                )
+                if not review_data:
                     logging.info(
-                        f"Topic returned 404 (topic_id {topic_id}, "
-                        f"course_code {course_code_list[0]}, semester {topic.most_recent.semester})"
+                        f"Invalid review data for ("
+                        f"topic_id={topic_id},"
+                        f"course_code={course_code_list[0]},"
+                        f"semester={topic.most_recent.semester})"
                     )
+                    continue
+
+                objs_to_insert.append(
+                    CachedReviewResponse(topic_id=topic_id, response=review_data, expired=False)
+                )
+                for course_code in course_code_list:
+                    curr_topic_id = cache.get(course_code)
+                    if curr_topic_id:
+                        cache_deletes.add(curr_topic_id)
+                    cache_deletes.add(course_code)
 
         if verbose:
             print(
-                f"{total_count} course reviews covered, {has_count} of which were already in the",
-                f" database. {len(objs_to_insert)} course reviews were created.",
+                f"{total_reviews} course reviews covered,"
+                f"{valid_reviews_in_db} of which were already in the",
+                f"database. {len(objs_to_insert)} course reviews were created.",
                 f" {len(objs_to_update)} course reviews were updated.",
             )
 

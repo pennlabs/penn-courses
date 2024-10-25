@@ -135,6 +135,7 @@ MONTH_IN_SECONDS = DAY_IN_SECONDS * 30
 @permission_classes([IsAuthenticated])
 def course_reviews(request, course_code, semester=None):
     request_semester = request.GET.get("semester")
+
     topic_id = cache.get(course_code)
     if topic_id is None:
         try:
@@ -150,7 +151,9 @@ def course_reviews(request, course_code, semester=None):
     if response is None:
         cached_response = CachedReviewResponse.objects.filter(topic_id=topic_id).first()
         if cached_response is None:
-            response = manual_course_reviews(course_code, request_semester, semester)
+            response = manual_course_reviews(course_code, request_semester)
+            if not response:
+                raise Http404()
         else:
             response = cached_response.response
         cache.set(topic_id, response, MONTH_IN_SECONDS)
@@ -178,7 +181,7 @@ def most_recent_course_from_code(course_code, semester):
     )
 
 
-def manual_course_reviews(course_code, request_semester, semester=None):
+def manual_course_reviews(course_code, request_semester):
     """
     Get all reviews for the topic of a given course and other relevant information.
     Different aggregation views are provided, such as reviews spanning all semesters,
@@ -188,7 +191,7 @@ def manual_course_reviews(course_code, request_semester, semester=None):
     try:
         course = most_recent_course_from_code(course_code, request_semester)
     except Course.DoesNotExist:
-        raise Http404()
+        return None
 
     topic = course.topic
     branched_from_full_code = course.branched_from_full_code

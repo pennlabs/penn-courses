@@ -101,6 +101,7 @@ class CachedReviewResponse(models.Model):
     reviews).
     """
 
+    # Using large string to account for topics with many course ids.
     topic_id = models.CharField(max_length=1000, db_index=True, unique=True)
     response = models.JSONField()
     expired = models.BooleanField(default=True)
