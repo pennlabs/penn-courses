@@ -64,12 +64,6 @@ class FriendshipModelTest(TestCase):
         delete_friends = self.client2.delete(reverse("friendship"), {"pennkey": u1.username})
         self.assertEquals(delete_friends.status_code, 200)
 
-
-
-
-
-    
-
     def test_basic_friendship_accept(self):
         u1 = self.u1
         u2 = self.u2
