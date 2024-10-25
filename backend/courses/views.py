@@ -467,11 +467,12 @@ class FriendshipView(generics.ListAPIView):
                 "POST": {
                     201: "Friendship request created successfully.",
                     200: "Friendship request accepted successfully.",
+                    404: "Username was None/ Username did not exist.",
                     409: "Friendship request already exists",
                 },
                 "DELETE": {
                     200: "Friendship rejected/deleted/cancelled successfully.",
-                    404: "Friendship does not exist.",
+                    404: "Friendship does not exist or Username does not exist.",
                     409: "Friendship request already rejected.",
                 },
             }
