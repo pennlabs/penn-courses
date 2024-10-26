@@ -213,6 +213,12 @@ const Semesters = ({
       : null
   );
   // semesters is state mostly derived from fulfillments
+  // console.log({fulfillments})
+  useEffect(() => {
+    console.log({fulfillments})
+    console.log(isLoadingFulfillments)
+  }, [fulfillments, isLoadingFulfillments])
+
 
   const getDefaultSemesters = React.useCallback(() => {
     const startingYear = currentSemester ? Number(currentSemester.substring(0, 4)) : new Date().getFullYear(); // Use current semester as default starting semester
@@ -268,7 +274,8 @@ const Semesters = ({
 
   /** Parse fulfillments and group them by semesters */
   useEffect(() => {
-    if (!activeDegreeplan || !fulfillments) return; // TODO: need more logic in this case
+    console.log({ fulfillments })
+    if (!activeDegreeplan || !fulfillments || isLoadingFulfillments) return; // TODO: need more logic in this case
     setSemesters((currentSemesters) => {
       const semesters = {} as { [semester: string]: Fulfillment[] };
       Object.keys(currentSemesters).forEach((semester) => {
@@ -283,7 +290,7 @@ const Semesters = ({
       });
       return semesters;
     });
-  }, [fulfillments, activeDegreeplan]);
+  }, [fulfillments, activeDegreeplan, isLoadingFulfillments]);
 
   return (
     <SemestersContainer className={className}>

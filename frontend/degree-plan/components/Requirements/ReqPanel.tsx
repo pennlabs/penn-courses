@@ -235,8 +235,6 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading}: Re
   const { data: activeDegreeplanDetail = null, isLoading: isLoadingDegrees } = useSWR<DegreePlan>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}` : null); 
   const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null); 
 
-  // console.log(fulfillments)
-
   const rulesToFulfillments = useMemo(() => {
     if (isLoadingFulfillments || !fulfillments) return {};
     const rulesToCourses: { [rule: string]: Fulfillment[] } = {};

@@ -346,22 +346,28 @@ const OnboardingPage = ({
   // Will likely change in the future!
   useEffect(() => {
     if (degreeID) {
+      console.log(degreeID)
+
       for (let sem of scrapedCourses) {
-        let semCode = sem.sem.match(/(\d+)/)[0];
-        if (sem.sem.includes("spring")) semCode += "A";
-        else if (sem.sem.includes("summer")) semCode += "B";
-        else semCode += "C";
+        console.log(sem)
+        let semCode = ""
+        if (sem.sem == "_TRAN") semCode = sem.sem
+
+        else {
+          semCode = sem.sem.match(/(\d+)/)[0];
+          if (sem.sem.includes("spring")) semCode += "A";
+          else if (sem.sem.includes("summer")) semCode += "B";
+          else semCode += "C";
+        }
+
         for (let course of sem.courses) {
           let code = course.replace(" ", "-").toUpperCase();
           createOrUpdate({ semester: semCode }, code);
         }
       }
-      for (let course of scrapedTransfer) {
-        let code = course.replace(" ", "-").toUpperCase();
-        createOrUpdate({ semester: "_TRAN" }, code);
-      }
+
       setShowOnboardingModal(false);
-      location.reload();
+      // location.reload();
     }
   }, [degreeID]);
 
@@ -443,20 +449,65 @@ const OnboardingPage = ({
   };
 
   // TRANSCRIPT PARSING
-  const handleTranscript = (items: any) => {
-    let allText: any = {};
+  const total = useRef<any>({})
+
+  const addText = (items: (any)[], index: number) => {
+    console.log(items, index)
+    let allText: any = { "col0": [], "col1": [] }
+    let maxCol = items.reduce(function (acc, el) {
+      if (el.str === '_________________________________________________________________') {
+        return Math.max(el.transform[4], acc)
+      }
+      return acc
+    }, -100)
+    // console.log(maxCol)
+
     for (let i in items) {
+      let col = items[i]?.transform[4];
       let pos = items[i]?.transform[5];
-      if (pos in allText) allText[pos].push(items[i]?.str);
-      else allText[pos] = [items[i]?.str];
-    }
-    let poses = Object.keys(allText).reverse();
-    let textResult = [];
-    for (let i in poses) {
-      textResult.push(allText[poses[i]].join("").toLowerCase());
+
+      let currentCol = col < maxCol ? "col0" : "col1";
+
+      if (items[i].str === "Level:High School") {
+        allText[currentCol] = [];
+        break
+      }
+
+      if (pos in allText[currentCol])
+        allText[currentCol][pos].push(items[i]?.str);
+      else
+        allText[currentCol][pos] = [items[i]?.str];
     }
 
-    let separatedCourses: any = {};
+    let textResult = [];
+    for (let col in allText) {
+      let poses = Object.keys(allText[col]).reverse();
+
+      for (let i in poses) {
+        textResult.push(allText[col][poses[i]].join("").toLowerCase());
+      }
+      total.current[index] = textResult;
+      console.log(total.current)
+      console.log("**********")
+    }
+
+
+    console.log(Object.keys(total.current).length)
+    if (Object.keys(total.current).length === numPages) {
+
+      let all: any = []
+      console.log(Object.keys(total.current).sort())
+      for (let key in Object.keys(total.current).sort()) {
+        all = all.concat(total.current[key])
+      }
+
+      parseTranscript(all)
+    }
+  }
+
+  const parseTranscript = (textResult: any) => {
+
+    let separatedCourses: any = [];
 
     for (let l in textResult) {
       // SCRAPE SCHOOL
@@ -466,10 +517,13 @@ const OnboardingPage = ({
         if (program.includes("arts"))
           tempSchools.push({ value: "BA", label: "Arts & Sciences" });
         // TODO: Ensure these are right!
-        if (program.includes("bachelor of science in engineering"))
-          tempSchools.push({ value: "BSE", label: "Engineering BSE" });
-        if (program.includes("bachelor of applied science"))
-          tempSchools.push({ value: "BAS", label: "Engineering BAS" });
+        if (program.includes("school of engineering and applied science")) {
+          if (textResult[parseInt(l)+1].includes("bachelor of science in engineering"))
+            tempSchools.push({ value: "BSE", label: "Engineering BSE" });
+          else
+            tempSchools.push({ value: "BAS", label: "Engineering BAS" });
+        }
+      
         if (program.includes("wharton"))
           tempSchools.push({ value: "BS", label: "Wharton" });
         if (program.includes("nursing"))
@@ -503,19 +557,22 @@ const OnboardingPage = ({
         }
       }
 
+
       // SCRAPE AP AND TRANSFER CREDIT
       if (textResult[l].includes("transfer credit")) {
         let truncatedTranscript = textResult.slice(parseInt(l) + 1);
         let courses = [];
         for (let line of truncatedTranscript) {
-          let courseMatch = line.match(/\b\w+\s\d{3,4}\b/);
+          // Match lines following course code format
+          let courseMatch = line.match(/\b\w+\s\d{3,4}\b/); 
           if (
             courseMatch &&
+            // Match lines following [term] [year] format
             !/(fall|spring|summer)\s\d{4}/i.test(courseMatch)
           ) {
             courses.push(courseMatch[0]);
           } else if (line.includes("institution credit")) {
-            setScrapedTransfer(courses);
+            separatedCourses["_TRAN"] = courses;
             console.log(courses);
             break;
           }
@@ -544,20 +601,11 @@ const OnboardingPage = ({
 
         setScrapedCourses(separatedCourses);
 
-        // ADD TO DOCK
-        // for (let sem of separatedCourses) {
-        //   console.log(sem);
-        //   for (let course of sem.courses) {
-        //     let code = course.replace(" ", "-").toUpperCase();
-        //     console.log(course.replace(" ", "-").toUpperCase());
-        //     // createOrUpdate({ full_code: code }, code);
-        //   }
-        // }
-
         // SCRAPE START YEAR AND INFER GRAD YEAR
         let years = separatedCourses.map((e, i) => {
-          return parseInt(e.sem.replace(/\D/g, ""));
+              return parseInt(e.sem.replace(/\D/g, ""));
         });
+        years.shift()
         let startYear = Math.min(...years);
         setStartingYear({
           value: startYear,
@@ -742,7 +790,7 @@ const OnboardingPage = ({
                       key={`page_${index + 1}`}
                       pageNumber={index + 1}
                       onGetTextSuccess={({ items, styles }) =>
-                        handleTranscript(items)
+                        addText(items, index)
                       }
                       renderTextLayer={true}
                     />
@@ -775,7 +823,10 @@ const OnboardingPage = ({
                 );
                 return (
                   <FieldWrapper style={{ display: "flex" }}>
-                    <Label>{e.sem[0].toUpperCase() + e.sem.slice(1)}</Label>
+                    { e.sem === "_TRAN" 
+                      ? <Label required={false}>Transfer Credit</Label>
+                      : <Label required={false}>{e.sem[0].toUpperCase() + e.sem.slice(1)}</Label>
+                    }
                     <Select
                       components={{ MultiValueRemove: () => null }}
                       options={semCourses}
