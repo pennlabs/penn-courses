@@ -126,12 +126,12 @@ export class MyChart extends PennLabsChart {
 			domain: { host: 'penndegreeplan.com', paths: ['/'] },
 		})
 
-    new CronJob(this, 'load-courses', {
-      schedule: cronTime.everySundayAt(4, 30),
-      image: backendImage,
-      secret,
-      cmd: ['python', 'manage.py', 'registrarimport'],
-    });
+		new CronJob(this, 'load-courses', {
+			schedule: cronTime.everyDayAt(3),
+			image: backendImage,
+			secret,
+			cmd: ['python', 'manage.py', 'registrarimport'],
+		});
 
 		new CronJob(this, 'report-stats', {
 			schedule: cronTime.everyDayAt(20),
