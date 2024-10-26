@@ -75,7 +75,7 @@ def precompute_pcr_views(verbose=False, is_new_data=False):
                     CachedReviewResponse(topic_id=topic_id, response=review_data, expired=False)
                 )
                 for course_code in course_code_list:
-                    curr_topic_id = cache.get(course_code)
+                    curr_topic_id = cache.get(CACHE_PREFIX + course_code)
                     if curr_topic_id:
                         cache_deletes.add(CACHE_PREFIX + curr_topic_id)
                     cache_deletes.add(CACHE_PREFIX + course_code)
