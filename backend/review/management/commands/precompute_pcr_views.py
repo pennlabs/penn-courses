@@ -6,6 +6,7 @@ from django.db import transaction
 from tqdm import tqdm
 
 from courses.models import Topic
+from PennCourses.settings.base import CACHE_PREFIX
 from review.models import CachedReviewResponse
 from review.views import manual_course_reviews
 
@@ -42,7 +43,7 @@ def precompute_pcr_views(verbose=False, is_new_data=False):
                 response_obj.expired = False
 
                 if is_new_data:
-                    cache_deletes.add(topic_id)
+                    cache_deletes.add(CACHE_PREFIX + topic_id)
                     review_data = manual_course_reviews(
                         topic.most_recent.full_code, topic.most_recent.semester
                     )
@@ -76,8 +77,8 @@ def precompute_pcr_views(verbose=False, is_new_data=False):
                 for course_code in course_code_list:
                     curr_topic_id = cache.get(course_code)
                     if curr_topic_id:
-                        cache_deletes.add(curr_topic_id)
-                    cache_deletes.add(course_code)
+                        cache_deletes.add(CACHE_PREFIX + curr_topic_id)
+                    cache_deletes.add(CACHE_PREFIX + course_code)
 
         if verbose:
             print(

@@ -19,7 +19,7 @@ from courses.models import (
 )
 from courses.util import get_current_semester, get_or_create_add_drop_period, prettify_semester
 from PennCourses.docs_settings import PcxAutoSchema
-from PennCourses.settings.base import TIME_ZONE, WAITLIST_DEPARTMENT_CODES
+from PennCourses.settings.base import CACHE_PREFIX, TIME_ZONE, WAITLIST_DEPARTMENT_CODES
 from review.annotations import annotate_average_and_recent, review_averages
 from review.documentation import (
     ACTIVITY_CHOICES,
@@ -136,7 +136,7 @@ MONTH_IN_SECONDS = DAY_IN_SECONDS * 30
 def course_reviews(request, course_code, semester=None):
     request_semester = request.GET.get("semester")
 
-    topic_id = cache.get(course_code)
+    topic_id = cache.get(CACHE_PREFIX + course_code)
     if topic_id is None:
         try:
             recent_course = most_recent_course_from_code(course_code, request_semester)
@@ -145,9 +145,9 @@ def course_reviews(request, course_code, semester=None):
         topic = recent_course.topic
         course_id_list = list(topic.courses.values_list("id"))
         topic_id = ".".join([str(id[0]) for id in sorted(course_id_list)])
-        cache.set(course_code, topic_id, MONTH_IN_SECONDS)
+        cache.set(CACHE_PREFIX + course_code, topic_id, MONTH_IN_SECONDS)
 
-    response = cache.get(topic_id)
+    response = cache.get(CACHE_PREFIX + topic_id)
     if response is None:
         cached_response = CachedReviewResponse.objects.filter(topic_id=topic_id).first()
         if cached_response is None:
@@ -156,7 +156,7 @@ def course_reviews(request, course_code, semester=None):
                 raise Http404()
         else:
             response = cached_response.response
-        cache.set(topic_id, response, MONTH_IN_SECONDS)
+        cache.set(CACHE_PREFIX + topic_id, response, MONTH_IN_SECONDS)
 
     return Response(response)
 
