@@ -28,7 +28,18 @@ export default function Home() {
         <SWRConfig
           value={{
             fetcher: (resource, init) =>
-              fetch(resource, init).then((res) => res.json()),
+            {
+              if (typeof resource === "string") {
+                return fetch(resource, init).then((res) => res.json())
+              }
+              if (Array.isArray(resource) && resource.every(k => typeof k === "string")) {
+                const last = resource.at(-1)
+                if(typeof last === "string") {
+                  return fetch(last, init).then((res) => res.json())
+                }
+              }
+              throw new Error("Undefined behavior due to invalid key")
+            },
             provider: () => new Map(),
             onError: (error, key) => {
               // if (error.status !== 403 && error.status !== 404) {

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import RuleComponent, { SkeletonRule } from './Rule';
 import { Degree as DegreeType, DegreePlan, Fulfillment, Rule } from '@/types';
 import styled from '@emotion/styled';
@@ -233,7 +233,13 @@ interface ReqPanelProps {
 const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading}: ReqPanelProps) => {
   const [editMode, setEditMode] = React.useState(false);  
   const { data: activeDegreeplanDetail = null, isLoading: isLoadingDegrees } = useSWR<DegreePlan>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}` : null); 
-  const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null); 
+  const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? ["REQ", `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments`] : null, {
+    
+  }); 
+
+  useEffect(() => {
+    
+  }, [fulfillments, isLoadingFulfillments])
 
   const rulesToFulfillments = useMemo(() => {
     if (isLoadingFulfillments || !fulfillments) return {};

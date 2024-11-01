@@ -8,6 +8,7 @@ import { pdfjs } from "react-pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
 import {
+  Degree,
   DegreeListing,
   DegreePlan,
   DockedCourse,
@@ -31,7 +32,10 @@ import {
   ArrowLeftIcon,
   ArrowRightIcon,
 } from "@radix-ui/react-icons";
+import { set } from "lodash";
 polyfillPromiseWithResolvers();
+
+const { closest } = require('fastest-levenshtein');
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.mjs`;
 
@@ -111,7 +115,7 @@ const NextButtonContainer = styled.div`
   }
 `;
 
-const NextButton = styled(Button)<{ disabled: boolean }>`
+const NextButton = styled(Button) <{ disabled: boolean }>`
   background-color: ${({ disabled }) =>
     disabled ? "var(--primary-color-dark)" : "#0000ff"};
 
@@ -407,18 +411,24 @@ const OnboardingPage = ({
   const startingYearOptions = getYearOptions()?.startYears;
   const graduationYearOptions = getYearOptions()?.gradYears;
 
-  const getMajorOptions = React.useCallback(() => {
-    /** Filter major options based on selected schools/degrees */
+
+  const getMajorOptions = (degrees: DegreeListing[] | undefined, schools: SchoolOption[], startingYear: any) => {
     const majorOptions = degrees
       ?.filter((d) => schools.map((s) => s.value).includes(d.degree))
       .sort((d) =>
-        Math.abs((startingYear ? startingYear.value : d.year) - d.year)
+        Math.abs((startingYear ? startingYear : d.year) - d.year)
       )
       .map((degree) => ({
         value: degree,
         label: createMajorLabel(degree),
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
+
+    return majorOptions;      
+  }
+
+  const majorOptionsCallback = React.useCallback(() => {
+    const majorOptions = getMajorOptions(degrees, schools, startingYear);
     return majorOptions;
   }, [schools, startingYear]);
 
@@ -448,19 +458,23 @@ const OnboardingPage = ({
     });
   };
 
+
   // TRANSCRIPT PARSING
-  const total = useRef<any>({})
+
+  const total = useRef<any>({});
 
   const addText = (items: (any)[], index: number) => {
-    console.log(items, index)
+
+    // At most the transcript will have two columns - we account for that here.
     let allText: any = { "col0": [], "col1": [] }
+
+    // Find x value for when second column begins using convenient lines.
     let maxCol = items.reduce(function (acc, el) {
       if (el.str === '_________________________________________________________________') {
         return Math.max(el.transform[4], acc)
       }
       return acc
     }, -100)
-    // console.log(maxCol)
 
     for (let i in items) {
       let col = items[i]?.transform[4];
@@ -468,11 +482,11 @@ const OnboardingPage = ({
 
       let currentCol = col < maxCol ? "col0" : "col1";
 
+      // Ignore potential high school program transcript
       if (items[i].str === "Level:High School") {
         allText[currentCol] = [];
         break
       }
-
       if (pos in allText[currentCol])
         allText[currentCol][pos].push(items[i]?.str);
       else
@@ -482,59 +496,60 @@ const OnboardingPage = ({
     let textResult = [];
     for (let col in allText) {
       let poses = Object.keys(allText[col]).reverse();
-
       for (let i in poses) {
         textResult.push(allText[col][poses[i]].join("").toLowerCase());
       }
       total.current[index] = textResult;
-      console.log(total.current)
-      console.log("**********")
     }
 
-
-    console.log(Object.keys(total.current).length)
+    // If all pages have been read, begin to parse text from transcript
     if (Object.keys(total.current).length === numPages) {
 
       let all: any = []
-      console.log(Object.keys(total.current).sort())
       for (let key in Object.keys(total.current).sort()) {
         all = all.concat(total.current[key])
       }
-
       parseTranscript(all)
     }
   }
 
   const parseTranscript = (textResult: any) => {
 
-    let separatedCourses: any = [];
+    let separatedCourses : any = [];
+
+    let startYear : number = 0;
+    let tempSchools : any = [];
+    let detectedMajor : string | null = null;
 
     for (let l in textResult) {
       // SCRAPE SCHOOL
-      if (textResult[l].includes("program")) {
+      if (textResult[l].replaceAll(" ", "").includes("program:")) {
+        console.log(textResult[l])
         let program = textResult[l].replace(/^.*?:\s*/, "");
-        let tempSchools = [];
+        // tempSchools = [];
         if (program.includes("arts"))
           tempSchools.push({ value: "BA", label: "Arts & Sciences" });
-        // TODO: Ensure these are right!
+       
         if (program.includes("school of engineering and applied science")) {
-          if (textResult[parseInt(l)+1].includes("bachelor of science in engineering"))
+          if (textResult[parseInt(l) + 1].includes("bachelor of science in engineering"))
             tempSchools.push({ value: "BSE", label: "Engineering BSE" });
           else
             tempSchools.push({ value: "BAS", label: "Engineering BAS" });
         }
-      
+
+        // TODO: Ensure these are right!
         if (program.includes("wharton"))
           tempSchools.push({ value: "BS", label: "Wharton" });
         if (program.includes("nursing"))
           tempSchools.push({ value: "BSN", label: "Nursing" });
-        setSchools(tempSchools);
+        if (tempSchools.length)
+          setSchools(tempSchools);
       }
 
       // SCRAPE MAJOR
       if (textResult[l].includes("major")) {
-        let major = textResult[l].replace(/^.*?:\s*/, "");
-        console.log(major);
+        detectedMajor = textResult[l].replace(/^.*?:\s*/, ""); 
+
       }
 
       // Regex gets an array for total institution values -> [Earned Hours, GPA Hours, Points, GPA]
@@ -564,7 +579,7 @@ const OnboardingPage = ({
         let courses = [];
         for (let line of truncatedTranscript) {
           // Match lines following course code format
-          let courseMatch = line.match(/\b\w+\s\d{3,4}\b/); 
+          let courseMatch = line.match(/\b\w+\s\d{3,4}\b/);
           if (
             courseMatch &&
             // Match lines following [term] [year] format
@@ -602,11 +617,11 @@ const OnboardingPage = ({
         setScrapedCourses(separatedCourses);
 
         // SCRAPE START YEAR AND INFER GRAD YEAR
-        let years = separatedCourses.map((e, i) => {
-              return parseInt(e.sem.replace(/\D/g, ""));
+        let years = separatedCourses.map((e: any, i: number) => {
+          return parseInt(e.sem.replace(/\D/g, ""));
         });
         years.shift()
-        let startYear = Math.min(...years);
+        startYear = Math.min(...years);
         setStartingYear({
           value: startYear,
           label: startYear,
@@ -617,6 +632,21 @@ const OnboardingPage = ({
         });
       }
     }
+
+    // Match degree
+    let possibleDegrees = getMajorOptions(degrees, tempSchools, startYear)
+      if (!detectedMajor?.includes("undeclared") && possibleDegrees) {
+        let justMajorNames = possibleDegrees.reduce((acc: any, el: any) => {
+          acc.push(el.label);
+          return acc;
+        }, [])
+        let closestMajor = closest(detectedMajor, justMajorNames)
+        var majorOption = possibleDegrees.find(obj => {
+          return obj.label === closestMajor
+        })
+        if (majorOption)
+          setMajors([majorOption])
+      }
   };
 
   if (currentPage === 0)
@@ -740,7 +770,7 @@ const OnboardingPage = ({
               <FieldWrapper>
                 <Label required>Major(s)</Label>
                 <Select
-                  options={getMajorOptions()}
+                  options={majorOptionsCallback()}
                   value={majors}
                   onChange={(selectedOptions) =>
                     setMajors([...selectedOptions])
@@ -811,9 +841,9 @@ const OnboardingPage = ({
                 <h2>Your Courses</h2>
                 <p>You can make edits on the next page.</p>
               </div>
-              {scrapedCourses.map((e, i) => {
+              {scrapedCourses.map((e: any, i: number) => {
                 const semCourses = e.courses.map(
-                  (course, _) =>
+                  (course: any, _: any) =>
                     [
                       {
                         value: course.toUpperCase(),
@@ -822,8 +852,8 @@ const OnboardingPage = ({
                     ][0]
                 );
                 return (
-                  <FieldWrapper style={{ display: "flex" }}>
-                    { e.sem === "_TRAN" 
+                  <FieldWrapper style={{ display: "flex" }} key={i}>
+                    {e.sem === "_TRAN"
                       ? <Label required={false}>Transfer Credit</Label>
                       : <Label required={false}>{e.sem[0].toUpperCase() + e.sem.slice(1)}</Label>
                     }
@@ -937,7 +967,7 @@ const OnboardingPage = ({
               <FieldWrapper>
                 <Label required>Major(s)</Label>
                 <Select
-                  options={getMajorOptions()}
+                  options={majorOptionsCallback()}
                   value={majors}
                   onChange={(selectedOptions) =>
                     setMajors([...selectedOptions])
@@ -998,9 +1028,6 @@ const OnboardingPage = ({
                     <Page
                       key={`page_${index + 1}`}
                       pageNumber={index + 1}
-                      onGetTextSuccess={({ items, styles }) =>
-                        handleTranscript(items)
-                      }
                       renderTextLayer={true}
                     />
                   ))}

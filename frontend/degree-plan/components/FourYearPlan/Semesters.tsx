@@ -209,13 +209,12 @@ const Semesters = ({
     Fulfillment[]
   >(
     activeDegreeplan
-      ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments`
+      ? ["SEM", `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments`]
       : null
   );
   // semesters is state mostly derived from fulfillments
-  // console.log({fulfillments})
   useEffect(() => {
-    console.log({fulfillments})
+    console.log("SEM", {fulfillments})
     console.log(isLoadingFulfillments)
   }, [fulfillments, isLoadingFulfillments])
 
