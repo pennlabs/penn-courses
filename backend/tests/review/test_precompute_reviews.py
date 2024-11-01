@@ -91,9 +91,6 @@ class PrecomputePcrReviewsCommandTestCase(TestCase):
         self.set_runtime_option()
         self.precompute_reviews(is_new_data=False)
 
-        print(Course.objects.all().values_list("id", "full_code", "topic"))
-        print(CachedReviewResponse.objects.all().values_list("topic_id"))
-
     def add_new_review_data(self):
         create_review("CIS-120-002", TEST5_SEMESTER, INSTRUCTOR_TWO, {"instructor_quality": 3})
         create_review("CIS-1200-001", TEST6_SEMESTER, INSTRUCTOR_THREE, {"instructor_quality": 0})
