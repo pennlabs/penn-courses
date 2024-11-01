@@ -103,12 +103,13 @@ export interface Alert {
 
 export interface Meeting {
     id: string;
-    day: string;
+    day?: string;
     start: number;
     end: number;
     room: string;
     latitude: number;
     longitude: number;
+    overlap: boolean;
 }
 
 // Represents a single colored block on the schedule
@@ -158,6 +159,16 @@ export interface CartCourse {
     section: Section;
     checked: boolean;
     overlaps: boolean;
+}
+
+export interface CoursesByDay {
+    M: CartCourse[];
+    T: CartCourse[];
+    W: CartCourse[];
+    R: CartCourse[];
+    F: CartCourse[];
+    S: CartCourse[];
+    U: CartCourse[];
 }
 
 export interface Schedule {
@@ -230,3 +241,9 @@ export type FilterType =
     export interface ColorsMap {
         [key: string]: Color
     }
+
+    export type Location = {
+        lat: number;
+        lng: number;
+    }
+

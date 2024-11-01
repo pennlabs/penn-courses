@@ -1,12 +1,11 @@
 import React, { FunctionComponent } from "react";
-import styled from "styled-components";
 import { connect } from "react-redux";
+import styled from "styled-components";
 import Section from "./Section";
 import { Section as SectionType, Alert as AlertType } from "../../types";
 import {
     addCartItem,
     openModal,
-    deleteAlertItem,
     removeCartItem,
     deactivateAlertItem,
 } from "../../actions";
@@ -55,7 +54,6 @@ function SectionList({
             .filter((alert: AlertType) => alert.cancelled === false)
             .map((alert: AlertType) => alert.section)
             .indexOf(id) !== -1;
-    console.log(sections);
     return (
         <ResultsContainer>
             <ul>
@@ -117,7 +115,7 @@ const mapDispatchToProps = (dispatch: (payload: any) => void) => ({
                         room: room,
                         title: section.id,
                     },
-                    `Find Your Class: ${section.id}`
+                    section.id
                 )
             );
         },

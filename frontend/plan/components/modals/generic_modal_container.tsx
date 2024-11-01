@@ -23,7 +23,7 @@ const OuterModalContainer = styled.div<{ $title: string }>`
     justify-content: center;
     overflow: hidden;
     position: fixed;
-    z-index: 40;
+    z-index: 2000 !important;
     bottom: 0;
     left: 0;
     right: 0;
