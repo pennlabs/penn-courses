@@ -83,7 +83,7 @@ function InnerMap({ locations, center } :InnerMapProps) {
 
     useEffect(() => {
         map.flyTo({ lat: center[0], lng: center[1]})
-    }, [locations])     
+    }, [center[0], center[1]])     
 
     return (
         <>
