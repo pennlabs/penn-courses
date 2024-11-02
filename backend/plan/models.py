@@ -90,3 +90,37 @@ class PrimarySchedule(models.Model):
 
     def __str__(self):
         return f"PrimarySchedule(User: {self.user}, Schedule ID: {self.schedule_id})"
+
+
+class NumberCalenders(models.Model):
+    
+    class Meta:
+        unique_together = (("section", "semester"))
+    
+    section = models.ForeignKey(
+        Section,
+        blank=True,
+        on_delete=models.CASCADE,
+        help_text=dedent(
+            """
+        The class section which has this count. 
+        The semester of each of these sections is assumed to match the semester defined by the semester field below.
+        
+        """
+        ),
+    )
+
+    semester = models.CharField(
+        max_length=5,
+        help_text=dedent(
+            """
+        The academic semester planned out by the schedule (of the form YYYYx where x is A
+        [for spring], B [summer], or C [fall]), e.g. `2019C` for fall 2019.
+        """
+        ),
+    )
+
+    count = models.IntegerField(
+        help_text="The count of the number of people who have this section in a schedule"
+    )
+

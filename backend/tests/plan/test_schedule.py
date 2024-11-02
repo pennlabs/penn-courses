@@ -13,6 +13,8 @@ from PennCourses.settings.base import PATH_REGISTRATION_SCHEDULE_NAME
 from plan.models import Schedule
 from tests.courses.util import create_mock_data_with_reviews
 
+from django.core.management import call_command
+
 
 User = get_user_model()
 
@@ -1224,3 +1226,47 @@ class ScheduleTest(TestCase):
                 path_schedule = schedule
         self.assertEqual(len(path_schedule["sections"]), 1)
         self.assertEqual(path_schedule["sections"][0]["id"], "CIS-120-001")
+
+    def test_countschedules_command(self):
+        """
+        Test the countschedules management command to ensure it correctly counts the number
+        of unique users who have each section in their schedules.
+        """
+        # Create an additional user and sections
+        user2 = User.objects.create_user(
+            username="user2", email="user2@example.com", password="top_secret"
+        )
+        _, cis160, cis160_reviews = create_mock_data_with_reviews(
+            "CIS-160-001", TEST_SEMESTER, 2
+        )
+
+        # Create schedules for user2
+        schedule2 = Schedule.objects.create(
+            person=user2,
+            semester=TEST_SEMESTER,
+            name="User2 Schedule",
+        )
+        schedule2.sections.set([self.cis120, cis160])  # user2 has both CIS-120-001 and CIS-160-001
+
+        # Run the countschedules command
+        call_command('countschedules')
+
+        # Fetch NumberCalenders instances for 'CIS-120-001' and 'CIS-160-001'
+        from plan.models import NumberCalenders
+
+        nc_cis120 = NumberCalenders.objects.get(
+            section=self.cis120,
+            semester=TEST_SEMESTER
+        )
+
+        nc_cis160 = NumberCalenders.objects.get(
+            section=cis160,
+            semester=TEST_SEMESTER
+        )
+
+        # Assert counts
+        # 'CIS-120-001' is in schedules of 'jacob' and 'user2' (2 unique users)
+        self.assertEqual(nc_cis120.count, 2)
+
+        # 'CIS-160-001' is only in schedule of 'user2' (1 unique user)
+        self.assertEqual(nc_cis160.count, 1)
