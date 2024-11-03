@@ -12,6 +12,6 @@ export default function Home() {
 
 function Logo() {
     return (
-        <Image src={`/img/logo.png`} alt="PCR Logo" width={64} height={64} />
+        <Image src={`/image/logo.png`} alt="PCR Logo" width={64} height={64} />
     );
 }
