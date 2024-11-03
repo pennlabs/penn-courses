@@ -247,6 +247,6 @@ export type FilterType =
     export type Location = {
         lat: number;
         lng: number;
-        color: string;
+        color?: string;
     }
 
