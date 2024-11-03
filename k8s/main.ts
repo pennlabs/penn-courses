@@ -139,6 +139,14 @@ export class MyChart extends PennLabsChart {
 			secret,
 			cmd: ['python', 'manage.py', 'alertstats', '1', '--slack'],
 		})
+
+		new CronJob(this, 'number-sections', {
+			schedule: cronTime.everyDayAt(4),
+			image: backendImage,
+			secret,
+			cmd: ['python', 'manage.py', 'countschedules'],
+		})
+
 	}
 }
 
