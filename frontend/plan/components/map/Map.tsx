@@ -17,7 +17,7 @@ function toDegrees(radians: number): number {
 }
 
 function getGeographicCenter(
-    locations: { lat: number; lng: number }[]
+    locations: Location[]
 ): [number, number] {
     let x = 0;
     let y = 0;
@@ -91,8 +91,8 @@ function InnerMap({ locations, center } :InnerMapProps) {
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            {separateOverlappingPoints(locations).map(({ lat, lng }, i) => (
-                <Marker key={i} lat={lat} lng={lng} />
+            {separateOverlappingPoints(locations).map(({ lat, lng, color }, i) => (
+                <Marker key={i} lat={lat} lng={lng} color={color}/>
             ))}    
         </>
     )
@@ -101,6 +101,7 @@ function InnerMap({ locations, center } :InnerMapProps) {
 
 function Map({ locations, zoom }: MapProps) {
     const center = getGeographicCenter(locations)
+    
     return (
         <MapContainer
             center={center}

@@ -80,6 +80,7 @@ export interface Instructor {
 export interface Section {
     id: string;
     status: Status;
+    color: Color;
     activity: Activity;
     credits: number;
     semester: string;
@@ -104,6 +105,7 @@ export interface Alert {
 export interface Meeting {
     id: string;
     day?: string;
+    color: string;
     start: number;
     end: number;
     room: string;
@@ -245,5 +247,6 @@ export type FilterType =
     export type Location = {
         lat: number;
         lng: number;
+        color: string;
     }
 

@@ -110,6 +110,7 @@ function MapTab({ meetingsByDay, focusSection }: MabTapProps) {
                                 .map((meeting: Meeting) => ({
                                     lat: meeting.latitude,
                                     lng: meeting.longitude,
+                                    color: meeting.color,
                                 }))
                                 .filter(
                                     (locData) =>
@@ -164,7 +165,7 @@ function getMeetingsByDay(schedules: any, scheduleSelected: any) {
         U: [],
     };
 
-    const sections = schedules.Schedule.sections;
+    const sections = schedules[scheduleSelected].sections;
 
     sections.forEach((section: Section) => {
         const inCart =
@@ -179,6 +180,7 @@ function getMeetingsByDay(schedules: any, scheduleSelected: any) {
                 const day = meeting.day;
                 meetingsByDay[day as Day].push({
                     id: section.id,
+                    color: section.color,
                     start: meeting.start,
                     end: meeting.end,
                     latitude: meeting.latitude,
@@ -214,7 +216,7 @@ function getMeetingsByDay(schedules: any, scheduleSelected: any) {
 const mapStateToProps = ({
     schedule: { schedules, scheduleSelected },
 }: any) => ({
-    meetingsByDay: schedules.Schedule
+    meetingsByDay: schedules[scheduleSelected]
         ? getMeetingsByDay(schedules, scheduleSelected)
         : {
               M: [],
