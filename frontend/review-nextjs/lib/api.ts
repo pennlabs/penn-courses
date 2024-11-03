@@ -7,14 +7,14 @@ export function getLogoutUrl(): string {
   )}`;
 }
 
-export function redirectForAuth(): void {
-  window.location.href = `/accounts/login/?next=${encodeURIComponent(
-    window.location.pathname
+export function getLoginUrl() {
+  return `/accounts/login/?next=${encodeURIComponent(
+      window.location.pathname
   )}`;
 }
 
-export async function apiCheckAuth(): Promise<boolean> {
-  const res = await doAPIRequest("/accounts/me/");
+export async function checkAuth(): Promise<boolean> {
+  const res = await fetch("/accounts/me/");
   if (res.status < 300 && res.status >= 200) {
     return true;
   } else {
