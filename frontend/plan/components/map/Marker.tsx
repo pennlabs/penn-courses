@@ -29,7 +29,13 @@ const Marker = ({ color = "#878ED8", lat, lng }: MarkerProps) => {
         iconAnchor: [12, 40],
     });
 
-    return <MarkerLeaflet position={[lat, lng]} icon={icon} />;
+    return (
+        <MarkerLeaflet
+            // @ts-ignore
+            position={[lat, lng]}
+            icon={icon}
+        />
+    );
 };
 
 export default React.memo(Marker);

@@ -88,6 +88,7 @@ function InnerMap({ locations, center } :InnerMapProps) {
     return (
         <>
             <TileLayer
+                // @ts-ignore
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
@@ -104,6 +105,7 @@ function Map({ locations, zoom }: MapProps) {
     
     return (
         <MapContainer
+            // @ts-ignore
             center={center}
             zoom={zoom}
             zoomControl={false}
