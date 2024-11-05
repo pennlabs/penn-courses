@@ -1011,6 +1011,15 @@ class CommentViewSet(viewsets.ModelViewSet):
             return Response(
                 {"message": "Insufficient fields provided."}, status=status.HTTP_400_BAD_REQUEST
             )
+        
+        # run moderation check 
+        text = request.data.get("text")
+        flagged, moderation_results = check_text_moderation(text)
+        if flagged:
+            return Response(
+                {"message": "Comment flagged for moderation.", "moderation_results": moderation_results},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         # verify section is real
         try:
@@ -1052,7 +1061,17 @@ class CommentViewSet(viewsets.ModelViewSet):
             )
 
         if "text" in request.data:
-            comment.text = request.data.get("text")
+            # Run moderation check on the new text 
+            text = request.data.get("text")
+            flagged, moderation_results = check_text_moderation(text)
+            if flagged:
+                return Response(
+                    {"message": "Comment flagged for moderation.", "moderation_results": moderation_results},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # update and save comment
+            comment.text = text
             comment.save()
             return Response({"message": "Successfully edited."}, status=status.HTTP_201_CREATED)
         else:
