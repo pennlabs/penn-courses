@@ -95,6 +95,19 @@ CONTEXT_TO_SLUG = {x[1]: x[2] for x in REVIEW_BIT_LABEL}
 ALL_FIELD_SLUGS = [x[2] for x in REVIEW_BIT_LABEL]
 
 
+class CachedReviewResponse(models.Model):
+    """
+    Represents a mapping from temp_topic_id (string-delimited list of sorted courses within a topic)
+    to a JSON object storing summarized course review data (all the data frontend uses to display
+    reviews).
+    """
+
+    # Using large string to account for topics with many course ids.
+    topic_id = models.CharField(max_length=1000, db_index=True, unique=True)
+    response = models.JSONField()
+    expired = models.BooleanField(default=True)
+
+
 class ReviewBit(models.Model):
     """
     A single key/value pair associated with a review. Fields are things like "course_quality",

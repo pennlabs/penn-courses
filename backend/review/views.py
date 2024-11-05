@@ -1,6 +1,7 @@
 from collections import Counter, defaultdict
 
 from dateutil.tz import gettz
+from django.core.cache import cache
 from django.db.models import F, Max, OuterRef, Q, Subquery, Value, IntegerField, Count, Exists
 from django.db.models.functions import Concat, Substr, StrIndex, Cast
 from django.http import Http404
@@ -21,7 +22,7 @@ from courses.models import (
 )
 from courses.util import get_current_semester, get_or_create_add_drop_period, prettify_semester, get_section_from_course_instructor_semester
 from PennCourses.docs_settings import PcxAutoSchema
-from PennCourses.settings.base import TIME_ZONE, WAITLIST_DEPARTMENT_CODES
+from PennCourses.settings.base import CACHE_PREFIX, TIME_ZONE, WAITLIST_DEPARTMENT_CODES
 from review.annotations import annotate_average_and_recent, review_averages
 from review.documentation import (
     ACTIVITY_CHOICES,
@@ -32,7 +33,7 @@ from review.documentation import (
     instructor_for_course_reviews_response_schema,
     instructor_reviews_response_schema,
 )
-from review.models import ALL_FIELD_SLUGS, Review
+from review.models import ALL_FIELD_SLUGS, CachedReviewResponse, Review
 from review.util import (
     aggregate_reviews,
     avg_and_recent_demand_plots,
@@ -93,6 +94,10 @@ section_filters_pcr = Q(has_reviews=True) | (
     (~Q(course__title="") | ~Q(course__description="")) & ~Q(activity="REC") & ~Q(status="X")
 )
 
+HOUR_IN_SECONDS = 60 * 60
+DAY_IN_SECONDS = HOUR_IN_SECONDS * 24
+MONTH_IN_SECONDS = DAY_IN_SECONDS * 30
+
 def get_course_from_code_semester(course_code, semester):
     return (
         Course.objects.filter(
@@ -150,51 +155,84 @@ def get_course_from_code_semester(course_code, semester):
 )
 @permission_classes([IsAuthenticated])
 def course_reviews(request, course_code, semester=None):
+    request_semester = request.GET.get("semester")
+
+    topic_id = cache.get(CACHE_PREFIX + course_code)
+    if topic_id is None:
+        try:
+            recent_course = most_recent_course_from_code(course_code, request_semester)
+        except Course.DoesNotExist:
+            raise Http404()
+        topic = recent_course.topic
+        course_id_list = list(topic.courses.values_list("id"))
+        topic_id = ".".join([str(id[0]) for id in sorted(course_id_list)])
+        cache.set(CACHE_PREFIX + course_code, topic_id, MONTH_IN_SECONDS)
+
+    response = cache.get(CACHE_PREFIX + topic_id)
+    if response is None:
+        cached_response = CachedReviewResponse.objects.filter(topic_id=topic_id).first()
+        if cached_response is None:
+            response = manual_course_reviews(course_code, request_semester)
+            if not response:
+                raise Http404()
+        else:
+            response = cached_response.response
+        cache.set(CACHE_PREFIX + topic_id, response, MONTH_IN_SECONDS)
+
+    return Response(response)
+
+
+def most_recent_course_from_code(course_code, semester):
+    return (
+        Course.objects.filter(
+            course_filters_pcr,
+            **(
+                {"topic__courses__full_code": course_code, "topic__courses__semester": semester}
+                if semester
+                else {"full_code": course_code}
+            ),
+        )
+        .order_by("-semester")[:1]
+        .annotate(
+            branched_from_full_code=F("topic__branched_from__most_recent__full_code"),
+            branched_from_semester=F("topic__branched_from__most_recent__semester"),
+        )
+        .select_related("topic__most_recent")
+        .get()
+    )
+
+
+def manual_course_reviews(course_code, request_semester):
     """
     Get all reviews for the topic of a given course and other relevant information.
     Different aggregation views are provided, such as reviews spanning all semesters,
     only the most recent semester, and instructor-specific views.
     """
+    semester = request_semester
     try:
-        semester = request.GET.get("semester")
-        course = (
-            Course.objects.filter(
-                course_filters_pcr,
-                **(
-                    {"topic__courses__full_code": course_code, "topic__courses__semester": semester}
-                    if semester
-                    else {"full_code": course_code}
-                ),
-            )
-            .order_by("-semester")[:1]
-            .annotate(
-                branched_from_full_code=F("topic__branched_from__most_recent__full_code"),
-                branched_from_semester=F("topic__branched_from__most_recent__semester"),
-            )
-            .select_related("topic__most_recent")
-            .get()
-        )
+        course = most_recent_course_from_code(course_code, request_semester)
     except Course.DoesNotExist:
-        raise Http404()
+        return None
 
     topic = course.topic
     branched_from_full_code = course.branched_from_full_code
     branched_from_semester = course.branched_from_semester
     course = topic.most_recent
     course_code = course.full_code
-    aliases = course.crosslistings.values_list("full_code", flat=True)
+    aliases = list(course.crosslistings.values_list("full_code", flat=True))
 
-    superseded = (
-        Course.objects.filter(
-            course_filters_pcr,
-            full_code=course_code,
+    superseded = False
+    if semester:
+        max_semester = (
+            Course.objects.filter(
+                course_filters_pcr,
+                full_code=course_code,
+            )
+            .aggregate(max_semester=Max("semester"))
+            .get("max_semester")
         )
-        .aggregate(max_semester=Max("semester"))
-        .get("max_semester")
-        > course.semester
-        if semester
-        else False
-    )
+        if max_semester:
+            superseded = max_semester > course.semester
     last_offered_sem_if_superceded = course.semester if superseded else None
 
     topic_codes = list(
@@ -269,22 +307,20 @@ def course_reviews(request, course_code, semester=None):
         course__topic=topic,
     )
 
-    return Response(
-        {
-            "code": course["full_code"],
-            "last_offered_sem_if_superceded": last_offered_sem_if_superceded,
-            "name": course["title"],
-            "description": course["description"],
-            "aliases": aliases,
-            "historical_codes": historical_codes,
-            "latest_semester": course["semester"],
-            "num_sections": num_sections,
-            "num_sections_recent": num_sections_recent,
-            "instructors": instructors,
-            "registration_metrics": num_registration_metrics > 0,
-            **get_average_and_recent_dict_single(course),
-        }
-    )
+    return {
+        "code": course["full_code"],
+        "last_offered_sem_if_superceded": last_offered_sem_if_superceded,
+        "name": course["title"],
+        "description": course["description"],
+        "aliases": aliases,
+        "historical_codes": historical_codes,
+        "latest_semester": course["semester"],
+        "num_sections": num_sections,
+        "num_sections_recent": num_sections_recent,
+        "instructors": instructors,
+        "registration_metrics": num_registration_metrics > 0,
+        **get_average_and_recent_dict_single(course),
+    }
 
 
 @api_view(["GET"])
@@ -839,6 +875,289 @@ def autocomplete(request):
     return Response(
         {"courses": course_set, "departments": department_set, "instructors": instructor_set}
     )
+
+# CommentsList
+# might not be necessary for this to be a viewset – since it's only one function, it can probably be a view – nice to have auth and serializer though
+class CommentList(generics.ListAPIView):
+    """
+    Retrieve a list of all comments for the provided course.
+    """
+
+    schema = PcxAutoSchema(
+        response_codes={
+            "review-coursecomments": {
+                "GET": {
+                    200: "Course comments retrieved successfully.",
+                    404: "Invalid course_code.",
+                }
+            },
+        },
+    )
+    serializer_class = CommentSerializer
+    http_method_names = ["get"]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, semester, course_code):
+        semester_arg = request.query_params.get("semester") or "all"
+        instructor = request.query_params.get("instructor") or "all"
+        sort_by = request.query_params.get("sort_by") or "oldest"
+        page = request.query_params.get("page") or 0
+        page_size = request.query_params.get("page_size") or 10
+
+        queryset = og_queryset = self.get_queryset()
+
+        # add filters
+        if semester_arg != "all":
+            queryset = queryset.all().filter(semester=semester_arg)
+        if instructor != "all":
+            queryset = queryset.all().filter(instructor=instructor)
+       
+        # apply ordering
+        if sort_by == "top":
+            # probably not right as is at the moment – likes are marked on a per comment basis not group basis
+            queryset = queryset.annotate(
+                base_votes=Count("base__upvotes")-Count("base__downvotes")
+            ).order_by("-base_votes", "base_id", "path")
+        elif sort_by == "oldest":
+            queryset = queryset.all().order_by("path")
+        elif sort_by == "newest":
+            queryset = queryset.all().order_by("-base_id", "path")
+        
+        # apply pagination (not sure how django handles OOB errors)
+        user_upvotes = queryset.filter(upvotes=request.user, id=OuterRef('id'))
+        user_downvotes = queryset.filter(downvotes=request.user, id=OuterRef('id'))
+        queryset = queryset.annotate(
+            user_upvoted=Exists(user_upvotes),
+            user_downvoted=Exists(user_downvotes)
+        )
+        queryset = queryset.all()[page*page_size:(page+1)*page_size]
+
+        response_body = {"comments": CommentListSerializer(queryset, many=True).data}
+        if semester_arg == "all":
+            response_body["semesters"] = list(og_queryset.values_list("section__course__semester", flat=True).distinct())
+        
+        return Response(response_body, status=status.HTTP_200_OK)
+    
+    def get_queryset(self):
+        course_code = self.kwargs["course_code"]
+        semester = self.kwargs["semester"] or "all"
+        try:
+            if semester == "all":
+                course = Course.objects.filter(full_code=course_code).latest("semester")
+            else:
+                course = get_course_from_code_semester(course_code, semester)
+        except Http404:
+            return Response(
+                {"message": "Course not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+        topic = course.topic
+        return Comment.objects.filter(section__course__topic=topic)
+
+# CommentViewSet
+class CommentViewSet(viewsets.ModelViewSet):
+    """
+    get:
+    Get a comment by a given `id` path parameter. If the id is not valid, a 404 is returned.
+
+    create:
+    Create a comment for the authenticated user.
+    This route will return a 201 if it succeeds with a JSON in the same format as if you were
+    to get the comment you just posted. If not all fields are specified (text, parent_id), a 400 is returned.
+
+    update:
+    Send a put request to this route to update / edit a specific comment.
+    The `id` path parameter (an integer) specifies which comment you want to update. If a comment
+    with the specified id does not exist, a 404 is returned. If a comment is not owned by the
+    authenticated user, a 403 is returned. If a user edits their comment to leave a blank comment,
+    a 400 is returned. Otherwise, if the request succeeds, it will return a 200 and a JSON in the 
+    same format as if you were to get the comment you just posted.
+
+    delete:
+    Send a delete request to this route to delete a specific comment. The `id` path parameter
+    (an integer) specifies which comment you want to update.  If a comment with the specified
+    id does not exist, a 404 is returned.  If a comment is not owned by the authenticated user,
+    a 403 is returned. If the delete is successful, a 204 is returned.
+
+    Note that difference in behavior for deletion of childless comments and comments with no
+    children. If a comment X has no children comments (other comments that have parent_id = comment X),
+    it can be safely deleted from the database. If a comment X has children, the comment's author
+    and text are wiped, but the comment stays in the database to maintain indentation and response
+    logic.
+    """
+
+    request_body = {
+        "id": {
+            "type": "integer",
+            "description": "The id of the current comment."
+        },
+        "text": {
+            "type": "string",
+            "description": "The text-content of a comment."
+        },
+        "parent_id": {
+            "type": "integer",
+            "description": "The parent id of the current comment."
+        }
+    }
+    schema = PcxAutoSchema(
+        response_codes={
+            "comments-list": {
+                "GET": {
+                    200: "Comments listed successfully."
+                }
+            },
+            "comments-detail": {
+                "GET": {
+                    200: "Comment retrieved successfully.",
+                    404: "No comment with given id found."
+                },
+                "POST": {
+                    201: "Comment created successfully.",
+                    400: "Invalid parent id."
+                },
+                "PUT": {
+                    200: "Comment updated successfully.",
+                    403: "User doesn't have permission to edit comment.",
+                    404: "No comment with given id found."
+                },
+                "DELETE": {
+                    204: "Comment deleted successfully.",
+                    403: "User doesn't have permission to delete this comment.",
+                    404: "No comment with given id found."
+                }
+            }
+        }
+    )
+
+    serializer_class = CommentSerializer
+    http_method_names = ["get", "post", "delete", "put"]
+    permission_classes = [IsAuthenticated]
+    queryset = Comment.objects.all()
+
+    def retrieve(self, request, pk=None):
+        comment = get_object_or_404(Comment, pk=pk)
+        return Response(comment, status=status.HTTP_200_OK)
+    
+    def create(self, request):
+        # check if comment already exists
+        if Comment.objects.filter(id=request.data.get("id")).exists():
+            return self.update(request, request.data.get("id"))
+        
+        if not all(map(lambda x: x in request.data, ["text", "course_code", "instructor", "semester"])):
+            return Response(
+                {"message": "Insufficient fields provided."}, status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        # run moderation check 
+        text = request.data.get("text")
+        flagged, moderation_results = check_text_moderation(text)
+        if flagged:
+            return Response(
+                {"message": "Comment flagged for moderation.", "moderation_results": moderation_results},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # verify section is real
+        try:
+            section = get_section_from_course_instructor_semester(
+                request.data.get("course_code"),
+                request.data.get("instructor"),
+                request.data.get("semester")
+            )
+        except Exception as e:
+            print(e)
+            return Response(
+                {"message": "Section not found."}, status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # create comment and send response
+        parent_id = request.data.get("parent")
+        parent = get_object_or_404(Comment, pk=parent_id) if parent_id != None else None
+        comment = Comment.objects.create(
+            text=request.data.get("text"),
+            author=request.user,
+            section=section,
+            parent=parent
+        )
+        base = parent.base if parent else comment
+        prefix = parent.path + "." if parent else ""
+        path = prefix + '{:0{}d}'.format(comment.id, 10)
+        comment.base = base
+        comment.path = path
+        comment.save()
+
+        return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
+
+    def update(self, request, pk=None):
+        comment = get_object_or_404(Comment, pk=pk)
+
+        if request.user != comment.author:
+            return Response(
+                {"message": "Not authorized to modify this comment."}, status=status.HTTP_403_FORBIDDEN
+            )
+
+        if "text" in request.data:
+            # Run moderation check on the new text 
+            text = request.data.get("text")
+            flagged, moderation_results = check_text_moderation(text)
+            if flagged:
+                return Response(
+                    {"message": "Comment flagged for moderation.", "moderation_results": moderation_results},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # update and save comment
+            comment.text = text
+            comment.save()
+            return Response({"message": "Successfully edited."}, status=status.HTTP_201_CREATED)
+        else:
+            return Response(
+                {"message": "Insufficient fields presented."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+    def destroy(self, request, pk=None):
+        comment = get_object_or_404(Comment, pk=pk)
+
+        if request.user != comment.author:
+            return Response(
+                {"message": "Not authorized to modify this comment."}, status=status.HTTP_403_FORBIDDEN
+            )
+        
+        comment.delete()
+        return Response({"message": "Successfully deleted."}, status=status.HTTP_204_NO_CONTENT)
+    
+@api_view(["POST"])
+def handle_vote(request):
+    """
+    Handles an incoming request that changes the vote of a comment.
+    """
+    if not all(map(lambda x: x in request.data, ["id", "vote_type"])):
+        return Response(
+            {"message": "Insufficient fields presented."}, status=status.HTTP_400_BAD_REQUEST
+        )  
+    
+    user = request.user
+    comment = get_object_or_404(Comment, pk=request.data.get("id"))
+    vote_type = request.data.get("vote_type")
+    if vote_type == "upvote":
+        comment.downvotes.remove(user)
+        comment.upvotes.add(user)
+    elif vote_type == "downvote":
+        comment.upvotes.remove(user)
+        comment.downvotes.add(user)
+    elif vote_type == "clear":
+        comment.upvotes.remove(user)
+        comment.downvotes.remove(user)
+    
+    return Response(CommentSerializer(comment).data, status=status.HTTP_201_CREATED)
+
+@api_view(["GET"])
+def get_comment_children(request, pk):
+    """
+    Gets all DIRECT children for a comment.
+    """
+    queryset = Comment.objects.filter(parent__id=pk)
+    return Response(CommentSerializer(queryset, many=True).data, status=status.HTTP_200_OK)
 
 # CommentsList
 # might not be necessary for this to be a viewset – since it's only one function, it can probably be a view – nice to have auth and serializer though
