@@ -25,11 +25,25 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
 	try {
 		if (!event.body) throw new BodyMissingError()
 		const payload = webhookPayloadSchema.parse(JSON.parse(event.body))
-		const users = await getRegisteredUsers(payload.section_id_normalized)
-		await sendCourseAlertEmail({
-			recipient: users.map((user) => user.email),
-			section_id: payload.section_id,
-		})
+		console.log("[org.pennlabs.courses.alert.webhook]: Incoming alert", payload)
+		if (
+			payload.previous_status !== Status.OPEN &&
+			payload.status == Status.OPEN
+		) {
+			const users = await getRegisteredUsers(payload.section_id_normalized)
+			console.log(
+				`[org.pennlabs.courses.alert.webhook]: Targeting alert email to ${users.length} users`
+			)
+			await sendCourseAlertEmail({
+				recipient: users.map((user) => user.email),
+				section_id: payload.section_id,
+			})
+			console.log(
+				`[org.pennlabs.courses.alert.webhook]: Sent alert email to ${users.length} users`
+			)
+		} else {
+			console.log("[org.pennlabs.courses.alert.webhook]: Ignored alert")
+		}
 		return {
 			statusCode: 200,
 			body: JSON.stringify({
@@ -37,6 +51,7 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
 			}),
 		}
 	} catch (error) {
+		console.error(error)
 		if (
 			error instanceof BodyMissingError ||
 			error instanceof ZodError ||
@@ -49,7 +64,6 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
 				}),
 			}
 		}
-		console.error(error)
 		return {
 			statusCode: 500,
 			body: JSON.stringify({

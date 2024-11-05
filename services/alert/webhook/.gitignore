@@ -1,3 +1,6 @@
 dist
-.terraform
 *.env
+
+.terraform
+*.tfstate
+*.tfstate.backup
