@@ -7,7 +7,7 @@ import scipy.stats as stats
 from django.db.models import Count, F
 from django.http import Http404
 
-import openai
+from openai import OpenAI
 from dotenv import load_dotenv
 import os
 
@@ -595,8 +595,8 @@ def avg_and_recent_percent_open_plots(section_map, status_updates_map):
         recent_percent_open_plot_semester,
     )
 
-# Set the OpenAI API key from the environment variable
-openai.api_key = os.getenv("OPENAI_API_KEY")
+# Initialize the OpenAI client - needed for versions >=1.0.0
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def check_text_moderation(text, model="omni-moderation-latest", thresholds=None):
     """
@@ -615,39 +615,49 @@ def check_text_moderation(text, model="omni-moderation-latest", thresholds=None)
     if thresholds is None:
         thresholds = {
             "sexual": 0.5,
-            "sexual/minors": 0.5,
+            "sexual_minors": 0.5,
             "harassment": 0.5,
-            "harassment/threatening": 0.5,
+            "harassment_threatening": 0.5,
             "hate": 0.5,
-            "hate/threatening": 0.5,
+            "hate_threatening": 0.5,
             "illicit": 0.5,
-            "illicit/violent": 0.5,
-            "self-harm": 0.5,
-            "self-harm/intent": 0.5,
-            "self-harm/instructions": 0.5,
+            "illicit_violent": 0.5,
+            "self_harm": 0.5,
+            "self_harm_intent": 0.5,
+            "self_harm_instructions": 0.5,
             "violence": 0.5,
-            "violence/graphic": 0.5
+            "violence_graphic": 0.5
         }
     
     # Call the OpenAI moderation endpoint
-    response = openai.Moderation.create(
+    response = client.moderations.create(
         model=model,
         input=text
     )
 
     # Extract results from the response
-    moderation_results = response['results'][0]
-    categories = moderation_results['categories']
-    category_scores = moderation_results['category_scores']
+    moderation_results = response.results[0]
+    categories = dict(moderation_results.categories)  
+    category_scores = (
+        moderation_results.category_scores.dict() 
+        if hasattr(moderation_results.category_scores, "dict") 
+        else moderation_results.category_scores
+    )
+
     
     # Check if any category score exceeds its threshold
     flagged = False
-    for category, score in category_scores.items():
-        if score >= thresholds.get(category):
+    for category, threshold in thresholds.items():
+        score = category_scores.get(category)
+        if score is not None and score >= threshold:
             flagged = True
             break
 
-    return flagged, {
-        "categories": categories,
-        "category_scores": category_scores
-    }
+    if flagged:
+        return flagged, {
+            "categories": [(category, categories.get(category)) for category in thresholds],
+            "category_scores": category_scores
+        }
+    else:
+        return flagged, {}
+

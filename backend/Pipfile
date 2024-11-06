@@ -63,6 +63,7 @@ python-dateutil = "*"
 docutils = "*"
 ics = "*"
 drf-nested-routers = "*"
+openai = "*"
 
 [requires]
 python_full_version = "3.11"

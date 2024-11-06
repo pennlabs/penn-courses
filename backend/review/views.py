@@ -43,6 +43,7 @@ from review.util import (
     get_single_dict_from_qs,
     get_status_updates_map,
     make_subdict,
+    check_text_moderation
 )
 from courses.serializers import CommentSerializer, CommentListSerializer
 
