@@ -2,13 +2,7 @@ import React from "react";
 import { Marker as MarkerLeaflet } from "react-leaflet";
 import { divIcon } from "leaflet";
 
-interface MarkerProps {
-    lat: number;
-    lng: number;
-    color?: string;
-}
-
-const Marker = ({ color = "#878ED8", lat, lng }: MarkerProps) => {
+const Marker = ({ color = "#878ED8", lat, lng }) => {
     const icon = divIcon({
         html: `
                 <svg
