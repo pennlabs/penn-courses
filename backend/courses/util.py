@@ -8,7 +8,7 @@ from decimal import Decimal
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
 from django.db import connection
-from django.db.models import Q
+from django.db.models import Q, ManyToManyField
 from django.db.models.aggregates import Count
 from django.db.models.expressions import Subquery, Value
 from django.db.models.functions.comparison import Coalesce
@@ -742,19 +742,29 @@ def get_section_from_course_instructor_semester(course_code, professors, semeste
     sections = Section.objects.all().prefetch_related("instructors").filter(
         course__topic__most_recent__full_code=course_topic_parent, course__semester=semester
     )
-    print(sections)
-    print("HIGH")
     professors_query = Q(instructors__name=professors[0])
     for professor in professors[1:]:
         professors_query &= Q(instructors__name=professor)
-    matching_sections = sections.filter(professors_query).distinct()
-    if matching_sections.count() == 1:
-        return matching_sections.first()
-    return matching_sections.first()
-    raise ValueError(
-        f"""No section exists with course code ({course_code}), professor ({professors[0]}),
-        semester ({semester})"""
-    )
+
+    instructor = Instructor.objects.filter(name=professors[0]).first()
+    instructor_sections = instructor.section_set.all()
+    print("instructor_section", instructor_sections)
+    print("Course Topic Parent", course_topic_parent)
+    try:
+        new_sections = instructor_sections.filter(course__topic__most_recent__full_code=course_topic_parent, course__semester=semester)
+
+        if new_sections.exists():
+            return new_sections.first()
+        else:
+            raise ValueError(
+                f"""No section exists with course code ({course_code}), professor ({professors[0]}),
+                semester ({semester})"""
+            )
+    except:
+        raise ValueError(
+            f"""No section exists with course code ({course_code}), professor ({professors[0]}),
+            semester ({semester})"""
+        )
 
 
 def historical_semester_probability(current_semester: str, semesters: list[str]):

@@ -131,6 +131,8 @@ const CommentsTab = forwardRef(
     const [isLoading1, setIsLoading1] = useState(false);
     const [isLoading2, setIsLoading2] = useState(false);
 
+    console.log("semester_list", semesterList);
+
     const [data, setData] = useState({});
 
     const [comments, setComments] = useState({});
@@ -138,12 +140,11 @@ const CommentsTab = forwardRef(
 
     const [selectedSemester, setSelectedSemester] = useState(null);
 
-    console.log("CHECKPOINT 1")
+    console.log("CHECKPOINT 1");
 
     const hasSelection =
       (type === "course" && instructor) || (type === "instructor" && course);
 
-      
     useEffect(() => {
       console.log("tihs is instructor", instructor);
       setIsLoading2(true);
@@ -157,7 +158,8 @@ const CommentsTab = forwardRef(
               modified_at: new Date(c.modified_at),
             }))
           );
-          setSemesterList(res.semesters);
+          console.log("semester rest", res);
+          setSemesterList([...new Set(res.semesters)]);
         })
         .finally(() => {
           setIsLoading2(false);
@@ -165,14 +167,13 @@ const CommentsTab = forwardRef(
     }, [course, instructor]);
 
     useEffect(() => {
-      console.log("CHECKPOINT 2")
+      console.log("CHECKPOINT 2");
       setIsLoading1(true);
       if (instructor !== null && course !== null) {
         apiHistory(course, instructor, url_semester)
           .then((res) => {
             console.log("fetching ratings");
-
-            console.log(res);
+            console.log("data", res);
             setData(res);
           })
           .finally(() => {
@@ -188,15 +189,13 @@ const CommentsTab = forwardRef(
       // });
     }, [course]);
 
-
-    console.log("CHECKPOINT 2")
+    console.log("CHECKPOINT 2");
     const hasData = Boolean(Object.keys(data).length);
     const isCourse = type === "course";
 
     if (!hasSelection && active) {
       return <Placeholder type={type} ref={ref} />;
     }
-
 
     if (!active) return <></>;
 
@@ -243,7 +242,12 @@ const CommentsTab = forwardRef(
                 </Link>
               </h3>
 
-              <WriteComment course={course} instructor={data.instructor.name} setUserComment={setUserComment} semestersList={data.sections}/>
+              <WriteComment
+                course={course}
+                instructor={data.instructor.name}
+                setUserComment={setUserComment}
+                semestersList={data.sections}
+              />
               <div>
                 <div>
                   <object
@@ -266,7 +270,6 @@ const CommentsTab = forwardRef(
                   marginBottom: ".5em",
                 }}
               >
-                
                 No one's commented yet! Be the first to share your thoughts.
               </h3>
             </div>
@@ -400,7 +403,7 @@ const RatingsTab = forwardRef(
             setIsLoading(false);
           });
       }
-    }, [course, instructor, url_semester]);
+    }, [course, generateCol, instructor, url_semester]);
 
     const hasData = Boolean(Object.keys(data).length);
     const isCourse = type === "course";

@@ -876,6 +876,8 @@ class CommentList(generics.ListAPIView):
         # semester_arg = request.query_params.get("semester") or "all"
         semester_arg = semester or "all"
         instructor = request.query_params.get("instructor") or "all"
+        if (instructor == "null"):
+            instructor = "all"
         sort_by = request.query_params.get("sort_by") or "newest"
         page = request.query_params.get("page") or 0
         page_size = request.query_params.get("page_size") or 20
@@ -883,6 +885,7 @@ class CommentList(generics.ListAPIView):
         queryset = og_queryset = self.get_queryset()
 
         print("I AM INSTRUCTOR", instructor)
+        print("semester", semester_arg)
         # add filters
         if semester_arg != "all":
             queryset = queryset.all().filter(section__course__semester=semester_arg)
@@ -920,6 +923,7 @@ class CommentList(generics.ListAPIView):
             response_body["semesters"] = list(
                 og_queryset.values_list("section__course__semester", flat=True).distinct()
             )
+        response_body["semesters"] = list(queryset.values_list("section__course__semester", flat=True))
 
         return Response(response_body, status=status.HTTP_200_OK)
 
@@ -1011,16 +1015,15 @@ class CommentViewSet(viewsets.ModelViewSet):
 
     serializer_class = CommentSerializer
     http_method_names = ["get", "post", "delete", "put"]
-    # permission_classes = [IsAuthenticated]
+    # Permission_classes = [IsAuthenticated]
     queryset = Comment.objects.all()
 
     def retrieve(self, request, pk=None):
         comment = get_object_or_404(Comment, pk=pk)
-        print("this is a comment")
         return Response(comment, status=status.HTTP_200_OK)
 
     def create(self, request):
-        # check if comment already exists
+        # Check if comment already exists
         if Comment.objects.filter(id=request.data.get("id")).exists():
             return self.update(request, request.data.get("id"))
 
@@ -1031,29 +1034,28 @@ class CommentViewSet(viewsets.ModelViewSet):
                 {"message": "Insufficient fields provided."}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        # verify section is real
+        # Verify section is real
         try:
             section = get_section_from_course_instructor_semester(
                 request.data.get("course_code"),
                 request.data.get("instructor"),
                 request.data.get("semester"),
             )
-            print("ran this")
             print(section)
         except Exception as e:
             print(e)
             print("hi")
             return Response({"message": "Section not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # create comment and send response
+        # Create comment and send response
         parent_id = request.data.get("parent")
         print("new section", section)
         print("new comment section", section.course.topic)
         parent = get_object_or_404(Comment, pk=parent_id) if parent_id is not None else None
+        instructor = get_object_or_404(Instructor, name=request.data.get("instructor")[0])
         comment = Comment.objects.create(
-            text=request.data.get("text"), author=request.user, section=section, parent=parent
-        )
-        print("this is a commnet lol", comment)
+            text=request.data.get("text"), author=request.user, section=section, parent=parent, instructor=instructor)
+        
         base = parent.base if parent else comment
         prefix = parent.path + "." if parent else ""
         path = prefix + "{:0{}d}".format(comment.id, 10)

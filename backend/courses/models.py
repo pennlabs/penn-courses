@@ -1579,6 +1579,18 @@ class Comment(models.Model):
         null=True,
     )
 
+    instructor = models.ForeignKey(
+        Instructor,
+        on_delete=models.SET_NULL,
+        help_text=dedent(
+            """
+        The instructor with which a comment is associated. Instructor was chosen instead of topics
+        for hosting comments because topics are SOFT STATE and are recomputed regularly.
+        """
+        ),
+        null=True,
+    )
+
     base = models.ForeignKey(
         "self",
         on_delete=models.SET_NULL,  # redundant due to special deletion conditions

@@ -10,9 +10,8 @@ export const WriteComment = forwardRef(
     const [semester, setSemester] = useState("2022A");
     const [activeSemesters, setActiveSemesters] = useState([]);
 
-
-    console.log(instructor)
-    console.log(semestersList);
+    console.log(instructor);
+    console.log("activeSemesters", activeSemesters);
 
     useEffect(() => {
       if (isEditing) {
@@ -22,7 +21,7 @@ export const WriteComment = forwardRef(
     useEffect(() => {
       if (semestersList) {
         const semList = semestersList.map((s) => s.semester);
-        setActiveSemesters(semList);
+        setActiveSemesters([...new Set(semList)]);
         setSemester(semList[0]);
       }
     }, [semestersList]);
