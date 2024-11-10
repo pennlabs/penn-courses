@@ -1,13 +1,15 @@
-const HOST_URL = process.env.NODE_ENV === 'development'
+export const BASE_URL = process.env.NODE_ENV === 'development'
   ? 'http://localhost:3000'
-  : process.env.NEXT_PUBLIC_HOST_URL;
+  : process.env.NEXT_PUBLIC_BASE_URL;
+
+export const CLIENT_ID = process.env.NEXT_PUBLIC_CLIENT_ID ?? "";
 
 export const doAPIRequest = (path: string, options = {}): Promise<Response> =>
   fetch(`/api${path}`, options);
 
 export function getLogoutUrl(): string {
   return `/accounts/logout/?next=${encodeURIComponent(
-    `${HOST_URL}/logout`
+    `${BASE_URL}/logout`
   )}`;
 }
 
@@ -16,12 +18,3 @@ export function getLogoutUrl(): string {
 //     window.location.pathname
 //   )}`;
 // }
-
-export async function checkAuth(): Promise<boolean> {
-  const res = await fetch("/accounts/me/");
-  if (res.status < 300 && res.status >= 200) {
-    return true;
-  } else {
-    return false;
-  }
-}
