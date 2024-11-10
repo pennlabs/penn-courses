@@ -1,6 +1,5 @@
 import React from "react";
 import { Marker as MarkerLeaflet } from "react-leaflet";
-// @ts-ignore
 import { divIcon } from "leaflet";
 
 interface MarkerProps {
@@ -11,7 +10,6 @@ interface MarkerProps {
 
 const Marker = ({ color = "#878ED8", lat, lng }: MarkerProps) => {
     const icon = divIcon({
-        // @ts-ignore
         html: `
                 <svg
                   width="20"
@@ -31,13 +29,7 @@ const Marker = ({ color = "#878ED8", lat, lng }: MarkerProps) => {
         iconAnchor: [12, 40],
     });
 
-    return (
-        <MarkerLeaflet
-            // @ts-ignore
-            position={[lat, lng]}
-            icon={icon}
-        />
-    );
+    return <MarkerLeaflet position={[lat, lng]} icon={icon} />;
 };
 
 export default React.memo(Marker);
