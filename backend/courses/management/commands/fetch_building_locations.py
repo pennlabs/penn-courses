@@ -35,9 +35,7 @@ def get_address(link: str) -> str:
     response = requests.get(link)
     soup = BeautifulSoup(response.text, "html.parser")
 
-    address_div = soup.find(
-        "div", class_="field-content my-3"
-    )
+    address_div = soup.find("div", class_="field-content my-3")
     return address_div.get_text(separator=" ", strip=True) if address_div else ""
 
 
