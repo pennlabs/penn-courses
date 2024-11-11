@@ -36,7 +36,7 @@ def get_address(link: str) -> str:
     soup = BeautifulSoup(response.text, "html.parser")
 
     address_div = soup.find(
-        "div", class_="text-white pb-3 mb-3 border-bottom border-1 border-indigo"
+        "div", class_="field-content my-3"
     )
     return address_div.get_text(separator=" ", strip=True) if address_div else ""
 
