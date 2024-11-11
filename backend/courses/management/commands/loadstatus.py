@@ -20,10 +20,12 @@ def set_all_status(semester=None, add_status_update=False, verbose=False):
     statuses = registrar.get_all_course_status(semester)
     if not statuses:
         return
-    for status in tqdm(statuses):
-        statuses_out_of_sync = []
-        status_updates_out_of_sync = []
 
+    sections_to_update = []
+    statuses_out_of_sync = []
+    status_updates_out_of_sync = []
+
+    for status in tqdm(statuses):
         section_code = status.get("section_id_normalized")
         if section_code is None:
             continue
@@ -47,12 +49,11 @@ def set_all_status(semester=None, add_status_update=False, verbose=False):
         current_status = section.status
 
         if current_status != course_status:
-            statuses_out_of_sync.append(section_code)
             section.status = course_status
-            section.save()
+            sections_to_update.append(section)
+            statuses_out_of_sync.append(section_code)
 
         if add_status_update and last_status_update.new_status != course_status:
-            status_updates_out_of_sync.append(section_code)
             record_update(
                 section,
                 course_term,
@@ -61,6 +62,9 @@ def set_all_status(semester=None, add_status_update=False, verbose=False):
                 False,
                 json.dumps(status),
             )
+            status_updates_out_of_sync.append(section_code)
+
+    Section.objects.bulk_update(sections_to_update, ["status"])
 
     if verbose:
         print(f"{len(statuses_out_of_sync)} statuses were out of sync.")

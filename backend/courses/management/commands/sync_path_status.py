@@ -1,4 +1,5 @@
 import asyncio
+import base64
 import json
 import logging
 from typing import Dict, List, Tuple
@@ -16,6 +17,7 @@ from courses.util import get_current_semester, translate_semester
 
 path_semaphore = asyncio.Semaphore(25)
 webhook_semaphore = asyncio.Semaphore(25)
+auth = base64.standard_b64encode("webhook:password".encode("ascii"))
 
 
 def map_path_to_opendata(course_status):
@@ -45,8 +47,8 @@ async def send_webhook_request(
     async with webhook_semaphore:
         await async_session.post(
             url="https://penncoursealert.com/webhook/",
-            data=format_webhook_request_body(course, course_status, semester),
-            headers={"Content-Type": "application/json"},
+            data=json.dumps(format_webhook_request_body(course, course_status, semester)),
+            headers={"Content-Type": "application/json", "Authorization": f"Basic {auth.decode()}"},
         )
 
 
@@ -83,7 +85,7 @@ async def get_department_path_status(
         "sec-fetch-mode": "cors",
         "sec-fetch-site": "same-origin",
         "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-        / +" (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        + " (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         "x-requested-with": "XMLHttpRequest",
     }
 
@@ -159,7 +161,7 @@ def resolve_path_differences(send_data_to_slack=False, verbose=False):
         print(f"Inconsistent Courses: {inconsistent_courses}")
 
     asyncio.run(send_webhook_requests(semester, inconsistent_courses, path_course_to_status))
-    if verbose:
+    if verbose and inconsistent_courses:
         print("Sent updates to webhook.")
 
     if send_data_to_slack and inconsistent_courses:
@@ -169,7 +171,7 @@ def resolve_path_differences(send_data_to_slack=False, verbose=False):
             data=json.dumps(
                 {
                     "text": f"{len(inconsistent_courses)} inconsistent Course "
-                    / +"Statuses Resolved: {inconsistent_courses}"
+                    + f"Statuses Resolved: {inconsistent_courses}"
                 }
             ),
         )
