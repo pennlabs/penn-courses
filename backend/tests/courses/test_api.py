@@ -6,6 +6,7 @@ from django.db.models.signals import post_save
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
 from options.models import Option
+from rest_framework import status
 from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
@@ -40,6 +41,14 @@ def set_semester():
     )
     Option(key="SEMESTER", value=TEST_SEMESTER, value_type="TXT").save()
     AddDropPeriod(semester=TEST_SEMESTER).save()
+
+
+class HealthTestCase(TestCase):
+    def test_health_check(self):
+        url = reverse("health")
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data, {"message": "OK"})
 
 
 class CourseListTestCase(TestCase):
