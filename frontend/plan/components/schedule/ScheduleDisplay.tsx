@@ -8,7 +8,6 @@ import GridLines from "./GridLines";
 import Stats from "./Stats";
 
 import {
-    Color,
     Day,
     Meeting,
     Section,
@@ -50,19 +49,6 @@ const EmptyScheduleMessage = ({ message }: { message: string }) => (
     </EmptyScheduleContainer>
 );
 
-// Used for box coloring, from StackOverflow:
-// https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript
-const hashString = (s: string) => {
-    let hash = 0;
-    if (!s || s.length === 0) return hash;
-    for (let i = 0; i < s.length; i += 1) {
-        const chr = s.charCodeAt(i);
-        hash = (hash << 5) - hash + chr;
-        hash |= 0; // Convert to 32bit integer
-    }
-    return hash;
-};
-
 const transformTime = (t: number) => {
     const frac = t % 1;
     const timeDec = Math.floor(t) + Math.round((frac / 0.6) * 100) / 100;
@@ -82,7 +68,7 @@ const ScheduleBox = styled.div`
     }
 `;
 
-const ScheduleContents = styled.div<{ $notEmpty: boolean, $dims: any }>`
+const ScheduleContents = styled.div<{ $notEmpty: boolean; $dims: any }>`
     display: grid;
     height: calc(100% - 10em);
     margin-bottom: 5px;
@@ -92,16 +78,11 @@ const ScheduleContents = styled.div<{ $notEmpty: boolean, $dims: any }>`
 
     background-color: white;
     font-family: "Inter";
-    padding: ${({ $notEmpty, $dims }) =>
-        $notEmpty ? $dims.padding : "1rem"};
-    grid-template-columns: ${({
-            $notEmpty,
-            $dims,
-        }) => ($notEmpty ? $dims.gridTemplateColumns : "none")};
-    grid-template-rows: ${({
-            $notEmpty,
-            $dims,
-        }) => ($notEmpty ? $dims.gridTemplateRows : "none")};
+    padding: ${({ $notEmpty, $dims }) => ($notEmpty ? $dims.padding : "1rem")};
+    grid-template-columns: ${({ $notEmpty, $dims }) =>
+        $notEmpty ? $dims.gridTemplateColumns : "none"};
+    grid-template-rows: ${({ $notEmpty, $dims }) =>
+        $notEmpty ? $dims.gridTemplateRows : "none"};
 
     @media only screen and (max-width: 480px) {
         height: 100%;
@@ -138,12 +119,12 @@ const ScheduleDisplay = ({
     // actual schedule elements are offset by the row/col offset since
     // days/times take up a row/col respectively.
 
-    if (
-        !schedData
-    ) {
-        return <ScheduleBox>
-            <EmptyScheduleMessage message="Loading...Standby" />
-        </ScheduleBox>;
+    if (!schedData) {
+        return (
+            <ScheduleBox>
+                <EmptyScheduleMessage message="Loading...Standby" />
+            </ScheduleBox>
+        );
     }
 
     const rowOffset = 1;
@@ -151,7 +132,10 @@ const ScheduleDisplay = ({
 
     let sections;
 
-    sections = friendshipState.activeFriendSchedule?.sections || schedData.sections || [];
+    sections =
+        friendshipState.activeFriendSchedule?.sections ||
+        schedData.sections ||
+        [];
 
     const notEmpty = sections.length > 0;
 
@@ -173,42 +157,11 @@ const ScheduleDisplay = ({
     const getNumRows = () => (endHour - startHour + 1) * 4 + rowOffset;
     const getNumCol = () => 5 + colOffset + (showWeekend ? 2 : 0);
 
-    // step 2 in the CIS121 review: hashing with linear probing.
-    // hash every section to a color, but if that color is taken, try the next color in the
-    // colors array. Only start reusing colors when all the colors are used.
-    const getColor = (() => {
-        const colors = [
-            Color.BLUE,
-            Color.RED,
-            Color.AQUA,
-            Color.ORANGE,
-            Color.GREEN,
-            Color.PINK,
-            Color.SEA,
-            Color.INDIGO,
-        ];
-        // some CIS120: `used` is a *closure* storing the colors currently in the schedule
-        let used: Color[] = [];
-        return (c: string) => {
-            if (used.length === colors.length) {
-                // if we've used all the colors, it's acceptable to start reusing colors.
-                used = [];
-            }
-            let i = Math.abs(hashString(c));
-            while (used.indexOf(colors[i % colors.length]) !== -1) {
-                i += 1;
-            }
-            const color = colors[i % colors.length];
-            used.push(color);
-            return color;
-        };
-    })();
     const sectionIds = sections.map((x) => x.id);
 
     // a meeting is the data that represents a single block on the schedule.
     const meetings: MeetingBlock[] = [];
     sections.forEach((s) => {
-        const color = getColor(s.id);
         if (s.meetings) {
             meetings.push(
                 ...s.meetings.map((m) => ({
@@ -216,7 +169,7 @@ const ScheduleDisplay = ({
                     start: transformTime(m.start),
                     end: transformTime(m.end),
                     course: {
-                        color,
+                        color: s.color,
                         id: s.id,
                         coreqFulfilled:
                             s.associated_sections.length === 0 ||

@@ -2,9 +2,7 @@ import React from "react";
 import styled from "styled-components";
 import { useSelector } from "react-redux";
 import scrollIntoView from "scroll-into-view-if-needed";
-
 import Badge from "../Badge";
-
 import { getTimeString, meetingSetsIntersect } from "../meetUtil";
 import { Section as SectionType } from "../../types";
 import AlertButton from "../alert/AlertButton";
@@ -177,12 +175,12 @@ export default function Section({
         Array.from(
             new Map(
                 meetings
-                    .filter(({ room }) => room) 
+                    .filter(({ room }) => room)
                     .map(({ room, latitude, longitude }) => [
-                        room.trim(), 
-                        { room: room.trim(), latitude, longitude }, 
+                        room.trim(),
+                        { room: room.trim(), latitude, longitude },
                     ])
-            ).values() 
+            ).values()
         );
 
     return (
@@ -247,23 +245,29 @@ export default function Section({
                                                 i
                                             ) => (
                                                 <div key={room}>
-                                                    <span
-                                                        onClick={() =>
-                                                            toggleMap.open(
-                                                                room,
-                                                                39.95302,
-                                                                -75.19815
-                                                            )
-                                                        }
-                                                        style={{
-                                                            color: "#878ED8",
-                                                            textDecoration:
-                                                                "underline",
-                                                            cursor: "pointer",
-                                                        }}
-                                                    >
-                                                        {room}
-                                                    </span>
+                                                    {latitude ? (
+                                                        <span
+                                                            onClick={() =>
+                                                                toggleMap.open(
+                                                                    room,
+                                                                    latitude,
+                                                                    longitude
+                                                                )
+                                                            }
+                                                            style={{
+                                                                color:
+                                                                    "#878ED8",
+                                                                textDecoration:
+                                                                    "underline",
+                                                                cursor:
+                                                                    "pointer",
+                                                            }}
+                                                        >
+                                                            {room}
+                                                        </span>
+                                                    ) : (
+                                                        <span>{room}</span>
+                                                    )}
                                                     {i <
                                                         cleanedMeetings.length -
                                                             1 && (

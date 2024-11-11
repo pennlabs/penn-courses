@@ -1,13 +1,8 @@
+import React from "react";
+import { Marker as MarkerLeaflet } from "react-leaflet";
 import { divIcon } from "leaflet";
-import { Popup, Marker as MarkerLeaflet } from "react-leaflet";
 
-interface MarkerProps {
-    lat: number;
-    lng: number;
-    color?: string;
-}
-
-export default function Marker({ color = "#878ED8", lat, lng }: MarkerProps) {
+const Marker = ({ color = "#878ED8", lat, lng }) => {
     const icon = divIcon({
         html: `
                 <svg
@@ -29,4 +24,6 @@ export default function Marker({ color = "#878ED8", lat, lng }: MarkerProps) {
     });
 
     return <MarkerLeaflet position={[lat, lng]} icon={icon} />;
-}
+};
+
+export default React.memo(Marker);

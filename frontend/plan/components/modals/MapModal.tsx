@@ -14,13 +14,12 @@ const MapModal = ({ lat, lng, room, title }: MapModalProps) => {
     const MapModalContainer = styled.div`
         display: flex;
         height: 200px;
-        width: "100px";
     `;
 
     const MapContainer = styled.div`
         height: 100%;
-        width: 60%;
-        margin-right: 5px;
+        width: 70%;
+        margin-right: 10px;
     `;
 
     const MapInfoContainer = styled.ul`
@@ -38,7 +37,7 @@ const MapModal = ({ lat, lng, room, title }: MapModalProps) => {
     return (
         <MapModalContainer>
             <MapContainer>
-                <Map lat={lat} lng={lng} />
+                <Map locations={[{ lat: lat, lng: lng }]} zoom={17} />
             </MapContainer>
 
             <MapInfoContainer>

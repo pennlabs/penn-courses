@@ -593,7 +593,7 @@ export const deduplicateCourseMeetings = (course) => {
 export function fetchCourseDetails(courseId) {
     return (dispatch) => {
         dispatch(updateCourseInfoRequest());
-        doAPIRequest(`/base/current/courses/${courseId}/`)
+        doAPIRequest(`/base/current/courses/${courseId}/?include_location=True`)
             .then((res) => res.json())
             .then((data) => deduplicateCourseMeetings(data))
             .then((course) => dispatch(updateCourseInfo(course)))
