@@ -1027,7 +1027,7 @@ class StatusUpdate(models.Model):
         self.section.has_status_updates = True
         self.section.save()
 
-        # section_demand_change.delay(self.section.id, self.created_at)
+        section_demand_change.delay(self.section.id, self.created_at)
 
 
 """
