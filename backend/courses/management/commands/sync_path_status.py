@@ -17,7 +17,7 @@ from courses.util import get_current_semester, translate_semester
 
 path_semaphore = asyncio.Semaphore(25)
 webhook_semaphore = asyncio.Semaphore(25)
-auth = base64.standard_b64encode(f"{settings.WEBHOOK_URL}:{settings.WEBHOOK_PASSWORD}".encode("ascii"))
+auth = base64.standard_b64encode(f"{settings.WEBHOOK_USERNAME}:{settings.WEBHOOK_PASSWORD}".encode("ascii"))
 
 
 def map_path_to_opendata(course_status):
