@@ -293,7 +293,6 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
             "associated_sections",
             "meetings__room",
             "instructors",
-            "meetings__room__building",
         ]
         if include_location:
             prefetch_list.append("meetings__room__building")
