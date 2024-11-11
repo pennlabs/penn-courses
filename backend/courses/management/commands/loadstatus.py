@@ -64,7 +64,8 @@ def set_all_status(semester=None, add_status_update=False, verbose=False):
             )
             status_updates_out_of_sync.append(section_code)
 
-    Section.objects.bulk_update(sections_to_update, ["status"])
+    if sections_to_update:
+        Section.objects.bulk_update(sections_to_update, ["status"])
 
     if verbose:
         print(f"{len(statuses_out_of_sync)} statuses were out of sync.")
