@@ -53,11 +53,16 @@ def recompute_topics(min_semester: str = None, verbose=False, allow_null_parent_
                 Course.objects.filter(semester=semester)
                 .select_related("parent_course", "parent_course__topic")
                 .prefetch_related("parent_course__children")
+                .order_by("-manually_set_parent_course")
             )
             topics_to_create = []
             topics_to_update = []  # .most_recent
             courses_to_update = []  # .topic
+            visited_courses = set()
+
             for course in courses:
+                if course.id in visited_courses:
+                    continue
                 parent = course.parent_course
                 if not parent:
                     topics_to_create.append(Topic(most_recent=course))
@@ -74,6 +79,11 @@ def recompute_topics(min_semester: str = None, verbose=False, allow_null_parent_
                     parent.full_code == course.full_code
                     and parent.title == course.title
                     or parent.children.count() == 1
+                    or (
+                        sum([child.manually_set_parent_course for child in parent.children.all()])
+                        == 1
+                        and course.manually_set_parent_course
+                    )
                 ):
                     # If a parent has multiple children and none are an exact match, we consider
                     # all the child courses as "branched from" the old. But if one child is an exact
@@ -86,6 +96,7 @@ def recompute_topics(min_semester: str = None, verbose=False, allow_null_parent_
                         topics_to_update.append(course.topic)
                         courses_to_update.append(course)
                 for child in parent.children.all():
+                    visited_courses.add(child.id)
                     if child.id == course.id and not branched_from:
                         continue
                     topics_to_create.append(Topic(most_recent=child, branched_from=parent.topic))
