@@ -2,7 +2,7 @@ from textwrap import dedent
 
 from django.contrib.auth import get_user_model
 from django.db.models import Prefetch, Q
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404
 from django.shortcuts import get_object_or_404
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import generics, status
@@ -525,8 +525,7 @@ class FriendshipView(generics.ListAPIView):
 
         username = request.data.get("pennkey")
         if not username:
-            res["message"] = "User not found"
-            return Response(res, status=status.HTTP_404_NOT_FOUND)
+            raise Http404("User not found.")
 
         recipient = get_object_or_404(User, username=username.lower())
 
@@ -569,8 +568,7 @@ class FriendshipView(generics.ListAPIView):
 
         username = request.data.get("pennkey")
         if not username:
-            res["message"] = "User not found."
-            return Response(res, status=status.HTTP_404_NOT_FOUND)
+            raise Http404("User not found.")
 
         recipient = get_object_or_404(User, username=username.lower())
 
