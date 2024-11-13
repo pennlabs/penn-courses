@@ -91,8 +91,10 @@ def precompute_pcr_views(verbose=False, is_new_data=False):
         # Bulk create / update objects.
         if verbose:
             print("Creating and updating objects.")
-        CachedReviewResponse.objects.bulk_create(objs_to_insert)
-        CachedReviewResponse.objects.bulk_update(objs_to_update, ["response", "expired"])
+        CachedReviewResponse.objects.bulk_create(objs_to_insert, batch_size=4000)
+        CachedReviewResponse.objects.bulk_update(
+            objs_to_update, ["response", "expired"], batch_size=4000
+        )
 
         # Bulk delete objects.
         if verbose:
