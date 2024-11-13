@@ -32,6 +32,8 @@ def recompute_topics(min_semester: str = None, verbose=False, allow_null_parent_
         - Any single child of a parent inherits the parent's topic.
         - Any child with siblings that exactly matches their parent in full_code
           and title inherits the parent's topic.
+        - Any child with siblings that is the only child with a manually set
+          parent_course_id inherits the parent topic.
         - Any child with siblings that does not exactly match their parent
           gets its own topic.
     These rules are applied sequentially in increasing order of semester.
