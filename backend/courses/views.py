@@ -521,7 +521,6 @@ class FriendshipView(generics.ListAPIView):
 
     def post(self, request):
         sender = request.user
-        res = {}
 
         username = request.data.get("pennkey")
         if not username:
@@ -563,7 +562,6 @@ class FriendshipView(generics.ListAPIView):
         # (depends on who sends the request)
 
         sender = request.user
-
         res = {}
 
         username = request.data.get("pennkey")
