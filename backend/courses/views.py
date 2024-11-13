@@ -2,7 +2,7 @@ from textwrap import dedent
 
 from django.contrib.auth import get_user_model
 from django.db.models import Prefetch, Q
-from django.http import JsonResponse, Http404
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import generics, status
