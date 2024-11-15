@@ -233,7 +233,7 @@ interface ReqPanelProps {
 const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading}: ReqPanelProps) => {
   const [editMode, setEditMode] = React.useState(false);  
   const { data: activeDegreeplanDetail = null, isLoading: isLoadingDegrees } = useSWR<DegreePlan>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}` : null); 
-  const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? ["REQ", `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments`] : null, {
+  const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null, {
     
   }); 
 

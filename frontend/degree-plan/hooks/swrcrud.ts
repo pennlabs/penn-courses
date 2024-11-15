@@ -200,7 +200,7 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
                     if (!list) return [updated];
                     return [...list.filter((item: T) => item[idKey] !== id), updated]
                 },
-                revalidate: false,
+                revalidate: true,
             }
         )
     }

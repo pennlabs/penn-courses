@@ -209,7 +209,7 @@ const Semesters = ({
     Fulfillment[]
   >(
     activeDegreeplan
-      ? ["SEM", `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments`]
+      ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments`
       : null
   );
   // semesters is state mostly derived from fulfillments

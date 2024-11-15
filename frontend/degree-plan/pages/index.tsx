@@ -29,16 +29,7 @@ export default function Home() {
           value={{
             fetcher: (resource, init) =>
             {
-              if (typeof resource === "string") {
-                return fetch(resource, init).then((res) => res.json())
-              }
-              if (Array.isArray(resource) && resource.every(k => typeof k === "string")) {
-                const last = resource.at(-1)
-                if(typeof last === "string") {
-                  return fetch(last, init).then((res) => res.json())
-                }
-              }
-              throw new Error("Undefined behavior due to invalid key")
+              return fetch(resource, init).then((res) => res.json())
             },
             provider: () => new Map(),
             onError: (error, key) => {
