@@ -519,7 +519,8 @@ const OnboardingPage = ({
 
     let startYear : number = 0;
     let tempSchools : any = [];
-    let detectedMajor : string | null = null;
+    let detectedMajors : string[] = [];
+    let detectedConcentrations : string[] = [];
 
     for (let l in textResult) {
       // SCRAPE SCHOOL
@@ -548,8 +549,12 @@ const OnboardingPage = ({
 
       // SCRAPE MAJOR
       if (textResult[l].includes("major")) {
-        detectedMajor = textResult[l].replace(/^.*?:\s*/, ""); 
+        detectedMajors.push(textResult[l].replace(/^.*?:\s*/, "")); 
+      }
 
+      // SCRAPE CONCENTRATION
+      if (textResult[l].includes("concentration")) {
+        detectedConcentrations.push(textResult[l].replace(/^.*?:\s*/, "")); 
       }
 
       // Regex gets an array for total institution values -> [Earned Hours, GPA Hours, Points, GPA]
@@ -633,20 +638,27 @@ const OnboardingPage = ({
       }
     }
 
-    // Match degree
+    // Match majors
+    let detectedMajorsOptions = [];
+
     let possibleDegrees = getMajorOptions(degrees, tempSchools, startYear)
-      if (!detectedMajor?.includes("undeclared") && possibleDegrees) {
-        let justMajorNames = possibleDegrees.reduce((acc: any, el: any) => {
-          acc.push(el.label);
-          return acc;
-        }, [])
-        let closestMajor = closest(detectedMajor, justMajorNames)
-        var majorOption = possibleDegrees.find(obj => {
-          return obj.label === closestMajor
-        })
-        if (majorOption)
-          setMajors([majorOption])
+      for (let i in detectedMajors) {
+        let m = detectedMajors[i] + (detectedConcentrations.length > parseInt(i) ? detectedConcentrations[i] : "")
+        if (!detectedMajors[i]?.includes("undeclared") && possibleDegrees) {
+          console.log(m)
+          let justMajorNames = possibleDegrees.reduce((acc: any, el: any) => {
+            acc.push(el.label);
+            return acc;
+          }, [])
+          let closestMajor = closest("computer science - no concen", justMajorNames)
+          console.log(closestMajor)
+          var majorOption = possibleDegrees.find(obj => {
+            return obj.label === closestMajor
+          })
+          if (majorOption) detectedMajorsOptions.push(majorOption)
+        }
       }
+      setMajors(detectedMajorsOptions)
   };
 
   if (currentPage === 0)

@@ -236,11 +236,7 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading}: Re
   const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null, {
     
   }); 
-
-  useEffect(() => {
-    
-  }, [fulfillments, isLoadingFulfillments])
-
+  
   const rulesToFulfillments = useMemo(() => {
     if (isLoadingFulfillments || !fulfillments) return {};
     const rulesToCourses: { [rule: string]: Fulfillment[] } = {};

@@ -6899,6 +6899,7 @@ define-property@^2.0.2:
     "@types/react" "^18.2.0"
     "@types/react-dom" "^18.2.0"
     axios "^1.6.2"
+    core-js "^3.38.1"
     immutability-helper "^3.1.1"
     lodash "^4.17.21"
     lodash.clonedeep "^4.5.0"
@@ -8117,6 +8118,11 @@ fast-levenshtein@~2.0.6:
   version "2.0.6"
   resolved "https://registry.npmjs.org/fast-levenshtein/-/fast-levenshtein-2.0.6.tgz"
   integrity sha1-PYpcZog6FqMMqGQ+hR8Zuqd5eRc=
+
+fastest-levenshtein@^1.0.16:
+  version "1.0.16"
+  resolved "https://registry.npmjs.org/fastest-levenshtein/-/fastest-levenshtein-1.0.16.tgz"
+  integrity sha512-eRnCtTTtGZFpQCwhJiUOuxPQWRXVKYDn0b2PeHfXL6/Zi53SLAzAHfVhVWK2AryC/WH05kGfxhFIPvTF0SXQzg==
 
 fastq@^1.6.0:
   version "1.9.0"

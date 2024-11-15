@@ -38,6 +38,8 @@ const getCsrf = (): string | boolean => {
  * @returns JSON or undefined (see @param returnJson).
  */
 export const baseFetcher = (init: RequestInit, returnJson: boolean = true) => async (resource: string, body?: any) => {
+    console.log("Something's happened")
+    console.log(resource)
     const res = await fetch(resource, {
         credentials: "include",
         mode: "same-origin",
