@@ -31,6 +31,7 @@ import {
   UploadIcon,
   ArrowLeftIcon,
   ArrowRightIcon,
+  RulerSquareIcon,
 } from "@radix-ui/react-icons";
 import { set } from "lodash";
 polyfillPromiseWithResolvers();
@@ -332,11 +333,13 @@ const OnboardingPage = ({
   const [scrapedTransfer, setScrapedTransfer] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(0);
 
+  const [degreeID, setDegreeID] = useState<number | null>(null);
+  const [coursesToRules, setCoursesToRules] = useState<any>(null);
+
   const { create: createDegreeplan } = useSWRCrud<DegreePlan>(
     "/api/degree/degreeplans"
   );
 
-  const [degreeID, setDegreeID] = useState<number | null>(null);
 
   const { createOrUpdate, remove } = useSWRCrud<Fulfillment>(
     `/api/degree/degreeplans/${degreeID}/fulfillments`,
@@ -349,14 +352,10 @@ const OnboardingPage = ({
   // Workaround solution to only input courses once degree has been created and degreeID exists.
   // Will likely change in the future!
   useEffect(() => {
-    if (degreeID) {
-      console.log(degreeID)
-
+    if (degreeID && coursesToRules) {
       for (let sem of scrapedCourses) {
-        console.log(sem)
         let semCode = ""
         if (sem.sem == "_TRAN") semCode = sem.sem
-
         else {
           semCode = sem.sem.match(/(\d+)/)[0];
           if (sem.sem.includes("spring")) semCode += "A";
@@ -366,14 +365,22 @@ const OnboardingPage = ({
 
         for (let course of sem.courses) {
           let code = course.replace(" ", "-").toUpperCase();
-          createOrUpdate({ semester: semCode }, code);
+
+          // If rule exists for course code, add it. Else, add with no rule. 
+          // TODO: Need support for more vague rules.
+          if (Object.keys(coursesToRules).includes(code)) {
+            let rule = coursesToRules[code];
+            createOrUpdate({ rules: [rule], semester: semCode }, code);
+          } else {
+            createOrUpdate({ semester: semCode }, code);
+          }
         }
       }
 
       setShowOnboardingModal(false);
       // location.reload();
     }
-  }, [degreeID]);
+  }, [degreeID, coursesToRules]);
 
   const complete =
     startingYear !== null &&
@@ -423,8 +430,7 @@ const OnboardingPage = ({
         label: createMajorLabel(degree),
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
-
-    return majorOptions;      
+    return majorOptions;
   }
 
   const majorOptionsCallback = React.useCallback(() => {
@@ -450,9 +456,42 @@ const OnboardingPage = ({
         const updated = postFetcher(
           `/api/degree/degreeplans/${res.id}/degrees`,
           { degree_ids: majors.map((m) => m.value.id) }
-        ); // add degree
-        setActiveDegreeplan(res);
+        ).then((res) => {
+          // Compile courses that are explicitly listed under a certain rule (Ex. CIS-1200)     
+          let coursesToRules: any = {}
 
+          // Recursively find all courses explicitly listed and pairs each with their rule #
+          // TO DO: add support for things like WRIT 0000-5999 (given range of valid courses)  
+          function findFinalRulesOrQJson(obj: any) {
+            // If q_json has type COURSE, add the single listed course to coursesToRules
+            if (obj?.q_json?.type === "COURSE") {
+              coursesToRules[obj.q_json.full_code] = obj.id;
+            }
+
+            // If q_json has type OR, add all listed courses to coursesToRules
+            else if (obj?.q_json?.type === "OR") {
+              for (let course of obj.q_json.clauses) {
+                if (course.type === "COURSE") {
+                  coursesToRules[course.full_code] = obj.id;
+                }
+              }
+            }
+
+            // Else, loop through all rules
+            if (obj?.rules && obj?.rules.length != 0) {
+              for (let rule of obj.rules) {
+                findFinalRulesOrQJson(rule)
+              }
+            }
+          }
+
+          for (let degree of res.degrees) {
+            findFinalRulesOrQJson(degree)
+          }
+
+          setCoursesToRules(coursesToRules);
+        }); // add degree
+        setActiveDegreeplan(res);
         setDegreeID(res.id);
       }
     });
@@ -460,7 +499,6 @@ const OnboardingPage = ({
 
 
   // TRANSCRIPT PARSING
-
   const total = useRef<any>({});
 
   const addText = (items: (any)[], index: number) => {
@@ -515,22 +553,21 @@ const OnboardingPage = ({
 
   const parseTranscript = (textResult: any) => {
 
-    let separatedCourses : any = [];
+    let separatedCourses: any = [];
 
-    let startYear : number = 0;
-    let tempSchools : any = [];
-    let detectedMajors : string[] = [];
-    let detectedConcentrations : string[] = [];
+    let startYear: number = 0;
+    let tempSchools: any = [];
+    let detectedMajors: string[] = [];
+    let detectedConcentrations: string[] = [];
 
     for (let l in textResult) {
       // SCRAPE SCHOOL
       if (textResult[l].replaceAll(" ", "").includes("program:")) {
-        console.log(textResult[l])
         let program = textResult[l].replace(/^.*?:\s*/, "");
         // tempSchools = [];
         if (program.includes("arts"))
           tempSchools.push({ value: "BA", label: "Arts & Sciences" });
-       
+
         if (program.includes("school of engineering and applied science")) {
           if (textResult[parseInt(l) + 1].includes("bachelor of science in engineering"))
             tempSchools.push({ value: "BSE", label: "Engineering BSE" });
@@ -549,12 +586,12 @@ const OnboardingPage = ({
 
       // SCRAPE MAJOR
       if (textResult[l].includes("major")) {
-        detectedMajors.push(textResult[l].replace(/^.*?:\s*/, "")); 
+        detectedMajors.push(textResult[l].replace(/^.*?:\s*/, ""));
       }
 
       // SCRAPE CONCENTRATION
       if (textResult[l].includes("concentration")) {
-        detectedConcentrations.push(textResult[l].replace(/^.*?:\s*/, "")); 
+        detectedConcentrations.push(textResult[l].replace(/^.*?:\s*/, ""));
       }
 
       // Regex gets an array for total institution values -> [Earned Hours, GPA Hours, Points, GPA]
@@ -563,8 +600,6 @@ const OnboardingPage = ({
         if (totalNums) {
           let credit_hours = totalNums[0];
           let gpa = totalNums[3];
-          console.log(credit_hours);
-          console.log(gpa);
         }
       }
 
@@ -573,7 +608,6 @@ const OnboardingPage = ({
         let totalNums = textResult[l].match(/\d+\.\d+/g);
         if (totalNums) {
           let transfer_hours = totalNums[0];
-          console.log(transfer_hours);
         }
       }
 
@@ -593,7 +627,6 @@ const OnboardingPage = ({
             courses.push(courseMatch[0]);
           } else if (line.includes("institution credit")) {
             separatedCourses["_TRAN"] = courses;
-            console.log(courses);
             break;
           }
         }
@@ -617,7 +650,6 @@ const OnboardingPage = ({
         separatedCourses = Object.keys(separatedCourses).map(
           (key) => [{ sem: key, courses: separatedCourses[key] }][0]
         );
-        console.log(separatedCourses);
 
         setScrapedCourses(separatedCourses);
 
@@ -642,23 +674,23 @@ const OnboardingPage = ({
     let detectedMajorsOptions = [];
 
     let possibleDegrees = getMajorOptions(degrees, tempSchools, startYear)
-      for (let i in detectedMajors) {
-        let m = detectedMajors[i] + (detectedConcentrations.length > parseInt(i) ? detectedConcentrations[i] : "")
-        if (!detectedMajors[i]?.includes("undeclared") && possibleDegrees) {
-          console.log(m)
-          let justMajorNames = possibleDegrees.reduce((acc: any, el: any) => {
-            acc.push(el.label);
-            return acc;
-          }, [])
-          let closestMajor = closest("computer science - no concen", justMajorNames)
-          console.log(closestMajor)
-          var majorOption = possibleDegrees.find(obj => {
-            return obj.label === closestMajor
-          })
-          if (majorOption) detectedMajorsOptions.push(majorOption)
-        }
+    for (let i in detectedMajors) {
+      let m = detectedMajors[i] + (detectedConcentrations.length > parseInt(i) ? detectedConcentrations[i] : "")
+      if (!detectedMajors[i]?.includes("undeclared") && possibleDegrees) {
+        // console.log(m)
+        let justMajorNames = possibleDegrees.reduce((acc: any, el: any) => {
+          acc.push(el.label);
+          return acc;
+        }, [])
+        let closestMajor = closest(m, justMajorNames)
+        // console.log(closestMajor)
+        var majorOption = possibleDegrees.find(obj => {
+          return obj.label === closestMajor
+        })
+        if (majorOption) detectedMajorsOptions.push(majorOption)
       }
-      setMajors(detectedMajorsOptions)
+    }
+    setMajors(detectedMajorsOptions)
   };
 
   if (currentPage === 0)

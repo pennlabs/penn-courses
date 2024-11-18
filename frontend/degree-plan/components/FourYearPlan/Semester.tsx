@@ -132,8 +132,7 @@ const FlexSemester = ({
     const { createOrUpdate: addToDock } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
 
     // the fulfillments api uses the POST method for updates (it creates if it doesn't exist, and updates if it does)
-    const { createOrUpdate, remove } = useSWRCrud<Fulfillment[]>(
-        // ["SEM", `/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`],
+    const { createOrUpdate, remove } = useSWRCrud<Fulfillment>(
         `/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`,
         { 
             idKey: "full_code",

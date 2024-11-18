@@ -213,10 +213,6 @@ const Semesters = ({
       : null
   );
   // semesters is state mostly derived from fulfillments
-  useEffect(() => {
-    console.log("SEM", {fulfillments})
-    console.log(isLoadingFulfillments)
-  }, [fulfillments, isLoadingFulfillments])
 
 
   const getDefaultSemesters = React.useCallback(() => {
@@ -273,7 +269,6 @@ const Semesters = ({
 
   /** Parse fulfillments and group them by semesters */
   useEffect(() => {
-    console.log({ fulfillments })
     if (!activeDegreeplan || !fulfillments || isLoadingFulfillments) return; // TODO: need more logic in this case
     setSemesters((currentSemesters) => {
       const semesters = {} as { [semester: string]: Fulfillment[] };

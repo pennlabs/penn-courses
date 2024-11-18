@@ -28,10 +28,7 @@ export default function Home() {
         <SWRConfig
           value={{
             fetcher: (resource, init) =>
-            {
-              return fetch(resource, init).then((res) => res.json())
-            },
-            // fetch(resource, init).then((res) => res.json()),
+              fetch(resource, init).then((res) => res.json()),
             provider: () => new Map(),
             onError: (error, key) => {
               // if (error.status !== 403 && error.status !== 404) {
