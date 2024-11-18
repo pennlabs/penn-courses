@@ -10,24 +10,19 @@ export const WriteComment = forwardRef(
     const [semester, setSemester] = useState("2022A");
     const [activeSemesters, setActiveSemesters] = useState([]);
 
-    console.log(instructor);
-    console.log("activeSemesters", activeSemesters);
-
+    // Log to see if the semestersList prop is updating correctly
     useEffect(() => {
-      if (isEditing) {
-      }
-    }, [course, isEditing]);
-
-    useEffect(() => {
+      console.log("semestersList updated in WriteComment:", semestersList);
       if (semestersList) {
         const semList = semestersList.map((s) => s.semester);
         setActiveSemesters([...new Set(semList)]);
-        setSemester(semList[0]);
+        setSemester(semList.sort(compareSemesters)[0]);
       }
-    }, [semestersList]);
+    }, [semestersList]); // Update when semestersList changes
 
     const handleSubmit = () => {
       console.log("Comment submitted");
+      console.log("Instructor")
       apiPostComment(course, semester, content, instructor).then((res) => {
         console.log(res);
         res = {
@@ -37,29 +32,17 @@ export const WriteComment = forwardRef(
         };
         setUserComment(res);
       });
-      // setUserComment({
-      //     content: content,
-      //     id: 1,
-      //     created_at: new Date(),
-      //     modified_at: new Date(),
-      //     author_name: "Engineering Student",
-      //     likes: 0,
-      //     course: course,
-      //     semester: semester,
-      //     professorId: [130],
-      //     parent_id: null,
-      //     path: "1",
-      //     replies: 0
-      //   })
     };
 
     return (
+      <div>
       <div
         className={`write-comment ${isEditing ? "active" : ""}`}
         onFocus={() => setIsEditing(true)}
         tabIndex={100}
         ref={ref}
       >
+        
         {isEditing && (
           <Dropdown name={semester}>
             {activeSemesters.map((s, i) => (
@@ -101,6 +84,7 @@ export const WriteComment = forwardRef(
             Comment
           </button>
         )}
+      </div>
       </div>
     );
   }

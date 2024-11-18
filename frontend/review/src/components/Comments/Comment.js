@@ -7,7 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 export const Comment = forwardRef(({ comment, isReply, isUserComment }, ref) => {
   const [showReplies, setShowReplies] = useState(false);
   const [replies, setReplies] = useState([]);
-  const [seeMore, setSeeMore] = useState(comment.text.length < 150);
+  const [seeMore, setSeeMore] = useState(true);
 
   const [liked, setLiked] = useState(false);
   const [disliked, setDisliked] = useState(false);
@@ -30,7 +30,7 @@ export const Comment = forwardRef(({ comment, isReply, isUserComment }, ref) => 
           <p>{comment.text}</p>
         ) : (
           <>
-            <p>{truncateText(comment.text, 150)}</p>
+            <p>{comment.text ? truncateText(comment.text, 150) : ""}</p>
             <button
               className=" btn-borderless btn"
               onClick={() => setSeeMore(true)}

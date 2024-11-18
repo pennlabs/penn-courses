@@ -871,6 +871,7 @@ class CommentList(generics.ListAPIView):
     # permission_classes = [IsAuthenticated]
 
     def get(self, request, semester, course_code):
+        print(request.user.username)
         print("HELLO")
         print(semester)
         # semester_arg = request.query_params.get("semester") or "all"
@@ -882,16 +883,13 @@ class CommentList(generics.ListAPIView):
         page = request.query_params.get("page") or 0
         page_size = request.query_params.get("page_size") or 20
 
-        queryset = og_queryset = self.get_queryset()
+        queryset = self.get_queryset()
 
-        print("I AM INSTRUCTOR", instructor)
-        print("semester", semester_arg)
         # add filters
         if semester_arg != "all":
             queryset = queryset.all().filter(section__course__semester=semester_arg)
         if instructor != "all":
             queryset = queryset.all().filter(instructor=instructor)
-
         # apply ordering
         if sort_by == "top":
             """
@@ -908,6 +906,7 @@ class CommentList(generics.ListAPIView):
             queryset = queryset.all().order_by("path")
         elif sort_by == "newest":
             queryset = queryset.all().order_by("-base_id", "path")
+
         print(queryset)
         # apply pagination (not sure how django handles OOB errors)
         if queryset:
@@ -919,35 +918,23 @@ class CommentList(generics.ListAPIView):
             queryset = queryset.all()[page * page_size: (page + 1) * page_size]
 
         response_body = {"comments": CommentListSerializer(queryset, many=True).data}
-        if semester_arg == "all":
-            response_body["semesters"] = list(
-                og_queryset.values_list("section__course__semester", flat=True).distinct()
-            )
-        response_body["semesters"] = list(queryset.values_list("section__course__semester", flat=True))
 
         return Response(response_body, status=status.HTTP_200_OK)
 
     def get_queryset(self):
         course_code = self.kwargs["course_code"]
-        
         semester = self.kwargs["semester"] or "all"
 
-        print(semester)
-
-        print("I MADE IT HERE", semester)
         try:
             if semester == "all":
                 course = Course.objects.all().filter(full_code=course_code).first()
             else:
-                print("HI1")
                 course = get_course_from_code_semester(course_code, None)
-                print("HI2")
         except Http404:
             return Response({"message": "Course not found."}, status=status.HTTP_404_NOT_FOUND)
         print(CourseDetailSerializer(course).data)
 
         topic = course.topic
-        print("this is a topic", topic)
         return Comment.objects.filter(section__course__topic=topic)
 
 
@@ -1034,11 +1021,12 @@ class CommentViewSet(viewsets.ModelViewSet):
                 {"message": "Insufficient fields provided."}, status=status.HTTP_400_BAD_REQUEST
             )
 
+        instructor = request.data.get("instructor")
         # Verify section is real
         try:
             section = get_section_from_course_instructor_semester(
                 request.data.get("course_code"),
-                request.data.get("instructor"),
+                instructor,
                 request.data.get("semester"),
             )
             print(section)
@@ -1046,16 +1034,18 @@ class CommentViewSet(viewsets.ModelViewSet):
             print(e)
             print("hi")
             return Response({"message": "Section not found."}, status=status.HTTP_404_NOT_FOUND)
+        if instructor:
+            instructor = get_object_or_404(Instructor, id=int(instructor[0]))
+        else:
+            raise Http404("Instructor with given instructor_id not found.")
 
         # Create comment and send response
         parent_id = request.data.get("parent")
         print("new section", section)
         print("new comment section", section.course.topic)
         parent = get_object_or_404(Comment, pk=parent_id) if parent_id is not None else None
-        instructor = get_object_or_404(Instructor, name=request.data.get("instructor")[0])
         comment = Comment.objects.create(
             text=request.data.get("text"), author=request.user, section=section, parent=parent, instructor=instructor)
-        
         base = parent.base if parent else comment
         prefix = parent.path + "." if parent else ""
         path = prefix + "{:0{}d}".format(comment.id, 10)

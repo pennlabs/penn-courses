@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 import { ColumnSelector, ScoreTable } from "./common";
 import { Comment, WriteComment } from "./Comments";
+import { Dropdown } from "./common/Dropdown";
 import {
   compareSemesters,
   getColumnName,
@@ -128,14 +129,14 @@ export const DetailsBox = forwardRef(
 const CommentsTab = forwardRef(
   ({ course, instructor, url_semester, type, isCourseEval, active }, ref) => {
     const [semesterList, setSemesterList] = useState([]);
-    const [isLoading1, setIsLoading1] = useState(false);
-    const [isLoading2, setIsLoading2] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
-    console.log("semester_list", semesterList);
+    console.log("instructor", instructor);
 
     const [data, setData] = useState({});
+    const [test, setTest] = useState("a");
 
-    const [comments, setComments] = useState({});
+    const [comments, setComments] = useState([]);
     const [userComment, setUserComment] = useState({});
 
     const [selectedSemester, setSelectedSemester] = useState(null);
@@ -146,8 +147,7 @@ const CommentsTab = forwardRef(
       (type === "course" && instructor) || (type === "instructor" && course);
 
     useEffect(() => {
-      console.log("tihs is instructor", instructor);
-      setIsLoading2(true);
+      setIsLoading(true);
       apiComments(course, "all", instructor, null)
         .then((res) => {
           console.log("fetching comments now", res);
@@ -159,26 +159,23 @@ const CommentsTab = forwardRef(
             }))
           );
           console.log("semester rest", res);
-          setSemesterList([...new Set(res.semesters)]);
         })
         .finally(() => {
-          setIsLoading2(false);
+          setIsLoading(false);
         });
     }, [course, instructor]);
 
     useEffect(() => {
-      console.log("CHECKPOINT 2");
-      setIsLoading1(true);
+      setSemesterList([...new Set(comments.map((c) => c.semester))]);
+    }, [comments]);
+
+    useEffect(() => {
       if (instructor !== null && course !== null) {
-        apiHistory(course, instructor, url_semester)
-          .then((res) => {
-            console.log("fetching ratings");
-            console.log("data", res);
-            setData(res);
-          })
-          .finally(() => {
-            setIsLoading1(false);
-          });
+        apiHistory(course, instructor, url_semester).then((res) => {
+          console.log("fetching ratings");
+          console.log("data", res);
+          setData(res);
+        });
       }
     }, [course, instructor, url_semester]);
 
@@ -189,7 +186,6 @@ const CommentsTab = forwardRef(
       // });
     }, [course]);
 
-    console.log("CHECKPOINT 2");
     const hasData = Boolean(Object.keys(data).length);
     const isCourse = type === "course";
 
@@ -200,7 +196,7 @@ const CommentsTab = forwardRef(
     if (!active) return <></>;
 
     // Return loading component. TODO: Add spinner/ghost loader.
-    if (!hasData && hasSelection && isLoading2) {
+    if (!hasData && hasSelection && isLoading) {
       return <Loading />;
     }
     // Return placeholder image.
@@ -217,10 +213,12 @@ const CommentsTab = forwardRef(
     const hasComments = comments.length > 0;
     const hasUserComment = Object.keys(userComment).length > 0;
 
+    console.log(semesterList);
+    console.log("logged_in_user");
     // if (!active) return <></>;
 
     if (!hasComments && !hasUserComment) {
-      if (isLoading2) {
+      if (isLoading) {
         // Loading spinner
         return <Loading />;
       } else {
@@ -244,11 +242,12 @@ const CommentsTab = forwardRef(
 
               <WriteComment
                 course={course}
-                instructor={data.instructor.name}
+                instructor={instructor}
                 setUserComment={setUserComment}
                 semestersList={data.sections}
               />
-              <div>
+
+              <div className="mt-2">
                 <div>
                   <object
                     type="image/svg+xml"
@@ -278,53 +277,78 @@ const CommentsTab = forwardRef(
       }
     }
 
+    const yum = ["a", "b", "c"];
+
     return (
       <div id="course-details" className="box" ref={ref}>
         <div id="course-details-wrapper">
           <h3>{isCourse ? data.instructor.name : "Comments"}</h3>
-          <div id="course-details-comments" className="clearfix mt-2">
-            {hasUserComment || (
-              <WriteComment
-                course={course}
-                semesters={semesterList}
-                setUserComment={setUserComment}
-              />
-            )}
-            <div className="list">
-              <div
-                onClick={() => setSelectedSemester(null)}
-                className={selectedSemester === null ? "selected" : ""}
-              >
-                Overall
-              </div>
-              {semesterList.map((sem, i) => (
-                <div
-                  key={sem}
-                  onClick={() => setSelectedSemester(sem)}
-                  className={selectedSemester === sem ? "selected" : ""}
-                >
-                  {sem}
-                </div>
-              ))}
-            </div>
-            <div className="comments">
-              {hasUserComment && (
-                <Comment comment={userComment} isUserComment />
+          <div className="clearfix mt-2">
+            <div id="course-details-comments" className="clearfix mt-2">
+              <div>
+              <div>
+              {hasUserComment || (
+                <WriteComment
+                  course={course}
+                  semesters={semesterList}
+                  instructor={instructor}
+                  setUserComment={setUserComment}
+                  semestersList={data.sections}
+                />
               )}
-              {comments
-                .filter(
-                  (c) => !selectedSemester || c.semester === selectedSemester
-                )
-                .map((c) => (
-                  <Comment comment={c} />
+              </div>
+              {/* <div rows={3}>
+              <Dropdown name={test}>
+                {yum.map((s, i) => (
+                  <button key={i} className="btn" onClick={(x) => setTest(x)}>
+                    {s}
+                  </button>
                 ))}
+              </Dropdown>
+              </div> */}
+              </div>
+          
+              
+              <div className="list mt-2">
+                <div
+                  onClick={() => setSelectedSemester(null)}
+                  className={selectedSemester === null ? "selected" : ""}
+                >
+                  Overall
+                </div>
+                {semesterList.map((sem, i) => (
+                  <div
+                    key={i}
+                    onClick={() => setSelectedSemester(sem)}
+                    className={selectedSemester === sem ? "selected" : ""}
+                  >
+                    {sem}
+                  </div>
+                ))}
+              </div>
+              
+              <div className="comments mt-2">
+                {hasUserComment &&
+                  (selectedSemester === userComment.semester ||
+                    selectedSemester === null) && (
+                    <Comment comment={userComment} isUserComment />
+                  )}
+                {comments
+                  .filter(
+                    (c) => !selectedSemester || c.semester === selectedSemester
+                  )
+                  .map((c) => (
+                    <Comment comment={c} />
+                  ))}
+              </div>
             </div>
-          </div>
-          <div>
-            <button className="btn">1</button>
-            <button className="btn">2</button>
-            <button className="btn">3</button>
-            <button className="btn">4</button>
+            <div>
+              <button className="btn">1</button>
+              <button className="btn">2</button>
+              <button className="btn">3</button>
+              <button className="btn">4</button>
+              
+            </div>
           </div>
         </div>
       </div>
@@ -379,7 +403,8 @@ const RatingsTab = forwardRef(
       if (instructor !== null && course !== null) {
         apiHistory(course, instructor, url_semester)
           .then((res) => {
-            console.log("fetching ratings");
+            console.log("fetching ratings first");
+
             const sections = Object.values(res.sections);
             const fields = [
               ...new Set(
@@ -403,7 +428,8 @@ const RatingsTab = forwardRef(
             setIsLoading(false);
           });
       }
-    }, [course, generateCol, instructor, url_semester]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [course, instructor, url_semester]);
 
     const hasData = Boolean(Object.keys(data).length);
     const isCourse = type === "course";

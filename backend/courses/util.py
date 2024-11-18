@@ -727,11 +727,6 @@ def get_semesters(semesters: str = None) -> list[str]:
 
 
 def get_section_from_course_instructor_semester(course_code, professors, semester):
-    """
-    Attempts to return a course section that matches the given parameters.
-    ValueError is raised if the section does not exist.
-    """
-
     course_candidate = Course.objects.filter(full_code=course_code).first()
     if not course_candidate:
         raise ValueError(f"No course exists with code ({course_code})")
@@ -739,31 +734,36 @@ def get_section_from_course_instructor_semester(course_code, professors, semeste
     if not course_topic:
         raise ValueError(f"No topic exists for course with code ({course_code})")
     course_topic_parent = course_topic.most_recent.full_code
-    sections = Section.objects.all().prefetch_related("instructors").filter(
-        course__topic__most_recent__full_code=course_topic_parent, course__semester=semester
-    )
-    professors_query = Q(instructors__name=professors[0])
-    for professor in professors[1:]:
-        professors_query &= Q(instructors__name=professor)
 
-    instructor = Instructor.objects.filter(name=professors[0]).first()
-    instructor_sections = instructor.section_set.all()
-    print("instructor_section", instructor_sections)
-    print("Course Topic Parent", course_topic_parent)
-    try:
-        new_sections = instructor_sections.filter(course__topic__most_recent__full_code=course_topic_parent, course__semester=semester)
+    # Debugging prints
+    print("Course Topic Parent:", course_topic_parent)
+    print("Semester:", semester)
 
-        if new_sections.exists():
-            return new_sections.first()
-        else:
-            raise ValueError(
-                f"""No section exists with course code ({course_code}), professor ({professors[0]}),
-                semester ({semester})"""
-            )
-    except:
+    sections = Section.objects.filter(
+        course__topic__most_recent__full_code=course_topic_parent,
+        course__semester=semester
+    ).prefetch_related("instructors")
+
+    print("All relevant sections:", sections)
+
+    for section in sections:
+        print("Instructors:", section.instructors.all())
+
+    # Match instructors
+    professors_query = Q()
+    print(professors)
+    for professor in professors:
+        professors_query |= Q(instructors__id=int(professor))
+
+    matching_sections = sections.filter(professors_query)
+
+    print("Sections matching instructors:", matching_sections)
+
+    if matching_sections.exists():
+        return matching_sections.first()
+    else:
         raise ValueError(
-            f"""No section exists with course code ({course_code}), professor ({professors[0]}),
-            semester ({semester})"""
+            f"No section exists with course code ({course_code}), professors ({', '.join(professors)}), semester ({semester})"
         )
 
 
