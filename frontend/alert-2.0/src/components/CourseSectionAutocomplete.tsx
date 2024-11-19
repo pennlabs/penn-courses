@@ -39,6 +39,7 @@ export const CourseSectionAutocomplete: React.FC<Props> = ({
 		},
 		{
 			placeholderData: keepPreviousData,
+			enabled: () => debouncedQuery.length > 0,
 		},
 	)
 	return (

@@ -8,10 +8,7 @@ import { userManager } from '@/core/auth'
 
 const config = {
 	userManager,
-	onSigninCallback: user => {
-		console.log(user)
-		window.history.replaceState({}, document.title, '/')
-	},
+	onSigninCallback: () => window.history.replaceState({}, document.title, '/'),
 } satisfies AuthProviderProps
 
 export const AuthProvider: React.FC<PropsWithChildren> = ({ children }) => {

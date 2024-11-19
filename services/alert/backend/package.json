@@ -4,18 +4,18 @@
 	"type": "module",
 	"prettier": "@esinx/prettier-config",
 	"scripts": {
-		"start": "bun src/listen.bun.ts",
-		"dev": "NODE_ENV=development bun --watch src/listen.bun.ts",
+		"start": "tsx src/listen.fastify.ts",
+		"dev": "NODE_ENV=development tsx --watch src/listen.fastify.ts",
 		"lint": "eslint ./src/*",
 		"lint:fix": "eslint ./src/* --fix",
 		"db": "drizzle-kit --config ./src/drizzle.config.ts",
-		"build:lambda": "tsx ./scripts/build.lambda"
+		"build:lambda": "tsx ./scripts/build.lambda",
+		"build": "tsc -b"
 	},
 	"devDependencies": {
 		"@esinx/eslint-config": "^2.0.1",
 		"@esinx/prettier-config": "^1.0.0-3",
 		"@types/aws-lambda": "^8.10.145",
-		"@types/bun": "latest",
 		"@types/pg": "^8.11.8",
 		"drizzle-kit": "^0.23.1",
 		"tsx": "^4.19.2"
@@ -24,15 +24,17 @@
 		"typescript": "^5.0.0"
 	},
 	"dependencies": {
-		"@trpc/server": "^11.0.0-rc.498",
+		"@fastify/cors": "^10.0.1",
+		"@trpc/server": "^11.0.0-rc.608",
 		"cross-fetch": "^4.0.0",
 		"dotenv": "^16.4.5",
 		"drizzle-orm": "^0.36.0",
+		"fastify": "^4.16.0",
 		"jose": "^5.8.0",
-		"pg": "^8.12.0",
+		"pg": "^8.13.1",
 		"superjson": "^2.2.1",
-		"trpc-bun-adapter": "^1.1.2",
 		"znv": "^0.4.0",
 		"zod": "^3.23.8"
-	}
+	},
+	"_external": ["pg", "dotenv", "cross-fetch"]
 }

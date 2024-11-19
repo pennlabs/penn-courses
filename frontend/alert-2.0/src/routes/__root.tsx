@@ -48,19 +48,17 @@ const Navbar: React.FC = () => {
 		<NavigationMenu
 			className={cn(
 				'max-w-[100vw]',
-				'p-4',
+				'py-4',
+				'px-8',
 				'bg-white',
 				'border-b-border',
 				'border-b-2',
+				'justify-between',
 			)}
 		>
+			{/* width of avatar is fixed to w-10, we use this dummy to algin menu to center */}
+			<div className={cn('w-10')} />
 			<NavigationMenuList>
-				<NavigationMenuItem>
-					<Avatar>
-						<AvatarFallback>{initials}</AvatarFallback>
-					</Avatar>
-				</NavigationMenuItem>
-				<NavigationMenuItem className={cn('w-4')}></NavigationMenuItem>
 				<NavigationMenuItem>
 					<NavigationMenuLink className={navigationMenuTriggerStyle()} asChild>
 						<Link to="/">Home</Link>
@@ -72,6 +70,9 @@ const Navbar: React.FC = () => {
 					</NavigationMenuLink>
 				</NavigationMenuItem>
 			</NavigationMenuList>
+			<Avatar>
+				<AvatarFallback>{initials}</AvatarFallback>
+			</Avatar>
 		</NavigationMenu>
 	)
 }
@@ -143,7 +144,7 @@ const Root: React.FC = () => {
 					</>
 				)}
 				<Toaster position="bottom-center" />
-				<TanStackRouterDevtools />
+				{import.meta.env.DEV && <TanStackRouterDevtools />}
 			</div>
 		</ErrorBoundary>
 	)

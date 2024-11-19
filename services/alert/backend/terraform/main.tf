@@ -11,8 +11,17 @@ terraform {
   }
 }
 
-output "backend-url" {
-  value = aws_apigatewayv2_stage.default.invoke_url
+data "aws_route53_zone" "penncoursealert" {
+  name         = "penncoursealert.com."
+  private_zone = false
+}
+
+# output "prod-url" {
+#   value = aws_api_gateway_stage.production.invoke_url
+# }
+
+output "staging-url" {
+  value = aws_api_gateway_stage.staging.invoke_url
 }
 
 locals {
