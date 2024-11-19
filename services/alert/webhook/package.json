@@ -1,0 +1,31 @@
+{
+	"name": "@pennlabs/pca-webhook",
+	"version": "1.0.0",
+	"main": "index.js",
+	"license": "MIT",
+	"type": "module",
+	"scripts": {
+		"build:lambda": "tsx ./scripts/build.lambda"
+	},
+	"devDependencies": {
+		"@types/aws-lambda": "^8.10.145",
+		"@types/node": "^22.5.1",
+		"@types/pg": "^8.11.10",
+		"aws-lambda": "^1.0.7",
+		"esbuild": "^0.24.0",
+		"tsconfig-paths": "^4.2.0",
+		"tsx": "^4.19.1",
+		"typescript": "^5.5.4",
+		"vite-tsconfig-paths": "^5.1.0",
+		"vitest": "^2.1.4"
+	},
+	"dependencies": {
+		"@aws-sdk/client-sesv2": "^3.672.0",
+		"@aws-sdk/client-sns": "^3.693.0",
+		"dotenv": "^16.4.5",
+		"drizzle-orm": "^0.36.0",
+		"pg": "^8.13.1",
+		"znv": "^0.4.0",
+		"zod": "^3.23.8"
+	}
+}
