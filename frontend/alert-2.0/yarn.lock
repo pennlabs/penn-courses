@@ -1063,20 +1063,20 @@
   resolved "https://registry.yarnpkg.com/@tanstack/store/-/store-0.5.5.tgz#84d78568c4a71c885cb15754bf51eca42a776efe"
   integrity sha512-EOSrgdDAJExbvRZEQ/Xhh9iZchXpMN+ga1Bnk8Nmygzs8TfiE6hbzThF+Pr2G19uHL6+DTDTHhJ8VQiOd7l4tA==
 
-"@trpc/client@^11.0.0-rc.498":
-  version "11.0.0-rc.498"
-  resolved "https://registry.yarnpkg.com/@trpc/client/-/client-11.0.0-rc.498.tgz#30a6a90cbefdf482ca0d4577c151631740943f7a"
-  integrity sha512-a1VjvLHCo8gPENMfzI8lVF1ys6kOGI3f/cIAZUMB0d2TlkDERlFYANnSnzFvmiKy6ICh3lsQQ3OIMmIfyd8OtQ==
+"@trpc/client@^11.0.0-rc.608":
+  version "11.0.0-rc.608"
+  resolved "https://registry.yarnpkg.com/@trpc/client/-/client-11.0.0-rc.608.tgz#bcf84f68e48fbca4a419ef320f933d5f442e1b8c"
+  integrity sha512-ZvhYhewiXXo3Kfy7JazVShsJUJTyqgkEV1rjhioJ6r3aIGw0ZS6zyyjcq1w99DTIzRP//FgB239NG5c66Ki9sw==
 
-"@trpc/react-query@^11.0.0-rc.498":
-  version "11.0.0-rc.498"
-  resolved "https://registry.yarnpkg.com/@trpc/react-query/-/react-query-11.0.0-rc.498.tgz#3914ab644ae2875400e135872a933a5b4b021a61"
-  integrity sha512-il/fgO9DSTHmrJbDInGNl8PymLo19CEfIjBXmerTm4hg/p438fQb4ZKDVbpBxEThgAaaP6D0HTELWn5VDWG3VQ==
+"@trpc/react-query@^11.0.0-rc.608":
+  version "11.0.0-rc.608"
+  resolved "https://registry.yarnpkg.com/@trpc/react-query/-/react-query-11.0.0-rc.608.tgz#f5b3f6d18264aafba46b9f4f01f24447c43ba4d1"
+  integrity sha512-V0UJltzCfdn3PqePqbB8TK64aNXVBpdoLEC4OdMtTYiZTsAnH1jTwrNOBji3Xwm8Q0n4jaUDrIz5M/5IPjYrGg==
 
-"@trpc/server@^11.0.0-rc.498":
-  version "11.0.0-rc.498"
-  resolved "https://registry.yarnpkg.com/@trpc/server/-/server-11.0.0-rc.498.tgz#981f7ccddbdb2147bc849bb92520aa84beb9e46a"
-  integrity sha512-LECCOz8JNB67CBasPA6fkLbhJIbUQRP1wq02xUfUMeaSEZFWJL+7fcTgLaWFQSHMMnMsvkLuDuDDkUSCF2SXmg==
+"@trpc/server@^11.0.0-rc.608":
+  version "11.0.0-rc.608"
+  resolved "https://registry.yarnpkg.com/@trpc/server/-/server-11.0.0-rc.608.tgz#1dedea7a695cd2da965a783cd77f72c2a09c72b5"
+  integrity sha512-+qxeyWlS+1zlTbekG7C+khDGZn788kLJG+ufO8mH/kgbRC+/a0OZSk7tyQI2Pf+UWeKc6KzrTi7TRBOOEBBE1A==
 
 "@types/babel__core@^7.20.5":
   version "7.20.5"
