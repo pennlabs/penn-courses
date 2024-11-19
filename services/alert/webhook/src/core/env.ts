@@ -6,6 +6,8 @@ import { z } from "zod"
 const schema = {
 	DATABASE_URL: z.string().url(),
 	CURRENT_SEMESTER: z.string(),
+	PUSH_ENDPOINT: z.string(),
+	PUSH_TOKEN: z.string(),
 }
 
 const $schema = z.object(schema)
