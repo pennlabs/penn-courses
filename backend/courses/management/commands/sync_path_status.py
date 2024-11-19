@@ -172,7 +172,7 @@ def resolve_path_differences(send_data_to_slack=False, verbose=False):
             url,
             data=json.dumps(
                 {
-                    "text": f"{len(inconsistent_courses)} inconsistent Course "
+                    "text": f"{len(inconsistent_courses)} Inconsistent Course "
                     + f"Statuses Resolved: {inconsistent_courses}"
                 }
             ),

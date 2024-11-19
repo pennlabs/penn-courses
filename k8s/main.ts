@@ -139,6 +139,13 @@ export class MyChart extends PennLabsChart {
 			secret,
 			cmd: ['python', 'manage.py', 'alertstats', '1', '--slack'],
 		})
+
+		new CronJob(this, 'sync-path-course-statuses', {
+			schedule: cronTime.everyHour(),
+			image: backendImage,
+			secret,
+			cmd: ['python', 'manage.py', 'sync_path_status', '--slack'],
+		})
 	}
 }
 
