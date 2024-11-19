@@ -23,9 +23,9 @@ dist-ssr
 *.sln
 *.sw?
 
-
 *.env
 
 .terraform
 *.tfstate
 *.tfstate.backup
+>>>>>>> alert-2.0
