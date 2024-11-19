@@ -3,6 +3,7 @@ import { z, ZodError } from "zod"
 import { Status } from "@/types/alert"
 import { sendCourseAlertEmail } from "@/core/ses"
 import { getRegisteredUsers } from "@/core/query"
+import { updateCourseStatus } from "./core/save"
 
 const statusSchema = z.nativeEnum(Status)
 
@@ -26,7 +27,9 @@ export const handler: APIGatewayProxyHandlerV2 = async (event) => {
 		if (!event.body) throw new BodyMissingError()
 		const payload = webhookPayloadSchema.parse(JSON.parse(event.body))
 		console.log("[org.pennlabs.courses.alert.webhook]: Incoming alert", payload)
+		const isValidStatusUpdate = await updateCourseStatus(payload, event.body);
 		if (
+			isValidStatusUpdate &&
 			payload.previous_status !== Status.OPEN &&
 			payload.status == Status.OPEN
 		) {

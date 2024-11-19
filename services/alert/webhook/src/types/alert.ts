@@ -4,3 +4,11 @@ export enum Status {
 	CANCELLED = "X",
 	UNLISTED = "",
 }
+
+export type WebhookPayload = {
+	previous_status: Status,
+	section_id: string;
+	section_id_normalized: string;
+	status: Status;
+	term: string;
+};
