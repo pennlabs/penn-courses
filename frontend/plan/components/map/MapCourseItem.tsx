@@ -6,8 +6,8 @@ const CourseCartItem = styled.div<{ $isMobile: boolean }>`
     transition: 250ms ease background;
     cursor: pointer;
     user-select: none;
-
-    flex-direction: row;
+    display: flex;
+    align-items: center;
     padding: 0.8rem;
     border-bottom: 1px solid #e5e8eb;
     grid-template-columns: 20% 50% 15% 15%;
@@ -27,6 +27,15 @@ const CourseCartItem = styled.div<{ $isMobile: boolean }>`
 `;
 
 const CourseDetailsContainer = styled.div``;
+
+const Dot = styled.span<{ $color: string }>`
+    height: 5px;
+    width: 5px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 10px;
+    background-color: ${({ $color }) => $color};
+`;
 
 interface CourseDetailsProps {
     id: string;
@@ -91,8 +100,7 @@ const CourseDetails = ({
 
 interface CartSectionProps {
     id: string;
-    lat?: number;
-    lng?: number;
+    color: string;
     start: number;
     end: number;
     room: string;
@@ -102,8 +110,7 @@ interface CartSectionProps {
 
 function MapCourseItem({
     id,
-    lat,
-    lng,
+    color,
     start,
     end,
     room,
@@ -121,6 +128,7 @@ function MapCourseItem({
                 focusSection(`${split[0]}-${split[1]}`);
             }}
         >
+            <Dot $color={color} />
             <CourseDetails
                 id={id}
                 start={start}

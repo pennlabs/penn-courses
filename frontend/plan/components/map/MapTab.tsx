@@ -55,6 +55,11 @@ const MapContainer = styled.div`
     margin-top: 5px;
 `;
 
+const MapCourseItemcontainer = styled.div`
+    height: 60%;
+    overflow-y: auto;
+`;
+
 interface MabTapProps {
     meetingsByDay: Record<Day, Meeting[]>;
     focusSection: (id: string) => void;
@@ -120,34 +125,34 @@ function MapTab({ meetingsByDay, focusSection }: MabTapProps) {
                             zoom={15}
                         />
                     </MapContainer>
-                    {meeetingsForDay.map(
-                        (
-                            {
-                                id,
-                                latitude,
-                                longitude,
-                                start,
-                                end,
-                                room,
-                                overlap,
-                            }: Meeting,
-                            i: number
-                        ) => {
-                            return (
-                                <MapCourseItem
-                                    key={id + i} // handle same class more than once/day (e.g. PHYS)
-                                    id={id}
-                                    lat={latitude}
-                                    lng={longitude}
-                                    start={start}
-                                    end={end}
-                                    room={room}
-                                    overlap={overlap!}
-                                    focusSection={focusSection}
-                                />
-                            );
-                        }
-                    )}
+                    <MapCourseItemcontainer>
+                        {meeetingsForDay.map(
+                            (
+                                {
+                                    id,
+                                    color,
+                                    start,
+                                    end,
+                                    room,
+                                    overlap,
+                                }: Meeting,
+                                i: number
+                            ) => {
+                                return (
+                                    <MapCourseItem
+                                        key={id + i} // handle same class more than once/day (e.g. PHYS)
+                                        id={id}
+                                        color={color}
+                                        start={start}
+                                        end={end}
+                                        room={room}
+                                        overlap={overlap!}
+                                        focusSection={focusSection}
+                                    />
+                                );
+                            }
+                        )}
+                    </MapCourseItemcontainer>
                 </>
             )}
         </Box>
