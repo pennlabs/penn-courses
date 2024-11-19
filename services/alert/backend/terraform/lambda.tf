@@ -11,19 +11,14 @@ resource "aws_s3_object" "payload" {
   depends_on = [data.archive_file.source]
 }
 
-
 resource "aws_lambda_function" "courses_alert_backend" {
   function_name = "org_pennlabs_courses_alert_backend"
   s3_bucket     = aws_s3_object.payload.bucket
   s3_key        = aws_s3_object.payload.key
-  handler       = "main.fetch"
-  runtime       = "provided.al2"
+  handler       = "main.handler"
+  runtime       = "nodejs20.x"
   architectures = ["arm64"]
   role          = aws_iam_role.courses_alert_backend_exec.arn
-  layers = [
-    # TODO: in future, we should include bun in this terrafrom file
-    "arn:aws:lambda:us-east-1:449445102765:layer:bun:1"
-  ]
   logging_config {
     log_group  = aws_cloudwatch_log_group.courses_alert_backend.name
     log_format = "Text"

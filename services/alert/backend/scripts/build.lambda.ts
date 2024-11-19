@@ -22,7 +22,7 @@ const main = async () => {
 		esbuild.build({
 			absWorkingDir: rootdir,
 			tsconfig: path.resolve(rootdir, 'tsconfig.build.json'),
-			entryPoints: [path.resolve(rootdir, 'src', 'listen.bun.ts')],
+			entryPoints: [path.resolve(rootdir, 'src', 'listen.lambda.ts')],
 			outfile: path.resolve(outdir, 'main.js'),
 			minify: true,
 			sourcemap: true,
@@ -32,33 +32,32 @@ const main = async () => {
 			format: 'cjs',
 			logLevel: 'info',
 			resolveExtensions: ['.ts', '.d.ts'],
-			external: [
-				...Object.keys(packageJSON.dependencies),
-				...Object.keys(packageJSON.devDependencies),
-			],
+			external: packageJSON._external
 		}),
 		fs.writeFile(
 			path.resolve(outdir, 'package.json'),
 			JSON.stringify(
 				{
-					dependencies: packageJSON.dependencies,
+					dependencies: Object.fromEntries(Object.entries(packageJSON.dependencies).filter(
+						([dep]) => packageJSON._external.includes(dep),
+					))
 				},
 				null,
 				4,
 			),
 		),
 		fs.copyFile(
-			path.resolve(rootdir, 'bun.lockb'),
-			path.resolve(outdir, 'bun.lockb'),
+			path.resolve(rootdir, 'yarn.lock'),
+			path.resolve(outdir, 'yarn.lock'),
 		),
 	])
 	await new Promise((resolve, reject) => {
-		const bunProcess = exec('bun install', {
+		const installProcess = exec('yarn install', {
 			cwd: outdir,
 		})
-		bunProcess.stdout?.pipe(process.stdout)
-		bunProcess.stderr?.pipe(process.stderr)
-		bunProcess.on('exit', code => {
+		installProcess.stdout?.pipe(process.stdout)
+		installProcess.stderr?.pipe(process.stderr)
+		installProcess.on('exit', code => {
 			if (code === 0) {
 				resolve(null)
 			} else {

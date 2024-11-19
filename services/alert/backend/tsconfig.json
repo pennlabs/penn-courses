@@ -5,6 +5,7 @@
 		"paths": {
 			"@/*": ["*"]
 		},
+		"outDir": "./dist/build",
 		// Enable latest features
 		"lib": ["ESNext", "DOM"],
 		"target": "ESNext",
