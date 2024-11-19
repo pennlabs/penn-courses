@@ -1,6 +1,0 @@
-dist
-*.env
-
-.terraform
-*.tfstate
-*.tfstate.backup
