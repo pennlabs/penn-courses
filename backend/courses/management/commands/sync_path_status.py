@@ -156,7 +156,7 @@ def resolve_path_differences(send_data_to_slack=False, verbose=False):
         print(f"{len(path_course_to_status)} section statuses fetched from Path.")
 
     inconsistent_courses = []
-    for course, db_status in enumerate(db_course_to_status):
+    for course, db_status in db_course_to_status.items():
         if course in path_course_to_status and db_status != path_course_to_status[course]:
             inconsistent_courses.append(course)
     if verbose:
