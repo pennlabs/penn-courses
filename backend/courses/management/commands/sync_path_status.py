@@ -48,7 +48,7 @@ async def send_webhook_request(
 ) -> None:
     async with webhook_semaphore:
         await async_session.post(
-            url="https://penncoursealert.com/webhook/",
+            url="https://penncoursealert.com/webhook",
             data=json.dumps(format_webhook_request_body(course, course_status, semester)),
             headers={"Content-Type": "application/json", "Authorization": f"Basic {auth.decode()}"},
         )
