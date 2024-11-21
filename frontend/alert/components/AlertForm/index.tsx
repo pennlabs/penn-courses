@@ -51,7 +51,10 @@ const ClosedCheckbox = styled.input`
 const closeNotifInfoText = `Check this box to receive a
 follow-up email when a course
 closes again after alerting you
-of an opening.`;
+of an opening. Please note that
+text notifications for course
+closures are not currently
+supported.`;
 
 const doAPIRequest = (
     url: string,
