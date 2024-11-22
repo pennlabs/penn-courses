@@ -191,9 +191,11 @@ class Rule(models.Model):
     )
 
     def __str__(self) -> str:
+        rules_str = ", ".join([str(rule) for rule in self.children.all()]) 
         return (
             f"{self.title}, q={self.q}, num={self.num}, cus={self.credits}, "
-            "parent={self.parent.title if self.parent else None}"
+            f"child rules: {rules_str}"
+            f"parent={self.parent.title if self.parent else None}"
         )
 
     @property
