@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 
@@ -5,6 +6,10 @@ from django.core.management.base import BaseCommand
 from tqdm import tqdm
 
 from courses import registrar
+from courses.management.commands.sync_path_status import (
+    get_all_course_status_path,
+    get_department_codes,
+)
 from courses.models import Course, Section
 from courses.util import (
     get_course_and_section,
@@ -25,6 +30,9 @@ def set_all_status(semester=None, add_status_update=False, verbose=False):
     statuses_out_of_sync = []
     status_updates_out_of_sync = []
 
+    department_codes = get_department_codes()
+    path_course_to_status = asyncio.run(get_all_course_status_path(semester, department_codes))
+
     for status in tqdm(statuses):
         section_code = status.get("section_id_normalized")
         if section_code is None:
@@ -44,6 +52,10 @@ def set_all_status(semester=None, add_status_update=False, verbose=False):
             _, section = get_course_and_section(section_code, semester)
         except (Section.DoesNotExist, Course.DoesNotExist):
             continue
+
+        if section_code in path_course_to_status:
+            # Defer judgement to Path@Penn status
+            course_status = path_course_to_status[section_code]
 
         last_status_update = section.last_status_update
         current_status = section.status

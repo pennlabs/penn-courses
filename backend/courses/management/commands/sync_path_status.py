@@ -22,8 +22,24 @@ auth = base64.standard_b64encode(
 )
 
 
-def map_path_to_opendata(course_status):
-    return "O" if course_status == "A" else "C"
+def map_path_to_opendata(course_status: str) -> str:
+    match course_status:
+        case "A":
+            return "O"
+        case "F":
+            return "C"
+        case _:
+            return "X"
+
+
+def normalize_status(course_status: str) -> str:
+    match course_status:
+        case "O":
+            return "Open"
+        case "C":
+            return "Closed"
+        case _:
+            return "Cancelled"
 
 
 def denormalize_section_code(section_code: str) -> str:
@@ -31,12 +47,12 @@ def denormalize_section_code(section_code: str) -> str:
 
 
 def format_webhook_request_body(
-    section_code: str, new_course_status: str, semester: str
+    section_code: str, previous_course_status: str, new_course_status: str, semester: str
 ) -> Dict[str, str]:
     return {
-        "previous_status": "C" if new_course_status == "O" else "O",
+        "previous_status": previous_course_status,
         "status": new_course_status,
-        "status_code_normalized": "Open" if new_course_status == "O" else "Closed",
+        "status_code_normalized": normalize_status(new_course_status),
         "section_id": denormalize_section_code(section_code),
         "section_id_normalized": section_code,
         "term": semester,
@@ -44,24 +60,37 @@ def format_webhook_request_body(
 
 
 async def send_webhook_request(
-    async_session: aiohttp.ClientSession, semester: str, course: str, course_status: str
+    async_session: aiohttp.ClientSession,
+    semester: str,
+    course: str,
+    previous_course_status: str,
+    course_status: str,
 ) -> None:
     async with webhook_semaphore:
         await async_session.post(
             url="https://penncoursealert.com/webhook",
-            data=json.dumps(format_webhook_request_body(course, course_status, semester)),
+            data=json.dumps(
+                format_webhook_request_body(course, previous_course_status, course_status, semester)
+            ),
             headers={"Content-Type": "application/json", "Authorization": f"Basic {auth.decode()}"},
         )
 
 
 async def send_webhook_requests(
-    semester: str, course_list: List[str], path_course_to_status: Dict[str, str]
+    semester: str,
+    course_list: List[str],
+    db_course_to_status: Dict[str, str],
+    path_course_to_status: Dict[str, str],
 ) -> None:
     async with aiohttp.ClientSession() as async_session:
         tasks = [
             asyncio.create_task(
                 coro=send_webhook_request(
-                    async_session, semester, course, path_course_to_status[course]
+                    async_session,
+                    semester,
+                    course,
+                    db_course_to_status[course],
+                    path_course_to_status[course],
                 )
             )
             for course in course_list
@@ -162,7 +191,11 @@ def resolve_path_differences(send_data_to_slack=False, verbose=False):
     if verbose:
         print(f"Inconsistent Courses: {inconsistent_courses}")
 
-    asyncio.run(send_webhook_requests(semester, inconsistent_courses, path_course_to_status))
+    asyncio.run(
+        send_webhook_requests(
+            semester, inconsistent_courses, db_course_to_status, path_course_to_status
+        )
+    )
     if verbose and inconsistent_courses:
         print("Sent updates to webhook.")
 
