@@ -36,7 +36,7 @@ def registrar_import(semester=None, query=""):
         dept.save()
 
     print("Loading course statuses from registrar...")
-    set_all_status(semester=semester)
+    set_all_status(semester=semester, add_status_update=True)
 
     recompute_parent_courses(semesters=[semester], verbose=True)
     recompute_soft_state(semesters=[semester], verbose=True)
