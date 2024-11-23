@@ -2,36 +2,35 @@
 
 import React, { useState } from "react";
 import { useOnClickOutside } from "../../../shared-components/src/useOnClickOutside";
-import { 
-    DropdownContainer, 
+import {
+    DropdownContainer,
     DropdownTrigger,
     DropdownFilterButton,
     DeleteButtonContainer,
-    DeleteButton } from "./DropdownButton";
-
-import { FilterType } from "../../types";
+    DeleteButton,
+} from "./DropdownButton";
 
 interface ButtonFilterProps<F, K extends keyof F> {
     title: string;
-    children: never[];
     filterData: F;
     clearFilter: () => void;
     startSearch: (searchObj: F) => void;
     value: number;
     buttonProperty: K;
-    updateButtonFilter: (value: any) => void
+    updateButtonFilter: (value: any) => void;
 }
 
 export function ButtonFilter<
     F extends { [P in K]: number },
-    K extends keyof F>({
+    K extends keyof F
+>({
     title,
     filterData,
     clearFilter,
-    startSearch, 
+    startSearch,
     value,
     buttonProperty,
-    updateButtonFilter
+    updateButtonFilter,
 }: ButtonFilterProps<F, K>) {
     const [isActive, setIsActive] = useState(false);
 
@@ -59,7 +58,7 @@ export function ButtonFilter<
                     type="button"
                 >
                     <div>{title}</div>
-                    { isActive && (
+                    {isActive && (
                         <DeleteButtonContainer>
                             <DeleteButton
                                 type="button"

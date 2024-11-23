@@ -2,9 +2,7 @@ import React from "react";
 import styled from "styled-components";
 import { useSelector } from "react-redux";
 import scrollIntoView from "scroll-into-view-if-needed";
-
 import Badge from "../Badge";
-
 import { getTimeString, meetingSetsIntersect } from "../meetUtil";
 import { Section as SectionType } from "../../types";
 import AlertButton from "../alert/AlertButton";
@@ -15,11 +13,14 @@ interface SectionProps {
         add: () => void;
         remove: () => void;
     };
+    toggleMap: {
+        open: (room: string, latitude: number, longitude: number) => void;
+    };
     inCart: boolean;
     alerts: {
         add: () => void;
         remove: () => void;
-    }
+    };
     inAlerts: boolean;
 }
 
@@ -130,7 +131,14 @@ const HoverSwitch = styled.div`
     }
 `;
 
-export default function Section({ section, cart, inCart, alerts, inAlerts }: SectionProps) {
+export default function Section({
+    section,
+    cart,
+    inCart,
+    toggleMap,
+    alerts,
+    inAlerts,
+}: SectionProps) {
     const { instructors, meetings, status } = section;
 
     const { schedules, scheduleSelected } = useSelector(
@@ -161,15 +169,20 @@ export default function Section({ section, cart, inCart, alerts, inAlerts }: Sec
             }
         }, 50);
     };
-    const cleanedRooms =
+
+    const cleanedMeetings =
         meetings &&
         Array.from(
-            new Set(
+            new Map(
                 meetings
                     .filter(({ room }) => room)
-                    .map(({ room }) => room.trim())
-            )
+                    .map(({ room, latitude, longitude }) => [
+                        room.trim(),
+                        { room: room.trim(), latitude, longitude },
+                    ])
+            ).values()
         );
+
     return (
         <SectionContainer>
             <SectionInfoContainer
@@ -218,14 +231,52 @@ export default function Section({ section, cart, inCart, alerts, inAlerts }: Sec
                         </div>
                         <div>{`${section.credits} CU`}</div>
                         <div>
-                            {cleanedRooms && cleanedRooms.length > 0 ? (
-                                <div>
+                            {cleanedMeetings && cleanedMeetings.length > 0 ? (
+                                <div style={{ display: "flex" }}>
                                     <i
                                         className="fas fa-map-marker-alt grey-text"
                                         style={{ color: "#c6c6c6" }}
                                     />
                                     &nbsp;
-                                    {cleanedRooms.join(", ")}
+                                    <div style={{ display: "flex" }}>
+                                        {cleanedMeetings.map(
+                                            (
+                                                { room, latitude, longitude },
+                                                i
+                                            ) => (
+                                                <div key={room}>
+                                                    {latitude ? (
+                                                        <span
+                                                            onClick={() =>
+                                                                toggleMap.open(
+                                                                    room,
+                                                                    latitude,
+                                                                    longitude
+                                                                )
+                                                            }
+                                                            style={{
+                                                                color:
+                                                                    "#878ED8",
+                                                                textDecoration:
+                                                                    "underline",
+                                                                cursor:
+                                                                    "pointer",
+                                                            }}
+                                                        >
+                                                            {room}
+                                                        </span>
+                                                    ) : (
+                                                        <span>{room}</span>
+                                                    )}
+                                                    {i <
+                                                        cleanedMeetings.length -
+                                                            1 && (
+                                                        <span>,&nbsp;</span>
+                                                    )}
+                                                </div>
+                                            )
+                                        )}
+                                    </div>
                                 </div>
                             ) : null}
                         </div>
@@ -246,17 +297,14 @@ export default function Section({ section, cart, inCart, alerts, inAlerts }: Sec
                     </div>
                     {status === "C" ? (
                         <div className={`popover is-popover-left`}>
-                            <AlertButton
-                                alerts={alerts}
-                                inAlerts={inAlerts}
-                            />
-        
-                            {inAlerts ||
+                            <AlertButton alerts={alerts} inAlerts={inAlerts} />
+
+                            {inAlerts || (
                                 <span className="popover-content">
                                     {" "}
                                     Course is closed. Sign up for an alert!{" "}
                                 </span>
-                            }
+                            )}
                         </div>
                     ) : (
                         <div />

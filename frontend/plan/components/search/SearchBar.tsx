@@ -71,7 +71,7 @@ interface SearchBarProps {
     store: object;
     storeLoaded: boolean;
     setShowLoginModal: React.Dispatch<React.SetStateAction<boolean>>;
-    activeSchedule: {id: number};
+    activeSchedule: { id: number };
     updateButtonFilter: (field: string) => (value: number) => void;
 }
 
@@ -206,7 +206,10 @@ const LevelRight = styled.div`
     }
 `;
 
-const PlanViewButton = styled.a<{ $isExpanded: boolean, $expandedButton: boolean }>`
+const PlanViewButton = styled.a<{
+    $isExpanded: boolean;
+    $expandedButton: boolean;
+}>`
     background-color: ${({
         $isExpanded,
         $expandedButton,
@@ -475,7 +478,7 @@ SearchBarProps) {
                     />
                 </DropdownButton>
             )}
-            {activeSchedule && 
+            {activeSchedule && (
                 <ButtonFilter
                     title="Fit Schedule"
                     filterData={filterData}
@@ -485,9 +488,8 @@ SearchBarProps) {
                     value={activeSchedule.id}
                     buttonProperty="schedule-fit"
                     updateButtonFilter={updateButtonFilter("schedule-fit")}
-                >
-                </ButtonFilter> 
-            }
+                ></ButtonFilter>
+            )}
             <ButtonFilter
                 title="Is Open"
                 filterData={filterData}
@@ -497,8 +499,7 @@ SearchBarProps) {
                 value={1}
                 buttonProperty="is_open"
                 updateButtonFilter={updateButtonFilter("is_open")}
-            >
-            </ButtonFilter> 
+            ></ButtonFilter>
         </DropdownContainer>
     );
     if (mobileView) {
@@ -534,30 +535,30 @@ SearchBarProps) {
                         <i className="fas fa-filter" />
                     </MobileFilterContainer>
                 </MobileSearchBarInnerContainer>
-                {reqsShown && 
+                {reqsShown && (
                     <>
-                    <MobileFilterDropdowns>
-                        {dropDowns}
-                    </MobileFilterDropdowns> 
-                    <ClearContainer>
-                        <ClearButton
-                            type="button"
-                            onClick={() => {
-                                clearSearchResults();
-                                conditionalStartSearch({
-                                    // TODO: remove any cast when getting rid of redux
-                                    ...(defaultFilters.filterData as any),
-                                    searchString: filterData.searchString,
-                                    selectedReq: defaultReqs,
-                                });
-                                clearAll();
-                            }}
-                        >
-                            Clear all
-                        </ClearButton>
-                    </ClearContainer>
+                        <MobileFilterDropdowns>
+                            {dropDowns}
+                        </MobileFilterDropdowns>
+                        <ClearContainer>
+                            <ClearButton
+                                type="button"
+                                onClick={() => {
+                                    clearSearchResults();
+                                    conditionalStartSearch({
+                                        // TODO: remove any cast when getting rid of redux
+                                        ...(defaultFilters.filterData as any),
+                                        searchString: filterData.searchString,
+                                        selectedReq: defaultReqs,
+                                    });
+                                    clearAll();
+                                }}
+                            >
+                                Clear all
+                            </ClearButton>
+                        </ClearContainer>
                     </>
-                }
+                )}
             </MobileSearchBarOuterContainer>
         );
     }

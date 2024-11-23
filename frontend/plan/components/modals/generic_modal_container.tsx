@@ -23,7 +23,7 @@ const OuterModalContainer = styled.div<{ $title: string }>`
     justify-content: center;
     overflow: hidden;
     position: fixed;
-    z-index: 40;
+    z-index: 2000 !important;
     bottom: 0;
     left: 0;
     right: 0;
@@ -124,7 +124,6 @@ const ModalCardBody = styled.section`
     flex-grow: 1;
     flex-shrink: 1;
     overflow: auto;
-    padding: 20px;
     padding-left: 2rem;
     padding-right: 2rem;
     padding-bottom: 1.5rem;

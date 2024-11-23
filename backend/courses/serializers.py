@@ -32,6 +32,40 @@ class MeetingSerializer(serializers.ModelSerializer):
         fields = ("day", "start", "end", "room")
 
 
+class MeetingWithBuildingSerializer(serializers.ModelSerializer):
+    room = serializers.StringRelatedField(
+        help_text=dedent(
+            """
+        The room in which the meeting is taking place, in the form '{building code} {room number}'.
+        """
+        )
+    )
+    latitude = serializers.SerializerMethodField(
+        read_only=True,
+        help_text="Latitude of building.",
+    )
+    longitude = serializers.SerializerMethodField(
+        read_only=True,
+        help_text="Longitude of building.",
+    )
+
+    @staticmethod
+    def get_latitude(obj):
+        if obj.room and obj.room.building:
+            return obj.room.building.latitude
+        return None
+
+    @staticmethod
+    def get_longitude(obj):
+        if obj.room and obj.room.building:
+            return obj.room.building.longitude
+        return None
+
+    class Meta:
+        model = Meeting
+        fields = ("day", "start", "end", "room", "latitude", "longitude")
+
+
 class SectionIdSerializer(serializers.ModelSerializer):
     id = serializers.CharField(source="full_code")
 
@@ -123,8 +157,7 @@ class SectionDetailSerializer(serializers.ModelSerializer):
             """
         ),
     )
-    meetings = MeetingSerializer(
-        many=True,
+    meetings = serializers.SerializerMethodField(
         read_only=True,
         help_text=dedent(
             """
@@ -185,6 +218,15 @@ class SectionDetailSerializer(serializers.ModelSerializer):
             "registration_volume",
         ]
         read_only_fields = fields
+
+    def get_meetings(self, obj):
+        include_location = self.context.get("include_location", False)
+        if include_location:
+            meetings_serializer = MeetingWithBuildingSerializer(obj.meetings, many=True)
+        else:
+            meetings_serializer = MeetingSerializer(obj.meetings, many=True)
+
+        return meetings_serializer.data
 
 
 class PreNGSSRequirementListSerializer(serializers.ModelSerializer):

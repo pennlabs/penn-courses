@@ -63,6 +63,7 @@ python-dateutil = "*"
 docutils = "*"
 ics = "*"
 drf-nested-routers = "*"
+google-api-python-client = "*"
 asyncio = "*"
 aiohttp = "*"
 
