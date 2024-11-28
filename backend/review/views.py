@@ -49,6 +49,8 @@ from review.util import (
     make_subdict,
 )
 
+import math
+
 
 """
 You might be wondering why these API routes are using the @api_view function decorator
@@ -880,16 +882,34 @@ class CommentList(generics.ListAPIView):
         if (instructor == "null"):
             instructor = "all"
         sort_by = request.query_params.get("sort_by") or "newest"
-        page = request.query_params.get("page") or 0
-        page_size = request.query_params.get("page_size") or 20
 
-        queryset = self.get_queryset()
+        page = request.query_params.get("page") or 0
+        page = int(page)
+
+        own_comments = bool(request.query_params.get("self")) or False
+        page_size = request.query_params.get("page_size") or 5
+
+        queryset = self.get_queryset().filter(parent__isnull=True)  # Only consider base comments
+
+        if instructor != "all":
+            queryset = queryset.all().filter(instructor=instructor)
+
+        semesters = list(
+            map(
+                lambda x: x["section__course__semester"],
+                list(queryset.values("section__course__semester").distinct()),
+            )
+        )
 
         # add filters
         if semester_arg != "all":
             queryset = queryset.all().filter(section__course__semester=semester_arg)
-        if instructor != "all":
-            queryset = queryset.all().filter(instructor=instructor)
+
+        num_pages = math.ceil(queryset.count() / page_size)
+
+        if own_comments:
+            queryset = queryset.all().filter(author=request.user)
+
         # apply ordering
         if sort_by == "top":
             """
@@ -907,17 +927,42 @@ class CommentList(generics.ListAPIView):
         elif sort_by == "newest":
             queryset = queryset.all().order_by("-base_id", "path")
 
-        print(queryset)
         # apply pagination (not sure how django handles OOB errors)
+        if queryset:
+            if page * page_size >= queryset.count():
+                return Response(
+                    {"message": "Page out of bounds."}, status=status.HTTP_400_BAD_REQUEST)
+            queryset = queryset.all()[page * page_size: max((page + 1) * page_size, queryset.count())]
+
+        replies = Comment.objects.none()
+        for comment in queryset:
+            replies |= Comment.objects.filter(base=comment)
+
+        queryset = queryset | replies
+
         if queryset:
             user_upvotes = queryset.filter(upvotes=request.user, id=OuterRef("id"))
             user_downvotes = queryset.filter(downvotes=request.user, id=OuterRef("id"))
             queryset = queryset.annotate(
                 user_upvoted=Exists(user_upvotes), user_downvoted=Exists(user_downvotes)
             )
-            queryset = queryset.all()[page * page_size: (page + 1) * page_size]
 
-        response_body = {"comments": CommentListSerializer(queryset, many=True).data}
+        if sort_by == "top":
+            """
+            probably not right as is at the moment –
+            likes are marked on a per comment basis not group basis
+            """
+            queryset = queryset.annotate(
+                base_votes=Count("base__upvotes") - Count("base__downvotes")
+            ).order_by("-base_votes", "base_id", "path")
+            queryset = queryset.annotate(
+                semester=F("section__course__semester"),
+            )
+        elif sort_by == "oldest":
+            queryset = queryset.all().order_by("path")
+        elif sort_by == "newest":
+            queryset = queryset.all().order_by("-base_id", "path")
+        response_body = {"comments": CommentListSerializer(queryset, many=True).data, "semesters": semesters, "num_pages": num_pages}
 
         return Response(response_body, status=status.HTTP_200_OK)
 
@@ -1032,7 +1077,6 @@ class CommentViewSet(viewsets.ModelViewSet):
             print(section)
         except Exception as e:
             print(e)
-            print("hi")
             return Response({"message": "Section not found."}, status=status.HTTP_404_NOT_FOUND)
         if instructor:
             instructor = get_object_or_404(Instructor, id=int(instructor[0]))
@@ -1043,9 +1087,15 @@ class CommentViewSet(viewsets.ModelViewSet):
         parent_id = request.data.get("parent")
         print("new section", section)
         print("new comment section", section.course.topic)
+        print("parent_id", parent_id)
         parent = get_object_or_404(Comment, pk=parent_id) if parent_id is not None else None
         comment = Comment.objects.create(
-            text=request.data.get("text"), author=request.user, section=section, parent=parent, instructor=instructor)
+            text=request.data.get("text"),
+            author=request.user,
+            section=section,
+            parent=parent,
+            instructor=instructor
+        )
         base = parent.base if parent else comment
         prefix = parent.path + "." if parent else ""
         path = prefix + "{:0{}d}".format(comment.id, 10)

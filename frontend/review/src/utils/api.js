@@ -10,7 +10,7 @@ const PUBLIC_API_TOKEN = "public";
 const API_TOKEN = "platform";
 
 function apiFetch(url, options = {}) {
-  return fetch(url, options).then(res => res.json());
+  return fetch(url, options).then((res) => res.json());
 }
 
 export function redirectForAuth() {
@@ -27,7 +27,7 @@ export function getLogoutUrl() {
 
 // Necessary for backwards compatibility (we used to just store uncompressed
 // JSON stringified autocomplete data)
-const isCompressedAutocomplete = data => {
+const isCompressedAutocomplete = (data) => {
   return data.startsWith("compressed:");
 };
 
@@ -47,7 +47,7 @@ export function apiAutocomplete() {
     // If a cached version exists, replace it in the cache asynchronously and return the old cache.
     apiFetch(`${API_DOMAIN}/api/review/autocomplete`)
       .then(compressAutocomplete)
-      .then(compressed => {
+      .then((compressed) => {
         try {
           localStorage.setItem(key, compressed);
         } catch (e) {
@@ -61,11 +61,11 @@ export function apiAutocomplete() {
     // If no cached data exists, fetch, set the cache and return in the same promise.
     return new Promise((resolve, reject) => {
       apiFetch(`${API_DOMAIN}/api/review/autocomplete`)
-        .then(data => {
+        .then((data) => {
           resolve(data);
           return compressAutocomplete(data);
         })
-        .then(compressed => {
+        .then((compressed) => {
           try {
             localStorage.setItem(key, compressed);
           } catch (e) {
@@ -90,10 +90,10 @@ export function apiIsAuthenticated(func) {
     `${API_DOMAIN}/api/review/auth?token=${encodeURIComponent(
       PUBLIC_API_TOKEN
     )}`
-  ).then(data => {
+  ).then((data) => {
     if (data.authed == null) {
       window.Raven.captureMessage(`Auth check error: ${JSON.stringify(data)}`, {
-        level: "error"
+        level: "error",
       });
     }
     func(data.authed);
@@ -138,7 +138,7 @@ const fakeComments = {
       professorId: [6],
       parent_id: null,
       path: "10",
-      replies: 1
+      replies: 1,
     },
     {
       text:
@@ -153,7 +153,7 @@ const fakeComments = {
       professorId: [6],
       parent_id: null,
       path: "20",
-      replies: 0
+      replies: 0,
     },
     {
       text:
@@ -168,17 +168,14 @@ const fakeComments = {
       professorId: [6],
       parent_id: null,
       path: "30",
-      replies: 0
-    }
-  ]
-}
+      replies: 0,
+    },
+  ],
+};
 
 const fakeSemesters = {
-  semesters: [
-    "2024A",
-    "2022A",
-  ],
-}
+  semesters: ["2024A", "2022A"],
+};
 
 const fakeReplies = {
   replies: [
@@ -195,7 +192,7 @@ const fakeReplies = {
       professorIds: [6],
       parent_id: 11,
       path: "10.11",
-      replies: 0
+      replies: 0,
     },
     {
       title: "Luke is so cool and awesome",
@@ -211,14 +208,13 @@ const fakeReplies = {
       professorId: [6],
       parent_id: 10,
       path: "10.11",
-      replies: 1
-    }
-  ]
-
-}
+      replies: 1,
+    },
+  ],
+};
 
 const fakeUserComment = {
-  text: 
+  text:
     "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla mollis commodo ligula sit amet pharetra. Nunc accumsan nec mi eget sagittis. Mauris rutrum hendrerit est, a interdum ipsum convallis et. Etiam vel est ac mauris congue sollicitudin ut quis nulla. Mauris rutrum hendrerit est, a interdum ipsum convallis et. Etiam vel est ac mauris congue sollicitudin ut quis nulla.",
   id: 40,
   created_at: new Date(),
@@ -230,21 +226,21 @@ const fakeUserComment = {
   professorId: [6],
   parent_id: null,
   path: "30",
-  replies: 0
-}
+  replies: 0,
+};
 
 // export function apiComments(course, semester, professorId, sortBy) {
 //   console.log("fetching comments");
 //   if(!semester && !professorId && !sortBy) {
 //     return Promise.resolve({ ...fakeComments, ...fakeSemesters})
 //   }
-  // return Promise.resolve({ comments: fakeComments.comments.filter((comment) => {
-  //   return (course == null || comment.course === course) && 
-  //   (semester == null || comment.semester === semester) && 
-  //   (professorId == null || comment.professorId === professorId)
-  // })})
+// return Promise.resolve({ comments: fakeComments.comments.filter((comment) => {
+//   return (course == null || comment.course === course) &&
+//   (semester == null || comment.semester === semester) &&
+//   (professorId == null || comment.professorId === professorId)
+// })})
 
-  /*
+/*
   return apiFetch(
     `${API_DOMAIN}/api/review/${encodeURIComponent(type)}/${encodeURIComponent(
       code
@@ -255,7 +251,11 @@ const fakeUserComment = {
 
 export function apiReplies(commentId) {
   console.log("fetching replies");
-  return Promise.resolve({ replies: fakeReplies.replies.filter(reply => reply.parent_id === commentId)} );
+  return Promise.resolve({
+    replies: fakeReplies.replies.filter(
+      (reply) => reply.parent_id === commentId
+    ),
+  });
 }
 
 // export function apiPostComment(course, semester, content) {
@@ -274,12 +274,26 @@ export function apiUserComment(course) {
 //   )
 // }
 
-export function apiComments(course, semester, professorId, sortBy) {
+export function apiComments(
+  course,
+  semester = "all",
+  professorId,
+  sortBy,
+  page
+) {
   return apiFetch(
-    
-    `${API_DOMAIN}/api/review/${"all"}/course_comments/${encodeURIComponent(course)}?instructor=${encodeURIComponent(professorId)}`
-    
-  )
+    `${API_DOMAIN}/api/review/${semester}/course_comments/${encodeURIComponent(
+      course
+    )}?instructor=${encodeURIComponent(professorId)}&page=${page - 1}`
+  );
+}
+
+export function getOwnComment(course, semester = "all", professorId, sortBy) {
+  return apiFetch(
+    `${API_DOMAIN}/api/review/${semester}/course_comments/${encodeURIComponent(
+      course
+    )}?instructor=${encodeURIComponent(professorId)}&self=${1}`
+  );
 }
 
 // export function apiReplies(commentId) {
@@ -289,24 +303,28 @@ export function apiComments(course, semester, professorId, sortBy) {
 
 // }
 
-export function apiPostComment(course, semester, content, instructor) {
-  return apiFetch(
-    `${API_DOMAIN}/api/review/comment`,
-    {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRFToken": getCsrf(),
-      },
-      body: JSON.stringify({
-        text: content,
-        course_code: course,
-        instructor: [instructor],
-        semester: semester,
-      })
-    }
-  );
+export function apiPostComment(
+  course,
+  semester,
+  content,
+  instructor,
+  parent = null
+) {
+  return apiFetch(`${API_DOMAIN}/api/review/comment`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+      "X-CSRFToken": getCsrf(),
+    },
+    body: JSON.stringify({
+      text: content,
+      course_code: course,
+      instructor: [instructor],
+      semester: semester,
+      parent: parent,
+    }),
+  });
 }
 
 // export function apiComment(commentId) {
@@ -319,7 +337,7 @@ export function apiContact(name) {
   return apiFetch(
     `https://api.pennlabs.org/directory/search?name=${encodeURIComponent(name)}`
   )
-    .then(res => {
+    .then((res) => {
       if (res.result_data.length !== 1) {
         return null;
       }
@@ -327,10 +345,10 @@ export function apiContact(name) {
       return {
         email: res.result_data[0].list_email,
         organization: res.result_data[0].list_organization,
-        title: res.result_data[0].list_title_or_major
+        title: res.result_data[0].list_title_or_major,
       };
     })
-    .catch(error => {
+    .catch((error) => {
       // TODO: refactor to avoid labs-api-server, currently not working
       return null;
     });

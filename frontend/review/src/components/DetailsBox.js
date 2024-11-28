@@ -10,7 +10,12 @@ import {
   orderColumns,
   toNormalizedSemester,
 } from "../utils/helpers";
-import { apiComments, apiHistory, apiComment } from "../utils/api";
+import {
+  apiComments,
+  apiHistory,
+  apiComment,
+  getOwnComment,
+} from "../utils/api";
 import { PROF_IMAGE_URL } from "../constants/routes";
 import { REGISTRATION_METRICS_COLUMNS } from "../constants";
 
@@ -130,44 +135,72 @@ const CommentsTab = forwardRef(
   ({ course, instructor, url_semester, type, isCourseEval, active }, ref) => {
     const [semesterList, setSemesterList] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
-
-    console.log("instructor", instructor);
-
     const [data, setData] = useState({});
-    const [test, setTest] = useState("a");
-
+    const [reply, setReply] = useState(null);
+    const [page, setPage] = useState(1);
+    const [maxPage, setMaxPage] = useState(1);
     const [comments, setComments] = useState([]);
     const [userComment, setUserComment] = useState({});
-
     const [selectedSemester, setSelectedSemester] = useState(null);
-
-    console.log("CHECKPOINT 1");
 
     const hasSelection =
       (type === "course" && instructor) || (type === "instructor" && course);
 
     useEffect(() => {
+      const semester = selectedSemester ? selectedSemester : "all";
       setIsLoading(true);
-      apiComments(course, "all", instructor, null)
-        .then((res) => {
-          console.log("fetching comments now", res);
-          setComments(
-            res.comments.map((c) => ({
-              ...c,
-              created_at: new Date(c.created_at),
-              modified_at: new Date(c.modified_at),
-            }))
-          );
-          console.log("semester rest", res);
+      getOwnComment(course, semester, instructor, null)
+        .then((ownComments) => {
+          console.log("fetching own comments now", ownComments);
+          if (
+            ownComments &&
+            ownComments.comments &&
+            ownComments.comments.length > 0
+          ) {
+            const parentComments = ownComments.comments.filter(
+              (c) => c.id === c.base
+            );
+            console.log("parent comments", parentComments);
+            if (parentComments.length > 0) {
+              var userComment = parentComments[0];
+              userComment = {
+                ...userComment,
+                created_at: new Date(userComment.created_at),
+                modified_at: new Date(userComment.modified_at),
+              };
+              setUserComment(userComment);
+            }
+          } else {
+            setUserComment({});
+          }
+          apiComments(course, semester, instructor, null, page)
+            .then((res) => {
+              console.log("fetching comments now", res);
+              setComments(
+                res.comments.map((c) => ({
+                  ...c,
+                  created_at: new Date(c.created_at),
+                  modified_at: new Date(c.modified_at),
+                }))
+              );
+              setSemesterList(res.semesters);
+              setMaxPage(res.num_pages);
+              console.log("semester rest", res);
+            })
+            .catch((err) => {
+              console.log("error", err);
+            })
+            .finally(() => {
+              setIsLoading(false);
+            });
+        })
+        .catch((err) => {
+          console.log("error", err);
         })
         .finally(() => {
           setIsLoading(false);
         });
-    }, [course, instructor]);
-
-    useEffect(() => {
-      setSemesterList([...new Set(comments.map((c) => c.semester))]);
-    }, [comments]);
+    }, [course, instructor, selectedSemester, page]);
 
     useEffect(() => {
       if (instructor !== null && course !== null) {
@@ -277,8 +310,6 @@ const CommentsTab = forwardRef(
       }
     }
 
-    const yum = ["a", "b", "c"];
-
     return (
       <div id="course-details" className="box" ref={ref}>
         <div id="course-details-wrapper">
@@ -286,18 +317,32 @@ const CommentsTab = forwardRef(
           <div className="clearfix mt-2">
             <div id="course-details-comments" className="clearfix mt-2">
               <div>
-              <div>
-              {hasUserComment || (
-                <WriteComment
-                  course={course}
-                  semesters={semesterList}
-                  instructor={instructor}
-                  setUserComment={setUserComment}
-                  semestersList={data.sections}
-                />
-              )}
-              </div>
-              {/* <div rows={3}>
+                <div>
+                  {!hasUserComment ? (
+                    <WriteComment
+                      course={course}
+                      semesters={semesterList}
+                      instructor={instructor}
+                      setUserComment={setUserComment}
+                      semestersList={data.sections}
+                      setReply={setReply}
+                    />
+                  ) : reply !== null ? (
+                    <WriteComment
+                      course={course}
+                      semesters={semesterList}
+                      instructor={instructor}
+                      setUserComment={setUserComment}
+                      semestersList={data.sections}
+                      reply={reply}
+                      setReply={setReply}
+                      edit={true}
+                    />
+                  ) : (
+                    <div></div>
+                  )}
+                </div>
+                {/* <div rows={3}>
               <Dropdown name={test}>
                 {yum.map((s, i) => (
                   <button key={i} className="btn" onClick={(x) => setTest(x)}>
@@ -307,8 +352,7 @@ const CommentsTab = forwardRef(
               </Dropdown>
               </div> */}
               </div>
-          
-              
+
               <div className="list mt-2">
                 <div
                   onClick={() => setSelectedSemester(null)}
@@ -319,14 +363,17 @@ const CommentsTab = forwardRef(
                 {semesterList.map((sem, i) => (
                   <div
                     key={i}
-                    onClick={() => setSelectedSemester(sem)}
+                    onClick={() => {
+                      setPage(1);
+                      setSelectedSemester(sem);
+                    }}
                     className={selectedSemester === sem ? "selected" : ""}
                   >
                     {sem}
                   </div>
                 ))}
               </div>
-              
+
               <div className="comments mt-2">
                 {hasUserComment &&
                   (selectedSemester === userComment.semester ||
@@ -337,17 +384,66 @@ const CommentsTab = forwardRef(
                   .filter(
                     (c) => !selectedSemester || c.semester === selectedSemester
                   )
+                  .filter((c) => c.id !== userComment.id)
                   .map((c) => (
-                    <Comment comment={c} />
+                    <Comment comment={c} setReply={setReply} />
                   ))}
               </div>
             </div>
-            <div>
-              <button className="btn">1</button>
-              <button className="btn">2</button>
-              <button className="btn">3</button>
-              <button className="btn">4</button>
-              
+            <div className="pagination mt-2" style={{ textAlign: "center" }}>
+              <button
+                className="btn"
+                style={{
+                  margin: "0 3px",
+                  padding: "3px 8px",
+                  borderRadius: "4px",
+                  backgroundColor: "#5bc0de", // light blue color
+                  color: "#fff",
+                  cursor: "pointer",
+                  transition: "background-color 0.3s, color 0.3s",
+                  border: "none",
+                }}
+                onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                disabled={page === 1}
+              >
+                <i className="fa fa-chevron-left" />
+              </button>
+              {Array.from({ length: maxPage }, (_, i) => (
+                <button
+                  key={i}
+                  className={`btn ${page === i + 1 ? "active" : ""}`}
+                  style={{
+                    margin: "0 3px",
+                    padding: "3px 8px",
+                    borderRadius: "4px",
+                    backgroundColor: page === i + 1 ? "#31b0d5" : "#5bc0de", // darker shade for active
+                    color: "#fff",
+                    cursor: "pointer",
+                    transition: "background-color 0.3s, color 0.3s",
+                    border: "none",
+                  }}
+                  onClick={() => setPage(i + 1)}
+                >
+                  {i + 1}
+                </button>
+              ))}
+              <button
+                className="btn"
+                style={{
+                  margin: "0 3px",
+                  padding: "3px 8px",
+                  borderRadius: "4px",
+                  backgroundColor: "#5bc0de", // light blue color
+                  color: "#fff",
+                  cursor: "pointer",
+                  transition: "background-color 0.3s, color 0.3s",
+                  border: "none",
+                }}
+                onClick={() => setPage((prev) => Math.min(prev + 1, maxPage))}
+                disabled={page === maxPage}
+              >
+                <i className="fa fa-chevron-right" />
+              </button>
             </div>
           </div>
         </div>
