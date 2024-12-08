@@ -106,6 +106,8 @@ export const SearchPanel = ({ activeDegreeplanId }: SearchPanelProp) => {
         setSearchRuleId(null);
     }
 
+    // console.log(ruleId)
+
     return (
         <PanelContainer>
             <SearchPanelHeader>

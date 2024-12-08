@@ -62,11 +62,12 @@ const ResultsList = ({
     isLoading
 }: ResultListProps) => {
     // TODO: what if activeDegreeplan is not defined
+
     const { createOrUpdate: createOrUpdateFulfillment } = useSWRCrud<Fulfillment>(
         `/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`,
         { 
             idKey: "full_code",
-            createDefaultOptimisticData: { semester: null, rules: [] }
+            createDefaultOptimisticData: { semester: null, rules: [ruleId] }
         }
     );
     const { createOrUpdate: createOrUpdateDockedCourse } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });

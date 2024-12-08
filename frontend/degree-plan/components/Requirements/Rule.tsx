@@ -46,7 +46,10 @@ const RuleLeafWrapper = styled.div<{$isDroppable:boolean, $isOver: boolean}>`
   justify-content: space-between;
   gap: .5rem;
   align-items: center;
-  box-shadow: ${props => props.$isOver ? '0px 0px 4px 2px var(--selected-color);' : props.$isDroppable ? '0px 0px 4px 2px var(--primary-color-dark);' : 'rgba(0, 0, 0, 0.05);'}
+  box-shadow: ${props => props.$isOver && props.$isDroppable ? '0px 0px 4px 2px var(--selected-color);' : props.$isDroppable ? '0px 0px 4px 2px var(--primary-color-dark);' : 'rgba(0, 0, 0, 0.05);'};
+  // background-color: ${props => props.$isOver ? props.$isDroppable ? null : 'lightgray' : null};
+  // cursor: ${props => props.$isOver ? props.$isDroppable ? "not-allowed" : "not-allowed" : "not-allowed"};
+  cursor: not-allowed;
 `
 
 const CusCourses = styled.div`
@@ -167,7 +170,9 @@ const RuleComponent = (ruleTree : RuleTree) => {
           createOrUpdate({ rules: course.rules !== undefined ? [...course.rules, rule.id] : [rule.id] }, course.full_code);
           return undefined;
         }, // TODO: this doesn't handle fulfillments that already have a rule
-        canDrop: () => { return !satisfied && !!rule.q },
+        canDrop: (item, monitor) => { 
+          return !satisfied && !!rule.q && (item.rule_id === rule.id)
+        },
         collect: monitor => ({
           isOver: !!monitor.isOver() && !satisfied,
           canDrop: !!monitor.canDrop()

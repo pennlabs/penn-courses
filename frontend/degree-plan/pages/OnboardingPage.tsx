@@ -642,9 +642,19 @@ const OnboardingPage = ({
             separatedCourses[currentSem] = [];
           } else {
             let courseMatch = line.match(/\b\w+\s\d{3,4}\b/);
+
             if (courseMatch) {
-              separatedCourses[currentSem].push(courseMatch[0]);
+              // Check if course didn't get an F or a W. If current sem's courses are empty, remove sem key from separatedCourses
+              if ((line[line.length -1] == "f" || line[line.length -1] == "w") && separatedCourses[currentSem].length == 0) {
+                  delete separatedCourses[currentSem];
+              }
+              else {
+                separatedCourses[currentSem].push(courseMatch[0]);
+              }
             }
+
+
+
           }
         }
         separatedCourses = Object.keys(separatedCourses).map(

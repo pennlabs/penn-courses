@@ -160,9 +160,12 @@ class FulfillmentSerializer(serializers.ModelSerializer):
                     identical_rules.append(curr_rule)
             else: # parent rule
                 bfs_queue.extend(curr_rule.children.all())
+        try:
+            rules.extend(identical_rules)
+            data["rules"] = rules
+        except:
+            pass
         
-        rules.extend(identical_rules)
-        data["rules"] = rules
 
         # TODO: check that rules belong to this degree plan
         for rule in rules:

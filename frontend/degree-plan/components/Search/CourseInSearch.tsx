@@ -139,6 +139,8 @@ interface CourseProps {
     isStar?: boolean;
 }
 
+
+
 export default function Course({
     course,
     ruleId,
@@ -148,9 +150,10 @@ export default function Course({
     isStar,
 }: CourseProps) {
     /** React dnd */
+
     const [{ isDragging }, drag] = useDrag<DnDCourse, never, { isDragging: boolean }>(() => ({
         type: ItemTypes.COURSE_IN_PLAN,
-        item: {full_code: course.id},
+        item: {full_code: course.id, rule_id: ruleId == null ? undefined : ruleId},
         collect: (monitor) => ({
           isDragging: !!monitor.isDragging()
         })
