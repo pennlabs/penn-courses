@@ -6,6 +6,4 @@ export const DAYS_TO_DAYSTRINGS = {
     W: "Wednesday",
     R: "Thursday",
     F: "Friday",
-    S: "Saturday",
-    U: "Sunday",
 };

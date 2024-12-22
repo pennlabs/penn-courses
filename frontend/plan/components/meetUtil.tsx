@@ -134,7 +134,7 @@ export const getTimeString = (meetings: Meeting[]) => {
     });
 
     let daySet = "";
-    Object.values(Day).forEach((day) => {
+    ["M", "T", "W", "R", "F", "S", "U"].forEach((day) => {
         times[maxrange].forEach((d) => {
             if (d === day) {
                 daySet += day;

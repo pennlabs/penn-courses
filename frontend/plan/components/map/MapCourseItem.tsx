@@ -1,7 +1,10 @@
 import styled from "styled-components";
 import { isMobile } from "react-device-detect";
 
-const CourseCartItem = styled.div<{ $isMobile: boolean }>`
+const CourseCartItem = styled.div<{
+    $isMobile: boolean;
+    $hasLocationData: boolean;
+}>`
     background: white;
     transition: 250ms ease background;
     cursor: pointer;
@@ -24,9 +27,12 @@ const CourseCartItem = styled.div<{ $isMobile: boolean }>`
     &:hover i {
         color: #d3d3d8;
     }
+    ${({ $hasLocationData }) =>
+        !$hasLocationData &&
+        `
+        opacity: 0.5;
+    `}
 `;
-
-const CourseDetailsContainer = styled.div``;
 
 const Dot = styled.span<{ $color: string }>`
     height: 5px;
@@ -42,7 +48,7 @@ interface CourseDetailsProps {
     start: number;
     end: number;
     room: string;
-    overlap: boolean;
+    hasLocationData: boolean;
 }
 
 const getTimeString = (start: number, end: number) => {
@@ -67,35 +73,24 @@ const CourseDetails = ({
     start,
     end,
     room,
-    overlap,
+    hasLocationData,
 }: CourseDetailsProps) => (
-    <CourseDetailsContainer>
+    <div>
         <b>
             <span>{id.replace(/-/g, " ")}</span>
         </b>
-        <div style={{ fontSize: "0.8rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <div>
-                    {overlap && (
-                        <div className="popover is-popover-right">
-                            <i
-                                style={{
-                                    paddingRight: "5px",
-                                    color: "#c6c6c6",
-                                }}
-                                className="fas fa-calendar-times"
-                            />
-                            <span className="popover-content">
-                                Conflicts with schedule!
-                            </span>
-                        </div>
-                    )}
-                    {getTimeString(start, end)}
-                </div>
-                <div>{room ? room : "No room data"}</div>
-            </div>
+
+        <div
+            style={{
+                display: "flex",
+                fontSize: "0.8rem",
+            }}
+        >
+            <div>{getTimeString(start, end)}</div>
+            &nbsp;&nbsp;
+            <div>{room && hasLocationData ? room : "No room data"}</div>
         </div>
-    </CourseDetailsContainer>
+    </div>
 );
 
 interface CartSectionProps {
@@ -104,7 +99,7 @@ interface CartSectionProps {
     start: number;
     end: number;
     room: string;
-    overlap: boolean;
+    hasLocationData: boolean;
     focusSection: (id: string) => void;
 }
 
@@ -114,7 +109,7 @@ function MapCourseItem({
     start,
     end,
     room,
-    overlap,
+    hasLocationData,
     focusSection,
 }: CartSectionProps) {
     return (
@@ -123,6 +118,7 @@ function MapCourseItem({
             id={id}
             aria-checked="false"
             $isMobile={isMobile}
+            $hasLocationData={hasLocationData}
             onClick={() => {
                 const split = id.split("-");
                 focusSection(`${split[0]}-${split[1]}`);
@@ -134,7 +130,7 @@ function MapCourseItem({
                 start={start}
                 end={end}
                 room={room}
-                overlap={overlap}
+                hasLocationData={hasLocationData}
             />
         </CourseCartItem>
     );

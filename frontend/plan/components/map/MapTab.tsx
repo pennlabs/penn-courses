@@ -2,11 +2,11 @@ import React, { useState } from "react";
 import { connect } from "react-redux";
 import dynamic from "next/dynamic";
 import styled from "styled-components";
-import MapDropdown from "./MapDropdown";
+import MapRadio from "./MapRadio";
 import MapCourseItem from "./MapCourseItem";
 import { scheduleContainsSection } from "../meetUtil";
 import { DAYS_TO_DAYSTRINGS } from "../../constants/constants";
-import { Section, Meeting, Day } from "../../types";
+import { Section, Meeting, Day, Weekdays } from "../../types";
 import "leaflet/dist/leaflet.css";
 import { ThunkDispatch } from "redux-thunk";
 import { fetchCourseDetails } from "../../actions";
@@ -49,9 +49,8 @@ const Box = styled.section<{ $length: number }>`
 
 const MapContainer = styled.div`
     height: 40%;
-    padding-left: 7px;
-    padding-right: 7px;
-    margin-right: 5px;
+    margin-right: 8px;
+    margin-left: 8px;
     margin-top: 5px;
 `;
 
@@ -87,7 +86,9 @@ const DayEmpty = ({ day }: DayEmptyProps) => (
                 marginBottom: "0.5rem",
             }}
         >
-            {`You don't have classes on ${DAYS_TO_DAYSTRINGS[day as Day]}!`}
+            {`You don't have classes on ${
+                DAYS_TO_DAYSTRINGS[day as Weekdays]
+            }!`}
         </h3>
         Click a course section&apos;s + icon to add it to the schedule.
         <br />
@@ -96,12 +97,12 @@ const DayEmpty = ({ day }: DayEmptyProps) => (
 );
 
 function MapTab({ meetingsByDay, focusSection }: MabTapProps) {
-    const [selectedDay, setSelectedDay] = useState<Day>(Day.M);
+    const [selectedDay, setSelectedDay] = useState<Day>(Weekdays.M);
     const meeetingsForDay = meetingsByDay[selectedDay];
 
     return (
         <Box $length={meeetingsForDay.length} id="cart">
-            <MapDropdown
+            <MapRadio
                 selectedDay={selectedDay}
                 setSelectedDay={setSelectedDay}
             />
@@ -122,7 +123,7 @@ function MapTab({ meetingsByDay, focusSection }: MabTapProps) {
                                         locData.lat != null &&
                                         locData.lng != null
                                 )}
-                            zoom={15}
+                            zoom={14}
                         />
                     </MapContainer>
                     <MapCourseItemcontainer>
@@ -131,10 +132,11 @@ function MapTab({ meetingsByDay, focusSection }: MabTapProps) {
                                 {
                                     id,
                                     color,
+                                    latitude,
+                                    longitude,
                                     start,
                                     end,
                                     room,
-                                    overlap,
                                 }: Meeting,
                                 i: number
                             ) => {
@@ -146,7 +148,10 @@ function MapTab({ meetingsByDay, focusSection }: MabTapProps) {
                                         start={start}
                                         end={end}
                                         room={room}
-                                        overlap={overlap!}
+                                        hasLocationData={
+                                            latitude != null &&
+                                            longitude != null
+                                        }
                                         focusSection={focusSection}
                                     />
                                 );

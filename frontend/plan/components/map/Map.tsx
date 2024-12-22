@@ -16,6 +16,7 @@ function toDegrees(radians: number): number {
     return radians * (180 / Math.PI);
 }
 
+// calculate the center of all locations on the map view to center the map 
 function getGeographicCenter(
     locations: Location[]
 ): [number, number] {
@@ -38,39 +39,44 @@ function getGeographicCenter(
     y /= total;
     z /= total;
 
-    const centralLongitude = Math.atan2(y, x);
+    const centralLongitude = toDegrees(Math.atan2(y, x));
     const centralSquareRoot = Math.sqrt(x * x + y * y);
-    const centralLatitude = Math.atan2(z, centralSquareRoot);
+    const centralLatitude = toDegrees(Math.atan2(z, centralSquareRoot));
 
-    return [toDegrees(centralLatitude), toDegrees(centralLongitude)];
+    return [centralLatitude ? centralLatitude : 39.9515, centralLongitude ? centralLongitude : -75.1910];
 }
 
 function separateOverlappingPoints(points: Location[], offset = 0.0001) {
     const validPoints = points.filter((p) => p.lat !== null && p.lng !== null) as Location[];
 
     // group points by coordinates
-    const groupedPoints: Record<string, Location[]> = validPoints.reduce((acc, point) => {
+    const groupedPoints: Record<string, Location[]> = {}; 
+    validPoints.forEach((point) => {
         const key = `${point.lat},${point.lng}`;
-        (acc[key] ||= []).push(point);
-        return acc;
-    }, {} as Record<string, Location[]>);
+        (groupedPoints[key] ||= []).push(point);
+    });
 
     // adjust overlapping points
     const adjustedPoints = Object.values(groupedPoints).flatMap((group) =>
         group.length === 1
-            ? group
+            ? group // no adjustment needed if class in map view doesnt share locations with others
             : group.map((point, index) => {
-                  const angle = (2 * Math.PI * index) / group.length;
-                  return {
-                      ...point,
-                      lat: point.lat! + offset * Math.cos(angle),
-                      lng: point.lng! + offset * Math.sin(angle),
-                  };
-              })
+                /*
+                At a high level, if there are multiple classes in map view that have the exact same location, 
+                we try to evenly distribute them around a "circle" centered on the original location. 
+                The size of the circle is determined by offset. 
+                 */
+                const angle = (2 * Math.PI * index) / group.length;
+                return {
+                    ...point,
+                    lat: point.lat! + offset * Math.cos(angle),
+                    lng: point.lng! + offset * Math.sin(angle),
+                };
+            })
     );
 
     // include points with null values
-    return [...adjustedPoints, ...points.filter((p) => p.lat === null || p.lng === null)];
+    return adjustedPoints;
 }
 
 interface InnerMapProps {
@@ -78,6 +84,7 @@ interface InnerMapProps {
     center: [number, number]
 }
 
+// need inner child component to use useMap hook to run on client 
 function InnerMap({ locations, center } :InnerMapProps) {
     const map = useMap();
 
@@ -101,7 +108,7 @@ function InnerMap({ locations, center } :InnerMapProps) {
 }
 
 function Map({ locations, zoom }: MapProps) {
-    const center = getGeographicCenter(locations)
+    const center = getGeographicCenter(locations);
     
     return (
         <MapContainer

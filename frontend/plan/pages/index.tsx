@@ -68,13 +68,13 @@ const CustomTabs = styled(Tabs)`
     }
 `;
 
-const CartTab = styled.a<{ active: boolean }>`
+const CartTab = styled.a<{ active: string }>`
     display: inline-flex;
     font-weight: bold;
     margin-bottom: 0.5rem;
     cursor: pointer;
     margin-right: 1rem;
-    color: ${(props) => (props.active ? "black" : "gray")};
+    color: ${(props) => (props.active === "true" ? "black" : "gray")};
 `;
 
 const Box = styled.div`
@@ -441,7 +441,9 @@ function Index() {
                                             <CartTab
                                                 key={item}
                                                 href={`/#${item}`}
-                                                active={selectedTab === item}
+                                                active={(
+                                                    selectedTab === item
+                                                ).toString()}
                                                 onClick={() =>
                                                     setSelectedTab(item)
                                                 }

@@ -42,12 +42,17 @@ export interface CUFilter {
     1.5: boolean;
 }
 
-export enum Day {
+export type Day = Weekdays | Weekends;
+
+export enum Weekdays {
     M = "M",
     T = "T",
     W = "W",
     R = "R",
     F = "F",
+} 
+
+export enum Weekends {
     S = "S",
     U = "U",
 }
