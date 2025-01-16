@@ -117,6 +117,10 @@ def accept_webhook(request):
                 f"after previous status update from {last_status_update.old_status} "
                 f"to {last_status_update.new_status} (duplicate or erroneous).",
             )
+        elif last_status_update:
+            logger.error(f"Changing {section} from {prev_status} to {course_status} (last update: {last_status_update.old_status} -> {last_status_update.new_status})")
+        else:
+            logger.error(f"Changing {section} from {prev_status} to {course_status} (no last update)")
 
         alert_for_course_called = False
         if should_send_pca_alert(course_term, course_status):
