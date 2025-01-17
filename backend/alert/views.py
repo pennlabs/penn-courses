@@ -66,7 +66,7 @@ def accept_webhook(request):
             """Your credentials cannot be verified.
         They should be placed in the header as &quot;Authorization-Bearer&quot;,
         YOUR_APP_ID and &quot;Authorization-Token&quot; , YOUR_TOKEN""",
-            status=401,
+            status=200,
         )
 
     if request.method != "POST":
