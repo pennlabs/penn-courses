@@ -80,12 +80,7 @@ def import_review(section, instructor, enrollment, responses, form_type, bits, s
     )
     if not created:
         stat("duplicate_review")
-    review_bits = []
-    for key, value in bits.items():
-        if value is None or value == "null":
-            stat(f"null value for {key}")
-            continue
-        review_bits.append(ReviewBit(review=review, field=key, average=value))
+    review_bits = [ReviewBit(review=review, field=k, average=v) for k, v in bits.items()]
 
     # This saves us a bunch of database calls per row, since reviews have > 10 bits.
     ReviewBit.objects.bulk_create(review_bits, ignore_conflicts=True)
@@ -200,7 +195,7 @@ def import_ratings_row(row, stat):
     }
 
     for key, val in details.items():
-        if val is None or val == "null":
+        if val is None:
             stat(f"null value for {key}")
             return
 

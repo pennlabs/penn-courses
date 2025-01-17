@@ -2,14 +2,13 @@ from textwrap import dedent
 
 from django.contrib.auth import get_user_model
 from django.db.models import Prefetch, Q
-from django.http import Http404, JsonResponse
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import generics, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
 from courses.filters import CourseSearchFilterBackend
 from courses.models import (
@@ -48,11 +47,6 @@ SEMESTER_PARAM_DESCRIPTION = (
     "semester it is from. The 'all' option can be significantly more expensive, so use "
     "only where needed. "
 )
-
-
-class Health(APIView):
-    def get(self, request):
-        return Response({"message": "OK"}, status=status.HTTP_200_OK)
 
 
 class BaseCourseMixin(AutoPrefetchViewSetMixin, generics.GenericAPIView):
@@ -473,12 +467,11 @@ class FriendshipView(generics.ListAPIView):
                 "POST": {
                     201: "Friendship request created successfully.",
                     200: "Friendship request accepted successfully.",
-                    404: "Username was None/ Username did not exist.",
                     409: "Friendship request already exists",
                 },
                 "DELETE": {
                     200: "Friendship rejected/deleted/cancelled successfully.",
-                    404: "Friendship does not exist or Username does not exist.",
+                    404: "Friendship does not exist.",
                     409: "Friendship request already rejected.",
                 },
             }
@@ -527,12 +520,7 @@ class FriendshipView(generics.ListAPIView):
 
     def post(self, request):
         sender = request.user
-
-        username = request.data.get("pennkey")
-        if not username:
-            raise Http404("User not found.")
-
-        recipient = get_object_or_404(User, username=username.lower())
+        recipient = get_object_or_404(User, username=request.data.get("pennkey"))
 
         existing_friendship = (
             self.get_all_friendships().filter(Q(recipient=recipient) | Q(sender=recipient)).first()
@@ -566,15 +554,9 @@ class FriendshipView(generics.ListAPIView):
     def delete(self, request):
         # either deletes a friendship or cancels/rejects a friendship request
         # (depends on who sends the request)
-
-        sender = request.user
         res = {}
-
-        username = request.data.get("pennkey")
-        if not username:
-            raise Http404("User not found.")
-
-        recipient = get_object_or_404(User, username=username.lower())
+        sender = request.user
+        recipient = get_object_or_404(User, username=request.data.get("pennkey"))
 
         existing_friendship = (
             self.get_all_friendships().filter(Q(recipient=recipient) | Q(sender=recipient)).first()

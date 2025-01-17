@@ -238,6 +238,3 @@ ROUGH_MINIMUM_DEMAND_DISTRIBUTION_ESTIMATES = (
 # The name of the schedule that is created/verified by Penn Mobile,
 # containing the user's active course registrations from Path.
 PATH_REGISTRATION_SCHEDULE_NAME = "Path Registration"
-
-# Manually Set Cache Prefix
-CACHE_PREFIX = "MANUAL_CACHE_"

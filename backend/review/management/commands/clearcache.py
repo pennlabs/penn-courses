@@ -5,8 +5,6 @@ from django.conf import settings
 from django.core.cache import cache
 from django.core.management import BaseCommand
 
-from PennCourses.settings.base import CACHE_PREFIX
-
 
 def clear_cache():
     # If we are not using redis as the cache backend, then we can delete everything from the cache.
@@ -22,9 +20,6 @@ def clear_cache():
     r = redis.Redis.from_url(settings.REDIS_URL)
     del_count = 0
     for key in r.scan_iter("*views.decorators.cache*"):
-        r.delete(key)
-        del_count += 1
-    for key in r.scan_iter(f"*{CACHE_PREFIX}*"):
         r.delete(key)
         del_count += 1
     return del_count

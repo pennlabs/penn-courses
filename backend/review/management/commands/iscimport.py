@@ -17,7 +17,6 @@ from review.import_utils.import_to_db import (
 )
 from review.import_utils.parse_sql import load_sql_dump
 from review.management.commands.clearcache import clear_cache
-from review.management.commands.precompute_pcr_views import precompute_pcr_views
 from review.models import Review
 
 
@@ -278,7 +277,6 @@ class Command(BaseCommand):
 
         print("Recomputing Section.has_reviews...")
         recompute_has_reviews()
-        precompute_pcr_views(verbose=True, is_new_data=True)
 
         print("Done.")
         return 0

@@ -66,7 +66,7 @@ def accept_webhook(request):
             """Your credentials cannot be verified.
         They should be placed in the header as &quot;Authorization-Bearer&quot;,
         YOUR_APP_ID and &quot;Authorization-Token&quot; , YOUR_TOKEN""",
-            status=401,
+            status=200,
         )
 
     if request.method != "POST":
@@ -117,12 +117,6 @@ def accept_webhook(request):
                 f"after previous status update from {last_status_update.old_status} "
                 f"to {last_status_update.new_status} (duplicate or erroneous).",
             )
-        elif last_status_update:
-            logger.error(f"{section}: {prev_status} -> {course_status} "
-                         f"(last: {last_status_update.old_status} -> "
-                         f"{last_status_update.new_status})")
-        else:
-            logger.error(f"{section}: {prev_status} -> {course_status} (no last)")
 
         alert_for_course_called = False
         if should_send_pca_alert(course_term, course_status):
@@ -138,16 +132,15 @@ def accept_webhook(request):
         else:
             response = JsonResponse({"message": "webhook recieved"})
 
-        with transaction.atomic():
-            u = record_update(
-                section,
-                course_term,
-                prev_status,
-                course_status,
-                alert_for_course_called,
-                request.body,
-            )
-            update_course_from_record(u)
+        u = record_update(
+            section,
+            course_term,
+            prev_status,
+            course_status,
+            alert_for_course_called,
+            request.body,
+        )
+        update_course_from_record(u)
     except (ValidationError, ValueError) as e:
         logger.error(e, extra={"request": request})
         response = JsonResponse(

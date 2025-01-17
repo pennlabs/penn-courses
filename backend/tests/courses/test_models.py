@@ -10,10 +10,19 @@ from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
 from courses.management.commands.recompute_soft_state import recompute_precomputed_fields
-from courses.models import Course, Department, PreNGSSRequirement, Section, Topic, UserProfile
+from courses.models import (
+    Course,
+    Department,
+    Instructor,
+    PreNGSSRequirement,
+    Section,
+    Topic,
+    UserProfile,
+)
 from courses.util import (
     get_or_create_course,
     get_or_create_course_and_section,
+    get_section_from_course_instructor_semester,
     invalidate_current_semester_cache,
     record_update,
     separate_course_code,
@@ -67,6 +76,68 @@ class SepCourseCodeTest(TestCase):
     def test_invalid_course(self):
         with self.assertRaises(ValueError):
             separate_course_code("BLAH BLAH BLAH")
+
+
+class GetSectionFromInstructorTestCase(TestCase):
+    def setUp(self):
+        set_semester()
+        self.c1 = Course(
+            department=Department.objects.get_or_create(code="PSCI")[0],
+            code="131",
+            semester="2020A",
+            title="American Foreign Policy",
+        )
+        self.c1.save()
+        self.s1 = Section(code="001")
+        self.s1.course = self.c1
+        self.i1 = Instructor.objects.create(name="Mickey Mouse")
+        self.i1.save()
+        self.s1.save()
+        self.s1.instructors.add(self.i1)
+        self.s1.save()
+
+        self.c2 = Course(
+            department=Department.objects.get_or_create(code="PSCI")[0],
+            code="1310",
+            semester="2021A",
+            title="American Foreign Policy",
+        )
+        self.c2.save()
+        self.s2 = Section(code="001")
+        self.s2.course = self.c2
+        self.i2 = Instructor.objects.create(name="Donald Duck")
+        self.i2.save()
+        self.s2.save()
+        self.s2.instructors.add(self.i2)
+        self.s2.save()
+
+        self.c1.save()
+        self.c2.save()
+        fill_course_soft_state()
+        self.c2.parent_course = self.c1
+        self.c2.manually_set_parent_course = True
+        self.c2.save()
+        fill_course_soft_state()
+
+    def testSectionAndSemesterMatch(self):
+        section = get_section_from_course_instructor_semester("PSCI-131", ["Mickey Mouse"], "2020A")
+        self.assertEqual(section, self.s1)
+
+    def testSectionAndSemesterDoNotMatch(self):
+        section = get_section_from_course_instructor_semester(
+            "PSCI-1310", ["Mickey Mouse"], "2020A"
+        )
+        self.assertEqual(section, self.s1)
+        section = get_section_from_course_instructor_semester("PSCI-131", ["Donald Duck"], "2021A")
+        self.assertEqual(section, self.s2)
+
+    def testInstructorDoesNotExistButClassDoes(self):
+        with self.assertRaises(ValueError):
+            get_section_from_course_instructor_semester("PSCI-1310", ["Goofy"], "2020A")
+
+    def testClassDoesNotExistButInstructorDoes(self):
+        with self.assertRaises(ValueError):
+            get_section_from_course_instructor_semester("PSCI-1311", ["Mickey Mouse"], "2020A")
 
 
 class GetCourseSectionTest(TestCase):

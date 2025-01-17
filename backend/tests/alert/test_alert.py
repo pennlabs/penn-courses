@@ -806,7 +806,9 @@ class WebhookViewTestCase(TestCase):
             "sent" in json.loads(res.content)["message"],
         )
         self.assertFalse(mock_alert.called)
-        self.assertEqual(0, StatusUpdate.objects.count())
+        self.assertEqual(1, StatusUpdate.objects.count())
+        u = StatusUpdate.objects.get()
+        self.assertFalse(u.alert_sent)
 
     def test_alert_called_alerts_off(self, mock_alert):
         Option.objects.update_or_create(
