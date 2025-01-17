@@ -1,0 +1,22 @@
+{
+	"files": [],
+	"references": [
+		{ "path": "../../services/alert/backend/tsconfig.json" },
+		{
+			"path": "./tsconfig.app.json"
+		},
+		{
+			"path": "./tsconfig.node.json"
+		}
+	],
+	"compilerOptions": {
+		"composite": true,
+		"baseUrl": ".",
+		"paths": {
+			"@/*": ["./src/*"],
+			"@pennlabs/pca-backend/router": [
+				"../../services/alert/backend/src/router"
+			]
+		}
+	}
+}
