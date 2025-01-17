@@ -118,9 +118,11 @@ def accept_webhook(request):
                 f"to {last_status_update.new_status} (duplicate or erroneous).",
             )
         elif last_status_update:
-            logger.error(f"{section}: {prev_status} -> {course_status} "
-                         f"(last: {last_status_update.old_status} -> "
-                         f"{last_status_update.new_status})")
+            logger.error(
+                f"{section}: {prev_status} -> {course_status} "
+                f"(last: {last_status_update.old_status} -> "
+                f"{last_status_update.new_status})"
+            )
         else:
             logger.error(f"{section}: {prev_status} -> {course_status} (no last)")
 
