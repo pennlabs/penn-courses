@@ -11,7 +11,6 @@ from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import status, viewsets
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from alert.models import Registration, RegStatus, register_for_course
@@ -292,7 +291,7 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         },
     )
     http_method_names = ["get", "post", "put"]
-    permission_classes = [IsAuthenticated]
+    permission_classes = []
 
     def get_serializer_class(self):
         if self.action == "create":
@@ -603,7 +602,7 @@ class RegistrationHistoryViewSet(AutoPrefetchViewSetMixin, viewsets.ReadOnlyMode
         },
     )
     serializer_class = RegistrationSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = []
 
     queryset = Registration.objects.none()  # included redundantly for docs
 
