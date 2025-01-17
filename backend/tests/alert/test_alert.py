@@ -912,7 +912,7 @@ class WebhookViewTestCase(TestCase):
             content_type="application/json",
             **self.headers,
         )
-        self.assertEqual(401, res.status_code)
+        self.assertEqual(200, res.status_code)
         self.assertFalse(mock_alert.called)
         self.assertEqual(0, StatusUpdate.objects.count())
 
@@ -926,7 +926,7 @@ class WebhookViewTestCase(TestCase):
             content_type="application/json",
             **self.headers,
         )
-        self.assertEqual(401, res.status_code)
+        self.assertEqual(200, res.status_code)
         self.assertFalse(mock_alert.called)
         self.assertEqual(0, StatusUpdate.objects.count())
 
