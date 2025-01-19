@@ -123,9 +123,9 @@ export const getTimeString = (meetings: Meeting[]) => {
     meetings.forEach((meeting) => {
         const rangeId = `${meeting.start}-${meeting.end}`;
         if (!times[rangeId]) {
-            times[rangeId] = [meeting.day];
+            times[rangeId] = [meeting.day!];
         } else {
-            times[rangeId].push(meeting.day);
+            times[rangeId].push(meeting.day!);
         }
         if (times[rangeId].length > maxcount) {
             maxcount = times[rangeId].length;
@@ -134,7 +134,7 @@ export const getTimeString = (meetings: Meeting[]) => {
     });
 
     let daySet = "";
-    Object.values(Day).forEach((day) => {
+    ["M", "T", "W", "R", "F", "S", "U"].forEach((day) => {
         times[maxrange].forEach((d) => {
             if (d === day) {
                 daySet += day;

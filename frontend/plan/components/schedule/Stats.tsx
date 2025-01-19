@@ -143,7 +143,7 @@ class Stats extends Component<StatsProps> {
                         startTimes.push(meeting.start);
                         endTimes.push(meeting.end);
                         hoursPerDay[
-                            mapDays[meeting.day]
+                            mapDays[meeting.day!]
                         ] += this.getMeetingLength(meeting);
                     });
                 }
