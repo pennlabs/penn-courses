@@ -61,7 +61,7 @@ def accept_webhook(request):
 
     username, password = extract_basic_auth(auth_header)
     if username != settings.WEBHOOK_USERNAME or password != settings.WEBHOOK_PASSWORD:
-        logger.error("Credentials could not be verified")
+        # logger.error("Credentials could not be verified") ### Commented out to filter spam
         return HttpResponse(
             """Your credentials cannot be verified.
         They should be placed in the header as &quot;Authorization-Bearer&quot;,
