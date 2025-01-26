@@ -18,7 +18,7 @@ export default function Footer() {
             | <a href={getLogoutUrl()}>Logout</a>
             <p id="copyright" className={cn("mx-4")}>
                 Made with{" "}
-                <Heart color="#F56F71" size={14} className={cn("inline")} /> by{" "}
+                <Heart color="#030303" size={14} className={cn("inline")} /> by{" "}
                 <a href="https://pennlabs.org">
                     <strong>Penn Labs</strong>
                 </a>{" "}

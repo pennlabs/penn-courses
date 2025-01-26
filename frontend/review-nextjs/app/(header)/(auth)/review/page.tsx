@@ -2,9 +2,12 @@
 import { cn } from "@/lib/utils";
 
 export default function Review() {
+    // const { data: session } = useSession();
+
     return (
         <div id="review" className={cn("mx-[20%]")}>
-            {/* {auth.isLoading ? <Skeleton /> : <ReviewPage />} */}
+            <p>Static data</p>
+            {/* {session ? <ReviewPage /> : <p>Not authenticated</p>} */}
         </div>
     );
 }
@@ -12,7 +15,7 @@ export default function Review() {
 function ReviewPage() {
     return (
         <p>
-            Secret data
+            Secret static data
             {/* Secret data that needs authentication {auth.isAuthenticated}{" "} */}
             {/* {auth.user?.profile.email} */}
         </p>
