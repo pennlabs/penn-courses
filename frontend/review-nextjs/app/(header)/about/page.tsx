@@ -98,7 +98,7 @@ export default function About() {
 
             <Image
                 alt="Penn Labs"
-                src="/static/image/labs.png"
+                src="/image/labs.png"
                 width={100}
                 height={100}
             />
