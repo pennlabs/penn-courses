@@ -164,11 +164,11 @@ function Index() {
     const [selectedTab, setSelectedTab] = useState<TabItem>(TabItem.Cart);
     useEffect(() => {
         setSelectedTab(
-            router.asPath.split("#")[1] === TabItem.Cart
-                ? TabItem.Cart
+            router.asPath.split("#")[1] === TabItem.Map
+                ? TabItem.Map
                 : router.asPath.split("#")[1] === TabItem.Alerts
                 ? TabItem.Alerts
-                : TabItem.Map
+                : TabItem.Cart
         );
     }, []);
 
