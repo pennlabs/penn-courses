@@ -1,4 +1,4 @@
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, useEffect } from "react";
 import useSWR from "swr";
 import ResultsList from "./ResultsList";
 import styled from "@emotion/styled";
@@ -14,7 +14,7 @@ interface SearchPanelContextType {
     setSearchFulfillments: (arg0: Fulfillment[]) => void,
     searchFulfillments: Fulfillment[],
     setSearchRuleQuery: (arg0: string | null) => void;
-    searchRuleQuery: string | null; // the q string associated with the rule
+    searchRuleQuery: string | null; // the q string associated with the rulez
 }
 
 export const SearchPanelContext = createContext<SearchPanelContextType>({
@@ -92,12 +92,17 @@ export const SearchPanel = ({ activeDegreeplanId }: SearchPanelProp) => {
         searchFulfillments: fulfillments
     } = useContext(SearchPanelContext); 
 
+
     // queryString and searchRuleQuery are different (queryString is the actual query e.g., "World Civ",
     // and searchRuleQuery is a q object)
     const [queryString, setQueryString] = React.useState<string>("");
 
     React.useEffect(() => {
         setQueryString("");
+    }, [ruleId])
+
+    useEffect(() => {
+        console.log(ruleId)
     }, [ruleId])
 
     const handleCloseSearch = () => {
@@ -155,6 +160,7 @@ export const useDebounce = (value: any, delay: number) => {
 }
 
 const buildSearchKey = (ruleId: Rule["id"] | null, query: string): string | null => {
+    console.log(`api/base/all/search/courses?search=${query}${ruleId ? `&rule_ids=${ruleId}` : ""}`)
     return query.length >= 3 || ruleId ? `api/base/all/search/courses?search=${query}${ruleId ? `&rule_ids=${ruleId}` : ""}` : null
 }
 

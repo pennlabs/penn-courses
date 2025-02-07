@@ -3,9 +3,10 @@ import styled from "@emotion/styled";
 import { Icon } from "../common/bulma_derived_components";
 import { Course, DegreePlan, Fulfillment } from "@/types";
 import useSWR from "swr";
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import Select from "react-select";
 import { ModalKey } from "./DegreeModal";
+import ToastContext from "../Toast/Toast";
 
 const getNextSemester = (semester: string) => {
   const year = parseInt(semester.slice(0, 4));
@@ -191,8 +192,7 @@ interface SemestersProps {
   setModalObject: (obj: any) => void;
   setEditMode: (arg0: boolean) => void;
   isLoading: boolean;
-  currentSemester?: string;
-}
+  currentSemester?: string;}
 
 const Semesters = ({
   activeDegreeplan,
@@ -214,6 +214,7 @@ const Semesters = ({
   );
   // semesters is state mostly derived from fulfillments
 
+  const showToast = useContext(ToastContext);
 
   const getDefaultSemesters = React.useCallback(() => {
     const startingYear = currentSemester ? Number(currentSemester.substring(0, 4)) : new Date().getFullYear(); // Use current semester as default starting semester

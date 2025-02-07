@@ -56,6 +56,7 @@ const PanelInteriorWrapper = styled.div<{ $maxWidth?: string; $minWidth?: string
   height: 100%;
 `;
 
+
 const FourYearPlanPage = ({
   updateUser,
   user
@@ -69,7 +70,7 @@ const FourYearPlanPage = ({
   const { data: degreeplans, isLoading: isLoadingDegreeplans } = useSWR<
     DegreePlan[]
   >("/api/degree/degreeplans");
-  
+
   useEffect(() => {
     // recompute the active degreeplan id on changes to the degreeplans
     if (!isLoadingDegreeplans && !degreeplans?.length) {
@@ -91,7 +92,7 @@ const FourYearPlanPage = ({
 
   // review panel
   const { data: options } = useSWR<Options>("/api/options");
-  
+
   const [reviewPanelCoords, setReviewPanelCoords] = useState<{
     top?: number;
     left?: number;
@@ -109,112 +110,115 @@ const FourYearPlanPage = ({
   const [searchRuleQuery, setSearchRuleQuery] = useState<string | null>(null); // a query object
   const [searchFulfillments, setSearchFulfillments] = useState<Fulfillment[]>([]); // fulfillments matching the ruleId
 
+
   return (
-    <SearchPanelContext.Provider
-      value={{
-        setSearchPanelOpen,
-        searchPanelOpen,
-        setSearchRuleId,
-        searchRuleId,
-        setSearchRuleQuery,
-        searchRuleQuery,
-        setSearchFulfillments,
-        searchFulfillments
-      }}
-    >
-      <ReviewPanelContext.Provider
+    <>
+      <SearchPanelContext.Provider
         value={{
-          full_code: reviewPanelFullCode,
-          set_full_code: setReviewPanelFullCode,
-          position: reviewPanelCoords,
-          setPosition: setReviewPanelCoords,
+          setSearchPanelOpen,
+          searchPanelOpen,
+          setSearchRuleId,
+          searchRuleId,
+          setSearchRuleQuery,
+          searchRuleQuery,
+          setSearchFulfillments,
+          searchFulfillments
         }}
       >
-        {reviewPanelFullCode && (
-          <ReviewPanel
-            currentSemester={options?.SEMESTER}
-            full_code={reviewPanelFullCode}
-            set_full_code={setReviewPanelFullCode}
-            position={reviewPanelCoords}
-            setPosition={setReviewPanelCoords}
-          />
-        )}
-        {modalKey && (
-          <DegreeModal
-            setModalKey={setModalKey}
-            modalKey={modalKey}
-            modalObject={modalObject}
-            setActiveDegreeplan={setActiveDegreeplan}
-          />
-        )}
-        <PageContainer>
-          <BodyContainer ref={ref}>
-            {!!showOnboardingModal ? (
-              <OnboardingPage
-                setShowOnboardingModal={setShowOnboardingModal}
-                setActiveDegreeplan={setActiveDegreeplan}
-              />
-            ) : (
-              <Row>
-                {/*
+        <ReviewPanelContext.Provider
+          value={{
+            full_code: reviewPanelFullCode,
+            set_full_code: setReviewPanelFullCode,
+            position: reviewPanelCoords,
+            setPosition: setReviewPanelCoords,
+          }}
+        >
+          {reviewPanelFullCode && (
+            <ReviewPanel
+              currentSemester={options?.SEMESTER}
+              full_code={reviewPanelFullCode}
+              set_full_code={setReviewPanelFullCode}
+              position={reviewPanelCoords}
+              setPosition={setReviewPanelCoords}
+            />
+          )}
+          {modalKey && (
+            <DegreeModal
+              setModalKey={setModalKey}
+              modalKey={modalKey}
+              modalObject={modalObject}
+              setActiveDegreeplan={setActiveDegreeplan}
+            />
+          )}
+          <PageContainer>
+            <BodyContainer ref={ref}>
+              {!!showOnboardingModal ? (
+                <OnboardingPage
+                  setShowOnboardingModal={setShowOnboardingModal}
+                  setActiveDegreeplan={setActiveDegreeplan}
+                />
+              ) : (
+                <Row>
+                  {/*
                 // @ts-ignore */}
-                <SplitPane
-                  split="vertical"
-                  maxSize={searchPanelOpen ? 
-                    (windowWidth ? windowWidth : 1000) * 0.5 
-                  : (windowWidth ? windowWidth : 1000) * 0.66}
-                  minSize={(windowWidth ? windowWidth : 400) * 0.33 }
-                  defaultSize="50%"
-                  style={{
-                    padding: "1.5rem",
-                    paddingBottom: "1rem" // less padding on bottom for penn labs footer
-                  }}
-                >
-                  {/*
+                  <SplitPane
+                    split="vertical"
+                    maxSize={searchPanelOpen ?
+                      (windowWidth ? windowWidth : 1000) * 0.5
+                      : (windowWidth ? windowWidth : 1000) * 0.66}
+                    minSize={(windowWidth ? windowWidth : 400) * 0.33}
+                    defaultSize="50%"
+                    style={{
+                      padding: "1.5rem",
+                      paddingBottom: "1rem" // less padding on bottom for penn labs footer
+                    }}
+                  >
+                    {/*
                   // @ts-ignore */}
-                  <PanelWrapper>
-                    <PanelInteriorWrapper>
-                      <PlanPanel
-                        currentSemester={options?.SEMESTER}
-                        setModalKey={setModalKey}
-                        modalKey={modalKey}
-                        setModalObject={setModalObject}
-                        isLoading={
-                          isLoadingDegreeplans // || isLoadingActiveDegreePlan
-                        }
-                        activeDegreeplan={activeDegreeplan}
-                        degreeplans={degreeplans}
-                        setActiveDegreeplan={setActiveDegreeplan}
-                        setShowOnboardingModal={setShowOnboardingModal}
-                      />
-                    </PanelInteriorWrapper>
-                  </PanelWrapper>
-                  {/*
-                  // @ts-ignore */}
-                  <PanelWrapper>
-                    <PanelInteriorWrapper>
-                      <ReqPanel
-                        setModalKey={setModalKey}
-                        setModalObject={setModalObject}
-                        isLoading={isLoadingDegreeplans}
-                        activeDegreeplan={activeDegreeplan}
-                      />
-                    </PanelInteriorWrapper>
-                    {searchPanelOpen && (
-                      <PanelInteriorWrapper $minWidth={"48%"} $maxWidth={"48%"}>
-                        <SearchPanel activeDegreeplanId={activeDegreeplan ? activeDegreeplan.id : null} />
+                    <PanelWrapper>
+                      <PanelInteriorWrapper>
+                        <PlanPanel
+                          currentSemester={options?.SEMESTER}
+                          setModalKey={setModalKey}
+                          modalKey={modalKey}
+                          setModalObject={setModalObject}
+                          isLoading={
+                            isLoadingDegreeplans // || isLoadingActiveDegreePlan
+                          }
+                          activeDegreeplan={activeDegreeplan}
+                          degreeplans={degreeplans}
+                          setActiveDegreeplan={setActiveDegreeplan}
+                          setShowOnboardingModal={setShowOnboardingModal}
+                        />
                       </PanelInteriorWrapper>
-                    )}
-                  </PanelWrapper>
-                </SplitPane>
-              </Row>
-            )}
-          </BodyContainer>
-          <Footer />
-          <Dock user={user} login={updateUser} logout={() => updateUser(null)} activeDegreeplanId={activeDegreeplan ? activeDegreeplan.id : null} />
-        </PageContainer>
-      </ReviewPanelContext.Provider>
-    </SearchPanelContext.Provider>
+                    </PanelWrapper>
+                    {/*
+                  // @ts-ignore */}
+                    <PanelWrapper>
+                      <PanelInteriorWrapper>
+                        <ReqPanel
+                          setModalKey={setModalKey}
+                          setModalObject={setModalObject}
+                          isLoading={isLoadingDegreeplans}
+                          activeDegreeplan={activeDegreeplan}
+                        />
+                      </PanelInteriorWrapper>
+                      {searchPanelOpen && (
+                        <PanelInteriorWrapper $minWidth={"48%"} $maxWidth={"48%"}>
+                          <SearchPanel activeDegreeplanId={activeDegreeplan ? activeDegreeplan.id : null} />
+                        </PanelInteriorWrapper>
+                      )}
+                    </PanelWrapper>
+                  </SplitPane>
+                </Row>
+              )}
+            </BodyContainer>
+            <Footer />
+            <Dock user={user} login={updateUser} logout={() => updateUser(null)} activeDegreeplanId={activeDegreeplan ? activeDegreeplan.id : null} />
+          </PageContainer>
+        </ReviewPanelContext.Provider>
+      </SearchPanelContext.Provider>
+    </>
   );
 };
 

@@ -153,7 +153,7 @@ export default function Course({
 
     const [{ isDragging }, drag] = useDrag<DnDCourse, never, { isDragging: boolean }>(() => ({
         type: ItemTypes.COURSE_IN_PLAN,
-        item: {full_code: course.id, rule_id: ruleId == null ? undefined : ruleId},
+        item: {full_code: course.id, rule_id: ruleId == null ? 10101 : ruleId},
         collect: (monitor) => ({
           isDragging: !!monitor.isDragging()
         })
@@ -161,6 +161,7 @@ export default function Course({
 
     const [isMouseOver, setIsMouseOver] = useState(false);
 
+    // console.log(course)
     return (
         <RowSelectors>
             <ReviewPanelTrigger full_code={course.id} triggerType="click">

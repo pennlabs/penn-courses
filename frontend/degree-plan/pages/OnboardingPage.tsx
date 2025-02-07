@@ -34,6 +34,8 @@ import {
   RulerSquareIcon,
 } from "@radix-ui/react-icons";
 import { set } from "lodash";
+import { collapseToast } from "react-toastify";
+import zIndex from "@mui/material/styles/zIndex";
 polyfillPromiseWithResolvers();
 
 const { closest } = require('fastest-levenshtein');
@@ -46,12 +48,13 @@ const PanelContainer = styled.div<{ $maxWidth: string; $minWidth: string }>`
   background-color: #ffffff;
   margin: 1rem;
   min-height: 85%;
-  overflow: hidden; /* Hide scrollbars */
+  // overflow: hidden; /* Hide scrollbars */
   width: ${(props) => (props.$maxWidth || props.$maxWidth ? "auto" : "100%")};
   max-width: ${(props) => (props.$maxWidth ? props.$maxWidth : "auto")};
   min-width: ${(props) => (props.$minWidth ? props.$minWidth : "auto")};
   position: relative;
   padding-bottom: "5%";
+  z-index: 100000;
 `;
 
 const ChooseContainer = styled.div<{ $maxWidth: string; $minWidth: string }>`
@@ -70,8 +73,20 @@ const ChooseContainer = styled.div<{ $maxWidth: string; $minWidth: string }>`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 30px;
+  gap: 40px;
 `;
+
+const ContainerGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+`
+
+const ErrorText = styled.p`
+  color: darkred;
+  min-height: 17px;
+`
 
 const CenteredFlexContainer = styled.div`
   display: flex;
@@ -85,8 +100,10 @@ const ColumnsContainer = styled.div`
   justify-content: space-between;
   padding-top: 1%;
   padding-left: 5%;
+  padding-right: 5%;
   gap: 20px;
   min-height: 100%;
+  padding-bottom: 5%;
 
   @media (max-width: 768px) {
     flex-direction: column;
@@ -94,17 +111,77 @@ const ColumnsContainer = styled.div`
   }
 `;
 
-export const Column = styled.div`
+const CourseContainer = styled.div`
+  max-height: 48vh;
   display: flex;
   flex-direction: column;
   flex: 1;
   gap: 1rem;
   padding-right: 2%;
+  padding-bottom: 2rem;
+
+  
+  // Scroll shadow credits: https://css-tricks.com/books/greatest-css-tricks/scroll-shadows/
+
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  overflow-scrolling: touch;
+
+  background:
+    /* Shadow Cover TOP */
+    linear-gradient(
+      white 30%,
+      rgba(255, 255, 255, 0)
+    ) center top,
+    
+    /* Shadow Cover BOTTOM */
+    linear-gradient(
+      rgba(255, 255, 255, 0), 
+      white 70%
+    ) center bottom,
+    
+    /* Shadow TOP */
+    radial-gradient(
+      farthest-side at 50% 0,
+      rgba(0, 0, 0, 0.4),
+      rgba(0, 0, 0, 0)
+    ) center top,
+    
+    /* Shadow BOTTOM */
+    radial-gradient(
+      farthest-side at 50% 100%,
+      rgba(0, 0, 0, 0.3),
+      rgba(0, 0, 0, 0)
+    ) center bottom;
+  
+  background-repeat: no-repeat;
+  background-size: 100% 40px, 100% 40px, 100% 14px, 100% 14px;
+  background-attachment: local, local, scroll, scroll;
+
+  // &::-webkit-scrollbar {
+  //     background-color: transparent;
+  //     width: 7px;
+
+  // }
+
+  // &::-webkit-scrollbar-thumb {
+  //   background-color: lightgray;
+  //   border-radius: 10px;
+  // }
+}
+
+`
+
+export const Column = styled.div`
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 1rem;
 `;
 
 const NextButtonContainer = styled.div`
   padding-top: 5%;
-  padding-right: 15%;
+  // padding-right: 15%;
   display: flex;
   flex-direction: row;
   justify-content: end;
@@ -176,6 +253,11 @@ const FieldWrapper = styled.div`
   align-items: left;
 `;
 
+const ScrollableCol = styled.div`
+  display: flex;
+
+`
+
 const TextButton = styled.div`
   display: flex;
   align-items: center;
@@ -188,6 +270,7 @@ const TextButton = styled.div`
     cursor: pointer;
   }
 `;
+
 
 const customSelectStylesLeft = {
   control: (provided: any) => ({
@@ -263,9 +346,11 @@ const customSelectStylesRight = {
 const customSelectStylesCourses = {
   control: (provided: any) => ({
     ...provided,
-    width: "80%",
+    width: "100%",
     minHeight: "35px",
     // height: "65px",
+    zIndex: -1
+
   }),
   menu: (provided: any) => ({
     ...provided,
@@ -276,6 +361,7 @@ const customSelectStylesCourses = {
     ...provided,
     // height: "55px",
     // padding: "0 6px",
+    zIndex: -1
   }),
   input: (provided: any) => ({
     ...provided,
@@ -366,14 +452,25 @@ const OnboardingPage = ({
         for (let course of sem.courses) {
           let code = course.replace(" ", "-").toUpperCase();
 
-          // If rule exists for course code, add it. Else, add with no rule. 
-          // TODO: Need support for more vague rules.
-          if (Object.keys(coursesToRules).includes(code)) {
-            let rule = coursesToRules[code];
-            createOrUpdate({ rules: [rule], semester: semCode }, code);
-          } else {
-            createOrUpdate({ semester: semCode }, code);
-          }
+          fetch(`/api/degree/satisfied-rule-list/${degreeID}/${code}`).then((r) => {
+            r.json().then((data) => {
+              const otherFulfilledRules = data.reduce((res: any, obj: any) => {
+                res.push(obj.id);
+                return res;
+              }, [])
+
+              createOrUpdate({ rules: otherFulfilledRules, semester: semCode }, code);
+            })
+          })
+
+          // // If rule exists for course code, add it. Else, add with no rule. 
+          // // TODO: Need support for more vague rules.
+          // if (Object.keys(coursesToRules).includes(code)) {
+          //   let rule = coursesToRules[code];
+          //   createOrUpdate({ rules: [rule], semester: semCode }, code);
+          // } else {
+          //   createOrUpdate({ semester: semCode }, code);
+          // }
         }
       }
 
@@ -502,7 +599,6 @@ const OnboardingPage = ({
   const total = useRef<any>({});
 
   const addText = (items: (any)[], index: number) => {
-
     // At most the transcript will have two columns - we account for that here.
     let allText: any = { "col0": [], "col1": [] }
 
@@ -542,7 +638,6 @@ const OnboardingPage = ({
 
     // If all pages have been read, begin to parse text from transcript
     if (Object.keys(total.current).length === numPages) {
-
       let all: any = []
       for (let key in Object.keys(total.current).sort()) {
         all = all.concat(total.current[key])
@@ -551,8 +646,9 @@ const OnboardingPage = ({
     }
   }
 
-  const parseTranscript = (textResult: any) => {
+  const transcriptDetected = useRef<boolean | null>(null);
 
+  const parseTranscript = (textResult: any) => {
     let separatedCourses: any = [];
 
     let startYear: number = 0;
@@ -645,16 +741,13 @@ const OnboardingPage = ({
 
             if (courseMatch) {
               // Check if course didn't get an F or a W. If current sem's courses are empty, remove sem key from separatedCourses
-              if ((line[line.length -1] == "f" || line[line.length -1] == "w") && separatedCourses[currentSem].length == 0) {
-                  delete separatedCourses[currentSem];
+              if ((line[line.length - 1] == "f" || line[line.length - 1] == "w") && separatedCourses[currentSem].length == 0) {
+                delete separatedCourses[currentSem];
               }
               else {
                 separatedCourses[currentSem].push(courseMatch[0]);
               }
             }
-
-
-
           }
         }
         separatedCourses = Object.keys(separatedCourses).map(
@@ -687,7 +780,6 @@ const OnboardingPage = ({
     for (let i in detectedMajors) {
       let m = detectedMajors[i] + (detectedConcentrations.length > parseInt(i) ? detectedConcentrations[i] : "")
       if (!detectedMajors[i]?.includes("undeclared") && possibleDegrees) {
-        // console.log(m)
         let justMajorNames = possibleDegrees.reduce((acc: any, el: any) => {
           acc.push(el.label);
           return acc;
@@ -701,48 +793,91 @@ const OnboardingPage = ({
       }
     }
     setMajors(detectedMajorsOptions)
+
+
+    transcriptDetected.current = startYear ? true : false;
   };
+
+
+  const resetParser = () => {
+    total.current = {};
+    transcriptDetected.current = null;
+    setSchools([]);
+    setMajors([]);
+    setMinor([]);
+    setName("");
+    setScrapedCourses([]);
+    setStartingYear(null);
+    setGraduationYear(null);
+  }
 
   if (currentPage === 0)
     return (
       <CenteredFlexContainer>
         <ChooseContainer $maxWidth="90%" $minWidth="90%">
-          <h1>Welcome to Penn Degree Plan!</h1>
-          <label>
-            <input
-              type="file"
-              accept=".pdf"
-              hidden
-              onChange={(event) => {
-                if (event.target.files) setPDF(event.target.files[0]);
+          <div style={{ display: "none" }}>
+            <Document
+              file={PDF}
+              onLoadSuccess={(pdf) => {
+                resetParser();
+                setNumPages(pdf.numPages);
               }}
-            />
-            <Upload>
-              <p style={{ fontSize: "1.2rem" }}>Upload Transcript</p>
-              {PDF?.name ? (
-                <p>{PDF?.name}</p>
-              ) : (
-                <UploadIcon width={20} height={20} />
-              )}
-            </Upload>
-          </label>
-          <NextButton
-            onClick={() => {
-              setCurrentPage(1);
-            }}
-            disabled={PDF ? false : true}
-            style={{
-              height: "45px",
-              width: "100px",
-              borderRadius: "7px",
-              color: PDF ? "white" : "",
-              transition: "all 0.25s",
-            }}
-          >
-            Next
-          </NextButton>
+            >
+              {Array.from(new Array(numPages), (el, index) => (
+                <Page
+                  key={`page_${index + 1}`}
+                  pageNumber={index + 1}
+                  onGetTextSuccess={({ items, styles }) => {
+                    addText(items, index);
+                  }
+                  }
+                  renderTextLayer={true}
+                />
+              ))}
+            </Document>
+          </div>
+
+          <h1>Welcome to Penn Degree Plan!</h1>
+          <ContainerGroup>
+            <label>
+              <input
+                type="file"
+                accept=".pdf"
+                hidden
+                onChange={(event) => {
+                  if (event.target.files) setPDF(event.target.files[0]);
+                }}
+              />
+              <Upload>
+                <p style={{ fontSize: "1.2rem" }}>Upload Transcript</p>
+                {PDF?.name ? (
+                  <p>{PDF?.name}</p>
+                ) : (
+                  <UploadIcon width={20} height={20} />
+                )}
+              </Upload>
+            </label>
+            <ErrorText>{PDF && transcriptDetected.current !== null && (transcriptDetected.current === true ? "" : "Can't detect a transcript! Try another file.")}</ErrorText>
+            <NextButton
+              onClick={() => {
+                if (startingYear && startingYear?.value !== 0)
+                  setCurrentPage(1);
+              }}
+              disabled={PDF && transcriptDetected.current === true ? false : true}
+              style={{
+                height: "45px",
+                width: "100px",
+                borderRadius: "7px",
+                color: PDF ? "white" : "",
+                transition: "all 0.25s",
+              }}
+            >
+              Next
+            </NextButton>
+          </ContainerGroup>
           <TextButton
             onClick={() => {
+              resetParser();
               setCurrentPage(2);
             }}
             style={{ borderBottom: "1px solid #aaa" }}
@@ -780,32 +915,32 @@ const OnboardingPage = ({
               </FieldWrapper>
 
               <FieldWrapper>
-                <Label required>Starting Year</Label>
-                <Select
-                  options={startingYearOptions}
-                  value={startingYear}
-                  onChange={(selectedOption) => setStartingYear(selectedOption)}
-                  isClearable
-                  placeholder="Select Year Started"
-                  styles={customSelectStylesLeft}
-                />
-              </FieldWrapper>
+                <FieldWrapper>
+                  <Label required>Starting Year</Label>
+                  <Select
+                    options={startingYearOptions}
+                    value={startingYear}
+                    onChange={(selectedOption) => setStartingYear(selectedOption)}
+                    isClearable
+                    placeholder="Select Year Started"
+                    styles={customSelectStylesLeft}
+                  />
+                </FieldWrapper>
 
-              <FieldWrapper>
-                <Label required>Graduation Year</Label>
-                <Select
-                  options={graduationYearOptions}
-                  value={graduationYear}
-                  onChange={(selectedOption) =>
-                    setGraduationYear(selectedOption)
-                  }
-                  isClearable
-                  placeholder="Select Year of Graduation"
-                  styles={customSelectStylesLeft}
-                />
-              </FieldWrapper>
+                <FieldWrapper>
+                  <Label required>Graduation Year</Label>
+                  <Select
+                    options={graduationYearOptions}
+                    value={graduationYear}
+                    onChange={(selectedOption) =>
+                      setGraduationYear(selectedOption)
+                    }
+                    isClearable
+                    placeholder="Select Year of Graduation"
+                    styles={customSelectStylesLeft}
+                  />
+                </FieldWrapper>
 
-              <FieldWrapper>
                 <Label required>School(s) or Program(s)</Label>
                 <Select
                   options={schoolOptions}
@@ -813,6 +948,7 @@ const OnboardingPage = ({
                   onChange={(selectedOptions) =>
                     setSchools([...selectedOptions])
                   }
+
                   isClearable
                   isMulti
                   placeholder="Select School or Program"
@@ -862,7 +998,7 @@ const OnboardingPage = ({
                 isLoading={isLoadingDegreeplans}
               /> */}
 
-              <div style={{ display: "none" }}>
+              {/* <div style={{ display: "none" }}>
                 <Document
                   file={PDF}
                   onLoadSuccess={(pdf) => {
@@ -880,7 +1016,7 @@ const OnboardingPage = ({
                     />
                   ))}
                 </Document>
-              </div>
+              </div> */}
             </Column>
 
             <Column>
@@ -895,37 +1031,41 @@ const OnboardingPage = ({
                 <h2>Your Courses</h2>
                 <p>You can make edits on the next page.</p>
               </div>
-              {scrapedCourses.map((e: any, i: number) => {
-                const semCourses = e.courses.map(
-                  (course: any, _: any) =>
-                    [
-                      {
-                        value: course.toUpperCase(),
-                        label: course.toUpperCase(),
-                      },
-                    ][0]
-                );
-                return (
-                  <FieldWrapper style={{ display: "flex" }} key={i}>
-                    {e.sem === "_TRAN"
-                      ? <Label required={false}>Transfer Credit</Label>
-                      : <Label required={false}>{e.sem[0].toUpperCase() + e.sem.slice(1)}</Label>
-                    }
-                    <Select
-                      components={{ MultiValueRemove: () => null }}
-                      options={semCourses}
-                      value={semCourses}
-                      // onChange={(selectedOptions) => console.log(selectedOptions)}
-                      // isClearable
-                      isMulti
-                      placeholder="Courses"
-                      styles={customSelectStylesCourses}
-                      isLoading={isLoadingDegrees}
-                      isDisabled
-                    />
-                  </FieldWrapper>
-                );
-              })}
+
+              {/* <CourseContainer style={{ width: "85%" }}> */}
+              <CourseContainer>
+                {scrapedCourses.map((e: any, i: number) => {
+                  const semCourses = e.courses.map(
+                    (course: any, _: any) =>
+                      [
+                        {
+                          value: course.toUpperCase(),
+                          label: course.toUpperCase(),
+                        },
+                      ][0]
+                  );
+                  return (
+                    <FieldWrapper style={{ display: "flex" }} key={i}>
+                      {e.sem === "_TRAN"
+                        ? <Label required={false}>Transfer Credit</Label>
+                        : <Label required={false}>{e.sem[0].toUpperCase() + e.sem.slice(1)}</Label>
+                      }
+                      <Select
+                        components={{ MultiValueRemove: () => null }}
+                        options={semCourses}
+                        value={semCourses}
+                        // onChange={(selectedOptions) => console.log(selectedOptions)}
+                        // isClearable
+                        isMulti
+                        placeholder="Courses"
+                        styles={customSelectStylesCourses}
+                        isLoading={isLoadingDegrees}
+                        isDisabled
+                      />
+                    </FieldWrapper>
+                  );
+                })}
+              </CourseContainer>
               <NextButtonContainer>
                 <NextButton
                   onClick={handleAddDegrees}
@@ -954,6 +1094,13 @@ const OnboardingPage = ({
           <TextButton
             onClick={() => {
               setCurrentPage(0);
+              setSchools([]);
+              setMajors([]);
+              setMinor([]);
+              setName("");
+              setScrapedCourses([]);
+              setStartingYear(null);
+              setGraduationYear(null);
             }}
             style={{ marginLeft: "5%", marginTop: "3%" }}
           >
@@ -1071,22 +1218,6 @@ const OnboardingPage = ({
                   Next
                 </NextButton>
               </NextButtonContainer>
-              <div style={{ display: "none" }}>
-                <Document
-                  file={PDF}
-                  onLoadSuccess={(pdf) => {
-                    setNumPages(pdf.numPages);
-                  }}
-                >
-                  {Array.from(new Array(numPages), (el, index) => (
-                    <Page
-                      key={`page_${index + 1}`}
-                      pageNumber={index + 1}
-                      renderTextLayer={true}
-                    />
-                  ))}
-                </Document>
-              </div>
             </Column>
           </ColumnsContainer>
         </PanelContainer>

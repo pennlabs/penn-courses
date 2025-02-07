@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useContext, useEffect, useMemo, useState } from 'react';
 import RuleComponent, { SkeletonRule } from './Rule';
-import { Degree as DegreeType, DegreePlan, Fulfillment, Rule } from '@/types';
+import { Degree as DegreeType, DegreePlan, Fulfillment, Rule, Degree as DegreeD } from '@/types';
 import styled from '@emotion/styled';
 import { DarkBlueBackgroundSkeleton, PanelBody, PanelContainer, PanelHeader, PanelTopBarIconList } from "../FourYearPlan/PanelCommon";
 import { EditButton } from '../FourYearPlan/EditButton';
@@ -9,6 +9,7 @@ import { Icon } from '../common/bulma_derived_components';
 import React from 'react';
 import { ModalKey } from '../FourYearPlan/DegreeModal';
 import { LightTrashIcon } from '../common/TrashIcon';
+import ToastContext from '../Toast/Toast';
 
 const EmptyPanelContainer = styled.div`
   display: flex;
@@ -61,7 +62,7 @@ export const DegreeYear = styled.span`
   font-size: .9rem;
   font-weight: 500;
 `
-const  DegreeTitleWrapper = styled.div`
+const DegreeTitleWrapper = styled.div`
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -107,14 +108,14 @@ const DegreeHeader = ({ degree, remove, setCollapsed, collapsed, editMode, skele
         </DegreeYear>
       </DegreeTitleWrapper>
       <span>
-        {!skeleton && !!editMode ? 
-        <LightTrashIcon role="button" onClick={() => remove(degree.id)}>
-          <i className="fa fa-trash fa-md"/>
-        </LightTrashIcon>
-        :
-        <Icon>
-          <i className={`fas fa-chevron-${collapsed ? "up" : "down"}`}></i>
-        </Icon>}
+        {!skeleton && !!editMode ?
+          <LightTrashIcon role="button" onClick={() => remove(degree.id)}>
+            <i className="fa fa-trash fa-md" />
+          </LightTrashIcon>
+          :
+          <Icon>
+            <i className={`fas fa-chevron-${collapsed ? "up" : "down"}`}></i>
+          </Icon>}
       </span>
     </DegreeHeaderContainer>
   )
@@ -143,11 +144,13 @@ export type RuleTree = RuleTreeLeaf | RuleTreeInternalNode;
 
 // TODO: factor out activeDegreePlanId so it's not in entire tree
 interface RuleProps {
-    rule: Rule;
-    rulesToFulfillments: { [ruleId: string]: Fulfillment[] };
-    activeDegreePlanId: number;
+  rule: Rule;
+  rulesToFulfillments: { [ruleId: string]: Fulfillment[] };
+  activeDegreePlanId: number;
+  degree: DegreeD;
 }
-const computeRuleTree = ({ activeDegreePlanId, rule, rulesToFulfillments }: RuleProps): RuleTree => {
+
+const computeRuleTree = ({activeDegreePlanId, rule, rulesToFulfillments, degree }: RuleProps): RuleTree => {
   if (rule.q) { // Rule leaf
     const fulfillmentsForRule: Fulfillment[] = rulesToFulfillments[rule.id] || [];
     const cus = fulfillmentsForRule.reduce((acc, f) => acc + (f.course?.credits || 1), 0); // default to 1 cu 
@@ -155,25 +158,24 @@ const computeRuleTree = ({ activeDegreePlanId, rule, rulesToFulfillments }: Rule
     const progress = Math.min(rule.credits ? cus / rule.credits : 1, rule.num ? num / rule.num : 1);
     return { activeDegreePlanId, type: "LEAF", progress, cus, num, rule, fulfillments: fulfillmentsForRule }
   }
-  
-  const children = rule.rules.map((child) => computeRuleTree({ activeDegreePlanId, rule: child, rulesToFulfillments })) 
+  const children = rule.rules.map((child) => computeRuleTree({ activeDegreePlanId, rule: child, rulesToFulfillments, degree }))
   const progress = children.reduce((acc, { progress }) => (progress == 1 ? 1 : 0) + acc, 0) / Math.min(children.length, rule.num || Infinity);
   return { num: rule.num || undefined, activeDegreePlanId, type: "INTERNAL_NODE", children, progress, rule } // internal node
 }
 
 
-const Degree = ({degree, rulesToFulfillments, activeDegreeplan, editMode, setModalKey, setModalObject, isLoading}: any) => {
-  const [collapsed, setCollapsed] = useState(false);  
+const Degree = ({ allRuleLeaves, degree, rulesToFulfillments, activeDegreeplan, editMode, setModalKey, setModalObject, isLoading }: any) => {
+  const [collapsed, setCollapsed] = useState(false);
   if (isLoading) {
     return (
       <div>
         <DegreeHeader
-        degree={degree}
-        remove={() => void {}}
-        setCollapsed={setCollapsed}
-        skeleton
-        collapsed={collapsed}
-        editMode={false}
+          degree={degree}
+          remove={() => void {}}
+          setCollapsed={setCollapsed}
+          skeleton
+          collapsed={collapsed}
+          editMode={false}
         />
         <DegreeBody>
           <SkeletonRule>
@@ -200,26 +202,28 @@ const Degree = ({degree, rulesToFulfillments, activeDegreeplan, editMode, setMod
 
   return (
     <div>
-      <DegreeHeader 
-        degree={degree} 
-        key={degree.id} 
+      <DegreeHeader
+        degree={degree}
+        key={degree.id}
         remove={() => {
-          setModalObject({degreeplanId: activeDegreeplan.id, degreeId: degree.id});
+          setModalObject({ degreeplanId: activeDegreeplan.id, degreeId: degree.id });
           setModalKey("degree-remove");
-        }} 
+        }}
         setCollapsed={setCollapsed}
         collapsed={collapsed || editMode} // Collapse degree view in edit mode
         editMode={editMode}
         skeleton={false}
-        />
+      />
       {!collapsed && !editMode &&
-      <DegreeBody>
-        {degree && degree.rules.map((rule: any) => (
-          <RuleComponent 
-          {...computeRuleTree({ activeDegreePlanId: activeDegreeplan.id, rule, rulesToFulfillments })}
-          />
-        ))}
-      </DegreeBody>}
+        <DegreeBody>
+          {degree && degree.rules.map((rule: any) => {
+            return (
+            <RuleComponent
+              {...computeRuleTree({activeDegreePlanId: activeDegreeplan.id, rule, rulesToFulfillments, degree })}
+            />
+          )}
+          )}
+        </DegreeBody>}
     </div>
   )
 }
@@ -230,11 +234,16 @@ interface ReqPanelProps {
   activeDegreeplan: DegreePlan | null;
   isLoading: boolean;
 }
-const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading}: ReqPanelProps) => {
-  const [editMode, setEditMode] = React.useState(false);  
-  const { data: activeDegreeplanDetail = null, isLoading: isLoadingDegrees } = useSWR<DegreePlan>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}` : null); 
+const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: ReqPanelProps) => {
+  const showToast = useContext(ToastContext);
+
+
+  const [editMode, setEditMode] = React.useState(false);
+  const [allRuleLeaves, setAllRuleLeaves] = React.useState(false);
+
+  const { data: activeDegreeplanDetail = null, isLoading: isLoadingDegrees } = useSWR<DegreePlan>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}` : null);
   const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null);
-  
+
   const rulesToFulfillments = useMemo(() => {
     if (isLoadingFulfillments || !fulfillments) return {};
     const rulesToCourses: { [rule: string]: Fulfillment[] } = {};
@@ -248,8 +257,49 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading}: Re
     });
     return rulesToCourses;
   }, [fulfillments, isLoadingFulfillments])
-  
-  return(
+
+
+  // React.useEffect(() => {
+  //   if (!isLoadingDegrees && activeDegreeplan) {
+  //     let allRuleLeaves: any = [];
+
+  //     // Finds duplicate rule leaves
+  //     // const findDuplicateRules = (rule: any): void => {
+  //     //   if (rule.q) { 
+  //     //     if (rule.title in duplicates) {
+  //     //       duplicates[rule.title] = [...duplicates[rule.title], rule];
+  //     //     } else {
+  //     //       duplicates[rule.title] = [rule];
+  //     //     }
+  //     //   }
+  //     //   else {
+  //     //     rule.rules.map((child: any) => findDuplicateRules(child))
+  //     //   }
+  //     // }
+
+  //     const findDuplicateRules = (rule: any): void => {
+  //       if (rule.q) { 
+  //         allRuleLeaves.push(rule.id);
+  //       }
+  //       else {
+  //         rule.rules.map((child: any) => findDuplicateRules(child))
+  //       }
+  //     }
+
+
+  //     activeDegreeplanDetail?.degrees.map((degree) => {
+  //       degree.rules.map((rule) => {
+  //         findDuplicateRules(rule);
+  //       })
+  //     })
+
+  //     setAllRuleLeaves(allRuleLeaves);
+  //   }
+
+  // }, [isLoadingDegrees, activeDegreeplan])
+
+
+  return (
     <PanelContainer>
       <PanelHeader>
         <ReqPanelTitle>Requirements</ReqPanelTitle>
@@ -257,34 +307,35 @@ const ReqPanel = ({setModalKey, setModalObject, activeDegreeplan, isLoading}: Re
           <EditButton editMode={editMode} setEditMode={setEditMode} />
         </PanelTopBarIconList>
       </PanelHeader>
-      {!activeDegreeplan ? <ReqPanelBody><Degree isLoading={true}/></ReqPanelBody> :
-      <>
-        {activeDegreeplanDetail && 
-        <ReqPanelBody>
-          {activeDegreeplanDetail.degrees.length == 0 && !editMode && <EmptyPanel />}
-          {activeDegreeplanDetail.degrees.map(degree => (
-            <Degree 
-            degree={degree} 
-            rulesToFulfillments={rulesToFulfillments} 
-            activeDegreeplan={activeDegreeplan}
-            editMode={editMode}
-            setModalKey={setModalKey}
-            setModalObject={setModalObject}
-            isLoading={isLoading}
-            />
-          ))}
-          {editMode && <AddButton role="button" onClick={() => {
-            setModalObject(activeDegreeplan);
-            setModalKey("degree-add");
-          }}>
-            <i className="fa fa-plus" />
-            <div>
-              Add Degree
-            </div>
-          </AddButton>}
-        </ReqPanelBody>
-        }
-      </>}
+      {!activeDegreeplan ? <ReqPanelBody><Degree isLoading={true} /></ReqPanelBody> :
+        <>
+          {activeDegreeplanDetail &&
+            <ReqPanelBody>
+              {activeDegreeplanDetail.degrees.length == 0 && !editMode && <EmptyPanel />}
+              {activeDegreeplanDetail.degrees.map(degree => (
+                <Degree
+                  allRuleLeaves={allRuleLeaves}
+                  degree={degree}
+                  rulesToFulfillments={rulesToFulfillments}
+                  activeDegreeplan={activeDegreeplan}
+                  editMode={editMode}
+                  setModalKey={setModalKey}
+                  setModalObject={setModalObject}
+                  isLoading={isLoading}
+                />
+              ))}
+              {editMode && <AddButton role="button" onClick={() => {
+                setModalObject(activeDegreeplan);
+                setModalKey("degree-add");
+              }}>
+                <i className="fa fa-plus" />
+                <div>
+                  Add Degree
+                </div>
+              </AddButton>}
+            </ReqPanelBody>
+          }
+        </>}
     </PanelContainer>
   );
 }

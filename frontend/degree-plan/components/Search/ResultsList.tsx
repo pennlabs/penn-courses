@@ -72,6 +72,15 @@ const ResultsList = ({
     );
     const { createOrUpdate: createOrUpdateDockedCourse } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
 
+    
+
+    // Must make into RuleIds then.
+    courses.map((course) => {
+        // console.log(course)
+        // console.log(ruleId)
+    })
+
+
     return (
         <CourseListContainer>
             <HeaderContainer>
@@ -80,7 +89,7 @@ const ResultsList = ({
                 <Header width="20%">DIFF</Header>
             </HeaderContainer>
             <CoursesContainer>
-                {!isLoading ? courses.map((course) => 
+                {!isLoading ? courses.map((course) =>  
                 <Course
                     ruleId={ruleId}
                     key={course.id + course.semester}

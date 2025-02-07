@@ -13,7 +13,13 @@ import { mutate } from "swr";
 import { ModalKey } from "./DegreeModal";
 import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
 
+import { useContext } from "react";
+
+import ToastContext from "../Toast/Toast";
+
 const SEMESTER_REGEX = /\d{4}[ABC]/
+
+
 
 const translateSemester = (semester: Course["semester"]) => {
     if (semester === TRANSFER_CREDIT_SEMESTER_KEY) return "AP & Transfer Credit";
@@ -23,7 +29,7 @@ const translateSemester = (semester: Course["semester"]) => {
 }
 
 export const SemesterCard = styled.div<{
-    $isDroppable:boolean,
+    $isDroppable: boolean,
     $isOver: boolean,
     $semesterComparison: number // -1 if currentSemester is less than this semester...
 }>`
@@ -80,9 +86,9 @@ const InlineSkeleton = styled(Skeleton)`
     display: inline-block;
 `
 
-export const SkeletonSemester = ({ 
+export const SkeletonSemester = ({
     showStats,
-} : { showStats: boolean }) => {
+}: { showStats: boolean }) => {
     return (
         <SemesterCard $isDroppable={false} $isOver={false} $semesterComparison={1}>
             <SemesterHeader>
@@ -90,9 +96,9 @@ export const SkeletonSemester = ({
                     <Skeleton width="5em" />
                 </SemesterLabel>
             </SemesterHeader>
-            <SemesterContent> 
+            <SemesterContent>
                 <SkeletonCoursesPlanned />
-                {!!showStats && <FlexStats fulfillments={[]}/>}
+                {!!showStats && <FlexStats fulfillments={[]} />}
             </SemesterContent>
             <CreditsLabel>
                 <InlineSkeleton width="2em" /><span>CUs</span>
@@ -115,7 +121,7 @@ interface SemesterProps {
     isLoading?: boolean
 }
 
-const FlexSemester = ({ 
+const FlexSemester = ({
     showStats,
     semester,
     fulfillments,
@@ -126,7 +132,9 @@ const FlexSemester = ({
     removeSemester,
     currentSemester,
     isLoading = false
-} : SemesterProps) => {
+}: SemesterProps) => {
+    const showToast = useContext(ToastContext);
+
     const credits = fulfillments.reduce((acc, curr) => acc + (curr.course?.credits || 1), 0)
 
     const { createOrUpdate: addToDock } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
@@ -134,7 +142,7 @@ const FlexSemester = ({
     // the fulfillments api uses the POST method for updates (it creates if it doesn't exist, and updates if it does)
     const { createOrUpdate, remove } = useSWRCrud<Fulfillment>(
         `/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`,
-        { 
+        {
             idKey: "full_code",
             createDefaultOptimisticData: { semester: null, rules: [] }
         }
@@ -142,24 +150,69 @@ const FlexSemester = ({
 
     const [{ isOver, canDrop }, drop] = useDrop<DnDCourse, never, { isOver: boolean, canDrop: boolean }>(() => ({
         accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_DOCK, ItemTypes.COURSE_IN_REQ],
+        hover(item, monitor) {
+            console.log(item)
+          },
         drop: (course: DnDCourse) => {
             if (course.rule_id === undefined || course.rule_id == null) { // moved from plan or dock
                 createOrUpdate({ semester }, course.full_code);
+                // fetch(`/api/degree/satisfied-rule-list/${activeDegreeplanId}/${course.full_code}`).then((r) => {
+                //     r.json().then((data) => {
+                //         const otherFulfilledRules = data.reduce((res: any, obj: any) => {
+                //           res.push(obj.id);
+                //           return res;
+                //         }, [])
+          
+                //         createOrUpdate({ rules: course.rules !== undefined ? [...course.rules, ...otherFulfilledRules] : otherFulfilledRules, semester }, course.full_code);
+                    
+                //         // Toast only if course has been directly dragged from search (not reqpanel!)
+                //         if (!course.rules)
+                //             for (let obj of data) {
+                //                 if (obj.id != course.rule_id) {
+                //                     showToast(`${course.full_code} also fulfilled ${obj.title}!`, false);
+                //                 }
+                //             }
+            
+                //     })
+                // })
+
             } else { // moved from req panel
                 const prev_rules = fulfillments.find((fulfillment) => fulfillment.full_code === course.full_code)?.rules || []
-                createOrUpdate({ rules: [...prev_rules, course.rule_id], semester }, course.full_code);
+                // console.log([...prev_rules])
+                fetch(`/api/degree/satisfied-rule-list/${activeDegreeplanId}/${course.full_code}`).then((r) => {
+                    r.json().then((data) => {
+                        const otherFulfilledRules = data.reduce((res: any, obj: any) => {
+                          res.push(obj.id);
+                          return res;
+                        }, [])
+          
+                        createOrUpdate({ rules: course.rules !== undefined ? [...course.rules, ...otherFulfilledRules] : otherFulfilledRules, semester }, course.full_code);
+                    
+                        // Toast only if course has been directly dragged from search (not reqpanel!)
+                        if (!course.rules)
+                            for (let obj of data) {
+                                if (obj.id != course.rule_id) {
+                                    showToast(`${course.full_code} also fulfilled ${obj.title}!`, false);
+                                }
+                            }
+            
+                    })
+                })
+
+                // createOrUpdate({ rules: [...prev_rules, course.rule_id], semester }, course.full_code);
             }
+
             return undefined;
         },
         collect: monitor => ({
-          isOver: !!monitor.isOver(),
-          canDrop: !!monitor.canDrop()
+            isOver: !!monitor.isOver(),
+            canDrop: !!monitor.canDrop()
         }),
     }), [createOrUpdate, semester]);
 
     const handleRemoveCourse = async (full_code: Course["id"]) => {
         remove(full_code);
-        addToDock({"full_code": full_code}, full_code);
+        addToDock({ "full_code": full_code }, full_code);
         await mutate(`/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`);
     }
 
@@ -172,36 +225,38 @@ const FlexSemester = ({
 
     const handleRemoveSemester = () => {
         setModalKey('semester-remove');
-        setModalObject({helper: removeSemesterHelper});
+        setModalObject({ helper: removeSemesterHelper });
     }
 
     return (
+        <>
         <SemesterCard
-        $isDroppable={canDrop}
-        $isOver={isOver}
-        ref={drop}
-        $semesterComparison={currentSemester ? semester.localeCompare(currentSemester) : 1}
+            $isDroppable={canDrop}
+            $isOver={isOver}
+            ref={drop}
+            $semesterComparison={currentSemester ? semester.localeCompare(currentSemester) : 1}
         >
             <SemesterHeader>
                 <SemesterLabel>
                     {translateSemester(semester)}
                 </SemesterLabel>
-                {!!editMode &&         
-                <TrashIcon role="button" onClick={handleRemoveSemester}>
-                    <i className="fa fa-trash fa-md"/>
-                </TrashIcon>}
+                {!!editMode &&
+                    <TrashIcon role="button" onClick={handleRemoveSemester}>
+                        <i className="fa fa-trash fa-md" />
+                    </TrashIcon>}
             </SemesterHeader>
-            <SemesterContent> 
-                <FlexCoursesPlanned 
-                    semester={semester} 
-                    fulfillments={fulfillments} 
-                    removeCourse={handleRemoveCourse}/>
-                {!!showStats && <FlexStats fulfillments={fulfillments}/>}
+            <SemesterContent>
+                <FlexCoursesPlanned
+                    semester={semester}
+                    fulfillments={fulfillments}
+                    removeCourse={handleRemoveCourse} />
+                {!!showStats && <FlexStats fulfillments={fulfillments} />}
             </SemesterContent>
             <CreditsLabel>
                 {credits} CUs
             </CreditsLabel>
         </SemesterCard>
+        </>
     )
 }
 

@@ -2,7 +2,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 from rest_framework_nested.routers import NestedDefaultRouter
 
-from degree.views import DegreePlanViewset, DegreeViewset, DockedCourseViewset, FulfillmentViewSet
+from degree.views import DegreePlanViewset, DegreeViewset, DockedCourseViewset, FulfillmentViewSet, SatisfiedRuleList
 
 
 router = DefaultRouter(trailing_slash=False)
@@ -17,4 +17,9 @@ fulfillments_router.register(r"fulfillments", FulfillmentViewSet, basename="degr
 urlpatterns = [
     path("", include(router.urls)),
     path("", include(fulfillments_router.urls)),
+    path(
+        "satisfied-rule-list/<slug:degree_plan_id>/<slug:full_code>",
+        SatisfiedRuleList.as_view(),
+        name="satisfied-rule-list",
+    ),
 ]

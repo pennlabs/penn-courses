@@ -1,7 +1,8 @@
+from collections import deque
 from django.db import IntegrityError
 from django.http import Http404
 from django_auto_prefetching import AutoPrefetchViewSetMixin
-from rest_framework import status, viewsets
+from rest_framework import status, viewsets, generics
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
@@ -16,7 +17,9 @@ from degree.serializers import (
     DegreePlanListSerializer,
     DockedCourseSerializer,
     FulfillmentSerializer,
+    RuleSerializer
 )
+from PennCourses.docs_settings import PcxAutoSchema
 
 
 class InPDPBeta(BasePermission):
@@ -80,7 +83,8 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         if request.data.get("name") is None:
             raise ValidationError({"name": "This field is required."})
-        new_degree_plan = DegreePlan(name=request.data.get("name"), person=self.request.user)
+        new_degree_plan = DegreePlan(
+            name=request.data.get("name"), person=self.request.user)
         new_degree_plan.save()
         serializer = self.get_serializer(new_degree_plan)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -188,3 +192,129 @@ class DockedCourseViewset(viewsets.ModelViewSet):
             return self.partial_update(request, *args, **kwargs)
         except Http404:
             return super().create(request, *args, **kwargs)
+
+
+class SatisfiedRuleList(generics.ListAPIView):
+    """
+    Provided a degree plan and a course code, retrieve a sublist of the degrees' rules that are satisfied by the course.
+    """
+
+    schema = PcxAutoSchema(
+        response_codes={
+            "requirements-list": {
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Requirements listed successfully."}
+            },
+        },
+        custom_path_parameter_desc={
+            "requirements-list": {
+                "GET": {
+                    "semester": (
+                        "The semester of the requirement (of the form YYYYx where x is A "
+                        "[for spring], B [summer], or C [fall]), e.g. `2019C` for fall 2019. "
+                        "We organize requirements by semester so that we don't get huge related "
+                        "sets which don't give particularly good info."
+                    )
+                }
+            }
+        },
+    )
+
+    serializer_class = RuleSerializer
+
+    def get_queryset(self):
+        degree_plan_id = self.kwargs["degree_plan_id"]
+        full_code = self.kwargs["full_code"]
+
+        degree_plan = DegreePlan.objects.get(id=degree_plan_id)
+
+
+        # # List of rule titles that should be ignored in limiting double counting WITHIN a degree. Basically, only allows double counting where legal.
+        # # ex. CIS-1200 is allowed to fulfill the Formal Reasoning and Analysis rule as well as the Computation and Cognition rule within a Cognitive Science degree.
+        # # ex. CIS-1200 is prevented from fulfilling both the Computation rule as well as the Computation and Cognition rule within a Cognitive Science degree.
+        # double_within_degree_allowed = [
+        #     "Sector 6: The Physical World",
+        #     "Sector 5: The Living World",
+        #     "Sector 4: Humanities and Social Sciences",
+        #     "Sector 3: Arts and Letters",
+        #     "Sector 2: History and Tradition",
+        #     "Sector 1: Society",
+        #     "Cultural Diversity in the U.S.",
+        #     "Cross Cultural Analysis",
+        #     "Formal Reasoning and Analysis",
+        #     "Quantitative Data Analysis",
+        #     "Foreign Language"
+        # ]
+
+        # fulfilled_rules = []
+
+        # for degree in degree_plan.degrees.all():
+        #     bfs_queue = deque()
+        #     rules = []
+
+        #     for rule_in_degree in degree.rules.all():
+        #         bfs_queue.append(rule_in_degree)
+
+        #     while len(bfs_queue):
+        #         curr_rule = bfs_queue.pop()
+        #         # this is a leaf rule
+        #         if curr_rule.q:
+        #             rules.append(curr_rule)
+        #         else:  # parent rule
+        #             bfs_queue.extend(curr_rule.children.all())
+
+        #     # TODO: Only add rules that are open ended
+
+
+        #     curr_rules = []
+        #     double_count_allowed_rules = []
+        #     found_rule = False
+
+
+        #     # print(rules)
+
+        #     satified_rules = degree_plan.check_rules_already_satisfied(rules)
+        #     for rule in rules:
+                
+
+        #         # If a rule explicitly lists the provided course as an option, that should be the onlym
+        #         # course we fulfill 
+        #         if full_code in rule.q and rule not in satified_rules:
+        #             curr_rules = [rule]
+
+        #         if rule.check_belongs([full_code]):
+        #             if rule.title in double_within_degree_allowed:
+        #                 double_count_allowed_rules.append(rule)
+        #             elif not found_rule:
+        #                 curr_rules.append(rule)
+        #                 found_rule = True
+
+        #     fulfilled_rules += curr_rules + double_count_allowed_rules
+
+        # # for rule in fulfilled_rules:
+        #     # print(rule)
+        # return fulfilled_rules
+
+        bfs_queue = deque()
+        rules = []
+
+
+        for degree in degree_plan.degrees.all():
+            for rule_in_degree in degree.rules.all():
+                bfs_queue.append(rule_in_degree)
+
+        while len(bfs_queue):
+            curr_rule = bfs_queue.pop()
+            # this is a leaf rule
+            if curr_rule.q:
+                rules.append(curr_rule)
+            else: # parent rule
+                bfs_queue.extend(curr_rule.children.all())
+
+        # TODO: Only add rules that are open ended
+        fulfilled_rules = []
+        for rule in rules:
+            print(rule)
+            if rule.check_belongs([full_code]):
+                fulfilled_rules.append(rule)
+
+        return fulfilled_rules
