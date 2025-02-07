@@ -22,6 +22,7 @@ import Selector from "../components/selector/Selector";
 import Footer from "../components/footer";
 import Cart from "../components/Cart";
 import Alerts from "../components/alert/Alerts";
+import MapTab from "../components/map/MapTab";
 import ModalContainer from "../components/modals/generic_modal_container";
 import SearchSortDropdown from "../components/search/SearchSortDropdown";
 import { openModal } from "../actions";
@@ -67,13 +68,13 @@ const CustomTabs = styled(Tabs)`
     }
 `;
 
-const CartTab = styled.a<{ active: boolean }>`
+const CartTab = styled.a<{ active: string }>`
     display: inline-flex;
     font-weight: bold;
     margin-bottom: 0.5rem;
     cursor: pointer;
     margin-right: 1rem;
-    color: ${(props) => (props.active ? "black" : "gray")};
+    color: ${(props) => (props.active === "true" ? "black" : "gray")};
 `;
 
 const Box = styled.div`
@@ -124,16 +125,19 @@ export function showToast(text: string, error: boolean) {
 
 enum TabItem {
     Cart = "cart-tab",
-    Alerts = "alerts-tab"
+    Alerts = "alerts-tab",
+    Map = "map-tab",
 }
 
 const tabItems = [
-    { item: TabItem.Cart, name: "Cart", component: Cart},
-    { item: TabItem.Alerts, name: "Alerts", component: Alerts},]
+    { item: TabItem.Cart, name: "Cart", component: Cart },
+    { item: TabItem.Alerts, name: "Alerts", component: Alerts },
+    { item: TabItem.Map, name: "Map", component: MapTab },
+];
 
 function Index() {
     const router = useRouter();
-    
+
     const [tab, setTab] = useState(0);
     const [view, setView] = useState(0);
     // FIXME: Hacky, maybe look into redux-persist?
@@ -159,10 +163,17 @@ function Index() {
 
     const [selectedTab, setSelectedTab] = useState<TabItem>(TabItem.Cart);
     useEffect(() => {
-        setSelectedTab(router.asPath.split("#")[1] === TabItem.Alerts ? TabItem.Alerts : TabItem.Cart);
+        setSelectedTab(
+            router.asPath.split("#")[1] === TabItem.Cart
+                ? TabItem.Cart
+                : router.asPath.split("#")[1] === TabItem.Alerts
+                ? TabItem.Alerts
+                : TabItem.Map
+        );
     }, []);
 
-    const TabContent = tabItems.find(({item}) => item === selectedTab)?.component
+    const TabContent = tabItems.find(({ item }) => item === selectedTab)
+        ?.component;
 
     useEffect(() => {
         setInnerWidth(window.innerWidth);
@@ -362,13 +373,13 @@ function Index() {
                                 style={
                                     isExpanded
                                         ? {
-                                            padding: 0,
-                                            width: "123%",
-                                        }
+                                              padding: 0,
+                                              width: "123%",
+                                          }
                                         : {
-                                            padding: 0,
-                                            width: "129%",
-                                        }
+                                              padding: 0,
+                                              width: "129%",
+                                          }
                                 }
                             >
                                 <div
@@ -412,7 +423,10 @@ function Index() {
                                             flex: 1,
                                         }}
                                     >
-                                        <Selector mobileView={false} view={view} />
+                                        <Selector
+                                            mobileView={false}
+                                            view={view}
+                                        />
                                     </Box>
                                 </div>
                                 <div
@@ -423,17 +437,24 @@ function Index() {
                                     }}
                                 >
                                     <div>
-                                        {tabItems.map(({item, name}) => (
-                                        <CartTab
-                                            key={item}
-                                            href={`/#${item}`}
-                                            active={selectedTab === item}
-                                            onClick={() => setSelectedTab(item)}
-                                        >
-                                            {name}
-                                            </CartTab>))}
+                                        {tabItems.map(({ item, name }) => (
+                                            <CartTab
+                                                key={item}
+                                                href={`/#${item}`}
+                                                active={(
+                                                    selectedTab === item
+                                                ).toString()}
+                                                onClick={() =>
+                                                    setSelectedTab(item)
+                                                }
+                                            >
+                                                {name}
+                                            </CartTab>
+                                        ))}
                                     </div>
-                                    {typeof TabContent !== "undefined" && <TabContent mobileView={false} />}
+                                    {typeof TabContent !== "undefined" && (
+                                        <TabContent mobileView={false} />
+                                    )}
                                 </div>
                                 <div
                                     style={{

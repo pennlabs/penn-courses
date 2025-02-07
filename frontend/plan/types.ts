@@ -42,12 +42,17 @@ export interface CUFilter {
     1.5: boolean;
 }
 
-export enum Day {
+export type Day = Weekdays | Weekends;
+
+export enum Weekdays {
     M = "M",
     T = "T",
     W = "W",
     R = "R",
     F = "F",
+} 
+
+export enum Weekends {
     S = "S",
     U = "U",
 }
@@ -80,6 +85,7 @@ export interface Instructor {
 export interface Section {
     id: string;
     status: Status;
+    color: Color;
     activity: Activity;
     credits: number;
     semester: string;
@@ -103,10 +109,14 @@ export interface Alert {
 
 export interface Meeting {
     id: string;
-    day: string;
+    day?: string;
+    color: string;
     start: number;
     end: number;
     room: string;
+    latitude: number;
+    longitude: number;
+    overlap: boolean;
 }
 
 // Represents a single colored block on the schedule
@@ -156,6 +166,16 @@ export interface CartCourse {
     section: Section;
     checked: boolean;
     overlaps: boolean;
+}
+
+export interface CoursesByDay {
+    M: CartCourse[];
+    T: CartCourse[];
+    W: CartCourse[];
+    R: CartCourse[];
+    F: CartCourse[];
+    S: CartCourse[];
+    U: CartCourse[];
 }
 
 export interface Schedule {
@@ -228,3 +248,10 @@ export type FilterType =
     export interface ColorsMap {
         [key: string]: Color
     }
+
+    export type Location = {
+        lat: number;
+        lng: number;
+        color?: string;
+    }
+

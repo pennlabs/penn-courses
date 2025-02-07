@@ -24,6 +24,7 @@ import { showToast } from "../pages";
 import { MIN_TIME_DIFFERENCE } from "../constants/sync_constants";
 
 import { PATH_REGISTRATION_SCHEDULE_NAME } from "../constants/constants";
+import { Color } from "../types";
 
 // the state contains the following two pieces of data:
 //  1. An object associating each schedule name with the schedule objecct
@@ -87,7 +88,7 @@ const toggleSection = (scheduleSections, section) => {
     if (scheduleContainsSection(scheduleSections, section)) {
         return scheduleSections.filter((m) => m.id !== section.id);
     }
-    return [...scheduleSections, section];
+    return [...scheduleSections, { ...section, color: getColor(section.id) }];
 };
 
 /**
@@ -178,7 +179,12 @@ const handleUpdateSchedulesOnFrontend = (state, schedulesFromBackend) => {
                     schedules: {
                         ...newState.schedules,
                         [scheduleFromBackend.name]: {
-                            sections: scheduleFromBackend.sections,
+                            sections: scheduleFromBackend.sections.map(
+                                (section) => ({
+                                    ...section,
+                                    color: getColor(section.id),
+                                })
+                            ),
                             id: scheduleFromBackend.id,
                             pushedToBackend: true,
                             updated_at: Date.now(),
@@ -220,6 +226,50 @@ const handleRemoveCartItem = (sectionId, state) => ({
     cartSections: state.cartSections.filter(({ id }) => id !== sectionId),
     cartPushedToBackend: false,
 });
+
+// Used for box coloring, from StackOverflow:
+// https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript
+const hashString = (s) => {
+    let hash = 0;
+    if (!s || s.length === 0) return hash;
+    for (let i = 0; i < s.length; i += 1) {
+        const chr = s.charCodeAt(i);
+        hash = (hash << 5) - hash + chr;
+        hash |= 0; // Convert to 32bit integer
+    }
+    return hash;
+};
+
+// step 2 in the CIS121 review: hashing with linear probing.
+// hash every section to a color, but if that color is taken, try the next color in the
+// colors array. Only start reusing colors when all the colors are used.
+const getColor = (() => {
+    const colors = [
+        Color.BLUE,
+        Color.RED,
+        Color.AQUA,
+        Color.ORANGE,
+        Color.GREEN,
+        Color.PINK,
+        Color.SEA,
+        Color.INDIGO,
+    ];
+    // some CIS120: `used` is a *closure* storing the colors currently in the schedule
+    let used = [];
+    return (c) => {
+        if (used.length === colors.length) {
+            // if we've used all the colors, it's acceptable to start reusing colors.
+            used = [];
+        }
+        let i = Math.abs(hashString(c));
+        while (used.indexOf(colors[i % colors.length]) !== -1) {
+            i += 1;
+        }
+        const color = colors[i % colors.length];
+        used.push(color);
+        return color;
+    };
+})();
 
 export const schedule = (state = initialState, action) => {
     switch (action.type) {

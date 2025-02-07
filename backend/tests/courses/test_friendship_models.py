@@ -27,7 +27,7 @@ class FriendshipModelTest(TestCase):
         self.assertTrue(UserProfile.objects.filter(user=u2).exists())
         self.assertTrue(UserProfile.objects.filter(user=u1).exists())
 
-        make_friends = self.client1.post(reverse("friendship"), {"pennkey": u2.username})
+        make_friends = self.client1.post(reverse("friendship"), {"pennkey": u2.username.upper()})
 
         self.assertEquals(make_friends.status_code, 201)
         self.assertTrue(
@@ -36,6 +36,33 @@ class FriendshipModelTest(TestCase):
             ).exists()
         )
         self.assertFalse(Friendship.objects.filter(sender=u2, recipient=u1).exists())
+
+    def test_none_username(self):
+        u1 = self.u1
+        u2 = self.u2
+
+        self.assertTrue(UserProfile.objects.filter(user=u2).exists())
+        self.assertTrue(UserProfile.objects.filter(user=u1).exists())
+
+        make_friends = self.client1.post(reverse("friendship"), {"pennkey": ""})
+
+        self.assertEquals(make_friends.status_code, 404)
+
+    def test_none_delete(self):
+        u1 = self.u1
+        u2 = self.u2
+
+        self.assertTrue(UserProfile.objects.filter(user=u2).exists())
+        self.assertTrue(UserProfile.objects.filter(user=u1).exists())
+
+        make_friends = self.client1.post(reverse("friendship"), {"pennkey": u2.username.upper()})
+        self.assertEquals(make_friends.status_code, 201)
+
+        delete_none = self.client1.delete(reverse("friendship"), {"pennkey": ""})
+        self.assertEquals(delete_none.status_code, 404)
+
+        delete_friends = self.client2.delete(reverse("friendship"), {"pennkey": u1.username})
+        self.assertEquals(delete_friends.status_code, 200)
 
     def test_basic_friendship_accept(self):
         u1 = self.u1

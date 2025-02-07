@@ -36,9 +36,9 @@ export class MyChart extends PennLabsChart {
 				secret,
 				cmd: [
 					'celery',
-					'worker',
 					'-A',
 					'PennCourses',
+					'worker',
 					'-Q',
 					'alerts,celery',
 					'-linfo',
@@ -51,7 +51,7 @@ export class MyChart extends PennLabsChart {
 			deployment: {
 				image: backendImage,
 				secret,
-				replicas: 5,
+				replicas: 2,
 			},
 			djangoSettingsModule: 'PennCourses.settings.production',
 			ingressProps,
@@ -138,6 +138,13 @@ export class MyChart extends PennLabsChart {
 			image: backendImage,
 			secret,
 			cmd: ['python', 'manage.py', 'alertstats', '1', '--slack'],
+		})
+
+		new CronJob(this, 'sync-path-course-statuses', {
+			schedule: cronTime.every(5).minutes(),
+			image: backendImage,
+			secret,
+			cmd: ['python', 'manage.py', 'sync_path_status', '--slack'],
 		})
 	}
 }

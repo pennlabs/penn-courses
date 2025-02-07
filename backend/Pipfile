@@ -63,6 +63,9 @@ python-dateutil = "*"
 docutils = "*"
 ics = "*"
 drf-nested-routers = "*"
+google-api-python-client = "*"
+asyncio = "*"
+aiohttp = "*"
 
 [requires]
 python_full_version = "3.11"

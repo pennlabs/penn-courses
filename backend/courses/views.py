@@ -2,13 +2,14 @@ from textwrap import dedent
 
 from django.contrib.auth import get_user_model
 from django.db.models import Prefetch, Q
-from django.http import JsonResponse
+from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import generics, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from courses.filters import CourseSearchFilterBackend
 from courses.models import (
@@ -47,6 +48,11 @@ SEMESTER_PARAM_DESCRIPTION = (
     "semester it is from. The 'all' option can be significantly more expensive, so use "
     "only where needed. "
 )
+
+
+class Health(APIView):
+    def get(self, request):
+        return Response({"message": "OK"}, status=status.HTTP_200_OK)
 
 
 class BaseCourseMixin(AutoPrefetchViewSetMixin, generics.GenericAPIView):
@@ -271,8 +277,26 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
     lookup_field = "full_code"
     queryset = Course.with_reviews.all()  # included redundantly for docs
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        include_location_str = self.request.query_params.get("include_location", "False")
+        context.update({"include_location": eval(include_location_str)})
+        return context
+
     def get_queryset(self):
         queryset = Course.with_reviews.all()
+        include_location = self.request.query_params.get("include_location", False)
+
+        prefetch_list = [
+            "course",
+            "meetings",
+            "associated_sections",
+            "meetings__room",
+            "instructors",
+        ]
+        if include_location:
+            prefetch_list.append("meetings__room__building")
+
         queryset = queryset.prefetch_related(
             Prefetch(
                 "sections",
@@ -280,15 +304,10 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
                 .filter(credits__isnull=False)
                 .filter(Q(status="O") | Q(status="C"))
                 .distinct()
-                .prefetch_related(
-                    "course",
-                    "meetings",
-                    "associated_sections",
-                    "meetings__room",
-                    "instructors",
-                ),
+                .prefetch_related(*prefetch_list),
             )
         )
+
         check_offered_in = self.request.query_params.get("check_offered_in")
         if check_offered_in:
             if "@" not in check_offered_in:
@@ -467,11 +486,12 @@ class FriendshipView(generics.ListAPIView):
                 "POST": {
                     201: "Friendship request created successfully.",
                     200: "Friendship request accepted successfully.",
+                    404: "Username was None/ Username did not exist.",
                     409: "Friendship request already exists",
                 },
                 "DELETE": {
                     200: "Friendship rejected/deleted/cancelled successfully.",
-                    404: "Friendship does not exist.",
+                    404: "Friendship does not exist or Username does not exist.",
                     409: "Friendship request already rejected.",
                 },
             }
@@ -520,7 +540,12 @@ class FriendshipView(generics.ListAPIView):
 
     def post(self, request):
         sender = request.user
-        recipient = get_object_or_404(User, username=request.data.get("pennkey"))
+
+        username = request.data.get("pennkey")
+        if not username:
+            raise Http404("User not found.")
+
+        recipient = get_object_or_404(User, username=username.lower())
 
         existing_friendship = (
             self.get_all_friendships().filter(Q(recipient=recipient) | Q(sender=recipient)).first()
@@ -554,9 +579,15 @@ class FriendshipView(generics.ListAPIView):
     def delete(self, request):
         # either deletes a friendship or cancels/rejects a friendship request
         # (depends on who sends the request)
-        res = {}
+
         sender = request.user
-        recipient = get_object_or_404(User, username=request.data.get("pennkey"))
+        res = {}
+
+        username = request.data.get("pennkey")
+        if not username:
+            raise Http404("User not found.")
+
+        recipient = get_object_or_404(User, username=username.lower())
 
         existing_friendship = (
             self.get_all_friendships().filter(Q(recipient=recipient) | Q(sender=recipient)).first()

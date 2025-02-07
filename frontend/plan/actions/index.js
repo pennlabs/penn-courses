@@ -564,11 +564,38 @@ const rateLimitedFetch = (url, init) =>
         }
     });
 
+export const deduplicateCourseMeetings = (course) => {
+    const deduplicatedCourse = {
+        ...course,
+        sections: course.sections.map((section) => {
+            const meetings = [];
+
+            section.meetings.forEach((meeting) => {
+                const exists = meetings.some(
+                    (existingMeeting) =>
+                        existingMeeting.day === meeting.day &&
+                        existingMeeting.start === meeting.start &&
+                        existingMeeting.end === meeting.end
+                );
+
+                if (!exists) {
+                    meetings.push(meeting);
+                }
+            });
+
+            return { ...section, meetings };
+        }),
+    };
+
+    return deduplicatedCourse;
+};
+
 export function fetchCourseDetails(courseId) {
     return (dispatch) => {
         dispatch(updateCourseInfoRequest());
-        doAPIRequest(`/base/current/courses/${courseId}/`)
+        doAPIRequest(`/base/current/courses/${courseId}/?include_location=True`)
             .then((res) => res.json())
+            .then((data) => deduplicateCourseMeetings(data))
             .then((course) => dispatch(updateCourseInfo(course)))
             .catch((error) => dispatch(sectionInfoSearchError(error)));
     };
@@ -583,6 +610,7 @@ export function fetchCourseDetails(courseId) {
 export const fetchBackendSchedules = (onComplete) => (dispatch) => {
     doAPIRequest("/plan/schedules/")
         .then((res) => res.json())
+        .then((data) => data.map((course) => deduplicateCourseMeetings(course)))
         .then((schedules) => {
             onComplete(schedules);
         })

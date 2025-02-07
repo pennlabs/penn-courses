@@ -120,26 +120,28 @@ export default function Block(props: BlockProps) {
     };
     return (
         <GridBlock style={{ ...pos }}>
-            <VisibleBlock
-                color={color}
-                role="button"
-                style={style}
-                onClick={focusSection}
-            >
-                <InnerBlock>
-                    {!isMobile && !readOnly && (
-                        <RemoveButton
-                            onClick={(e) => {
-                                remove();
-                                e.stopPropagation();
-                            }}
-                        />
-                    )}
-                    {false && !coreqFulfilled && <CoreqWarning />}
+            {color && (
+                <VisibleBlock
+                    color={color}
+                    role="button"
+                    style={style}
+                    onClick={focusSection}
+                >
+                    <InnerBlock>
+                        {!isMobile && !readOnly && (
+                            <RemoveButton
+                                onClick={(e) => {
+                                    remove();
+                                    e.stopPropagation();
+                                }}
+                            />
+                        )}
+                        {false && !coreqFulfilled && <CoreqWarning />}
 
-                    <span>{id.replace(/-/g, " ")}</span>
-                </InnerBlock>
-            </VisibleBlock>
+                        <span>{id.replace(/-/g, " ")}</span>
+                    </InnerBlock>
+                </VisibleBlock>
+            )}
         </GridBlock>
     );
 }

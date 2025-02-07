@@ -10,6 +10,7 @@ from courses.management.commands.recompute_soft_state import recompute_soft_stat
 from courses.models import Department, Section
 from courses.util import get_current_semester, upsert_course_from_opendata
 from review.management.commands.clearcache import clear_cache
+from review.management.commands.precompute_pcr_views import precompute_pcr_views
 
 
 def registrar_import(semester=None, query=""):
@@ -35,7 +36,7 @@ def registrar_import(semester=None, query=""):
         dept.save()
 
     print("Loading course statuses from registrar...")
-    set_all_status(semester=semester)
+    set_all_status(semester=semester, add_status_update=True)
 
     recompute_parent_courses(semesters=[semester], verbose=True)
     recompute_soft_state(semesters=[semester], verbose=True)
@@ -44,6 +45,8 @@ def registrar_import(semester=None, query=""):
         # Make sure to load in summer course data as well
         # (cron job only does current semester, which is either fall or spring)
         registrar_import(semester=semester[:-1] + "B", query=query)
+
+    precompute_pcr_views(verbose=True, is_new_data=False)
 
 
 class Command(BaseCommand):

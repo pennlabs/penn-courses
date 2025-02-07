@@ -445,6 +445,11 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     http_method_names = ["get", "post", "delete", "put"]
     permission_classes = [IsAuthenticated]
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({"include_location": True})
+        return context
+
     @staticmethod
     def get_semester(data):
         semester = normalize_semester(data.get("semester"))
