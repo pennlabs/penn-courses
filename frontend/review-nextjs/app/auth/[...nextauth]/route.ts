@@ -14,6 +14,7 @@ const handler = NextAuth({
                 params: {
                     response_type: "code",
                     scope: "read",
+                    // redirect_uri: `${process.env.NEXTAUTH_URL}/api/auth/callback/pennlabs`,
                 },
                 url: "https://platform.pennlabs.org/accounts/authorize/",
             },
@@ -33,11 +34,11 @@ const handler = NextAuth({
         }
     ],
     pages: {
-        signIn: "/auth/signin",
-        signOut: "/auth/signout",
+        signIn: "/accounts/login",
+        signOut: "/accounts/logout",
         error: "/auth/error",
         verifyRequest: "/auth/verify-request",
-    },
+    }
 })
 
 export { handler as GET, handler as POST };
