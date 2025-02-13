@@ -66,7 +66,6 @@ drf-nested-routers = "*"
 google-api-python-client = "*"
 asyncio = "*"
 aiohttp = "*"
-google-api-python-client = "*"
 
 [requires]
 python_full_version = "3.11"
