@@ -12,12 +12,7 @@ export const OIDC_TOKEN_ENDPOINT = `${OIDC_AUTHORITY}/accounts/token/`;
 export const JWKS_URI = `${OIDC_AUTHORITY}/accounts/.well-known/jwks.json`;
 
 export const doAPIRequest = (path: string, options = {}): Promise<Response> =>
-    fetch(`/api${path}`, options);
-
-export function getLogoutUrl(): string {
-    return `/accounts/logout/?next=${encodeURIComponent(`${BASE_URL}/logout`)}`;
-}
-
-export function getLoginUrl() {
-    return `/accounts/login/?next=${BASE_URL}`;
-}
+    fetch(path, {
+        ...options,
+        credentials: "include",
+    });

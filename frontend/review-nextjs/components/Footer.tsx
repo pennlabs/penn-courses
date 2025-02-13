@@ -1,12 +1,11 @@
 "use client";
-import { getLogoutUrl } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { Heart } from "lucide-react";
 import Link from "next/link";
 
 export default function Footer() {
     return (
-        <footer className={cn("block", "text-xs", "mx-auto")}>
+        <footer className={cn("block", "text-xs", "mx-auto", "text-center")}>
             <Link href="/about">About</Link> | <Link href="/faq">FAQs</Link> |{" "}
             <a
                 target="_blank"
@@ -14,9 +13,8 @@ export default function Footer() {
                 href="https://airtable.com/appFRa4NQvNMEbWsA/shrCCsGC2BjUif5Wx"
             >
                 Feedback
-            </a>{" "}
-            | <a href={getLogoutUrl()}>Logout</a>
-            <p id="copyright" className={cn("mx-4")}>
+            </a>
+            <p id="copyright">
                 Made with{" "}
                 <Heart color="#030303" size={14} className={cn("inline")} /> by{" "}
                 <a href="https://pennlabs.org">
