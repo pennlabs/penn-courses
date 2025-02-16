@@ -1,6 +1,8 @@
 from http import HTTPStatus
+
 from django.http import JsonResponse
 from django.views.generic import View
+
 
 class HealthView(View):
     def get(self, request):
@@ -20,4 +22,4 @@ class HealthView(View):
                                     enum: ["OK"]
         ---
         """
-        return JsonResponse({"message": "OK"}, status=HTTPStatus.OK) 
+        return JsonResponse({"message": "OK"}, status=HTTPStatus.OK)
