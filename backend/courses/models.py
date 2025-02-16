@@ -1190,7 +1190,6 @@ class Meeting(models.Model):
         ),
     )
 
-
     def save(self, *args, **kwargs):
         self.clean()
         super().save(*args, **kwargs)
