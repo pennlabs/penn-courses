@@ -16,8 +16,6 @@ from PennCourses.settings.base import FIRST_BANNER_SEM, PRE_NGSS_PERMIT_REQ_REST
 from review.annotations import review_averages
 
 
-
-
 User = get_user_model()
 
 
@@ -1194,13 +1192,16 @@ class Meeting(models.Model):
 
     def clean(self):
         super().clean()
-        if (self.section is None and self.associated_break is None) or (self.section is not None and self.associated_break is not None):
-            raise ValidationError("Either the section field of associated_break field must be populated, but not both")
-        
+        if (self.section is None and self.associated_break is None) or (
+            self.section is not None and self.associated_break is not None
+        ):
+            raise ValidationError(
+                "Either the section field of associated_break field must be populated, but not both"
+            )
+
     def save(self, *args, **kwargs):
         self.clean()
         super().save(*args, **kwargs)
-        
 
     class Meta:
         unique_together = (("section", "day", "start", "end", "room"),)

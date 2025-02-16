@@ -92,7 +92,6 @@ class PrimarySchedule(models.Model):
         return f"PrimarySchedule(User: {self.user}, Schedule ID: {self.schedule_id})"
 
 
-
 class Break(models.Model):
     """
     Holds break objects created by users on PCP.
@@ -109,11 +108,13 @@ class Break(models.Model):
         null=True,
         help_text=dedent(
             """
-            This represents the location that the user can input themselves. 
-            Will use a building object from a drop down or have it validated or something so it can interact with map.
-            Didn't want to run into issue of users creating arbitrary Room objects, so just using a char field
+            This represents the location that the user can input themselves.
+            Will use a building object from a drop down or have it validated
+            or something so it can interact with map.
+            Didn't want to run into issue of users creating arbitrary
+            Room objects, so just using a char field
             """
-        ) #TODO: Don't know how I want to do buildings yet.
+        ),  # TODO: Don't know how I want to do buildings yet.
     )
 
     name = models.CharField(
@@ -126,7 +127,6 @@ class Break(models.Model):
         ),
     )
 
-    
     meeting_times = models.TextField(
         blank=True,
         help_text=dedent(
@@ -140,11 +140,9 @@ class Break(models.Model):
         """
         ),
     )
-    
+
     class Meta:
         unique_together = (("person"),)
 
     def __str__(self):
         return "User: %s, Break ID: %s" % (self.person, self.id)
-
-

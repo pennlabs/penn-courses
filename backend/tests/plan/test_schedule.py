@@ -4,21 +4,16 @@ from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.db.models.signals import post_save
 from django.test import TestCase
+from django.urls import reverse
 from options.models import Option
+from rest_framework import status
 from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
 from courses.util import get_average_reviews, invalidate_current_semester_cache
 from PennCourses.settings.base import PATH_REGISTRATION_SCHEDULE_NAME
-from plan.models import Schedule, Break
-
-from courses.models import Meeting
-
+from plan.models import Break, Schedule
 from tests.courses.util import create_mock_data_with_reviews
-
-from django.urls import reverse
-from django.db import IntegrityError
-from rest_framework import status
 
 
 User = get_user_model()
@@ -1242,15 +1237,15 @@ class BreakViewSetTests(TestCase):
 
         # Create an initial Break instance to test update operations
         self.break_obj = Break.objects.create(
-            person=self.user,
-            name="Morning Break",
-            location_string="Cafeteria"
+            person=self.user, name="Morning Break", location_string="Cafeteria"
         )
         self.break_obj.save()
 
         # Use Django's reverse to dynamically get the correct endpoint
         self.break_list_url = reverse("breaks-list")  # /api/plan/breaks/
-        self.break_detail_url = reverse("breaks-detail", kwargs={"pk": self.break_obj.id})  # /api/plan/breaks/{id}/
+        self.break_detail_url = reverse(
+            "breaks-detail", kwargs={"pk": self.break_obj.id}
+        )  # /api/plan/breaks/{id}/
 
     @patch("accounts.authentication.requests.post")
     def test_create_break(self, mock_set_meetings):
@@ -1261,7 +1256,7 @@ class BreakViewSetTests(TestCase):
         data = {
             "name": "Afternoon Break",
             "location_string": "Lobby",
-            "meetings": []  # No meetings provided
+            "meetings": [],  # No meetings provided
         }
         response = self.client.post(self.break_list_url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -1280,21 +1275,22 @@ class BreakViewSetTests(TestCase):
     @patch("plan.views.set_meetings")
     def test_update_break_existing(self, mock_set_meetings):
         """
-        If a break with the provided "id" exists, sending a POST request with that id should update it.
+        If a break with the provided "id" exists, sending a POST
+        request with that id should update it.
         """
         data = {
             "id": self.break_obj.id,
             "name": "Updated Break",
             "location_string": "New Location",
             "meetings": [
-                       {
+                {
                     "days": "MT",
                     "begin_time_24": 900,
                     "begin_time": "9:00 AM",
                     "end_time_24": 1000,
                     "end_time": "10:00 AM",
                 },
-                    ]
+            ],
         }
         response = self.client.post(self.break_list_url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -1315,14 +1311,14 @@ class BreakViewSetTests(TestCase):
             "id": 9999,  # An id that does not exist for this user
             "name": "Nonexistent Break",
             "location_string": "Nowhere",
-            "meetings": []
+            "meetings": [],
         }
         response = self.client.post(self.break_list_url, data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data.get("message"), "success")
-        
-        new_break = Break.objects.get(id = response.data.get("id"))
-        
+
+        new_break = Break.objects.get(id=response.data.get("id"))
+
         self.assertEqual(new_break.name, "Nonexistent Break")
         self.assertEqual(new_break.location_string, "Nowhere")
 

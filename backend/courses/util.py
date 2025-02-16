@@ -493,7 +493,7 @@ def set_meetings(obj, meetings):
         start_date = extract_date(meeting.get("start_date"))
         end_date = extract_date(meeting.get("end_date"))
         for day in list(meeting["days"]):
-            
+
             meeting = Meeting.objects.update_or_create(
                 section=obj if isinstance(obj, Section) else None,
                 associated_break=obj if isinstance(obj, Break) else None,
@@ -506,6 +506,7 @@ def set_meetings(obj, meetings):
                     "end_date": end_date,
                 },
             )
+
 
 def add_associated_sections(section, linked_sections):
     semester = section.course.semester
@@ -534,6 +535,7 @@ def set_crosslistings(course, crosslistings):
             )
             course.primary_listing = primary_course
             return
+
 
 def upsert_course_from_opendata(info, semester, missing_sections=None):
     dept_code = info.get("subject") or info.get("course_department")
