@@ -1,8 +1,14 @@
 from textwrap import dedent
+
 from rest_framework import serializers
 
-from courses.serializers import PublicUserSerializer, SectionDetailSerializer, MeetingSerializer, MeetingWithBuildingSerializer
-from plan.models import PrimarySchedule, Schedule, Break
+from courses.serializers import (
+    MeetingSerializer,
+    MeetingWithBuildingSerializer,
+    PublicUserSerializer,
+    SectionDetailSerializer,
+)
+from plan.models import Break, PrimarySchedule, Schedule
 
 
 class ScheduleSerializer(serializers.ModelSerializer):
@@ -52,11 +58,9 @@ class BreakSerializer(serializers.ModelSerializer):
         read_only=False, required=False, help_text="The id of the schedule."
     )
 
-
     class Meta:
         model = Break
         exclude = ["person"]
-        
 
     def get_meetings(self, obj):
         include_location = self.context.get("include_location", False)
@@ -66,4 +70,3 @@ class BreakSerializer(serializers.ModelSerializer):
             meetings_serializer = MeetingSerializer(obj.meetings, many=True)
 
         return meetings_serializer.data
-
