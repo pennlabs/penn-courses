@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
-from django.db.models import OuterRef, Q, Subquery
+from django.db.models import OuterRef, Q, Subquery, UniqueConstraint
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -1137,7 +1137,7 @@ class Meeting(models.Model):
         null=True,
         on_delete=models.CASCADE,
         related_name="meetings",
-        help_text="The Section object to which this class meeting belongs.",
+        help_text="The Break object to which this meeting object belongs.",
     )
 
     day = models.CharField(
@@ -1190,14 +1190,6 @@ class Meeting(models.Model):
         ),
     )
 
-    def clean(self):
-        super().clean()
-        if (self.section is None and self.associated_break is None) or (
-            self.section is not None and self.associated_break is not None
-        ):
-            raise ValidationError(
-                "Either the section field of associated_break field must be populated, but not both"
-            )
 
     def save(self, *args, **kwargs):
         self.clean()
@@ -1205,6 +1197,20 @@ class Meeting(models.Model):
 
     class Meta:
         unique_together = (("section", "day", "start", "end", "room"),)
+        constraints = [
+            # Ensure that a meeting has either a section or an associated_break, but not both
+            UniqueConstraint(
+                fields=["section", "associated_break"],
+                condition=Q(section__isnull=True) | Q(associated_break__isnull=True),
+                name="unique_meeting_either_section_or_break",
+            ),
+            # Ensure that a meeting must have at least one (not both null)
+            UniqueConstraint(
+                fields=["section", "associated_break"],
+                condition=~(Q(section__isnull=True) & Q(associated_break__isnull=True)),
+                name="meeting_must_have_section_or_break",
+            ),
+        ]
 
     @staticmethod
     def int_to_time(time):
