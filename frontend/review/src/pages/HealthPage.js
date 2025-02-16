@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-const HealthPage = () => {
+const Health = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -15,4 +15,4 @@ const HealthPage = () => {
   return <div>OK</div>;
 };
 
-export default HealthPage;
+export const HealthPage = Health;
