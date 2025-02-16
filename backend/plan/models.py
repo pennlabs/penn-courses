@@ -2,6 +2,7 @@ from textwrap import dedent
 
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.db.models import Q, UniqueConstraint
 
 from courses.models import Section
 
@@ -142,7 +143,13 @@ class Break(models.Model):
     )
 
     class Meta:
-        unique_together = (("person"),)
+        constraints = [
+            UniqueConstraint(
+                fields=["person", "meeting_times"],
+                condition=Q(meeting_times__isnull=False) & ~Q(meeting_times=""),
+                name="unique_break_meeting_times_per_person",
+            )
+        ]
 
     def __str__(self):
         return "User: %s, Break ID: %s" % (self.person, self.id)
