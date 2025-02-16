@@ -20,18 +20,17 @@ interface RawPayload {
 
 // This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
-    const refresh_token = request.cookies.get("refresh_token")?.value;
-    const access_token = request.cookies.get("access_token")?.value;
+    const id_token = request.cookies.get("id_token")?.value;
 
     // access token doesn't work, isn't even JWT token.
     // will figure out later
 
-    if (refresh_token) {
+    if (id_token) {
         // Verify access_token
         const jwks = await jose.createRemoteJWKSet(new URL(JWKS_URI));
         try {
             const { payload } = await jose.jwtVerify<RawPayload>(
-                refresh_token,
+                id_token,
                 jwks,
                 {
                     clockTolerance: "1m",
@@ -45,7 +44,7 @@ export async function middleware(request: NextRequest) {
     }
     // null/invalid access token
 
-    if (refresh_token) {
+    if (id_token) {
         // Request access_token from platform
         return NextResponse.next(); // temp
     }
