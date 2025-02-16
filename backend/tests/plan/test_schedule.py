@@ -1247,13 +1247,14 @@ class BreakViewSetTests(TestCase):
             "breaks-detail", kwargs={"pk": self.break_obj.id}
         )  # /api/plan/breaks/{id}/
 
-    @patch("accounts.authentication.requests.post")
+    @patch("plan.views.set_meetings")
     def test_create_break(self, mock_set_meetings):
         """
         Ensure that posting a new break (without an "id") creates the break
         and returns a 201 response.
         """
         data = {
+            "id": 2,
             "name": "Afternoon Break",
             "location_string": "Lobby",
             "meetings": [],  # No meetings provided
@@ -1330,7 +1331,6 @@ class BreakViewSetTests(TestCase):
         response = self.client.get(self.break_list_url, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         # Check that our initial break ("Morning Break") is in the returned list.
-        print(response.data)
         break_names = [item.get("name") for item in response.data]
         self.assertIn("Morning Break", break_names)
 
