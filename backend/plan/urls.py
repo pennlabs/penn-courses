@@ -6,6 +6,7 @@ from plan.views import (
     CalendarAPIView,
     PrimaryScheduleViewSet,
     ScheduleViewSet,
+    BreakViewSet,
     recommend_courses_view,
 )
 
@@ -13,6 +14,7 @@ from plan.views import (
 router = routers.DefaultRouter()
 router.register(r"schedules", ScheduleViewSet, basename="schedules")
 router.register(r"primary-schedules", PrimaryScheduleViewSet, basename="primary-schedules")
+router.register(r"breaks", BreakViewSet, basename="breaks")
 
 urlpatterns = [
     path("<int:schedule_pk>/calendar/", CalendarAPIView.as_view(), name="calendar-view"),

@@ -14,13 +14,13 @@ from ics.grammar.parse import ContentLine
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.exceptions import PermissionDenied
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from courses.models import Course, Meeting, Section
 from courses.serializers import CourseListSerializer
-from courses.util import get_course_and_section, get_current_semester, normalize_semester
+from courses.util import get_course_and_section, get_current_semester, normalize_semester, set_meetings
 from courses.views import get_accepted_friends
 from PennCourses.docs_settings import PcxAutoSchema
 from PennCourses.settings.base import PATH_REGISTRATION_SCHEDULE_NAME
@@ -31,8 +31,8 @@ from plan.management.commands.recommendcourses import (
     vectorize_user,
     vectorize_user_by_courses,
 )
-from plan.models import PrimarySchedule, Schedule
-from plan.serializers import PrimaryScheduleSerializer, ScheduleSerializer
+from plan.models import PrimarySchedule, Schedule, Break
+from plan.serializers import PrimaryScheduleSerializer, ScheduleSerializer, BreakSerializer
 
 
 @api_view(["POST"])
@@ -617,6 +617,113 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         )
         return queryset
 
+class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
+    
+    serializer_class = BreakSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        include_location_str = "False"
+        # TODO: figure out how we want to do locations.
+        context.update({"include_location": eval(include_location_str)})
+        return context
+
+    def update(self, request):
+        break_id = request.data.get("id")
+        if not break_id:
+            return Response({"detail": "Break id is required for update."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            current_break = self.get_queryset().get(id=break_id)
+        except Break.DoesNotExist:
+            return Response({"detail": "Break not found."},
+                            status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"detail": "Error retrieving break: " + str(e)},
+                            status=status.HTTP_400_BAD_REQUEST)
+        
+        name = request.data.get("name")
+        if not name:
+            return Response({"detail": "Break name is required."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        location_string = request.data.get("location_string")
+        
+        current_break.name = name
+        current_break.location_string = location_string
+
+        meetings = request.data.get("meetings")
+        try:
+            set_meetings(current_break, meetings)
+        except Exception as e:
+            return Response({"detail": "Error setting meetings: " + str(e)},
+                            status=status.HTTP_400_BAD_REQUEST)
+        
+        try:
+            current_break.save()
+        except Exception as e:
+            return Response({"detail": "Error saving break: " + str(e)},
+                            status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response({"message": "success", "id": current_break.id},
+                        status=status.HTTP_200_OK)
+    
+    def create(self, request, *args, **kwargs):
+        break_id = request.data.get("id")
+        if break_id and Break.objects.filter(id=break_id).exists():
+            return self.update(request)
+        
+        name = request.data.get("name")
+        if not name:
+            return Response({"detail": "Break name is required."},
+                            status=status.HTTP_400_BAD_REQUEST)
+        location_string = request.data.get("location_string")
+        
+        try:
+            if break_id:
+                new_break = self.get_queryset().create(
+                    person=request.user,
+                    name=name,
+                    location_string=location_string,
+                    id=break_id,
+                )
+            else:
+                new_break = self.get_queryset().create(
+                    person=request.user,
+                    name=name,
+                    location_string=location_string,
+                )
+        except IntegrityError as e:
+            return Response(
+                {"detail": "IntegrityError encountered while trying to create: " + str(e.__cause__)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except Exception as e:
+            return Response(
+                {"detail": "Error creating break: " + str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        
+        meetings = request.data.get("meetings")
+        try:
+            set_meetings(new_break, meetings)
+        except Exception as e:
+            return Response({"detail": "Error setting meetings: " + str(e)},
+                            status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response({"message": "success", "id": new_break.id},
+                        status=status.HTTP_201_CREATED)
+
+    def get_queryset(self):
+        return Break.objects.filter(person=self.request.user).prefetch_related(
+            "meetings",          # Prefetch the related meetings
+            "meetings__room",    # Prefetch the related rooms for each meeting
+        )
+
+
+
+    
 
 class CalendarAPIView(APIView):
     schema = PcxAutoSchema(

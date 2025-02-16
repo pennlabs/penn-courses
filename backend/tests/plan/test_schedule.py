@@ -10,8 +10,15 @@ from rest_framework.test import APIClient
 from alert.models import AddDropPeriod
 from courses.util import get_average_reviews, invalidate_current_semester_cache
 from PennCourses.settings.base import PATH_REGISTRATION_SCHEDULE_NAME
-from plan.models import Schedule
+from plan.models import Schedule, Break
+
+from courses.models import Meeting
+
 from tests.courses.util import create_mock_data_with_reviews
+
+from django.urls import reverse
+from django.db import IntegrityError
+from rest_framework import status
 
 
 User = get_user_model()
@@ -1224,3 +1231,126 @@ class ScheduleTest(TestCase):
                 path_schedule = schedule
         self.assertEqual(len(path_schedule["sections"]), 1)
         self.assertEqual(path_schedule["sections"][0]["id"], "CIS-120-001")
+
+
+class BreakViewSetTests(TestCase):
+    def setUp(self):
+        # Create and authenticate a test user
+        self.user = User.objects.create_user(username="testuser", password="testpassword")
+        self.client = APIClient()
+        self.client.login(username="testuser", password="testpassword")
+
+        # Create an initial Break instance to test update operations
+        self.break_obj = Break.objects.create(
+            person=self.user,
+            name="Morning Break",
+            location_string="Cafeteria"
+        )
+        self.break_obj.save()
+
+        # Use Django's reverse to dynamically get the correct endpoint
+        self.break_list_url = reverse("breaks-list")  # /api/plan/breaks/
+        self.break_detail_url = reverse("breaks-detail", kwargs={"pk": self.break_obj.id})  # /api/plan/breaks/{id}/
+
+    @patch("accounts.authentication.requests.post")
+    def test_create_break(self, mock_set_meetings):
+        """
+        Ensure that posting a new break (without an "id") creates the break
+        and returns a 201 response.
+        """
+        data = {
+            "name": "Afternoon Break",
+            "location_string": "Lobby",
+            "meetings": []  # No meetings provided
+        }
+        response = self.client.post(self.break_list_url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        # Check that a new Break was created with the proper fields.
+        new_break_id = response.data.get("id")
+        self.assertIsNotNone(new_break_id)
+        new_break = Break.objects.get(id=new_break_id)
+        self.assertEqual(new_break.name, "Afternoon Break")
+        self.assertEqual(new_break.location_string, "Lobby")
+
+        # Verify that set_meetings was called with the new break and meetings list.
+        mock_set_meetings.assert_called_once_with(new_break, [])
+        self.assertEqual(response.data.get("message"), "success")
+
+    @patch("plan.views.set_meetings")
+    def test_update_break_existing(self, mock_set_meetings):
+        """
+        If a break with the provided "id" exists, sending a POST request with that id should update it.
+        """
+        data = {
+            "id": self.break_obj.id,
+            "name": "Updated Break",
+            "location_string": "New Location",
+            "meetings": [
+                       {
+                    "days": "MT",
+                    "begin_time_24": 900,
+                    "begin_time": "9:00 AM",
+                    "end_time_24": 1000,
+                    "end_time": "10:00 AM",
+                },
+                    ]
+        }
+        response = self.client.post(self.break_list_url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        # Refresh the object from the database to confirm changes.
+        self.break_obj.refresh_from_db()
+        self.assertEqual(self.break_obj.name, "Updated Break")
+        self.assertEqual(self.break_obj.location_string, "New Location")
+
+        self.assertEqual(response.data.get("message"), "success")
+        self.assertEqual(response.data.get("id"), self.break_obj.id)
+
+    def test_update_break_nonexistent(self):
+        """
+        Posting a break update with an id that does not exist should create a break  with that ID.
+        """
+        data = {
+            "id": 9999,  # An id that does not exist for this user
+            "name": "Nonexistent Break",
+            "location_string": "Nowhere",
+            "meetings": []
+        }
+        response = self.client.post(self.break_list_url, data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data.get("message"), "success")
+        
+        new_break = Break.objects.get(id = response.data.get("id"))
+        
+        self.assertEqual(new_break.name, "Nonexistent Break")
+        self.assertEqual(new_break.location_string, "Nowhere")
+
+    def test_list_breaks(self):
+        """
+        Ensure that a GET request to the break-list endpoint returns the list
+        of breaks for the authenticated user.
+        """
+        response = self.client.get(self.break_list_url, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Check that our initial break ("Morning Break") is in the returned list.
+        print(response.data)
+        break_names = [item.get("name") for item in response.data]
+        self.assertIn("Morning Break", break_names)
+
+    def test_get_break_by_id(self):
+        """
+        Ensure that retrieving a specific break by its id works.
+        """
+        response = self.client.get(self.break_detail_url, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["name"], self.break_obj.name)
+        self.assertEqual(response.data["location_string"], self.break_obj.location_string)
+
+    def test_delete_break(self):
+        """
+        Ensure that deleting a break works.
+        """
+        response = self.client.delete(self.break_detail_url, format="json")
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Break.objects.filter(id=self.break_obj.id).exists())

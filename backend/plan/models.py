@@ -90,3 +90,61 @@ class PrimarySchedule(models.Model):
 
     def __str__(self):
         return f"PrimarySchedule(User: {self.user}, Schedule ID: {self.schedule_id})"
+
+
+
+class Break(models.Model):
+    """
+    Holds break objects created by users on PCP.
+    """
+
+    person = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.CASCADE,
+        help_text="The person (user) who created this break.",
+    )
+
+    location_string = models.CharField(
+        max_length=80,
+        null=True,
+        help_text=dedent(
+            """
+            This represents the location that the user can input themselves. 
+            Will use a building object from a drop down or have it validated or something so it can interact with map.
+            Didn't want to run into issue of users creating arbitrary Room objects, so just using a char field
+            """
+        ) #TODO: Don't know how I want to do buildings yet.
+    )
+
+    name = models.CharField(
+        max_length=255,
+        help_text=dedent(
+            """
+        The user's name for the break. No two breaks can match in all of the fields
+        `[name, person]`
+        """
+        ),
+    )
+
+    
+    meeting_times = models.TextField(
+        blank=True,
+        help_text=dedent(
+            """
+        A JSON-stringified list of meeting times of the form
+        `{days code} {start time} - {end time}`, e.g.
+        `["MWF 09:00 AM - 10:00 AM","F 11:00 AM - 12:00 PM","T 05:00 PM - 06:00 PM"]` for
+        PHYS-151-001 (2020A). Each letter of the days code is of the form M, T, W, R, F for each
+        day of the work week, respectively (and multiple days are combined with concatenation).
+        To access the Meeting objects for this section, the related field `meetings` can be used.
+        """
+        ),
+    )
+    
+    class Meta:
+        unique_together = (("person"),)
+
+    def __str__(self):
+        return "User: %s, Break ID: %s" % (self.person, self.id)
+
+

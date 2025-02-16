@@ -29,6 +29,7 @@ from courses.models import (
     StatusUpdate,
     User,
 )
+from plan.models import Break
 from review.management.commands.mergeinstructors import resolve_duplicates
 
 
@@ -465,7 +466,7 @@ def clean_meetings(meetings):
     }.values()
 
 
-def set_meetings(section, meetings):
+def set_meetings(obj, meetings):
     meetings = clean_meetings(meetings)
 
     for meeting in meetings:
@@ -473,9 +474,9 @@ def set_meetings(section, meetings):
     meeting_times = [
         f"{meeting['days']} {meeting['begin_time']} - {meeting['end_time']}" for meeting in meetings
     ]
-    section.meeting_times = json.dumps(meeting_times)
+    obj.meeting_times = json.dumps(meeting_times)
 
-    section.meetings.all().delete()
+    obj.meetings.all().delete()
     for meeting in meetings:
         online = (
             not meeting["building_code"]
@@ -492,8 +493,10 @@ def set_meetings(section, meetings):
         start_date = extract_date(meeting.get("start_date"))
         end_date = extract_date(meeting.get("end_date"))
         for day in list(meeting["days"]):
+            
             meeting = Meeting.objects.update_or_create(
-                section=section,
+                section=obj if isinstance(obj, Section) else None,
+                associated_break=obj if isinstance(obj, Break) else None,
                 day=day,
                 start=start_time,
                 end=end_time,
@@ -503,7 +506,6 @@ def set_meetings(section, meetings):
                     "end_date": end_date,
                 },
             )
-
 
 def add_associated_sections(section, linked_sections):
     semester = section.course.semester
@@ -532,7 +534,6 @@ def set_crosslistings(course, crosslistings):
             )
             course.primary_listing = primary_course
             return
-
 
 def upsert_course_from_opendata(info, semester, missing_sections=None):
     dept_code = info.get("subject") or info.get("course_department")
