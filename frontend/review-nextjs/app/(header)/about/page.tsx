@@ -5,7 +5,7 @@ import Image from "next/image";
 
 export default function About() {
     return (
-        <div className={cn("mx-[20%]")}>
+        <div className={cn("mx-[10%]")}>
             <h2>Hey there!</h2>
             <p>Welcome to the new Penn Course Review!</p>
             <p>

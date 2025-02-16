@@ -3,7 +3,7 @@ import { Rating } from "@/lib/types";
 import { cn } from "@/lib/utils";
 export default function FAQ() {
     return (
-        <div id="faqs" className={cn("mx-[20%]")}>
+        <div id="faqs" className={cn("mx-[10%]")}>
             <h2>Frequently Asked Questions</h2>
             <div>
                 <p className="question">How do I use the website?</p>

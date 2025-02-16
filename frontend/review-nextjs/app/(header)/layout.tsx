@@ -1,4 +1,5 @@
 import Header from "@/components/Header";
+import { cn } from "@/lib/utils";
 
 export default function RootLayout({
     children,
@@ -8,7 +9,11 @@ export default function RootLayout({
     return (
         <>
             <Header />
-            {children}
+            <main
+                className={cn("flex", "flex-col", "items-center", "mx-[10%]")}
+            >
+                {children}
+            </main>
         </>
     );
 }

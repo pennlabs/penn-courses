@@ -23,25 +23,24 @@ export async function middleware(request: NextRequest) {
     const refresh_token = request.cookies.get("refresh_token")?.value;
     const access_token = request.cookies.get("access_token")?.value;
 
-    if (access_token) {
+    // access token doesn't work, isn't even JWT token.
+    // will figure out later
+
+    if (refresh_token) {
         // Verify access_token
         const jwks = await jose.createRemoteJWKSet(new URL(JWKS_URI));
         try {
             const { payload } = await jose.jwtVerify<RawPayload>(
-                access_token,
+                refresh_token,
                 jwks,
                 {
                     clockTolerance: "1m",
                 }
             );
-
-            console.log(payload);
             return NextResponse.next();
         } catch (e) {
             console.error(e);
-            return NextResponse.redirect(new URL("/", request.url), {
-                status: 401,
-            });
+            return NextResponse.redirect(new URL("/", request.url));
         }
     }
     // null/invalid access token

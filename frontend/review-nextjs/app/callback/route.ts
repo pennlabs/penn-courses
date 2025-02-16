@@ -9,9 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function GET(request: NextRequest) {
     const code = request.nextUrl.searchParams.get("code");
     if (!code) {
-        return NextResponse.redirect(new URL("/", request.url), {
-            status: 401,
-        });
+        throw new Error("Platform Authentication Failed");
     }
 
     const res = await fetch(OIDC_TOKEN_ENDPOINT, {
@@ -29,9 +27,7 @@ export async function GET(request: NextRequest) {
     });
 
     if (!res.ok) {
-        return NextResponse.redirect(new URL("/", request.url), {
-            status: 401,
-        });
+        throw new Error("Platform Authentication Failed");
     }
 
     const tokens = await res.json();
