@@ -14,9 +14,8 @@ enum SearchStatus {
     ERROR,
 }
 
-export default function SearchBar() {
-    const [query, setQuery] = useState("");
-    const [debouncedQuery, setDebouncedQuery] = useDebouncedState("");
+export default function SearchBar({ small }: { small?: boolean }) {
+    const [query, debouncedQuery, setQuery] = useDebouncedState("");
     const [results, setResults] = useState<SearchResult | null>(null);
     const [status, setStatus] = useState(SearchStatus.IDLE);
 
@@ -40,38 +39,35 @@ export default function SearchBar() {
             });
     }, [debouncedQuery]);
 
-    const handleKeyDown = async (e: React.KeyboardEvent) => {
-        if (e.key === "Enter") {
-            redirect("/review");
-        }
-    };
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setQuery(e.target.value);
-        setDebouncedQuery(e.target.value);
-    };
-
     return (
         <div className={cn("flex", "flex-col", "w-[600px]")}>
             <input
                 className={cn(
-                    "bg-white",
-                    "shadow-xl",
-                    "p-3",
-                    "border",
+                    small ? "bg-gray-100" : "bg-white",
+                    small ? "text-xs" : "text-3xl",
+                    small && "rounded-full",
+                    small || "shadow-xl",
+                    small || "border",
+                    small || "border-[#f3f3f3]",
                     "min-w-fit",
-                    "border-[#f3f3f3]",
-                    "text-3xl"
+                    "outline-none",
+                    "mx-3",
+                    "p-3"
                 )}
                 type="text"
                 value={query}
-                onChange={handleChange}
-                onKeyDown={handleKeyDown}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && redirect("/review")}
                 placeholder="Search for a class or professor..."
             />
-            <p>{debouncedQuery}</p>
-            <p>{status}</p>
-            <p>{results?.Departments[0]?.name}</p>
+            {small || (
+                // for testing purposes
+                <>
+                    <p>{debouncedQuery}</p>
+                    <p>{status}</p>
+                    <p>{results?.Departments[0]?.name}</p>
+                </>
+            )}
         </div>
     );
 }
