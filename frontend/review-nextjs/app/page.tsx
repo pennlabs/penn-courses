@@ -1,3 +1,4 @@
+import SearchBar from "@/components/SearchBar";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 
@@ -8,7 +9,7 @@ export default function Home() {
                 <Logo />{" "}
                 <h1 className={cn("text-5xl", "ml-3")}>Penn Course Review</h1>
             </div>
-            <a href="/review">Review page</a>
+            <SearchBar />
         </div>
     );
 }
