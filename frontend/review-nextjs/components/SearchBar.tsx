@@ -50,7 +50,7 @@ export default function SearchBar({ small }: { small?: boolean }) {
                     small || "border",
                     small || "border-[#f3f3f3]",
                     "min-w-fit",
-                    "outline-none",
+                    "outline-hidden",
                     "mx-3",
                     "p-3"
                 )}
