@@ -1,5 +1,7 @@
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import Link from "next/link";
+import SearchBar from "./SearchBar";
 
 export default function Header() {
     return (
@@ -11,9 +13,14 @@ export default function Header() {
                 "p-5",
                 "border",
                 "border-[#f3f3f3]",
+                "flex",
+                "flex-row",
             ])}
         >
-            <Logo />{" "}
+            <Link href="/">
+                <Logo />
+            </Link>
+            <SearchBar small />
         </header>
     );
 }
