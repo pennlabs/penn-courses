@@ -18,16 +18,21 @@ interface RawPayload {
     is_active: boolean;
 }
 
+let jwks: any = null;
+async function getJWKSet() {
+    if (!jwks) {
+        jwks = await jose.createRemoteJWKSet(new URL(JWKS_URI));
+    }
+    return jwks;
+}
+
 // This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
     const id_token = request.cookies.get("id_token")?.value;
 
-    // access token doesn't work, isn't even JWT token.
-    // will figure out later
-
     if (id_token) {
         // Verify access_token
-        const jwks = await jose.createRemoteJWKSet(new URL(JWKS_URI));
+        const jwks = await getJWKSet();
         try {
             const { payload } = await jose.jwtVerify<RawPayload>(
                 id_token,
@@ -37,16 +42,7 @@ export async function middleware(request: NextRequest) {
                 }
             );
             return NextResponse.next();
-        } catch (e) {
-            console.error(e);
-            return NextResponse.redirect(new URL("/", request.url));
-        }
-    }
-    // null/invalid access token
-
-    if (id_token) {
-        // Request access_token from platform
-        return NextResponse.next(); // temp
+        } catch (e) {}
     }
 
     // Request authorization code
@@ -59,7 +55,6 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(authorizationUrl.toString());
 }
 
-// See "Matching Paths" below to learn more
 export const config = {
     matcher: ["/review"],
 };
