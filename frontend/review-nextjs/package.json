@@ -9,8 +9,10 @@
         "lint": "next lint"
     },
     "dependencies": {
+        "@radix-ui/react-dialog": "^1.1.6",
         "class-variance-authority": "^0.7.0",
         "clsx": "^2.1.1",
+        "cmdk": "1.0.0",
         "jose": "^5.9.6",
         "lucide-react": "^0.475.0",
         "next": "^15.0.2",

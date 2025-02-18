@@ -6,6 +6,17 @@ import { SearchResult } from "@/lib/types";
 import { cn, fetchDummyResults } from "@/lib/utils";
 import { redirect } from "next/navigation";
 import { useEffect, useState } from "react";
+import {
+    Command,
+    CommandDialog,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+    CommandSeparator,
+    CommandShortcut,
+} from "@/components/ui/command";
 
 enum SearchStatus {
     IDLE,
@@ -41,7 +52,58 @@ export default function SearchBar({ small }: { small?: boolean }) {
 
     return (
         <div className={cn("flex", "flex-col", "w-[600px]")}>
-            <input
+            <Command shouldFilter={false}>
+                <CommandInput
+                    placeholder="Search for a class or professor..."
+                    value={query}
+                    onValueChange={setQuery}
+                />
+                <CommandList>
+                    {results?.Courses.length && (
+                        <CommandGroup heading="Courses">
+                            {results.Courses.map((course) => (
+                                <CommandItem
+                                    key={course.code}
+                                    onSelect={() => {
+                                        redirect(`/review`);
+                                    }}
+                                >
+                                    {course.code} - {course.title}
+                                </CommandItem>
+                            ))}
+                        </CommandGroup>
+                    )}
+                    {results?.Departments.length && (
+                        <CommandGroup heading="Departments">
+                            {results.Departments.map((dept) => (
+                                <CommandItem
+                                    key={dept.code}
+                                    onSelect={() => {
+                                        redirect(`/review`);
+                                    }}
+                                >
+                                    {dept.code} - {dept.name}
+                                </CommandItem>
+                            ))}
+                        </CommandGroup>
+                    )}
+                    {results?.Instructors.length && (
+                        <CommandGroup heading="Instructors">
+                            {results.Instructors.map((ins) => (
+                                <CommandItem
+                                    key={ins.name}
+                                    onSelect={() => {
+                                        redirect(`/review`);
+                                    }}
+                                >
+                                    {ins.name} - {ins.id}
+                                </CommandItem>
+                            ))}
+                        </CommandGroup>
+                    )}
+                </CommandList>
+            </Command>
+            {/* <input
                 className={cn(
                     small ? "bg-gray-100" : "bg-white",
                     small ? "text-xs" : "text-3xl",
@@ -59,15 +121,7 @@ export default function SearchBar({ small }: { small?: boolean }) {
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && redirect("/review")}
                 placeholder="Search for a class or professor..."
-            />
-            {small || (
-                // for testing purposes
-                <>
-                    <p>{debouncedQuery}</p>
-                    <p>{status}</p>
-                    <p>{results?.Departments[0]?.name}</p>
-                </>
-            )}
+            /> */}
         </div>
     );
 }

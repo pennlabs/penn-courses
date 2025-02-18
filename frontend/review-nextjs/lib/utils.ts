@@ -75,10 +75,11 @@ const dummyResults: SearchResult = {
 
 export const fetchDummyResults = async (query: string): Promise<SearchResult> => {
     return new Promise((resolve) => {
-        setTimeout(() => {
-            console.log("Making network request");
-            resolve(dummyResults);
-        }, 500);
+        resolve(dummyResults);
+        // setTimeout(() => {
+        //     console.log("Making network request");
+        //     resolve(dummyResults);
+        // }, 100);
     });
 };
 
