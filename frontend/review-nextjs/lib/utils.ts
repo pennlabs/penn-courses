@@ -9,7 +9,7 @@ export function cn(...inputs: ClassValue[]) {
 /**
  * @returns {string | boolean} The CSRF token used by backend
  */
-const getCsrf = (): string | boolean => {
+export const getCsrf = (): string | boolean => {
   return document.cookie &&
     document.cookie
         .split("; ")
@@ -82,5 +82,3 @@ export const fetchDummyResults = async (query: string): Promise<SearchResult> =>
         // }, 100);
     });
 };
-
-export default getCsrf;
