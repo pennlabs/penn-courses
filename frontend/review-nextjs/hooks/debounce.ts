@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 
 export const useDebouncedState = <T>(
     initialValue: T,
-    delay = 500
+    delay = 100
 ): [T, T, (value: T) => void] => {
     const [value, setValue] = useState(initialValue);
     const [debouncedValue, setDebouncedValue] = useState(value);
