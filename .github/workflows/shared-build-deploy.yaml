@@ -9,7 +9,7 @@ on: push
 jobs:
   backend-check:
     name: "Backend Check"
-    uses: pennlabs/shared-actions/.github/workflows/django.yaml@8785a7d7b9158d8d5705a0202f5695db2c0beb97
+    uses: pennlabs/shared-actions/.github/workflows/django.yaml@6628edbdaca930c30423f904c2ed07b675089067
     with:
       projectName: PennCourses
       path: backend
