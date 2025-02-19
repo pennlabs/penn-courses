@@ -18,6 +18,7 @@ interface RawPayload {
     is_active: boolean;
 }
 
+// cache JWKs so doesn't need to be fetched every time
 let jwks: any = null;
 async function getJWKSet() {
     if (!jwks) {
@@ -26,7 +27,6 @@ async function getJWKSet() {
     return jwks;
 }
 
-// This function can be marked `async` if using `await` inside
 export async function middleware(request: NextRequest) {
     const id_token = request.cookies.get("id_token")?.value;
 
