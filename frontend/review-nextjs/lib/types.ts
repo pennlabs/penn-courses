@@ -1,3 +1,5 @@
+import { FuseResult } from "fuse.js";
+
 export enum Rating {
     Bad = "bad",
     Okay = "okay",
@@ -28,17 +30,20 @@ export type Instructor = {
     id: string;
 };
 
-export type SearchOptions = {
-    workLow: number;
-    workHigh: number;
-    difficultyLow: number;
-    difficultyHigh: number;
-    qualityLow: number;
-    qualityHigh: number;
+export type AutocompleteObject = {
+    title: string;
+    desc: string | Array<string>;
+    url: string;
 };
 
-export type SearchResult = {
-    Courses: Course[];
-    Departments: Department[];
-    Instructors: Instructor[];
+export type AutocompleteData = {
+    courses: AutocompleteObject[];
+    departments: AutocompleteObject[];
+    instructors: AutocompleteObject[];
+};
+
+export type AutocompleteResult = {
+    courses: FuseResult<AutocompleteObject>[];
+    departments: FuseResult<AutocompleteObject>[];
+    instructors: FuseResult<AutocompleteObject>[];
 };

@@ -11,8 +11,8 @@ export const OIDC_AUTHORIZATION_ENDPOINT = `${OIDC_AUTHORITY}/accounts/authorize
 export const OIDC_TOKEN_ENDPOINT = `${OIDC_AUTHORITY}/accounts/token/`;
 export const JWKS_URI = `${OIDC_AUTHORITY}/accounts/.well-known/jwks.json`;
 
-export const doAPIRequest = (path: string, options = {}): Promise<Response> =>
-    fetch(path, {
+export const apiFetch = (path: string, options = {}): Promise<Response> =>
+    fetch(`${BASE_URL}${path}`, {
         ...options,
         credentials: "include",
     });
