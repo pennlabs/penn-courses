@@ -20,7 +20,7 @@ export default function Header() {
             <Link href="/">
                 <Logo />
             </Link>
-            <SearchBar small />
+            <SearchBar header />
         </header>
     );
 }
