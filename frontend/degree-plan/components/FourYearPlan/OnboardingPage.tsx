@@ -24,7 +24,7 @@ import {
 } from "@/components/FourYearPlan/Semesters";
 import { maxWidth, TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
 import { createMajorLabel } from "@/components/FourYearPlan/DegreeModal";
-import { polyfillPromiseWithResolvers } from "./polyfilsResolver";
+import { polyfillPromiseWithResolvers } from "../../pages/polyfilsResolver";
 
 import "core-js/full/promise/with-resolvers.js";
 import {

@@ -15,7 +15,7 @@ import DegreeModal, { ModalKey } from "@/components/FourYearPlan/DegreeModal";
 import SplitPane, { Pane } from "react-split-pane";
 import Dock from "@/components/Dock/Dock";
 import useWindowDimensions from "@/hooks/window";
-import OnboardingPage from "../pages/OnboardingPage";
+import OnboardingPage from "./FourYearPlan/OnboardingPage";
 import Footer from "./Footer";
 
 const PageContainer = styled.div`

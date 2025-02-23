@@ -18,7 +18,7 @@ import {
 import useSWR, { useSWRConfig } from "swr";
 import ModalContainer from "../common/ModalContainer";
 import Select from "react-select";
-import { schoolOptions } from "@/pages/OnboardingPage";
+import { schoolOptions } from "./OnboardingPage";
 
 export type ModalKey =
   | "plan-create"
