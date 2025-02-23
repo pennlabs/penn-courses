@@ -33,9 +33,6 @@ import {
   ArrowRightIcon,
   RulerSquareIcon,
 } from "@radix-ui/react-icons";
-import { set } from "lodash";
-import { collapseToast } from "react-toastify";
-import zIndex from "@mui/material/styles/zIndex";
 polyfillPromiseWithResolvers();
 
 const { closest } = require('fastest-levenshtein');
@@ -332,7 +329,7 @@ const customSelectStylesRight = {
   multiValueLabel: (provided: any) => ({
     ...provided,
     borderRadius: "8px",
-    maxWidth: "90px",
+    // maxWidth: "90px",
     overflow: "hidden",
     textOverflow: "ellipsis",
     whiteSpace: "nowrap",
@@ -439,6 +436,7 @@ const OnboardingPage = ({
   // Will likely change in the future!
   useEffect(() => {
     if (degreeID && coursesToRules) {
+      console.log(degreeID)
       for (let sem of scrapedCourses) {
         let semCode = ""
         if (sem.sem == "_TRAN") semCode = sem.sem
@@ -784,7 +782,8 @@ const OnboardingPage = ({
           acc.push(el.label);
           return acc;
         }, [])
-        let closestMajor = closest(m, justMajorNames)
+
+        let closestMajor = m == "computer science " ? "Computer Science - No Concentration (2024)" : closest(m, justMajorNames)
         // console.log(closestMajor)
         var majorOption = possibleDegrees.find(obj => {
           return obj.label === closestMajor

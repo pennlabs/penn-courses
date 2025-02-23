@@ -11,14 +11,14 @@ const nextConfig = {
     },
   },
   webpack(config) {
-    Object.defineProperty(config, 'devtool', {
-        get() {
-            return 'source-map';
-        },
-        set() {},
+    Object.defineProperty(config, "devtool", {
+      get() {
+        return "source-map";
+      },
+      set() {},
     });
     return config;
-},
+  },
   async rewrites() {
     if (process.env.node !== "production") {
       return [
