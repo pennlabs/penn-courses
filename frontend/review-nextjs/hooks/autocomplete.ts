@@ -6,7 +6,6 @@ import {
     AutocompleteResult,
 } from "@/lib/types";
 import { apiFetch } from "@/lib/api";
-import { expandTitle } from "@/lib/utils";
 import { useDebouncedState } from "./debounce";
 
 type Indices = {

@@ -23,8 +23,3 @@ export const getCsrf = (): string | boolean => {
             false
         );
 };
-
-export const expandTitle = (title: string) => {
-    const a = title.split("-");
-    return `${title} ${a[0]}-${a[1]} ${a[0]}${a[1]}`;
-};
