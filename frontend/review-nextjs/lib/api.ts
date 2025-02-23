@@ -10,9 +10,17 @@ export const OIDC_AUTHORITY = "https://platform.pennlabs.org";
 export const OIDC_AUTHORIZATION_ENDPOINT = `${OIDC_AUTHORITY}/accounts/authorize/`;
 export const OIDC_TOKEN_ENDPOINT = `${OIDC_AUTHORITY}/accounts/token/`;
 export const JWKS_URI = `${OIDC_AUTHORITY}/accounts/.well-known/jwks.json`;
+export const currentSemester = "2025A";
 
 export const apiFetch = (path: string, options = {}): Promise<Response> =>
     fetch(`${BASE_URL}${path}`, {
         ...options,
         credentials: "include",
     });
+
+export const apiReviewData = async (
+    type: string,
+    code: string
+): Promise<Response> => {
+    return apiFetch(`/api/review/${type}/${code}?semester=${currentSemester}`);
+};

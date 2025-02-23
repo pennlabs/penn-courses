@@ -1,21 +1,16 @@
 "use client";
 
-import { AutocompleteObject } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { redirect } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
     Command,
-    CommandDialog,
     CommandEmpty,
     CommandGroup,
     CommandInput,
     CommandItem,
     CommandList,
-    CommandSeparator,
-    CommandShortcut,
 } from "@/components/ui/command";
-import Fuse from "fuse.js";
 import { useAutocomplete } from "@/hooks/autocomplete";
 
 enum SearchStatus {
@@ -24,12 +19,6 @@ enum SearchStatus {
     SUCCESS,
     ERROR,
 }
-
-type Indices = {
-    courses: Fuse<AutocompleteObject> | null;
-    instructors: Fuse<AutocompleteObject> | null;
-    departments: Fuse<AutocompleteObject> | null;
-};
 
 export default function SearchBar({ small }: { small?: boolean }) {
     const [query, setQuery] = useState("");
