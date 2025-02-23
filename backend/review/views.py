@@ -68,12 +68,10 @@ extra_metrics_section_filters = (
     & ~Q(course__semester__icontains="b")  # Filter out summer classes
     & Q(has_status_updates=True)
     & ~Q(
-        id__in=Subquery(
-            NGSSRestriction.special_approval().values("sections__id"))
+        id__in=Subquery(NGSSRestriction.special_approval().values("sections__id"))
     )  # Filter out sections that require permit for registration
     & ~Q(
-        id__in=Subquery(
-            PreNGSSRestriction.special_approval().values("sections__id"))
+        id__in=Subquery(PreNGSSRestriction.special_approval().values("sections__id"))
     )  # Filter out sections that require permit for registration (pre-NGSS)
 )
 
@@ -88,11 +86,9 @@ def extra_metrics_section_filters_pcr(current_semester=None):
     return extra_metrics_section_filters & Q(course__semester__lt=current_semester) & ~Q(status="X")
 
 
-course_filters_pcr = ~Q(title="") | ~Q(
-    description="") | Q(sections__has_reviews=True)
+course_filters_pcr = ~Q(title="") | ~Q(description="") | Q(sections__has_reviews=True)
 section_filters_pcr = Q(has_reviews=True) | (
-    (~Q(course__title="") | ~Q(course__description="")) & ~Q(
-        activity="REC") & ~Q(status="X")
+    (~Q(course__title="") | ~Q(course__description="")) & ~Q(activity="REC") & ~Q(status="X")
 )
 
 HOUR_IN_SECONDS = 60 * 60
@@ -143,8 +139,7 @@ def course_reviews(request, course_code, semester=None):
     topic_id = cache.get(CACHE_PREFIX + course_code)
     if topic_id is None:
         try:
-            recent_course = most_recent_course_from_code(
-                course_code, request_semester)
+            recent_course = most_recent_course_from_code(course_code, request_semester)
         except Course.DoesNotExist:
             raise Http404()
         topic = recent_course.topic
@@ -154,8 +149,7 @@ def course_reviews(request, course_code, semester=None):
 
     response = cache.get(CACHE_PREFIX + topic_id)
     if response is None:
-        cached_response = CachedReviewResponse.objects.filter(
-            topic_id=topic_id).first()
+        cached_response = CachedReviewResponse.objects.filter(topic_id=topic_id).first()
         if cached_response is None:
             response = manual_course_reviews(course_code, request_semester)
             if not response:
@@ -172,18 +166,15 @@ def most_recent_course_from_code(course_code, semester):
         Course.objects.filter(
             course_filters_pcr,
             **(
-                {"topic__courses__full_code": course_code,
-                    "topic__courses__semester": semester}
+                {"topic__courses__full_code": course_code, "topic__courses__semester": semester}
                 if semester
                 else {"full_code": course_code}
             ),
         )
         .order_by("-semester")[:1]
         .annotate(
-            branched_from_full_code=F(
-                "topic__branched_from__most_recent__full_code"),
-            branched_from_semester=F(
-                "topic__branched_from__most_recent__semester"),
+            branched_from_full_code=F("topic__branched_from__most_recent__full_code"),
+            branched_from_semester=F("topic__branched_from__most_recent__semester"),
         )
         .select_related("topic__most_recent")
         .get()
@@ -263,8 +254,7 @@ def manual_course_reviews(course_code, request_semester):
         .distinct()
         .annotate(
             most_recent_sem=Subquery(
-                Section.objects.filter(
-                    instructors__id=OuterRef("id"), course__topic=topic)
+                Section.objects.filter(instructors__id=OuterRef("id"), course__topic=topic)
                 .annotate(common=Value(1))
                 .values("common")
                 .annotate(max_sem=Max("course__semester"))
@@ -276,12 +266,10 @@ def manual_course_reviews(course_code, request_semester):
     for instructor in recent_instructors:
         instructor["exclude_from_recent"] = True
     all_instructors = list(instructor_reviews.values()) + recent_instructors
-    instructors = aggregate_reviews(
-        all_instructors, "instructor_id", name="instructor_name")
+    instructors = aggregate_reviews(all_instructors, "instructor_id", name="instructor_name")
 
     course_qs = annotate_average_and_recent(
-        Course.objects.filter(course_filters_pcr,
-                              topic_id=topic.id).order_by("-semester")[:1],
+        Course.objects.filter(course_filters_pcr, topic_id=topic.id).order_by("-semester")[:1],
         match_review_on=Q(section__course__topic=topic),
         match_section_on=Q(course__topic=topic) & section_filters_pcr,
         extra_metrics=True,
@@ -367,8 +355,7 @@ def course_plots(request, course_code):
             Course.objects.filter(
                 course_filters_pcr,
                 **(
-                    {"topic__courses__full_code": course_code,
-                        "topic__courses__semester": semester}
+                    {"topic__courses__full_code": course_code, "topic__courses__semester": semester}
                     if semester
                     else {"full_code": course_code}
                 ),
@@ -398,8 +385,7 @@ def course_plots(request, course_code):
             instructors__id__in=instructor_ids,
         ).distinct()
 
-    # a dict mapping semester to section id to section object
-    section_map = defaultdict(dict)
+    section_map = defaultdict(dict)  # a dict mapping semester to section id to section object
     for section in filtered_sections:
         section_map[section.efficient_semester][section.id] = section
 
@@ -509,8 +495,7 @@ def instructor_reviews(request, instructor_id):
     instructor_qs = annotate_average_and_recent(
         Instructor.objects.filter(id=instructor_id),
         match_review_on=Q(instructor_id=instructor_id),
-        match_section_on=Q(
-            instructors__id=instructor_id) & section_filters_pcr,
+        match_section_on=Q(instructors__id=instructor_id) & section_filters_pcr,
         extra_metrics=True,
     )
     inst = get_single_dict_from_qs(instructor_qs)
@@ -637,8 +622,7 @@ def department_reviews(request, department_code):
         review["course_title"] = course["course_title"]
 
     all_courses = reviews + list(topic_id_to_course.values())
-    courses = aggregate_reviews(
-        all_courses, "course_code", code="course_code", name="course_title")
+    courses = aggregate_reviews(all_courses, "course_code", code="course_code", name="course_title")
 
     return Response({"code": department.code, "name": department.name, "courses": courses})
 
@@ -691,8 +675,7 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
             Course.objects.filter(
                 course_filters_pcr,
                 **(
-                    {"topic__courses__full_code": course_code,
-                        "topic__courses__semester": semester}
+                    {"topic__courses__full_code": course_code, "topic__courses__semester": semester}
                     if semester
                     else {"full_code": course_code}
                 ),
@@ -792,8 +775,7 @@ def autocomplete(request):
         Course.objects.filter(course_filters_pcr)
         .annotate(
             max_semester=Subquery(
-                Course.objects.filter(full_code=OuterRef(
-                    "full_code"), topic=OuterRef("topic"))
+                Course.objects.filter(full_code=OuterRef("full_code"), topic=OuterRef("topic"))
                 .annotate(common=Value(1))
                 .values("common")
                 .annotate(max_semester=Max("semester"))
@@ -815,7 +797,7 @@ def autocomplete(request):
             {
                 "title": semester_prefix(course) + course["full_code"],
                 "desc": [course["title"]],
-                "url": f"/course/{course['full_code']}",
+                "url": f"/course/{course['full_code']}/{course['max_semester']}",
             }
             for course in courses
         ],
@@ -836,8 +818,7 @@ def autocomplete(request):
 
     instructors = (
         Instructor.objects.filter(
-            id__in=Subquery(Section.objects.filter(
-                section_filters_pcr).values("instructors__id"))
+            id__in=Subquery(Section.objects.filter(section_filters_pcr).values("instructors__id"))
         )
         .distinct()
         .values("name", "id", "section__course__department__code")
@@ -850,8 +831,7 @@ def autocomplete(request):
                 "desc": set([inst["section__course__department__code"]]),
                 "url": f"/instructor/{inst['id']}",
             }
-        instructor_set[inst["id"]]["desc"].add(
-            inst["section__course__department__code"])
+        instructor_set[inst["id"]]["desc"].add(inst["section__course__department__code"])
 
     def join_depts(depts):
         try:
@@ -872,6 +852,5 @@ def autocomplete(request):
     )
 
     return Response(
-        {"courses": course_set, "departments": department_set,
-            "instructors": instructor_set}
+        {"courses": course_set, "departments": department_set, "instructors": instructor_set}
     )
