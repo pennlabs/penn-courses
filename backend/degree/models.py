@@ -191,7 +191,7 @@ class Rule(models.Model):
     )
 
     def __str__(self) -> str:
-        rules_str = ", ".join([str(rule) for rule in self.children.all()]) 
+        rules_str = ", ".join([str(rule) for rule in self.children.all()])
         return (
             f"{self.title}, q={self.q}, num={self.num}, cus={self.credits}, "
             f"child rules: {rules_str}"
@@ -241,7 +241,10 @@ class Rule(models.Model):
             if self.num is not None and count < self.num:
                 return False
             return True
-        
+
+    # This is scuffed. Only difference with evaluate() is that this is on line 269,
+    # where we check if total_credits = 0 rather than total_credits < self.credits.
+    # Why do we do this? It makes it work, I guess. Please make something better.
     def check_belongs(self, full_codes: Iterable[str]) -> bool:
         """
         Check if provided courses all contribute to fulfilling a rule.
@@ -264,16 +267,9 @@ class Rule(models.Model):
             assert self.num is not None or self.credits is not None
             if self.num is not None and total_courses < self.num:
                 return False
-            
+
             if self.credits is not None and total_credits == 0:
                 return False
-
-            # print(self)
-            # print(self.num)
-            # print(total_courses)
-            # print(self.credits)
-            # print(total_credits)
-            # print("=======")
             return True
         else:
             # assert self.children.all().exists()
@@ -379,18 +375,16 @@ class DegreePlan(models.Model):
             if rule.evaluate(full_codes):
                 satisfied_rules.add(rule)
         return (satisfied_rules, violated_dcrs)
-    
+
     def check_rules_already_satisfied(self, rules: set[Rule]) -> set[Rule]:
         satisfied_rules = set()
 
         for rule in rules:
             f = Fulfillment.objects.all().filter(degree_plan=self).filter(rules=rule)
             if (rule.num and len(f) >= rule.num) or (rule.credits and len(f) >= rule.credits):
-                satisfied_rules.add(rule) 
+                satisfied_rules.add(rule)
 
         return satisfied_rules
-
-        
 
     def copy(self, new_name: str) -> DegreePlan:
         """

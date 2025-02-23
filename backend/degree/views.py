@@ -1,8 +1,9 @@
 from collections import deque
+
 from django.db import IntegrityError
 from django.http import Http404
 from django_auto_prefetching import AutoPrefetchViewSetMixin
-from rest_framework import status, viewsets, generics
+from rest_framework import generics, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
@@ -17,7 +18,7 @@ from degree.serializers import (
     DegreePlanListSerializer,
     DockedCourseSerializer,
     FulfillmentSerializer,
-    RuleSerializer
+    RuleSerializer,
 )
 from PennCourses.docs_settings import PcxAutoSchema
 
@@ -83,8 +84,7 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         if request.data.get("name") is None:
             raise ValidationError({"name": "This field is required."})
-        new_degree_plan = DegreePlan(
-            name=request.data.get("name"), person=self.request.user)
+        new_degree_plan = DegreePlan(name=request.data.get("name"), person=self.request.user)
         new_degree_plan.save()
         serializer = self.get_serializer(new_degree_plan)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -196,7 +196,8 @@ class DockedCourseViewset(viewsets.ModelViewSet):
 
 class SatisfiedRuleList(generics.ListAPIView):
     """
-    Provided a degree plan and a course code, retrieve a sublist of the degrees' rules that are satisfied by the course.
+    Provided a degree plan and a course code, retrieve a sublist
+    of the degrees' rules that are satisfied by the course.
     """
 
     schema = PcxAutoSchema(
@@ -227,10 +228,38 @@ class SatisfiedRuleList(generics.ListAPIView):
 
         degree_plan = DegreePlan.objects.get(id=degree_plan_id)
 
+        bfs_queue = deque()
+        rules = []
 
-        # # List of rule titles that should be ignored in limiting double counting WITHIN a degree. Basically, only allows double counting where legal.
-        # # ex. CIS-1200 is allowed to fulfill the Formal Reasoning and Analysis rule as well as the Computation and Cognition rule within a Cognitive Science degree.
-        # # ex. CIS-1200 is prevented from fulfilling both the Computation rule as well as the Computation and Cognition rule within a Cognitive Science degree.
+        for degree in degree_plan.degrees.all():
+            for rule_in_degree in degree.rules.all():
+                bfs_queue.append(rule_in_degree)
+
+        while len(bfs_queue):
+            curr_rule = bfs_queue.pop()
+            # this is a leaf rule
+            if curr_rule.q:
+                rules.append(curr_rule)
+            else:  # parent rule
+                bfs_queue.extend(curr_rule.children.all())
+
+        # TODO: Only add rules that are open ended
+        fulfilled_rules = []
+        for rule in rules:
+            print(rule)
+            if rule.check_belongs([full_code]):
+                fulfilled_rules.append(rule)
+
+        return fulfilled_rules
+
+        # Here's some code I wrote that attempts to limit
+
+        # # List of rule titles that should be ignored in limiting double counting
+        # # WITHIN a degree. Basically, only allows double counting where legal.
+        # # ex. CIS-1200 is allowed to fulfill the Formal Reasoning and Analysis
+        # # rule as well as the Computation and Cognition rule within a Cognitive Science degree.
+        # # ex. CIS-1200 is prevented from fulfilling both the Computation
+        # # rule as well as the Computation and Cognition rule within a Cognitive Science degree.
         # double_within_degree_allowed = [
         #     "Sector 6: The Physical World",
         #     "Sector 5: The Living World",
@@ -264,20 +293,17 @@ class SatisfiedRuleList(generics.ListAPIView):
 
         #     # TODO: Only add rules that are open ended
 
-
         #     curr_rules = []
         #     double_count_allowed_rules = []
         #     found_rule = False
-
 
         #     # print(rules)
 
         #     satified_rules = degree_plan.check_rules_already_satisfied(rules)
         #     for rule in rules:
-                
 
-        #         # If a rule explicitly lists the provided course as an option, that should be the onlym
-        #         # course we fulfill 
+        #         # If a rule explicitly lists the provided course as an option, that
+        #         # should be the only course we fulfill
         #         if full_code in rule.q and rule not in satified_rules:
         #             curr_rules = [rule]
 
@@ -293,28 +319,3 @@ class SatisfiedRuleList(generics.ListAPIView):
         # # for rule in fulfilled_rules:
         #     # print(rule)
         # return fulfilled_rules
-
-        bfs_queue = deque()
-        rules = []
-
-
-        for degree in degree_plan.degrees.all():
-            for rule_in_degree in degree.rules.all():
-                bfs_queue.append(rule_in_degree)
-
-        while len(bfs_queue):
-            curr_rule = bfs_queue.pop()
-            # this is a leaf rule
-            if curr_rule.q:
-                rules.append(curr_rule)
-            else: # parent rule
-                bfs_queue.extend(curr_rule.children.all())
-
-        # TODO: Only add rules that are open ended
-        fulfilled_rules = []
-        for rule in rules:
-            print(rule)
-            if rule.check_belongs([full_code]):
-                fulfilled_rules.append(rule)
-
-        return fulfilled_rules

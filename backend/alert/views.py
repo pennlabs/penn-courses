@@ -161,7 +161,7 @@ def accept_webhook(request):
 
 class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     """
-    retrieve: Get one of the logged-in user's PCA registrations for the current semester, using
+    retrieve: Get one of the logged-in user's PCA registrations for the  , using
     the registration's ID. Note that if a registration with the specified ID exists, but that
     registration is not at the head of its resubscribe chain (i.e. there is a more recent
     registration which was created by resubscribing to the specified registration), the
