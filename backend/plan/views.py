@@ -630,8 +630,9 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
+        #include_location_str = "False"
         # TODO: figure out how we want to do locations.
-        context.update({"include_location": False})
+        #context.update({"include_location": eval(include_location_str)})
         return context
 
     def update(self, request):
