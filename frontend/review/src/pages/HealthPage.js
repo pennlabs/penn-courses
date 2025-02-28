@@ -1,16 +1,16 @@
 import React, { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 
 const Health = () => {
-  const navigate = useNavigate();
+  const history = useHistory();
 
   useEffect(() => {
     // Check user agent on client side
     const userAgent = navigator.userAgent;
     if (userAgent !== "service-status") {
-      navigate("/", { replace: true });
+      history.push("/", { replace: true });
     }
-  }, [navigate]);
+  }, [history]);
 
   return <div>OK</div>;
 };
