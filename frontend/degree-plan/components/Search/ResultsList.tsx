@@ -62,14 +62,24 @@ const ResultsList = ({
     isLoading
 }: ResultListProps) => {
     // TODO: what if activeDegreeplan is not defined
+
     const { createOrUpdate: createOrUpdateFulfillment } = useSWRCrud<Fulfillment>(
         `/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`,
         { 
             idKey: "full_code",
-            createDefaultOptimisticData: { semester: null, rules: [] }
+            createDefaultOptimisticData: { semester: null, rules: [ruleId] }
         }
     );
     const { createOrUpdate: createOrUpdateDockedCourse } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
+
+    
+
+    // Must make into RuleIds then.
+    courses.map((course) => {
+        // console.log(course)
+        // console.log(ruleId)
+    })
+
 
     return (
         <CourseListContainer>
@@ -79,7 +89,7 @@ const ResultsList = ({
                 <Header width="20%">DIFF</Header>
             </HeaderContainer>
             <CoursesContainer>
-                {!isLoading ? courses.map((course) => 
+                {!isLoading ? courses.map((course) =>  
                 <Course
                     ruleId={ruleId}
                     key={course.id + course.semester}

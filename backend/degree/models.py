@@ -191,9 +191,11 @@ class Rule(models.Model):
     )
 
     def __str__(self) -> str:
+        rules_str = ", ".join([str(rule) for rule in self.children.all()])
         return (
             f"{self.title}, q={self.q}, num={self.num}, cus={self.credits}, "
-            "parent={self.parent.title if self.parent else None}"
+            f"child rules: {rules_str}"
+            f"parent={self.parent.title if self.parent else None}"
         )
 
     @property
@@ -226,6 +228,48 @@ class Rule(models.Model):
             if self.credits is not None and total_credits < self.credits:
                 return False
 
+            return True
+        else:
+            # assert self.children.all().exists()
+            count = 0
+            for child in self.children.all():
+                if not child.evaluate(full_codes):
+                    if self.num is None:
+                        return False
+                else:
+                    count += 1
+            if self.num is not None and count < self.num:
+                return False
+            return True
+
+    # This is scuffed. Only difference with evaluate() is that this is on line 269,
+    # where we check if total_credits = 0 rather than total_credits < self.credits.
+    # Why do we do this? It makes it work, I guess. Please make something better.
+    def check_belongs(self, full_codes: Iterable[str]) -> bool:
+        """
+        Check if provided courses all contribute to fulfilling a rule.
+        """
+        if self.q:
+            assert not self.children.all().exists()
+            total_courses, total_credits = (
+                Course.objects.filter(self.get_q_object() or Q(), full_code__in=full_codes)
+                .aggregate(
+                    total_courses=Count("id"),
+                    total_credits=Coalesce(
+                        Sum("credits"),
+                        0,
+                        output_field=DecimalField(max_digits=4, decimal_places=2),
+                    ),
+                )
+                .values()
+            )
+
+            assert self.num is not None or self.credits is not None
+            if self.num is not None and total_courses < self.num:
+                return False
+
+            if self.credits is not None and total_credits == 0:
+                return False
             return True
         else:
             # assert self.children.all().exists()
@@ -330,8 +374,17 @@ class DegreePlan(models.Model):
             full_codes = [fulfillment.full_code for fulfillment in rule_fulfillments]
             if rule.evaluate(full_codes):
                 satisfied_rules.add(rule)
-
         return (satisfied_rules, violated_dcrs)
+
+    def check_rules_already_satisfied(self, rules: set[Rule]) -> set[Rule]:
+        satisfied_rules = set()
+
+        for rule in rules:
+            f = Fulfillment.objects.all().filter(degree_plan=self).filter(rules=rule)
+            if (rule.num and len(f) >= rule.num) or (rule.credits and len(f) >= rule.credits):
+                satisfied_rules.add(rule)
+
+        return satisfied_rules
 
     def copy(self, new_name: str) -> DegreePlan:
         """
