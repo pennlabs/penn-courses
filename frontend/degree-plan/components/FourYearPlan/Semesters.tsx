@@ -3,9 +3,10 @@ import styled from "@emotion/styled";
 import { Icon } from "../common/bulma_derived_components";
 import { Course, DegreePlan, Fulfillment } from "@/types";
 import useSWR from "swr";
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import Select from "react-select";
 import { ModalKey } from "./DegreeModal";
+import ToastContext from "../Toast/Toast";
 
 const getNextSemester = (semester: string) => {
   const year = parseInt(semester.slice(0, 4));
@@ -191,8 +192,7 @@ interface SemestersProps {
   setModalObject: (obj: any) => void;
   setEditMode: (arg0: boolean) => void;
   isLoading: boolean;
-  currentSemester?: string;
-}
+  currentSemester?: string;}
 
 const Semesters = ({
   activeDegreeplan,
@@ -213,6 +213,8 @@ const Semesters = ({
       : null
   );
   // semesters is state mostly derived from fulfillments
+
+  const showToast = useContext(ToastContext);
 
   const getDefaultSemesters = React.useCallback(() => {
     const startingYear = currentSemester ? Number(currentSemester.substring(0, 4)) : new Date().getFullYear(); // Use current semester as default starting semester
@@ -255,6 +257,7 @@ const Semesters = ({
 
   /** Update semesters to local storage */
   useEffect(() => {
+    console.log(semesters)
     if (Object.keys(semesters).length == 0 && !isLoading) setEditMode(true);
     // if finish loading and no semesters, we go to edit mode for the user to add new semesters
     if (!activeDegreeplan) return;
@@ -268,7 +271,7 @@ const Semesters = ({
 
   /** Parse fulfillments and group them by semesters */
   useEffect(() => {
-    if (!activeDegreeplan || !fulfillments) return; // TODO: need more logic in this case
+    if (!activeDegreeplan || !fulfillments || isLoadingFulfillments) return; // TODO: need more logic in this case
     setSemesters((currentSemesters) => {
       const semesters = {} as { [semester: string]: Fulfillment[] };
       Object.keys(currentSemesters).forEach((semester) => {
@@ -283,7 +286,7 @@ const Semesters = ({
       });
       return semesters;
     });
-  }, [fulfillments, activeDegreeplan]);
+  }, [fulfillments, activeDegreeplan, isLoadingFulfillments]);
 
   return (
     <SemestersContainer className={className}>

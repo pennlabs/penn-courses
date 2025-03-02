@@ -125,3 +125,11 @@ export function assertValueType<T, K extends keyof T>(obj: T, idKey: K, value: a
         throw new Error(`Value ${value} is not of type ${typeof obj[idKey]}`);
     }
 }
+
+export interface PromiseConstructor {
+  withResolvers<T>(): {
+    promise: Promise<T>
+    resolve: (value: T | PromiseLike<T>) => void
+    reject: (reason?: any) => void
+  }
+ }
