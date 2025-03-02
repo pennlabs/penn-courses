@@ -658,7 +658,6 @@ const OnboardingPage = ({
       // SCRAPE SCHOOL
       if (textResult[l].replaceAll(" ", "").includes("program:")) {
         let program = textResult[l].replace(/^.*?:\s*/, "");
-        // tempSchools = [];
         if (program.includes("arts"))
           tempSchools.push({ value: "BA", label: "Arts & Sciences" });
 
@@ -784,7 +783,6 @@ const OnboardingPage = ({
         }, [])
 
         let closestMajor = m == "computer science " ? "Computer Science - No Concentration (2024)" : closest(m, justMajorNames)
-        // console.log(closestMajor)
         var majorOption = possibleDegrees.find(obj => {
           return obj.label === closestMajor
         })
@@ -1086,142 +1084,141 @@ const OnboardingPage = ({
       </CenteredFlexContainer>
     );
 
-  if (currentPage === 2)
-    return (
-      <CenteredFlexContainer>
-        <PanelContainer $maxWidth="90%" $minWidth="90%">
-          <TextButton
-            onClick={() => {
-              setCurrentPage(0);
-              setSchools([]);
-              setMajors([]);
-              setMinor([]);
-              setName("");
-              setScrapedCourses([]);
-              setStartingYear(null);
-              setGraduationYear(null);
-            }}
-            style={{ marginLeft: "5%", marginTop: "3%" }}
-          >
-            <ArrowLeftIcon />
-            <p>Back</p>
-          </TextButton>
-          <h1 style={{ paddingLeft: "5%", paddingTop: "1.25%" }}>
-            Enter your degree(s):
-          </h1>
-          <ColumnsContainer>
-            <Column>
-              <FieldWrapper>
-                <Label required>Degree Plan Name</Label>
-                <TextInput
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder=""
-                />
-              </FieldWrapper>
+  return (
+    <CenteredFlexContainer>
+      <PanelContainer $maxWidth="90%" $minWidth="90%">
+        <TextButton
+          onClick={() => {
+            setCurrentPage(0);
+            setSchools([]);
+            setMajors([]);
+            setMinor([]);
+            setName("");
+            setScrapedCourses([]);
+            setStartingYear(null);
+            setGraduationYear(null);
+          }}
+          style={{ marginLeft: "5%", marginTop: "3%" }}
+        >
+          <ArrowLeftIcon />
+          <p>Back</p>
+        </TextButton>
+        <h1 style={{ paddingLeft: "5%", paddingTop: "1.25%" }}>
+          Enter your degree(s):
+        </h1>
+        <ColumnsContainer>
+          <Column>
+            <FieldWrapper>
+              <Label required>Degree Plan Name</Label>
+              <TextInput
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder=""
+              />
+            </FieldWrapper>
 
-              <FieldWrapper>
-                <Label required>Starting Year</Label>
-                <Select
-                  options={startingYearOptions}
-                  value={startingYear}
-                  onChange={(selectedOption) => setStartingYear(selectedOption)}
-                  isClearable
-                  placeholder="Select Year Started"
-                  styles={customSelectStylesLeft}
-                />
-              </FieldWrapper>
-
-              <FieldWrapper>
-                <Label required>Graduation Year</Label>
-                <Select
-                  options={graduationYearOptions}
-                  value={graduationYear}
-                  onChange={(selectedOption) =>
-                    setGraduationYear(selectedOption)
-                  }
-                  isClearable
-                  placeholder="Select Year of Graduation"
-                  styles={customSelectStylesLeft}
-                />
-              </FieldWrapper>
-            </Column>
-
-            <Column>
-              <FieldWrapper>
-                <Label required>School(s) or Program(s)</Label>
-                <Select
-                  options={schoolOptions}
-                  value={schools}
-                  onChange={(selectedOptions) =>
-                    setSchools([...selectedOptions])
-                  }
-                  isClearable
-                  isMulti
-                  placeholder="Select School or Program"
-                  styles={customSelectStylesRight}
-                  isLoading={isLoadingDegrees}
-                />
-              </FieldWrapper>
-
-              <FieldWrapper>
-                <Label required>Major(s)</Label>
-                <Select
-                  options={majorOptionsCallback()}
-                  value={majors}
-                  onChange={(selectedOptions) =>
-                    setMajors([...selectedOptions])
-                  }
-                  isClearable
-                  isMulti
-                  isDisabled={schools.length === 0}
-                  placeholder={"Major - Concentration"}
-                  styles={customSelectStylesRight}
-                  isLoading={isLoadingDegrees}
-                />
-              </FieldWrapper>
-
-              {/* <h5>Concentration</h5>
-              <Select
-                options={getConcentrationOptions()}
-                value={concentrations}
-                onChange={(selectedOption) => setConcentrations(selectedOption)}
-                isClearable
-                isMulti
-                placeholder="Concentration"
-                styles={customSelectStylesRight}
-                isLoading={isLoadingDegrees}
-              /> */}
-
-              {/* <h5>Minor(s)</h5>
+            <FieldWrapper>
+              <Label required>Starting Year</Label>
               <Select
                 options={startingYearOptions}
-                value={minor}
-                onChange={(selectedOption) => setMinor(selectedOption)}
+                value={startingYear}
+                onChange={(selectedOption) => setStartingYear(selectedOption)}
+                isClearable
+                placeholder="Select Year Started"
+                styles={customSelectStylesLeft}
+              />
+            </FieldWrapper>
+
+            <FieldWrapper>
+              <Label required>Graduation Year</Label>
+              <Select
+                options={graduationYearOptions}
+                value={graduationYear}
+                onChange={(selectedOption) =>
+                  setGraduationYear(selectedOption)
+                }
+                isClearable
+                placeholder="Select Year of Graduation"
+                styles={customSelectStylesLeft}
+              />
+            </FieldWrapper>
+          </Column>
+
+          <Column>
+            <FieldWrapper>
+              <Label required>School(s) or Program(s)</Label>
+              <Select
+                options={schoolOptions}
+                value={schools}
+                onChange={(selectedOptions) =>
+                  setSchools([...selectedOptions])
+                }
                 isClearable
                 isMulti
-                placeholder="Minor Name"
+                placeholder="Select School or Program"
                 styles={customSelectStylesRight}
-                isLoading={isLoadingDegreeplans}
-              /> */}
-              <NextButtonContainer>
-                <NextButton
-                  onClick={handleAddDegrees}
-                  disabled={!complete}
-                  style={{
-                    height: "35px",
-                    width: "90px",
-                    borderRadius: "7px",
-                  }}
-                >
-                  Next
-                </NextButton>
-              </NextButtonContainer>
-            </Column>
-          </ColumnsContainer>
-        </PanelContainer>
-      </CenteredFlexContainer>
-    );
+                isLoading={isLoadingDegrees}
+              />
+            </FieldWrapper>
+
+            <FieldWrapper>
+              <Label required>Major(s)</Label>
+              <Select
+                options={majorOptionsCallback()}
+                value={majors}
+                onChange={(selectedOptions) =>
+                  setMajors([...selectedOptions])
+                }
+                isClearable
+                isMulti
+                isDisabled={schools.length === 0}
+                placeholder={"Major - Concentration"}
+                styles={customSelectStylesRight}
+                isLoading={isLoadingDegrees}
+              />
+            </FieldWrapper>
+
+            {/* <h5>Concentration</h5>
+            <Select
+              options={getConcentrationOptions()}
+              value={concentrations}
+              onChange={(selectedOption) => setConcentrations(selectedOption)}
+              isClearable
+              isMulti
+              placeholder="Concentration"
+              styles={customSelectStylesRight}
+              isLoading={isLoadingDegrees}
+            /> */}
+
+            {/* <h5>Minor(s)</h5>
+            <Select
+              options={startingYearOptions}
+              value={minor}
+              onChange={(selectedOption) => setMinor(selectedOption)}
+              isClearable
+              isMulti
+              placeholder="Minor Name"
+              styles={customSelectStylesRight}
+              isLoading={isLoadingDegreeplans}
+            /> */}
+            <NextButtonContainer>
+              <NextButton
+                onClick={handleAddDegrees}
+                disabled={!complete}
+                style={{
+                  height: "35px",
+                  width: "90px",
+                  borderRadius: "7px",
+                }}
+              >
+                Next
+              </NextButton>
+            </NextButtonContainer>
+          </Column>
+        </ColumnsContainer>
+      </PanelContainer>
+    </CenteredFlexContainer>
+  );
 };
 
 export default OnboardingPage;

@@ -53,6 +53,10 @@ const PlanPanel = ({
     const { copy: copyDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans');
     const [showStats, setShowStats] = useState(true);
     const [editMode, setEditMode] = useState(false);
+    
+    useEffect(() => {
+        console.log(editMode)
+    }, [editMode])
 
     return (
             <PanelContainer>
@@ -91,7 +95,7 @@ const PlanPanel = ({
                 <PanelBody>
                     <Semesters 
                     activeDegreeplan={activeDegreeplan || undefined} 
-                    showStats={showStats} 
+                    showStats={showStats}
                     editMode={editMode}
                     setEditMode={setEditMode}
                     setModalKey={setModalKey}
