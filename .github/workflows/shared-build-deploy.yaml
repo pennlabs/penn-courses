@@ -34,7 +34,7 @@ jobs:
             dockerfile: Dockerfile
 
             # If enabled, will cache_from the latest version of the docker image.
-            cache: true
+            cache: false
 
         secrets: inherit
 
