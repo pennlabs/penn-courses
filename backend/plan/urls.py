@@ -3,6 +3,7 @@ from django.views.generic import TemplateView
 from rest_framework_nested import routers
 
 from plan.views import (
+    BreakViewSet,
     CalendarAPIView,
     PrimaryScheduleViewSet,
     ScheduleViewSet,
@@ -13,6 +14,7 @@ from plan.views import (
 router = routers.DefaultRouter()
 router.register(r"schedules", ScheduleViewSet, basename="schedules")
 router.register(r"primary-schedules", PrimaryScheduleViewSet, basename="primary-schedules")
+router.register(r"breaks", BreakViewSet, basename="breaks")
 
 urlpatterns = [
     path("<int:schedule_pk>/calendar/", CalendarAPIView.as_view(), name="calendar-view"),
