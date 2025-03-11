@@ -137,6 +137,10 @@ const ScheduleDisplay = ({
         schedData.sections ||
         [];
 
+    let breaks;
+
+    breaks = friendshipState.activeFriendSchedule?.breaks || schedData.breaks || [];
+
     const notEmpty = sections.length > 0;
 
     let startHour = 10.5;
@@ -168,6 +172,7 @@ const ScheduleDisplay = ({
                     day: m.day as Day,
                     start: transformTime(m.start),
                     end: transformTime(m.end),
+                    type: "section",
                     course: {
                         color: s.color,
                         id: s.id,
@@ -185,6 +190,30 @@ const ScheduleDisplay = ({
             );
         }
     });
+    
+    breaks.forEach((b) => {
+      if (b.meetings) {
+          meetings.push(
+              ...b.meetings.map((m) => ({
+                  day: m.day as Day,
+                  start: transformTime(m.start),
+                  end: transformTime(m.end),
+                  type: "break",
+                  course: {
+                      color: b.color,
+                      id: b.name,
+                      coreqFulfilled: true
+                  },
+                  style: {
+                      width: "100%",
+                      left: "0",
+                  },
+              }))
+          );
+      }
+    });
+    
+
 
     startHour = Math.floor(
         Math.min(startHour, ...meetings.map((m) => m.start))
@@ -239,15 +268,15 @@ const ScheduleDisplay = ({
                                 col: colOffset,
                             }}
                             readOnly={readOnly}
-                            remove={() => removeSection(meeting.course.id)}
+                            remove={() => removeSection(meeting.course.id, meeting.type)}
                             key={`${meeting.course.id}-${meeting.day}`}
-                            focusSection={() => {
+                            focusSection={meeting.type == "section" ? () => {
                                 if (isMobileOnly && setTab) {
                                     setTab(0);
                                 }
                                 const split = meeting.course.id.split("-");
                                 focusSection(`${split[0]}-${split[1]}`);
-                            }}
+                            } : () => {}}
                         />
                     ))}
                 {!notEmpty && !readOnly && <EmptySchedule />}

@@ -140,7 +140,7 @@ const mapStateToProps = (state: any) => {
 };
 
 const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
-    removeSection: (idDashed: string) => dispatch(removeSchedItem(idDashed)),
+    removeSection: (idDashed: string, type: string) => dispatch(removeSchedItem(idDashed, type)),
     focusSection: (id: string) => dispatch(fetchCourseDetails(id)),
     changeMySchedule: (scheduleName: string) =>
         dispatch(changeMySchedule(scheduleName)),

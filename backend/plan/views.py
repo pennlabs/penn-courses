@@ -492,6 +492,18 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     raise e
         return sections
 
+    @staticmethod
+    def get_breaks(data):
+        raw_breaks = data.get("breaks", [])
+        breaks = []
+        for b in raw_breaks:
+            break_id = b.get("id")
+            if break_id:
+                break_candidate = Break.objects.filter(id=break_id).first()
+                if break_candidate:
+                    breaks.append(break_candidate)
+        return breaks
+
     def validate_name(self, request, existing_schedule=None, allow_path=False):
         name = request.data.get("name")
         if PATH_REGISTRATION_SCHEDULE_NAME in [
@@ -545,11 +557,20 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             )
 
         try:
+            breaks = self.get_breaks(request.data)
+        except ObjectDoesNotExist:
+            return Response(
+                {"detail": "One or more breaks not found in database."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
             schedule.person = request.user
             schedule.semester = semester
             schedule.name = PATH_REGISTRATION_SCHEDULE_NAME if from_path else name
             schedule.save()
             schedule.sections.set(sections)
+            schedule.breaks.set(breaks)
             return Response({"message": "success", "id": schedule.id}, status=status.HTTP_200_OK)
         except IntegrityError as e:
             return Response(
@@ -663,7 +684,15 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
         meetings = request.data.get("meetings")
         try:
-            set_meetings(current_break, meetings)
+            meetings_with_codes = [
+                {
+                    **m,
+                    "building_code": None,
+                    "room_code": None,
+                }
+                for m in meetings
+            ]
+            set_meetings(current_break, meetings_with_codes)
         except Exception as e:
             return Response(
                 {"detail": "Error setting meetings: " + str(e)}, status=status.HTTP_400_BAD_REQUEST
@@ -719,8 +748,16 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             )
 
         meetings = request.data.get("meetings")
+        meetings_with_codes = [
+            {
+                **m,
+                "building_code": None,
+                "room_code": None,
+            }
+            for m in meetings
+        ]
         try:
-            set_meetings(new_break, meetings)
+            set_meetings(new_break, meetings_with_codes)
         except Exception as e:
             return Response(
                 {"detail": "Error setting meetings: " + str(e)}, status=status.HTTP_400_BAD_REQUEST
