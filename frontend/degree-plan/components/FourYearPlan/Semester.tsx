@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useDrag, useDrop } from "react-dnd";
-import { ItemTypes } from "../dnd/constants";
+import { ItemTypes } from "../Dock/dnd/constants";
 import CoursesPlanned, { SkeletonCoursesPlanned } from "./CoursesPlanned";
 import Stats from "./Stats";
 import styled from '@emotion/styled';
@@ -135,6 +135,8 @@ const FlexSemester = ({
 }: SemesterProps) => {
     const showToast = useContext(ToastContext);
 
+    console.log(fulfillments)
+
     const credits = fulfillments.reduce((acc, curr) => acc + (curr.course?.credits || 1), 0)
 
     const { createOrUpdate: addToDock } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
@@ -176,26 +178,38 @@ const FlexSemester = ({
                 //     })
                 // })
 
+
             } else { // moved from req panel
                 const prev_rules = fulfillments.find((fulfillment) => fulfillment.full_code === course.full_code)?.rules || []
                 // console.log([...prev_rules])
-                fetch(`/api/degree/satisfied-rule-list/${activeDegreeplanId}/${course.full_code}`).then((r) => {
+                fetch(`/api/degree/satisfied-rule-list/${activeDegreeplanId}/${course.full_code}/${course.rule_id}`).then((r) => {
                     r.json().then((data) => {
-                        const otherFulfilledRules = data.reduce((res: any, obj: any) => {
-                          res.push(obj.id);
-                          return res;
-                        }, [])
-          
-                        createOrUpdate({ rules: course.rules !== undefined ? [...course.rules, ...otherFulfilledRules] : otherFulfilledRules, semester }, course.full_code);
-                    
-                        // Toast only if course has been directly dragged from search (not reqpanel!)
-                        if (!course.rules)
-                            for (let obj of data) {
-                                if (obj.id != course.rule_id) {
-                                    showToast(`${course.full_code} also fulfilled ${obj.title}!`, false);
-                                }
-                            }
-            
+                        console.log(data)
+                        console.log(course.rule_id)
+
+                        if (!data.some((obj: any) => obj.id === course.rule_id)) {
+                            showToast(`${course.full_code} should go somewhere else!`, true);
+
+                        } else {
+                            const otherFulfilledRules = data.reduce((res: any, obj: any) => {
+                                res.push(obj.id);
+                                return res;
+                              }, [])
+                
+                              createOrUpdate({ rules: course.rules !== undefined ? [...course.rules, ...otherFulfilledRules] : otherFulfilledRules, semester }, course.full_code);
+                          
+                              // Toast only if course has been directly dragged from search (not reqpanel!)
+                              // TODO: This doesn't work for explicitly listed courses.
+
+                              // TODO: This should please work for 
+                              if (!course.rules)
+                                  for (let obj of data) {
+                                      if (obj.id != course.rule_id) {
+                                          showToast(`${course.full_code} also fulfilled ${obj.title}!`, false);
+                                      }
+                                    }      
+                        }
+
                     })
                 })
 

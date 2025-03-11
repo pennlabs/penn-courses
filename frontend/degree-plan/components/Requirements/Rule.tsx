@@ -5,7 +5,7 @@ import styled from '@emotion/styled';
 import { Icon } from '../common/bulma_derived_components';
 import { useSWRCrud } from '@/hooks/swrcrud';
 import { useDrop } from 'react-dnd';
-import { ItemTypes } from '../dnd/constants';
+import { ItemTypes } from '../Dock/dnd/constants';
 import { DarkBlueBackgroundSkeleton } from "../FourYearPlan/PanelCommon";
 import { DegreeYear, RuleTree } from './ReqPanel';
 import assert from 'assert';

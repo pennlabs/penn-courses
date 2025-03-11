@@ -19,6 +19,7 @@ from degree.serializers import (
     DockedCourseSerializer,
     FulfillmentSerializer,
     RuleSerializer,
+    Rule
 )
 from PennCourses.docs_settings import PcxAutoSchema
 
@@ -192,6 +193,116 @@ class DockedCourseViewset(viewsets.ModelViewSet):
             return self.partial_update(request, *args, **kwargs)
         except Http404:
             return super().create(request, *args, **kwargs)
+        
+
+class OnboardFromTranscript(generics.ListAPIView):
+    serializer_class = RuleSerializer
+
+    def get_queryset(self):
+        degree_plan_id = self.kwargs["degree_plan_id"]
+        all_courses = self.kwargs["all_codes"].split(',')
+
+        degree_plan = DegreePlan.objects.get(id=degree_plan_id)
+
+        # List of rule titles that should be ignored in limiting double counting
+        # WITHIN a degree. Basically, only allows double counting where legal.
+
+        # ex. CIS-1200 is allowed to fulfill the Formal Reasoning and Analysis
+        # rule as well as the Computation and Cognition rule within a Cognitive Science degree.
+
+        # ex. CIS-1200 is prevented from fulfilling both the Computation
+        # rule as well as the Computation and Cognition rule within a Cognitive Science degree.
+
+        # TODO: Remove Flexible Gen Eds once Wharton Flexible Gen Ed's is fixed.
+        double_within_degree_allowed = [
+            "Sector 6: The Physical World",
+            "Sector 5: The Living World",
+            "Sector 4: Humanities and Social Sciences",
+            "Sector 3: Arts and Letters",
+            "Sector 2: History and Tradition",
+            "Sector 1: Society",
+            "Cultural Diversity in the U.S.",
+            "Cross Cultural Analysis",
+            "Formal Reasoning and Analysis",
+            "Quantitative Data Analysis",
+            "Foreign Language",
+            "Flexible Gen Eds"
+        ]
+
+        for degree in degree_plan.degrees.all():
+            print(degree_plan.degrees.all())
+            bfs_queue = deque()
+            rules = []
+
+            for rule_in_degree in degree.rules.all():
+                bfs_queue.append(rule_in_degree)
+
+            while len(bfs_queue):
+                curr_rule = bfs_queue.pop()
+                # this is a leaf rule
+                if curr_rule.q:
+                    rules.append(curr_rule)
+                else:  # parent rule
+                    bfs_queue.extend(curr_rule.children.all())
+
+            # TODO: Only add rules that are open ended
+            print(rules)
+
+
+            satisfied_rules = []
+            for course in all_courses:
+                full_code, semester = course.split("_")
+                if semester == "TRAN":
+                    semester = "_TRAN"
+
+                # print(full_code, semester)
+
+                fulfilled_rules = set()
+                curr_rules = []
+                double_count_allowed_rules = []
+                found_rule = False
+
+                elective_rules = []
+
+                for rule in rules:
+                    if full_code in rule.q:
+                        if rule in satisfied_rules:
+                            curr_rules.append(rule.id)
+                        else:
+                            curr_rules = [rule.id]
+                            found_rule = True
+
+                    if rule.check_belongs([full_code]):
+                        if rule.title in double_within_degree_allowed:
+                            double_count_allowed_rules.append(rule.id)
+                        # TODO: WORKAROUND -- Need to fix elective requirements from data dump
+                        elif "elective" in rule.title.lower():
+                            elective_rules.append(rule.id)
+                        elif not found_rule:
+                            curr_rules.append(rule.id)
+                            if rule.id not in satisfied_rules:
+                                f = Fulfillment.objects.all().filter(degree_plan=degree_plan).filter(rules=rule)
+                                if (rule.num and len(f) >= rule.num) or (rule.credits and len(f) >= rule.credits):
+                                    satisfied_rules.append(rule.id)
+                                else:
+                                    found_rule = True
+
+                if len(curr_rules) != 0:
+                    fulfilled_rules.update(curr_rules + double_count_allowed_rules)
+                else:
+                    fulfilled_rules.update(elective_rules + double_count_allowed_rules)
+
+                for rule in fulfilled_rules:
+                    f, just_created = Fulfillment.objects.get_or_create(degree_plan=degree_plan, full_code=full_code, semester=semester)
+                    if just_created:
+                        f.save()
+                        f.rules.set(fulfilled_rules)
+                    else:
+                        f.rules.add(*fulfilled_rules)
+                    f.save()
+        
+        return fulfilled_rules
+
 
 
 class SatisfiedRuleList(generics.ListAPIView):
@@ -226,96 +337,151 @@ class SatisfiedRuleList(generics.ListAPIView):
         degree_plan_id = self.kwargs["degree_plan_id"]
         full_code = self.kwargs["full_code"]
 
+        rule_selected = None
+        if self.kwargs["rule_id"] != "0":
+            rule_selected = Rule.objects.get(id=self.kwargs["rule_id"])
+
         degree_plan = DegreePlan.objects.get(id=degree_plan_id)
 
-        bfs_queue = deque()
-        rules = []
+        # List of rule titles that should be ignored in limiting double counting
+        # WITHIN a degree. Basically, only allows double counting where legal.
+
+        # ex. CIS-1200 is allowed to fulfill the Formal Reasoning and Analysis
+        # rule as well as the Computation and Cognition rule within a Cognitive Science degree.
+
+        # ex. CIS-1200 is prevented from fulfilling both the Computation
+        # rule as well as the Computation and Cognition rule within a Cognitive Science degree.
+
+        # TODO: Remove Flexible Gen Eds once Wharton Flexible Gen Ed's is fixed.
+        double_within_degree_allowed = [
+            "Sector 6: The Physical World",
+            "Sector 5: The Living World",
+            "Sector 4: Humanities and Social Sciences",
+            "Sector 3: Arts and Letters",
+            "Sector 2: History and Tradition",
+            "Sector 1: Society",
+            "Cultural Diversity in the U.S.",
+            "Cross Cultural Analysis",
+            "Formal Reasoning and Analysis",
+            "Quantitative Data Analysis",
+            "Foreign Language",
+            "Flexible Gen Eds"
+        ]
+
+        fulfilled_rules = set()
 
         for degree in degree_plan.degrees.all():
+            bfs_queue = deque()
+            rules = []
+
             for rule_in_degree in degree.rules.all():
                 bfs_queue.append(rule_in_degree)
 
-        while len(bfs_queue):
-            curr_rule = bfs_queue.pop()
-            # this is a leaf rule
-            if curr_rule.q:
-                rules.append(curr_rule)
-            else:  # parent rule
-                bfs_queue.extend(curr_rule.children.all())
+            while len(bfs_queue):
+                curr_rule = bfs_queue.pop()
+                # this is a leaf rule
+                if curr_rule.q:
+                    rules.append(curr_rule)
+                else:  # parent rule
+                    bfs_queue.extend(curr_rule.children.all())
 
-        # TODO: Only add rules that are open ended
-        fulfilled_rules = []
-        for rule in rules:
-            print(rule)
-            if rule.check_belongs([full_code]):
-                fulfilled_rules.append(rule)
+            # TODO: Only add rules that are open ended
 
+            curr_rules = []
+            double_count_allowed_rules = []
+            found_rule = False
+            satisfied_rules = degree_plan.check_rules_already_satisfied(rules)
+
+            # DIFFERENT PROCESS FOR TRANSCRIPT SCRAPING.
+            if not rule_selected:
+                elective_rules = []
+
+                for rule in rules:
+
+                    if full_code in rule.q:
+                        if rule in satisfied_rules:
+                            curr_rules.append(rule)
+                        else:
+                            curr_rules = [rule]
+                            found_rule = True
+
+                    if rule.check_belongs([full_code]):
+                        if rule.title in double_within_degree_allowed:
+                            double_count_allowed_rules.append(rule)
+                        elif "elective" in rule.title.lower():
+                            elective_rules.append(rule)
+                        elif not found_rule:
+                            curr_rules.append(rule)
+                            if rule not in satisfied_rules:
+                                found_rule = True
+
+                if len(curr_rules) != 0:
+                    fulfilled_rules.update(curr_rules + double_count_allowed_rules)
+                else:
+                    fulfilled_rules.update(elective_rules + double_count_allowed_rules)
+            
+            else:
+                # PRIORITY: Check the current rule passed in.
+                if rule_selected and degree.rules.all().filter(id=self.kwargs["rule_id"]) and rule_selected.check_belongs([full_code]):
+                    if rule_selected.title in double_within_degree_allowed:
+                        double_count_allowed_rules.append(rule_selected)
+                    else:
+                        curr_rules = [rule_selected]
+                        found_rule = True
+
+
+                for rule in rules:
+                    # If an unfulfilled rule explicitly lists the provided course as an option, that
+                    # should be the only course we fulfill. 
+
+                    # If this explicit rule is fulfilled by another course, then we just add it normally.
+
+
+                    # if full_code in rule.q and rule not in satified_rules:
+                    if full_code in rule.q:
+                        if rule in satisfied_rules:
+                            curr_rules.append(rule)
+                        else:
+                            curr_rules = [rule]
+                            found_rule = True
+
+                    if rule.check_belongs([full_code]):
+                        if rule.title in double_within_degree_allowed:
+                            double_count_allowed_rules.append(rule)
+                        elif not found_rule:
+                            curr_rules.append(rule)
+                            if rule not in satisfied_rules:
+                                found_rule = True
+
+                fulfilled_rules.update(curr_rules + double_count_allowed_rules)
+
+        # for rule in fulfilled_rules:
+        #     print(rule)
         return fulfilled_rules
+    
 
-        # Here's some code I wrote that attempts to limit
 
-        # # List of rule titles that should be ignored in limiting double counting
-        # # WITHIN a degree. Basically, only allows double counting where legal.
-        # # ex. CIS-1200 is allowed to fulfill the Formal Reasoning and Analysis
-        # # rule as well as the Computation and Cognition rule within a Cognitive Science degree.
-        # # ex. CIS-1200 is prevented from fulfilling both the Computation
-        # # rule as well as the Computation and Cognition rule within a Cognitive Science degree.
-        # double_within_degree_allowed = [
-        #     "Sector 6: The Physical World",
-        #     "Sector 5: The Living World",
-        #     "Sector 4: Humanities and Social Sciences",
-        #     "Sector 3: Arts and Letters",
-        #     "Sector 2: History and Tradition",
-        #     "Sector 1: Society",
-        #     "Cultural Diversity in the U.S.",
-        #     "Cross Cultural Analysis",
-        #     "Formal Reasoning and Analysis",
-        #     "Quantitative Data Analysis",
-        #     "Foreign Language"
-        # ]
-
-        # fulfilled_rules = []
+        # bfs_queue = deque()
+        # rules = []
 
         # for degree in degree_plan.degrees.all():
-        #     bfs_queue = deque()
-        #     rules = []
-
         #     for rule_in_degree in degree.rules.all():
         #         bfs_queue.append(rule_in_degree)
 
-        #     while len(bfs_queue):
-        #         curr_rule = bfs_queue.pop()
-        #         # this is a leaf rule
-        #         if curr_rule.q:
-        #             rules.append(curr_rule)
-        #         else:  # parent rule
-        #             bfs_queue.extend(curr_rule.children.all())
+        # while len(bfs_queue):
+        #     curr_rule = bfs_queue.pop()
+        #     # this is a leaf rule
+        #     if curr_rule.q:
+        #         rules.append(curr_rule)
+        #     else:  # parent rule
+        #         bfs_queue.extend(curr_rule.children.all())
 
-        #     # TODO: Only add rules that are open ended
+        # # TODO: Only add rules that are open ended
+        # fulfilled_rules = []
+        # for rule in rules:
+        #     print(rule)
+        #     if rule.check_belongs([full_code]):
+        #         fulfilled_rules.append(rule)
 
-        #     curr_rules = []
-        #     double_count_allowed_rules = []
-        #     found_rule = False
-
-        #     # print(rules)
-
-        #     satified_rules = degree_plan.check_rules_already_satisfied(rules)
-        #     for rule in rules:
-
-        #         # If a rule explicitly lists the provided course as an option, that
-        #         # should be the only course we fulfill
-        #         if full_code in rule.q and rule not in satified_rules:
-        #             curr_rules = [rule]
-
-        #         if rule.check_belongs([full_code]):
-        #             if rule.title in double_within_degree_allowed:
-        #                 double_count_allowed_rules.append(rule)
-        #             elif not found_rule:
-        #                 curr_rules.append(rule)
-        #                 found_rule = True
-
-        #     fulfilled_rules += curr_rules + double_count_allowed_rules
-
-        # # for rule in fulfilled_rules:
-        #     # print(rule)
         # return fulfilled_rules
+

@@ -4,7 +4,7 @@ import { DarkBlueIcon } from '../Requirements/QObject';
 import React, { useContext, useEffect } from "react";
 import { useDrop } from "react-dnd";
 import { Course, DegreePlan, DnDCourse, DockedCourse, Fulfillment, User } from "@/types";
-import { ItemTypes } from "../dnd/constants";
+import { ItemTypes } from "./dnd/constants";
 import { SearchPanelContext } from '../Search/SearchPanel';
 import { useSWRCrud } from '@/hooks/swrcrud';
 import useSWR, { useSWRConfig } from 'swr';

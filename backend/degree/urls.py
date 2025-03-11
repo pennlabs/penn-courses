@@ -8,6 +8,7 @@ from degree.views import (
     DockedCourseViewset,
     FulfillmentViewSet,
     SatisfiedRuleList,
+    OnboardFromTranscript
 )
 
 
@@ -24,7 +25,12 @@ urlpatterns = [
     path("", include(router.urls)),
     path("", include(fulfillments_router.urls)),
     path(
-        "satisfied-rule-list/<slug:degree_plan_id>/<slug:full_code>",
+        "onboard-from-transcript/<slug:degree_plan_id>/<path:all_codes>",
+        OnboardFromTranscript.as_view(),
+        name="onboard-from-transcript" 
+         ),
+    path(
+        "satisfied-rule-list/<slug:degree_plan_id>/<slug:full_code>/<slug:rule_id>",
         SatisfiedRuleList.as_view(),
         name="satisfied-rule-list",
     ),

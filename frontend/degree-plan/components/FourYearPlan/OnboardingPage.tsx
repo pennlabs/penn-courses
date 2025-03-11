@@ -436,43 +436,61 @@ const OnboardingPage = ({
   // Will likely change in the future!
   useEffect(() => {
     if (degreeID && coursesToRules) {
-      console.log(degreeID)
+      let allCodes = "";
       for (let sem of scrapedCourses) {
-        let semCode = ""
-        if (sem.sem == "_TRAN") semCode = sem.sem
-        else {
-          semCode = sem.sem.match(/(\d+)/)[0];
-          if (sem.sem.includes("spring")) semCode += "A";
-          else if (sem.sem.includes("summer")) semCode += "B";
-          else semCode += "C";
-        }
-
-        for (let course of sem.courses) {
-          let code = course.replace(" ", "-").toUpperCase();
-
-          fetch(`/api/degree/satisfied-rule-list/${degreeID}/${code}`).then((r) => {
-            r.json().then((data) => {
-              const otherFulfilledRules = data.reduce((res: any, obj: any) => {
-                res.push(obj.id);
-                return res;
-              }, [])
-
-              createOrUpdate({ rules: otherFulfilledRules, semester: semCode }, code);
-            })
-          })
-
-          // // If rule exists for course code, add it. Else, add with no rule. 
-          // // TODO: Need support for more vague rules.
-          // if (Object.keys(coursesToRules).includes(code)) {
-          //   let rule = coursesToRules[code];
-          //   createOrUpdate({ rules: [rule], semester: semCode }, code);
-          // } else {
-          //   createOrUpdate({ semester: semCode }, code);
-          // }
+        if (sem.courses.length > 0) {
+          let semCode = ""
+          if (sem.sem == "_TRAN") semCode = "TRAN"
+          else {
+            semCode = sem.sem.match(/(\d+)/)[0];
+            if (sem.sem.includes("spring")) semCode += "A";
+            else if (sem.sem.includes("summer")) semCode += "B";
+            else semCode += "C";
+          }
+          allCodes += sem.courses.reduce((acc: String, course: String) => {
+            return acc + course.replace(" ", "-").toUpperCase() + "_" + semCode + ","
+          }, "")
         }
       }
 
-      setShowOnboardingModal(false);
+      allCodes = allCodes.slice(0, -1)
+      fetch(`/api/degree/onboard-from-transcript/${degreeID}/${allCodes}`).then((r) => {
+        console.log(r)
+
+        r.json().then((data) => {
+          console.log(data)
+          setShowOnboardingModal(false);
+        })
+      })
+
+      // for (let sem of scrapedCourses) {
+      //   let semCode = ""
+      //   if (sem.sem == "_TRAN") semCode = sem.sem
+      //   else {
+      //     semCode = sem.sem.match(/(\d+)/)[0];
+      //     if (sem.sem.includes("spring")) semCode += "A";
+      //     else if (sem.sem.includes("summer")) semCode += "B";
+      //     else semCode += "C";
+      //   }
+
+
+
+      //   for (let course of sem.courses) {
+      //     let code = course.replace(" ", "-").toUpperCase();
+
+      //     fetch(`/api/degree/satisfied-rule-list/${degreeID}/${code}/0`).then((r) => {
+      //       r.json().then((data) => {
+      //         const otherFulfilledRules = data.reduce((res: any, obj: any) => {
+      //           res.push(obj.id);
+      //           return res;
+      //         }, [])
+
+      //         createOrUpdate({ rules: otherFulfilledRules, semester: semCode }, code);
+      //       })
+      //     })
+      //   }
+      // }
+
       // location.reload();
     }
   }, [degreeID, coursesToRules]);
