@@ -439,22 +439,21 @@ export const schedule = (state = initialState, action) => {
                             },
                         },
                     };
-                } else {
-                    return {
-                        ...state,
-                        schedules: {
-                            ...state.schedules,
-                            [state.scheduleSelected]: {
-                                ...state.schedules[state.scheduleSelected],
-                                updated_at: Date.now(),
-                                pushedToBackend: false,
-                                breaks: state.schedules[
-                                    state.scheduleSelected
-                                ].breaks.filter((br) => br.name !== action.id),
-                            },
-                        },
-                    };
                 }
+                return {
+                    ...state,
+                    schedules: {
+                        ...state.schedules,
+                        [state.scheduleSelected]: {
+                            ...state.schedules[state.scheduleSelected],
+                            updated_at: Date.now(),
+                            pushedToBackend: false,
+                            breaks: state.schedules[
+                                state.scheduleSelected
+                            ].breaks.filter((br) => br.name !== action.id),
+                        },
+                    },
+                };
             }
             showToast("Cannot remove courses from a friend's schedule!", true);
 
