@@ -137,7 +137,6 @@ export default function Block(props: BlockProps) {
                             />
                         )}
                         {false && !coreqFulfilled && <CoreqWarning />}
-
                         <span>{id.replace(/-/g, " ")}</span>
                     </InnerBlock>
                 </VisibleBlock>

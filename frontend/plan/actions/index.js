@@ -110,8 +110,9 @@ export const addCartItem = (section) => ({
     section,
 });
 
-export const removeSchedItem = (id) => ({
+export const removeSchedItem = (id, type) => ({
     type: REMOVE_SCHED_ITEM,
+    itemType: type,
     id,
 });
 

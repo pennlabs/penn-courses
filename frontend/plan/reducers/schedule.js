@@ -185,6 +185,10 @@ const handleUpdateSchedulesOnFrontend = (state, schedulesFromBackend) => {
                                     color: getColor(section.id),
                                 })
                             ),
+                            breaks: scheduleFromBackend.breaks.map((br) => ({
+                                ...br,
+                                color: getColor(br.id),
+                            })),
                             id: scheduleFromBackend.id,
                             pushedToBackend: true,
                             updated_at: Date.now(),
@@ -420,6 +424,22 @@ export const schedule = (state = initialState, action) => {
 
         case REMOVE_SCHED_ITEM:
             if (!state.readOnly) {
+                if (action.itemType === "section") {
+                    return {
+                        ...state,
+                        schedules: {
+                            ...state.schedules,
+                            [state.scheduleSelected]: {
+                                ...state.schedules[state.scheduleSelected],
+                                updated_at: Date.now(),
+                                pushedToBackend: false,
+                                sections: state.schedules[
+                                    state.scheduleSelected
+                                ].sections.filter((m) => m.id !== action.id),
+                            },
+                        },
+                    };
+                }
                 return {
                     ...state,
                     schedules: {
@@ -428,9 +448,9 @@ export const schedule = (state = initialState, action) => {
                             ...state.schedules[state.scheduleSelected],
                             updated_at: Date.now(),
                             pushedToBackend: false,
-                            sections: state.schedules[
+                            breaks: state.schedules[
                                 state.scheduleSelected
-                            ].sections.filter((m) => m.id !== action.id),
+                            ].breaks.filter((br) => br.name !== action.id),
                         },
                     },
                 };
