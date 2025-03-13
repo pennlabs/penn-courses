@@ -98,6 +98,13 @@ export interface Section {
     associated_sections: Section[];
 }
 
+export interface Break {
+  id: string;
+  name: string;
+  color: Color;
+  meetings?: Meeting[];
+}
+
 export interface Alert {
     id: string;
     section: string;
@@ -122,6 +129,7 @@ export interface Meeting {
 // Represents a single colored block on the schedule
 export interface MeetingBlock {
     day: Day;
+    type: string;
     start: number;
     end: number;
     course: {
@@ -239,7 +247,7 @@ export type FilterType =
 
     export interface FriendshipState {
         activeFriend: User;
-        activeFriendSchedule: { found: boolean; sections: Section[] };
+        activeFriendSchedule: { found: boolean; sections: Section[], breaks: Break[] };
         acceptedFriends: User[];
         requestsReceived: Friendship[];
         requestsSent: Friendship[];
