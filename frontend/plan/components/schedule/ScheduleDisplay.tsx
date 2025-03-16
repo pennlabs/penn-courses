@@ -118,7 +118,6 @@ const ScheduleDisplay = ({
 }: ScheduleDisplayProps) => {
     // actual schedule elements are offset by the row/col offset since
     // days/times take up a row/col respectively.
-
     if (!schedData) {
         return (
             <ScheduleBox>
