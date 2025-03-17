@@ -61,6 +61,7 @@ const MapCourseItemcontainer = styled.div`
 
 interface MabTapProps {
     meetingsByDay: Record<Day, Meeting[]>;
+    isFriendSchedule: boolean;
     focusSection: (id: string) => void;
 }
 
@@ -70,9 +71,10 @@ const CartEmptyImage = styled.img`
 
 interface DayEmptyProps {
     day: Day;
+    isFriendSchedule: boolean;
 }
 
-const DayEmpty = ({ day }: DayEmptyProps) => (
+const DayEmpty = ({ day, isFriendSchedule }: DayEmptyProps) => (
     <div
         style={{
             fontSize: "0.8em",
@@ -86,17 +88,23 @@ const DayEmpty = ({ day }: DayEmptyProps) => (
                 marginBottom: "0.5rem",
             }}
         >
-            {`You don't have classes on ${
-                DAYS_TO_DAYSTRINGS[day as Weekdays]
-            }!`}
+            {`${
+                isFriendSchedule ? "Your friend doesn't" : "You don't"
+            } have classes on ${DAYS_TO_DAYSTRINGS[day as Weekdays]}!`}
         </h3>
-        Click a course section&apos;s + icon to add it to the schedule.
+        {!isFriendSchedule && (
+            <>Click a course section&apos;s + icon to add it to the schedule.</>
+        )}
         <br />
         <CartEmptyImage src="/icons/empty-state-cart.svg" alt="" />
     </div>
 );
 
-function MapTab({ meetingsByDay, focusSection }: MabTapProps) {
+function MapTab({
+    meetingsByDay,
+    isFriendSchedule,
+    focusSection,
+}: MabTapProps) {
     const [selectedDay, setSelectedDay] = useState<Day>(Weekdays.M);
     const meeetingsForDay = meetingsByDay[selectedDay];
 
@@ -107,7 +115,10 @@ function MapTab({ meetingsByDay, focusSection }: MabTapProps) {
                 setSelectedDay={setSelectedDay}
             />
             {meeetingsForDay.length === 0 ? (
-                <DayEmpty day={selectedDay} />
+                <DayEmpty
+                    day={selectedDay}
+                    isFriendSchedule={isFriendSchedule}
+                />
             ) : (
                 <>
                     <MapContainer>
@@ -175,7 +186,9 @@ function getMeetingsByDay(schedules: any, scheduleSelected: any) {
         U: [],
     };
 
-    const sections = schedules[scheduleSelected].sections;
+    const sections = scheduleSelected
+        ? schedules[scheduleSelected].sections
+        : schedules.sections;
 
     sections.forEach((section: Section) => {
         const inCart =
@@ -185,7 +198,7 @@ function getMeetingsByDay(schedules: any, scheduleSelected: any) {
                 section
             );
 
-        if (inCart) {
+        if (inCart || scheduleSelected == null) {
             section.meetings?.forEach((meeting: Meeting) => {
                 const day = meeting.day;
                 meetingsByDay[day as Day].push({
@@ -225,19 +238,25 @@ function getMeetingsByDay(schedules: any, scheduleSelected: any) {
 
 const mapStateToProps = ({
     schedule: { schedules, scheduleSelected },
-}: any) => ({
-    meetingsByDay: schedules[scheduleSelected]
-        ? getMeetingsByDay(schedules, scheduleSelected)
-        : {
-              M: [],
-              T: [],
-              W: [],
-              R: [],
-              F: [],
-              S: [],
-              U: [],
-          },
-});
+    friendships: { activeFriendSchedule },
+}: any) => {
+    return {
+        meetingsByDay: activeFriendSchedule
+            ? getMeetingsByDay(activeFriendSchedule, null)
+            : schedules[scheduleSelected]
+            ? getMeetingsByDay(schedules, scheduleSelected)
+            : {
+                  M: [],
+                  T: [],
+                  W: [],
+                  R: [],
+                  F: [],
+                  S: [],
+                  U: [],
+              },
+        isFriendSchedule: activeFriendSchedule != null,
+    };
+};
 
 const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
     focusSection: (id: string) => dispatch(fetchCourseDetails(id)),

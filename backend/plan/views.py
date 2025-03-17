@@ -204,6 +204,11 @@ class PrimaryScheduleViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = PrimaryScheduleSerializer
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({"include_location": True})
+        return context
+
     def get_queryset(self):
         return PrimarySchedule.objects.filter(
             Q(user=self.request.user)
