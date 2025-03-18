@@ -22,6 +22,7 @@ import Selector from "../components/selector/Selector";
 import Footer from "../components/footer";
 import Cart from "../components/Cart";
 import Alerts from "../components/alert/Alerts";
+import SolverTab from "../components/solver/SolverTab";
 import MapTab from "../components/map/MapTab";
 import ModalContainer from "../components/modals/generic_modal_container";
 import SearchSortDropdown from "../components/search/SearchSortDropdown";
@@ -127,12 +128,14 @@ enum TabItem {
     Cart = "cart-tab",
     Alerts = "alerts-tab",
     Map = "map-tab",
+    Solver = "solver-tab",
 }
 
 const tabItems = [
     { item: TabItem.Cart, name: "Cart", component: Cart },
     { item: TabItem.Alerts, name: "Alerts", component: Alerts },
     { item: TabItem.Map, name: "Map", component: MapTab },
+    { item: TabItem.Solver, name: "Solver", component: SolverTab },
 ];
 
 function Index() {
@@ -168,6 +171,8 @@ function Index() {
                 ? TabItem.Map
                 : router.asPath.split("#")[1] === TabItem.Alerts
                 ? TabItem.Alerts
+                : router.asPath.split("#")[1] === TabItem.Solver
+                ? TabItem.Solver
                 : TabItem.Cart
         );
     }, []);
@@ -306,6 +311,11 @@ function Index() {
                                 className="topTab"
                                 label="Schedule"
                                 onClick={() => setTab(2)}
+                            />
+                            <Tab
+                                className="topTab"
+                                label="Solver"
+                                onClick={() => setTab(3)}
                             />
                         </CustomTabs>
                         <SwipeableViews
