@@ -135,7 +135,7 @@ const tabItems = [
     { item: TabItem.Cart, name: "Cart", component: Cart },
     { item: TabItem.Alerts, name: "Alerts", component: Alerts },
     { item: TabItem.Map, name: "Map", component: MapTab },
-    { item: TabItem.Solver, name: "Solver", component: SolverTab },
+    { item: TabItem.Solver, name: "Breaks", component: SolverTab },
 ];
 
 function Index() {

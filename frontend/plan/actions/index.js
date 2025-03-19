@@ -71,6 +71,8 @@ export const SET_STATE_READ_ONLY = "SET_STATE_READ_ONLY";
 export const SET_PRIMARY_SCHEDULE_ID_ON_FRONTEND =
     "SET_PRIMARY_SCHEDULE_ID_ON_FRONTEND";
 
+export const ADD_BREAK_ITEM = "ADD_BREAK_ITEM";
+
 export const doAPIRequest = (path, options = {}) =>
     fetch(`/api${path}`, options);
 
@@ -182,6 +184,11 @@ export const clearSchedule = () => ({
 export const setPrimaryScheduleIdOnFrontend = (scheduleId) => ({
     scheduleId,
     type: SET_PRIMARY_SCHEDULE_ID_ON_FRONTEND,
+});
+
+export const addBreakItem = (newBreak) => ({
+    type: ADD_BREAK_ITEM,
+    newBreak,
 });
 
 export const checkForDefaultSchedules = (schedulesFromBackend) => (

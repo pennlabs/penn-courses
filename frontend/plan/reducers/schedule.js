@@ -17,6 +17,7 @@ import {
     REMOVE_SCHED_ITEM,
     ADD_CART_ITEM,
     REMOVE_CART_ITEM,
+    ADD_BREAK_ITEM,
 } from "../actions";
 import { scheduleContainsSection } from "../components/meetUtil";
 import { showToast } from "../pages";
@@ -461,6 +462,29 @@ export const schedule = (state = initialState, action) => {
             return {
                 ...state,
             };
+
+        case ADD_BREAK_ITEM:
+            if (!state.readOnly) {
+                console.log(action);
+                return {
+                    ...state,
+                    schedules: {
+                        ...state.schedules,
+                        [state.scheduleSelected]: {
+                            ...state.schedules[state.scheduleSelected],
+                            updated_at: Date.now(),
+                            pushedToBackend: false,
+                            breaks: [
+                                ...state.schedules[state.scheduleSelected]
+                                    .breaks,
+                                action.newBreak,
+                            ],
+                        },
+                    },
+                };
+            }
+            showToast("Cannot add breaks to a friend's schedule!", true);
+            return { ...state };
 
         case ADD_CART_ITEM:
             return {

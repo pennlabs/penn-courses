@@ -1,10 +1,9 @@
 import React, { FunctionComponent } from "react";
-import { connect } from "react-redux";
+import { connect, useSelector } from "react-redux";
 import { ThunkDispatch } from "redux-thunk";
 import styled from "styled-components";
-import { fetchCourseDetails, openModal } from "../../actions";
-import { Section as SectionType, Break as BreakType } from "../../types";
-// import AlertSection from "./AlertSection";
+import { addBreakItem, fetchCourseDetails, openModal } from "../../actions";
+import { Section as SectionType, Break as BreakType, Schedule, Color } from "../../types";
 
 const Box = styled.section<{ length: number }>`
     height: calc(100vh - 9em - 3em);
@@ -38,49 +37,89 @@ const Box = styled.section<{ length: number }>`
 `;
 
 interface SolverProps {
-
+    contactInfo: { email: string; phone: string };
+    manageBreaks?: {
+        add: () => void;
+    };
+    mobileView: boolean;
 }
 
 const CartEmptyImage = styled.img`
     max-width: min(60%, 40vw);
 `;
 
+const BreakEmpty = () => (
+    <div
+        style={{
+            fontSize: "0.8em",
+            textAlign: "center",
+            marginTop: "5vh",
+        }}
+    >
+        <h3
+            style={{
+                fontWeight: "bold",
+                marginBottom: "0.5rem",
+            }}
+        >
+            You have no breaks!
+        </h3>
+        Click an icon to sign up for breaks.
+        <br />
+        <CartEmptyImage src="/icons/empty-state-cart.svg" alt="" />
+    </div>
+);
+
+
 const Solver: React.FC<SolverProps> = ({
-  
+    manageBreaks,
+    mobileView,
 }) => {
     return(
-        <Box length={1} id="solver">
-            what's up!
+        <Box length={1} id="breaks">
+            {/* <DayTimeSelector
+                // @ts-ignore
+                filterData={filterData}
+                updateCheckboxFilter={updateCheckboxFilter}
+                checkboxProperty="days"
+                // @ts-ignore
+                startSearch={conditionalStartSearch}
+                minRange={1.5}
+                maxRange={17}
+                step={1 / 60}
+                updateRangeFilter={updateRangeFilter("time")}
+                rangeProperty="time"
+            /> */}
+            <button onClick={manageBreaks?.add}>Add Break</button>
         </Box>
-
     );
 };
 
 const mapStateToProps = ({
-    alerts: { alertedCourses, contactInfo },
-    sections: { courseInfoLoading }
 }: any) => ({
-    courseInfoLoading,
-    alertedCourses,
-    contactInfo,
 });
 
 const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
-    manageAlerts: (sectionId: string) => ({
-        // add: () => {
-        //     const alertId = alerts.find((a: AlertType) => a.section === sectionId)?.id;
-        //     dispatch(openModal("ALERT_FORM", { sectionId: sectionId, alertId: alertId }, "Sign up for Alerts"))
-        // },
-        // remove: () => {
-        //     const alertId = alerts.find((a: AlertType) => a.section === sectionId)?.id;
-        //     dispatch(deactivateAlertItem(sectionId, alertId));
-        // },
-        // delete: () => {
-        //     const alertId = alerts.find((a: AlertType) => a.section === sectionId)?.id;
-        //     dispatch(deleteAlertItem(sectionId, alertId));
-        // }
-    }),
-    courseInfo: (sectionId: string) => dispatch(fetchCourseDetails(sectionId)),
+    manageBreaks: {
+        add: () => {
+            const newBreak = {
+                name: "My Break",
+                color: Color.RED,
+                // location_string: "Library",
+                meetings: [{
+                    day: "M",
+                    color: "#D0021B",
+                    start: 10.15,
+                    end: 11.44,
+                    room: "DRL",
+                    latitude: 10,
+                    longitude: 10,
+                    overlap: false,
+                }],
+            }
+            dispatch(addBreakItem(newBreak));
+        },
+    },
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(Solver);
