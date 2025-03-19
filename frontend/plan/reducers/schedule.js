@@ -363,6 +363,7 @@ export const schedule = (state = initialState, action) => {
                     ...state.schedules,
                     [action.scheduleName]: {
                         sections: action.scheduleSections,
+                        breaks: action.scheduleBreaks,
                         id: action.scheduleId,
                         pushedToBackend: true,
                         updated_at: Date.now(),

@@ -152,12 +152,14 @@ export const updateScrollPos = (scrollPos = 0) => ({
 export const createScheduleOnFrontend = (
     scheduleName,
     scheduleId,
-    scheduleSections
+    scheduleSections,
+    scheduleBreaks
 ) => ({
     type: CREATE_SCHEDULE_ON_FRONTEND,
     scheduleName,
     scheduleId,
     scheduleSections,
+    scheduleBreaks,
 });
 
 export const clearAllScheduleData = () => ({ type: CLEAR_ALL_SCHEDULE_DATA });
@@ -631,6 +633,7 @@ export const updateScheduleOnBackend = (name, schedule) => (dispatch) => {
         ...schedule,
         name,
         sections: schedule.sections,
+        breaks: schedule.breaks,
     };
     doAPIRequest(`/plan/schedules/${schedule.id}/`, {
         method: "PUT",
@@ -679,10 +682,13 @@ export function fetchSectionInfo(searchData) {
  * @param sections The list of sections for the schedule
  * @returns {Function}
  */
-export const createScheduleOnBackend = (name, sections = []) => (dispatch) => {
+export const createScheduleOnBackend = (name, sections = [], breaks = []) => (
+    dispatch
+) => {
     const scheduleObj = {
         name,
         sections,
+        breaks,
     };
     doAPIRequest("/plan/schedules/", {
         method: "POST",
@@ -697,7 +703,7 @@ export const createScheduleOnBackend = (name, sections = []) => (dispatch) => {
     })
         .then((response) => response.json())
         .then(({ id }) => {
-            dispatch(createScheduleOnFrontend(name, id, sections));
+            dispatch(createScheduleOnFrontend(name, id, sections, breaks));
         })
         .catch((error) => console.log(error));
 };

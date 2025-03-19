@@ -3,7 +3,7 @@ import { connect } from "react-redux";
 import { ThunkDispatch } from "redux-thunk";
 import styled from "styled-components";
 import { fetchCourseDetails, openModal } from "../../actions";
-// import { Section as SectionType, Alert as AlertType } from "../../types";
+import { Section as SectionType, Break as BreakType } from "../../types";
 // import AlertSection from "./AlertSection";
 
 const Box = styled.section<{ length: number }>`
