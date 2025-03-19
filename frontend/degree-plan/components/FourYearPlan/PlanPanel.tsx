@@ -50,13 +50,10 @@ const PlanPanel = ({
     currentSemester,
 } : PlanPanelProps) => {
     
+
     const { copy: copyDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans');
     const [showStats, setShowStats] = useState(true);
     const [editMode, setEditMode] = useState(false);
-    
-    useEffect(() => {
-        console.log(editMode)
-    }, [editMode])
 
     return (
             <PanelContainer>
@@ -70,7 +67,7 @@ const PlanPanel = ({
                         mutators={{
                             copy: (item: DegreePlan) => {
                                 (copyDegreeplan({...item, name: `${item.name} (copy)`}, item.id) as Promise<any>)
-                                .then((copied) => copied && setActiveDegreeplan(copied.id))
+                                .then((copied) => copied && setActiveDegreeplan(copied))
                             },
                             remove: (item: DegreePlan) => {
                                 setModalKey("plan-remove")

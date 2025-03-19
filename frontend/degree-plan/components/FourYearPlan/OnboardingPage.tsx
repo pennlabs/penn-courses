@@ -452,46 +452,17 @@ const OnboardingPage = ({
           }, "")
         }
       }
-
-      allCodes = allCodes.slice(0, -1)
-      fetch(`/api/degree/onboard-from-transcript/${degreeID}/${allCodes}`).then((r) => {
-        console.log(r)
-
-        r.json().then((data) => {
-          console.log(data)
-          setShowOnboardingModal(false);
+      
+      if (allCodes == "") {
+        setShowOnboardingModal(false);
+      } else {
+        allCodes = allCodes.slice(0, -1)
+        fetch(`/api/degree/onboard-from-transcript/${degreeID}/${allCodes}`).then((r) => {
+          r.json().then((data) => {
+            setShowOnboardingModal(false);
+          })
         })
-      })
-
-      // for (let sem of scrapedCourses) {
-      //   let semCode = ""
-      //   if (sem.sem == "_TRAN") semCode = sem.sem
-      //   else {
-      //     semCode = sem.sem.match(/(\d+)/)[0];
-      //     if (sem.sem.includes("spring")) semCode += "A";
-      //     else if (sem.sem.includes("summer")) semCode += "B";
-      //     else semCode += "C";
-      //   }
-
-
-
-      //   for (let course of sem.courses) {
-      //     let code = course.replace(" ", "-").toUpperCase();
-
-      //     fetch(`/api/degree/satisfied-rule-list/${degreeID}/${code}/0`).then((r) => {
-      //       r.json().then((data) => {
-      //         const otherFulfilledRules = data.reduce((res: any, obj: any) => {
-      //           res.push(obj.id);
-      //           return res;
-      //         }, [])
-
-      //         createOrUpdate({ rules: otherFulfilledRules, semester: semCode }, code);
-      //       })
-      //     })
-      //   }
-      // }
-
-      // location.reload();
+      }
     }
   }, [degreeID, coursesToRules]);
 
@@ -1069,8 +1040,6 @@ const OnboardingPage = ({
                         components={{ MultiValueRemove: () => null }}
                         options={semCourses}
                         value={semCourses}
-                        // onChange={(selectedOptions) => console.log(selectedOptions)}
-                        // isClearable
                         isMulti
                         placeholder="Courses"
                         styles={customSelectStylesCourses}

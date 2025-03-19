@@ -397,10 +397,21 @@ class DegreePlan(models.Model):
             new_degree_plan.degrees.add(degree)
 
         # this also handles updating satisfaction statuses
+
+
         for fulfillment in self.fulfillments.all():
+            for field in fulfillment._meta.fields:
+                    print(getattr(fulfillment, field.name))
+
+            rules = fulfillment.rules.all()
+            unselected_rules = fulfillment.unselected_rules.all()
+
             fulfillment.pk = None
             fulfillment.degree_plan = new_degree_plan
             fulfillment.save()
+            fulfillment.rules.set(rules)
+            fulfillment.unselected_rules.set(unselected_rules)
+            
 
         return new_degree_plan
 
@@ -440,6 +451,18 @@ class Fulfillment(models.Model):
             """
             The rules this course fulfills. Blank if this course does not apply
             to any rules.
+            """
+        ),
+    )
+    unselected_rules = models.ManyToManyField(
+        Rule,
+        related_name="selected",
+        blank=True,
+        help_text=dedent(
+            """
+            The rules this course fulfills that should be shown in the open-ended rule box 
+            (as opposed to the expandable box). Blank if this course should not be included in
+            any open-ended rule boxes.
             """
         ),
     )

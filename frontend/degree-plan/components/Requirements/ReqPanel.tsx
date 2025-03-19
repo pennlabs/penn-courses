@@ -134,6 +134,7 @@ interface RuleTreeLeaf extends RuleTreeBaseNode {
   cus: number;
   num: number;
   fulfillments: Fulfillment[]; // The fulfillments for the rule
+  unselectedFulfillments: Fulfillment[]
 }
 interface RuleTreeInternalNode extends RuleTreeBaseNode {
   type: "INTERNAL_NODE";
@@ -146,25 +147,27 @@ export type RuleTree = RuleTreeLeaf | RuleTreeInternalNode;
 interface RuleProps {
   rule: Rule;
   rulesToFulfillments: { [ruleId: string]: Fulfillment[] };
+  rulesToUnselectedFulfillments: { [ruleId: string]: Fulfillment[] };
   activeDegreePlanId: number;
   degree: DegreeD;
 }
 
-const computeRuleTree = ({activeDegreePlanId, rule, rulesToFulfillments, degree }: RuleProps): RuleTree => {
+const computeRuleTree = ({activeDegreePlanId, rule, rulesToFulfillments, rulesToUnselectedFulfillments, degree }: RuleProps): RuleTree => {
   if (rule.q) { // Rule leaf
     const fulfillmentsForRule: Fulfillment[] = rulesToFulfillments[rule.id] || [];
+    const unselectedFulfillmentsForRule: Fulfillment[] = rulesToUnselectedFulfillments[rule.id] || [];
     const cus = fulfillmentsForRule.reduce((acc, f) => acc + (f.course?.credits || 1), 0); // default to 1 cu 
     const num = fulfillmentsForRule.length;
     const progress = Math.min(rule.credits ? cus / rule.credits : 1, rule.num ? num / rule.num : 1);
-    return { activeDegreePlanId, type: "LEAF", progress, cus, num, rule, fulfillments: fulfillmentsForRule }
+    return { activeDegreePlanId, type: "LEAF", progress, cus, num, rule, fulfillments: fulfillmentsForRule, unselectedFulfillments: unselectedFulfillmentsForRule }
   }
-  const children = rule.rules.map((child) => computeRuleTree({ activeDegreePlanId, rule: child, rulesToFulfillments, degree }))
+  const children = rule.rules.map((child) => computeRuleTree({ activeDegreePlanId, rule: child, rulesToFulfillments, rulesToUnselectedFulfillments, degree }))
   const progress = children.reduce((acc, { progress }) => (progress == 1 ? 1 : 0) + acc, 0) / Math.min(children.length, rule.num || Infinity);
   return { num: rule.num || undefined, activeDegreePlanId, type: "INTERNAL_NODE", children, progress, rule } // internal node
 }
 
 
-const Degree = ({ allRuleLeaves, degree, rulesToFulfillments, activeDegreeplan, editMode, setModalKey, setModalObject, isLoading }: any) => {
+const Degree = ({ allRuleLeaves, degree, rulesToFulfillments, rulesToUnselectedFulfillments, activeDegreeplan, editMode, setModalKey, setModalObject, isLoading }: any) => {
   const [collapsed, setCollapsed] = useState(false);
   if (isLoading) {
     return (
@@ -214,12 +217,12 @@ const Degree = ({ allRuleLeaves, degree, rulesToFulfillments, activeDegreeplan, 
         editMode={editMode}
         skeleton={false}
       />
-      {!collapsed && !editMode &&
+      {!collapsed && !editMode && 
         <DegreeBody>
           {degree && degree.rules.map((rule: any) => {
             return (
             <RuleComponent
-              {...computeRuleTree({activeDegreePlanId: activeDegreeplan.id, rule, rulesToFulfillments, degree })}
+              {...computeRuleTree({activeDegreePlanId: activeDegreeplan.id, rule, rulesToFulfillments, rulesToUnselectedFulfillments, degree })}
             />
           )}
           )}
@@ -259,45 +262,21 @@ const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: 
   }, [fulfillments, isLoadingFulfillments])
 
 
-  // React.useEffect(() => {
-  //   if (!isLoadingDegrees && activeDegreeplan) {
-  //     let allRuleLeaves: any = [];
-
-  //     // Finds duplicate rule leaves
-  //     // const findDuplicateRules = (rule: any): void => {
-  //     //   if (rule.q) { 
-  //     //     if (rule.title in duplicates) {
-  //     //       duplicates[rule.title] = [...duplicates[rule.title], rule];
-  //     //     } else {
-  //     //       duplicates[rule.title] = [rule];
-  //     //     }
-  //     //   }
-  //     //   else {
-  //     //     rule.rules.map((child: any) => findDuplicateRules(child))
-  //     //   }
-  //     // }
-
-  //     const findDuplicateRules = (rule: any): void => {
-  //       if (rule.q) { 
-  //         allRuleLeaves.push(rule.id);
-  //       }
-  //       else {
-  //         rule.rules.map((child: any) => findDuplicateRules(child))
-  //       }
-  //     }
-
-
-  //     activeDegreeplanDetail?.degrees.map((degree) => {
-  //       degree.rules.map((rule) => {
-  //         findDuplicateRules(rule);
-  //       })
-  //     })
-
-  //     setAllRuleLeaves(allRuleLeaves);
-  //   }
-
-  // }, [isLoadingDegrees, activeDegreeplan])
-
+  const rulesToUnselectedFulfillments = useMemo(() => {
+    if (isLoadingFulfillments || !fulfillments) return {};
+    const rulesToCourses: { [rule: string]: Fulfillment[] } = {};
+    fulfillments.forEach(fulfillment => {
+      if (fulfillment.unselected_rules) {
+        fulfillment.unselected_rules.forEach(rule => {
+          if (!(rule in rulesToCourses)) {
+            rulesToCourses[rule] = [];
+          }
+          rulesToCourses[rule].push(fulfillment);
+        });
+      }
+    });
+    return rulesToCourses;
+  }, [fulfillments, isLoadingFulfillments])
 
   return (
     <PanelContainer>
@@ -317,6 +296,7 @@ const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: 
                   allRuleLeaves={allRuleLeaves}
                   degree={degree}
                   rulesToFulfillments={rulesToFulfillments}
+                  rulesToUnselectedFulfillments={rulesToUnselectedFulfillments}
                   activeDegreeplan={activeDegreeplan}
                   editMode={editMode}
                   setModalKey={setModalKey}

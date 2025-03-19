@@ -3,7 +3,7 @@ import styled from "@emotion/styled";
 import { Icon } from "../common/bulma_derived_components";
 import { Course, DegreePlan, Fulfillment } from "@/types";
 import useSWR from "swr";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import Select from "react-select";
 import { ModalKey } from "./DegreeModal";
 import ToastContext from "../Toast/Toast";
@@ -214,8 +214,6 @@ const Semesters = ({
   );
   // semesters is state mostly derived from fulfillments
 
-  const showToast = useContext(ToastContext);
-
   const getDefaultSemesters = React.useCallback(() => {
     const startingYear = currentSemester ? Number(currentSemester.substring(0, 4)) : new Date().getFullYear(); // Use current semester as default starting semester
     return interpolateSemesters(startingYear, startingYear + 4);
@@ -228,7 +226,12 @@ const Semesters = ({
     if (!semesters[semester]) setSemesters({ ...semesters, [semester]: [] });
   };
 
+  const numUpdates = React.useRef<number>(-1);
+  const currNumUpdates = React.useRef<number>(0);
+
   const removeSemester = (semester: string) => {
+    numUpdates.current = semesters[semester].length
+
     if (semesters[semester]) {
       var newSems: { [semester: string]: Fulfillment[] } = {};
       for (var sem in semesters) {
@@ -255,12 +258,24 @@ const Semesters = ({
     }
   }, [activeDegreeplan, currentSemester]);
 
+  // TODO: Bug where edit mode would always be set to true. When initializing, semesters updates multiple times,
+  // so we can't be sure that we actually have no courses and should enter edit mode. 
+  // I made a quick fix: it seems like semesters updates 5-6 times when initializing, so I just have it wait until
+  // then to set edit mode to true if necessary. There is likely a better way to do this.
+  const updateCounter = useRef(0);
+
   /** Update semesters to local storage */
   useEffect(() => {
-    console.log(semesters)
-    if (Object.keys(semesters).length == 0 && !isLoading) setEditMode(true);
+    updateCounter.current = updateCounter.current + 1;
+
+    if (Object.keys(semesters).length == 0 && !isLoading && updateCounter.current >= 5) {
+      setEditMode(true);
+    } 
+
     // if finish loading and no semesters, we go to edit mode for the user to add new semesters
     if (!activeDegreeplan) return;
+
+    // && Object.keys(semesters).length
     if (typeof window !== "undefined" && Object.keys(semesters).length) {
       localStorage.setItem(
         getLocalSemestersKey(activeDegreeplan.id),
@@ -272,20 +287,25 @@ const Semesters = ({
   /** Parse fulfillments and group them by semesters */
   useEffect(() => {
     if (!activeDegreeplan || !fulfillments || isLoadingFulfillments) return; // TODO: need more logic in this case
-    setSemesters((currentSemesters) => {
-      const semesters = {} as { [semester: string]: Fulfillment[] };
-      Object.keys(currentSemesters).forEach((semester) => {
-        semesters[semester] = [];
+    currNumUpdates.current = currNumUpdates.current + 1;
+    if (currNumUpdates.current >= numUpdates.current) {
+      setSemesters((currentSemesters) => {
+        const semesters = {} as { [semester: string]: Fulfillment[] };
+        Object.keys(currentSemesters).forEach((semester) => {
+          semesters[semester] = [];
+        });
+        fulfillments.forEach((fulfillment) => {
+          if (!fulfillment.semester) return;
+          if (!semesters[fulfillment.semester]) {
+            semesters[fulfillment.semester] = [];
+          }
+          semesters[fulfillment.semester].push(fulfillment);
+        });
+        currNumUpdates.current = 0;
+        numUpdates.current = -1;
+        return semesters;
       });
-      fulfillments.forEach((fulfillment) => {
-        if (!fulfillment.semester) return;
-        if (!semesters[fulfillment.semester]) {
-          semesters[fulfillment.semester] = [];
-        }
-        semesters[fulfillment.semester].push(fulfillment);
-      });
-      return semesters;
-    });
+    } 
   }, [fulfillments, activeDegreeplan, isLoadingFulfillments]);
 
   return (
@@ -308,6 +328,7 @@ const Semesters = ({
                 setModalKey={setModalKey}
                 setModalObject={setModalObject}
                 currentSemester={currentSemester}
+                numSemesters={Object.keys(semesters).length}
               />
             ))}
       {editMode && (

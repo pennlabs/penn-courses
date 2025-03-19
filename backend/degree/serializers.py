@@ -121,20 +121,27 @@ class FulfillmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Fulfillment
-        fields = ["id", "degree_plan", "full_code", "course", "semester", "rules"]
+        fields = ["id", "degree_plan", "full_code", "course", "semester", "rules", "unselected_rules"]
 
     def validate(self, data):
         data = super().validate(data)
         rules = data.get("rules")  # for patch requests without a rules field
+        unselected_rules = data.get("unselected_rules")
         full_code = data.get("full_code")
         degree_plan = data.get("degree_plan")
 
-        if rules is None and full_code is None and degree_plan is None:
+        if rules is None and unselected_rules is None and full_code is None and degree_plan is None:
             return data  # Nothing to validate
         if rules is None and self.instance is not None:
             rules = self.instance.rules.all()
         elif rules is None:
             rules = []
+
+        if unselected_rules is None and self.instance is not None:
+            unselected_rules = self.instance.unselected_rules.all()
+        elif unselected_rules is None:
+            unselected_rules = []
+            
         if full_code is None:
             full_code = self.instance.full_code
         if degree_plan is None:

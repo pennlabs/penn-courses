@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
 import RuleLeaf, { SkeletonRuleLeaf } from './QObject';
 import { Course, DnDCourse, Fulfillment, Rule } from '@/types';
 import styled from '@emotion/styled';
@@ -10,6 +10,7 @@ import { DarkBlueBackgroundSkeleton } from "../FourYearPlan/PanelCommon";
 import { DegreeYear, RuleTree } from './ReqPanel';
 import assert from 'assert';
 import SatisfiedCheck from '../FourYearPlan/SatisfiedCheck';
+import { ExpandedCoursesPanelContext } from '../FourYearPlan/ExpandedCoursesPanel';
 
 const RuleTitleWrapper = styled.div`
     background-color: var(--primary-color);
@@ -17,7 +18,7 @@ const RuleTitleWrapper = styled.div`
     border-radius: var(--req-item-radius);
 `
 
-const ProgressBar = styled.div<{$progress: number}>`
+const ProgressBar = styled.div<{ $progress: number }>`
     width: ${props => props.$progress * 100}%;
     height: 100%;
     position: absolute;
@@ -39,7 +40,7 @@ const RuleTitle = styled.div`
   margin-bottom: 0.5rem;
 `
 
-const RuleLeafWrapper = styled.div<{$isDroppable:boolean, $isOver: boolean}>`
+const RuleLeafWrapper = styled.div<{ $isDroppable: boolean, $isOver: boolean }>`
   padding: .5rem .5rem .5rem 0rem;
   margin-left: 0;
   display: flex;
@@ -113,16 +114,16 @@ export const SkeletonRule: React.FC<React.PropsWithChildren> = ({ children }) =>
   <>
     {!children ?
       <RuleLeafWrapper $isDroppable={false} $isOver={false}>
-          <SkeletonRuleLeaf />
-          <div>
-            <CusCourses>
-              <Row>
-                <DarkBlueBackgroundSkeleton width="1em" />
-                <span>/</span>
-                <DarkBlueBackgroundSkeleton width="2em" />
-              </Row>
-            </CusCourses>
-          </div>
+        <SkeletonRuleLeaf />
+        <div>
+          <CusCourses>
+            <Row>
+              <DarkBlueBackgroundSkeleton width="1em" />
+              <span>/</span>
+              <DarkBlueBackgroundSkeleton width="2em" />
+            </Row>
+          </CusCourses>
+        </div>
       </RuleLeafWrapper>
       :
       <RuleTitleWrapper>
@@ -132,12 +133,12 @@ export const SkeletonRule: React.FC<React.PropsWithChildren> = ({ children }) =>
             <DarkBlueBackgroundSkeleton width="10em" />
             <DarkBlueBackgroundSkeleton width="7em" />
           </Row>
-            <Icon>
-              <i className="fas fa-chevron-down" />
-            </Icon>
+          <Icon>
+            <i className="fas fa-chevron-down" />
+          </Icon>
         </RuleTitle>
       </RuleTitleWrapper>
-      }
+    }
     <div className="ms-3">
       {children}
     </div>
@@ -147,106 +148,136 @@ export const SkeletonRule: React.FC<React.PropsWithChildren> = ({ children }) =>
 /**
  * Recursive component to represent a rule.
  */
-const RuleComponent = (ruleTree : RuleTree) => {
-    const { type, activeDegreePlanId, rule, progress } = ruleTree; 
-    const satisfied = progress === 1;
+const RuleComponent = (ruleTree: RuleTree) => {
+  const { set_courses, courses } = useContext(ExpandedCoursesPanelContext);
+  const { type, activeDegreePlanId, rule, progress } = ruleTree;
+  const satisfied = progress === 1;
 
-    // state for INTERNAL_NODEs
-    const [collapsed, setCollapsed] = useState(false);
+  // state for INTERNAL_NODEs
+  const [collapsed, setCollapsed] = useState(false);
 
-    // hooks for LEAFs
-    const { createOrUpdate } = useSWRCrud<Fulfillment>(
-        `/api/degree/degreeplans/${activeDegreePlanId}/fulfillments`,
-        { idKey: "full_code",
-        createDefaultOptimisticData: { semester: null, rules: [] }
+  // hooks for LEAFs
+  const { createOrUpdate } = useSWRCrud<Fulfillment>(
+    `/api/degree/degreeplans/${activeDegreePlanId}/fulfillments`,
+    {
+      idKey: "full_code",
+      createDefaultOptimisticData: { semester: null, rules: [] }
     });
 
-    const [{ isOver, canDrop }, drop] = useDrop<DnDCourse, never, { isOver: boolean, canDrop: boolean }>({
-        accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_DOCK], 
-        drop: (course: DnDCourse) => {
-          createOrUpdate({ rules: course.rules !== undefined ? [...course.rules, rule.id] : [rule.id] }, course.full_code);
-          return undefined;
-        }, // TODO: this doesn't handle fulfillments that already have a rule
-        canDrop: () => { return !satisfied && !!rule.q },
-        collect: monitor => ({
-          isOver: !!monitor.isOver() && !satisfied,
+  const [{ isOver, canDrop }, drop] = useDrop<DnDCourse, never, { isOver: boolean, canDrop: boolean }>({
+    accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_DOCK, ItemTypes.COURSE_IN_EXPAND],
+    drop: (course: DnDCourse, monitor) => {
+      if (monitor.getItemType() === ItemTypes.COURSE_IN_EXPAND) {
+        course.unselected_rules?.splice(course.unselected_rules?.indexOf(rule.id), 1)
+
+        createOrUpdate({ rules: course.rules !== undefined ? [...course.rules, rule.id] : [rule.id], unselected_rules: course.unselected_rules !== undefined ? course.unselected_rules : [] }, course.full_code);
+
+        let new_courses = courses?.filter((fulfillment) => {
+          if (fulfillment.full_code !== course.full_code) {
+            return fulfillment
+          }
+        })
+
+        set_courses(new_courses)
+      } else {
+        createOrUpdate({ rules: course.rules !== undefined ? [...course.rules, rule.id] : [rule.id] }, course.full_code);
+      }
+      return undefined;
+    }, // TODO: this doesn't handle fulfillments that already have a rule
+    canDrop: (course: DnDCourse, monitor) => {
+      if (monitor.getItemType() === ItemTypes.COURSE_IN_EXPAND) {
+        return rule.id === course.rule_id
+      } else {
+        return !!rule.q
+      }
+    },
+    collect: monitor => {
+      if (monitor.getItemType() === ItemTypes.COURSE_IN_EXPAND) {
+        return ({
+          isOver: !!monitor.isOver() && rule.id === monitor.getItem().rule_id,
           canDrop: !!monitor.canDrop()
-        }),
-    }, [createOrUpdate, satisfied]);
+        })
+      }
+      return ({
+        isOver: !!monitor.isOver(),
+        canDrop: !!monitor.canDrop()
+      })
+    },
+  }, [createOrUpdate, satisfied]);
 
 
-    if (type === "LEAF") {
-      const { fulfillments, cus, num } = ruleTree;
-      return (
-          <RuleLeafContainer>
-            <RuleLeafLabel>{rule.title}</RuleLeafLabel>
-            <RuleLeafWrapper $isDroppable={canDrop} $isOver={isOver} ref={drop}>
-              <RuleLeaf q_json={rule.q_json} rule={rule} fulfillmentsForRule={fulfillments} satisfied={satisfied} activeDegreePlanId={activeDegreePlanId}/>
-              <Row>
-              {!!satisfied && <SatisfiedCheck />}
-              <Column>
-                {rule.credits && 
-                  <CusCourses><sup>{cus}</sup>/<sub>{rule.credits}</sub><div>{rule.credits > 1 ? 'cus' : 'cu'}</div></CusCourses>
-                  }
-                {" "}
-                {rule.num && <CusCourses><sup>{num}</sup>/<sub>{rule.num}</sub></CusCourses>}
-              </Column>
-              </Row>
-            </RuleLeafWrapper>
-          </RuleLeafContainer>
-      )
-    }
+  if (type === "LEAF") {
+    const { fulfillments, unselectedFulfillments, cus, num } = ruleTree;
+    return (
+      <RuleLeafContainer>
+        <RuleLeafLabel>{rule.title}</RuleLeafLabel>
+        <RuleLeafWrapper $isDroppable={canDrop} $isOver={isOver} ref={drop}>
+          <RuleLeaf q_json={rule.q_json} rule={rule} fulfillmentsForRule={fulfillments} unselectedFulfillmentsForRule={unselectedFulfillments} satisfied={satisfied} activeDegreePlanId={activeDegreePlanId} />
+          <Row>
+            {!!satisfied && <SatisfiedCheck />}
+            <Column>
+              {rule.credits &&
+                <CusCourses><sup>{cus}</sup>/<sub>{rule.credits}</sub><div>{rule.credits > 1 ? 'cus' : 'cu'}</div></CusCourses>
+              }
+              {" "}
+              {rule.num && <CusCourses><sup>{num}</sup>/<sub>{rule.num}</sub></CusCourses>}
+            </Column>
+          </Row>
+        </RuleLeafWrapper>
+      </RuleLeafContainer>
+    )
+  }
 
-    // otherwise, type == "INTERNAL_NODE"
-    const { children, num } = ruleTree; 
+  // otherwise, type == "INTERNAL_NODE"
+  const { children, num } = ruleTree;
 
-    if (num && children.length > num) {
-      return <PickNWrapper>
-        <PickNTitle>
-          <div>Pick {num}:</div>
-          {satisfied &&
-            <SatisfiedCheck />
-            }
-        </PickNTitle>
+  if (num && children.length > num) {
+    return <PickNWrapper>
+      <PickNTitle>
+        <div>Pick {num}:</div>
+        {satisfied &&
+          <SatisfiedCheck />
+        }
+      </PickNTitle>
+      {children.map((ruleTree) => (
+        <div>
+          <RuleComponent {...ruleTree} />
+        </div>
+      ))}
+    </PickNWrapper>
+  }
+
+
+  return (
+    <>
+      <RuleTitleWrapper onClick={() => setCollapsed(!collapsed)}>
+        <ProgressBar $progress={progress}></ProgressBar>
+        <RuleTitle>
+          <div>
+            {rule.title}
+            {" "}
+            <DegreeYear>{(progress * 100).toFixed(0)}%</DegreeYear>
+          </div>
+          {rule.rules.length &&
+            <Icon>
+              <i className={`fas fa-chevron-${collapsed ? "up" : "down"}`}></i>
+            </Icon>
+          }
+        </RuleTitle>
+      </RuleTitleWrapper>
+      {!collapsed &&
+        <Indented>
+          <Column>
             {children.map((ruleTree) => (
               <div>
                 <RuleComponent {...ruleTree} />
               </div>
             ))}
-      </PickNWrapper>
-    }
-
-
-    return (
-      <>
-        <RuleTitleWrapper onClick={() => setCollapsed(!collapsed)}>
-          <ProgressBar $progress={progress}></ProgressBar>
-          <RuleTitle>
-            <div>
-              {rule.title}
-              {" "}
-              <DegreeYear>{(progress * 100).toFixed(0)}%</DegreeYear>
-            </div>
-              {rule.rules.length && 
-                  <Icon>
-                    <i className={`fas fa-chevron-${collapsed ? "up" : "down"}`}></i>
-                  </Icon>
-              }
-          </RuleTitle>
-        </RuleTitleWrapper>
-        {!collapsed &&
-          <Indented>
-            <Column>
-              {children.map((ruleTree) => (
-                <div>
-                  <RuleComponent {...ruleTree} />
-                </div>
-              ))}
-            </Column>
-          </Indented>
-          }
-      </>
-    )
+          </Column>
+        </Indented>
+      }
+    </>
+  )
 }
 
 export default RuleComponent;

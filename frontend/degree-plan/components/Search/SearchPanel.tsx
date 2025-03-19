@@ -101,17 +101,11 @@ export const SearchPanel = ({ activeDegreeplanId }: SearchPanelProp) => {
         setQueryString("");
     }, [ruleId])
 
-    useEffect(() => {
-        console.log(ruleId)
-    }, [ruleId])
-
     const handleCloseSearch = () => {
         setQueryString(""); 
         setSearchPanelOpen(false);
         setSearchRuleId(null);
     }
-
-    // console.log(ruleId)
 
     return (
         <PanelContainer>
@@ -160,7 +154,6 @@ export const useDebounce = (value: any, delay: number) => {
 }
 
 const buildSearchKey = (ruleId: Rule["id"] | null, query: string): string | null => {
-    console.log(`api/base/all/search/courses?search=${query}${ruleId ? `&rule_ids=${ruleId}` : ""}`)
     return query.length >= 3 || ruleId ? `api/base/all/search/courses?search=${query}${ruleId ? `&rule_ids=${ruleId}` : ""}` : null
 }
 
