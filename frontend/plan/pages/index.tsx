@@ -22,7 +22,7 @@ import Selector from "../components/selector/Selector";
 import Footer from "../components/footer";
 import Cart from "../components/Cart";
 import Alerts from "../components/alert/Alerts";
-import SolverTab from "../components/solver/SolverTab";
+import SolverTab from "../components/solver/BreakTab";
 import MapTab from "../components/map/MapTab";
 import ModalContainer from "../components/modals/generic_modal_container";
 import SearchSortDropdown from "../components/search/SearchSortDropdown";
@@ -128,7 +128,7 @@ enum TabItem {
     Cart = "cart-tab",
     Alerts = "alerts-tab",
     Map = "map-tab",
-    Solver = "solver-tab",
+    Solver = "break-tab",
 }
 
 const tabItems = [

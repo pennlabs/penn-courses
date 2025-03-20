@@ -465,7 +465,6 @@ export const schedule = (state = initialState, action) => {
 
         case ADD_BREAK_ITEM:
             if (!state.readOnly) {
-                console.log(action);
                 return {
                     ...state,
                     schedules: {
@@ -477,7 +476,19 @@ export const schedule = (state = initialState, action) => {
                             breaks: [
                                 ...state.schedules[state.scheduleSelected]
                                     .breaks,
-                                action.newBreak,
+                                {
+                                    name: "my break",
+                                    color: Color.PINK,
+                                    meetings: action.days.map((day) => ({
+                                        day,
+                                        start: action.timeRange[0],
+                                        end: action.timeRange[1],
+                                        room: "Towne 100",
+                                        latitude: 39.9526,
+                                        longitude: -75.1652,
+                                        overlap: false,
+                                    })),
+                                },
                             ],
                         },
                     },

@@ -186,9 +186,10 @@ export const setPrimaryScheduleIdOnFrontend = (scheduleId) => ({
     type: SET_PRIMARY_SCHEDULE_ID_ON_FRONTEND,
 });
 
-export const addBreakItem = (newBreak) => ({
+export const addBreakItem = (days, timeRange) => ({
     type: ADD_BREAK_ITEM,
-    newBreak,
+    days,
+    timeRange,
 });
 
 export const checkForDefaultSchedules = (schedulesFromBackend) => (
