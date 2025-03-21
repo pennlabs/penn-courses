@@ -150,7 +150,7 @@ const ModalContainer = ({
                     </div>
                 </ModalCardHead>
                 <ModalCardBody>
-                    {modalKey && 
+                    {modalKey &&
                         React.Children.map(children, (child: React.ReactNode) =>
                             React.cloneElement(child as React.ReactElement, {
                                 close,

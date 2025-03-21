@@ -5,6 +5,7 @@ import FourYearPlanPage from "../components/FourYearPlanPage";
 import React, { useEffect, useState } from "react";
 import { DegreePlan, type User } from "../types";
 import LoginModal from "pcx-shared-components/src/accounts/LoginModal";
+import TutorialModal, { TutorialModalContext } from "../components/FourYearPlan/OnboardingTutorial";
 import { SWRConfig } from "swr";
 import { toast, ToastContainer } from "react-toastify";
 import styled from "@emotion/styled";
@@ -14,75 +15,80 @@ import ToastContext from "@/components/Toast/Toast";
 
 
 export default function Home() {
-  const [user, setUser] = useState<User | null>(null);
-  const [showLoginModal, setShowLoginModal] = useState(false);
+    const [user, setUser] = useState<User | null>(null);
+    const [showLoginModal, setShowLoginModal] = useState(false);
+    const [showOnboardingModal, setShowOnboardingModal] = useState(true);
 
-  const updateUser = (newUserVal: User | null) => {
-    if (!newUserVal) {
-      // the user has logged out; show the login modal
-      setShowLoginModal(true);
-    } else {
-      // the user has logged in; hide the login modal
-      setShowLoginModal(false);
+    const updateUser = (newUserVal: User | null) => {
+        if (!newUserVal) {
+            // the user has logged out; show the login modal
+            setShowLoginModal(true);
+            setShowOnboardingModal(false);
+        } else {
+            // the user has logged in; hide the login modal
+            setShowLoginModal(false);
+
+            // TODO: only show if the user logs in for the first time
+            setShowOnboardingModal(true);
+        }
+        setUser(newUserVal);
+    };
+
+
+
+    function showToast(text: string, error: boolean) {
+        if (error) {
+            toast.error(text, {
+                position: toast.POSITION.BOTTOM_CENTER,
+            });
+        } else {
+            toast.success(text, {
+                position: toast.POSITION.BOTTOM_CENTER,
+            });
+        }
     }
-    setUser(newUserVal);
-  };
+
+    //   const Toast = styled(ToastContainer)`
+    //     .Toastify__toast {
+    //         border-radius: 0.5rem;
+    //         background-color: white;
+    //     }
+    //     .Toastify__toast-body {
+    //         font-family: BlinkMacSystemFont;
+    //         color: black;
+    //         font-size: 1rem;
+    //     }
+    // `;
 
 
+    return (
+        <>
+            <DndProvider backend={HTML5Backend}>
+                <ToastContext.Provider value={showToast}>
+                    <SWRConfig
+                        value={{
+                            fetcher: (resource, init) =>
+                                fetch(resource, init).then((res) => res.json()),
+                            provider: () => new Map(),
+                            onError: (error, key) => {
+                                // if (error.status !== 403 && error.status !== 404) {
+                                //   alert(error.info);
+                                // }
+                            },
+                        }}
+                    >
+                        {showLoginModal && (
+                            <LoginModal
+                                pathname={window.location.pathname}
+                                siteName="Penn Degree Plan"
+                            />
+                        )}
+                        <FourYearPlanPage user={user} updateUser={updateUser} showTutorial={true} />
+                    </SWRConfig>
+                </ToastContext.Provider>
+            </DndProvider>
+            <ToastContainer />
 
-  function showToast(text: string, error: boolean) {
-    if (error) {
-      toast.error(text, {
-        position: toast.POSITION.BOTTOM_CENTER,
-      });
-    } else {
-      toast.success(text, {
-        position: toast.POSITION.BOTTOM_CENTER,
-      });
-    }
-  }
-
-  //   const Toast = styled(ToastContainer)`
-  //     .Toastify__toast {
-  //         border-radius: 0.5rem;
-  //         background-color: white;
-  //     }
-  //     .Toastify__toast-body {
-  //         font-family: BlinkMacSystemFont;
-  //         color: black;
-  //         font-size: 1rem;
-  //     }
-  // `;
-
-
-  return (
-    <>
-      <DndProvider backend={HTML5Backend}>
-        <ToastContext.Provider value={showToast}>
-          <SWRConfig
-            value={{
-              fetcher: (resource, init) =>
-                fetch(resource, init).then((res) => res.json()),
-              provider: () => new Map(),
-              onError: (error, key) => {
-                // if (error.status !== 403 && error.status !== 404) {
-                //   alert(error.info);
-                // }
-              },
-            }}
-          >
-            {showLoginModal && (
-              <LoginModal
-                pathname={window.location.pathname}
-                siteName="Penn Degree Plan"
-              />
-            )}
-            <FourYearPlanPage user={user} updateUser={updateUser} />
-          </SWRConfig>
-        </ToastContext.Provider>
-      </DndProvider>
-      <ToastContainer />
-
-    </>
-  );
+        </>
+    );
 }

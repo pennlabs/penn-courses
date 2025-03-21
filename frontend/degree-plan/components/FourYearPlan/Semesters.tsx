@@ -3,28 +3,28 @@ import styled from "@emotion/styled";
 import { Icon } from "../common/bulma_derived_components";
 import { Course, DegreePlan, Fulfillment } from "@/types";
 import useSWR from "swr";
-import React, { useContext, useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState, forwardRef } from "react";
 import Select from "react-select";
 import { ModalKey } from "./DegreeModal";
 import ToastContext from "../Toast/Toast";
 
 const getNextSemester = (semester: string) => {
-  const year = parseInt(semester.slice(0, 4));
-  const season = semester.slice(4);
-  if (season === "A") {
-    // Spring -> Fall
-    return `${year}C`;
-  } else if (season === "B") {
-    // Summer -> Fall
-    return `${year}C`;
-  } else {
-    // Fall -> Spring
-    return `${year + 1}A`;
-  }
+    const year = parseInt(semester.slice(0, 4));
+    const season = semester.slice(4);
+    if (season === "A") {
+        // Spring -> Fall
+        return `${year}C`;
+    } else if (season === "B") {
+        // Summer -> Fall
+        return `${year}C`;
+    } else {
+        // Fall -> Spring
+        return `${year + 1}A`;
+    }
 };
 
 export const getLocalSemestersKey = (degreeplanId: DegreePlan["id"]) =>
-  `PDP-${degreeplanId}-semesters`;
+    `PDP-${degreeplanId}-semesters`;
 
 const SemestersContainer = styled.div`
   display: flex;
@@ -89,253 +89,261 @@ const YearInput = styled.input`
 `
 
 const selectStyles = (topOrBottom: boolean) => ({
-  control: (provided: any) => ({
-    ...provided,
-    width: "9rem",
-    backgroundColor: "transparent",
-    borderColor: "#9FB5EF",
-    color: "#C1C1C1",
-    boxShadow: "none",
-    "&:hover": {
-      borderColor: "#9FB5EF",
-    },
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
-    borderBottom: 0
-  }),
-  singleValue: (provided: any) => ({
-    ...provided,
-    color: "#C1C1C1",
-  }),
+    control: (provided: any) => ({
+        ...provided,
+        width: "9rem",
+        backgroundColor: "transparent",
+        borderColor: "#9FB5EF",
+        color: "#C1C1C1",
+        boxShadow: "none",
+        "&:hover": {
+            borderColor: "#9FB5EF",
+        },
+        borderBottomLeftRadius: 0,
+        borderBottomRightRadius: 0,
+        borderBottom: 0
+    }),
+    singleValue: (provided: any) => ({
+        ...provided,
+        color: "#C1C1C1",
+    }),
 });
 
 // TODO: get a consistent color palette across PCx
 interface ModifySemestersProps {
-  addSemester: (semester: Course["semester"]) => void;
-  className?: string;
-  semesters: { [semester: string]: Fulfillment[] };
+    addSemester: (semester: Course["semester"]) => void;
+    className?: string;
+    semesters: { [semester: string]: Fulfillment[] };
 }
 
 const ModifySemesters = ({
-  addSemester,
-  semesters,
-  className,
+    addSemester,
+    semesters,
+    className,
 }: ModifySemestersProps) => {
-  const latestSemester =
-    Object.keys(semesters).sort((a, b) => a.localeCompare(b)).pop() || "2026A"; // TODO: Change fallback value to start semester (based on onboarding?)
+    const latestSemester =
+        Object.keys(semesters).sort((a, b) => a.localeCompare(b)).pop() || "2026A"; // TODO: Change fallback value to start semester (based on onboarding?)
 
-  const nextSemester = getNextSemester(latestSemester);
-  const [nextYear, nextSeason] = [
-    nextSemester.slice(0, 4),
-    nextSemester.slice(4),
-  ];
+    const nextSemester = getNextSemester(latestSemester);
+    const [nextYear, nextSeason] = [
+        nextSemester.slice(0, 4),
+        nextSemester.slice(4),
+    ];
 
-  const [selectedYear, setSelectedYear] = useState(nextYear);
-  const [selectedSeason, setSelectedSeason] = useState(nextSeason);
+    const [selectedYear, setSelectedYear] = useState(nextYear);
+    const [selectedSeason, setSelectedSeason] = useState(nextSeason);
 
-  const semesterKeys = Object.keys(semesters).sort();
+    const semesterKeys = Object.keys(semesters).sort();
 
-  const handleAddSemester = () => {
-    const semester = `${selectedYear}${selectedSeason}`;
-    addSemester(semester);
-  };
+    const handleAddSemester = () => {
+        const semester = `${selectedYear}${selectedSeason}`;
+        addSemester(semester);
+    };
 
-  const seasonOptions = [
-    { value: "A", label: "Spring" },
-    { value: "B", label: "Summer" },
-    { value: "C", label: "Fall" },
-  ];
+    const seasonOptions = [
+        { value: "A", label: "Spring" },
+        { value: "B", label: "Summer" },
+        { value: "C", label: "Fall" },
+    ];
 
-  return (
-    // TODO: add a modal for this
-    <AddSemesterContainer className={className}>
-      <AddButtonContainer role="button" onClick={handleAddSemester}>
-        <AddButton>
-          <PlusIcon>
-            <i className="fas fa-plus fa-lg"></i>
-          </PlusIcon>
-          <div>Add Semester</div>
-        </AddButton>
-      </AddButtonContainer>
+    return (
+        // TODO: add a modal for this
+        <AddSemesterContainer className={className}>
+            <AddButtonContainer role="button" onClick={handleAddSemester}>
+                <AddButton>
+                    <PlusIcon>
+                        <i className="fas fa-plus fa-lg"></i>
+                    </PlusIcon>
+                    <div>Add Semester</div>
+                </AddButton>
+            </AddButtonContainer>
 
-      <Select
-        styles={selectStyles(true)}
-        options={seasonOptions}
-        value={seasonOptions.find((option) => option.value === selectedSeason)}
-        onChange={(option) => setSelectedSeason(option ? option.value : selectedSeason)}
-      />
+            <Select
+                styles={selectStyles(true)}
+                options={seasonOptions}
+                value={seasonOptions.find((option) => option.value === selectedSeason)}
+                onChange={(option) => setSelectedSeason(option ? option.value : selectedSeason)}
+            />
 
-      <YearInput
-        value={selectedYear}
-        type="number"
-        onChange={(e) => setSelectedYear(e.target.value)}
-      />
-    </AddSemesterContainer>
-  );
+            <YearInput
+                value={selectedYear}
+                type="number"
+                onChange={(e) => setSelectedYear(e.target.value)}
+            />
+        </AddSemesterContainer>
+    );
 };
 
 export const interpolateSemesters = (startingYear: number, graduationYear: number) => {
-  let res = {} as { [semester: string]: Fulfillment[] };
-  for (let year = startingYear; year < graduationYear; year++) {
-    res[`${year}C`] = [];
-    res[`${year + 1}A`] = []; // A is Spring, C is Fall
-  }
-  return res;
+    let res = {} as { [semester: string]: Fulfillment[] };
+    for (let year = startingYear; year < graduationYear; year++) {
+        res[`${year}C`] = [];
+        res[`${year + 1}A`] = []; // A is Spring, C is Fall
+    }
+    return res;
 }
 
 interface SemestersProps {
-  activeDegreeplan?: DegreePlan;
-  showStats: any;
-  className?: string;
-  editMode: boolean;
-  setModalKey: (arg0: ModalKey) => void;
-  setModalObject: (obj: any) => void;
-  setEditMode: (arg0: boolean) => void;
-  isLoading: boolean;
-  currentSemester?: string;}
+    activeDegreeplan?: DegreePlan;
+    showStats: any;
+    className?: string;
+    editMode: boolean;
+    setModalKey: (arg0: ModalKey) => void;
+    setModalObject: (obj: any) => void;
+    setEditMode: (arg0: boolean) => void;
+    isLoading: boolean;
+    currentSemester?: string;
+    ref?: any;
+}
 
-const Semesters = ({
-  activeDegreeplan,
-  showStats,
-  className,
-  editMode,
-  setModalKey,
-  setModalObject,
-  setEditMode,
-  currentSemester,
-  isLoading,
-}: SemestersProps) => {
-  const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<
-    Fulfillment[]
-  >(
-    activeDegreeplan
-      ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments`
-      : null
-  );
-  // semesters is state mostly derived from fulfillments
-
-  const getDefaultSemesters = React.useCallback(() => {
-    const startingYear = currentSemester ? Number(currentSemester.substring(0, 4)) : new Date().getFullYear(); // Use current semester as default starting semester
-    return interpolateSemesters(startingYear, startingYear + 4);
-  }, [currentSemester]);
-
-  const [semesters, setSemesters] = useState<{
-    [semester: string]: Fulfillment[];
-  }>({});
-  const addSemester = (semester: string) => {
-    if (!semesters[semester]) setSemesters({ ...semesters, [semester]: [] });
-  };
-
-  const numUpdates = React.useRef<number>(-1);
-  const currNumUpdates = React.useRef<number>(0);
-
-  const removeSemester = (semester: string) => {
-    numUpdates.current = semesters[semester].length
-
-    if (semesters[semester]) {
-      var newSems: { [semester: string]: Fulfillment[] } = {};
-      for (var sem in semesters) {
-        if (sem !== semester) newSems = { ...newSems, [sem]: semesters[sem] };
-      }
-      setSemesters(newSems);
-    }
-  };
-
-  /** Get semesters from local storage */
-  useEffect(() => {
-    if (!activeDegreeplan) return;
-    if (typeof window === "undefined") return setSemesters(getDefaultSemesters());
-    const stickyValue = localStorage.getItem(
-      getLocalSemestersKey(activeDegreeplan.id)
+const Semesters = forwardRef(({
+    activeDegreeplan,
+    showStats,
+    className,
+    editMode,
+    setModalKey,
+    setModalObject,
+    setEditMode,
+    currentSemester,
+    isLoading
+}: SemestersProps, semesterRefs) => {
+    const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<
+        Fulfillment[]
+    >(
+        activeDegreeplan
+            ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments`
+            : null
     );
-    if (stickyValue === null) return setSemesters(getDefaultSemesters());
-    let parsed;
-    try {
-      parsed = JSON.parse(stickyValue)
-      setSemesters(parsed)
-    } catch {
-      setSemesters(getDefaultSemesters());
-    }
-  }, [activeDegreeplan, currentSemester]);
+    // semesters is state mostly derived from fulfillments
 
-  // TODO: Bug where edit mode would always be set to true. When initializing, semesters updates multiple times,
-  // so we can't be sure that we actually have no courses and should enter edit mode. 
-  // I made a quick fix: it seems like semesters updates 5-6 times when initializing, so I just have it wait until
-  // then to set edit mode to true if necessary. There is likely a better way to do this.
-  const updateCounter = useRef(0);
+    const getDefaultSemesters = React.useCallback(() => {
+        const startingYear = currentSemester ? Number(currentSemester.substring(0, 4)) : new Date().getFullYear(); // Use current semester as default starting semester
+        return interpolateSemesters(startingYear, startingYear + 4);
+    }, [currentSemester]);
 
-  /** Update semesters to local storage */
-  useEffect(() => {
-    updateCounter.current = updateCounter.current + 1;
+    const [semesters, setSemesters] = useState<{
+        [semester: string]: Fulfillment[];
+    }>({});
+    const addSemester = (semester: string) => {
+        if (!semesters[semester]) setSemesters({ ...semesters, [semester]: [] });
+    };
 
-    if (Object.keys(semesters).length == 0 && !isLoading && updateCounter.current >= 5) {
-      setEditMode(true);
-    } 
+    const numUpdates = React.useRef<number>(-1);
+    const currNumUpdates = React.useRef<number>(0);
 
-    // if finish loading and no semesters, we go to edit mode for the user to add new semesters
-    if (!activeDegreeplan) return;
 
-    // && Object.keys(semesters).length
-    if (typeof window !== "undefined" && Object.keys(semesters).length) {
-      localStorage.setItem(
-        getLocalSemestersKey(activeDegreeplan.id),
-        JSON.stringify(semesters)
-      );
-    }
-  }, [semesters, activeDegreeplan]);
+    const removeSemester = (semester: string) => {
+        numUpdates.current = semesters[semester].length
 
-  /** Parse fulfillments and group them by semesters */
-  useEffect(() => {
-    if (!activeDegreeplan || !fulfillments || isLoadingFulfillments) return; // TODO: need more logic in this case
-    currNumUpdates.current = currNumUpdates.current + 1;
-    if (currNumUpdates.current >= numUpdates.current) {
-      setSemesters((currentSemesters) => {
-        const semesters = {} as { [semester: string]: Fulfillment[] };
-        Object.keys(currentSemesters).forEach((semester) => {
-          semesters[semester] = [];
-        });
-        fulfillments.forEach((fulfillment) => {
-          if (!fulfillment.semester) return;
-          if (!semesters[fulfillment.semester]) {
-            semesters[fulfillment.semester] = [];
-          }
-          semesters[fulfillment.semester].push(fulfillment);
-        });
-        currNumUpdates.current = 0;
-        numUpdates.current = -1;
-        return semesters;
-      });
-    } 
-  }, [fulfillments, activeDegreeplan, isLoadingFulfillments]);
+        if (semesters[semester]) {
+            var newSems: { [semester: string]: Fulfillment[] } = {};
+            for (var sem in semesters) {
+                if (sem !== semester) newSems = { ...newSems, [sem]: semesters[sem] };
+            }
+            setSemesters(newSems);
+        }
+    };
 
-  return (
-    <SemestersContainer className={className}>
-      {isLoading
-        ? Array.from(Array(8).keys()).map(() => (
-            <SkeletonSemester showStats={showStats} />
-          ))
-        : Object.keys(semesters)
-            .sort((a,b) => a.localeCompare(b))
-            .map((semester: any) => (
-              <FlexSemester
-                activeDegreeplanId={activeDegreeplan?.id}
-                showStats={showStats}
-                semester={semester}
-                fulfillments={semesters[semester]}
-                key={semester}
-                editMode={editMode}
-                removeSemester={removeSemester}
-                setModalKey={setModalKey}
-                setModalObject={setModalObject}
-                currentSemester={currentSemester}
-                numSemesters={Object.keys(semesters).length}
-              />
-            ))}
-      {editMode && (
-        <ModifySemesters addSemester={addSemester} semesters={semesters} />
-      )}
-    </SemestersContainer>
-  );
-};
+    /** Get semesters from local storage */
+    useEffect(() => {
+        if (!activeDegreeplan) return;
+        if (typeof window === "undefined") return setSemesters(getDefaultSemesters());
+        const stickyValue = localStorage.getItem(
+            getLocalSemestersKey(activeDegreeplan.id)
+        );
+        if (stickyValue === null) return setSemesters(getDefaultSemesters());
+        let parsed;
+        try {
+            parsed = JSON.parse(stickyValue)
+            setSemesters(parsed)
+        } catch {
+            setSemesters(getDefaultSemesters());
+        }
+    }, [activeDegreeplan, currentSemester]);
+
+    // TODO: Bug where edit mode would always be set to true. When initializing, semesters updates multiple times,
+    // so we can't be sure that we actually have no courses and should enter edit mode. 
+    // I made a quick fix: it seems like semesters updates 5-6 times when initializing, so I just have it wait until
+    // then to set edit mode to true if necessary. There is likely a better way to do this.
+    const updateCounter = useRef(0);
+
+    /** Update semesters to local storage */
+    useEffect(() => {
+        updateCounter.current = updateCounter.current + 1;
+
+        if (Object.keys(semesters).length == 0 && !isLoading && updateCounter.current >= 5) {
+            setEditMode(true);
+        }
+
+        // if finish loading and no semesters, we go to edit mode for the user to add new semesters
+        if (!activeDegreeplan) return;
+
+        // && Object.keys(semesters).length
+        if (typeof window !== "undefined" && Object.keys(semesters).length) {
+            localStorage.setItem(
+                getLocalSemestersKey(activeDegreeplan.id),
+                JSON.stringify(semesters)
+            );
+        }
+    }, [semesters, activeDegreeplan]);
+
+    /** Parse fulfillments and group them by semesters */
+    useEffect(() => {
+        if (!activeDegreeplan || !fulfillments || isLoadingFulfillments) return; // TODO: need more logic in this case
+        currNumUpdates.current = currNumUpdates.current + 1;
+        if (currNumUpdates.current >= numUpdates.current) {
+            setSemesters((currentSemesters) => {
+                const semesters = {} as { [semester: string]: Fulfillment[] };
+                Object.keys(currentSemesters).forEach((semester) => {
+                    semesters[semester] = [];
+                });
+                fulfillments.forEach((fulfillment) => {
+                    if (!fulfillment.semester) return;
+                    if (!semesters[fulfillment.semester]) {
+                        semesters[fulfillment.semester] = [];
+                    }
+                    semesters[fulfillment.semester].push(fulfillment);
+                });
+                currNumUpdates.current = 0;
+                numUpdates.current = -1;
+                return semesters;
+            });
+        }
+    }, [fulfillments, activeDegreeplan, isLoadingFulfillments]);
+
+    return (
+        <SemestersContainer className={className}>
+            {isLoading
+                ? Array.from(Array(8).keys()).map(() => (
+                    <SkeletonSemester showStats={showStats} />
+                ))
+                : Object.keys(semesters)
+                    .sort((a, b) => a.localeCompare(b))
+                    .map((semester: any) =>
+                        <FlexSemester
+                            activeDegreeplanId={activeDegreeplan?.id}
+                            showStats={showStats}
+                            semester={semester}
+                            fulfillments={semesters[semester]}
+                            key={semester}
+                            editMode={editMode}
+                            removeSemester={removeSemester}
+                            setModalKey={setModalKey}
+                            setModalObject={setModalObject}
+                            currentSemester={currentSemester}
+                            numSemesters={Object.keys(semesters).length}
+                        /* @ts-ignore */
+                        // ref={(el) => (semesterRefs.current[semester] = el)}
+                        />
+                    )
+            }
+            {
+                editMode && (
+                    <ModifySemesters addSemester={addSemester} semesters={semesters} />
+                )
+            }
+        </SemestersContainer >
+    );
+});
 
 export default Semesters;

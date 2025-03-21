@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useContext, forwardRef } from "react";
 import { useDrag, useDrop } from "react-dnd";
 import { ItemTypes } from "../Dock/dnd/constants";
 import CoursesPlanned, { SkeletonCoursesPlanned } from "./CoursesPlanned";
@@ -15,14 +15,10 @@ import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
 
 import { Tooltip } from 'react-tooltip';
 
-import { useContext } from "react";
-
 import ToastContext from "../Toast/Toast";
 import { DisabledTrashIcon } from "../common/DisabledTrashIcon";
 
 const SEMESTER_REGEX = /\d{4}[ABC]/
-
-
 
 const translateSemester = (semester: Course["semester"]) => {
     if (semester === TRANSFER_CREDIT_SEMESTER_KEY) return "AP & Transfer Credit";
@@ -45,9 +41,12 @@ export const SemesterCard = styled.div<{
     display: flex;
     flex-direction: column;
     flex: 1 1 11rem;
+    width: auto;
+    height: auto;
+    position: relative;
 `;
 
-const SemesterHeader = styled.div`
+const SemesterHeader = styled.div<{ $ref?: any }>`
     width: 100%;
     display: flex;
     flex-direction: row;
@@ -100,12 +99,15 @@ export const SkeletonSemester = ({
                 </SemesterLabel>
             </SemesterHeader>
             <SemesterContent>
-                <SkeletonCoursesPlanned />
-                {!!showStats && <FlexStats fulfillments={[]} />}
+                <SemesterContent>
+                    <SkeletonCoursesPlanned />
+                    {!!showStats && <FlexStats fulfillments={[]} />}
+                    {!!showStats && <FlexStats fulfillments={[]} />}
+                </SemesterContent>
+                <CreditsLabel>
+                    <InlineSkeleton width="2em" /><span>CUs</span>
+                </CreditsLabel>
             </SemesterContent>
-            <CreditsLabel>
-                <InlineSkeleton width="2em" /><span>CUs</span>
-            </CreditsLabel>
         </SemesterCard>
     )
 }
@@ -125,7 +127,7 @@ interface SemesterProps {
     isLoading?: boolean
 }
 
-const FlexSemester = ({
+const FlexSemester = forwardRef<HTMLDivElement, SemesterProps>(({
     showStats,
     semester,
     fulfillments,
@@ -137,9 +139,7 @@ const FlexSemester = ({
     currentSemester,
     numSemesters,
     isLoading = false
-}: SemesterProps) => {
-    const showToast = useContext(ToastContext);
-
+}, ref) => {
     const credits = fulfillments.reduce((acc, curr) => acc + (curr.course?.credits || 1), 0)
 
     const { createOrUpdate: addToDock } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
@@ -194,7 +194,7 @@ const FlexSemester = ({
                             res.push(obj.id);
                             return res;
                         }, []);
-                        
+
                         if (selectedRules.length || true) {
                             createOrUpdate({
                                 rules: selectedRules,
@@ -254,30 +254,32 @@ const FlexSemester = ({
                 ref={drop}
                 $semesterComparison={currentSemester ? semester.localeCompare(currentSemester) : 1}
             >
-                <SemesterHeader>
-                    <SemesterLabel>
-                        {translateSemester(semester)}
-                    </SemesterLabel>
-                    {/* TODO: Current structure doesn't allow for last semester to be deleted.
+                <div ref={ref} >
+                    <SemesterHeader>
+                        <SemesterLabel>
+                            {translateSemester(semester)}
+                        </SemesterLabel>
+                        {/* TODO: Current structure doesn't allow for last semester to be deleted.
                         Disabling deletion when there is only one semester 
                         is a quick fix that could be addressed later. */}
-                    {!!editMode && (numSemesters > 1 ?
-                        <TrashIcon role="button" onClick={handleRemoveSemester}>
-                            <i className="fa fa-trash fa-md" />
-                        </TrashIcon>
-                        : <>
-                            <a
-                                data-tooltip-id="my-tooltip"
-                                data-tooltip-content="You must have at least one semester!"
-                            >
-                                <DisabledTrashIcon role="button">
-                                    <i className="fa fa-trash fa-md" />
-                                </DisabledTrashIcon>
-                            </a>
-                            <Tooltip id="my-tooltip" place="top" />
-                        </>)
-                    }
-                </SemesterHeader>
+                        {!!editMode && (numSemesters > 1 ?
+                            <TrashIcon role="button" onClick={handleRemoveSemester}>
+                                <i className="fa fa-trash fa-md" />
+                            </TrashIcon>
+                            : <>
+                                <a
+                                    data-tooltip-id="my-tooltip"
+                                    data-tooltip-content="You must have at least one semester!"
+                                >
+                                    <DisabledTrashIcon role="button">
+                                        <i className="fa fa-trash fa-md" />
+                                    </DisabledTrashIcon>
+                                </a>
+                                <Tooltip id="my-tooltip" place="top" />
+                            </>)
+                        }
+                    </SemesterHeader>
+                </div>
                 <SemesterContent>
                     <FlexCoursesPlanned
                         semester={semester}
@@ -291,6 +293,6 @@ const FlexSemester = ({
             </SemesterCard>
         </>
     )
-}
+});
 
 export default FlexSemester;
