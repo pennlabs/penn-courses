@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, forwardRef } from "react";
 import { useDrag, useDrop } from "react-dnd";
 import { ItemTypes } from "../dnd/constants";
 import CoursesPlanned, { SkeletonCoursesPlanned } from "./CoursesPlanned";
@@ -23,7 +23,7 @@ const translateSemester = (semester: Course["semester"]) => {
 }
 
 export const SemesterCard = styled.div<{
-    $isDroppable:boolean,
+    $isDroppable: boolean,
     $isOver: boolean,
     $semesterComparison: number // -1 if currentSemester is less than this semester...
 }>`
@@ -36,9 +36,12 @@ export const SemesterCard = styled.div<{
     display: flex;
     flex-direction: column;
     flex: 1 1 11rem;
+    width: auto;
+    height: auto;
+    position: relative;
 `;
 
-const SemesterHeader = styled.div`
+const SemesterHeader = styled.div<{ $ref?: any }>`
     width: 100%;
     display: flex;
     flex-direction: row;
@@ -80,9 +83,9 @@ const InlineSkeleton = styled(Skeleton)`
     display: inline-block;
 `
 
-export const SkeletonSemester = ({ 
+export const SkeletonSemester = ({
     showStats,
-} : { showStats: boolean }) => {
+}: { showStats: boolean }) => {
     return (
         <SemesterCard $isDroppable={false} $isOver={false} $semesterComparison={1}>
             <SemesterHeader>
@@ -90,9 +93,9 @@ export const SkeletonSemester = ({
                     <Skeleton width="5em" />
                 </SemesterLabel>
             </SemesterHeader>
-            <SemesterContent> 
+            <SemesterContent>
                 <SkeletonCoursesPlanned />
-                {!!showStats && <FlexStats fulfillments={[]}/>}
+                {!!showStats && <FlexStats fulfillments={[]} />}
             </SemesterContent>
             <CreditsLabel>
                 <InlineSkeleton width="2em" /><span>CUs</span>
@@ -115,7 +118,7 @@ interface SemesterProps {
     isLoading?: boolean
 }
 
-const FlexSemester = ({ 
+const FlexSemester = forwardRef<HTMLDivElement, SemesterProps>(({
     showStats,
     semester,
     fulfillments,
@@ -126,7 +129,7 @@ const FlexSemester = ({
     removeSemester,
     currentSemester,
     isLoading = false
-} : SemesterProps) => {
+}, ref) => {
     const credits = fulfillments.reduce((acc, curr) => acc + (curr.course?.credits || 1), 0)
 
     const { createOrUpdate: addToDock } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
@@ -134,7 +137,7 @@ const FlexSemester = ({
     // the fulfillments api uses the POST method for updates (it creates if it doesn't exist, and updates if it does)
     const { createOrUpdate, remove } = useSWRCrud<Fulfillment>(
         `/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`,
-        { 
+        {
             idKey: "full_code",
             createDefaultOptimisticData: { semester: null, rules: [] }
         }
@@ -152,14 +155,14 @@ const FlexSemester = ({
             return undefined;
         },
         collect: monitor => ({
-          isOver: !!monitor.isOver(),
-          canDrop: !!monitor.canDrop()
+            isOver: !!monitor.isOver(),
+            canDrop: !!monitor.canDrop()
         }),
     }), [createOrUpdate, semester]);
 
     const handleRemoveCourse = async (full_code: Course["id"]) => {
         remove(full_code);
-        addToDock({"full_code": full_code}, full_code);
+        addToDock({ "full_code": full_code }, full_code);
         await mutate(`/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`);
     }
 
@@ -172,37 +175,39 @@ const FlexSemester = ({
 
     const handleRemoveSemester = () => {
         setModalKey('semester-remove');
-        setModalObject({helper: removeSemesterHelper});
+        setModalObject({ helper: removeSemesterHelper });
     }
 
     return (
         <SemesterCard
-        $isDroppable={canDrop}
-        $isOver={isOver}
-        ref={drop}
-        $semesterComparison={currentSemester ? semester.localeCompare(currentSemester) : 1}
+            $isDroppable={canDrop}
+            $isOver={isOver}
+            ref={drop}
+            $semesterComparison={currentSemester ? semester.localeCompare(currentSemester) : 1}
         >
-            <SemesterHeader>
-                <SemesterLabel>
-                    {translateSemester(semester)}
-                </SemesterLabel>
-                {!!editMode &&         
-                <TrashIcon role="button" onClick={handleRemoveSemester}>
-                    <i className="fa fa-trash fa-md"/>
-                </TrashIcon>}
-            </SemesterHeader>
-            <SemesterContent> 
-                <FlexCoursesPlanned 
-                    semester={semester} 
-                    fulfillments={fulfillments} 
-                    removeCourse={handleRemoveCourse}/>
-                {!!showStats && <FlexStats fulfillments={fulfillments}/>}
+            <div ref={ref}>
+                <SemesterHeader>
+                    <SemesterLabel>
+                        {translateSemester(semester)}
+                    </SemesterLabel>
+                    {!!editMode &&
+                        <TrashIcon role="button" onClick={handleRemoveSemester}>
+                            <i className="fa fa-trash fa-md" />
+                        </TrashIcon>}
+                </SemesterHeader>
+            </div>
+            <SemesterContent>
+                <FlexCoursesPlanned
+                    semester={semester}
+                    fulfillments={fulfillments}
+                    removeCourse={handleRemoveCourse} />
+                {!!showStats && <FlexStats fulfillments={fulfillments} />}
             </SemesterContent>
             <CreditsLabel>
                 {credits} CUs
             </CreditsLabel>
         </SemesterCard>
     )
-}
+});
 
 export default FlexSemester;
