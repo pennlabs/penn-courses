@@ -26,7 +26,7 @@ import {
     deleteFriendshipOnBackend,
     fetchBackendFriendships,
     fetchFriendPrimarySchedule,
-    unsetActiveFriend
+    unsetActiveFriend,
 } from "../../actions/friendshipUtil";
 
 const ScheduleContainer = styled.div`
@@ -61,10 +61,7 @@ interface ScheduleProps {
     friendshipMutators: {
         fetchFriendSchedule: (friend: User) => void;
         fetchBackendFriendships: (user: User) => void;
-        deleteFriendshipOnBackend: (
-            user: User,
-            friendPennkey: string
-        ) => void;
+        deleteFriendshipOnBackend: (user: User, friendPennkey: string) => void;
     };
     schedulesMutator: {
         setPrimary: (user: User, scheduleId: string | null) => void;
@@ -150,12 +147,8 @@ const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
             dispatch(fetchFriendPrimarySchedule(friend)),
         fetchBackendFriendships: (user: User) =>
             dispatch(fetchBackendFriendships(user)),
-        deleteFriendshipOnBackend: (
-            user: User,
-            friendPennkey: string) =>
-            dispatch(
-                deleteFriendshipOnBackend(user, friendPennkey)
-            ),
+        deleteFriendshipOnBackend: (user: User, friendPennkey: string) =>
+            dispatch(deleteFriendshipOnBackend(user, friendPennkey)),
     },
     schedulesMutator: {
         setPrimary: (user: User, scheduleId: string | null) =>

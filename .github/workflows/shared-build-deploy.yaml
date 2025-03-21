@@ -18,7 +18,7 @@ jobs:
             codeCoverage: false
 
     publish-backend:
-        uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@v0.1
+        uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@v0.1.7
         with:
             # Inputs
             imageName: "penn-courses-backend"
@@ -64,7 +64,7 @@ jobs:
             DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
     publish-frontend:
-        uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@v0.1
+        uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@v0.1.7
         strategy:
             fail-fast: true
             matrix:
@@ -101,7 +101,7 @@ jobs:
     # Landing
     # ========================================================================================================
     publish-landing:
-        uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@v0.1
+        uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@v0.1.7
         with:
             # Inputs
             imageName: "pcx-landing"
@@ -126,7 +126,7 @@ jobs:
 
     deploy:
         name: "Deploy"
-        uses: pennlabs/shared-actions/.github/workflows/deployment.yaml@v0.1.5
+        uses: pennlabs/shared-actions/.github/workflows/deployment.yaml@v0.1.7
 
         with:
             githubRef: ${{ github.ref }}

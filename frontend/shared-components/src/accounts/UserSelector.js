@@ -86,10 +86,10 @@ const LogoutDropdownMenu = styled.div`
     display: ${({ selected }) => (selected ? "block" : "none")};
     left: 0;
     min-width: 12rem;
-    ${({ floatTop }) =>
-        floatTop ? "padding-bottom: 4px" : "padding-top: 4px"};
+    ${({ floattop }) =>
+        floattop ? "padding-bottom: 4px" : "padding-top: 4px"};
     position: absolute;
-    ${({ floatTop }) => (floatTop ? "bottom: 100%" : "top: 100%")};
+    ${({ floattop }) => (floattop ? "bottom: 100%" : "top: 100%")};
     z-index: 20;
 `;
 
@@ -137,9 +137,12 @@ const UserSelector = ({
                         "U"}{" "}
                 </span>
             </NameBubble>
-            <LogoutDropdownMenu selected={selected} floatTop={dropdownTop}>
+            <LogoutDropdownMenu
+                selected={selected}
+                floattop={dropdownTop.toString()}
+            >
                 <LogoutDropdownContainer className="dropdown-menu-container">
-                    <TriangleUp down={dropdownTop} />
+                    <TriangleUp down={dropdownTop.toString()} />
                     <InnerMenu $leftAligned={leftAligned}>
                         <NameContainer>
                             {" "}
