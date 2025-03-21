@@ -33,9 +33,10 @@ const InnerMenu = styled.div`
     background: white;
     color: #4a4a4a;
     border-radius: 4px;
-    position: relative;
+    position: absolute;
     padding: 0.32rem;
     font-size: 0.85rem;
+    top: 70px;
     box-shadow: 0 0 5px 0 lightgrey;
     right: ${(props) => (props.$leftAligned ? "0%" : "61%")};
 `;
