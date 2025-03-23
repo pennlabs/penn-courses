@@ -7,7 +7,6 @@ from django.shortcuts import get_object_or_404
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import generics, status
 from rest_framework.exceptions import ValidationError
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -401,7 +400,7 @@ class UserView(generics.RetrieveAPIView, generics.UpdateAPIView):
     """
 
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = []
 
     def get_queryset(self):
         return get_user_model().objects.filter(pk=self.request.user.pk)
@@ -475,7 +474,7 @@ class FriendshipView(generics.ListAPIView):
     #  model = Friendship
     serializer_class = FriendshipSerializer
     http_method_names = ["get", "post", "delete"]
-    permission_classes = [IsAuthenticated]
+    permission_classes = []
 
     schema = PcxAutoSchema(
         response_codes={

@@ -65,6 +65,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "PennCourses.middleware.CustomLoginMiddleware",
 ]
 
 ROOT_URLCONF = os.environ.get("ROOT_URLCONF", "PennCourses.urls")

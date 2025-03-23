@@ -6,7 +6,6 @@ from django.db.models import F, Max, OuterRef, Q, Subquery, Value
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes, schema
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from courses.models import (
@@ -132,7 +131,7 @@ MONTH_IN_SECONDS = DAY_IN_SECONDS * 30
         override_response_schema=course_reviews_response_schema,
     )
 )
-@permission_classes([IsAuthenticated])
+@permission_classes([])
 def course_reviews(request, course_code, semester=None):
     request_semester = request.GET.get("semester")
 
@@ -344,7 +343,7 @@ def manual_course_reviews(course_code, request_semester):
         override_response_schema=course_plots_response_schema,
     )
 )
-@permission_classes([IsAuthenticated])
+@permission_classes([])
 def course_plots(request, course_code):
     """
     Get all PCR plots for a given course.
@@ -485,7 +484,7 @@ INSTRUCTOR_COURSE_REVIEW_FIELDS = [
         override_response_schema=instructor_reviews_response_schema,
     )
 )
-@permission_classes([IsAuthenticated])
+@permission_classes([])
 def instructor_reviews(request, instructor_id):
     """
     Get all reviews for a given instructor, aggregated by course.
@@ -576,7 +575,7 @@ def instructor_reviews(request, instructor_id):
         override_response_schema=department_reviews_response_schema,
     )
 )
-@permission_classes([IsAuthenticated])
+@permission_classes([])
 def department_reviews(request, department_code):
     """
     Get reviews for all courses in a department.
@@ -664,7 +663,7 @@ def department_reviews(request, department_code):
         override_response_schema=instructor_for_course_reviews_response_schema,
     )
 )
-@permission_classes([IsAuthenticated])
+@permission_classes([])
 def instructor_for_course_reviews(request, course_code, instructor_id):
     """
     Get the review history of an instructor teaching a course.

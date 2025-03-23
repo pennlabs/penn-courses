@@ -5,7 +5,7 @@ from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
-from rest_framework.permissions import BasePermission, IsAuthenticated
+from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
 
 from degree.models import Degree, DegreePlan, DockedCourse, Fulfillment, PDPBetaUser
@@ -34,7 +34,7 @@ class DegreeViewset(viewsets.ReadOnlyModelViewSet):
     filterset_fields = search_fields
 
     # After Beta: remove this permission entirely
-    permission_classes = [IsAuthenticated & InPDPBeta]
+    permission_classes = [InPDPBeta]
 
     queryset = Degree.objects.all()
 
@@ -50,7 +50,7 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     """
 
     # After beta: remove InPDPBeta
-    permission_classes = [IsAuthenticated & InPDPBeta]
+    permission_classes = [InPDPBeta]
 
     def get_queryset(self):
         queryset = DegreePlan.objects.filter(person=self.request.user)
@@ -131,7 +131,7 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
     """
 
     # After beta: remove InPDPBeta
-    permission_classes = [IsAuthenticated & InPDPBeta]
+    permission_classes = [InPDPBeta]
     serializer_class = FulfillmentSerializer
     http_method_names = ["get", "post", "head", "delete"]
     queryset = Fulfillment.objects.all()
@@ -170,7 +170,7 @@ class DockedCourseViewset(viewsets.ModelViewSet):
     """
 
     # After beta: remove InPDPBeta
-    permission_classes = [IsAuthenticated & InPDPBeta]
+    permission_classes = [InPDPBeta]
     serializer_class = DockedCourseSerializer
     http_method_names = ["get", "post", "head", "delete"]
     queryset = DockedCourse.objects.all()
