@@ -14,6 +14,7 @@ from ics.grammar.parse import ContentLine
 from rest_framework import status, viewsets
 from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -89,7 +90,7 @@ from plan.serializers import PrimaryScheduleSerializer, ScheduleSerializer
         },
     )
 )
-@permission_classes([])
+@permission_classes([IsAuthenticated])
 def recommend_courses_view(request):
     """
     This route will optionally take in current and past courses. In order to
@@ -200,7 +201,7 @@ class PrimaryScheduleViewSet(viewsets.ModelViewSet):
     model = PrimarySchedule
     queryset = PrimarySchedule.objects.none()
     http_method_names = ["get", "post"]
-    permission_classes = []
+    permission_classes = [IsAuthenticated]
     serializer_class = PrimaryScheduleSerializer
 
     def get_serializer_context(self):
@@ -447,7 +448,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
     serializer_class = ScheduleSerializer
     http_method_names = ["get", "post", "delete", "put"]
-    permission_classes = []
+    permission_classes = [IsAuthenticated]
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
