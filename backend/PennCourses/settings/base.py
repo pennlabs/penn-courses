@@ -11,9 +11,11 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
-
 import boto3
 import dj_database_url
+import dotenv
+
+dotenv.load_dotenv()
 
 
 DOMAINS = os.environ.get("DOMAINS", "example.com").split(",")
@@ -65,6 +67,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "PennCourses.middleware.OIDCMiddleware",
 ]
 
 ROOT_URLCONF = os.environ.get("ROOT_URLCONF", "PennCourses.urls")
@@ -173,6 +176,14 @@ OPEN_DATA_API_BASE = "https://3scale-public-prod-open-data.apps.k8s.upenn.edu/ap
 # Penn OpenData Course Status Webhook Auth
 WEBHOOK_USERNAME = os.environ.get("WEBHOOK_USERNAME", "webhook")
 WEBHOOK_PASSWORD = os.environ.get("WEBHOOK_PASSWORD", "password")
+
+# Penn Labs Auth OIDC
+AUTH_OIDC_CLIENT_ID=os.environ.get("AUTH_OIDC_CLIENT_ID", "")
+AUTH_OIDC_CLIENT_SECRET=os.environ.get("AUTH_OIDC_CLIENT_SECRET", "")
+AUTH_OIDC_AUTHORITY="https://platform.pennlabs.org"
+AUTH_OIDC_ENDPOINT=f"{AUTH_OIDC_AUTHORITY}/accounts/authorize/"
+AUTH_OIDC_TOKEN_ENDPOINT = f"{AUTH_OIDC_AUTHORITY}/accounts/token/"
+AUTH_OIDC_JWKS_URI = f"{AUTH_OIDC_AUTHORITY}/accounts/.well-known/jwks.json"
 
 # Email Configuration
 SMTP_HOST = os.environ.get("SMTP_HOST", "")

@@ -24,9 +24,9 @@ export default async function Course({
     params: Promise<CourseParams>;
 }) {
     const { code } = await params;
-    const response = await apiReviewData("course", code);
-    const data = await response.json();
-    console.log(data);
+    // const response = await apiReviewData("course", code);
+    // const data = await response.json();
+    // console.log(data);
     return (
         <div id="review" className={cn("mx-[20%]")}>
             <p>YOURE AUTHENTICATED! Static protected data</p>

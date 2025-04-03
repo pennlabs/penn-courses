@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
 
     const tokens = await res.json();
 
-    const response = NextResponse.redirect(new URL("/review", request.url));
+    const response = NextResponse.redirect(new URL("/", request.url));
     response.cookies.set("id_token", tokens.id_token, {
         httpOnly: true,
         secure: true,

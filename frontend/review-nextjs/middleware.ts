@@ -56,5 +56,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-    matcher: "/review/:path",
+    matcher: "/review/:path*",
 };
