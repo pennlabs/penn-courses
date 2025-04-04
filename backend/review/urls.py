@@ -43,5 +43,5 @@ urlpatterns = [
         name="course-history",
     ),
     path("autocomplete", cache_page(MONTH_IN_SECONDS)(autocomplete), name="review-autocomplete"),
-    path("jwt/", test_jwt, name="test-jwt")
+    path("testjwt", test_jwt, name="test-jwt"),
 ]

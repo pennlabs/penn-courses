@@ -753,7 +753,6 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
         }
     )
 
-
 @api_view(["GET"])
 @schema(
     PcxAutoSchema(
@@ -861,12 +860,12 @@ def autocomplete(request):
     PcxAutoSchema(
         response_codes={
             "test-jwt": {
-                "GET": {200: "Test data retrieved successfully."},
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Test dump retrieved successfully."},
             },
         },
     )
 )
 def test_jwt(request):
-    return JsonResponse(
+    return Response(
         {"hello": "hi"}
     )

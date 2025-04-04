@@ -8,7 +8,7 @@ const nextConfig = {
             },
             {
                 source: "/accounts/:path*",
-                destination: "http://127.0.0.1:8000/accounts/:path*/",
+                destination: "http://127.0.0.1:8000/accounts/:path*",
             },
         ];
     },

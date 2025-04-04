@@ -13,7 +13,6 @@ export default function Error({
     const router = useRouter();
     return (
         <>
-            <Header />
             <div className={cn("flex", "flex-col", "items-center")}>
                 <h2>Something went wrong!</h2>
                 <h3>{error.message}</h3>

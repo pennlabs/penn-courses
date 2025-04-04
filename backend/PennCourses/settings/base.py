@@ -177,13 +177,9 @@ OPEN_DATA_API_BASE = "https://3scale-public-prod-open-data.apps.k8s.upenn.edu/ap
 WEBHOOK_USERNAME = os.environ.get("WEBHOOK_USERNAME", "webhook")
 WEBHOOK_PASSWORD = os.environ.get("WEBHOOK_PASSWORD", "password")
 
-# Penn Labs Auth OIDC
-AUTH_OIDC_CLIENT_ID=os.environ.get("AUTH_OIDC_CLIENT_ID", "")
-AUTH_OIDC_CLIENT_SECRET=os.environ.get("AUTH_OIDC_CLIENT_SECRET", "")
-AUTH_OIDC_AUTHORITY="https://platform.pennlabs.org"
-AUTH_OIDC_ENDPOINT=f"{AUTH_OIDC_AUTHORITY}/accounts/authorize/"
-AUTH_OIDC_TOKEN_ENDPOINT = f"{AUTH_OIDC_AUTHORITY}/accounts/token/"
-AUTH_OIDC_JWKS_URI = f"{AUTH_OIDC_AUTHORITY}/accounts/.well-known/jwks.json"
+# Penn Labs Platform JWKs
+JWKS_URI = f"https://platform.pennlabs.org/accounts/.well-known/jwks.json"
+AUTH_OIDC_CLIENT_ID = os.environ.get("AUTH_OIDC_CLIENT_ID", "")
 
 # Email Configuration
 SMTP_HOST = os.environ.get("SMTP_HOST", "")

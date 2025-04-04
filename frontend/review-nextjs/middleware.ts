@@ -41,6 +41,7 @@ export async function middleware(request: NextRequest) {
                     clockTolerance: "1m",
                 }
             );
+            console.log(payload);
             return NextResponse.next();
         } catch (e) {}
     }
