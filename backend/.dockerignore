@@ -18,6 +18,7 @@ LICENSE
 tests/
 *.sqlite3
 postgres/
+.venv
 
 # Dev
 .vscode
