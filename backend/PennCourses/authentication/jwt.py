@@ -1,8 +1,10 @@
+import pprint
 import threading
 import time
 import logging
 from django.http import HttpResponseForbidden
 from django.conf import settings
+from rest_framework import authentication, exceptions
 import jwt
 
 logger = logging.getLogger(__name__)
@@ -37,19 +39,18 @@ def verify_jwt(token):
         payload = jwt.decode(token, signing_key,audience=settings.AUTH_OIDC_CLIENT_ID, algorithms=["RS256"])
         return payload
     except jwt.PyJWTError:
-        raise HttpResponseForbidden("Invalid JWT token.")
+        raise exceptions.AuthenticationFailed("Invalid JWT Token.")
 
-class OIDCMiddleware:
-    def __init__(self, get_response):
-        self.get_response = get_response
-
-    def __call__(self, request):
-        response = self.get_response(request)
-        if request.path.startswith('/api/review/testjwt'):
-            id_token = request.COOKIES.get('id_token')
-            if id_token:
-                payload = verify_jwt(id_token)
-                if payload:
-                    return response
-            return HttpResponseForbidden("Invalid Token")
-        return response
+class JWTAuthentication(authentication.BaseAuthentication):
+    """
+    Authentication based on JWT tokens stored in cookies.
+    """
+    def authenticate(self, request):
+        id_token = request.COOKIES.get('id_token')
+        print(id_token)
+        if id_token:
+            payload = verify_jwt(id_token)
+            if payload:
+                pprint.pprint(payload)
+                return (payload, None)
+        return exceptions.AuthenticationFailed("Invalid JWT Token.")

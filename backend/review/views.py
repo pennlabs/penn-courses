@@ -855,6 +855,7 @@ def autocomplete(request):
         {"courses": course_set, "departments": department_set, "instructors": instructor_set}
     )
 
+@permission_classes([IsAuthenticated])
 @api_view(["GET"])
 @schema(
     PcxAutoSchema(

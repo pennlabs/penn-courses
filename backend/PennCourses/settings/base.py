@@ -67,7 +67,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "PennCourses.middleware.OIDCMiddleware",
 ]
 
 ROOT_URLCONF = os.environ.get("ROOT_URLCONF", "PennCourses.urls")
@@ -206,6 +205,7 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.BasicAuthentication",
         "accounts.authentication.PlatformAuthentication",
+        "PennCourses.authentication.jwt.JWTAuthentication",
     ],
 }
 
