@@ -2,7 +2,7 @@ import pprint
 import threading
 import time
 import logging
-from django.http import HttpResponseForbidden
+from django.contrib.auth.models import AnonymousUser
 from django.conf import settings
 from rest_framework import authentication, exceptions
 import jwt
@@ -47,10 +47,9 @@ class JWTAuthentication(authentication.BaseAuthentication):
     """
     def authenticate(self, request):
         id_token = request.COOKIES.get('id_token')
-        print(id_token)
         if id_token:
             payload = verify_jwt(id_token)
             if payload:
                 pprint.pprint(payload)
                 return (payload, None)
-        return exceptions.AuthenticationFailed("Invalid JWT Token.")
+        return (AnonymousUser, None)
