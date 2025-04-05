@@ -1,24 +1,46 @@
-from django.conf import settings
+import threading
+import time
+import logging
 from django.http import HttpResponseForbidden
+from django.conf import settings
 import jwt
 
+logger = logging.getLogger(__name__)
+
+REFRESH_INTERVAL = 3600  # 1 hour
+jwks_client = jwt.PyJWKClient(settings.JWKS_URI)
+jwks_client_lock = threading.Lock()
+
+def get_jwks_client():
+    with jwks_client_lock:
+        return jwks_client
+
+def start_jwks_refresh():
+    def refresh():
+        global jwks_client
+        while True:
+            try:
+                new_client = jwt.PyJWKClient(settings.JWKS_URI)
+                with jwks_client_lock:
+                    jwks_client = new_client
+                    logger.info("[JWK] JWKs client updated and cached.")
+            except Exception as e:
+                logger.info("[JWK] Error updating JWKs client: %s", e)
+            time.sleep(REFRESH_INTERVAL)
+
+    thread = threading.Thread(target=refresh, daemon=True)
+    thread.start()
+
 def verify_jwt(token):
-    # TODO: cache JWK set
-    print(token)
     try:
-        jwks_client = jwt.PyJWKClient(settings.JWKS_URI)
         signing_key = jwks_client.get_signing_key_from_jwt(token).key
-        print(signing_key)
         payload = jwt.decode(token, signing_key,audience=settings.AUTH_OIDC_CLIENT_ID, algorithms=["RS256"])
-        print(payload)
         return payload
     except jwt.PyJWTError:
         raise HttpResponseForbidden("Invalid JWT token.")
 
 class OIDCMiddleware:
     def __init__(self, get_response):
-        # jwks.fetch_and_cache_jwks()
-        # jwks.start_jwks_refresh()
         self.get_response = get_response
 
     def __call__(self, request):
