@@ -12,10 +12,14 @@ export async function generateStaticParams() {
     // Old system: new page for course and for semester
     // New: Static rendered for course and query parameter semester=2025A to change the view
     const response = await apiFetch("/api/review/autocomplete");
+    console.log(response);
     const data: AutocompleteData = await response.json();
-    return data.courses.map((course) => ({
-        code: course.title,
-    }));
+    console.log(data);
+    // return [...new Set(data.courses.map((course) => course.title))].map(
+    //     (courseTitle) => {
+    //         code: courseTitle;
+    //     }
+    // );
 }
 
 export default async function Course({
@@ -23,7 +27,7 @@ export default async function Course({
 }: {
     params: Promise<CourseParams>;
 }) {
-    const { code } = await params;
+    // const { code } = await params;
     // const response = await apiReviewData("course", code);
     // const data = await response.json();
     // console.log(data);
