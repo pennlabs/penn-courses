@@ -186,8 +186,9 @@ export const setPrimaryScheduleIdOnFrontend = (scheduleId) => ({
     type: SET_PRIMARY_SCHEDULE_ID_ON_FRONTEND,
 });
 
-export const addBreakItem = (days, timeRange) => ({
+export const addBreakItem = (name, days, timeRange) => ({
     type: ADD_BREAK_ITEM,
+    name,
     days,
     timeRange,
 });
@@ -623,6 +624,8 @@ export const fetchBackendSchedules = (onComplete) => (dispatch) => {
         .then((res) => res.json())
         .then((data) => data.map((course) => deduplicateCourseMeetings(course)))
         .then((schedules) => {
+            console.log("test");
+            console.log(schedules);
             onComplete(schedules);
         })
         // eslint-disable-next-line no-console
@@ -658,6 +661,10 @@ export const updateScheduleOnBackend = (name, schedule) => (dispatch) => {
             if (name === "cart") {
                 dispatch(markCartSynced());
             } else {
+                console.log("test");
+                fetchBackendSchedules((schedulesFromBackend) => {
+                    console.log("schedule", schedulesFromBackend);
+                });
                 dispatch(markScheduleSynced(name));
             }
         })

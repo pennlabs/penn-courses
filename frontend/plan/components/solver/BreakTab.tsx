@@ -1,9 +1,8 @@
-import React, { FunctionComponent, useEffect, useState } from "react";
-import { connect } from "react-redux";
+import React, { FunctionComponent, use, useEffect, useState } from "react";
+import { connect, useDispatch } from "react-redux";
 import { ThunkDispatch } from "redux-thunk";
 import styled from "styled-components";
-import { addBreakItem, fetchCourseDetails } from "../../actions";
-import { Section as SectionType, Break as BreakType, Color } from "../../types";
+import { addBreakItem, updateScheduleOnBackend } from "../../actions";
 import { DayTimeSelector } from "./DayTimeSelector";
 
 const Box = styled.section<{ length: number }>`
@@ -38,10 +37,11 @@ const Box = styled.section<{ length: number }>`
 `;
 
 interface SolverProps {
+    name: string;
     days: string[];
     timeRange: [number, number];
     manageBreaks?: {
-        add: (days: string[], timeRange: [number, number]) => void;
+        add: (name:string, days: string[], timeRange: [number, number]) => void;
     };
     mobileView: boolean;
 }
@@ -49,8 +49,8 @@ interface SolverProps {
 
 const Button = styled.button`
     color: gray;
-    padding: 5px;
-    margin: 20px 10px;
+    padding: 0.5rem;
+    margin: 0.5rem 1.25rem;
     border: 1px lightgray solid;
     border-radius: 5px;
     background: none;
@@ -64,19 +64,17 @@ const Solver: React.FC<SolverProps> = ({
     manageBreaks,
     mobileView,
 }) => {
+    const [name, setName] = useState("My Break");
     const [selectedDays, setSelectedDays] = useState<string[]>([]);
     const [selectedTimes, setSelectedTimes] = useState<[number, number]>([10.5, 22]);
 
-    useEffect(() => {
-        console.log("Selected Days:", selectedDays);
-        console.log("Selected Times:", selectedTimes);
-    }
-    , [selectedDays, selectedTimes]);
-
     return(
         <Box length={1} id="breaks">
-            <DayTimeSelector minRange={10.5} maxRange={22} step={1 / 60} selectedDays={selectedDays} setSelectedDays={setSelectedDays} selectedTimes={selectedTimes} setSelectedTimes={setSelectedTimes}/>
-            <Button onClick={() => manageBreaks?.add(selectedDays, selectedTimes)}>Add Break</Button>
+            <DayTimeSelector minRange={10.5} maxRange={22} step={1 / 60} selectedDays={selectedDays} setSelectedDays={setSelectedDays} selectedTimes={selectedTimes} setSelectedTimes={setSelectedTimes}
+            name={name} setName={setName}/>
+            <Button onClick={() => {
+                manageBreaks?.add(name, selectedDays, selectedTimes);
+            }}>Add Break</Button>
         </Box>
     );
 };
@@ -91,8 +89,8 @@ const mapStateToProps = ({
 
 const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
     manageBreaks: {
-        add: (days: string[], timeRange: [number, number]) => {
-            dispatch(addBreakItem(days, timeRange));
+        add: (name:string, days: string[], timeRange: [number, number]) => {
+            dispatch(addBreakItem(name, days, timeRange));
         },
     },
 });

@@ -477,8 +477,8 @@ export const schedule = (state = initialState, action) => {
                                 ...state.schedules[state.scheduleSelected]
                                     .breaks,
                                 {
-                                    name: "my break",
-                                    color: Color.PINK,
+                                    name: action.name,
+                                    color: getColor(action.name),
                                     meetings: action.days.map((day) => ({
                                         day,
                                         start: action.timeRange[0],

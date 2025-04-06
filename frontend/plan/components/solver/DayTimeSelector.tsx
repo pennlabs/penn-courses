@@ -27,6 +27,10 @@ const DayRow = styled.div`
     padding: 0.75rem;
 `;
 
+const NameRow = styled.div`
+    padding: 0.75rem;
+`;
+
 const RangeFilterContainer = styled.div`
     justify-content: center;
     flex-wrap: wrap;
@@ -46,6 +50,14 @@ const StyledRangeWrapper = styled.div`
     & .rc-slider-track {
         background-color: #7876f3 !important;
     }
+`;
+
+const NameInput = styled.input`
+    width: 100%;
+    padding: 0.5rem;
+    margin: 0.5rem 0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
 `;
 
 const intToTime = (t: number) => {
@@ -75,10 +87,12 @@ interface DayTimeSelectorProps {
     setSelectedDays: (days: string[]) => void;
     selectedTimes: [number, number];
     setSelectedTimes: (times: [number, number]) => void;
+    name: string;
+    setName: (name: string) => void;
 }
 
 export function DayTimeSelector({ 
-    minRange, maxRange, step, selectedDays, setSelectedDays, selectedTimes, setSelectedTimes }: DayTimeSelectorProps) {
+    minRange, maxRange, step, selectedDays, setSelectedDays, selectedTimes, setSelectedTimes, name, setName }: DayTimeSelectorProps) {
 
     const daysOfWeek = ["M", "T", "W", "R", "F", "S", "U"];
 
@@ -98,6 +112,16 @@ export function DayTimeSelector({
 
     return (
         <DayTimeFilterContainer>
+            <NameRow>
+                <p><strong>Name</strong></p>
+                <NameInput
+                    type="text"
+                    placeholder="Break Name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                />
+            </NameRow>
+            
             <DayRow>
                 <p><strong>Day</strong></p>
                 <FilterContainer>
