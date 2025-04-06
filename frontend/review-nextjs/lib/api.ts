@@ -22,7 +22,8 @@ export const apiReviewData = async (
     type: string,
     code: string
 ): Promise<Response> => {
-    return apiFetch(`/api/review/${type}/${code}?semester=${currentSemester}`);
+    // return apiFetch(`/api/review/${type}/${code}?semester=${currentSemester}`);
+    return apiFetch(`/api/review/${type}/${code}`);
 };
 
 export const apiJWT = async (): Promise<Response> => {

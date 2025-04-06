@@ -30,6 +30,7 @@ export function useAutocomplete(): [
                     threshold: 0.3,
                     keys: ["title", "desc"],
                 };
+                console.log(data);
                 setIndices({
                     courses: new Fuse<AutocompleteObject>(data.courses, ops),
                     instrs: new Fuse<AutocompleteObject>(data.instructors, ops),

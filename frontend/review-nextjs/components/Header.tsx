@@ -8,7 +8,7 @@ export default function Header() {
         <header
             className={cn([
                 "bg-white",
-                "min-h-[80px]",
+                "w-full",
                 "shadow-md",
                 "p-5",
                 "border",

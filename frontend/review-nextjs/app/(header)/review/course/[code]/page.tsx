@@ -1,7 +1,7 @@
+import Card from "@/components/Card";
 import { apiFetch, apiReviewData } from "@/lib/api";
-import { AutocompleteData } from "@/lib/types";
+import { AutocompleteData, type Course } from "@/lib/types";
 import { cn } from "@/lib/utils";
-import { useEffect } from "react";
 
 interface CourseParams {
     code: string;
@@ -27,12 +27,13 @@ export default async function Course({
 }) {
     const { code } = await params;
     const response = await apiReviewData("course", code);
-    const data = await response.json();
+    const data: Course = await response.json();
     console.log(data);
     return (
         <div id="review" className={cn("mx-[20%]")}>
-            <p>YOURE AUTHENTICATED! Static protected data</p>
-            <p>{code}</p>
+            <Card>
+                <h3>{data.code}</h3>
+            </Card>
         </div>
     );
 }
