@@ -753,8 +753,6 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
         }
     )
 
-
-@permission_classes([])
 @api_view(["GET"])
 @schema(
     PcxAutoSchema(

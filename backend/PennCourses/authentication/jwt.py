@@ -59,6 +59,5 @@ class JWTAuthentication(authentication.BaseAuthentication):
         if id_token:
             payload = verify_jwt(id_token)
             if payload:
-                pprint.pprint(payload)
                 return (payload, None)
         return (AnonymousUser, None)
