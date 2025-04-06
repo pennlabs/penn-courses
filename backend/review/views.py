@@ -3,7 +3,7 @@ from collections import Counter, defaultdict
 from dateutil.tz import gettz
 from django.core.cache import cache
 from django.db.models import F, Max, OuterRef, Q, Subquery, Value
-from django.http import Http404, JsonResponse
+from django.http import Http404
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
