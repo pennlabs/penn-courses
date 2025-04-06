@@ -8,7 +8,7 @@ from review.views import (
     department_reviews,
     instructor_for_course_reviews,
     instructor_reviews,
-    test_jwt
+    test_jwt,
 )
 
 

@@ -753,6 +753,7 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
         }
     )
 
+
 @permission_classes([])
 @api_view(["GET"])
 @schema(
@@ -856,6 +857,7 @@ def autocomplete(request):
         {"courses": course_set, "departments": department_set, "instructors": instructor_set}
     )
 
+
 @permission_classes([IsAuthenticated])
 @api_view(["GET"])
 @schema(
@@ -868,6 +870,4 @@ def autocomplete(request):
     )
 )
 def test_jwt(request):
-    return Response(
-        {"hello": "hi"}
-    )
+    return Response({"hello": "hi"})
