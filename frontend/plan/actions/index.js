@@ -186,10 +186,11 @@ export const setPrimaryScheduleIdOnFrontend = (scheduleId) => ({
     type: SET_PRIMARY_SCHEDULE_ID_ON_FRONTEND,
 });
 
-export const addBreakItem = (days, timeRange) => ({
+export const addBreakItem = (days, timeRange, break_id) => ({
     type: ADD_BREAK_ITEM,
     days,
     timeRange,
+    id: break_id,
 });
 
 export const checkForDefaultSchedules = (schedulesFromBackend) => (
@@ -611,6 +612,54 @@ export function fetchCourseDetails(courseId) {
             .catch((error) => dispatch(sectionInfoSearchError(error)));
     };
 }
+
+const convertToTimeString = (decimalHour) => {
+    const hours24 = Math.floor(decimalHour);
+    const minutes = Math.round((decimalHour - hours24) * 60);
+
+    const period = hours24 >= 12 ? "PM" : "AM";
+    const hours12 = hours24 % 12 === 0 ? 12 : hours24 % 12;
+    const paddedMinutes = minutes.toString().padStart(2, "0");
+
+    return `${hours12}:${paddedMinutes} ${period}`;
+};
+
+function convertToHHMM(decimalHour) {
+    const hours = Math.floor(decimalHour);
+    const minutes = Math.round((decimalHour - hours) * 60);
+    return hours * 100 + minutes;
+}
+
+export const createBreakItemBackend = (days, timeRange) => (dispatch) => {
+    doAPIRequest("/plan/breaks/", {
+        method: "POST",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+        body: JSON.stringify({
+            name: "Break",
+            location_string: "BREAK",
+
+            meetings: [
+                {
+                    days: days.join(""),
+                    begin_time_24: convertToHHMM(timeRange[0]),
+                    end_time_24: convertToHHMM(timeRange[1]),
+                    begin_time: convertToTimeString(timeRange[0]),
+                    end_time: convertToTimeString(timeRange[1]),
+                },
+            ],
+        }),
+    })
+        .then((res) => res.json())
+        .then((breakItem) => {
+            dispatch(addBreakItem(days, timeRange, breakItem.break_id));
+        });
+};
 
 /**
  * Pulls schedules from the backend

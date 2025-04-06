@@ -478,6 +478,7 @@ export const schedule = (state = initialState, action) => {
                                     .breaks,
                                 {
                                     name: "my break",
+                                    id: action.id,
                                     color: Color.PINK,
                                     meetings: action.days.map((day) => ({
                                         day,

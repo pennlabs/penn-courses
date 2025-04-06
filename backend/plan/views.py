@@ -640,6 +640,9 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             "sections__instructors",
             "sections__meetings",
             "sections__meetings__room",
+            Prefetch("breaks", Break.objects.all()),
+            "breaks__meetings",
+            "breaks__meetings__room",
         )
         return queryset
 
@@ -698,8 +701,11 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 {"detail": "Error setting meetings: " + str(e)}, status=status.HTTP_400_BAD_REQUEST
             )
 
+        print("current_break", current_break)
+
         try:
             current_break.save()
+
         except Exception as e:
             return Response(
                 {"detail": "Error saving break: " + str(e)}, status=status.HTTP_400_BAD_REQUEST
@@ -718,7 +724,7 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 {"detail": "Break name is required."}, status=status.HTTP_400_BAD_REQUEST
             )
         location_string = request.data.get("location_string")
-
+        print(request.data)
         try:
             if break_id:
                 new_break = self.get_queryset().create(
@@ -756,6 +762,7 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             }
             for m in meetings
         ]
+        print(meetings_with_codes)
         try:
             set_meetings(new_break, meetings_with_codes)
         except Exception as e:
@@ -763,7 +770,10 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 {"detail": "Error setting meetings: " + str(e)}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        return Response({"message": "success", "id": new_break.id}, status=status.HTTP_201_CREATED)
+        return Response(
+            {"message": "success", "break_id": new_break.id},
+            status=status.HTTP_201_CREATED,
+        )
 
     def get_queryset(self):
         return Break.objects.filter(person=self.request.user).prefetch_related(
