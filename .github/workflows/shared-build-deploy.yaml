@@ -45,7 +45,7 @@ jobs:
 
     frontend-check:
         name: "Frontend Check"
-        uses: pennlabs/shared-actions/.github/workflows/react.yaml@238aa5ee908afba9f906641b51f82bb81572f66a
+        uses: pennlabs/shared-actions/.github/workflows/react.yaml@b227580b1791e5812e58c1244595452fc848eff5
         strategy:
             fail-fast: true
             matrix:
