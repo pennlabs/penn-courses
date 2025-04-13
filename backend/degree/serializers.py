@@ -1,3 +1,4 @@
+from collections import deque
 from textwrap import dedent
 
 from django.db.models import Q
@@ -120,24 +121,61 @@ class FulfillmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Fulfillment
-        fields = ["id", "degree_plan", "full_code", "course", "semester", "rules"]
+        fields = ["id", "degree_plan", "full_code", "course", "semester", "rules", "unselected_rules"]
 
     def validate(self, data):
         data = super().validate(data)
         rules = data.get("rules")  # for patch requests without a rules field
+        unselected_rules = data.get("unselected_rules")
         full_code = data.get("full_code")
         degree_plan = data.get("degree_plan")
 
-        if rules is None and full_code is None and degree_plan is None:
+        if rules is None and unselected_rules is None and full_code is None and degree_plan is None:
             return data  # Nothing to validate
         if rules is None and self.instance is not None:
             rules = self.instance.rules.all()
         elif rules is None:
             rules = []
+
+        if unselected_rules is None and self.instance is not None:
+            unselected_rules = self.instance.unselected_rules.all()
+        elif unselected_rules is None:
+            unselected_rules = []
+            
         if full_code is None:
             full_code = self.instance.full_code
         if degree_plan is None:
             degree_plan = self.instance.degree_plan
+
+        # Find rules in degree plan with requirements identical to currently fulfilled ones
+        bfs_queue = deque()
+        for degree in degree_plan.degrees.all():
+            for rule_in_degree in degree.rules.all():
+                bfs_queue.append(rule_in_degree)
+
+        identical_rules = []
+        existing_fulfillment = Fulfillment.objects.filter(
+            degree_plan=degree_plan, full_code=full_code
+        ).first()
+        existing_rules = (
+            existing_fulfillment.rules.all() if existing_fulfillment is not None else []
+        )
+        while len(bfs_queue):
+            curr_rule = bfs_queue.pop()
+            # this is a leaf rule
+            if curr_rule.q:
+                if (
+                    any(rule.q == curr_rule.q and rule.id != curr_rule.id for rule in rules)
+                    and curr_rule not in existing_rules
+                ):
+                    identical_rules.append(curr_rule)
+            else:  # parent rule
+                bfs_queue.extend(curr_rule.children.all())
+
+        if hasattr(rules, 'extend'):
+            rules.extend(identical_rules)
+
+        data["rules"] = rules
 
         # TODO: check that rules belong to this degree plan
         for rule in rules:

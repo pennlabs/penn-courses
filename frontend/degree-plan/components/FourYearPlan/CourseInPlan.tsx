@@ -1,5 +1,5 @@
 import { useDrag } from "react-dnd";
-import { ItemTypes } from "../dnd/constants";
+import { ItemTypes } from "../Dock/dnd/constants";
 import { Course, DnDCourse, Fulfillment } from "@/types";
 import 'react-loading-skeleton/dist/skeleton.css'
 import CourseComponent from "../Course/Course";
