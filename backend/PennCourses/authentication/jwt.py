@@ -1,5 +1,5 @@
-import logging
 import asyncio
+import logging
 
 import jwt
 from django.conf import settings
@@ -18,6 +18,7 @@ async def get_jwks_client():
     async with jwks_client_lock:
         return jwks_client
 
+
 async def refresh_jwks_client():
     global jwks_client
     while True:
@@ -30,9 +31,11 @@ async def refresh_jwks_client():
             logger.error("[JWK] Error updating JWKs client: %s", e)
         await asyncio.sleep(REFRESH_INTERVAL)
 
+
 def start_jwks_refresh():
     loop = asyncio.get_event_loop()
     loop.create_task(refresh_jwks_client())
+
 
 async def verify_jwt(token):
     try:
@@ -58,5 +61,6 @@ class JWTAuthentication(authentication.BaseAuthentication):
             if payload:
                 return (payload, None)
         return (AnonymousUser, None)
+
 
 start_jwks_refresh()
