@@ -15,7 +15,7 @@ def parse_coursearray(courseArray) -> Q:
         course_q = Q()
         match (course["discipline"], course["number"], course.get("numberEnd")):
             # an @ is a placeholder meaning any
-            case ("@", "@", end) | ("PSEUDO@", "@", end):
+            case ("@", "@", end) | ("PSEUDO@", "@", end): ##oop, fix it nikhil
                 assert end is None
                 logging.info("ignoring @ course")
             case discipline, "@", end:
@@ -184,6 +184,18 @@ def parse_rulearray(
             or rule_json["ruleType"] == "Subset"
             or "ruleArray" not in rule_json
         )
+
+        if (rule_json["label"] == "Technical Electives (6 CU)"):
+            #manually override technical electives since ellucian doesn't currently do this correctly
+            #doesn't have to have num or credits
+            unrestricted_q = repr(Q(attributes__code__in=["EUCU", "EUCR"]))
+            restricted_q = repr(Q(attributes__code="EUCU"))
+            unrestricted_rule = Rule(parent=this_rule, title="Technical Elective", credits=1, q=unrestricted_q)
+            restricted_rule = Rule(parent=this_rule, title="Unrestricted Technical Elective", credits=5, q=restricted_q)
+            rules.append(unrestricted_rule)
+            rules.append(restricted_rule)
+            break
+
         match rule_json["ruleType"]:
             case "Course":
                 """
@@ -207,6 +219,7 @@ def parse_rulearray(
                 # a rule with 0 courses/credits is not a rule
                 if num == 0 or credits == 0:
                     rules.pop()
+
                 else:
                     this_rule.q = repr(parse_coursearray(rule_req["courseArray"]))
                     this_rule.credits = credits
