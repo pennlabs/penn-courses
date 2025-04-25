@@ -105,6 +105,7 @@ export interface DnDCourse {
   rule_id?: number // only used when dragging from REQ panel
   unselected_rules?: number[];
   fulfillment?: Fulfillment;
+  attributes?: string[]
 }
 
 export interface Fulfillment extends DBObject {

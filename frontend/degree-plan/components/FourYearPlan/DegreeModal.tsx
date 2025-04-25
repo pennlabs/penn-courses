@@ -162,6 +162,13 @@ const ModalInterior = ({
 
   const { mutate } = useSWRConfig();
 
+  // Need to add modalRef
+  const [modalRefCurrent, setModalRefCurrent] = useState<HTMLSelectElement | null>(null);
+
+  React.useEffect(() => {
+    setModalRefCurrent(modalRef.current);
+  }, [modalRef]);
+
   const add_degreeplan = async (name: string) => {
     const _new = await postFetcher("/api/degree/degreeplans", { name: name });
     await mutate("/api/degree/degreeplans"); // use updated degree plan returned
@@ -299,14 +306,15 @@ const ModalInterior = ({
                 placeholder="Select School or Program"
                 isLoading={false}
                 styles={{ menuPortal: base => ({ ...base, zIndex: 999 }) }}
-                menuPortalTarget={modalRef.current}
+                menuPortalTarget={modalRefCurrent}
+
               />
               <Select
                 options={getMajorOptions()}
                 value={major}
                 onChange={(selectedOption) => setMajor(selectedOption || undefined)}
                 styles={{ menuPortal: base => ({ ...base, zIndex: 999 }) }}
-                menuPortalTarget={modalRef.current}
+                menuPortalTarget={modalRefCurrent}
                 isClearable
                 isDisabled={!school}
                 placeholder={

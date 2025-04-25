@@ -33,6 +33,7 @@ interface CourseInReqProps {
 
 const CourseInReq = (props : CourseInReqProps) => {
     const { course, activeDegreePlanId, rule_id, isOpenEnded, fulfillment } = props;
+
     const { courses, set_courses } = useContext(ExpandedCoursesPanelContext);
 
     const { remove: removeFulfillment, createOrUpdate: updateFulfillment } = useSWRCrud<Fulfillment>(

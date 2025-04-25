@@ -154,8 +154,9 @@ const FlexSemester = ({
     );
 
     const [{ isOver, canDrop }, drop] = useDrop<DnDCourse, never, { isOver: boolean, canDrop: boolean }>(() => ({
-        accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_DOCK, ItemTypes.COURSE_IN_REQ],
+        accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_DOCK, ItemTypes.COURSE_IN_REQ, ItemTypes.COURSE_IN_SEARCH],
         drop: (course: DnDCourse) => {
+            // console.log(course)
             if (course.rule_id === undefined || course.rule_id == null) { // moved from plan or dock
                 createOrUpdate({ semester }, course.full_code);
                 // fetch(`/api/degree/satisfied-rule-list/${activeDegreeplanId}/${course.full_code}`).then((r) => {

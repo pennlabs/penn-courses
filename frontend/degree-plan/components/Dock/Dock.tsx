@@ -121,7 +121,7 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
       };
     
     const [{ isOver, canDrop }, drop] = useDrop(() => ({
-        accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_REQ],
+        accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_REQ, ItemTypes.COURSE_IN_SEARCH],
         drop: (course: DnDCourse) => {
            createOrUpdate({"full_code": course.full_code}, course.full_code);
         },

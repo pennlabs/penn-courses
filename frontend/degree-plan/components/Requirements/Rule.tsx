@@ -47,7 +47,7 @@ const RuleLeafWrapper = styled.div<{ $isDroppable: boolean, $isOver: boolean }>`
   justify-content: space-between;
   gap: .5rem;
   align-items: center;
-  box-shadow: ${props => props.$isOver ? '0px 0px 4px 2px var(--selected-color);' : props.$isDroppable ? '0px 0px 4px 2px var(--primary-color-dark);' : 'rgba(0, 0, 0, 0.05);'}
+  box-shadow: ${props => props.$isOver && props.$isDroppable ? '0px 0px 4px 2px var(--selected-color);' : props.$isDroppable ? '0px 0px 4px 2px var(--primary-color-dark);' : 'rgba(0, 0, 0, 0.05);'}
 `
 
 const CusCourses = styled.div`
@@ -164,8 +164,70 @@ const RuleComponent = (ruleTree: RuleTree) => {
       createDefaultOptimisticData: { semester: null, rules: [] }
     });
 
+
+  const parseQJson = (qJson: any, course: any) => {
+    // console.log(course)
+
+    if (qJson?.type == "LEAF") {
+      if (qJson?.key == "attributes__code__in") {
+        if (course.course.attribute_codes) {
+          return qJson.value.some((attribute) => course.course.attribute_codes.includes(attribute));
+        }
+        console.log("LEAF key not handled: ", qJson?.key)
+        return false;
+      }
+    } else if (qJson?.type == "AND") {
+      const clauses = qJson.clauses;
+      if (clauses.some((clause:any) => ["code__gte", "code__lte"].includes(clause.key))) {
+
+        let digits = parseInt(course.full_code.match(/\d+/)[0]);
+        if (digits < 1000) {
+          digits *= 10;
+        }
+        const dept = course.full_code.match(/[a-zA-Z]+/g)[0];
+
+        for (let clause of clauses) {
+          if (clause.key == "code__gte") {
+            if (parseInt(clause.value) > digits) {
+              // console.log("mismatch at lower bound")
+              return false;
+            }
+          } else if (clause.key == "code__lte") {
+            if (parseInt(clause.value) < digits) {
+              // console.log("mismatch at upper bound")
+              return false;
+            }
+          } else if (clause.key == "attributes__code__in") {
+            if (!clause.value.some((attribute: any) => course.course.attribute_codes.includes(attribute))) {
+              // console.log("mismatch at attributes")
+              return false;
+            }
+          } else if (clause.key == "department__code") {
+            if (dept != clause.value) {
+              console.log(dept, clause.value)
+              // console.log("mismatch at dept code")
+              return false;
+            }
+          } else {
+            console.log("AND key not accounted for.")
+          }
+        }
+        return true;
+      } else {
+        return clauses.some((clause: any) => parseQJson(clause, course));
+      }
+    } else if (qJson?.type == "OR") {
+      return qJson.clauses.some((clause: any) => parseQJson(clause, course));
+    } else if (qJson?.type == "COURSE") {
+      return course.full_code == qJson.full_code || course.full_code == qJson?.full_code__startswith;
+    } else {
+      console.log("Unhandled qJson type.")
+      return true;
+    }
+  }
+
   const [{ isOver, canDrop }, drop] = useDrop<DnDCourse, never, { isOver: boolean, canDrop: boolean }>({
-    accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_DOCK, ItemTypes.COURSE_IN_EXPAND],
+    accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_DOCK, ItemTypes.COURSE_IN_EXPAND, ItemTypes.COURSE_IN_SEARCH],
     drop: (course: DnDCourse, monitor) => {
       if (monitor.getItemType() === ItemTypes.COURSE_IN_EXPAND) {
         course.unselected_rules?.splice(course.unselected_rules?.indexOf(rule.id), 1)
@@ -185,10 +247,36 @@ const RuleComponent = (ruleTree: RuleTree) => {
       return undefined;
     }, // TODO: this doesn't handle fulfillments that already have a rule
     canDrop: (course: DnDCourse, monitor) => {
-      if (monitor.getItemType() === ItemTypes.COURSE_IN_EXPAND) {
-        return rule.id === course.rule_id
+      if (monitor.getItemType() === ItemTypes.COURSE_IN_EXPAND || monitor.getItemType() === ItemTypes.COURSE_IN_SEARCH) {
+        return rule.id === course.rule_id;
+      }
+
+      // Right now, if you drag from dock to reqPanel there's no semester, so we just have an X button on the course. 
+      // Looks buggy, so I'm just disabling that and only allowing users to drag to semester panel.
+      if (monitor.getItemType() === ItemTypes.COURSE_IN_DOCK) {
+        // const formattedCourse = {
+        //   course: {
+        //     "attribute_codes": course.attribute_codes,
+        //   },
+        //   full_code: course.full_code
+        // }
+
+        const formattedCourse = {
+          course: {
+            "attribute_codes": [],
+          },
+          full_code: "NOPE-0000"
+        }
+
+        return parseQJson(rule.q_json, formattedCourse);
+      }
+
+      if (course?.course?.attribute_codes) {    
+        // console.log(parseQJson(rule.q_json, course))
+        return parseQJson(rule.q_json, course);
       } else {
-        return !!rule.q
+        console.log(course, "No attributes!")
+        return true;
       }
     },
     collect: monitor => {

@@ -152,7 +152,7 @@ export default function Course({
     /** React dnd */
 
     const [{ isDragging }, drag] = useDrag<DnDCourse, never, { isDragging: boolean }>(() => ({
-        type: ItemTypes.COURSE_IN_PLAN,
+        type: ItemTypes.COURSE_IN_SEARCH,
         item: {full_code: course.id, rule_id: ruleId == null ? 10101 : ruleId},
         collect: (monitor) => ({
           isDragging: !!monitor.isDragging()
