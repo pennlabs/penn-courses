@@ -11,7 +11,7 @@ from django.db.models.functions import Coalesce
 from django.db.models.signals import m2m_changed
 from django.utils import timezone
 
-from courses.models import Course
+from courses.models import Course, Attribute
 from degree.utils.model_utils import json_parser, q_object_parser
 
 
@@ -374,6 +374,9 @@ class DegreePlan(models.Model):
             full_codes = [fulfillment.full_code for fulfillment in rule_fulfillments]
             if rule.evaluate(full_codes):
                 satisfied_rules.add(rule)
+
+        print(violated_dcrs)
+
         return (satisfied_rules, violated_dcrs)
 
     def check_rules_already_satisfied(self, rules: set[Rule]) -> set[Rule]:
@@ -456,7 +459,7 @@ class Fulfillment(models.Model):
     )
     unselected_rules = models.ManyToManyField(
         Rule,
-        related_name="selected",
+        related_name="unselected",
         blank=True,
         help_text=dedent(
             """

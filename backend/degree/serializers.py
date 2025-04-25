@@ -23,6 +23,17 @@ class DegreeListSerializer(serializers.ModelSerializer):
 
 
 class SimpleCourseSerializer(serializers.ModelSerializer):
+    attribute_codes = serializers.SerializerMethodField()
+
+    def get_attribute_codes(self, obj):
+        courses = Course.objects.all().filter(title=obj.title).exclude(attributes__isnull=True)
+        if (len(courses) == 0):
+            return []
+
+        attributes = courses[0].attributes.all()
+        return [attr.code for attr in attributes]
+
+
     id = serializers.ReadOnlyField(
         source="full_code",
         help_text=dedent(
@@ -59,6 +70,7 @@ class SimpleCourseSerializer(serializers.ModelSerializer):
             "instructor_quality",
             "difficulty",
             "work_required",
+            "attribute_codes"
         ]
         read_only_fields = fields
 
@@ -106,6 +118,9 @@ class FulfillmentSerializer(serializers.ModelSerializer):
         if course is not None:
             return SimpleCourseSerializer(course).data
         return None
+
+    def get_attribute_codes(self, obj):
+        return [attr.code for attr in obj.attributes.all()]
 
     rules = serializers.PrimaryKeyRelatedField(
         many=True, queryset=Rule.objects.all(), required=False
@@ -193,6 +208,7 @@ class FulfillmentSerializer(serializers.ModelSerializer):
         double_count_restrictions = DoubleCountRestriction.objects.filter(
             Q(rule__in=rules) | Q(other_rule__in=rules)
         )
+        
         for restriction in double_count_restrictions:
             if restriction.is_double_count_violated(degree_plan):
                 raise serializers.ValidationError(
@@ -224,6 +240,16 @@ class DockedCourseSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(help_text="The id of the docked course")
     person = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
+    attribute_codes = serializers.SerializerMethodField()
+
+    def get_attribute_codes(self, obj):
+        courses = Course.objects.all().filter(full_code=obj.full_code).exclude(attributes__isnull=True)
+        if (len(courses) == 0):
+            return []
+
+        attributes = courses[0].attributes.all()
+        return [attr.code for attr in attributes]
+
     class Meta:
         model = DockedCourse
-        fields = ["full_code", "id", "person"]
+        fields = ["full_code", "id", "person", "attribute_codes"]

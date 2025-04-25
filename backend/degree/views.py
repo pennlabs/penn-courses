@@ -24,6 +24,8 @@ from degree.serializers import (
 )
 from PennCourses.docs_settings import PcxAutoSchema
 
+from courses.models import Course
+
 
 class InPDPBeta(BasePermission):
     def has_permission(self, request, view):
@@ -165,6 +167,8 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
         if request.data.get("full_code") is None:
             raise ValidationError({"full_code": "This field is required."})
         self.kwargs["full_code"] = request.data["full_code"]
+        # self.kwargs["attributes"] = Course.objects.all().filter(full_code=request.data.get("full_code"))[0].attributes.all()
+
         try:
             return self.partial_update(request, *args, **kwargs)
         except Http404:
@@ -294,7 +298,6 @@ class OnboardFromTranscript(generics.ListAPIView):
                             found_rule[curr_degree] = True
                             # TODO: Change
                 
-
             f, just_created = Fulfillment.objects.get_or_create(degree_plan=degree_plan, full_code=full_code, semester=semester)
             if just_created:
                 f.save()
@@ -304,15 +307,10 @@ class OnboardFromTranscript(generics.ListAPIView):
                 f.rules.add(*set.union(*curr_rules.values()).union(set.union(*double_count_allowed_rules.values())))
                 f.unselected_rules.add(*set.union(*unselected_rules.values()))
             f.save()
-
-            # print(f)
-            # print(double_count_allowed_rules)
             
             for rule in set.union(*curr_rules.values()).union(set.union(*double_count_allowed_rules.values())):
                 satisfied_lookup[rule] += 1
         
-
-        print("Done")
         return curr_rules
 
 
@@ -395,8 +393,8 @@ class SatisfiedRuleList(APIView):
             unselected_rules = {degree: set() for degree in rules_per_degree.keys()}
             found_rule = dict.fromkeys(rules_per_degree.keys(), False)
             satisfied_rules = degree_plan.check_rules_already_satisfied(rules)
-
-            rules.remove(rule_selected)
+            if (rule_selected in rules):
+                rules.remove(rule_selected)
             for rule in rules:
                 curr_degree = [degree for degree in rules_per_degree if rule in rules_per_degree[degree]][0]
 

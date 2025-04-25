@@ -10,14 +10,14 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddField(
-            model_name="fulfillment",
-            name="selected_rules",
-            field=models.ManyToManyField(
-                blank=True,
-                help_text="\nThe rules this course fulfills that should be shown in the open-ended rule box \n(as opposed to the expandable box). Blank if this course should not be included in\nany open-ended rule boxes.\n",
-                related_name="+",
-                to="degree.rule",
-            ),
-        ),
+        # migrations.AddField(
+        #     model_name="fulfillment",
+        #     name="unselected_rules",
+        #     field=models.ManyToManyField(
+        #         blank=True,
+        #         help_text="\nThe rules this course fulfills that should be shown in the open-ended rule box \n(as opposed to the expandable box). Blank if this course should not be included in\nany open-ended rule boxes.\n",
+        #         related_name="+",
+        #         to="degree.rule",
+        #     ),
+        # ),
     ]
