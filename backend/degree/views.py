@@ -1,5 +1,6 @@
 from django.db import IntegrityError
 from django.http import Http404
+from django.db.models import F
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -8,7 +9,8 @@ from rest_framework.filters import SearchFilter
 from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 
-from degree.models import Degree, DegreePlan, DockedCourse, Fulfillment, PDPBetaUser
+
+from degree.models import Degree, DegreePlan, DockedCourse, Fulfillment, PDPBetaUser, Rule
 from degree.serializers import (
     DegreeDetailSerializer,
     DegreeListSerializer,
@@ -155,14 +157,33 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
         """
         Create or update fulfillment.
         """
-        if request.data.get("full_code") is None:
-            raise ValidationError({"full_code": "This field is required."})
-        self.kwargs["full_code"] = request.data["full_code"]
+        if request.data.get("rules") == None:
+            if request.data.get("full_code") is None:
+                raise ValidationError({"full_code": "This field is required."})
+            self.kwargs["full_code"] = request.data["full_code"]
+            relevant_degrees = Degree.objects.filter(degreeplan__id=self.kwargs["degreeplan_pk"])
+            relevant_rules = Rule.objects.filter(
+                id__in=relevant_degrees.values_list('rules', flat=True),
+            )
+            rules = Rule.objects.filter(
+                q__contains=request.data.get("full_code")
+            )
+            print(rules)
+            filtered = [obj for obj in rules if getroot_query(obj) in relevant_rules]
+
+            
+
+            print(filtered)
+            self.kwargs["rules"] = filtered
+        else:
+            self.kwargs["full_code"] = request.data.get("full_code")
+            self.kwargs["rules"] = request.data.get("rules")
         try:
             return self.partial_update(request, *args, **kwargs)
         except Http404:
             return super().create(request, *args, **kwargs)
 
+    
 
 class DockedCourseViewset(viewsets.ModelViewSet):
     """
@@ -188,3 +209,9 @@ class DockedCourseViewset(viewsets.ModelViewSet):
             return self.partial_update(request, *args, **kwargs)
         except Http404:
             return super().create(request, *args, **kwargs)
+
+
+def getroot_query(query_obj):
+        if query_obj.parent is None: 
+            return query_obj
+        return getroot_query(query_obj.parent)

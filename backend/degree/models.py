@@ -199,6 +199,13 @@ class Rule(models.Model):
     @property
     def q_json(self):
         return self.get_json_q_object()
+    
+    @property
+    def root(self):
+        r = self
+        while(r.parent != None):
+            r = r.parent
+        return r
 
     def evaluate(self, full_codes: Iterable[str]) -> bool:
         """
@@ -557,3 +564,78 @@ class PDPBetaUser(models.Model):
         help_text="The user who has access to the PDP beta",
     )
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class DoubleCountAllow(models.Model):
+    """
+    Represents an allowance for courses and credits to be double counted between two rules.
+
+    """
+
+    max_courses = models.PositiveSmallIntegerField(
+        null=True,
+        help_text=dedent(
+            """
+            The maximum number of courses you can count for both rules.
+            If null, there is no limit, and max_credits must not be null.
+            """
+        ),
+    )
+
+    max_credits = models.DecimalField(
+        decimal_places=2,
+        max_digits=4,
+        null=True,
+        help_text=dedent(
+            """
+            The maximum number of CUs you can count for both rules.
+            If null, there is no limit, and max_courses must not be null.
+            """
+        ),
+    )
+
+    rule = models.ForeignKey(
+        Rule,
+        on_delete=models.CASCADE,
+        related_name="+",
+        help_text=dedent(
+            """
+            A rule in the double count allowance.
+            """
+        ),
+    )
+
+    other_rule = models.ForeignKey(Rule, on_delete=models.CASCADE, related_name="+")
+
+    def is_double_count_allowed(self, degree_plan: DegreePlan, fulfillments=None) -> bool:
+        """
+        Returns True if double counting between these rules is allowed based on the given
+        DegreePlan's fulfillments.
+
+        """
+        if fulfillments is None:
+            rule_fulfillments = degree_plan.get_rule_fulfillments(self.rule)
+            other_rule_fulfillments = degree_plan.get_rule_fulfillments(self.other_rule)
+            shared_fulfillments = rule_fulfillments & other_rule_fulfillments
+        else:
+            shared_fulfillments = fulfillments
+        
+        if self.max_courses is not None and len(shared_fulfillments) > self.max_courses:
+            return False
+
+        if self.max_credits is not None:
+            intersection_cus = (
+                Course.objects.filter(
+                    full_code__in=[fulfillment.full_code for fulfillment in shared_fulfillments]
+                )
+                .order_by("full_code", "-semester")
+                .aggregate(sum=Sum("credits", distinct=True))
+                .get("sum")
+            )
+            if intersection_cus is None:
+                intersection_cus = 0
+                
+            if intersection_cus > self.max_credits:
+                return False
+                
+        return True
