@@ -102,7 +102,7 @@ export interface Break {
   id: string;
   name: string;
   color: Color;
-  meetings?: Meeting[];
+  meetings: Meeting[];
 }
 
 export interface Alert {
@@ -174,6 +174,11 @@ export interface CartCourse {
     section: Section;
     checked: boolean;
     overlaps: boolean;
+}
+
+export interface BreakSectionItem {
+    break: Break;
+    checked: boolean;
 }
 
 export interface CoursesByDay {

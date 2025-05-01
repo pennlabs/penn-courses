@@ -18,6 +18,8 @@ import {
     ADD_CART_ITEM,
     REMOVE_CART_ITEM,
     ADD_BREAK_ITEM,
+    TOGGLE_BREAK,
+    REMOVE_BREAK,
 } from "../actions";
 import { scheduleContainsSection } from "../components/meetUtil";
 import { showToast } from "../pages";
@@ -35,6 +37,7 @@ const initialState = {
     scheduleSelected: "",
 
     cartSections: [],
+    breakSections: [],
     cartPushedToBackend: false,
     deletedSchedules: [],
     cartUpdatedAt: Date.now(),
@@ -465,6 +468,21 @@ export const schedule = (state = initialState, action) => {
 
         case ADD_BREAK_ITEM:
             if (!state.readOnly) {
+                const newBreakItem = {
+                    name: action.name,
+                    id: action.id,
+                    color: getColor(action.name),
+                    meetings: action.days.map((day) => ({
+                        day,
+                        start: action.timeRange[0],
+                        end: action.timeRange[1],
+                        room: "Towne 100",
+                        latitude: 39.9526,
+                        longitude: -75.1652,
+                        overlap: false,
+                    })),
+                };
+
                 return {
                     ...state,
                     schedules: {
@@ -476,25 +494,73 @@ export const schedule = (state = initialState, action) => {
                             breaks: [
                                 ...state.schedules[state.scheduleSelected]
                                     .breaks,
-                                {
-                                    name: action.name,
-                                    color: getColor(action.name),
-                                    meetings: action.days.map((day) => ({
-                                        day,
-                                        start: action.timeRange[0],
-                                        end: action.timeRange[1],
-                                        room: "Towne 100",
-                                        latitude: 39.9526,
-                                        longitude: -75.1652,
-                                        overlap: false,
-                                    })),
-                                },
+                                newBreakItem,
                             ],
+                        },
+                    },
+                    breakSections: [
+                        ...state.breakSections,
+                        { break: newBreakItem, checked: true }, // push to displayed breaks too
+                    ],
+                };
+            }
+            showToast("Cannot add breaks to a friend's schedule!", true);
+            return { ...state };
+
+        case TOGGLE_BREAK:
+            if (!state.readOnly) {
+                const newBreakSections = state.breakSections.map(
+                    (breakSection) => {
+                        if (breakSection.break.name === action.name) {
+                            return {
+                                ...breakSection,
+                                checked: !breakSection.checked,
+                            };
+                        }
+                        return breakSection;
+                    }
+                );
+                return {
+                    ...state,
+                    breakSections: newBreakSections,
+                    schedules: {
+                        ...state.schedules,
+                        [state.scheduleSelected]: {
+                            ...state.schedules[state.scheduleSelected],
+                            updated_at: Date.now(),
+                            pushedToBackend: false,
+                            breaks: newBreakSections
+                                .filter((breakSection) => breakSection.checked)
+                                .map((breakSection) => breakSection.break),
                         },
                     },
                 };
             }
-            showToast("Cannot add breaks to a friend's schedule!", true);
+            showToast("Cannot remove breaks from a friend's schedule!", true);
+            return { ...state };
+
+        case REMOVE_BREAK:
+            if (!state.readOnly) {
+                const newBreakSections = state.breakSections.filter(
+                    (breakSection) => breakSection.break.name !== action.name
+                );
+                return {
+                    ...state,
+                    breakSections: newBreakSections,
+                    schedules: {
+                        ...state.schedules,
+                        [state.scheduleSelected]: {
+                            ...state.schedules[state.scheduleSelected],
+                            updated_at: Date.now(),
+                            pushedToBackend: false,
+                            breaks: newBreakSections.map(
+                                (breakSection) => breakSection.break
+                            ),
+                        },
+                    },
+                };
+            }
+            showToast("Cannot remove breaks from a friend's schedule!", true);
             return { ...state };
 
         case ADD_CART_ITEM:

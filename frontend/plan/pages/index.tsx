@@ -22,7 +22,7 @@ import Selector from "../components/selector/Selector";
 import Footer from "../components/footer";
 import Cart from "../components/Cart";
 import Alerts from "../components/alert/Alerts";
-import SolverTab from "../components/solver/BreakTab";
+import BreakTab from "../components/solver/BreakTab";
 import MapTab from "../components/map/MapTab";
 import ModalContainer from "../components/modals/generic_modal_container";
 import SearchSortDropdown from "../components/search/SearchSortDropdown";
@@ -128,14 +128,14 @@ enum TabItem {
     Cart = "cart-tab",
     Alerts = "alerts-tab",
     Map = "map-tab",
-    Solver = "break-tab",
+    Break = "break-tab",
 }
 
 const tabItems = [
     { item: TabItem.Cart, name: "Cart", component: Cart },
     { item: TabItem.Alerts, name: "Alerts", component: Alerts },
     { item: TabItem.Map, name: "Map", component: MapTab },
-    { item: TabItem.Solver, name: "Breaks", component: SolverTab },
+    { item: TabItem.Break, name: "Breaks", component: BreakTab },
 ];
 
 function Index() {
@@ -171,8 +171,8 @@ function Index() {
                 ? TabItem.Map
                 : router.asPath.split("#")[1] === TabItem.Alerts
                 ? TabItem.Alerts
-                : router.asPath.split("#")[1] === TabItem.Solver
-                ? TabItem.Solver
+                : router.asPath.split("#")[1] === TabItem.Break
+                ? TabItem.Break
                 : TabItem.Cart
         );
     }, []);
