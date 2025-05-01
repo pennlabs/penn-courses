@@ -85,6 +85,10 @@ const BreakTab: React.FC<BreakProps> = ({
     console.log("Selected Days:", selectedDays);
     console.log("Selected Times:", selectedTimes);
   }
+  useEffect(() => {
+    console.log("Selected Days:", selectedDays);
+    console.log("Selected Times:", selectedTimes);
+  }
     , [selectedDays, selectedTimes]);
 
   return (
