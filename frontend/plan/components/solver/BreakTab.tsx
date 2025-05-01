@@ -95,10 +95,10 @@ const BreakTab: React.FC<BreakProps> = ({
               name={breakItem.break.name}
               checked={breakItem.checked}
               time={getTimeString(breakItem.break.meetings)}
-              toggleCheck={() => toggleBreak(breakItem.break.name)}
+              toggleCheck={() => toggleBreak(breakItem.break.id)}
               remove={(e) => {
                   e.stopPropagation();
-                  removeBreak(breakItem.break.name);
+                  removeBreak(breakItem.break.id);
               }}
               />
           ))}
@@ -120,10 +120,10 @@ const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
     },
   },
   toggleBreak: (breakId: string) => {
-    dispatch({ type: "TOGGLE_BREAK", name: breakId });
+    dispatch({ type: "TOGGLE_BREAK", id: breakId });
   },
   removeBreak: (breakId: string) => {
-    dispatch({ type: "REMOVE_BREAK", name: breakId });
+    dispatch({ type: "REMOVE_BREAK", id: breakId });
   },
 });
 

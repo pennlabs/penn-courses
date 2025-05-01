@@ -102,7 +102,7 @@ export interface Break {
   id: string;
   name: string;
   color: Color;
-  meetings: Meeting[];
+  meetings?: Meeting[];
 }
 
 export interface Alert {

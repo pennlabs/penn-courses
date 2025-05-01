@@ -511,7 +511,7 @@ export const schedule = (state = initialState, action) => {
             if (!state.readOnly) {
                 const newBreakSections = state.breakSections.map(
                     (breakSection) => {
-                        if (breakSection.break.name === action.name) {
+                        if (breakSection.break.id === action.id) {
                             return {
                                 ...breakSection,
                                 checked: !breakSection.checked,
@@ -542,7 +542,7 @@ export const schedule = (state = initialState, action) => {
         case REMOVE_BREAK:
             if (!state.readOnly) {
                 const newBreakSections = state.breakSections.filter(
-                    (breakSection) => breakSection.break.name !== action.name
+                    (breakSection) => breakSection.break.id !== action.id
                 );
                 return {
                     ...state,
