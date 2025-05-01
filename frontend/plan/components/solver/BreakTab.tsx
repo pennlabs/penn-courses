@@ -89,7 +89,9 @@ const BreakTab: React.FC<BreakProps> = ({
             <Button onClick={() => manageBreaks?.add(name, selectedDays, selectedTimes)}>Add Break</Button>
           </BreakAddSection>
           {
-          breaks.map((breakItem, i) => (
+          breaks.map((breakItem, i) => {
+            if (!breakItem.break) return null; 
+            return (
               <BreakSection
               key={i}
               name={breakItem.break.name}
@@ -101,7 +103,7 @@ const BreakTab: React.FC<BreakProps> = ({
                   removeBreak(breakItem.break.id);
               }}
               />
-          ))}
+          )})}
         </Box>
     </>
   );

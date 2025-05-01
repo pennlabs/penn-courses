@@ -188,10 +188,16 @@ const handleUpdateSchedulesOnFrontend = (state, schedulesFromBackend) => {
                                     color: getColor(section.id),
                                 })
                             ),
-                            breaks: scheduleFromBackend.breaks.map((br) => ({
-                                ...br,
-                                color: getColor(br.id),
-                            })),
+                            breaks: scheduleFromBackend.breaks.map((br) => {
+                                const newBreak = {
+                                    ...br,
+                                    color: getColor(br.name),
+                                };
+                                return {
+                                    break: newBreak,
+                                    checked: true,
+                                };
+                            }),
                             id: scheduleFromBackend.id,
                             pushedToBackend: true,
                             updated_at: Date.now(),
@@ -548,9 +554,7 @@ export const schedule = (state = initialState, action) => {
                             ...state.schedules[state.scheduleSelected],
                             updated_at: Date.now(),
                             pushedToBackend: false,
-                            breaks: newBreakSections.map(
-                                (breakSection) => breakSection.break
-                            ),
+                            breaks: newBreakSections,
                         },
                     },
                 };
