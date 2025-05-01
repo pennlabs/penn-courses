@@ -81,16 +81,6 @@ const BreakTab: React.FC<BreakProps> = ({
   const [selectedTimes, setSelectedTimes] = useState<[number, number]>([10.5, 22]);
   const [name, setName] = useState<string>("");
 
-  useEffect(() => {
-    console.log("Selected Days:", selectedDays);
-    console.log("Selected Times:", selectedTimes);
-  }
-  useEffect(() => {
-    console.log("Selected Days:", selectedDays);
-    console.log("Selected Times:", selectedTimes);
-  }
-    , [selectedDays, selectedTimes]);
-
   return (
     <>
         <Box length={breaks.length + 1} id="breaks">
