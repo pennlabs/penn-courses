@@ -41,8 +41,8 @@ const Box = styled.section<{ length: number }>`
 
 
 interface BreakProps {
-  days: string[];
-  timeRange: [number, number];
+  days?: string[];
+  timeRange?: [number, number];
   manageBreaks?: {
     add: (name: string, days: string[], timeRange: [number, number]) => void;
   };
@@ -94,7 +94,7 @@ const BreakTab: React.FC<BreakProps> = ({
               key={i}
               name={breakItem.break.name}
               checked={breakItem.checked}
-              time={getTimeString(breakItem.break.meetings)}
+              time={getTimeString(breakItem.break.meetings ?? [])}
               toggleCheck={() => toggleBreak(breakItem.break.id)}
               remove={(e) => {
                   e.stopPropagation();
@@ -108,9 +108,9 @@ const BreakTab: React.FC<BreakProps> = ({
 };
 
 const mapStateToProps = ({
-  schedule: { breakSections = [] },
+  schedule: { scheduleSelected, schedules },
 }: any) => ({
-  breaks: breakSections,
+  breaks: schedules[scheduleSelected]?.breaks ?? [],
 });
 
 const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({

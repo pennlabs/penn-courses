@@ -37,7 +37,6 @@ const initialState = {
     scheduleSelected: "",
 
     cartSections: [],
-    breakSections: [],
     cartPushedToBackend: false,
     deletedSchedules: [],
     cartUpdatedAt: Date.now(),
@@ -494,14 +493,10 @@ export const schedule = (state = initialState, action) => {
                             breaks: [
                                 ...state.schedules[state.scheduleSelected]
                                     .breaks,
-                                newBreakItem,
+                                { break: newBreakItem, checked: true },
                             ],
                         },
                     },
-                    breakSections: [
-                        ...state.breakSections,
-                        { break: newBreakItem, checked: true }, // push to displayed breaks too
-                    ],
                 };
             }
             showToast("Cannot add breaks to a friend's schedule!", true);
@@ -509,7 +504,9 @@ export const schedule = (state = initialState, action) => {
 
         case TOGGLE_BREAK:
             if (!state.readOnly) {
-                const newBreakSections = state.breakSections.map(
+                const oldBreakSections =
+                    state.schedules[state.scheduleSelected]?.breaks ?? [];
+                const newBreakSections = oldBreakSections.map(
                     (breakSection) => {
                         if (breakSection.break.id === action.id) {
                             return {
@@ -522,16 +519,13 @@ export const schedule = (state = initialState, action) => {
                 );
                 return {
                     ...state,
-                    breakSections: newBreakSections,
                     schedules: {
                         ...state.schedules,
                         [state.scheduleSelected]: {
                             ...state.schedules[state.scheduleSelected],
                             updated_at: Date.now(),
                             pushedToBackend: false,
-                            breaks: newBreakSections
-                                .filter((breakSection) => breakSection.checked)
-                                .map((breakSection) => breakSection.break),
+                            breaks: newBreakSections,
                         },
                     },
                 };
@@ -541,12 +535,13 @@ export const schedule = (state = initialState, action) => {
 
         case REMOVE_BREAK:
             if (!state.readOnly) {
-                const newBreakSections = state.breakSections.filter(
+                const oldBreakSections =
+                    state.schedules[state.scheduleSelected]?.breaks ?? [];
+                const newBreakSections = oldBreakSections.filter(
                     (breakSection) => breakSection.break.id !== action.id
                 );
                 return {
                     ...state,
-                    breakSections: newBreakSections,
                     schedules: {
                         ...state.schedules,
                         [state.scheduleSelected]: {

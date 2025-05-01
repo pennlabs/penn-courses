@@ -194,6 +194,7 @@ export interface CoursesByDay {
 export interface Schedule {
     id: string;
     sections: Section[];
+    breaks: BreakSectionItem[];
     semester: string;
     name: string;
     created_at: string;
@@ -252,7 +253,7 @@ export type FilterType =
 
     export interface FriendshipState {
         activeFriend: User;
-        activeFriendSchedule: { found: boolean; sections: Section[], breaks: Break[] };
+        activeFriendSchedule: { found: boolean; sections: Section[], breaks: BreakSectionItem[] };
         acceptedFriends: User[];
         requestsReceived: Friendship[];
         requestsSent: Friendship[];

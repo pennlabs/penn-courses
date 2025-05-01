@@ -11,9 +11,9 @@ import {
   Day,
   Meeting,
   Section,
-  Break,
   MeetingBlock,
   FriendshipState,
+  BreakSectionItem,
 } from "../../types";
 import { getConflictGroups } from "../meetUtil";
 import { PATH_REGISTRATION_SCHEDULE_NAME } from "../../constants/constants";
@@ -100,7 +100,7 @@ interface ScheduleDisplayProps {
   schedName: string;
   schedData: {
     sections: Section[];
-    breaks: Break[];
+    breaks: BreakSectionItem[];
   };
   friendshipState: FriendshipState;
   focusSection: (id: string) => void;
@@ -141,7 +141,8 @@ const ScheduleDisplay = ({
 
   let breaks;
 
-  breaks = friendshipState.activeFriendSchedule?.breaks || schedData.breaks || [];
+  breaks = friendshipState.activeFriendSchedule?.breaks
+  || schedData.breaks || [];
 
   const notEmpty = sections.length > 0;
 
@@ -194,28 +195,29 @@ const ScheduleDisplay = ({
   });
 
   breaks.forEach((b) => {
-    if (b.meetings) {
-      meetings.push(
-        ...b.meetings.map((m) => ({
-          day: m.day as Day,
-          start: transformTime(m.start),
-          end: transformTime(m.end),
-          type: "break",
-          course: {
-            color: b.color,
-            id: b.name,
-            coreqFulfilled: true
-          },
-          style: {
-            width: "100%",
-            left: "0",
-          },
-        }))
-      );
+    if (b.checked) {
+      let breakItem = b.break;
+      if (breakItem.meetings) {
+        meetings.push(
+          ...breakItem.meetings.map((m) => ({
+            day: m.day as Day,
+            start: transformTime(m.start),
+            end: transformTime(m.end),
+            type: "break",
+            course: {
+              color: breakItem.color,
+              id: breakItem.name,
+              coreqFulfilled: true
+            },
+            style: {
+              width: "100%",
+              left: "0",
+            },
+          }))
+        );
+      }
     }
   });
-
-
 
   startHour = Math.floor(
     Math.min(startHour, ...meetings.map((m) => m.start))

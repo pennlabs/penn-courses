@@ -21,6 +21,7 @@ import {
   User,
   Schedule as ScheduleType,
   FriendshipState,
+  BreakSectionItem,
 } from "../../types";
 import ScheduleDisplay from "./ScheduleDisplay";
 import {
@@ -49,7 +50,7 @@ const ScheduleDropdownHeader = styled.h3`
 interface ScheduleProps {
   user: User;
   activeScheduleName: string;
-  currScheduleData: { sections: Section[], breaks: Break[] };
+  currScheduleData: { sections: Section[], breaks: BreakSectionItem[] };
   allSchedules: ScheduleType[];
   primaryScheduleId: string;
   readOnly: boolean;

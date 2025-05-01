@@ -102,7 +102,6 @@ export function DayTimeSelector({
             : [...selectedDays, day];
 
         setSelectedDays(updatedDays);
-        console.log(updatedDays);
     };
 
     const handleTimeChange = (values: number | number[]) => {
