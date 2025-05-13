@@ -62,7 +62,12 @@ class Break(models.Model):
                 fields=["person", "meeting_times"],
                 condition=Q(meeting_times__isnull=False) & ~Q(meeting_times=""),
                 name="unique_break_meeting_times_per_person",
-            )
+            ),
+            UniqueConstraint(
+                fields=["name", "person"],
+                condition=Q(name__isnull=False) & ~Q(name=""),
+                name="unique_break_name_per_person",
+            ),
         ]
 
     def __str__(self):
