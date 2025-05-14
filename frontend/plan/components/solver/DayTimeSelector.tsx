@@ -21,7 +21,7 @@ const FilterContainer = styled.div`
     flex-wrap: wrap;
     justify-content: center;
     margin-top: 0.5rem;
-`; 
+`;
 
 const DayRow = styled.div`
     padding: 0.75rem;
@@ -61,115 +61,115 @@ const NameInput = styled.input`
 `;
 
 const intToTime = (t: number) => {
-    let hour = Math.floor(t % 12);
-    const min = Math.round((t % 1) * 60);
-    let meridian;
-    if (t === 24) {
-        meridian = "AM";
-    } else {
-        meridian = t < 12 ? "AM" : "PM";
-    }
-    if (hour === 0) {
-        hour = 12;
-    }
-    const minString = min > 9 ? min : `0${min}`;
-    if (min === 0) {
-        return `${hour} ${meridian}`;
-    }
-    return `${hour}:${minString} ${meridian}`;
+  let hour = Math.floor(t % 12);
+  const min = Math.round((t % 1) * 60);
+  let meridian;
+  if (t === 24) {
+    meridian = "AM";
+  } else {
+    meridian = t < 12 ? "AM" : "PM";
+  }
+  if (hour === 0) {
+    hour = 12;
+  }
+  const minString = min > 9 ? min : `0${min}`;
+  if (min === 0) {
+    return `${hour} ${meridian}`;
+  }
+  return `${hour}:${minString} ${meridian}`;
 };
 
 interface DayTimeSelectorProps {
-    minRange: number;
-    maxRange: number;
-    step: number;
-    selectedDays: string[];
-    setSelectedDays: (days: string[]) => void;
-    selectedTimes: [number, number];
-    setSelectedTimes: (times: [number, number]) => void;
-    name: string;
-    setName: (name: string) => void;
+  minRange: number;
+  maxRange: number;
+  step: number;
+  selectedDays: string[];
+  setSelectedDays: (days: string[]) => void;
+  selectedTimes: [number, number];
+  setSelectedTimes: (times: [number, number]) => void;
+  name: string;
+  setName: (name: string) => void;
 }
 
-export function DayTimeSelector({ 
-    minRange, maxRange, step, selectedDays, setSelectedDays, selectedTimes, setSelectedTimes, name, setName }: DayTimeSelectorProps) {
+export function DayTimeSelector({
+  minRange, maxRange, step, selectedDays, setSelectedDays, selectedTimes, setSelectedTimes, name, setName }: DayTimeSelectorProps) {
 
-    const daysOfWeek = ["M", "T", "W", "R", "F", "S", "U"];
+  const daysOfWeek = ["M", "T", "W", "R", "F", "S", "U"];
 
-    const handleDayToggle = (day: string) => {
-        const updatedDays = selectedDays.includes(day)
-            ? selectedDays.filter((d) => d !== day)
-            : [...selectedDays, day];
+  const handleDayToggle = (day: string) => {
+    const updatedDays = selectedDays.includes(day)
+      ? selectedDays.filter((d) => d !== day)
+      : [...selectedDays, day];
 
-        setSelectedDays(updatedDays);
-    };
+    setSelectedDays(updatedDays);
+  };
 
-    const handleTimeChange = (values: number | number[]) => {
-        const newTimes = values as [number, number];
-        setSelectedTimes(newTimes);
-    };
+  const handleTimeChange = (values: number | number[]) => {
+    const newTimes = values as [number, number];
+    setSelectedTimes(newTimes);
+  };
 
-    return (
-        <DayTimeFilterContainer>
-            <NameRow>
-                <p><strong>Name</strong></p>
-                <NameInput
-                    type="text"
-                    placeholder="Break Name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                />
-            </NameRow>
-            
-            <DayRow>
-                <p><strong>Day</strong></p>
-                <FilterContainer>
-                    {daysOfWeek.map((day) => (
-                        <FilterRow key={"day-" + day}>
-                            <CheckboxInput
-                                type="checkbox"
-                                id={"day-" + day}
-                                checked={selectedDays.includes(day)}
-                                onChange={() => handleDayToggle(day)}
-                            />
-                            <CheckboxLabel htmlFor={"day-" + day}>{day}</CheckboxLabel>
-                        </FilterRow>
-                    ))}
-                </FilterContainer>
-            </DayRow>
-            <Column>
-                <p><strong>Time</strong></p>
-                <RangeFilterContainer>
-                    <StyledRangeWrapper>
-                        <Slider
-                            range
-                            min={minRange}
-                            max={maxRange}
-                            value={selectedTimes}
-                            marks={{
-                                10.5: {
-                                    style: {},
-                                    label: intToTime(
-                                        selectedTimes[0]
-                                    ),
-                                },
+  return (
+    <DayTimeFilterContainer>
+      <NameRow>
+        <p><strong>Name</strong></p>
+        <NameInput
+          type="text"
+          placeholder="Break Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+      </NameRow>
 
-                                22: {
-                                    label:
-                                        intToTime(
-                                            selectedTimes[1]
-                                        )
-                                },
-                            }}
-                            step={step}
-                            vertical={false}
-                            allowCross={false}
-                            onChange={handleTimeChange}
-                            // style={{ width: "100%" }}
-                        />
-                    </StyledRangeWrapper>
-                </RangeFilterContainer>
-            </Column>
-        </DayTimeFilterContainer>
-    );
+      <DayRow>
+        <p><strong>Day</strong></p>
+        <FilterContainer>
+          {daysOfWeek.map((day) => (
+            <FilterRow key={"day-" + day}>
+              <CheckboxInput
+                type="checkbox"
+                id={"day-" + day}
+                checked={selectedDays.includes(day)}
+                onChange={() => handleDayToggle(day)}
+              />
+              <CheckboxLabel htmlFor={"day-" + day}>{day}</CheckboxLabel>
+            </FilterRow>
+          ))}
+        </FilterContainer>
+      </DayRow>
+      <Column>
+        <p><strong>Time</strong></p>
+        <RangeFilterContainer>
+          <StyledRangeWrapper>
+            <Slider
+              range
+              min={minRange}
+              max={maxRange}
+              value={selectedTimes}
+              marks={{
+                10.5: {
+                  style: {},
+                  label: intToTime(
+                    selectedTimes[0]
+                  ),
+                },
+
+                22: {
+                  label:
+                    intToTime(
+                      selectedTimes[1]
+                    )
+                },
+              }}
+              step={step}
+              vertical={false}
+              allowCross={false}
+              onChange={handleTimeChange}
+            // style={{ width: "100%" }}
+            />
+          </StyledRangeWrapper>
+        </RangeFilterContainer>
+      </Column>
+    </DayTimeFilterContainer>
+  );
 }

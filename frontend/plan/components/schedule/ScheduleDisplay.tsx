@@ -11,6 +11,7 @@ import {
   Day,
   Meeting,
   Section,
+  Break,
   MeetingBlock,
   FriendshipState,
   BreakSectionItem,
@@ -142,23 +143,27 @@ const ScheduleDisplay = ({
   let breaks;
 
   breaks = friendshipState.activeFriendSchedule?.breaks
-  || schedData.breaks || [];
+    || schedData.breaks || [];
 
-  const notEmpty = sections.length > 0;
+  const notEmpty = sections.length > 0 || breaks.length > 0;
 
   let startHour = 10.5;
   let endHour = 16;
 
+
   // show the weekend days only if there's a section which meets on saturday (S) or sunday (U)
   const showWeekend =
-    sections.filter((sec: Section) => {
-      if (sec.meetings) {
-        sec.meetings.filter(
-          (meeting: Meeting) =>
-            meeting.day === "S" || meeting.day === "U"
-        ).length > 0;
-      }
-    }).length > 0;
+    sections.some((sec: Section) =>
+      sec.meetings?.some(
+        (meeting: Meeting) => meeting.day === "S" || meeting.day === "U"
+      )
+    ) ||
+    breaks.some((brk: BreakSectionItem) =>
+      brk.break.meetings?.some(
+        (meeting: Meeting) => meeting.day === "S" || meeting.day === "U"
+      )
+    );
+
 
   // 15 minute time intervals
   const getNumRows = () => (endHour - startHour + 1) * 4 + rowOffset;

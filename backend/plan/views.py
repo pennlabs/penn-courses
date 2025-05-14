@@ -501,6 +501,8 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             if break_id:
                 break_candidate = Break.objects.filter(id=break_id).first()
                 if break_candidate:
+                    break_candidate.checked = b.get("checked", False)
+                    break_candidate.save()
                     breaks.append(break_candidate)
         return breaks
 
@@ -701,7 +703,8 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 {"detail": "Error setting meetings: " + str(e)}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        print("current_break", current_break)
+        checked = request.data.get("checked")
+        current_break.checked = checked if checked is not None else current_break.checked
 
         try:
             current_break.save()
@@ -724,7 +727,6 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 {"detail": "Break name is required."}, status=status.HTTP_400_BAD_REQUEST
             )
         location_string = request.data.get("location_string")
-        print(request.data)
         try:
             if break_id:
                 new_break = self.get_queryset().create(
@@ -762,7 +764,6 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             }
             for m in meetings
         ]
-        print(meetings_with_codes)
         try:
             set_meetings(new_break, meetings_with_codes)
         except Exception as e:
