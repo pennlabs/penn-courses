@@ -42,6 +42,16 @@ class Break(models.Model):
         ),
     )
 
+    checked = models.BooleanField(
+        default=True,
+        help_text=dedent(
+            """
+        Whether or not the break has been checked by the user. This is used to
+        determine if the break should be displayed in the user's schedule.
+        """
+        ),
+    )
+
     meeting_times = models.TextField(
         blank=True,
         help_text=dedent(

@@ -145,7 +145,7 @@ const ScheduleDisplay = ({
   breaks = friendshipState.activeFriendSchedule?.breaks
     || schedData.breaks || [];
 
-  const notEmpty = sections.length > 0;
+  const notEmpty = sections.length > 0 || breaks.length > 0;
 
   let startHour = 10.5;
   let endHour = 16;

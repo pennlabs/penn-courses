@@ -703,7 +703,9 @@ export const updateScheduleOnBackend = (name, schedule) => (dispatch) => {
         ...schedule,
         name,
         sections: schedule.sections,
-        breaks: (schedule.breaks ?? []).map((breakItem) => breakItem.break),
+        breaks: (schedule.breaks ?? []).map((breakItem) => {
+            return { ...breakItem.break, checked: breakItem.checked };
+        }),
     };
     doAPIRequest(`/plan/schedules/${schedule.id}/`, {
         method: "PUT",
