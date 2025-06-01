@@ -88,6 +88,10 @@ overflow - y: scroll;
 padding: 1.5rem;
 `
 
+const ReqPanelBackground = styled.div`
+  background-color: #707070;
+`
+
 interface DegreeHeaderProps {
     degree: DegreeType,
     remove: (degreeId: DegreeType["id"]) => void,
@@ -272,22 +276,32 @@ interface ReqPanelProps {
     isLoading: boolean;
 }
 const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: ReqPanelProps) => {
-    const { tutorialModalKey, highlightedComponentRef } = useContext(TutorialModalContext);
+    const { tutorialModalKey, componentRefs } = useContext(TutorialModalContext);
     const reqPanelRef = React.useRef<HTMLDivElement | null>(null);
+    const editReqRef = React.useRef<HTMLDivElement | null>(null);
+
+    const showToast = useContext(ToastContext);
 
     useEffect(() => {
         if (reqPanelRef.current) {
             if (tutorialModalKey === "requirements-panel-1" || tutorialModalKey === "requirements-panel-2" || tutorialModalKey === "edit-requirements") {
                 reqPanelRef.current.style.zIndex = "11";
-                highlightedComponentRef.current = reqPanelRef.current;
+                componentRefs.current["reqPanel"] = reqPanelRef.current;
             } else {
                 reqPanelRef.current.style.zIndex = "0";
             }
         }
 
-    }, [tutorialModalKey, highlightedComponentRef]);
-    const showToast = useContext(ToastContext);
+        if (editReqRef.current) {
+            if (tutorialModalKey === "edit-requirements") {
+                editReqRef.current.style.zIndex = "11";
+                componentRefs.current["editReqs"] = editReqRef.current;
+            } else {
+                editReqRef.current.style.zIndex = "0";
+            }
+        }
 
+    }, [tutorialModalKey, componentRefs]);
 
     const [editMode, setEditMode] = React.useState(false);
     const [allRuleLeaves, setAllRuleLeaves] = React.useState(false);
@@ -328,51 +342,56 @@ const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: 
 
 
     return (
-        <div style={{ position: "relative" }} ref={(el) => {
+        <PanelContainer style={{ position: "relative" }} ref={(el) => {
             reqPanelRef.current = el;
             if (tutorialModalKey === "requirements-panel-1" || tutorialModalKey === "requirements-panel-2") {
-                highlightedComponentRef.current = el;
+                componentRefs.current["reqPanel"] = el;
             }
         }}>
-            <PanelContainer>
-                <PanelHeader>
-                    <ReqPanelTitle>Requirements</ReqPanelTitle>
-                    <PanelTopBarIconList>
-                        <EditButton editMode={editMode} setEditMode={setEditMode} />
-                    </PanelTopBarIconList>
-                </PanelHeader>
-                {!activeDegreeplan ? <ReqPanelBody><Degree isLoading={true} /></ReqPanelBody> :
-                    <>
-                        {activeDegreeplanDetail &&
-                            <ReqPanelBody>
-                                {activeDegreeplanDetail.degrees.length == 0 && !editMode && <EmptyPanel />}
-                                {activeDegreeplanDetail.degrees.map(degree => (
-                                    <Degree
-                                        allRuleLeaves={allRuleLeaves}
-                                        degree={degree}
-                                        rulesToFulfillments={rulesToFulfillments}
-                                        rulesToUnselectedFulfillments={rulesToUnselectedFulfillments}
-                                        activeDegreeplan={activeDegreeplan}
-                                        editMode={editMode}
-                                        setModalKey={setModalKey}
-                                        setModalObject={setModalObject}
-                                        isLoading={isLoading}
-                                    />
-                                ))}
-                                {editMode && <AddButton role="button" onClick={() => {
-                                    setModalObject(activeDegreeplan);
-                                    setModalKey("degree-add");
-                                }}>
-                                    <i className="fa fa-plus" />
-                                    <div>
-                                        Add Degree
-                                    </div>
-                                </AddButton>}
-                            </ReqPanelBody>
+            <ReqPanelBackground />
+            <PanelHeader>
+                <ReqPanelTitle>Requirements</ReqPanelTitle>
+                <PanelTopBarIconList>
+                    <div style={{ position: "relative" }} ref={(el) => {
+                        if (tutorialModalKey === "edit-requirements") {
+                            componentRefs.current["editReqs"] = el;
                         }
-                    </>}
-            </PanelContainer>
-        </div>
+                    }}>
+                        <EditButton editMode={editMode} setEditMode={setEditMode} />
+                    </div>
+                </PanelTopBarIconList>
+            </PanelHeader>
+            {!activeDegreeplan ? <ReqPanelBody><Degree isLoading={true} /></ReqPanelBody> :
+                <>
+                    {activeDegreeplanDetail &&
+                        <ReqPanelBody>
+                            {activeDegreeplanDetail.degrees.length == 0 && !editMode && <EmptyPanel />}
+                            {activeDegreeplanDetail.degrees.map(degree => (
+                                <Degree
+                                    allRuleLeaves={allRuleLeaves}
+                                    degree={degree}
+                                    rulesToFulfillments={rulesToFulfillments}
+                                    rulesToUnselectedFulfillments={rulesToUnselectedFulfillments}
+                                    activeDegreeplan={activeDegreeplan}
+                                    editMode={editMode}
+                                    setModalKey={setModalKey}
+                                    setModalObject={setModalObject}
+                                    isLoading={isLoading}
+                                />
+                            ))}
+                            {editMode && <AddButton role="button" onClick={() => {
+                                setModalObject(activeDegreeplan);
+                                setModalKey("degree-add");
+                            }}>
+                                <i className="fa fa-plus" />
+                                <div>
+                                    Add Degree
+                                </div>
+                            </AddButton>}
+                        </ReqPanelBody>
+                    }
+                </>}
+        </PanelContainer>
     );
 }
 export default ReqPanel;

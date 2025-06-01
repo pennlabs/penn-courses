@@ -17,8 +17,6 @@ const ModalContainer = styled.div<{ $top?: string; $left?: string; $position?: s
     color: #4a4a4a;
 `;
 
-
-
 const ModalCard = styled.div`
     max-width: 400px !important;
     max-height: 400px !important;
@@ -64,17 +62,18 @@ const ModalCardBody = styled.div`
     display: block;
 `;
 
-const ModalCardArrow = styled.div`
+const ModalCardArrow = styled.div<{ $top?: number, $left?: number, $rotation?: number }>`
     position: relative;
-    top: 20%;
-    left: -20%;
+    top: ${({ $top }) => $top || 0}%;
+    left: ${({ $left }) => $left || 0}%;
     width: 0;
     height: 0;
     border-left: 10px solid transparent;
     border-right: 10px solid white;
     border-top: 10px solid transparent;
     border-bottom: 10px solid transparent;
-    border-right-color: red;
+    transform: rotate(${({ $rotation }) => $rotation || 90}deg);
+    z-index: 1;
 `;
 
 const CloseButton = styled.button`
@@ -99,6 +98,7 @@ interface PanelProps {
     left?: string;
     position?: string;
     headerIcon?: string;
+    arrowPosition?: { top?: number, left?: number };
     close?: () => void;
 }
 
@@ -109,11 +109,12 @@ const OnboardingTutorialPanel = ({
     left,
     position,
     headerIcon,
+    arrowPosition,
     close,
 }: PropsWithChildren<PanelProps>) => (
     <ModalContainer $top={top} $left={left} $position={position}>
         {/* <ModalBackground /> */}
-        {/* <ModalCardArrow /> */}
+        {/* <ModalCardArrow $top={arrowPosition?.top} $left={15} /> */}
         <ModalCard>
             <ModalCardHead $center={!headerIcon}>
                 <header>{title}</header>

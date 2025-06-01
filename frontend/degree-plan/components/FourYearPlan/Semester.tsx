@@ -12,6 +12,7 @@ import 'react-loading-skeleton/dist/skeleton.css'
 import { mutate } from "swr";
 import { ModalKey } from "./DegreeModal";
 import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
+import { SemestersContext } from "./Semesters";
 
 import { Tooltip } from 'react-tooltip';
 
@@ -127,7 +128,7 @@ interface SemesterProps {
     isLoading?: boolean
 }
 
-const FlexSemester = forwardRef<HTMLDivElement, SemesterProps>(({
+const FlexSemester = ({
     showStats,
     semester,
     fulfillments,
@@ -139,7 +140,9 @@ const FlexSemester = forwardRef<HTMLDivElement, SemesterProps>(({
     currentSemester,
     numSemesters,
     isLoading = false
-}, ref) => {
+}: SemesterProps) => {
+    const { semesterRefs } = useContext(SemestersContext);
+
     const credits = fulfillments.reduce((acc, curr) => acc + (curr.course?.credits || 1), 0)
 
     const { createOrUpdate: addToDock } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
@@ -254,32 +257,32 @@ const FlexSemester = forwardRef<HTMLDivElement, SemesterProps>(({
                 ref={drop}
                 $semesterComparison={currentSemester ? semester.localeCompare(currentSemester) : 1}
             >
-                <div ref={ref} >
-                    <SemesterHeader>
-                        <SemesterLabel>
-                            {translateSemester(semester)}
-                        </SemesterLabel>
-                        {/* TODO: Current structure doesn't allow for last semester to be deleted.
+                <SemesterHeader ref={(el) => {
+                    semesterRefs.current[semester] = el;
+                }}>
+                    <SemesterLabel>
+                        {translateSemester(semester)}
+                    </SemesterLabel>
+                    {/* TODO: Current structure doesn't allow for last semester to be deleted.
                         Disabling deletion when there is only one semester 
                         is a quick fix that could be addressed later. */}
-                        {!!editMode && (numSemesters > 1 ?
-                            <TrashIcon role="button" onClick={handleRemoveSemester}>
-                                <i className="fa fa-trash fa-md" />
-                            </TrashIcon>
-                            : <>
-                                <a
-                                    data-tooltip-id="my-tooltip"
-                                    data-tooltip-content="You must have at least one semester!"
-                                >
-                                    <DisabledTrashIcon role="button">
-                                        <i className="fa fa-trash fa-md" />
-                                    </DisabledTrashIcon>
-                                </a>
-                                <Tooltip id="my-tooltip" place="top" />
-                            </>)
-                        }
-                    </SemesterHeader>
-                </div>
+                    {!!editMode && (numSemesters > 1 ?
+                        <TrashIcon role="button" onClick={handleRemoveSemester}>
+                            <i className="fa fa-trash fa-md" />
+                        </TrashIcon>
+                        : <>
+                            <a
+                                data-tooltip-id="my-tooltip"
+                                data-tooltip-content="You must have at least one semester!"
+                            >
+                                <DisabledTrashIcon role="button">
+                                    <i className="fa fa-trash fa-md" />
+                                </DisabledTrashIcon>
+                            </a>
+                            <Tooltip id="my-tooltip" place="top" />
+                        </>)
+                    }
+                </SemesterHeader>
                 <SemesterContent>
                     <FlexCoursesPlanned
                         semester={semester}
@@ -293,6 +296,6 @@ const FlexSemester = forwardRef<HTMLDivElement, SemesterProps>(({
             </SemesterCard>
         </>
     )
-});
+};
 
 export default FlexSemester;

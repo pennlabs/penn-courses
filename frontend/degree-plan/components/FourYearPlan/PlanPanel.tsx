@@ -2,7 +2,7 @@ import SelectListDropdown from "./SelectListDropdown";
 import Semesters from "./Semesters";
 import styled from "@emotion/styled";
 import type { DegreePlan } from "@/types";
-import React, { useEffect, useState, forwardRef, useContext } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { useSWRCrud } from '@/hooks/swrcrud';
 import { EditButton } from './EditButton';
 import { PanelTopBarButton, PanelTopBarIcon } from "./PanelCommon";
@@ -39,7 +39,7 @@ interface PlanPanelProps {
     setShowOnboardingModal: (arg0: boolean) => void;
 }
 
-const PlanPanel = forwardRef(({
+const PlanPanel = ({
     setModalKey,
     modalKey,
     setModalObject,
@@ -49,12 +49,12 @@ const PlanPanel = forwardRef(({
     degreeplans,
     isLoading,
     currentSemester,
-}: PlanPanelProps, semesterRefs) => {
+}: PlanPanelProps) => {
     const { copy: copyDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans');
     const [showStats, setShowStats] = useState(true);
     const [editMode, setEditMode] = useState(false);
 
-    const { tutorialModalKey, highlightedComponentRef } = useContext(TutorialModalContext);
+    const { tutorialModalKey, componentRefs } = useContext(TutorialModalContext);
     const planPanelRef = React.useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
@@ -62,14 +62,19 @@ const PlanPanel = forwardRef(({
 
         if (tutorialModalKey === "calendar-panel" || tutorialModalKey === "current-semester" || tutorialModalKey === "future-semesters" || tutorialModalKey === "past-semesters" || tutorialModalKey === "edit-mode" || tutorialModalKey === "show-stats") {
             planPanelRef.current.style.zIndex = "11";
-            highlightedComponentRef.current = planPanelRef.current;
+            componentRefs.current["planPanel"] = planPanelRef.current;
         } else {
             planPanelRef.current.style.zIndex = "0";
         }
-    }, [tutorialModalKey, highlightedComponentRef]);
+    }, [tutorialModalKey, componentRefs]);
 
     return (
-        <PanelContainer>
+        <PanelContainer style={{ position: "relative" }} ref={(el) => {
+            planPanelRef.current = el;
+            if (tutorialModalKey === "calendar-panel" || tutorialModalKey === "current-semester" || tutorialModalKey === "future-semesters" || tutorialModalKey === "past-semesters" || tutorialModalKey === "edit-mode" || tutorialModalKey === "show-stats") {
+                componentRefs.current["planPanel"] = el;
+            }
+        }}>
             <PanelHeader>
                 <SelectListDropdown
                     itemType="degree plan"
@@ -112,11 +117,10 @@ const PlanPanel = forwardRef(({
                     setModalObject={setModalObject}
                     isLoading={isLoading}
                     currentSemester={currentSemester}
-                // ref={semesterRefs}
                 />
             </PanelBody>
         </PanelContainer>
     );
-});
+};
 
 export default PlanPanel;

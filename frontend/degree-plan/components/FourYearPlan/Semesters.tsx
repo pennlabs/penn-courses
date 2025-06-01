@@ -183,6 +183,14 @@ export const interpolateSemesters = (startingYear: number, graduationYear: numbe
     return res;
 }
 
+interface SemestersContextProps {
+    semesterRefs: React.MutableRefObject<{ [semester: string]: HTMLDivElement | null }>;
+}
+
+export const SemestersContext = React.createContext<SemestersContextProps>({
+    semesterRefs: { current: {} },
+});
+
 interface SemestersProps {
     activeDegreeplan?: DegreePlan;
     showStats: any;
@@ -196,7 +204,7 @@ interface SemestersProps {
     ref?: any;
 }
 
-const Semesters = forwardRef(({
+const Semesters = ({
     activeDegreeplan,
     showStats,
     className,
@@ -206,7 +214,7 @@ const Semesters = forwardRef(({
     setEditMode,
     currentSemester,
     isLoading
-}: SemestersProps, semesterRefs) => {
+}: SemestersProps) => {
     const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<
         Fulfillment[]
     >(
@@ -344,6 +352,6 @@ const Semesters = forwardRef(({
             }
         </SemestersContainer >
     );
-});
+};
 
 export default Semesters;
