@@ -137,25 +137,14 @@ interface TutorialModalContextProps {
     tutorialModalKey: TutorialModalKey;
     setTutorialModalKey: (key: TutorialModalKey) => void;
     highlightedComponentRef: any;
-    // componentRefs: any[];
-    // requirementsPanelRef: any;
-    // editButtonRef: any;
-    // calendarPanelRef: any;
-    // pastSemestersRef: any;
-    // currentSemesterRef: any;
-    // futureSemestersRef: any;
-    // editModeRef: any;
-    // showStatsRef: any;
-    // coursesDockRef: any;
-    // generalSearchRef: any;
-    // setHighlightedComponent: (component: any) => void;
+    componentRefs: any;
 }
 
 export const TutorialModalContext = createContext<TutorialModalContextProps>({
     tutorialModalKey: null,
     setTutorialModalKey: (key: TutorialModalKey) => { }, // placeholder
     highlightedComponentRef: null,
-    // componentRefs: [],
+    componentRefs: null,
     // setHighlightedComponent: (component: any) => { } // placeholder
 });
 
@@ -192,7 +181,7 @@ const ModalInterior = ({
             case "edit-mode":
                 return "-65%";
             case "show-stats":
-                return "-65%";
+                return "-62%";
             case "courses-dock":
                 return "60%";
             case "general-search":
@@ -207,7 +196,7 @@ const ModalInterior = ({
     const leftLocation = () => {
         switch (modalKey) {
             case "welcome":
-                return "-10%";
+                return "0%";
             case "requirements-panel-1":
                 return "-25%";
             case "requirements-panel-2":
@@ -234,6 +223,15 @@ const ModalInterior = ({
                 return "";
             default:
                 throw Error("Invalid modal key: ");
+        }
+    }
+
+    const arrowLocation = () => {
+        switch (modalKey) {
+            case "welcome":
+                return { top: 0, left: 0 };
+            case "requirements-panel-1":
+                return { top: 50, left: 50 };
         }
     }
 

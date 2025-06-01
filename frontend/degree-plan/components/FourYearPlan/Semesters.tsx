@@ -3,7 +3,7 @@ import styled from "@emotion/styled";
 import { Icon } from "../common/bulma_derived_components";
 import { Course, DegreePlan, Fulfillment } from "@/types";
 import useSWR from "swr";
-import React, { useEffect, useState, forwardRef } from "react";
+import React, { useEffect, useState } from "react";
 import Select from "react-select";
 import { ModalKey } from "./DegreeModal";
 
@@ -182,6 +182,14 @@ export const interpolateSemesters = (startingYear: number, graduationYear: numbe
     return res;
 }
 
+interface SemestersContextProps {
+    semesterRefs: React.MutableRefObject<{ [semester: string]: HTMLDivElement | null }>;
+}
+
+export const SemestersContext = React.createContext<SemestersContextProps>({
+    semesterRefs: { current: {} },
+});
+
 interface SemestersProps {
     activeDegreeplan?: DegreePlan;
     showStats: any;
@@ -195,7 +203,7 @@ interface SemestersProps {
     ref?: any;
 }
 
-const Semesters = forwardRef(({
+const Semesters = ({
     activeDegreeplan,
     showStats,
     className,
@@ -205,7 +213,7 @@ const Semesters = forwardRef(({
     setEditMode,
     currentSemester,
     isLoading
-}: SemestersProps, semesterRefs) => {
+}: SemestersProps) => {
     const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<
         Fulfillment[]
     >(
@@ -307,8 +315,6 @@ const Semesters = forwardRef(({
                             setModalKey={setModalKey}
                             setModalObject={setModalObject}
                             currentSemester={currentSemester}
-                        /* @ts-ignore */
-                        // ref={(el) => (semesterRefs.current[semester] = el)}
                         />
                     )
             }
@@ -319,6 +325,6 @@ const Semesters = forwardRef(({
             }
         </SemestersContainer >
     );
-});
+};
 
 export default Semesters;

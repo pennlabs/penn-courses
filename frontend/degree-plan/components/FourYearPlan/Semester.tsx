@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, forwardRef } from "react";
+import React, { useState, useRef, useEffect, useContext } from "react";
 import { useDrag, useDrop } from "react-dnd";
 import { ItemTypes } from "../dnd/constants";
 import CoursesPlanned, { SkeletonCoursesPlanned } from "./CoursesPlanned";
@@ -12,6 +12,7 @@ import 'react-loading-skeleton/dist/skeleton.css'
 import { mutate } from "swr";
 import { ModalKey } from "./DegreeModal";
 import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
+import { SemestersContext } from "./Semesters";
 
 const SEMESTER_REGEX = /\d{4}[ABC]/
 
@@ -118,7 +119,7 @@ interface SemesterProps {
     isLoading?: boolean
 }
 
-const FlexSemester = forwardRef<HTMLDivElement, SemesterProps>(({
+const FlexSemester = ({
     showStats,
     semester,
     fulfillments,
@@ -129,7 +130,9 @@ const FlexSemester = forwardRef<HTMLDivElement, SemesterProps>(({
     removeSemester,
     currentSemester,
     isLoading = false
-}, ref) => {
+}: SemesterProps) => {
+    const { semesterRefs } = useContext(SemestersContext);
+
     const credits = fulfillments.reduce((acc, curr) => acc + (curr.course?.credits || 1), 0)
 
     const { createOrUpdate: addToDock } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
@@ -185,17 +188,17 @@ const FlexSemester = forwardRef<HTMLDivElement, SemesterProps>(({
             ref={drop}
             $semesterComparison={currentSemester ? semester.localeCompare(currentSemester) : 1}
         >
-            <div ref={ref}>
-                <SemesterHeader>
-                    <SemesterLabel>
-                        {translateSemester(semester)}
-                    </SemesterLabel>
-                    {!!editMode &&
-                        <TrashIcon role="button" onClick={handleRemoveSemester}>
-                            <i className="fa fa-trash fa-md" />
-                        </TrashIcon>}
-                </SemesterHeader>
-            </div>
+            <SemesterHeader ref={(el) => {
+                semesterRefs.current[semester] = el;
+            }}>
+                <SemesterLabel>
+                    {translateSemester(semester)}
+                </SemesterLabel>
+                {!!editMode &&
+                    <TrashIcon role="button" onClick={handleRemoveSemester}>
+                        <i className="fa fa-trash fa-md" />
+                    </TrashIcon>}
+            </SemesterHeader>
             <SemesterContent>
                 <FlexCoursesPlanned
                     semester={semester}
@@ -208,6 +211,6 @@ const FlexSemester = forwardRef<HTMLDivElement, SemesterProps>(({
             </CreditsLabel>
         </SemesterCard>
     )
-});
+};
 
 export default FlexSemester;

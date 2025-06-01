@@ -2,7 +2,7 @@ import SelectListDropdown from "./SelectListDropdown";
 import Semesters from "./Semesters";
 import styled from "@emotion/styled";
 import type { DegreePlan } from "@/types";
-import React, { useEffect, useState, forwardRef, useContext } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { useSWRCrud } from '@/hooks/swrcrud';
 import { EditButton } from './EditButton';
 import { PanelTopBarButton, PanelTopBarIcon } from "./PanelCommon";
@@ -37,7 +37,7 @@ interface PlanPanelProps {
     setShowOnboardingModal: (arg0: boolean) => void;
 }
 
-const PlanPanel = forwardRef(({
+const PlanPanel = ({
     setModalKey,
     modalKey,
     setModalObject,
@@ -47,12 +47,12 @@ const PlanPanel = forwardRef(({
     degreeplans,
     isLoading,
     currentSemester,
-}: PlanPanelProps, semesterRefs) => {
+}: PlanPanelProps) => {
     const { copy: copyDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans');
     const [showStats, setShowStats] = useState(true);
     const [editMode, setEditMode] = useState(false);
 
-    const { tutorialModalKey, highlightedComponentRef } = useContext(TutorialModalContext);
+    const { tutorialModalKey, componentRefs } = useContext(TutorialModalContext);
     const planPanelRef = React.useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
@@ -60,68 +60,65 @@ const PlanPanel = forwardRef(({
 
         if (tutorialModalKey === "calendar-panel" || tutorialModalKey === "current-semester" || tutorialModalKey === "future-semesters" || tutorialModalKey === "past-semesters" || tutorialModalKey === "edit-mode" || tutorialModalKey === "show-stats") {
             planPanelRef.current.style.zIndex = "11";
-            highlightedComponentRef.current = planPanelRef.current;
+            componentRefs.current["planPanel"] = planPanelRef.current;
         } else {
             planPanelRef.current.style.zIndex = "0";
         }
-    }, [tutorialModalKey, highlightedComponentRef]);
+    }, [tutorialModalKey, componentRefs]);
 
     return (
-        <div style={{ position: "relative" }} ref={(el) => {
+        <PanelContainer style={{ position: "relative" }} ref={(el) => {
             planPanelRef.current = el;
             if (tutorialModalKey === "calendar-panel" || tutorialModalKey === "current-semester" || tutorialModalKey === "future-semesters" || tutorialModalKey === "past-semesters" || tutorialModalKey === "edit-mode" || tutorialModalKey === "show-stats") {
-                highlightedComponentRef.current = el;
+                componentRefs.current["planPanel"] = el;
             }
         }}>
-            <PanelContainer>
-                <PanelHeader>
-                    <SelectListDropdown
-                        itemType="degree plan"
-                        active={activeDegreeplan || undefined}
-                        getItemName={(item: DegreePlan) => item.name}
-                        allItems={degreeplans || []}
-                        selectItem={(id: DegreePlan["id"]) => setActiveDegreeplan(degreeplans?.filter(d => d.id === id)[0] || null)}
-                        mutators={{
-                            copy: (item: DegreePlan) => {
-                                (copyDegreeplan({ ...item, name: `${item.name} (copy)` }, item.id) as Promise<any>)
-                                    .then((copied) => copied && setActiveDegreeplan(copied.id))
-                            },
-                            remove: (item: DegreePlan) => {
-                                setModalKey("plan-remove")
-                                setModalObject(item)
-                            },
-                            rename: (item: DegreePlan) => {
-                                setModalKey("plan-rename")
-                                setModalObject(item)
-                            },
-                            create: () => {
-                                setShowOnboardingModal(true);
-                            }
-                        }}
-                        isLoading={isLoading}
-                    />
-                    <PanelTopBarIconList>
-                        <ShowStatsButton showStats={showStats} setShowStats={setShowStats} />
-                        <EditButton editMode={editMode} setEditMode={setEditMode} />
-                    </PanelTopBarIconList>
-                </PanelHeader>
-                {/** map to semesters */}
-                <PanelBody>
-                    <Semesters
-                        activeDegreeplan={activeDegreeplan || undefined}
-                        showStats={showStats}
-                        editMode={editMode}
-                        setEditMode={setEditMode}
-                        setModalKey={setModalKey}
-                        setModalObject={setModalObject}
-                        isLoading={isLoading}
-                        currentSemester={currentSemester}
-                    // ref={semesterRefs}
-                    />
-                </PanelBody>
-            </PanelContainer>
-        </div>
+            <PanelHeader>
+                <SelectListDropdown
+                    itemType="degree plan"
+                    active={activeDegreeplan || undefined}
+                    getItemName={(item: DegreePlan) => item.name}
+                    allItems={degreeplans || []}
+                    selectItem={(id: DegreePlan["id"]) => setActiveDegreeplan(degreeplans?.filter(d => d.id === id)[0] || null)}
+                    mutators={{
+                        copy: (item: DegreePlan) => {
+                            (copyDegreeplan({ ...item, name: `${item.name} (copy)` }, item.id) as Promise<any>)
+                                .then((copied) => copied && setActiveDegreeplan(copied.id))
+                        },
+                        remove: (item: DegreePlan) => {
+                            setModalKey("plan-remove")
+                            setModalObject(item)
+                        },
+                        rename: (item: DegreePlan) => {
+                            setModalKey("plan-rename")
+                            setModalObject(item)
+                        },
+                        create: () => {
+                            setShowOnboardingModal(true);
+                        }
+                    }}
+                    isLoading={isLoading}
+                />
+                <PanelTopBarIconList>
+                    <ShowStatsButton showStats={showStats} setShowStats={setShowStats} />
+                    <EditButton editMode={editMode} setEditMode={setEditMode} />
+                </PanelTopBarIconList>
+            </PanelHeader>
+            {/** map to semesters */}
+            <PanelBody>
+                <Semesters
+                    activeDegreeplan={activeDegreeplan || undefined}
+                    showStats={showStats}
+                    editMode={editMode}
+                    setEditMode={setEditMode}
+                    setModalKey={setModalKey}
+                    setModalObject={setModalObject}
+                    isLoading={isLoading}
+                    currentSemester={currentSemester}
+                />
+            </PanelBody>
+        </PanelContainer>
     );
-});
+};
 
 export default PlanPanel;
