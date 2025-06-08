@@ -119,9 +119,6 @@ class FulfillmentSerializer(serializers.ModelSerializer):
             return SimpleCourseSerializer(course).data
         return None
 
-    def get_attribute_codes(self, obj):
-        return [attr.code for attr in obj.attributes.all()]
-
     rules = serializers.PrimaryKeyRelatedField(
         many=True, queryset=Rule.objects.all(), required=False
     )
@@ -136,7 +133,7 @@ class FulfillmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Fulfillment
-        fields = ["id", "degree_plan", "full_code", "course", "semester", "rules", "unselected_rules"]
+        fields = ["id", "degree_plan", "full_code", "course", "semester", "rules", "unselected_rules", "legal"]
 
     def validate(self, data):
         data = super().validate(data)

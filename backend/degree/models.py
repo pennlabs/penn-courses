@@ -21,6 +21,7 @@ program_choices = [
     ("AU_BA", "College BA"),
     ("WU_BS", "Wharton BS"),
     ("NU_BSN", "Nursing BSN"),
+    # ("EM_MSE", "Accelerated Masters"),
 ]
 
 program_code_to_name = dict(program_choices)
@@ -188,6 +189,20 @@ class Rule(models.Model):
             """
         ),
         related_name="children",
+    )
+
+    can_double_count_with = models.ManyToManyField(
+        "self", 
+        symmetrical=True,
+        blank=True,
+        help_text=dedent(
+            """
+            Parent rules that can double count with this rule. 
+            (i.e. if this rule is Quantitative Data Analysis (a College Foundations req), 
+            then this field would contain the General Educations: Sector rule as well as 
+            the Major in ___ rule.) 
+            """
+        )
     )
 
     def __str__(self) -> str:
@@ -466,6 +481,14 @@ class Fulfillment(models.Model):
             The rules this course fulfills that should be shown in the open-ended rule box 
             (as opposed to the expandable box). Blank if this course should not be included in
             any open-ended rule boxes.
+            """
+        ),
+    )
+    legal = models.BooleanField(
+        default=True,
+        help_text=dedent(
+            """
+            True if course associated with this fulfillment isn't illegally double counted anywhere, false otherwise.
             """
         ),
     )

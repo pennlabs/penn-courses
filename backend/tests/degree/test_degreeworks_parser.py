@@ -4,7 +4,7 @@ from django.db.models import Q
 from django.test import TestCase
 
 from degree.models import Degree, Rule
-from degree.utils import parse_degreeworks
+from backend.degree.management.commands import parse_degreeworks
 
 
 class EvaluateConditionTest(TestCase):
