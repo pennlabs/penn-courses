@@ -8,7 +8,7 @@ from django.db import transaction
 
 from degree.management.commands.deduplicate_rules import deduplicate_rules
 from degree.models import Degree, program_code_to_name
-from degree.utils.parse_degreeworks import parse_and_save_degreeworks
+from backend.degree.management.commands.parse_degreeworks import parse_and_save_degreeworks
 
 
 class Command(BaseCommand):

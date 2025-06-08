@@ -79,7 +79,7 @@ class DegreeworksClient:
                         "errorMessage": "",
                         "catalogYear": "",
                         "choices": [],
-                        "selectedChoices": ["2024"],
+                        "selectedChoices": ["2025"],
                         "ruleGoalCode": None,
                         "links": [],
                     },
@@ -3827,6 +3827,8 @@ class DegreeworksClient:
             timeout=timeout,
         )
         res.raise_for_status()
+
+        # print([program["key"] for program in res.json()[0]["goals"][1]["choices"]])
 
         return [program["key"] for program in res.json()[0]["goals"][1]["choices"]]
 

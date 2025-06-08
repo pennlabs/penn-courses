@@ -4,7 +4,7 @@ import { DarkBlueIcon } from '../Requirements/QObject';
 import React, { useContext, useEffect } from "react";
 import { useDrop } from "react-dnd";
 import { Course, DegreePlan, DnDCourse, DockedCourse, Fulfillment, User } from "@/types";
-import { ItemTypes } from "../dnd/constants";
+import { ItemTypes } from "./dnd/constants";
 import { SearchPanelContext } from '../Search/SearchPanel';
 import { useSWRCrud } from '@/hooks/swrcrud';
 import useSWR, { useSWRConfig } from 'swr';
@@ -107,7 +107,6 @@ interface DockProps {
 }
 
 const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
-    // const [courseAdded, setCourseAdded] = React.useState(false);
     const { searchPanelOpen, setSearchPanelOpen, setSearchRuleQuery, setSearchRuleId } = useContext(SearchPanelContext)
     const { createOrUpdate } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
     const { data: dockedCourses = [], isLoading } = useSWR<DockedCourse[]>(user ? `/api/degree/docked` : null); 
@@ -122,7 +121,7 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
       };
     
     const [{ isOver, canDrop }, drop] = useDrop(() => ({
-        accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_REQ],
+        accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_REQ, ItemTypes.COURSE_IN_SEARCH],
         drop: (course: DnDCourse) => {
            createOrUpdate({"full_code": course.full_code}, course.full_code);
         },
