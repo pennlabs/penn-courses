@@ -98,6 +98,13 @@ export interface Section {
     associated_sections: Section[];
 }
 
+export interface Break {
+  id: string;
+  name: string;
+  color: Color;
+  meetings?: Meeting[];
+}
+
 export interface Alert {
     id: string;
     section: string;
@@ -122,6 +129,7 @@ export interface Meeting {
 // Represents a single colored block on the schedule
 export interface MeetingBlock {
     day: Day;
+    type: string;
     start: number;
     end: number;
     course: {
@@ -168,6 +176,11 @@ export interface CartCourse {
     overlaps: boolean;
 }
 
+export interface BreakSectionItem {
+    break: Break;
+    checked: boolean;
+}
+
 export interface CoursesByDay {
     M: CartCourse[];
     T: CartCourse[];
@@ -181,6 +194,7 @@ export interface CoursesByDay {
 export interface Schedule {
     id: string;
     sections: Section[];
+    breaks: BreakSectionItem[];
     semester: string;
     name: string;
     created_at: string;
@@ -239,7 +253,7 @@ export type FilterType =
 
     export interface FriendshipState {
         activeFriend: User;
-        activeFriendSchedule: { found: boolean; sections: Section[] };
+        activeFriendSchedule: { found: boolean; sections: Section[], breaks: BreakSectionItem[] };
         acceptedFriends: User[];
         requestsReceived: Friendship[];
         requestsSent: Friendship[];

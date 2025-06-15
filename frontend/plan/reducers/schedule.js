@@ -17,6 +17,9 @@ import {
     REMOVE_SCHED_ITEM,
     ADD_CART_ITEM,
     REMOVE_CART_ITEM,
+    ADD_BREAK_ITEM,
+    TOGGLE_BREAK,
+    REMOVE_BREAK,
 } from "../actions";
 import { scheduleContainsSection } from "../components/meetUtil";
 import { showToast } from "../pages";
@@ -185,6 +188,16 @@ const handleUpdateSchedulesOnFrontend = (state, schedulesFromBackend) => {
                                     color: getColor(section.id),
                                 })
                             ),
+                            breaks: scheduleFromBackend.breaks.map((br) => {
+                                const newBreak = {
+                                    ...br,
+                                    color: getColor(br.name),
+                                };
+                                return {
+                                    break: newBreak,
+                                    checked: newBreak.checked,
+                                };
+                            }),
                             id: scheduleFromBackend.id,
                             pushedToBackend: true,
                             updated_at: Date.now(),
@@ -359,6 +372,7 @@ export const schedule = (state = initialState, action) => {
                     ...state.schedules,
                     [action.scheduleName]: {
                         sections: action.scheduleSections,
+                        breaks: action.scheduleBreaks,
                         id: action.scheduleId,
                         pushedToBackend: true,
                         updated_at: Date.now(),
@@ -420,6 +434,22 @@ export const schedule = (state = initialState, action) => {
 
         case REMOVE_SCHED_ITEM:
             if (!state.readOnly) {
+                if (action.itemType === "section") {
+                    return {
+                        ...state,
+                        schedules: {
+                            ...state.schedules,
+                            [state.scheduleSelected]: {
+                                ...state.schedules[state.scheduleSelected],
+                                updated_at: Date.now(),
+                                pushedToBackend: false,
+                                sections: state.schedules[
+                                    state.scheduleSelected
+                                ].sections.filter((m) => m.id !== action.id),
+                            },
+                        },
+                    };
+                }
                 return {
                     ...state,
                     schedules: {
@@ -428,9 +458,11 @@ export const schedule = (state = initialState, action) => {
                             ...state.schedules[state.scheduleSelected],
                             updated_at: Date.now(),
                             pushedToBackend: false,
-                            sections: state.schedules[
+                            breaks: state.schedules[
                                 state.scheduleSelected
-                            ].sections.filter((m) => m.id !== action.id),
+                            ].breaks.filter(
+                                (br) => br.break.name !== action.id
+                            ),
                         },
                     },
                 };
@@ -440,6 +472,120 @@ export const schedule = (state = initialState, action) => {
             return {
                 ...state,
             };
+
+        case ADD_BREAK_ITEM:
+            // Check name is not already in use
+            if (
+                state.schedules[state.scheduleSelected].breaks.find(
+                    (br) => br.break.name === action.name
+                )
+            ) {
+                showToast("Break name already in use!", true);
+                return { ...state };
+            }
+
+            // Check that some date is selected
+            if (action.days.length === 0) {
+                showToast("Please select a day!", true);
+                return { ...state };
+            }
+
+            // Check that the name box is not empty
+            if (action.name === "") {
+                showToast("Please enter a name!", true);
+                return { ...state };
+            }
+
+            if (!state.readOnly) {
+                const newBreakItem = {
+                    name: action.name,
+                    id: action.id,
+                    color: getColor(action.name),
+                    meetings: action.days.map((day) => ({
+                        day,
+                        start: action.timeRange[0],
+                        end: action.timeRange[1],
+                        room: "Towne 100",
+                        latitude: 39.9526,
+                        longitude: -75.1652,
+                        overlap: false,
+                    })),
+                };
+
+                return {
+                    ...state,
+                    schedules: {
+                        ...state.schedules,
+                        [state.scheduleSelected]: {
+                            ...state.schedules[state.scheduleSelected],
+                            updated_at: Date.now(),
+                            pushedToBackend: false,
+                            breaks: [
+                                ...state.schedules[state.scheduleSelected]
+                                    .breaks,
+                                { break: newBreakItem, checked: true },
+                            ],
+                        },
+                    },
+                };
+            }
+            showToast("Cannot add breaks to a friend's schedule!", true);
+            return { ...state };
+
+        case TOGGLE_BREAK:
+            if (!state.readOnly) {
+                const oldBreakSections =
+                    state.schedules[state.scheduleSelected]?.breaks ?? [];
+                const newBreakSections = oldBreakSections.map(
+                    (breakSection) => {
+                        if (breakSection.break.id === action.id) {
+                            return {
+                                ...breakSection,
+                                checked: !breakSection.checked,
+                            };
+                        }
+                        return breakSection;
+                    }
+                );
+                const temp = {
+                    ...state,
+                    schedules: {
+                        ...state.schedules,
+                        [state.scheduleSelected]: {
+                            ...state.schedules[state.scheduleSelected],
+                            updated_at: Date.now(),
+                            pushedToBackend: false,
+                            breaks: newBreakSections,
+                        },
+                    },
+                };
+                return temp;
+            }
+            showToast("Cannot remove breaks from a friend's schedule!", true);
+            return { ...state };
+
+        case REMOVE_BREAK:
+            if (!state.readOnly) {
+                const oldBreakSections =
+                    state.schedules[state.scheduleSelected]?.breaks ?? [];
+                const newBreakSections = oldBreakSections.filter(
+                    (breakSection) => breakSection.break.id !== action.id
+                );
+                return {
+                    ...state,
+                    schedules: {
+                        ...state.schedules,
+                        [state.scheduleSelected]: {
+                            ...state.schedules[state.scheduleSelected],
+                            updated_at: Date.now(),
+                            pushedToBackend: false,
+                            breaks: newBreakSections,
+                        },
+                    },
+                };
+            }
+            showToast("Cannot remove breaks from a friend's schedule!", true);
+            return { ...state };
 
         case ADD_CART_ITEM:
             return {
