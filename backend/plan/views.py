@@ -783,6 +783,24 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED,
         )
 
+    def destroy(self, request, *args, **kwargs):
+        break_id = kwargs["break_pk"]
+        if not break_id:
+            return Response(
+                {"detail": "Break id is required for delete."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            current_break = self.get_queryset().get(id=break_id)
+            current_break.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Break.DoesNotExist:
+            return Response({"detail": "Break not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response(
+                {"detail": "Error deleting break: " + str(e)}, status=status.HTTP_400_BAD_REQUEST
+            )
+
     def get_queryset(self):
         return Break.objects.filter(person=self.request.user).prefetch_related(
             "meetings",  # Prefetch the related meetings

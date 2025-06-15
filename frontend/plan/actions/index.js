@@ -674,6 +674,23 @@ export const createBreakItemBackend = (name, days, timeRange) => (dispatch) => {
         });
 };
 
+export const removeBreakItemBackend = (break_id) => (dispatch) => {
+    doAPIRequest(`/plan/breaks/${break_id}/`, {
+        method: "DELETE",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+    })
+        .then(() => {
+            dispatch(removeBreakItem(break_id));
+        })
+        .catch((error) => console.log(error));
+};
+
 /**
  * Pulls schedules from the backend
  * @param onComplete The function to call when initialization has been completed (with the schedules
