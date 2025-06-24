@@ -1042,7 +1042,7 @@ class Building(models.Model):
     """A building at Penn."""
 
     code = models.CharField(
-        max_length=4,
+        max_length=5,
         unique=True,
         help_text=dedent(
             """
