@@ -1254,7 +1254,6 @@ class BreakViewSetTests(TestCase):
         and returns a 201 response.
         """
         data = {
-            "id": 2,
             "name": "Afternoon Break",
             "location_string": "Lobby",
             "meetings": [],  # No meetings provided
@@ -1263,7 +1262,7 @@ class BreakViewSetTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # Check that a new Break was created with the proper fields.
-        new_break_id = response.data.get("id")
+        new_break_id = response.data.get("break_id")
         self.assertIsNotNone(new_break_id)
         new_break = Break.objects.get(id=new_break_id)
         self.assertEqual(new_break.name, "Afternoon Break")
@@ -1302,7 +1301,7 @@ class BreakViewSetTests(TestCase):
         self.assertEqual(self.break_obj.location_string, "New Location")
 
         self.assertEqual(response.data.get("message"), "success")
-        self.assertEqual(response.data.get("id"), self.break_obj.id)
+        self.assertEqual(response.data.get("break_id"), self.break_obj.id)
 
     def test_update_break_nonexistent(self):
         """
@@ -1318,7 +1317,7 @@ class BreakViewSetTests(TestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data.get("message"), "success")
 
-        new_break = Break.objects.get(id=response.data.get("id"))
+        new_break = Break.objects.get(id=response.data.get("break_id"))
 
         self.assertEqual(new_break.name, "Nonexistent Break")
         self.assertEqual(new_break.location_string, "Nowhere")

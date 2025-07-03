@@ -674,6 +674,26 @@ export const createBreakItemBackend = (name, days, timeRange) => (dispatch) => {
         });
 };
 
+export const removeBreakItemBackend = (breakId) => (dispatch) => {
+    doAPIRequest(`/plan/breaks/${breakId}/`, {
+        method: "DELETE",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+    })
+        .then(() => {
+            dispatch(removeBreakItem(breakId));
+        })
+        .catch((error) => {
+            // eslint-disable-next-line no-console
+            console.log(error);
+        });
+};
+
 /**
  * Pulls schedules from the backend
  * @param onComplete The function to call when initialization has been completed (with the schedules
@@ -703,7 +723,9 @@ export const updateScheduleOnBackend = (name, schedule) => (dispatch) => {
         ...schedule,
         name,
         sections: schedule.sections,
-        breaks: (schedule.breaks ?? []).map((breakItem) => breakItem.break),
+        breaks: (schedule.breaks ?? []).map((breakItem) => {
+            return { ...breakItem.break, checked: breakItem.checked };
+        }),
     };
     doAPIRequest(`/plan/schedules/${schedule.id}/`, {
         method: "PUT",
@@ -775,6 +797,7 @@ export const createScheduleOnBackend = (name, sections = [], breaks = []) => (
         .then(({ id }) => {
             dispatch(createScheduleOnFrontend(name, id, sections, breaks));
         })
+        // eslint-disable-next-line no-console
         .catch((error) => console.log(error));
 };
 
@@ -808,6 +831,7 @@ export const deleteScheduleOnBackend = (user, scheduleName, scheduleId) => (
                 })
             );
         })
+        // eslint-disable-next-line no-console
         .catch((error) => console.log(error));
 };
 
@@ -825,6 +849,7 @@ export const findOwnPrimarySchedule = (user) => (dispatch) => {
                     setPrimaryScheduleIdOnFrontend(foundSched?.schedule.id)
                 );
             })
+            // eslint-disable-next-line no-console
             .catch((error) => console.log(error))
     );
 };
@@ -851,6 +876,7 @@ export const setCurrentUserPrimarySchedule = (user, scheduleId) => (
         .then(() => {
             dispatch(findOwnPrimarySchedule(user));
         })
+        // eslint-disable-next-line no-console
         .catch((error) => console.log(error));
 };
 
@@ -978,6 +1004,7 @@ export const fetchAlerts = () => (dispatch) => {
                 );
             });
         })
+        // eslint-disable-next-line no-console
         .catch((error) => console.log(error));
 };
 

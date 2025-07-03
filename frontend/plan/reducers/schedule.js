@@ -195,7 +195,7 @@ const handleUpdateSchedulesOnFrontend = (state, schedulesFromBackend) => {
                                 };
                                 return {
                                     break: newBreak,
-                                    checked: true,
+                                    checked: newBreak.checked,
                                 };
                             }),
                             id: scheduleFromBackend.id,
@@ -460,7 +460,9 @@ export const schedule = (state = initialState, action) => {
                             pushedToBackend: false,
                             breaks: state.schedules[
                                 state.scheduleSelected
-                            ].breaks.filter((br) => br.name !== action.id),
+                            ].breaks.filter(
+                                (br) => br.break.name !== action.id
+                            ),
                         },
                     },
                 };
@@ -472,6 +474,28 @@ export const schedule = (state = initialState, action) => {
             };
 
         case ADD_BREAK_ITEM:
+            // Check name is not already in use
+            if (
+                state.schedules[state.scheduleSelected].breaks.find(
+                    (br) => br.break.name === action.name
+                )
+            ) {
+                showToast("Break name already in use!", true);
+                return { ...state };
+            }
+
+            // Check that some date is selected
+            if (action.days.length === 0) {
+                showToast("Please select a day!", true);
+                return { ...state };
+            }
+
+            // Check that the name box is not empty
+            if (action.name === "") {
+                showToast("Please enter a name!", true);
+                return { ...state };
+            }
+
             if (!state.readOnly) {
                 const newBreakItem = {
                     name: action.name,
@@ -523,7 +547,7 @@ export const schedule = (state = initialState, action) => {
                         return breakSection;
                     }
                 );
-                return {
+                const temp = {
                     ...state,
                     schedules: {
                         ...state.schedules,
@@ -535,6 +559,7 @@ export const schedule = (state = initialState, action) => {
                         },
                     },
                 };
+                return temp;
             }
             showToast("Cannot remove breaks from a friend's schedule!", true);
             return { ...state };

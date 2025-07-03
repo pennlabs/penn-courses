@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { connect } from "react-redux";
 import { ThunkDispatch } from "redux-thunk";
 import styled from "styled-components";
-import { createBreakItemBackend } from "../../actions";
+import { createBreakItemBackend, removeBreakItemBackend } from "../../actions";
 import { BreakSectionItem } from "../../types";
-import { DayTimeSelector } from "./BreakForm";
+import { BreakForm } from "./BreakForm";
 import BreakSection from "./BreakSection";
 import { getTimeString } from "../meetUtil";
 
@@ -48,11 +48,11 @@ interface BreakProps {
             days: string[],
             timeRange: [number, number]
         ) => void;
+        remove: (breakId: string) => void;
     };
     mobileView: boolean;
     breaks: BreakSectionItem[];
     toggleBreak: (breakId: string) => void;
-    removeBreak: (breakId: string) => void;
 }
 
 const Button = styled.button`
@@ -94,7 +94,6 @@ const BreakAddSection = styled.div`
 const BreakTab: React.FC<BreakProps> = ({
     breaks,
     toggleBreak,
-    removeBreak,
     manageBreaks,
     mobileView,
 }) => {
@@ -109,10 +108,10 @@ const BreakTab: React.FC<BreakProps> = ({
         <>
             <Box length={breaks.length + 1} id="breaks">
                 <BreakAddSection>
-                    <DayTimeSelector
+                    <BreakForm
                         minRange={10.5}
                         maxRange={22}
-                        step={5 / 60}
+                        step={1 / 60}
                         selectedDays={selectedDays}
                         setSelectedDays={setSelectedDays}
                         selectedTimes={selectedTimes}
@@ -139,7 +138,7 @@ const BreakTab: React.FC<BreakProps> = ({
                             toggleCheck={() => toggleBreak(breakItem.break.id)}
                             remove={(e) => {
                                 e.stopPropagation();
-                                removeBreak(breakItem.break.id);
+                                manageBreaks?.remove(breakItem.break.id);
                             }}
                         />
                     );
@@ -160,12 +159,12 @@ const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
         add: (name: string, days: string[], timeRange: [number, number]) => {
             dispatch(createBreakItemBackend(name, days, timeRange));
         },
+        remove: (breakId: string) => {
+            dispatch(removeBreakItemBackend(breakId));
+        },
     },
     toggleBreak: (breakId: string) => {
         dispatch({ type: "TOGGLE_BREAK", id: breakId });
-    },
-    removeBreak: (breakId: string) => {
-        dispatch({ type: "REMOVE_BREAK", id: breakId });
     },
 });
 

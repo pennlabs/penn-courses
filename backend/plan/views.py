@@ -209,6 +209,11 @@ class PrimaryScheduleViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     serializer_class = PrimaryScheduleSerializer
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.update({"include_location": True})
+        return context
+
     def get_queryset(self):
         return PrimarySchedule.objects.filter(
             Q(user=self.request.user)
@@ -501,6 +506,8 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             if break_id:
                 break_candidate = Break.objects.filter(id=break_id).first()
                 if break_candidate:
+                    break_candidate.checked = b.get("checked", False)
+                    break_candidate.save()
                     breaks.append(break_candidate)
         return breaks
 
@@ -701,7 +708,8 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 {"detail": "Error setting meetings: " + str(e)}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        print("current_break", current_break)
+        checked = request.data.get("checked")
+        current_break.checked = checked if checked is not None else current_break.checked
 
         try:
             current_break.save()
@@ -711,7 +719,9 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 {"detail": "Error saving break: " + str(e)}, status=status.HTTP_400_BAD_REQUEST
             )
 
-        return Response({"message": "success", "id": current_break.id}, status=status.HTTP_200_OK)
+        return Response(
+            {"message": "success", "break_id": current_break.id}, status=status.HTTP_200_OK
+        )
 
     def create(self, request, *args, **kwargs):
         break_id = request.data.get("id")
@@ -724,7 +734,6 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 {"detail": "Break name is required."}, status=status.HTTP_400_BAD_REQUEST
             )
         location_string = request.data.get("location_string")
-        print(request.data)
         try:
             if break_id:
                 new_break = self.get_queryset().create(
@@ -762,7 +771,6 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             }
             for m in meetings
         ]
-        print(meetings_with_codes)
         try:
             set_meetings(new_break, meetings_with_codes)
         except Exception as e:
@@ -774,6 +782,24 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             {"message": "success", "break_id": new_break.id},
             status=status.HTTP_201_CREATED,
         )
+
+    def destroy(self, request, *args, **kwargs):
+        break_id = kwargs["break_pk"]
+        if not break_id:
+            return Response(
+                {"detail": "Break id is required for delete."}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            current_break = self.get_queryset().get(id=break_id)
+            current_break.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        except Break.DoesNotExist:
+            return Response({"detail": "Break not found."}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response(
+                {"detail": "Error deleting break: " + str(e)}, status=status.HTTP_400_BAD_REQUEST
+            )
 
     def get_queryset(self):
         return Break.objects.filter(person=self.request.user).prefetch_related(

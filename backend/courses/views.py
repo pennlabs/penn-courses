@@ -279,8 +279,11 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        include_location_str = self.request.query_params.get("include_location", "False")
-        context.update({"include_location": eval(include_location_str)})
+        if self.request and hasattr(self.request, "query_params"):
+            include_location_str = self.request.query_params.get("include_location", "False")
+            context.update({"include_location": include_location_str.lower() == "true"})
+        else:
+            context.update({"include_location": False})
         return context
 
     def get_queryset(self):

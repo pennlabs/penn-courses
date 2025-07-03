@@ -143,7 +143,7 @@ interface DayTimeSelectorProps {
     setName: (name: string) => void;
 }
 
-export function DayTimeSelector({
+export function BreakForm({
     minRange,
     maxRange,
     selectedDays,

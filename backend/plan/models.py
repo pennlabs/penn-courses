@@ -42,6 +42,16 @@ class Break(models.Model):
         ),
     )
 
+    checked = models.BooleanField(
+        default=True,
+        help_text=dedent(
+            """
+        Whether or not the break has been checked by the user. This is used to
+        determine if the break should be displayed in the user's schedule.
+        """
+        ),
+    )
+
     meeting_times = models.TextField(
         blank=True,
         help_text=dedent(
@@ -62,7 +72,12 @@ class Break(models.Model):
                 fields=["person", "meeting_times"],
                 condition=Q(meeting_times__isnull=False) & ~Q(meeting_times=""),
                 name="unique_break_meeting_times_per_person",
-            )
+            ),
+            UniqueConstraint(
+                fields=["name", "person"],
+                condition=Q(name__isnull=False) & ~Q(name=""),
+                name="unique_break_name_per_person",
+            ),
         ]
 
     def __str__(self):

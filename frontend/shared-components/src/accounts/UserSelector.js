@@ -33,9 +33,10 @@ const InnerMenu = styled.div`
     background: white;
     color: #4a4a4a;
     border-radius: 4px;
-    position: relative;
+    position: absolute;
     padding: 0.32rem;
     font-size: 0.85rem;
+    top: 70px;
     box-shadow: 0 0 5px 0 lightgrey;
     right: ${(props) => (props.$leftAligned ? "0%" : "61%")};
 `;
@@ -86,10 +87,10 @@ const LogoutDropdownMenu = styled.div`
     display: ${({ selected }) => (selected ? "block" : "none")};
     left: 0;
     min-width: 12rem;
-    ${({ floatTop }) =>
-        floatTop ? "padding-bottom: 4px" : "padding-top: 4px"};
+    ${({ floattop }) =>
+        floattop ? "padding-bottom: 4px" : "padding-top: 4px"};
     position: absolute;
-    ${({ floatTop }) => (floatTop ? "bottom: 100%" : "top: 100%")};
+    ${({ floattop }) => (floattop ? "bottom: 100%" : "top: 100%")};
     z-index: 20;
 `;
 
@@ -137,9 +138,12 @@ const UserSelector = ({
                         "U"}{" "}
                 </span>
             </NameBubble>
-            <LogoutDropdownMenu selected={selected} floatTop={dropdownTop}>
+            <LogoutDropdownMenu
+                selected={selected}
+                floattop={dropdownTop.toString()}
+            >
                 <LogoutDropdownContainer className="dropdown-menu-container">
-                    <TriangleUp down={dropdownTop} />
+                    <TriangleUp down={dropdownTop.toString()} />
                     <InnerMenu $leftAligned={leftAligned}>
                         <NameContainer>
                             {" "}
