@@ -2,8 +2,86 @@ from textwrap import dedent
 
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.db.models import Q, UniqueConstraint
 
 from courses.models import Section
+
+
+class Break(models.Model):
+    """
+    Holds break objects created by users on PCP.
+    """
+
+    person = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.CASCADE,
+        help_text="The person (user) who created this break.",
+    )
+
+    location_string = models.CharField(
+        max_length=80,
+        null=True,
+        help_text=dedent(
+            """
+            This represents the location that the user can input themselves.
+            Will use a building object from a drop down or have it validated
+            or something so it can interact with map.
+            Didn't want to run into issue of users creating arbitrary
+            Room objects, so just using a char field
+            """
+        ),  # TODO: Don't know how I want to do buildings yet.
+    )
+
+    name = models.CharField(
+        max_length=255,
+        help_text=dedent(
+            """
+        The user's name for the break. No two breaks can match in all of the fields
+        `[name, person]`
+        """
+        ),
+    )
+
+    checked = models.BooleanField(
+        default=True,
+        help_text=dedent(
+            """
+        Whether or not the break has been checked by the user. This is used to
+        determine if the break should be displayed in the user's schedule.
+        """
+        ),
+    )
+
+    meeting_times = models.TextField(
+        blank=True,
+        help_text=dedent(
+            """
+        A JSON-stringified list of meeting times of the form
+        `{days code} {start time} - {end time}`, e.g.
+        `["MWF 09:00 AM - 10:00 AM","F 11:00 AM - 12:00 PM","T 05:00 PM - 06:00 PM"]` for
+        PHYS-151-001 (2020A). Each letter of the days code is of the form M, T, W, R, F for each
+        day of the work week, respectively (and multiple days are combined with concatenation).
+        To access the Meeting objects for this section, the related field `meetings` can be used.
+        """
+        ),
+    )
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(
+                fields=["person", "meeting_times"],
+                condition=Q(meeting_times__isnull=False) & ~Q(meeting_times=""),
+                name="unique_break_meeting_times_per_person",
+            ),
+            UniqueConstraint(
+                fields=["name", "person"],
+                condition=Q(name__isnull=False) & ~Q(name=""),
+                name="unique_break_name_per_person",
+            ),
+        ]
+
+    def __str__(self):
+        return "User: %s, Break ID: %s" % (self.person, self.id)
 
 
 class Schedule(models.Model):
@@ -24,6 +102,17 @@ class Schedule(models.Model):
             """
         The class sections which comprise the schedule. The semester of each of these sections is
         assumed to  match the semester defined by the semester field below.
+        """
+        ),
+    )
+
+    breaks = models.ManyToManyField(
+        Break,
+        blank=True,
+        help_text=dedent(
+            """
+        The breaks which comprise the schedule. The semester of each of these breaks is assumed to
+        match the semester defined by the semester field below.
         """
         ),
     )

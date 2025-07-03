@@ -67,6 +67,7 @@ export const fetchBackendFriendships = (user) => (dispatch) => {
                 )
             );
         })
+        // eslint-disable-next-line no-console
         .catch((error) => console.log(error));
 };
 
@@ -90,6 +91,7 @@ export const deleteFriendshipOnBackend = (user, friendPennkey) => (
         .then(() => {
             dispatch(fetchBackendFriendships(user));
         })
+        // eslint-disable-next-line no-console
         .catch((error) => console.log(error));
 };
 
@@ -137,5 +139,6 @@ export const fetchFriendPrimarySchedule = (friend) => (dispatch) => {
             }
             dispatch(setStateReadOnly(true));
         })
+        // eslint-disable-next-line no-console
         .catch((error) => console.log(error));
 };

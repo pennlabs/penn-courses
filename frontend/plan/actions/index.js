@@ -71,6 +71,10 @@ export const SET_STATE_READ_ONLY = "SET_STATE_READ_ONLY";
 export const SET_PRIMARY_SCHEDULE_ID_ON_FRONTEND =
     "SET_PRIMARY_SCHEDULE_ID_ON_FRONTEND";
 
+export const ADD_BREAK_ITEM = "ADD_BREAK_ITEM";
+export const TOGGLE_BREAK = "TOGGLE_BREAK";
+export const REMOVE_BREAK = "REMOVE_BREAK";
+
 export const doAPIRequest = (path, options = {}) =>
     fetch(`/api${path}`, options);
 
@@ -110,8 +114,9 @@ export const addCartItem = (section) => ({
     section,
 });
 
-export const removeSchedItem = (id) => ({
+export const removeSchedItem = (id, type) => ({
     type: REMOVE_SCHED_ITEM,
+    itemType: type,
     id,
 });
 
@@ -151,12 +156,14 @@ export const updateScrollPos = (scrollPos = 0) => ({
 export const createScheduleOnFrontend = (
     scheduleName,
     scheduleId,
-    scheduleSections
+    scheduleSections,
+    scheduleBreaks
 ) => ({
     type: CREATE_SCHEDULE_ON_FRONTEND,
     scheduleName,
     scheduleId,
     scheduleSections,
+    scheduleBreaks,
 });
 
 export const clearAllScheduleData = () => ({ type: CLEAR_ALL_SCHEDULE_DATA });
@@ -179,6 +186,24 @@ export const clearSchedule = () => ({
 export const setPrimaryScheduleIdOnFrontend = (scheduleId) => ({
     scheduleId,
     type: SET_PRIMARY_SCHEDULE_ID_ON_FRONTEND,
+});
+
+export const addBreakItem = (name, days, timeRange, breakId) => ({
+    type: ADD_BREAK_ITEM,
+    name,
+    days,
+    timeRange,
+    id: breakId,
+});
+
+export const toggleBreak = (breakItem) => ({
+    type: TOGGLE_BREAK,
+    breakItem,
+});
+
+export const removeBreakItem = (breakId) => ({
+    type: REMOVE_BREAK,
+    id: breakId,
 });
 
 export const checkForDefaultSchedules = (schedulesFromBackend) => (
@@ -601,6 +626,74 @@ export function fetchCourseDetails(courseId) {
     };
 }
 
+const convertToTimeString = (decimalHour) => {
+    const hours24 = Math.floor(decimalHour);
+    const minutes = Math.round((decimalHour - hours24) * 60);
+
+    const period = hours24 >= 12 ? "PM" : "AM";
+    const hours12 = hours24 % 12 === 0 ? 12 : hours24 % 12;
+    const paddedMinutes = minutes.toString().padStart(2, "0");
+
+    return `${hours12}:${paddedMinutes} ${period}`;
+};
+
+function convertToHHMM(decimalHour) {
+    const hours = Math.floor(decimalHour);
+    const minutes = Math.round((decimalHour - hours) * 60);
+    return hours * 100 + minutes;
+}
+
+export const createBreakItemBackend = (name, days, timeRange) => (dispatch) => {
+    doAPIRequest("/plan/breaks/", {
+        method: "POST",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+        body: JSON.stringify({
+            name,
+            location_string: "BREAK",
+
+            meetings: [
+                {
+                    days: days.join(""),
+                    begin_time_24: convertToHHMM(timeRange[0]),
+                    end_time_24: convertToHHMM(timeRange[1]),
+                    begin_time: convertToTimeString(timeRange[0]),
+                    end_time: convertToTimeString(timeRange[1]),
+                },
+            ],
+        }),
+    })
+        .then((res) => res.json())
+        .then((breakItem) => {
+            dispatch(addBreakItem(name, days, timeRange, breakItem.break_id));
+        });
+};
+
+export const removeBreakItemBackend = (breakId) => (dispatch) => {
+    doAPIRequest(`/plan/breaks/${breakId}/`, {
+        method: "DELETE",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+    })
+        .then(() => {
+            dispatch(removeBreakItem(breakId));
+        })
+        .catch((error) => {
+            // eslint-disable-next-line no-console
+            console.log(error);
+        });
+};
+
 /**
  * Pulls schedules from the backend
  * @param onComplete The function to call when initialization has been completed (with the schedules
@@ -630,6 +723,9 @@ export const updateScheduleOnBackend = (name, schedule) => (dispatch) => {
         ...schedule,
         name,
         sections: schedule.sections,
+        breaks: (schedule.breaks ?? []).map((breakItem) => {
+            return { ...breakItem.break, checked: breakItem.checked };
+        }),
     };
     doAPIRequest(`/plan/schedules/${schedule.id}/`, {
         method: "PUT",
@@ -678,10 +774,13 @@ export function fetchSectionInfo(searchData) {
  * @param sections The list of sections for the schedule
  * @returns {Function}
  */
-export const createScheduleOnBackend = (name, sections = []) => (dispatch) => {
+export const createScheduleOnBackend = (name, sections = [], breaks = []) => (
+    dispatch
+) => {
     const scheduleObj = {
         name,
         sections,
+        breaks,
     };
     doAPIRequest("/plan/schedules/", {
         method: "POST",
@@ -696,8 +795,9 @@ export const createScheduleOnBackend = (name, sections = []) => (dispatch) => {
     })
         .then((response) => response.json())
         .then(({ id }) => {
-            dispatch(createScheduleOnFrontend(name, id, sections));
+            dispatch(createScheduleOnFrontend(name, id, sections, breaks));
         })
+        // eslint-disable-next-line no-console
         .catch((error) => console.log(error));
 };
 
@@ -731,6 +831,7 @@ export const deleteScheduleOnBackend = (user, scheduleName, scheduleId) => (
                 })
             );
         })
+        // eslint-disable-next-line no-console
         .catch((error) => console.log(error));
 };
 
@@ -748,6 +849,7 @@ export const findOwnPrimarySchedule = (user) => (dispatch) => {
                     setPrimaryScheduleIdOnFrontend(foundSched?.schedule.id)
                 );
             })
+            // eslint-disable-next-line no-console
             .catch((error) => console.log(error))
     );
 };
@@ -774,6 +876,7 @@ export const setCurrentUserPrimarySchedule = (user, scheduleId) => (
         .then(() => {
             dispatch(findOwnPrimarySchedule(user));
         })
+        // eslint-disable-next-line no-console
         .catch((error) => console.log(error));
 };
 
@@ -901,6 +1004,7 @@ export const fetchAlerts = () => (dispatch) => {
                 );
             });
         })
+        // eslint-disable-next-line no-console
         .catch((error) => console.log(error));
 };
 
