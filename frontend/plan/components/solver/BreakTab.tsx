@@ -3,8 +3,8 @@ import { connect } from "react-redux";
 import { ThunkDispatch } from "redux-thunk";
 import styled from "styled-components";
 import { createBreakItemBackend } from "../../actions";
-import { Section as SectionType, Break as BreakType, BreakSectionItem } from "../../types";
-import { DayTimeSelector } from "./DayTimeSelector";
+import { BreakSectionItem } from "../../types";
+import { DayTimeSelector } from "./BreakForm";
 import BreakSection from "./BreakSection";
 import { getTimeString } from "../meetUtil";
 
@@ -39,94 +39,134 @@ const Box = styled.section<{ length: number }>`
     }
 `;
 
-
 interface BreakProps {
-  days?: string[];
-  timeRange?: [number, number];
-  manageBreaks?: {
-    add: (name: string, days: string[], timeRange: [number, number]) => void;
-  };
-  mobileView: boolean;
-  breaks: BreakSectionItem[];
-  toggleBreak: (breakId: string) => void;
-  removeBreak: (breakId: string) => void;
+    days?: string[];
+    timeRange?: [number, number];
+    manageBreaks?: {
+        add: (
+            name: string,
+            days: string[],
+            timeRange: [number, number]
+        ) => void;
+    };
+    mobileView: boolean;
+    breaks: BreakSectionItem[];
+    toggleBreak: (breakId: string) => void;
+    removeBreak: (breakId: string) => void;
 }
 
 const Button = styled.button`
-    color: gray;
-    padding: 0.5rem;
-    margin: 0.5rem 1.25rem;
-    border: 1px lightgray solid;
-    border-radius: 5px;
-    background: none;
+    padding: 0.5em 1.25em;
+    background: #fff;
+    color: #7e7e7e;
+    border: solid 0.1rem #dadada;
+    border-radius: 30px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    transition: background 0.15s, color 0.15s, border 0.15s;
+    margin-left: 1rem;
+    margin-top: 0.6rem;
+
     &:hover {
-        cursor: pointer;
-        color: #669afb;
+        background: rgb(247, 247, 247);
+        color: rgb(90, 90, 90);
+        border-bottom-color: rgb(218, 218, 218);
+        outline: none;
+    }
+
+    &:active {
+        outline: none;
+        box-shadow: 0 0 0 0.125em rgb(50 115 220 / 25%);
+        color: #7876f3;
+        border: solid 0.1rem #7876f3;
+        background-color: #fff;
     }
 `;
 
 const BreakAddSection = styled.div`
-  border-bottom: 1px solid #e5e8eb;
-  padding-bottom: 1rem;
+    border-bottom: 1px solid #e5e8eb;
+    padding-bottom: 1rem;
 `;
 
 const BreakTab: React.FC<BreakProps> = ({
-  breaks,
-  toggleBreak,
-  removeBreak,
-  manageBreaks,
-  mobileView,
+    breaks,
+    toggleBreak,
+    removeBreak,
+    manageBreaks,
+    mobileView,
 }) => {
-  const [selectedDays, setSelectedDays] = useState<string[]>([]);
-  const [selectedTimes, setSelectedTimes] = useState<[number, number]>([10.5, 22]);
-  const [name, setName] = useState<string>("");
+    const [selectedDays, setSelectedDays] = useState<string[]>([]);
+    const [selectedTimes, setSelectedTimes] = useState<[number, number]>([
+        10.5,
+        22,
+    ]);
+    const [name, setName] = useState<string>("");
 
-  return (
-    <>
-        <Box length={breaks.length + 1} id="breaks">
-          <BreakAddSection>
-            <DayTimeSelector minRange={10.5} maxRange={22} step={1 / 60} selectedDays={selectedDays} setSelectedDays={setSelectedDays} selectedTimes={selectedTimes} setSelectedTimes={setSelectedTimes} name={name} setName={setName} />
-            <Button onClick={() => manageBreaks?.add(name, selectedDays, selectedTimes)}>Add Break</Button>
-          </BreakAddSection>
-          {
-          breaks.map((breakItem, i) => {
-            if (!breakItem.break) return null; 
-            return (
-              <BreakSection
-              key={i}
-              name={breakItem.break.name}
-              checked={breakItem.checked}
-              time={getTimeString(breakItem.break.meetings ?? [])}
-              toggleCheck={() => toggleBreak(breakItem.break.id)}
-              remove={(e) => {
-                  e.stopPropagation();
-                  removeBreak(breakItem.break.id);
-              }}
-              />
-          )})}
-        </Box>
-    </>
-  );
+    return (
+        <>
+            <Box length={breaks.length + 1} id="breaks">
+                <BreakAddSection>
+                    <DayTimeSelector
+                        minRange={10.5}
+                        maxRange={22}
+                        step={5 / 60}
+                        selectedDays={selectedDays}
+                        setSelectedDays={setSelectedDays}
+                        selectedTimes={selectedTimes}
+                        setSelectedTimes={setSelectedTimes}
+                        name={name}
+                        setName={setName}
+                    />
+                    <Button
+                        onClick={() =>
+                            manageBreaks?.add(name, selectedDays, selectedTimes)
+                        }
+                    >
+                        Add Break
+                    </Button>
+                </BreakAddSection>
+                {breaks.map((breakItem, i) => {
+                    if (!breakItem.break) return null;
+                    return (
+                        <BreakSection
+                            key={i}
+                            name={breakItem.break.name}
+                            checked={breakItem.checked}
+                            time={getTimeString(breakItem.break.meetings ?? [])}
+                            toggleCheck={() => toggleBreak(breakItem.break.id)}
+                            remove={(e) => {
+                                e.stopPropagation();
+                                removeBreak(breakItem.break.id);
+                            }}
+                        />
+                    );
+                })}
+            </Box>
+        </>
+    );
 };
 
 const mapStateToProps = ({
-  schedule: { scheduleSelected, schedules },
+    schedule: { scheduleSelected, schedules },
 }: any) => ({
-  breaks: schedules[scheduleSelected]?.breaks ?? [],
+    breaks: schedules[scheduleSelected]?.breaks ?? [],
 });
 
 const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
-  manageBreaks: {
-    add: (name: string, days: string[], timeRange: [number, number]) => {
-      dispatch(createBreakItemBackend(name, days, timeRange));
+    manageBreaks: {
+        add: (name: string, days: string[], timeRange: [number, number]) => {
+            dispatch(createBreakItemBackend(name, days, timeRange));
+        },
     },
-  },
-  toggleBreak: (breakId: string) => {
-    dispatch({ type: "TOGGLE_BREAK", id: breakId });
-  },
-  removeBreak: (breakId: string) => {
-    dispatch({ type: "REMOVE_BREAK", id: breakId });
-  },
+    toggleBreak: (breakId: string) => {
+        dispatch({ type: "TOGGLE_BREAK", id: breakId });
+    },
+    removeBreak: (breakId: string) => {
+        dispatch({ type: "REMOVE_BREAK", id: breakId });
+    },
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(BreakTab);
