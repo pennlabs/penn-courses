@@ -1165,42 +1165,52 @@ class AlertRegistrationTestCase(TestCase):
                         },
                     )
                     self.assertEqual(
-                        0
-                        if not should_send
-                        else len([c for c in contact_infos if "email" in c.keys() and c["email"]]),
+                        (
+                            0
+                            if not should_send
+                            else len(
+                                [c for c in contact_infos if "email" in c.keys() and c["email"]]
+                            )
+                        ),
                         send_email_mock.call_count,
                     )
                     self.assertEqual(
-                        0
-                        if not should_send
-                        else len(
-                            [
-                                c
-                                for c in contact_infos
-                                if "number" in c.keys()
-                                and c["number"]
-                                and ("push_username" not in c.keys() or not c["push_username"])
-                            ]
+                        (
+                            0
+                            if not should_send
+                            else len(
+                                [
+                                    c
+                                    for c in contact_infos
+                                    if "number" in c.keys()
+                                    and c["number"]
+                                    and ("push_username" not in c.keys() or not c["push_username"])
+                                ]
+                            )
                         ),
                         send_text_mock.call_count,
                     )
                     self.assertEqual(
-                        0
-                        if not should_send
-                        else len(
-                            [
-                                c
-                                for c in contact_infos
-                                if "push_username" in c.keys() and c["push_username"]
-                            ]
+                        (
+                            0
+                            if not should_send
+                            else len(
+                                [
+                                    c
+                                    for c in contact_infos
+                                    if "push_username" in c.keys() and c["push_username"]
+                                ]
+                            )
                         ),
                         push_notification_mock.call_count,
                     )
                     for c in contact_infos:
                         self.assertEqual(
-                            0
-                            if not should_send or "email" not in c.keys() or not c["email"]
-                            else 1,
+                            (
+                                0
+                                if not should_send or "email" not in c.keys() or not c["email"]
+                                else 1
+                            ),
                             len(
                                 [
                                     m
@@ -1210,12 +1220,14 @@ class AlertRegistrationTestCase(TestCase):
                             ),
                         )
                         self.assertEqual(
-                            0
-                            if not should_send
-                            or "number" not in c.keys()
-                            or not c["number"]
-                            or ("push_username" in c.keys() and c["push_username"])
-                            else 1,
+                            (
+                                0
+                                if not should_send
+                                or "number" not in c.keys()
+                                or not c["number"]
+                                or ("push_username" in c.keys() and c["push_username"])
+                                else 1
+                            ),
                             len(
                                 [
                                     m
@@ -1225,11 +1237,13 @@ class AlertRegistrationTestCase(TestCase):
                             ),
                         )
                         self.assertEqual(
-                            0
-                            if not should_send
-                            or "push_username" not in c.keys()
-                            or not c["push_username"]
-                            else 1,
+                            (
+                                0
+                                if not should_send
+                                or "push_username" not in c.keys()
+                                or not c["push_username"]
+                                else 1
+                            ),
                             len(
                                 [
                                     m

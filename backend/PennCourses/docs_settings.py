@@ -371,7 +371,7 @@ tag_group_abbreviations = {
     "PCR": "Penn Course Review",
     "PCx": "Penn Courses (Base)",
     "Accounts": "Penn Labs Accounts",
-    "": "Other"  # Catches all other tags (this should normally be an empty tag group and if so
+    "": "Other",  # Catches all other tags (this should normally be an empty tag group and if so
     # it will not show up in the documentation, but is left as a debugging safeguard).
     # If routes are showing up in a "Misc" tag in this group, make sure you set the schema for
     # those views to be PcxAutoSchema, as is instructed in the meta docs above.

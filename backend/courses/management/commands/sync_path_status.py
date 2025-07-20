@@ -63,7 +63,7 @@ async def send_webhook_request(
     course: str,
     previous_course_status: str,
     course_status: str,
-    webhook_semaphore: asyncio.Semaphore
+    webhook_semaphore: asyncio.Semaphore,
 ) -> None:
     async with webhook_semaphore:
         await async_session.post(
@@ -91,7 +91,7 @@ async def send_webhook_requests(
                     course,
                     db_course_to_status[course],
                     path_course_to_status[course],
-                    webhook_semaphore
+                    webhook_semaphore,
                 )
             )
             for course in course_list
@@ -101,10 +101,10 @@ async def send_webhook_requests(
 
 
 async def get_department_path_status(
-    async_session: aiohttp.ClientSession, 
+    async_session: aiohttp.ClientSession,
     semester: str,
-    department: str, 
-    path_semaphore: asyncio.Semaphore
+    department: str,
+    path_semaphore: asyncio.Semaphore,
 ) -> Tuple[str, str]:
     headers = {
         "accept": "application/json, text/javascript, */*; q=0.01",

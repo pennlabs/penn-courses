@@ -771,6 +771,7 @@ def autocomplete(request):
     all the information necessary for frontend-based autocomplete. It is also cached
     to improve performance.
     """
+
     courses = (
         Course.objects.filter(course_filters_pcr)
         .annotate(
@@ -787,11 +788,16 @@ def autocomplete(request):
         .distinct("full_code", "topic_id")
     )
     code_counter = Counter(c["full_code"] for c in courses)
-    semester_prefix = (
-        lambda course: f"({prettify_semester(course['max_semester'])}) "
-        if code_counter[course["full_code"]] > 1
-        else ""
-    )
+
+    def get_prefix(course: Course) -> str:
+        return (
+            f"({prettify_semester(course['max_semester'])}) "
+            if code_counter[course["full_code"]] > 1
+            else ""
+        )
+
+    semester_prefix = get_prefix
+
     course_set = sorted(
         [
             {
