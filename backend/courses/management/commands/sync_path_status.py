@@ -101,7 +101,10 @@ async def send_webhook_requests(
 
 
 async def get_department_path_status(
-    async_session: aiohttp.ClientSession, semester: str, department: str, path_semaphore: asyncio.Semaphore
+    async_session: aiohttp.ClientSession, 
+    semester: str,
+    department: str, 
+    path_semaphore: asyncio.Semaphore
 ) -> Tuple[str, str]:
     headers = {
         "accept": "application/json, text/javascript, */*; q=0.01",
@@ -160,7 +163,9 @@ async def get_all_course_status_path(semester: str, department_codes: List[str])
     path_semaphore = asyncio.Semaphore(25)  # Limit concurrent Path requests
     async with aiohttp.ClientSession() as async_session:
         tasks = [
-            asyncio.create_task(coro=get_department_path_status(async_session, semester, dept_code, path_semaphore))
+            asyncio.create_task(
+                coro=get_department_path_status(async_session, semester, dept_code, path_semaphore)
+            )
             for dept_code in department_codes
         ]
         responses = await asyncio.gather(*tasks, return_exceptions=False)
