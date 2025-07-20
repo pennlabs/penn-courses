@@ -68,13 +68,14 @@ def set_all_status(semester=None, add_status_update=False, verbose=False):
         if add_status_update:
             if not last_status_update and course_status:
                 try:
+                    # If there is no last status update, the course was previously unlisted
                     record_update(
                         section,
                         course_term,
-                        "",
-                        course_status,
-                        False,
-                        json.dumps(status),
+                        old_status="",
+                        new_status=course_status,
+                        alerted=False,
+                        req=json.dumps(status),
                     )
                     status_updates_out_of_sync.append(section_code)
                 except Exception as e:
@@ -85,10 +86,10 @@ def set_all_status(semester=None, add_status_update=False, verbose=False):
                     record_update(
                         section,
                         course_term,
-                        last_status_update.new_status,
-                        course_status,
-                        False,
-                        json.dumps(status),
+                        old_status=last_status_update.new_status,
+                        new_status=course_status,
+                        alerted=False,
+                        req=json.dumps(status),
                     )
                     status_updates_out_of_sync.append(section_code)
                 except Exception as e:
