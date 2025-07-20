@@ -65,16 +65,35 @@ def set_all_status(semester=None, add_status_update=False, verbose=False):
             sections_to_update.append(section)
             statuses_out_of_sync.append(section_code)
 
-        if add_status_update and last_status_update.new_status != course_status:
-            record_update(
-                section,
-                course_term,
-                last_status_update.new_status,
-                course_status,
-                False,
-                json.dumps(status),
-            )
-            status_updates_out_of_sync.append(section_code)
+        if add_status_update:
+            if not last_status_update and course_status:
+                try:
+                    record_update(
+                        section,
+                        course_term,
+                        "",
+                        course_status,
+                        False,
+                        json.dumps(status),
+                    )
+                    status_updates_out_of_sync.append(section_code)
+                except Exception as e:
+                    if verbose:
+                        print(f"Error recording status update for {section_code}: {e}")
+            elif last_status_update.new_status != course_status:
+                try:
+                    record_update(
+                        section,
+                        course_term,
+                        last_status_update.new_status,
+                        course_status,
+                        False,
+                        json.dumps(status),
+                    )
+                    status_updates_out_of_sync.append(section_code)
+                except Exception as e:
+                    if verbose:
+                        print(f"Error recording status update for {section_code}: {e}")
 
     if sections_to_update:
         Section.objects.bulk_update(sections_to_update, ["status"])
