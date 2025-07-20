@@ -188,7 +188,8 @@ def aggregate_reviews(reviews, group_by, **extra_fields):
     # Second pass: Aggregate grouped reviews by taking the average of all scores and recent scores.
     for k, reviews in grouped_reviews.items():
         latest_sem_with_reviews = max(
-            [r["semester"] for r in reviews if not r.get("exclude_from_recent")], default=None
+            [r["semester"] for r in reviews if not r.get("exclude_from_recent")],
+            default=None,
         )
         latest_sem = max([r["semester"] for r in reviews], default=None)
         all_scores = [r["scores"] for r in reviews]
@@ -553,7 +554,10 @@ def avg_and_recent_percent_open_plots(section_map, status_updates_map):
             )
             if len(updates) == 0:
                 estimate_open = int(section.percent_open > 0.5)
-                open_plots[semester][section_id] = [(0, estimate_open), (1, estimate_open)]
+                open_plots[semester][section_id] = [
+                    (0, estimate_open),
+                    (1, estimate_open),
+                ]
                 continue
             open_plot = [(0, int(updates[0].old_status == "O"))]
             # open_plot: the demand plot for this section, containing elements of the form
