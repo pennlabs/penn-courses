@@ -15,7 +15,13 @@ from django.utils import timezone
 from django.utils.timezone import make_aware
 
 from alert.alerts import Email, PushNotification, Text
-from courses.models import Course, Section, StatusUpdate, UserProfile, string_dict_to_html
+from courses.models import (
+    Course,
+    Section,
+    StatusUpdate,
+    UserProfile,
+    string_dict_to_html,
+)
 from courses.util import (
     does_object_pass_filter,
     get_course_and_section,
@@ -116,7 +122,8 @@ class Registration(models.Model):
     """
 
     created_at = models.DateTimeField(
-        auto_now_add=True, help_text="The datetime at which this registration was created."
+        auto_now_add=True,
+        help_text="The datetime at which this registration was created.",
     )
     original_created_at = models.DateTimeField(
         null=True,
@@ -130,7 +137,8 @@ class Registration(models.Model):
         ),
     )
     updated_at = models.DateTimeField(
-        auto_now=True, help_text="The datetime at which this registration was last modified."
+        auto_now=True,
+        help_text="The datetime at which this registration was last modified.",
     )
 
     SOURCE_CHOICES = (
@@ -259,7 +267,8 @@ class Registration(models.Model):
         ),
     )
     notification_sent = models.BooleanField(
-        default=False, help_text="True if an alert has been sent to the user, false otherwise."
+        default=False,
+        help_text="True if an alert has been sent to the user, false otherwise.",
     )
     notification_sent_at = models.DateTimeField(
         blank=True,
@@ -439,14 +448,18 @@ class Registration(models.Model):
         column should tell them the last time they were alerted about that section).
         """
         return (
-            self.section.registrations.filter(user=self.user, notification_sent_at__isnull=False)
+            self.section.registrations.filter(
+                user=self.user, notification_sent_at__isnull=False
+            )
             .aggregate(max_notification_sent_at=Max("notification_sent_at"))
             .get("max_notification_sent_at", None)
         )
 
     def __str__(self):
         return "%s: %s @ %s" % (
-            (str(self.user) if self.user is not None else None) or self.email or self.phone,
+            (str(self.user) if self.user is not None else None)
+            or self.email
+            or self.phone,
             str(self.section),
             str(self.created_at),
         )
@@ -521,9 +534,9 @@ class Registration(models.Model):
             super().save(*args, **kwargs)
 
             if self.resubscribed_from_id:
-                Registration.objects.filter(head_registration_id=self.resubscribed_from_id).update(
-                    head_registration=self
-                )
+                Registration.objects.filter(
+                    head_registration_id=self.resubscribed_from_id
+                ).update(head_registration=self)
 
             if self.original_created_at is None:
                 self.original_created_at = self.get_original_registration().created_at
@@ -561,12 +574,14 @@ class Registration(models.Model):
             text_result = Text(self).send_alert(close_notification=close_notification)
             if text_result is None:
                 logging.debug(
-                    "ERROR OCCURRED WHILE ATTEMPTING TEXT NOTIFICATION FOR " + self.__str__()
+                    "ERROR OCCURRED WHILE ATTEMPTING TEXT NOTIFICATION FOR "
+                    + self.__str__()
                 )
         email_result = Email(self).send_alert(close_notification=close_notification)
         if email_result is None:
             logging.debug(
-                "ERROR OCCURRED WHILE ATTEMPTING EMAIL NOTIFICATION FOR " + self.__str__()
+                "ERROR OCCURRED WHILE ATTEMPTING EMAIL NOTIFICATION FOR "
+                + self.__str__()
             )
         push_notif_result = False
         if push_notification:
@@ -575,10 +590,13 @@ class Registration(models.Model):
             )
             if push_notif_result is None:
                 logging.debug(
-                    "ERROR OCCURRED WHILE ATTEMPTING PUSH NOTIFICATION FOR " + self.__str__()
+                    "ERROR OCCURRED WHILE ATTEMPTING PUSH NOTIFICATION FOR "
+                    + self.__str__()
                 )
         if not email_result and not text_result and not push_notif_result:
-            logging.debug("ALERT CALLED BUT NOTIFICATION NOT SENT FOR " + self.__str__())
+            logging.debug(
+                "ALERT CALLED BUT NOTIFICATION NOT SENT FOR " + self.__str__()
+            )
             return False
         if not close_notification:
             logging.debug("NOTIFICATION SENT FOR " + self.__str__())
@@ -611,7 +629,9 @@ class Registration(models.Model):
         """
         most_recent_reg = self.get_most_current()
         if most_recent_reg.is_active:  # if the head of this resub chain is active
-            return most_recent_reg  # don't create duplicate registrations for no reason.
+            return (
+                most_recent_reg  # don't create duplicate registrations for no reason.
+            )
 
         new_registration = Registration(
             user=self.user,
@@ -701,13 +721,21 @@ def register_for_course(
         )
         registration.validate_phone()
         if section.registrations.filter(
-            email=email_address, phone=registration.phone, **Registration.is_active_filter()
+            email=email_address,
+            phone=registration.phone,
+            **Registration.is_active_filter(),
         ).exists():
             return RegStatus.OPEN_REG_EXISTS, section.full_code, None
     else:
-        if section.registrations.filter(user=user, **Registration.is_active_filter()).exists():
+        if section.registrations.filter(
+            user=user, **Registration.is_active_filter()
+        ).exists():
             return RegStatus.OPEN_REG_EXISTS, section.full_code, None
-        if close_notification and not user.profile.email and not user.profile.push_notifications:
+        if (
+            close_notification
+            and not user.profile.email
+            and not user.profile.push_notifications
+        ):
             return RegStatus.TEXT_CLOSE_NOTIFICATION, section.full_code, None
         registration = Registration(section=section, user=user, source=source)
         registration.auto_resubscribe = auto_resub
@@ -844,7 +872,9 @@ class PcaDemandDistributionEstimate(models.Model):
             or self.lowest_demand_section.capacity <= 0
         ):
             return None
-        return float(self.lowest_demand_section_volume) / float(self.lowest_demand_section.capacity)
+        return float(self.lowest_demand_section_volume) / float(
+            self.lowest_demand_section.capacity
+        )
 
     def save(self, *args, **kwargs):
         """
@@ -887,7 +917,9 @@ def validate_add_drop_semester(semester):
             f"Semester {semester} is invalid; valid semesters contain 5 characters."
         )
     if semester[4] not in ["A", "C"]:
-        raise ValidationError(f"Semester {semester} is invalid; valid semesters end in 'A' or 'C'.")
+        raise ValidationError(
+            f"Semester {semester} is invalid; valid semesters end in 'A' or 'C'."
+        )
     if not semester[:4].isnumeric():
         raise ValidationError(
             f"Semester {semester} is invalid; the 4-letter prefix of a valid semester is numeric."
@@ -913,10 +945,14 @@ class AddDropPeriod(models.Model):
         ),
     )
     start = models.DateTimeField(
-        null=True, blank=True, help_text="The datetime at which the add drop period started."
+        null=True,
+        blank=True,
+        help_text="The datetime at which the add drop period started.",
     )
     end = models.DateTimeField(
-        null=True, blank=True, help_text="The datetime at which the add drop period ended."
+        null=True,
+        blank=True,
+        help_text="The datetime at which the add drop period ended.",
     )
 
     # estimated_start and estimated_end are filled in automatically in the overridden save method,
@@ -1044,7 +1080,9 @@ class AddDropPeriod(models.Model):
         if last_start is None:
             tz = gettz(TIME_ZONE)
             return make_aware(
-                datetime.strptime(f"{s_year}-{s_month}-{s_day} 07:00", "%Y-%m-%d %H:%M"),
+                datetime.strptime(
+                    f"{s_year}-{s_month}-{s_day} 07:00", "%Y-%m-%d %H:%M"
+                ),
                 timezone=tz,
             )
         return last_start.start.replace(year=s_year)
@@ -1079,7 +1117,9 @@ class AddDropPeriod(models.Model):
                 e_day = 22
             tz = gettz(TIME_ZONE)
             return make_aware(
-                datetime.strptime(f"{e_year}-{e_month}-{e_day} 23:59", "%Y-%m-%d %H:%M"),
+                datetime.strptime(
+                    f"{e_year}-{e_month}-{e_day} 23:59", "%Y-%m-%d %H:%M"
+                ),
                 timezone=tz,
             )
         return last_end.end.replace(year=e_year)

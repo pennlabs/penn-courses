@@ -19,7 +19,9 @@ class EvaluateConditionTest(TestCase):
     @staticmethod
     def relational_operator(left, operator, right):
         """Helper function to create a relational operator condition."""
-        return {"relationalOperator": {"left": left, "operator": operator, "right": right}}
+        return {
+            "relationalOperator": {"left": left, "operator": operator, "right": right}
+        }
 
     def test_unsupported_operator(self):
         comparators = ["<", ">", "<=", ">=", "IS"]
@@ -254,7 +256,14 @@ class RuleArrayParserTest(TestCase):
 
     @staticmethod
     def single_rule_array(ruletype, rule_req, extra_rule_kwargs={}):
-        return [{"ruleType": ruletype, "requirement": rule_req, "label": "", **extra_rule_kwargs}]
+        return [
+            {
+                "ruleType": ruletype,
+                "requirement": rule_req,
+                "label": "",
+                **extra_rule_kwargs,
+            }
+        ]
 
     def assertParsedRulesEqual(
         self,
@@ -267,7 +276,9 @@ class RuleArrayParserTest(TestCase):
     ):
         rules = []
         parse_degreeworks.parse_rulearray(
-            self.single_rule_array(ruletype, rule_req, extra_rule_kwargs=extra_rule_kwargs),
+            self.single_rule_array(
+                ruletype, rule_req, extra_rule_kwargs=extra_rule_kwargs
+            ),
             Degree(),
             rules,
         )
@@ -387,7 +398,11 @@ class RuleArrayParserTest(TestCase):
     def test_ifstmt(self, *mocks):
         ifstmt = {
             "leftCondition": {
-                "relationalOperator": {"left": "MAJOR", "operator": "=", "right": "PHYS"}
+                "relationalOperator": {
+                    "left": "MAJOR",
+                    "operator": "=",
+                    "right": "PHYS",
+                }
             },
             "ifPart": {"ruleArray": self.course_a_rulearray},
         }
@@ -398,7 +413,9 @@ class RuleArrayParserTest(TestCase):
             extra_rule_kwargs={"booleanEvaluation": "True"},
         )
 
-        with patch("degree.utils.parse_degreeworks.evaluate_condition", return_value=False):
+        with patch(
+            "degree.utils.parse_degreeworks.evaluate_condition", return_value=False
+        ):
             self.assertParsedRulesEqual(
                 "IfStmt", ifstmt, [], extra_rule_kwargs={"booleanEvaluation": "False"}
             )
@@ -406,7 +423,11 @@ class RuleArrayParserTest(TestCase):
     def test_ifstmt_with_else(self, *mocks):
         ifstmt = {
             "leftCondition": {
-                "relationalOperator": {"left": "MAJOR", "operator": "=", "right": "PHYS"}
+                "relationalOperator": {
+                    "left": "MAJOR",
+                    "operator": "=",
+                    "right": "PHYS",
+                }
             },
             "ifPart": {
                 "ruleArray": self.course_a_rulearray,
@@ -415,12 +436,20 @@ class RuleArrayParserTest(TestCase):
         }
 
         self.assertParsedRulesEqual(
-            "IfStmt", ifstmt, [self.rule_a], extra_rule_kwargs={"booleanEvaluation": "True"}
+            "IfStmt",
+            ifstmt,
+            [self.rule_a],
+            extra_rule_kwargs={"booleanEvaluation": "True"},
         )
 
-        with patch("degree.utils.parse_degreeworks.evaluate_condition", return_value=False):
+        with patch(
+            "degree.utils.parse_degreeworks.evaluate_condition", return_value=False
+        ):
             self.assertParsedRulesEqual(
-                "IfStmt", ifstmt, [self.rule_b], extra_rule_kwargs={"booleanEvaluation": "False"}
+                "IfStmt",
+                ifstmt,
+                [self.rule_b],
+                extra_rule_kwargs={"booleanEvaluation": "False"},
             )
 
     def test_ifstmt_evaluation_with_degreeworks_evaluation(self, *mocks):
@@ -429,7 +458,11 @@ class RuleArrayParserTest(TestCase):
         """
         ifstmt = {
             "leftCondition": {
-                "relationalOperator": {"left": "MAJOR", "operator": "=", "right": "PHYS"}
+                "relationalOperator": {
+                    "left": "MAJOR",
+                    "operator": "=",
+                    "right": "PHYS",
+                }
             },
             "ifPart": {
                 "ruleArray": self.course_a_rulearray,
@@ -450,32 +483,57 @@ class RuleArrayParserTest(TestCase):
                 "IfStmt", ifstmt, [], extra_rule_kwargs={"booleanEvaluation": "Unknown"}
             )
 
-        with patch("degree.utils.parse_degreeworks.evaluate_condition", return_value=False):
+        with patch(
+            "degree.utils.parse_degreeworks.evaluate_condition", return_value=False
+        ):
             with self.assertRaises(AssertionError):
                 self.assertParsedRulesEqual(
-                    "IfStmt", ifstmt, [], extra_rule_kwargs={"booleanEvaluation": "True"}
+                    "IfStmt",
+                    ifstmt,
+                    [],
+                    extra_rule_kwargs={"booleanEvaluation": "True"},
                 )
             with self.assertRaises(AssertionError):
                 self.assertParsedRulesEqual(
-                    "IfStmt", ifstmt, [], extra_rule_kwargs={"booleanEvaluation": "Unknown"}
+                    "IfStmt",
+                    ifstmt,
+                    [],
+                    extra_rule_kwargs={"booleanEvaluation": "Unknown"},
                 )
 
-        with patch("degree.utils.parse_degreeworks.evaluate_condition", return_value=None):
+        with patch(
+            "degree.utils.parse_degreeworks.evaluate_condition", return_value=None
+        ):
             assert (
                 parse_degreeworks.evaluate_condition(
-                    {"relationalOperator": {"left": "MAJOR", "operator": "=", "right": "PHYS"}},
+                    {
+                        "relationalOperator": {
+                            "left": "MAJOR",
+                            "operator": "=",
+                            "right": "PHYS",
+                        }
+                    },
                     Degree(),
                 )
                 is None
             )
             self.assertParsedRulesEqual(
-                "IfStmt", ifstmt, [self.rule_b], extra_rule_kwargs={"booleanEvaluation": "False"}
+                "IfStmt",
+                ifstmt,
+                [self.rule_b],
+                extra_rule_kwargs={"booleanEvaluation": "False"},
             )
             self.assertParsedRulesEqual(
-                "IfStmt", ifstmt, [self.rule_b], extra_rule_kwargs={"booleanEvaluation": "True"}
+                "IfStmt",
+                ifstmt,
+                [self.rule_b],
+                extra_rule_kwargs={"booleanEvaluation": "True"},
             )
             self.assertParsedRulesEqual(
-                "IfStmt", ifstmt, [self.rule_b], extra_rule_kwargs={"booleanEvaluation": "Unknown"}
+                "IfStmt",
+                ifstmt,
+                [self.rule_b],
+                extra_rule_kwargs={"booleanEvaluation": "Unknown"},
             )
 
     def test_ifstmt_with_bad_boolean_evaluation(self, *mocks):
@@ -484,7 +542,11 @@ class RuleArrayParserTest(TestCase):
                 "IfStmt",
                 {
                     "leftCondition": {
-                        "relationalOperator": {"left": "MAJOR", "operator": "=", "right": "PHYS"}
+                        "relationalOperator": {
+                            "left": "MAJOR",
+                            "operator": "=",
+                            "right": "PHYS",
+                        }
                     },
                     "ifPart": {
                         "ruleArray": self.course_a_rulearray,
@@ -500,9 +562,15 @@ class RuleArrayParserTest(TestCase):
             "IfStmt",
             {
                 "leftCondition": {
-                    "relationalOperator": {"left": "MAJOR", "operator": "=", "right": "PHYS"}
+                    "relationalOperator": {
+                        "left": "MAJOR",
+                        "operator": "=",
+                        "right": "PHYS",
+                    }
                 },
-                "ifPart": {"ruleArray": self.course_a_rulearray + self.course_b_rulearray},
+                "ifPart": {
+                    "ruleArray": self.course_a_rulearray + self.course_b_rulearray
+                },
             },
             [self.rule_a, self.rule_b],
             extra_rule_kwargs={"booleanEvaluation": "True"},
@@ -524,7 +592,9 @@ class RuleArrayParserTest(TestCase):
 
     def test_unknown_ruletype(self, *mocks):
         with self.assertRaises(LookupError):
-            parse_degreeworks.parse_rulearray(self.single_rule_array("Unknown", {}), Degree(), [])
+            parse_degreeworks.parse_rulearray(
+                self.single_rule_array("Unknown", {}), Degree(), []
+            )
 
     def test_other_ruletypes(self, *mocks):
         self.assertParsedRulesEqual("Complete", {}, [])

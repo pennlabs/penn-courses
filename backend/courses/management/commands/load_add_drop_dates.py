@@ -17,7 +17,9 @@ from PennCourses.settings.base import TIME_ZONE
 
 def fill_in_add_drop_periods(verbose=False) -> set[str]:
     all_semesters = set(Course.objects.values_list("semester", flat=True).distinct())
-    adp_semesters = set(AddDropPeriod.objects.values_list("semester", flat=True).distinct())
+    adp_semesters = set(
+        AddDropPeriod.objects.values_list("semester", flat=True).distinct()
+    )
     missing_semesters = set()
     for candidate in all_semesters - adp_semesters:
         try:
@@ -37,7 +39,9 @@ def load_add_drop_dates(verbose=False):
     validate_add_drop_semester(semester)
 
     if verbose:
-        print(f"Loading course selection period dates for semester {semester} from the Almanac")
+        print(
+            f"Loading course selection period dates for semester {semester} from the Almanac"
+        )
     with transaction.atomic():
         adp = get_or_create_add_drop_period(semester)
         start_date = adp.start
@@ -58,8 +62,12 @@ def load_add_drop_dates(verbose=False):
         tz = gettz(TIME_ZONE)
 
         s_year, s_month, s_day, e_year, e_month, e_day = (None,) * 6
-        start_mode = 0  # 0 if start semester hasn't been found, 1 if it has, 2 if finished sem
-        end_mode = 0  # 0 if end semester hasn't been found, 1 if it has, 2 if finished sem
+        start_mode = (
+            0  # 0 if start semester hasn't been found, 1 if it has, 2 if finished sem
+        )
+        end_mode = (
+            0  # 0 if end semester hasn't been found, 1 if it has, 2 if finished sem
+        )
         all_th_parents = {el.parent for el in soup.find_all("th")}
         months = [
             "january",
@@ -90,7 +98,10 @@ def load_add_drop_dates(verbose=False):
                 children = list(tr_el.findChildren("td", recursive=False))
                 title = children[0]
                 date_string = children[1].get_text()
-                if title is not None and "advance registration" in title.get_text().lower():
+                if (
+                    title is not None
+                    and "advance registration" in title.get_text().lower()
+                ):
                     if start_mode == 1:
                         dates = date_string.split("-")
                         ar_begin_month = None
@@ -106,10 +117,15 @@ def load_add_drop_dates(verbose=False):
                         s_year = int(start_sem[:4])
                         if ar_end_month is not None:
                             s_month = months.index(ar_end_month) + 1
-                        day_candidates = [int(s) for s in dates[1].split() if s.isdigit()]
+                        day_candidates = [
+                            int(s) for s in dates[1].split() if s.isdigit()
+                        ]
                         if len(day_candidates) > 0:
                             s_day = day_candidates[0]
-                if title is not None and "course selection period ends" in title.get_text().lower():
+                if (
+                    title is not None
+                    and "course selection period ends" in title.get_text().lower()
+                ):
                     if end_mode == 1:
                         course_sel_end_month = None
                         for month in months:
@@ -118,7 +134,9 @@ def load_add_drop_dates(verbose=False):
                         e_year = int(end_sem[:4])
                         if course_sel_end_month is not None:
                             e_month = months.index(course_sel_end_month) + 1
-                        day_candidates = [int(s) for s in date_string.split() if s.isdigit()]
+                        day_candidates = [
+                            int(s) for s in date_string.split() if s.isdigit()
+                        ]
                         if len(day_candidates) > 0:
                             e_day = day_candidates[0]
         if None not in [s_year, s_month, s_day] and start_date is None:
@@ -136,7 +154,9 @@ def load_add_drop_dates(verbose=False):
                 )
         if None not in [e_year, e_month, e_day]:
             end_date = make_aware(
-                datetime.strptime(f"{e_year}-{e_month}-{e_day} 11:59", "%Y-%m-%d %H:%M"),
+                datetime.strptime(
+                    f"{e_year}-{e_month}-{e_day} 11:59", "%Y-%m-%d %H:%M"
+                ),
                 timezone=tz,
             )
         adp.estimated_start, adp.end = start_date, end_date

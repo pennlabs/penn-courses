@@ -53,7 +53,9 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **kwargs):
-        out_handle = open(kwargs["out_file"], "w") if kwargs["out_file"] is not None else None
+        out_handle = (
+            open(kwargs["out_file"], "w") if kwargs["out_file"] is not None else None
+        )
         since_year = kwargs["since_year"]
         to_year = kwargs["to_year"] or int(get_current_semester()[:4])
 

@@ -7,7 +7,12 @@ from django.db.models import F, Max, Min, OuterRef, Subquery, Value
 from tqdm import tqdm
 
 from courses.models import Course
-from PennCourses.settings.base import FIRST_BANNER_SEM, XWALK_S3_BUCKET, XWALK_SRC, S3_client
+from PennCourses.settings.base import (
+    FIRST_BANNER_SEM,
+    XWALK_S3_BUCKET,
+    XWALK_SRC,
+    S3_client,
+)
 from review.management.commands.clearcache import clear_cache
 
 
@@ -17,7 +22,9 @@ def get_crosswalk(cross_walk):
     a list of the new codes originating from that source.
     """
     links = dict()
-    cross_walk = pd.read_csv(cross_walk, delimiter="|", encoding="unicode_escape", dtype=str)
+    cross_walk = pd.read_csv(
+        cross_walk, delimiter="|", encoding="unicode_escape", dtype=str
+    )
     for _, r in cross_walk.iterrows():
         old_full_code = f"{r['SRS_SUBJ_CODE']}-{r['SRS_COURSE_NUMBER']}"
         new_full_code = f"{r['NGSS_SUBJECT']}-{r['NGSS_COURSE_NUMBER']}"
@@ -67,7 +74,9 @@ def load_crosswalk(print_missing=False, verbose=False):
 
     with transaction.atomic():
         root_courses = (
-            Course.objects.filter(full_code__in=root_course_codes, semester__lt=FIRST_BANNER_SEM)
+            Course.objects.filter(
+                full_code__in=root_course_codes, semester__lt=FIRST_BANNER_SEM
+            )
             .annotate(
                 max_semester=Subquery(
                     Course.objects.filter(
@@ -84,7 +93,9 @@ def load_crosswalk(print_missing=False, verbose=False):
         )
         root_courses = {r.full_code: r for r in root_courses}
         child_courses = (
-            Course.objects.filter(full_code__in=child_course_codes, semester__gte=FIRST_BANNER_SEM)
+            Course.objects.filter(
+                full_code__in=child_course_codes, semester__gte=FIRST_BANNER_SEM
+            )
             .annotate(
                 min_semester=Subquery(
                     Course.objects.filter(
@@ -100,11 +111,15 @@ def load_crosswalk(print_missing=False, verbose=False):
             .annotate(department_code=F("department__code"))
         )
         child_courses = {child.full_code: child for child in child_courses}
-        for root_course_code, children_codes in tqdm(crosswalk.items(), disable=not verbose):
+        for root_course_code, children_codes in tqdm(
+            crosswalk.items(), disable=not verbose
+        ):
             if root_course_code not in root_courses:
                 num_missing_roots += 1
                 if print_missing:
-                    print(f"Root course {root_course_code} before {FIRST_BANNER_SEM} not found.")
+                    print(
+                        f"Root course {root_course_code} before {FIRST_BANNER_SEM} not found."
+                    )
                 continue
             root_course = root_courses[root_course_code]
 
@@ -121,7 +136,9 @@ def load_crosswalk(print_missing=False, verbose=False):
                 parent_course = root_course
                 if child.department_code != root_course.department_code:
                     for xlist_parent in root_course.crosslistings.all():
-                        if xlist_parent.full_code.startswith(f"{child.department_code}-"):
+                        if xlist_parent.full_code.startswith(
+                            f"{child.department_code}-"
+                        ):
                             parent_course = xlist_parent
                 if child.parent_course != parent_course:
                     child.parent_course = parent_course

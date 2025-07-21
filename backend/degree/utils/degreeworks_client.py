@@ -56,7 +56,9 @@ class DegreeworksClient:
 
         return res.json()
 
-    def degrees_of(self, program_code: str, year: int, undergrad_only=False) -> list[Degree]:
+    def degrees_of(
+        self, program_code: str, year: int, undergrad_only=False
+    ) -> list[Degree]:
         goals_payload = [
             {
                 "id": "programCollection",
@@ -940,7 +942,11 @@ class DegreeworksClient:
                         "errorMessage": "",
                         "catalogYear": "",
                         "choices": [
-                            {"key": "UG", "description": "Undergraduate", "isVisibleInWhatif": True}
+                            {
+                                "key": "UG",
+                                "description": "Undergraduate",
+                                "isVisibleInWhatif": True,
+                            }
                         ],
                         "selectedChoices": ["UG"],
                         "ruleGoalCode": "SCHOOL",
@@ -1127,15 +1133,31 @@ class DegreeworksClient:
                                 "description": "Asian American Studies",
                                 "isVisibleInWhatif": True,
                             },
-                            {"key": "BIOE", "description": "Bioethics", "isVisibleInWhatif": True},
-                            {"key": "BIOL", "description": "Biology", "isVisibleInWhatif": True},
-                            {"key": "BIOP", "description": "Biophysics", "isVisibleInWhatif": True},
+                            {
+                                "key": "BIOE",
+                                "description": "Bioethics",
+                                "isVisibleInWhatif": True,
+                            },
+                            {
+                                "key": "BIOL",
+                                "description": "Biology",
+                                "isVisibleInWhatif": True,
+                            },
+                            {
+                                "key": "BIOP",
+                                "description": "Biophysics",
+                                "isVisibleInWhatif": True,
+                            },
                             {
                                 "key": "CBE",
                                 "description": "Chemical & Biomolecular Eng",
                                 "isVisibleInWhatif": True,
                             },
-                            {"key": "CHEM", "description": "Chemistry", "isVisibleInWhatif": True},
+                            {
+                                "key": "CHEM",
+                                "description": "Chemistry",
+                                "isVisibleInWhatif": True,
+                            },
                             {
                                 "key": "CIMS",
                                 "description": "Cinema and Media Studies",
@@ -1176,7 +1198,11 @@ class DegreeworksClient:
                                 "description": "Data Science",
                                 "isVisibleInWhatif": True,
                             },
-                            {"key": "DSGN", "description": "Design", "isVisibleInWhatif": True},
+                            {
+                                "key": "DSGN",
+                                "description": "Design",
+                                "isVisibleInWhatif": True,
+                            },
                             {
                                 "key": "DHUM",
                                 "description": "Digital Humanities",
@@ -1217,7 +1243,11 @@ class DegreeworksClient:
                                 "description": "Economic Policy",
                                 "isVisibleInWhatif": True,
                             },
-                            {"key": "ECON", "description": "Economics", "isVisibleInWhatif": True},
+                            {
+                                "key": "ECON",
+                                "description": "Economics",
+                                "isVisibleInWhatif": True,
+                            },
                             {
                                 "key": "EE",
                                 "description": "Electrical Engineering",
@@ -1233,7 +1263,11 @@ class DegreeworksClient:
                                 "description": "Engineering Entrepreneurship",
                                 "isVisibleInWhatif": True,
                             },
-                            {"key": "ENGL", "description": "English", "isVisibleInWhatif": True},
+                            {
+                                "key": "ENGL",
+                                "description": "English",
+                                "isVisibleInWhatif": True,
+                            },
                             {
                                 "key": "ENVH",
                                 "description": "Environmental Humanities",
@@ -1254,7 +1288,11 @@ class DegreeworksClient:
                                 "description": "European Studies",
                                 "isVisibleInWhatif": True,
                             },
-                            {"key": "FNAR", "description": "Fine Arts", "isVisibleInWhatif": True},
+                            {
+                                "key": "FNAR",
+                                "description": "Fine Arts",
+                                "isVisibleInWhatif": True,
+                            },
                             {
                                 "key": "FRFS",
                                 "description": "French and Francophone Studies",
@@ -1265,8 +1303,16 @@ class DegreeworksClient:
                                 "description": "Gen, Sexuality & Women's Sts",
                                 "isVisibleInWhatif": True,
                             },
-                            {"key": "GEOL", "description": "Geology", "isVisibleInWhatif": True},
-                            {"key": "GRMN", "description": "German", "isVisibleInWhatif": True},
+                            {
+                                "key": "GEOL",
+                                "description": "Geology",
+                                "isVisibleInWhatif": True,
+                            },
+                            {
+                                "key": "GRMN",
+                                "description": "German",
+                                "isVisibleInWhatif": True,
+                            },
                             {
                                 "key": "GMST",
                                 "description": "Global Medieval Studies",
@@ -1282,7 +1328,11 @@ class DegreeworksClient:
                                 "description": "Hispanic Studies",
                                 "isVisibleInWhatif": True,
                             },
-                            {"key": "HIST", "description": "History", "isVisibleInWhatif": True},
+                            {
+                                "key": "HIST",
+                                "description": "History",
+                                "isVisibleInWhatif": True,
+                            },
                             {
                                 "key": "ARTH",
                                 "description": "History of Art",
@@ -1383,7 +1433,11 @@ class DegreeworksClient:
                                 "description": "Modern Middle Eastern Studies",
                                 "isVisibleInWhatif": True,
                             },
-                            {"key": "MUSC", "description": "Music", "isVisibleInWhatif": True},
+                            {
+                                "key": "MUSC",
+                                "description": "Music",
+                                "isVisibleInWhatif": True,
+                            },
                             {
                                 "key": "NAIS",
                                 "description": "Native American And Indigenous",
@@ -1404,14 +1458,26 @@ class DegreeworksClient:
                                 "description": "Nursing & Hlth Services Mgmt",
                                 "isVisibleInWhatif": True,
                             },
-                            {"key": "NUTR", "description": "Nutrition", "isVisibleInWhatif": True},
+                            {
+                                "key": "NUTR",
+                                "description": "Nutrition",
+                                "isVisibleInWhatif": True,
+                            },
                             {
                                 "key": "APEN",
                                 "description": "Persian Language & Literature",
                                 "isVisibleInWhatif": True,
                             },
-                            {"key": "PHIL", "description": "Philosophy", "isVisibleInWhatif": True},
-                            {"key": "PHYS", "description": "Physics", "isVisibleInWhatif": True},
+                            {
+                                "key": "PHIL",
+                                "description": "Philosophy",
+                                "isVisibleInWhatif": True,
+                            },
+                            {
+                                "key": "PHYS",
+                                "description": "Physics",
+                                "isVisibleInWhatif": True,
+                            },
                             {
                                 "key": "PSCI",
                                 "description": "Political Science",
@@ -1422,7 +1488,11 @@ class DegreeworksClient:
                                 "description": "Psychoanalytic Studies",
                                 "isVisibleInWhatif": True,
                             },
-                            {"key": "PSYC", "description": "Psychology", "isVisibleInWhatif": True},
+                            {
+                                "key": "PSYC",
+                                "description": "Psychology",
+                                "isVisibleInWhatif": True,
+                            },
                             {
                                 "key": "RELS",
                                 "description": "Religious Studies",
@@ -1443,7 +1513,11 @@ class DegreeworksClient:
                                 "description": "Science Technology & Society",
                                 "isVisibleInWhatif": True,
                             },
-                            {"key": "SOCI", "description": "Sociology", "isVisibleInWhatif": True},
+                            {
+                                "key": "SOCI",
+                                "description": "Sociology",
+                                "isVisibleInWhatif": True,
+                            },
                             {
                                 "key": "SAST",
                                 "description": "South Asia Studies",
@@ -1807,7 +1881,10 @@ class DegreeworksClient:
 
         # LEVEL
         levels = res.json()[0]["goals"][2]["choices"]
-        if undergrad_only and len([choice for choice in levels if choice["key"] == "UG"]) < 1:
+        if (
+            undergrad_only
+            and len([choice for choice in levels if choice["key"] == "UG"]) < 1
+        ):
             print("No undergraduate degree for program", program_code)
             return []
         goals_payload[0]["goals"][2]["selectedChoices"] = ["UG"]
@@ -3831,12 +3908,15 @@ class DegreeworksClient:
         return [program["key"] for program in res.json()[0]["goals"][1]["choices"]]
 
 
-def write_dp(dp: Degree, audit_json: dict, dir: str | Path = "degrees", overwrite=False):
+def write_dp(
+    dp: Degree, audit_json: dict, dir: str | Path = "degrees", overwrite=False
+):
     file_name = f"{dp.year}-{dp.program}-{dp.degree}-{dp.major}"
     if dp.concentration is not None:
         file_name += f"-{dp.concentration}"
     Path(dir).mkdir(
-        exist_ok=True, parents=True  # will still throw an error if dir is a non-directory file
+        exist_ok=True,
+        parents=True,  # will still throw an error if dir is a non-directory file
     )
     file_path = Path(dir, file_name)
     if not overwrite and file_path.exists():

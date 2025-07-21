@@ -117,7 +117,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         if not all(
-            [getenv(var) for var in ["GSEARCH_API_KEY", "GSEARCH_ENGINE_ID", "GMAPS_API_KEY"]]
+            [
+                getenv(var)
+                for var in ["GSEARCH_API_KEY", "GSEARCH_ENGINE_ID", "GMAPS_API_KEY"]
+            ]
         ):
             raise ValueError("Env vars not set properly.")
 

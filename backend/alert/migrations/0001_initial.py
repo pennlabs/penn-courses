@@ -19,7 +19,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
@@ -56,7 +59,8 @@ class Migration(migrations.Migration):
                 (
                     "section",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, to="courses.Section"
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="courses.Section",
                     ),
                 ),
             ],

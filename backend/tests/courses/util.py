@@ -1,4 +1,6 @@
-from courses.management.commands.recompute_parent_courses import recompute_parent_courses
+from courses.management.commands.recompute_parent_courses import (
+    recompute_parent_courses,
+)
 from courses.management.commands.recompute_soft_state import (
     recompute_precomputed_fields,
     recompute_topics,

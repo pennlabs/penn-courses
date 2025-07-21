@@ -27,7 +27,9 @@ def create_review(section_code, semester, instructor_name, bits, responses=100):
     _, section, _, _ = get_or_create_course_and_section(section_code, semester)
     instructor, _ = Instructor.objects.get_or_create(name=instructor_name)
     section.instructors.add(instructor)
-    import_review(section, instructor, None, responses, None, bits, lambda x, y=None: None)
+    import_review(
+        section, instructor, None, responses, None, bits, lambda x, y=None: None
+    )
     fill_course_soft_state()
 
 
@@ -73,38 +75,70 @@ class PrecomputePcrReviewsCommandTestCase(TestCase):
         self.err = StringIO()
 
         # Same Course, Originally Different Topics
-        create_review("CIS-120-001", TEST1_SEMESTER, INSTRUCTOR_ONE, {"instructor_quality": 4})
+        create_review(
+            "CIS-120-001", TEST1_SEMESTER, INSTRUCTOR_ONE, {"instructor_quality": 4}
+        )
 
-        create_review("CIS-120-002", TEST2_SEMESTER, INSTRUCTOR_TWO, {"instructor_quality": 2})
+        create_review(
+            "CIS-120-002", TEST2_SEMESTER, INSTRUCTOR_TWO, {"instructor_quality": 2}
+        )
 
-        create_review("CIS-1200-001", TEST3_SEMESTER, INSTRUCTOR_THREE, {"instructor_quality": 0})
+        create_review(
+            "CIS-1200-001", TEST3_SEMESTER, INSTRUCTOR_THREE, {"instructor_quality": 0}
+        )
 
         # Individual Course
-        create_review("CIS-1210-003", TEST3_SEMESTER, INSTRUCTOR_THREE, {"instructor_quality": 2})
+        create_review(
+            "CIS-1210-003", TEST3_SEMESTER, INSTRUCTOR_THREE, {"instructor_quality": 2}
+        )
 
         # Courses to Switch Topics
-        create_review("AFRC-1500-001", TEST1_SEMESTER, INSTRUCTOR_ONE, {"instructor_quality": 1})
-        create_review("ANTH-1500-002", TEST2_SEMESTER, INSTRUCTOR_TWO, {"instructor_quality": 3})
-        create_review("MUSC-1500-001", TEST3_SEMESTER, INSTRUCTOR_THREE, {"instructor_quality": 1})
+        create_review(
+            "AFRC-1500-001", TEST1_SEMESTER, INSTRUCTOR_ONE, {"instructor_quality": 1}
+        )
+        create_review(
+            "ANTH-1500-002", TEST2_SEMESTER, INSTRUCTOR_TWO, {"instructor_quality": 3}
+        )
+        create_review(
+            "MUSC-1500-001", TEST3_SEMESTER, INSTRUCTOR_THREE, {"instructor_quality": 1}
+        )
         self.update_course_topic("AFRC-1500", "ANTH-1500")
 
         self.set_runtime_option()
         self.precompute_reviews(is_new_data=False)
 
     def add_new_review_data(self):
-        create_review("CIS-120-002", TEST5_SEMESTER, INSTRUCTOR_TWO, {"instructor_quality": 3})
-        create_review("CIS-1200-001", TEST6_SEMESTER, INSTRUCTOR_THREE, {"instructor_quality": 0})
-        create_review("CIS-1210-004", TEST5_SEMESTER, INSTRUCTOR_THREE, {"instructor_quality": 4})
-        create_review("MUSC-1500-003", TEST6_SEMESTER, INSTRUCTOR_THREE, {"instructor_quality": 0})
-        create_review("AFRC-1500-002", TEST5_SEMESTER, INSTRUCTOR_ONE, {"instructor_quality": 2})
-        create_review("IPD-5150-101", TEST5_SEMESTER, INSTRUCTOR_ONE, {"instructor_quality": 3})
+        create_review(
+            "CIS-120-002", TEST5_SEMESTER, INSTRUCTOR_TWO, {"instructor_quality": 3}
+        )
+        create_review(
+            "CIS-1200-001", TEST6_SEMESTER, INSTRUCTOR_THREE, {"instructor_quality": 0}
+        )
+        create_review(
+            "CIS-1210-004", TEST5_SEMESTER, INSTRUCTOR_THREE, {"instructor_quality": 4}
+        )
+        create_review(
+            "MUSC-1500-003", TEST6_SEMESTER, INSTRUCTOR_THREE, {"instructor_quality": 0}
+        )
+        create_review(
+            "AFRC-1500-002", TEST5_SEMESTER, INSTRUCTOR_ONE, {"instructor_quality": 2}
+        )
+        create_review(
+            "IPD-5150-101", TEST5_SEMESTER, INSTRUCTOR_ONE, {"instructor_quality": 3}
+        )
         self.update_course_topic("AFRC-1500", "ANTH-1500")
 
-    def get_cached_review_with_courses(self, course_codes) -> Optional[CachedReviewResponse]:
+    def get_cached_review_with_courses(
+        self, course_codes
+    ) -> Optional[CachedReviewResponse]:
         course_ids = []
         for course_code in course_codes:
             course_ids.extend(
-                list(Course.objects.filter(full_code=course_code).values_list("id", flat=True))
+                list(
+                    Course.objects.filter(full_code=course_code).values_list(
+                        "id", flat=True
+                    )
+                )
             )
 
         topic_id = ".".join([str(id) for id in sorted(course_ids)])

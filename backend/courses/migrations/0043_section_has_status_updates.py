@@ -2,7 +2,9 @@
 
 from django.db import migrations, models
 
-from courses.management.commands.recompute_soft_state import recompute_has_status_updates
+from courses.management.commands.recompute_soft_state import (
+    recompute_has_status_updates,
+)
 
 
 def compute_has_status_updates(apps, schema_editor):

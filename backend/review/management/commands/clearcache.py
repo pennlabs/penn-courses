@@ -12,7 +12,8 @@ def clear_cache():
     # If we are not using redis as the cache backend, then we can delete everything from the cache.
     if (
         settings.CACHES is None
-        or settings.CACHES.get("default").get("BACKEND") != "django_redis.cache.RedisCache"
+        or settings.CACHES.get("default").get("BACKEND")
+        != "django_redis.cache.RedisCache"
     ):
         cache.clear()
         return -1

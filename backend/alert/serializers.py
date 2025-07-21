@@ -129,5 +129,7 @@ class RegistrationUpdateSerializer(serializers.ModelSerializer):
         model = Registration
         fields = registration_fields + ["cancelled", "deleted", "resubscribe"]
         read_only_fields = [
-            f for f in registration_fields if f not in ["auto_resubscribe", "close_notification"]
+            f
+            for f in registration_fields
+            if f not in ["auto_resubscribe", "close_notification"]
         ]

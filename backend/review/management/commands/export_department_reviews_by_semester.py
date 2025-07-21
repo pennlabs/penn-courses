@@ -43,7 +43,9 @@ def average_by_dept(fields, semesters, departments=None, verbose=False):
             extra_metrics=False,
         ).values("code", *fields)
 
-        dept_avgs[semester] = {dept_dict.pop("code"): dept_dict for dept_dict in semester_dept_avgs}
+        dept_avgs[semester] = {
+            dept_dict.pop("code"): dept_dict for dept_dict in semester_dept_avgs
+        }
 
         for code, enrollments_sum in (
             Review.objects.filter(
@@ -158,5 +160,7 @@ class Command(BaseCommand):
                 json.dump(dept_avgs, f, indent=4)
 
             if upload_to_s3:
-                S3_resource.meta.client.upload_file(output_file_path, "penn.courses", path)
+                S3_resource.meta.client.upload_file(
+                    output_file_path, "penn.courses", path
+                )
                 os.remove(output_file_path)

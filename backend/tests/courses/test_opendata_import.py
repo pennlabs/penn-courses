@@ -6,7 +6,14 @@ from django.test import TestCase
 from options.models import Option
 
 from alert.models import AddDropPeriod
-from courses.models import Attribute, Course, Instructor, Meeting, NGSSRestriction, Section
+from courses.models import (
+    Attribute,
+    Course,
+    Instructor,
+    Meeting,
+    NGSSRestriction,
+    Section,
+)
 from courses.util import (
     add_attributes,
     add_restrictions,
@@ -38,7 +45,10 @@ class AddAttributesTestCase(TestCase):
             "MUSC-0050-001", TEST_SEMESTER
         )
         self.AMTH = {"attribute_code": "AMTH", "attribute_desc": "MUSC M Tier Thre"}
-        self.NUFC = {"attribute_code": "NUFC", "attribute_desc": "NUR-ADMIN-FCH Department"}
+        self.NUFC = {
+            "attribute_code": "NUFC",
+            "attribute_desc": "NUR-ADMIN-FCH Department",
+        }
 
     def test_add_attribute(self):
         add_attributes(self.MUSC_0050, [self.AMTH])
@@ -65,7 +75,8 @@ class AddAttributesTestCase(TestCase):
 
     def test_add_attribute_with_no_school(self):
         add_attributes(
-            self.MUSC_0050, [{"attribute_code": "ZPRS", "attribute_desc": "VIPER seminar"}]
+            self.MUSC_0050,
+            [{"attribute_code": "ZPRS", "attribute_desc": "VIPER seminar"}],
         )
         VPRS_obj = Attribute.objects.get(code="ZPRS")
         self.assertIsNone(VPRS_obj.school)
@@ -103,9 +114,13 @@ class AddNGSSRestrictionTestCase(TestCase):
 
 class ParseOpendataResponseTestCase(TestCase):
     def test_parse_response(self):
-        BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        BASE_DIR = os.path.dirname(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        )
         if not os.path.basename(BASE_DIR).startswith("backend"):
-            test_file_path = os.path.join(BASE_DIR, "backend/tests/courses/test-opendata.json")
+            test_file_path = os.path.join(
+                BASE_DIR, "backend/tests/courses/test-opendata.json"
+            )
         else:
             test_file_path = os.path.join(BASE_DIR, "tests/courses/test-opendata.json")
         upsert_course_from_opendata(

@@ -13,6 +13,8 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="section",
             name="credits",
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=3, null=True),
+            field=models.DecimalField(
+                blank=True, decimal_places=2, max_digits=3, null=True
+            ),
         ),
     ]

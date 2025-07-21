@@ -72,13 +72,17 @@ def review_averages(
         fields = ["course_quality", "difficulty", "instructor_quality", "work_required"]
 
     class PercentOpenSubqueryAvg(Subquery):
-        template = "(SELECT AVG(percent_open) FROM (%(subquery)s) percent_open_avg_view)"
+        template = (
+            "(SELECT AVG(percent_open) FROM (%(subquery)s) percent_open_avg_view)"
+        )
 
     class NumOpeningsSubqueryAvg(Subquery):
         template = "(SELECT AVG(num_openings) FROM (%(subquery)s) num_openings_view)"
 
     class FilledInAdvRegAvg(Subquery):
-        template = "(SELECT AVG(filled_in_adv_reg) FROM (%(subquery)s) filled_in_adv_reg_view)"
+        template = (
+            "(SELECT AVG(filled_in_adv_reg) FROM (%(subquery)s) filled_in_adv_reg_view)"
+        )
 
     queryset = queryset.annotate(
         **{
@@ -100,8 +104,14 @@ def review_averages(
             **(
                 {
                     (prefix + "final_enrollment"): Subquery(
-                        ReviewBit.objects.filter(reviewbit_subfilters, review__responses__gt=0)
-                        .values("review_id", "review__enrollment", "review__section__capacity")
+                        ReviewBit.objects.filter(
+                            reviewbit_subfilters, review__responses__gt=0
+                        )
+                        .values(
+                            "review_id",
+                            "review__enrollment",
+                            "review__section__capacity",
+                        )
                         .order_by()
                         .distinct()
                         .annotate(common=Value(1))

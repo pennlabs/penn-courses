@@ -6,7 +6,9 @@ from options.models import Option
 from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
-from courses.management.commands.recompute_soft_state import recompute_precomputed_fields
+from courses.management.commands.recompute_soft_state import (
+    recompute_precomputed_fields,
+)
 from courses.models import Instructor, PreNGSSRequirement, Section
 from courses.util import invalidate_current_semester_cache, set_meetings
 from plan.models import Schedule
@@ -40,17 +42,23 @@ class CreditUnitFilterTestCase(TestCase):
         set_semester()
 
     def test_include_course(self):
-        response = self.client.get(reverse("courses-search", args=["current"]), {"cu": "1.0"})
+        response = self.client.get(
+            reverse("courses-search", args=["current"]), {"cu": "1.0"}
+        )
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
 
     def test_include_multiple(self):
-        response = self.client.get(reverse("courses-search", args=["current"]), {"cu": "0.5,1.0"})
+        response = self.client.get(
+            reverse("courses-search", args=["current"]), {"cu": "0.5,1.0"}
+        )
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
 
     def test_exclude_course(self):
-        response = self.client.get(reverse("courses-search", args=["current"]), {"cu": ".5,1.5"})
+        response = self.client.get(
+            reverse("courses-search", args=["current"]), {"cu": ".5,1.5"}
+        )
         self.assertEqual(200, response.status_code)
         self.assertEqual(0, len(response.data))
 
@@ -75,7 +83,8 @@ class PreNGSSRequirementFilterTestCase(TestCase):
 
     def test_filter_for_req(self):
         response = self.client.get(
-            reverse("courses-search", args=["current"]), {"pre_ngss_requirements": "REQ@SAS"}
+            reverse("courses-search", args=["current"]),
+            {"pre_ngss_requirements": "REQ@SAS"},
         )
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
@@ -83,12 +92,15 @@ class PreNGSSRequirementFilterTestCase(TestCase):
 
     def test_filter_for_req_dif_sem(self):
         req2 = PreNGSSRequirement(
-            semester=("2019A" if TEST_SEMESTER == "2019C" else "2019C"), code="REQ", school="SAS"
+            semester=("2019A" if TEST_SEMESTER == "2019C" else "2019C"),
+            code="REQ",
+            school="SAS",
         )
         req2.save()
         req2.courses.add(self.different_math)
         response = self.client.get(
-            reverse("courses-search", args=["current"]), {"pre_ngss_requirements": "REQ@SAS"}
+            reverse("courses-search", args=["current"]),
+            {"pre_ngss_requirements": "REQ@SAS"},
         )
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
@@ -153,7 +165,9 @@ class IsOpenFilterTestCase(TestCase):
         set_semester()
 
     def test_lec_open_all_rec_open(self):
-        response = self.client.get(reverse("courses-search", args=[TEST_SEMESTER]), {"is-open": ""})
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"is-open": ""}
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual({res["id"] for res in response.data}, self.all_codes)
@@ -252,14 +266,18 @@ class CourseReviewAverageTestCase(TestCase):
         set_semester()
 
     def test_course_average(self):
-        response = self.client.get(reverse("courses-detail", args=["current", "CIS-120"]))
+        response = self.client.get(
+            reverse("courses-detail", args=["current", "CIS-120"])
+        )
         self.assertEqual(200, response.status_code)
         self.assertEqual(3, response.data["course_quality"])
         self.assertEqual(3, response.data["instructor_quality"])
         self.assertEqual(3, response.data["difficulty"])
 
     def test_section_reviews(self):
-        response = self.client.get(reverse("courses-detail", args=["current", "CIS-120"]))
+        response = self.client.get(
+            reverse("courses-detail", args=["current", "CIS-120"])
+        )
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data["sections"]))
 
@@ -280,11 +298,15 @@ class CourseReviewAverageTestCase(TestCase):
             }
         )
         self.section2.instructors.add(instructor3)
-        response = self.client.get(reverse("courses-detail", args=["current", "CIS-120"]))
+        response = self.client.get(
+            reverse("courses-detail", args=["current", "CIS-120"])
+        )
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data["sections"]))
         self.assertEqual(
-            1.5, response.data["sections"][1]["course_quality"], response.data["sections"][1]
+            1.5,
+            response.data["sections"][1]["course_quality"],
+            response.data["sections"][1],
         )
 
     def test_filter_courses_by_review_included(self):
@@ -326,7 +348,9 @@ class DayFilterTestCase(TestCase):
         self.cis_160_202.activity = "REC"
         self.cis_160_202.save()
 
-        _, self.cis_121_001 = create_mock_data(code="CIS-121-001", semester=TEST_SEMESTER)
+        _, self.cis_121_001 = create_mock_data(
+            code="CIS-121-001", semester=TEST_SEMESTER
+        )
         set_meetings(
             self.cis_121_001,
             [
@@ -351,7 +375,9 @@ class DayFilterTestCase(TestCase):
             ],
         )
 
-        _, self.cis_262_001 = create_mock_async_class(code="CIS-262-001", semester=TEST_SEMESTER)
+        _, self.cis_262_001 = create_mock_async_class(
+            code="CIS-262-001", semester=TEST_SEMESTER
+        )
 
         recompute_precomputed_fields()
 
@@ -361,10 +387,14 @@ class DayFilterTestCase(TestCase):
         set_semester()
 
     def test_only_async(self):
-        response = self.client.get(reverse("courses-search", args=[TEST_SEMESTER]), {"days": ""})
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"days": ""}
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
-        self.assertEqual({res["id"] for res in response.data}, {"CIS-262"})  # only async
+        self.assertEqual(
+            {res["id"] for res in response.data}, {"CIS-262"}
+        )  # only async
 
     def test_all_days(self):
         response = self.client.get(
@@ -375,28 +405,38 @@ class DayFilterTestCase(TestCase):
         self.assertEqual({res["id"] for res in response.data}, self.all_codes)
 
     def test_illegal_characters(self):
-        response = self.client.get(reverse("courses-search", args=[TEST_SEMESTER]), {"days": "M-R"})
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"days": "M-R"}
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), len(self.all_codes))
         self.assertEqual({res["id"] for res in response.data}, self.all_codes)
 
     def test_lec_no_rec(self):
-        response = self.client.get(reverse("courses-search", args=[TEST_SEMESTER]), {"days": "TR"})
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"days": "TR"}
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
         self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "CIS-262"})
 
     def test_rec_no_lec(self):
-        response = self.client.get(reverse("courses-search", args=[TEST_SEMESTER]), {"days": "MW"})
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"days": "MW"}
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual({res["id"] for res in response.data}, {"CIS-262"})
 
     def test_lec_and_rec(self):
-        response = self.client.get(reverse("courses-search", args=[TEST_SEMESTER]), {"days": "TWR"})
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"days": "TWR"}
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 3)
-        self.assertEqual({res["id"] for res in response.data}, {"CIS-160", "CIS-120", "CIS-262"})
+        self.assertEqual(
+            {res["id"] for res in response.data}, {"CIS-160", "CIS-120", "CIS-262"}
+        )
 
     def test_partial_match(self):
         response = self.client.get(
@@ -433,13 +473,16 @@ class DayFilterTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 4)
         self.assertEqual(
-            {res["id"] for res in response.data}, {"CIS-120", "CIS-121", "CIS-160", "CIS-262"}
+            {res["id"] for res in response.data},
+            {"CIS-120", "CIS-121", "CIS-160", "CIS-262"},
         )
 
 
 class TimeFilterTestCase(TestCase):
     def setUp(self):
-        _, self.cis_120_001 = create_mock_data("CIS-120-001", TEST_SEMESTER)  # time 11.0-12.0
+        _, self.cis_120_001 = create_mock_data(
+            "CIS-120-001", TEST_SEMESTER
+        )  # time 11.0-12.0
 
         _, self.cis_120_002 = create_mock_data(
             code="CIS-120-002", semester=TEST_SEMESTER, start=1200, end=1330
@@ -461,7 +504,9 @@ class TimeFilterTestCase(TestCase):
         self.cis_160_202.activity = "REC"
         self.cis_160_202.save()
 
-        _, self.cis_121_001 = create_mock_data(code="CIS-121-001", semester=TEST_SEMESTER)
+        _, self.cis_121_001 = create_mock_data(
+            code="CIS-121-001", semester=TEST_SEMESTER
+        )
         set_meetings(
             self.cis_121_001,
             [
@@ -486,7 +531,9 @@ class TimeFilterTestCase(TestCase):
             ],
         )
 
-        _, self.cis_262_001 = create_mock_async_class(code="CIS-262-001", semester=TEST_SEMESTER)
+        _, self.cis_262_001 = create_mock_async_class(
+            code="CIS-262-001", semester=TEST_SEMESTER
+        )
 
         recompute_precomputed_fields()
 
@@ -496,7 +543,9 @@ class TimeFilterTestCase(TestCase):
         set_semester()
 
     def test_empty_time_all(self):
-        response = self.client.get(reverse("courses-search", args=[TEST_SEMESTER]), {"time": ""})
+        response = self.client.get(
+            reverse("courses-search", args=[TEST_SEMESTER]), {"time": ""}
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), len(self.all_codes))
         self.assertEqual({res["id"] for res in response.data}, self.all_codes)
@@ -539,7 +588,9 @@ class TimeFilterTestCase(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
-        self.assertEqual({res["id"] for res in response.data}, {"CIS-262"})  # only async
+        self.assertEqual(
+            {res["id"] for res in response.data}, {"CIS-262"}
+        )  # only async
 
     def test_start_end_same(self):
         response = self.client.get(
@@ -547,7 +598,9 @@ class TimeFilterTestCase(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
-        self.assertEqual({res["id"] for res in response.data}, {"CIS-262"})  # only async
+        self.assertEqual(
+            {res["id"] for res in response.data}, {"CIS-262"}
+        )  # only async
 
     def test_lec_no_rec(self):
         response = self.client.get(
@@ -555,7 +608,9 @@ class TimeFilterTestCase(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
-        self.assertEqual({res["id"] for res in response.data}, {"CIS-262"})  # only async
+        self.assertEqual(
+            {res["id"] for res in response.data}, {"CIS-262"}
+        )  # only async
 
     def test_one_match(self):
         response = self.client.get(
@@ -571,7 +626,9 @@ class TimeFilterTestCase(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 3)
-        self.assertEqual({res["id"] for res in response.data}, {"CIS-160", "CIS-120", "CIS-262"})
+        self.assertEqual(
+            {res["id"] for res in response.data}, {"CIS-160", "CIS-120", "CIS-262"}
+        )
 
     def test_contains_parts_of_two_sec(self):
         response = self.client.get(
@@ -607,7 +664,9 @@ class TimeFilterTestCase(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 3)
-        self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "CIS-160", "CIS-262"})
+        self.assertEqual(
+            {res["id"] for res in response.data}, {"CIS-120", "CIS-160", "CIS-262"}
+        )
 
     def test_multi_meeting_match(self):
         response = self.client.get(
@@ -616,7 +675,9 @@ class TimeFilterTestCase(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 3)
-        self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "CIS-121", "CIS-262"})
+        self.assertEqual(
+            {res["id"] for res in response.data}, {"CIS-120", "CIS-121", "CIS-262"}
+        )
 
 
 class DayTimeFilterTestCase(TestCase):
@@ -626,26 +687,44 @@ class DayTimeFilterTestCase(TestCase):
         )  # time 11.0-12.0, days MWF
 
         _, self.cis_120_002 = create_mock_data(
-            code="CIS-120-002", semester=TEST_SEMESTER, start=1200, end=1330, meeting_days="TR"
+            code="CIS-120-002",
+            semester=TEST_SEMESTER,
+            start=1200,
+            end=1330,
+            meeting_days="TR",
         )
 
         _, self.cis_160_001 = create_mock_data(
-            code="CIS-160-001", semester=TEST_SEMESTER, start=500, end=630, meeting_days="TR"
+            code="CIS-160-001",
+            semester=TEST_SEMESTER,
+            start=500,
+            end=630,
+            meeting_days="TR",
         )
 
         _, self.cis_160_201 = create_mock_data(
-            code="CIS-160-201", semester=TEST_SEMESTER, start=1100, end=1200, meeting_days="M"
+            code="CIS-160-201",
+            semester=TEST_SEMESTER,
+            start=1100,
+            end=1200,
+            meeting_days="M",
         )
         self.cis_160_201.activity = "REC"
         self.cis_160_201.save()
 
         _, self.cis_160_202 = create_mock_data(
-            code="CIS-160-202", semester=TEST_SEMESTER, start=1400, end=1500, meeting_days="W"
+            code="CIS-160-202",
+            semester=TEST_SEMESTER,
+            start=1400,
+            end=1500,
+            meeting_days="W",
         )
         self.cis_160_202.activity = "REC"
         self.cis_160_202.save()
 
-        _, self.cis_121_001 = create_mock_data(code="CIS-121-001", semester=TEST_SEMESTER)
+        _, self.cis_121_001 = create_mock_data(
+            code="CIS-121-001", semester=TEST_SEMESTER
+        )
         set_meetings(
             self.cis_121_001,
             [
@@ -670,7 +749,9 @@ class DayTimeFilterTestCase(TestCase):
             ],
         )
 
-        _, self.cis_262_001 = create_mock_async_class(code="CIS-262-001", semester=TEST_SEMESTER)
+        _, self.cis_262_001 = create_mock_async_class(
+            code="CIS-262-001", semester=TEST_SEMESTER
+        )
 
         recompute_precomputed_fields()
 
@@ -681,7 +762,8 @@ class DayTimeFilterTestCase(TestCase):
 
     def test_all_match(self):
         response = self.client.get(
-            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "0-23.59", "days": "MTWRFSU"}
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"time": "0-23.59", "days": "MTWRFSU"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), len(self.all_codes))
@@ -698,7 +780,8 @@ class DayTimeFilterTestCase(TestCase):
 
     def test_time_matches_not_days(self):
         response = self.client.get(
-            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "1.00-", "days": "F"}
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"time": "1.00-", "days": "F"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
@@ -706,7 +789,8 @@ class DayTimeFilterTestCase(TestCase):
 
     def test_days_time_partial_match(self):
         response = self.client.get(
-            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "12.0-15.0", "days": "TWR"}
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"time": "12.0-15.0", "days": "TWR"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
@@ -714,7 +798,8 @@ class DayTimeFilterTestCase(TestCase):
 
     def test_multi_meeting_partial_match(self):
         response = self.client.get(
-            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "9.00-10.00", "days": "MTWR"}
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"time": "9.00-10.00", "days": "MTWR"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
@@ -722,11 +807,14 @@ class DayTimeFilterTestCase(TestCase):
 
     def test_multi_meeting_full_match(self):
         response = self.client.get(
-            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "9.00-14.30", "days": "MTWR"}
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"time": "9.00-14.30", "days": "MTWR"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 3)
-        self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "CIS-121", "CIS-262"})
+        self.assertEqual(
+            {res["id"] for res in response.data}, {"CIS-120", "CIS-121", "CIS-262"}
+        )
 
 
 class ScheduleFilterTestCase(TestCase):
@@ -736,26 +824,44 @@ class ScheduleFilterTestCase(TestCase):
         )  # time 11.0-12.0, days MWF
 
         _, self.cis_120_002 = create_mock_data(
-            code="CIS-120-002", semester=TEST_SEMESTER, start=1200, end=1330, meeting_days="TR"
+            code="CIS-120-002",
+            semester=TEST_SEMESTER,
+            start=1200,
+            end=1330,
+            meeting_days="TR",
         )
 
         _, self.cis_160_001 = create_mock_data(
-            code="CIS-160-001", semester=TEST_SEMESTER, start=500, end=630, meeting_days="TR"
+            code="CIS-160-001",
+            semester=TEST_SEMESTER,
+            start=500,
+            end=630,
+            meeting_days="TR",
         )
 
         _, self.cis_160_201 = create_mock_data(
-            code="CIS-160-201", semester=TEST_SEMESTER, start=1100, end=1200, meeting_days="M"
+            code="CIS-160-201",
+            semester=TEST_SEMESTER,
+            start=1100,
+            end=1200,
+            meeting_days="M",
         )
         self.cis_160_201.activity = "REC"
         self.cis_160_201.save()
 
         _, self.cis_160_202 = create_mock_data(
-            code="CIS-160-202", semester=TEST_SEMESTER, start=1400, end=1500, meeting_days="W"
+            code="CIS-160-202",
+            semester=TEST_SEMESTER,
+            start=1400,
+            end=1500,
+            meeting_days="W",
         )
         self.cis_160_202.activity = "REC"
         self.cis_160_202.save()
 
-        _, self.cis_121_001 = create_mock_data(code="CIS-121-001", semester=TEST_SEMESTER)
+        _, self.cis_121_001 = create_mock_data(
+            code="CIS-121-001", semester=TEST_SEMESTER
+        )
         set_meetings(
             self.cis_121_001,
             [
@@ -780,7 +886,9 @@ class ScheduleFilterTestCase(TestCase):
             ],
         )
 
-        _, self.cis_262_001 = create_mock_async_class(code="CIS-262-001", semester=TEST_SEMESTER)
+        _, self.cis_262_001 = create_mock_async_class(
+            code="CIS-262-001", semester=TEST_SEMESTER
+        )
 
         recompute_precomputed_fields()
 
@@ -811,7 +919,9 @@ class ScheduleFilterTestCase(TestCase):
             name="Only CIS-120 and CIS-262 Available Schedule",
         )
         self.only_120_262_available_schedule.save()
-        self.only_120_262_available_schedule.sections.set([self.cis_120_001, self.cis_121_001])
+        self.only_120_262_available_schedule.sections.set(
+            [self.cis_120_001, self.cis_121_001]
+        )
 
         self.only_262_available_schedule = Schedule(
             person=self.user,

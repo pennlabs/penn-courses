@@ -5,7 +5,9 @@ from tqdm import tqdm
 
 from courses import registrar
 from courses.management.commands.loadstatus import set_all_status
-from courses.management.commands.recompute_parent_courses import recompute_parent_courses
+from courses.management.commands.recompute_parent_courses import (
+    recompute_parent_courses,
+)
 from courses.management.commands.recompute_soft_state import recompute_soft_state
 from courses.models import Department, Section
 from courses.util import get_current_semester, upsert_course_from_opendata

@@ -12,7 +12,10 @@ from courses.util import get_semesters, in_dev
 
 
 def recompute_parent_courses(
-    semesters: list[str], overwrite_manual_changes=False, skip_xwalk=False, verbose=False
+    semesters: list[str],
+    overwrite_manual_changes=False,
+    skip_xwalk=False,
+    verbose=False,
 ):
     """
     Attemps to recompute empty `parent_course` fields for all courses in the specified semesters.
@@ -24,7 +27,9 @@ def recompute_parent_courses(
     :param verbose: Whether to print status/progress updates.
     """
     if verbose:
-        print(f"Attempting to recompute empty `parent_course` fields for semesters {semesters}.")
+        print(
+            f"Attempting to recompute empty `parent_course` fields for semesters {semesters}."
+        )
     filled_links = 0
     for i, semester in enumerate(sorted(semesters)):
         if verbose:
@@ -89,9 +94,7 @@ def recompute_parent_courses(
 
 
 class Command(BaseCommand):
-    help = (
-        "This script attempts to recompute unset `parent_course` relations in the given semesters."
-    )
+    help = "This script attempts to recompute unset `parent_course` relations in the given semesters."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -127,9 +130,13 @@ class Command(BaseCommand):
         overwrite_manual = kwargs["overwrite_manual_changes"]
 
         if overwrite_manual:
-            confirm = input("Are you sure you want to overwrite all manual changes? (y/N): ")
+            confirm = input(
+                "Are you sure you want to overwrite all manual changes? (y/N): "
+            )
             if confirm.lower() != "y":
                 print("Operation cancelled by user.")
                 return 1
 
-        recompute_parent_courses(semesters, overwrite_manual_changes=overwrite_manual, verbose=True)
+        recompute_parent_courses(
+            semesters, overwrite_manual_changes=overwrite_manual, verbose=True
+        )

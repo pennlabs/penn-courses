@@ -77,7 +77,10 @@ class Email(Alert):
         Returns False if notification was not sent intentionally,
         and None if notification was attempted to be sent but an error occurred.
         """
-        if self.registration.user is not None and self.registration.user.profile.email is not None:
+        if (
+            self.registration.user is not None
+            and self.registration.user.profile.email is not None
+        ):
             email = self.registration.user.profile.email
         elif self.registration.email is not None:
             email = self.registration.email
@@ -117,10 +120,16 @@ class Text(Alert):
         if close_notification:
             # Do not send close notifications by text
             return False
-        if self.registration.user is not None and self.registration.user.profile.push_notifications:
+        if (
+            self.registration.user is not None
+            and self.registration.user.profile.push_notifications
+        ):
             # Do not send text if push_notifications is enabled
             return False
-        if self.registration.user is not None and self.registration.user.profile.phone is not None:
+        if (
+            self.registration.user is not None
+            and self.registration.user.profile.phone is not None
+        ):
             phone_number = self.registration.user.profile.phone
         elif self.registration.phone is not None:
             phone_number = self.registration.phone
@@ -133,14 +142,19 @@ class Text(Alert):
 
 class PushNotification(Alert):
     def __init__(self, reg):
-        super().__init__("alert/push_notif.txt", reg, close_template="alert/push_notif_close.txt")
+        super().__init__(
+            "alert/push_notif.txt", reg, close_template="alert/push_notif_close.txt"
+        )
 
     def send_alert(self, close_notification=False):
         """
         Returns False if notification was not sent intentionally,
         and None if notification was attempted to be sent but an error occurred.
         """
-        if self.registration.user is not None and self.registration.user.profile.push_notifications:
+        if (
+            self.registration.user is not None
+            and self.registration.user.profile.push_notifications
+        ):
             # Only send push notification if push_notifications is enabled
             pennkey = self.registration.user.username
             bearer_token = MOBILE_NOTIFICATION_SECRET

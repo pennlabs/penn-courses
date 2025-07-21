@@ -24,19 +24,24 @@ def deduplicate_status_updates(semesters: list[str], verbose=False):
             # be modified unless the entire update for a semester succeeds.
 
             if verbose:
-                print(f"\nProcessing semester {semester}, " f"{(semester_num+1)}/{len(semesters)}.")
+                print(
+                    f"\nProcessing semester {semester}, "
+                    f"{(semester_num+1)}/{len(semesters)}."
+                )
 
             num_removed = 0
             for section_id in tqdm(
-                Section.objects.filter(course__semester=semester).values_list("id", flat=True),
+                Section.objects.filter(course__semester=semester).values_list(
+                    "id", flat=True
+                ),
                 disable=(not verbose),
             ):
                 last_update = None
                 ids_to_remove = []  # IDs of redundant status updates to remove
 
-                for update in StatusUpdate.objects.filter(section_id=section_id).order_by(
-                    "created_at"
-                ):
+                for update in StatusUpdate.objects.filter(
+                    section_id=section_id
+                ).order_by("created_at"):
                     if (
                         last_update
                         and last_update.old_status == update.old_status

@@ -9,8 +9,17 @@ from options.models import Option
 from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
-from courses.management.commands.recompute_soft_state import recompute_precomputed_fields
-from courses.models import Course, Department, PreNGSSRequirement, Section, Topic, UserProfile
+from courses.management.commands.recompute_soft_state import (
+    recompute_precomputed_fields,
+)
+from courses.models import (
+    Course,
+    Department,
+    PreNGSSRequirement,
+    Section,
+    Topic,
+    UserProfile,
+)
 from courses.util import (
     get_or_create_course,
     get_or_create_course_and_section,
@@ -100,7 +109,9 @@ class GetCourseSectionTest(TestCase):
             self.assertCourseSame(test)
 
     def test_create_course(self):
-        course, section, _, _ = get_or_create_course_and_section("CIS 120 001", TEST_SEMESTER)
+        course, section, _, _ = get_or_create_course_and_section(
+            "CIS 120 001", TEST_SEMESTER
+        )
         self.assertEqual("CIS-120-001", section.full_code)
         self.assertEqual(Course.objects.count(), 2)
         self.assertEqual(course.department.code, "CIS")
@@ -150,7 +161,9 @@ class CourseSaveAutoPrimaryListingTest(TestCase):
     def test_set_primary_listing(self):
         get_or_create_course("CIS", "120", TEST_SEMESTER)
         b, _ = get_or_create_course("OIDD", "291", TEST_SEMESTER)
-        c, _ = get_or_create_course("LGST", "291", TEST_SEMESTER, defaults={"primary_listing": b})
+        c, _ = get_or_create_course(
+            "LGST", "291", TEST_SEMESTER, defaults={"primary_listing": b}
+        )
         b_db = Course.objects.get(full_code="OIDD-291")
         c_db = Course.objects.get(full_code="LGST-291")
         self.assertEqual(b.primary_listing, b)
@@ -195,7 +208,9 @@ class CourseTopicTestCase(TestCase):
     def test_crosslistings(self):
         a, _ = get_or_create_course("CIS", "120", TEST_SEMESTER)
         b, _ = get_or_create_course("OIDD", "291", TEST_SEMESTER)
-        c, _ = get_or_create_course("LGST", "291", TEST_SEMESTER, defaults={"primary_listing": b})
+        c, _ = get_or_create_course(
+            "LGST", "291", TEST_SEMESTER, defaults={"primary_listing": b}
+        )
         fill_course_soft_state()
         a_db = Course.objects.get(full_code="CIS-120")
         b_db = Course.objects.get(full_code="OIDD-291")
@@ -233,7 +248,9 @@ class SectionHasStatusUpdateTestCase(TestCase):
 
     def test_no_updates(self):
         recompute_precomputed_fields()
-        self.assertFalse(Section.objects.get(full_code="CIS-120-001").has_status_updates)
+        self.assertFalse(
+            Section.objects.get(full_code="CIS-120-001").has_status_updates
+        )
 
     def test_one_update(self):
         up = record_update(self.section, TEST_SEMESTER, "C", "O", True, "JSON")
@@ -264,8 +281,16 @@ class CrosslistingTestCase(TestCase):
         set_crosslistings(
             self.clst,
             [
-                {"subject_code": "CLST", "course_number": "027", "is_primary_section": False},
-                {"subject_code": "ANCH", "course_number": "027", "is_primary_section": True},
+                {
+                    "subject_code": "CLST",
+                    "course_number": "027",
+                    "is_primary_section": False,
+                },
+                {
+                    "subject_code": "ANCH",
+                    "course_number": "027",
+                    "is_primary_section": True,
+                },
             ],
         )
         self.clst.save()
@@ -276,8 +301,16 @@ class CrosslistingTestCase(TestCase):
         set_crosslistings(
             self.clst,
             [
-                {"subject_code": "CLST", "course_number": "027", "is_primary_section": False},
-                {"subject_code": "ANCH", "course_number": "027", "is_primary_section": True},
+                {
+                    "subject_code": "CLST",
+                    "course_number": "027",
+                    "is_primary_section": False,
+                },
+                {
+                    "subject_code": "ANCH",
+                    "course_number": "027",
+                    "is_primary_section": True,
+                },
             ],
         )
         set_crosslistings(self.anch, [])
@@ -290,9 +323,21 @@ class CrosslistingTestCase(TestCase):
         set_crosslistings(
             self.anch,
             [
-                {"subject_code": "CLST", "course_number": "027", "is_primary_section": False},
-                {"subject_code": "ANCH", "course_number": "027", "is_primary_section": False},
-                {"subject_code": "HIST", "course_number": "027", "is_primary_section": True},
+                {
+                    "subject_code": "CLST",
+                    "course_number": "027",
+                    "is_primary_section": False,
+                },
+                {
+                    "subject_code": "ANCH",
+                    "course_number": "027",
+                    "is_primary_section": False,
+                },
+                {
+                    "subject_code": "HIST",
+                    "course_number": "027",
+                    "is_primary_section": True,
+                },
             ],
         )
         self.anch.save()
@@ -315,7 +360,9 @@ class PreNGSSRequirementTestCase(TestCase):
         self.req2 = PreNGSSRequirement(
             semester=TEST_SEMESTER, school="SAS", code="TEST2", name="Test 2"
         )
-        self.req3 = PreNGSSRequirement(semester="XXXXX", school="SAS", code="TEST1", name="Test 1+")
+        self.req3 = PreNGSSRequirement(
+            semester="XXXXX", school="SAS", code="TEST1", name="Test 1+"
+        )
 
         self.req1.save()
         self.req2.save()

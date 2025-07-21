@@ -61,7 +61,9 @@ def parse_coursearray(courseArray) -> Q:
                             case "Fall":
                                 sub_q = Q(semester=f"{year}C")
                             case _:
-                                raise LookupError(f"Unknown semester in withArray: {semester}")
+                                raise LookupError(
+                                    f"Unknown semester in withArray: {semester}"
+                                )
                     case "DWCOLLEGE":
                         assert len(filter["valueList"]) == 1
                         match filter["valueList"][0]:
@@ -85,7 +87,9 @@ def parse_coursearray(courseArray) -> Q:
                         logging.info("ignoring DWCOURSENUMBER")
                         sub_q = Q()
                     case _:
-                        raise LookupError(f"Unknown filter type in withArray: {filter['code']}")
+                        raise LookupError(
+                            f"Unknown filter type in withArray: {filter['code']}"
+                        )
                 match filter["connector"]:
                     # TODO: this assumes the connector is to the next element, i.e.,
                     # we use the previous filter's connector here)
@@ -94,7 +98,9 @@ def parse_coursearray(courseArray) -> Q:
                     case "OR":
                         course_q |= sub_q
                     case _:
-                        raise LookupError(f"Unknown connector type in withArray: {connector}")
+                        raise LookupError(
+                            f"Unknown connector type in withArray: {connector}"
+                        )
 
                 connector = filter["connector"]
 
@@ -108,7 +114,9 @@ def parse_coursearray(courseArray) -> Q:
             case "OR" | "" | None:
                 q |= course_q
             case _:
-                raise LookupError(f"Unknown connector type in courseArray: {course['connector']}")
+                raise LookupError(
+                    f"Unknown connector type in courseArray: {course['connector']}"
+                )
 
     if len(q) == 0:
         logging.warn("empty query")
@@ -129,7 +137,9 @@ def evaluate_condition(condition, degree) -> bool:
             case "OR":
                 return right or left
             case _:
-                raise LookupError(f"Unknown connector in ifStmt: {condition['connector']}")
+                raise LookupError(
+                    f"Unknown connector in ifStmt: {condition['connector']}"
+                )
     elif "relationalOperator" in condition:
         comparator = condition["relationalOperator"]
         match comparator["left"]:
@@ -140,11 +150,15 @@ def evaluate_condition(condition, degree) -> bool:
             case "PROGRAM":
                 attribute = degree.program
             case "BANNERGPA":
-                logging.info("ignoring ifStmt with BANNERGPA. Assume GPA is high enough.")
+                logging.info(
+                    "ignoring ifStmt with BANNERGPA. Assume GPA is high enough."
+                )
                 # Assume we always have a sufficiently high GPA
                 return comparator["operator"] == ">" or comparator["operator"] == ">="
             case "ATTRIBUTE":  # TODO: what is this?
-                logging.info("ignoring ifStmt with ATTRIBUTE. Assume don't have this attribute.")
+                logging.info(
+                    "ignoring ifStmt with ATTRIBUTE. Assume don't have this attribute."
+                )
                 return False  # Assume they don't have this ATTRIBUTE
             case _:
                 # e.g., "ALLDEGREES", "WUEXPTGRDTRM", "-COURSE-", "NUMMAJORS", "NUMCONCS", "MINOR"
@@ -202,7 +216,9 @@ def parse_rulearray(
                     else None
                 )
                 if num is None and credits is None:
-                    raise ValueError("No classesBegin or creditsBegin in Course requirement")
+                    raise ValueError(
+                        "No classesBegin or creditsBegin in Course requirement"
+                    )
 
                 # a rule with 0 courses/credits is not a rule
                 if num == 0 or credits == 0:
@@ -232,7 +248,10 @@ def parse_rulearray(
                 assert evaluation is None or evaluation == degreeworks_eval
 
                 if evaluation is None:
-                    logging.warn(f"Evaluation is unknown for `{rule_req}`. " "Defaulting to False.")
+                    logging.warn(
+                        f"Evaluation is unknown for `{rule_req}`. "
+                        "Defaulting to False."
+                    )
                     evaluation = False
 
                 if evaluation:
@@ -265,7 +284,9 @@ def parse_rulearray(
                 this_rule.num = int(rule_req["numberOfGroups"])
             case "Complete" | "Incomplete":
                 rules.pop()
-            case "Noncourse":  # this is a presentation or something else that's required
+            case (
+                "Noncourse"
+            ):  # this is a presentation or something else that's required
                 rules.pop()
             case "Block" | "Blocktype":  # headings
                 rules.pop()

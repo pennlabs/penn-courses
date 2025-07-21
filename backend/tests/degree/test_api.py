@@ -7,7 +7,10 @@ from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
 from courses.models import Course, User
-from courses.util import get_or_create_course_and_section, invalidate_current_semester_cache
+from courses.util import (
+    get_or_create_course_and_section,
+    invalidate_current_semester_cache,
+)
 from degree.models import (
     Degree,
     DegreePlan,
@@ -66,7 +69,9 @@ class DegreePlanViewsetTest(TestCase):
 
 
 class FulfillmentViewsetTest(TestCase):
-    def assertSerializedFulfillmentEquals(self, fulfillment: dict, expected: Fulfillment):
+    def assertSerializedFulfillmentEquals(
+        self, fulfillment: dict, expected: Fulfillment
+    ):
         self.assertEqual(len(fulfillment), 6)
         self.assertEqual(fulfillment["id"], expected.id)
 
@@ -74,7 +79,9 @@ class FulfillmentViewsetTest(TestCase):
             Course.with_reviews.get(full_code=expected.full_code)
         ).data
         self.assertDictEqual(fulfillment["course"], expected_course)
-        self.assertEqual(fulfillment["rules"], [rule.id for rule in expected.rules.all()])
+        self.assertEqual(
+            fulfillment["rules"], [rule.id for rule in expected.rules.all()]
+        )
         self.assertEqual(fulfillment["semester"], expected.semester)
         self.assertEqual(fulfillment["degree_plan"], expected.degree_plan.id)
         self.assertEqual(fulfillment["full_code"], expected.full_code)
@@ -101,7 +108,9 @@ class FulfillmentViewsetTest(TestCase):
         )
         fill_course_soft_state()
 
-        self.degree = Degree.objects.create(program="EU_BSE", degree="BSE", major="CIS", year=2023)
+        self.degree = Degree.objects.create(
+            program="EU_BSE", degree="BSE", major="CIS", year=2023
+        )
         self.parent_rule = Rule.objects.create()
         self.rule1 = Rule.objects.create(
             parent=self.parent_rule,
@@ -145,8 +154,15 @@ class FulfillmentViewsetTest(TestCase):
 
     def test_create_fulfillment(self):
         response = self.client.post(
-            reverse("degreeplan-fulfillment-list", kwargs={"degreeplan_pk": self.degree_plan.id}),
-            {"full_code": "CIS-1200", "semester": TEST_SEMESTER, "rules": [self.rule1.id]},
+            reverse(
+                "degreeplan-fulfillment-list",
+                kwargs={"degreeplan_pk": self.degree_plan.id},
+            ),
+            {
+                "full_code": "CIS-1200",
+                "semester": TEST_SEMESTER,
+                "rules": [self.rule1.id],
+            },
         )
         self.assertEqual(response.status_code, 201, response.json())
         self.assertSerializedFulfillmentEquals(
@@ -158,7 +174,9 @@ class FulfillmentViewsetTest(TestCase):
         self.assertEqual(fulfillment.semester, TEST_SEMESTER)
         self.assertEqual(fulfillment.rules.count(), 1)
         self.assertEqual(fulfillment.rules.first(), self.rule1)
-        satisfaction = SatisfactionStatus.objects.get(rule=self.rule1, degree_plan=self.degree_plan)
+        satisfaction = SatisfactionStatus.objects.get(
+            rule=self.rule1, degree_plan=self.degree_plan
+        )
         self.assertTrue(satisfaction.satisfied)
         self.rule1.refresh_from_db()
 
@@ -179,7 +197,10 @@ class FulfillmentViewsetTest(TestCase):
         b.rules.add(self.rule2)
 
         response = self.client.get(
-            reverse("degreeplan-fulfillment-list", kwargs={"degreeplan_pk": self.degree_plan.id})
+            reverse(
+                "degreeplan-fulfillment-list",
+                kwargs={"degreeplan_pk": self.degree_plan.id},
+            )
         )
         self.assertEqual(response.status_code, 200, response.json())
         response_a, response_b = sorted(

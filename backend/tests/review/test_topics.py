@@ -26,8 +26,15 @@ class CourseCodeChangedTestCase(TestCase, PCRTestMixin):
         self.instructor_name = "Instructor One"
         self.client = APIClient()
         self.client.force_login(User.objects.create_user(username="test"))
-        create_review("CIS-471-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
-        create_review("CIS-371-001", "2012A", self.instructor_name, {"instructor_quality": 2})
+        create_review(
+            "CIS-471-001",
+            TEST_SEMESTER,
+            self.instructor_name,
+            {"instructor_quality": 4},
+        )
+        create_review(
+            "CIS-371-001", "2012A", self.instructor_name, {"instructor_quality": 2}
+        )
         create_review(
             "CIS-471-001",
             "2017B",
@@ -106,7 +113,8 @@ class CourseCodeChangedTestCase(TestCase, PCRTestMixin):
     def test_instructor_no_old_codes(self):
         res = self.client.get(
             reverse(
-                "instructor-reviews", args=[Instructor.objects.get(name=self.instructor_name).pk]
+                "instructor-reviews",
+                args=[Instructor.objects.get(name=self.instructor_name).pk],
             )
         )
         self.assertEqual(200, res.status_code)
@@ -172,8 +180,12 @@ class CourseCodeChangedNoReviewTestCase(TestCase, PCRTestMixin):
         instructor, _ = Instructor.objects.get_or_create(name=self.instructor_name)
         section.instructors.add(instructor)
 
-        create_review("CIS-371-001", "2012A", self.instructor_name, {"instructor_quality": 2})
-        create_review("CIS-471-001", "2017B", self.instructor_name, {"instructor_quality": 3})
+        create_review(
+            "CIS-371-001", "2012A", self.instructor_name, {"instructor_quality": 2}
+        )
+        create_review(
+            "CIS-471-001", "2017B", self.instructor_name, {"instructor_quality": 3}
+        )
         create_review(
             "CIS-471-001",
             "2017A",
@@ -245,7 +257,8 @@ class CourseCodeChangedNoReviewTestCase(TestCase, PCRTestMixin):
     def test_instructor_no_old_codes(self):
         res = self.client.get(
             reverse(
-                "instructor-reviews", args=[Instructor.objects.get(name=self.instructor_name).pk]
+                "instructor-reviews",
+                args=[Instructor.objects.get(name=self.instructor_name).pk],
             )
         )
         self.assertEqual(200, res.status_code)
@@ -334,8 +347,12 @@ class InstructorNoReviewTestCase(TestCase, PCRTestMixin):
         instructor, _ = Instructor.objects.get_or_create(name="Instructor Two")
         section.instructors.add(instructor)
 
-        create_review("CIS-371-001", "2012A", self.instructor_name, {"instructor_quality": 2})
-        create_review("CIS-471-001", "2017B", self.instructor_name, {"instructor_quality": 3})
+        create_review(
+            "CIS-371-001", "2012A", self.instructor_name, {"instructor_quality": 2}
+        )
+        create_review(
+            "CIS-471-001", "2017B", self.instructor_name, {"instructor_quality": 3}
+        )
         create_review(
             "CIS-471-001",
             "2017A",
@@ -417,7 +434,8 @@ class InstructorNoReviewTestCase(TestCase, PCRTestMixin):
     def test_instructor_no_old_codes(self):
         res = self.client.get(
             reverse(
-                "instructor-reviews", args=[Instructor.objects.get(name=self.instructor_name).pk]
+                "instructor-reviews",
+                args=[Instructor.objects.get(name=self.instructor_name).pk],
             )
         )
         self.assertEqual(200, res.status_code)
@@ -519,11 +537,22 @@ class CourseCodeChangedTwoInstructorsMultipleSemestersTestCase(TestCase, PCRTest
         self.instructor_name = "Instructor One"
         self.client = APIClient()
         self.client.force_login(User.objects.create_user(username="test"))
-        create_review("CIS-471-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
-        create_review("CIS-471-001", "2017A", "Instructor Two", {"instructor_quality": 2})
+        create_review(
+            "CIS-471-001",
+            TEST_SEMESTER,
+            self.instructor_name,
+            {"instructor_quality": 4},
+        )
+        create_review(
+            "CIS-471-001", "2017A", "Instructor Two", {"instructor_quality": 2}
+        )
 
-        create_review("CIS-371-900", "2012A", self.instructor_name, {"instructor_quality": 2})
-        create_review("CIS-371-003", "2012C", "Instructor Two", {"instructor_quality": 1})
+        create_review(
+            "CIS-371-900", "2012A", self.instructor_name, {"instructor_quality": 2}
+        )
+        create_review(
+            "CIS-371-003", "2012C", "Instructor Two", {"instructor_quality": 1}
+        )
 
         Section.objects.all().update(activity="LEC")
 
@@ -669,12 +698,20 @@ class BranchedFromTestCase(TestCase, PCRTestMixin):
         self.client = APIClient()
         self.client.force_login(User.objects.create_user(username="test"))
         create_review(
-            "ARTH-2220-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4}
+            "ARTH-2220-001",
+            TEST_SEMESTER,
+            self.instructor_name,
+            {"instructor_quality": 4},
         )
         create_review(
-            "NELC-2055-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 3}
+            "NELC-2055-001",
+            TEST_SEMESTER,
+            self.instructor_name,
+            {"instructor_quality": 3},
         )
-        create_review("ARTH-222-001", "2012A", self.instructor_name, {"instructor_quality": 2})
+        create_review(
+            "ARTH-222-001", "2012A", self.instructor_name, {"instructor_quality": 2}
+        )
         topic_2220 = Topic.objects.get(most_recent__full_code="ARTH-2220")
         topic_2055 = Topic.objects.get(most_recent__full_code="NELC-2055")
         topic_222 = Topic.objects.get(most_recent__full_code="ARTH-222")
@@ -755,8 +792,15 @@ class CourseOfferedInTestCase(TestCase, PCRTestMixin):
         self.instructor_name = "Instructor One"
         self.client = APIClient()
         self.client.force_login(User.objects.create_user(username="test"))
-        create_review("CIS-471-001", TEST_SEMESTER, self.instructor_name, {"instructor_quality": 4})
-        create_review("CIS-371-001", "2012A", self.instructor_name, {"instructor_quality": 2})
+        create_review(
+            "CIS-471-001",
+            TEST_SEMESTER,
+            self.instructor_name,
+            {"instructor_quality": 4},
+        )
+        create_review(
+            "CIS-371-001", "2012A", self.instructor_name, {"instructor_quality": 2}
+        )
         create_review(
             "CIS-471-001",
             "2017B",
@@ -880,6 +924,7 @@ class CourseOfferedInTestCase(TestCase, PCRTestMixin):
         self.assertEqual(
             404,
             self.client.get(
-                reverse("course-history", args=["CIS-471", instructor.pk]), {"semester": "2012A"}
+                reverse("course-history", args=["CIS-471", instructor.pk]),
+                {"semester": "2012A"},
             ).status_code,
         )

@@ -64,7 +64,9 @@ def translate_semester(semester, ignore_error=False):
     if not match:
         if ignore_error:
             return semester
-        raise ValueError(f"Invalid semester '{semester}' (should be of the form '2022C').")
+        raise ValueError(
+            f"Invalid semester '{semester}' (should be of the form '2022C')."
+        )
 
     year, suffix = match.groups()
     return year + semester_suffix_map[suffix]
@@ -82,7 +84,9 @@ def translate_semester_inv(semester, ignore_error=False):
     if not match:
         if ignore_error:
             return semester
-        raise ValueError(f"Invalid semester '{semester}' (should be of the form '202210').")
+        raise ValueError(
+            f"Invalid semester '{semester}' (should be of the form '202210')."
+        )
 
     year, suffix = match.groups()
     return year + semester_suffix_map_inv[suffix]
@@ -184,7 +188,9 @@ def get_add_drop_period(semester):
     cached_adps = cache.get("add_drop_periods", dict())
     if semester not in cached_adps:
         cached_adps[semester] = AddDropPeriod.objects.get(semester=semester)
-        cache.set("add_drop_periods", cached_adps, timeout=90000)  # cache expires every 25 hours
+        cache.set(
+            "add_drop_periods", cached_adps, timeout=90000
+        )  # cache expires every 25 hours
     return cached_adps[semester]
 
 
@@ -294,7 +300,9 @@ def get_course_and_section(course_code_or_crn, semester, section_manager=None):
 
     try:
         dept_code, course_id, section_id = separate_course_code(str(course_code_or_crn))
-        course = Course.objects.get(department__code=dept_code, code=course_id, semester=semester)
+        course = Course.objects.get(
+            department__code=dept_code, code=course_id, semester=semester
+        )
         section = section_manager.get(course=course, code=section_id)
     except ValueError:
         section = (
@@ -322,7 +330,9 @@ def update_percent_open(section, new_status_update):
             return
         seconds_before_last = Decimal(
             max(
-                (last_status_update.created_at - add_drop.estimated_start).total_seconds(),
+                (
+                    last_status_update.created_at - add_drop.estimated_start
+                ).total_seconds(),
                 0,
             )
         )
@@ -342,7 +352,9 @@ def update_percent_open(section, new_status_update):
         section.save()
 
 
-def record_update(section, semester, old_status, new_status, alerted, req, created_at=None):
+def record_update(
+    section, semester, old_status, new_status, alerted, req, created_at=None
+):
     from alert.models import validate_add_drop_semester  # avoid circular imports
 
     u = StatusUpdate(
@@ -378,7 +390,9 @@ def import_instructor(pennid, name, stat=None):
     if not stat:
         stat = lambda key, amt=1, element=None: None  # noqa E731
     if not pennid:
-        instructor_ob = Instructor.objects.filter(name=name).order_by("-updated_at").first()
+        instructor_ob = (
+            Instructor.objects.filter(name=name).order_by("-updated_at").first()
+        )
         if not instructor_ob:
             stat("instructors_created")
             instructor_ob = Instructor.objects.create(name=name)
@@ -409,7 +423,9 @@ def import_instructor(pennid, name, stat=None):
             else:
                 stat("instructors_created")
                 instructor_ob = Instructor.objects.create(user=user, name=name)
-    dups = set(Instructor.objects.filter(name=name, user__isnull=True)) | {instructor_ob}
+    dups = set(Instructor.objects.filter(name=name, user__isnull=True)) | {
+        instructor_ob
+    }
     if len(dups) > 1:
         resolve_duplicates(
             [dups],
@@ -471,7 +487,8 @@ def set_meetings(section, meetings):
     for meeting in meetings:
         meeting["days"] = "".join(sorted(list(set(meeting["days"]))))
     meeting_times = [
-        f"{meeting['days']} {meeting['begin_time']} - {meeting['end_time']}" for meeting in meetings
+        f"{meeting['days']} {meeting['begin_time']} - {meeting['end_time']}"
+        for meeting in meetings
     ]
     section.meeting_times = json.dumps(meeting_times)
 
@@ -486,7 +503,9 @@ def set_meetings(section, meetings):
                 or meeting["building_desc"].lower() == "no room needed"
             )
         )
-        room = None if online else get_room(meeting["building_code"], meeting["room_code"])
+        room = (
+            None if online else get_room(meeting["building_code"], meeting["room_code"])
+        )
         start_time = Decimal(meeting["begin_time_24"]) / 100
         end_time = Decimal(meeting["end_time_24"]) / 100
         start_date = extract_date(meeting.get("start_date"))
@@ -543,7 +562,9 @@ def upsert_course_from_opendata(info, semester, missing_sections=None):
     course.title = info["course_title"] or ""
     course.description = (info["course_description"] or "").strip()
     if info.get("additional_section_narrative"):
-        course.description += (course.description and "\n") + info["additional_section_narrative"]
+        course.description += (course.description and "\n") + info[
+            "additional_section_narrative"
+        ]
     course.syllabus_url = info.get("syllabus_url") or None
 
     # set course primary listing
@@ -553,7 +574,9 @@ def upsert_course_from_opendata(info, semester, missing_sections=None):
     section.credits = Decimal(info["credits"] or "0") if "credits" in info else None
     section.code_specific_enrollment = int(info["section_enrollment"] or 0)
     section.code_specific_capacity = int(info["max_enrollment"] or 0)
-    section.capacity = int(info["max_enrollment_crosslist"] or section.code_specific_capacity)
+    section.capacity = int(
+        info["max_enrollment_crosslist"] or section.code_specific_capacity
+    )
     section.activity = info["activity"] or ""
 
     set_meetings(section, info["meetings"])
@@ -768,6 +791,10 @@ def historical_semester_probability(current_semester: str, semesters: list[str])
     return list(
         map(
             lambda x: min(round(x, 2), 1.00),
-            [semester_probabilities["A"], semester_probabilities["B"], semester_probabilities["C"]],
+            [
+                semester_probabilities["A"],
+                semester_probabilities["B"],
+                semester_probabilities["C"],
+            ],
         )
     )

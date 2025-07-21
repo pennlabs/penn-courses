@@ -20,7 +20,11 @@ from rest_framework.views import APIView
 
 from courses.models import Course, Meeting, Section
 from courses.serializers import CourseListSerializer
-from courses.util import get_course_and_section, get_current_semester, normalize_semester
+from courses.util import (
+    get_course_and_section,
+    get_current_semester,
+    normalize_semester,
+)
 from courses.views import get_accepted_friends
 from PennCourses.docs_settings import PcxAutoSchema
 from PennCourses.settings.base import PATH_REGISTRATION_SCHEDULE_NAME
@@ -84,7 +88,10 @@ from plan.serializers import PrimaryScheduleSerializer, ScheduleSerializer
         override_response_schema={
             "recommend-courses": {
                 "POST": {
-                    200: {"type": "array", "items": {"$ref": "#/components/schemas/CourseList"}}
+                    200: {
+                        "type": "array",
+                        "items": {"$ref": "#/components/schemas/CourseList"},
+                    }
                 }
             }
         },
@@ -212,7 +219,11 @@ class PrimaryScheduleViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return PrimarySchedule.objects.filter(
             Q(user=self.request.user)
-            | Q(user_id__in=Subquery(get_accepted_friends(self.request.user).values("id")))
+            | Q(
+                user_id__in=Subquery(
+                    get_accepted_friends(self.request.user).values("id")
+                )
+            )
         ).prefetch_related(
             Prefetch("schedule__sections", Section.with_reviews.all()),
             "schedule__sections__associated_sections",
@@ -264,7 +275,9 @@ class PrimaryScheduleViewSet(viewsets.ModelViewSet):
                 res["message"] = "Primary schedule successfully unset"
             res["message"] = "Primary schedule was already unset"
         else:
-            schedule = Schedule.objects.filter(person_id=user.id, id=schedule_id).first()
+            schedule = Schedule.objects.filter(
+                person_id=user.id, id=schedule_id
+            ).first()
             if not schedule:
                 res["message"] = "Schedule does not exist"
                 return JsonResponse(res, status=status.HTTP_400_BAD_REQUEST)
@@ -349,7 +362,9 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         },
         "sections": {
             "type": "array",
-            "description": ('The sections in the schedule (can also be called "meetings").'),
+            "description": (
+                'The sections in the schedule (can also be called "meetings").'
+            ),
             "items": {
                 "type": "object",
                 "required": ["id"],
@@ -357,7 +372,8 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     "id": {
                         "type": "string",
                         "description": (
-                            "A course code of the form DEPT-XXXX (e.g. CIS-1200), " "or a Path CRN"
+                            "A course code of the form DEPT-XXXX (e.g. CIS-1200), "
+                            "or a Path CRN"
                         ),
                     },
                     "semester": {
@@ -498,7 +514,8 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             name,
             existing_schedule and existing_schedule.name,
         ] and not (
-            allow_path and isinstance(request.successful_authenticator, PlatformAuthentication)
+            allow_path
+            and isinstance(request.successful_authenticator, PlatformAuthentication)
         ):
             raise PermissionDenied(
                 "You cannot create/update/delete a schedule with the name "
@@ -534,7 +551,9 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        name = self.validate_name(request, existing_schedule=schedule, allow_path=from_path)
+        name = self.validate_name(
+            request, existing_schedule=schedule, allow_path=from_path
+        )
 
         try:
             sections = self.get_sections(request.data, semester, skip_missing=from_path)
@@ -550,7 +569,9 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             schedule.name = PATH_REGISTRATION_SCHEDULE_NAME if from_path else name
             schedule.save()
             schedule.sections.set(sections)
-            return Response({"message": "success", "id": schedule.id}, status=status.HTTP_200_OK)
+            return Response(
+                {"message": "success", "id": schedule.id}, status=status.HTTP_200_OK
+            )
         except IntegrityError as e:
             return Response(
                 {
@@ -596,7 +617,8 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 )
             schedule.sections.set(sections)
             return Response(
-                {"message": "success", "id": schedule.id}, status=status.HTTP_201_CREATED
+                {"message": "success", "id": schedule.id},
+                status=status.HTTP_201_CREATED,
             )
         except IntegrityError as e:
             return Response(
@@ -627,7 +649,9 @@ class CalendarAPIView(APIView):
     schema = PcxAutoSchema(
         custom_path_parameter_desc={
             "calendar-view": {
-                "GET": {"schedule_pk": "The PCP id of the schedule you want to export."},
+                "GET": {
+                    "schedule_pk": "The PCP id of the schedule you want to export."
+                },
             },
         },
         response_codes={
@@ -663,12 +687,16 @@ class CalendarAPIView(APIView):
         )
 
         if not schedule:
-            return Response({"detail": "Invalid schedule"}, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {"detail": "Invalid schedule"}, status=status.HTTP_403_FORBIDDEN
+            )
 
         day_mapping = {"M": "MO", "T": "TU", "W": "WE", "R": "TH", "F": "FR"}
 
         calendar = ICSCal(creator="Penn Labs")
-        calendar.extra.append(ContentLine(name="X-WR-CALNAME", value=f"{schedule.name} Schedule"))
+        calendar.extra.append(
+            ContentLine(name="X-WR-CALNAME", value=f"{schedule.name} Schedule")
+        )
 
         for section in schedule.sections.all():
             e = ICSEvent()
@@ -706,9 +734,9 @@ class CalendarAPIView(APIView):
             e.begin = arrow.get(
                 start_datetime, "YYYY-MM-DD HH:mm A", tzinfo="America/New York"
             ).format("YYYYMMDDTHHmmss")
-            e.end = arrow.get(end_datetime, "YYYY-MM-DD HH:mm A", tzinfo="America/New York").format(
-                "YYYYMMDDTHHmmss"
-            )
+            e.end = arrow.get(
+                end_datetime, "YYYY-MM-DD HH:mm A", tzinfo="America/New York"
+            ).format("YYYYMMDDTHHmmss")
             end_date = arrow.get(
                 first_meeting.end_date, "YYYY-MM-DD", tzinfo="America/New York"
             ).format("YYYYMMDDTHHmmss")

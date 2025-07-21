@@ -55,7 +55,9 @@ class PrimaryScheduleTest(TestCase):
         if schedule_id is None:
             self.assertEqual(PrimarySchedule.objects.filter(user=user).count(), 0)
         else:
-            self.assertEqual(PrimarySchedule.objects.get(user=user).schedule_id, schedule_id)
+            self.assertEqual(
+                PrimarySchedule.objects.get(user=user).schedule_id, schedule_id
+            )
         response = client.get(primary_schedule_url)
         self.assertEqual(response.status_code, 200)
         if num_primary is not None:
@@ -69,7 +71,9 @@ class PrimaryScheduleTest(TestCase):
         self.assert_primary_schedule_id(self.client, self.u1, self.s.id, num_primary=1)
 
     def test_invalid_schedule_id(self):
-        response = self.client.post(primary_schedule_url, {"schedule_id": self.deleted_schedule_id})
+        response = self.client.post(
+            primary_schedule_url, {"schedule_id": self.deleted_schedule_id}
+        )
         self.assertEqual(response.status_code, 400)
         self.assert_primary_schedule_id(self.client, self.u1, None, num_primary=0)
 
@@ -105,7 +109,9 @@ class PrimaryScheduleTest(TestCase):
         self.client3 = APIClient()
         self.client3.login(username="jacob3", password="top_secret")
 
-        Friendship.objects.create(sender=self.u1, recipient=u2, status=Friendship.Status.ACCEPTED)
+        Friendship.objects.create(
+            sender=self.u1, recipient=u2, status=Friendship.Status.ACCEPTED
+        )
         u2_s = Schedule(
             person=u2,
             semester=TEST_SEMESTER,
@@ -123,7 +129,9 @@ class PrimaryScheduleTest(TestCase):
         self.assertIn(self.s.id, [p["schedule"]["id"] for p in response.json()])
         self.assertIn(u2_s.id, [p["schedule"]["id"] for p in response.json()])
 
-        Friendship.objects.create(sender=self.u1, recipient=u3, status=Friendship.Status.ACCEPTED)
+        Friendship.objects.create(
+            sender=self.u1, recipient=u3, status=Friendship.Status.ACCEPTED
+        )
         u3_s = Schedule(
             person=u3,
             semester=TEST_SEMESTER,

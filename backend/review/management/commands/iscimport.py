@@ -44,7 +44,9 @@ class Command(BaseCommand):
     """
 
     def add_arguments(self, parser):
-        parser.add_argument("src", help="path to directory or zip file holding .sql dumps.")
+        parser.add_argument(
+            "src", help="path to directory or zip file holding .sql dumps."
+        )
 
         file_options = parser.add_mutually_exclusive_group()
         file_options.add_argument(
@@ -117,7 +119,9 @@ class Command(BaseCommand):
         )
 
         parser.add_argument(
-            "--force", action="store_true", help="Complete action in non-interactive mode."
+            "--force",
+            action="store_true",
+            help="Complete action in non-interactive mode.",
         )
 
         parser.set_defaults(summary_file=ISC_SUMMARY_TABLE)
@@ -161,7 +165,9 @@ class Command(BaseCommand):
         import_all = kwargs["import_all"]
         s3_bucket = kwargs["s3_bucket"]
         is_zip_file = kwargs["zip"] or s3_bucket is not None
-        summary_file = kwargs["summary_file"]  # either summary table or summary hist table
+        summary_file = kwargs[
+            "summary_file"
+        ]  # either summary table or summary hist table
         import_details = kwargs["import_details"]
         import_descriptions = kwargs["import_descriptions"]
         show_progress_bar = kwargs["show_progress_bar"]
@@ -243,7 +249,8 @@ class Command(BaseCommand):
 
                 print(f"Importing reviews for semester {semester}")
                 stats = import_summary_rows(
-                    (r for r in summary_rows if r["TERM"] == semester), show_progress_bar
+                    (r for r in summary_rows if r["TERM"] == semester),
+                    show_progress_bar,
                 )
                 print(stats)
 

@@ -31,7 +31,9 @@ def set_all_status(semester=None, add_status_update=False, verbose=False):
     status_updates_out_of_sync = []
 
     department_codes = get_department_codes()
-    path_course_to_status = asyncio.run(get_all_course_status_path(semester, department_codes))
+    path_course_to_status = asyncio.run(
+        get_all_course_status_path(semester, department_codes)
+    )
 
     for status in tqdm(statuses):
         section_code = status.get("section_id_normalized")
@@ -113,7 +115,9 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("--semester", default=None, type=str)
         parser.add_argument(
-            "--create-status-updates", action="store_true", help="Create status updates if set"
+            "--create-status-updates",
+            action="store_true",
+            help="Create status updates if set",
         )
         parser.add_argument("--verbose", action="store_true")
 

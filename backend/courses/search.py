@@ -19,7 +19,11 @@ def filter_or_lookups_terms(queryset, orm_lookups, search_terms):
 
 class TypedCourseSearchBackend(filters.SearchFilter):
     code_res = [
-        re.compile(r"^([A-Za-z]{" + str(dept_len) + r"})\s*-?\s*(\d{1,4}[A-Za-z]?|[A-Za-z]{1,3})?$")
+        re.compile(
+            r"^([A-Za-z]{"
+            + str(dept_len)
+            + r"})\s*-?\s*(\d{1,4}[A-Za-z]?|[A-Za-z]{1,3})?$"
+        )
         for dept_len in reversed(range(1, 5))
     ]  # To avoid ambiguity (e.g. INTL-BUL as INTLBUL), try each dept code length separately
 
@@ -52,7 +56,9 @@ class TypedCourseSearchBackend(filters.SearchFilter):
         if search_type == "auto":
             # Cache regex results for performance
             inferred_search_type = getattr(self, "inferred_search_type", None)
-            search_type = inferred_search_type or self.infer_search_type(self.get_query(request))
+            search_type = inferred_search_type or self.infer_search_type(
+                self.get_query(request)
+            )
             self.inferred_search_type = search_type
         return search_type
 
@@ -90,7 +96,8 @@ class TypedCourseSearchBackend(filters.SearchFilter):
 
         search_fields = self.get_search_fields(view, request)
         orm_lookups = [
-            self.construct_search(str(search_field), queryset) for search_field in search_fields
+            self.construct_search(str(search_field), queryset)
+            for search_field in search_fields
         ]
         search_terms = self.get_search_terms(request)
         if not search_terms:
