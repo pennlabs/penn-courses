@@ -72,9 +72,7 @@ async def send_webhook_request(
         await async_session.post(
             url="https://penncoursealert.com/webhook",
             data=json.dumps(
-                format_webhook_request_body(
-                    course, previous_course_status, course_status, semester
-                )
+                format_webhook_request_body(course, previous_course_status, course_status, semester)
             ),
             headers={
                 "Content-Type": "application/json",
@@ -139,9 +137,7 @@ async def get_department_path_status(
         "keyword": department,
     }
     criteria_string = f'[{{"field":"keyword","value":"{department}"}}]'
-    data = quote(
-        f'{{"other":{{"srcdb":"{path_semester}"}},"criteria":{criteria_string}}}'
-    )
+    data = quote(f'{{"other":{{"srcdb":"{path_semester}"}},"criteria":{criteria_string}}}')
 
     async with path_semaphore:
         response = await async_session.post(
@@ -153,9 +149,7 @@ async def get_department_path_status(
         if response.ok:
             response_json = await response.json()
             return {
-                ("-".join(result["code"].split(" ")) + "-" + result["no"]): result[
-                    "stat"
-                ]
+                ("-".join(result["code"].split(" ")) + "-" + result["no"]): result["stat"]
                 for result in response_json["results"]
             }
 
@@ -166,10 +160,7 @@ def get_all_course_status_db(semester: str) -> Dict[str, str]:
         .filter(Q(course__semester=semester) & (Q(status="O") | Q(status="C")))
         .values("full_code", "status")
     )
-    return {
-        section_dict["full_code"]: section_dict["status"]
-        for section_dict in section_dicts
-    }
+    return {section_dict["full_code"]: section_dict["status"] for section_dict in section_dicts}
 
 
 def get_department_codes() -> List[str]:
@@ -177,16 +168,12 @@ def get_department_codes() -> List[str]:
     return list(departments.values_list("code", flat=True))
 
 
-async def get_all_course_status_path(
-    semester: str, department_codes: List[str]
-) -> Dict[str, str]:
+async def get_all_course_status_path(semester: str, department_codes: List[str]) -> Dict[str, str]:
     path_semaphore = asyncio.Semaphore(25)  # Limit concurrent Path requests
     async with aiohttp.ClientSession() as async_session:
         tasks = [
             asyncio.create_task(
-                coro=get_department_path_status(
-                    async_session, semester, dept_code, path_semaphore
-                )
+                coro=get_department_path_status(async_session, semester, dept_code, path_semaphore)
             )
             for dept_code in department_codes
         ]
@@ -209,18 +196,13 @@ def resolve_path_differences(send_data_to_slack=False, verbose=False):
         print(f"{len(db_course_to_status)} section statuses fetched from db.")
 
     department_codes = get_department_codes()
-    path_course_to_status = asyncio.run(
-        get_all_course_status_path(semester, department_codes)
-    )
+    path_course_to_status = asyncio.run(get_all_course_status_path(semester, department_codes))
     if verbose:
         print(f"{len(path_course_to_status)} section statuses fetched from Path.")
 
     inconsistent_courses = []
     for course, db_status in db_course_to_status.items():
-        if (
-            course in path_course_to_status
-            and db_status != path_course_to_status[course]
-        ):
+        if course in path_course_to_status and db_status != path_course_to_status[course]:
             inconsistent_courses.append(course)
     if verbose:
         print(f"Inconsistent Courses: {inconsistent_courses}")
@@ -261,6 +243,4 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         root_logger = logging.getLogger("")
         root_logger.setLevel(logging.DEBUG)
-        resolve_path_differences(
-            send_data_to_slack=kwargs["slack"], verbose=kwargs["verbose"]
-        )
+        resolve_path_differences(send_data_to_slack=kwargs["slack"], verbose=kwargs["verbose"])

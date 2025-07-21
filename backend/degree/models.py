@@ -207,9 +207,7 @@ class Rule(models.Model):
         if self.q:
             assert not self.children.all().exists()
             total_courses, total_credits = (
-                Course.objects.filter(
-                    self.get_q_object() or Q(), full_code__in=full_codes
-                )
+                Course.objects.filter(self.get_q_object() or Q(), full_code__in=full_codes)
                 .aggregate(
                     total_courses=Count("id"),
                     total_credits=Coalesce(
@@ -258,9 +256,7 @@ class DegreePlan(models.Model):
     Stores a users plan for an associated degree.
     """
 
-    name = models.CharField(
-        max_length=255, help_text="The user's nickname for the degree plan."
-    )
+    name = models.CharField(max_length=255, help_text="The user's nickname for the degree plan.")
 
     degrees = models.ManyToManyField(
         Degree,
@@ -279,9 +275,7 @@ class DegreePlan(models.Model):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(
-                fields=["name", "person"], name="degreeplan_name_person"
-            )
+            models.UniqueConstraint(fields=["name", "person"], name="degreeplan_name_person")
         ]
 
     def get_rule_fulfillments(self, rule: Rule) -> set[Rule]:
@@ -308,16 +302,12 @@ class DegreePlan(models.Model):
         """
         top_level_rules = Rule.objects.filter(degrees__in=self.degrees)
         for rule in top_level_rules:
-            status = SatisfactionStatus.objects.filter(
-                degree_plan=self, rule=rule
-            ).first()
+            status = SatisfactionStatus.objects.filter(degree_plan=self, rule=rule).first()
             if not status.satisfied:
                 return False
         return True
 
-    def evaluate_rules(
-        self, rules: list[Rule]
-    ) -> tuple[set[Rule], set[DoubleCountRestriction]]:
+    def evaluate_rules(self, rules: list[Rule]) -> tuple[set[Rule], set[DoubleCountRestriction]]:
         """
         Evaluates this DegreePlan with respect to the given Rules. Returns a set of satisfied Rules
         and a list of DoubleCountRestrictions violated as a tuple.
@@ -421,9 +411,7 @@ def update_satisfaction_statuses(sender, instance, action, pk_set, **kwargs):
         )
 
         for rule in Rule.objects.filter(degrees__in=degree_plan.degrees.all()):
-            status, _ = SatisfactionStatus.objects.get_or_create(
-                degree_plan=degree_plan, rule=rule
-            )
+            status, _ = SatisfactionStatus.objects.get_or_create(degree_plan=degree_plan, rule=rule)
             status.satisfied = rule.evaluate(full_codes)
             status.save()
 
@@ -446,17 +434,13 @@ class SatisfactionStatus(models.Model):
         related_name="+",
         help_text="The rule that is satisfied",
     )
-    satisfied = models.BooleanField(
-        default=False, help_text="Whether the rule is satisfied"
-    )
+    satisfied = models.BooleanField(default=False, help_text="Whether the rule is satisfied")
     last_updated = models.DateTimeField(auto_now=True)
     last_checked = models.DateTimeField(default=timezone.now)
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(
-                fields=["degree_plan", "rule"], name="unique_satisfaction"
-            )
+            models.UniqueConstraint(fields=["degree_plan", "rule"], name="unique_satisfaction")
         ]
 
 
@@ -524,9 +508,7 @@ class DoubleCountRestriction(models.Model):
 
         intersection_cus = (
             Course.objects.filter(
-                full_code__in=[
-                    fulfillment.full_code for fulfillment in shared_fulfillments
-                ]
+                full_code__in=[fulfillment.full_code for fulfillment in shared_fulfillments]
             )
             .order_by("full_code", "-semester")
             .aggregate(sum=Sum("credits", distinct=True))

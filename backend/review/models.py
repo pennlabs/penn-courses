@@ -30,9 +30,7 @@ class Review(models.Model):
 
     def set_averages(self, bits):
         for key, value in bits.items():
-            ReviewBit.objects.update_or_create(
-                review=self, field=key, defaults={"average": value}
-            )
+            ReviewBit.objects.update_or_create(review=self, field=key, defaults={"average": value})
 
     @staticmethod
     def get_averages(topic_id, instructor_name=None, fields=None):

@@ -84,9 +84,7 @@ class DoubleCountRestrictionSerializer(serializers.ModelSerializer):
 
 class DegreeDetailSerializer(serializers.ModelSerializer):
     rules = RuleSerializer(many=True, read_only=True)
-    double_count_restrictions = DoubleCountRestrictionSerializer(
-        many=True, read_only=True
-    )
+    double_count_restrictions = DoubleCountRestrictionSerializer(many=True, read_only=True)
 
     class Meta:
         model = Degree
@@ -147,9 +145,7 @@ class FulfillmentSerializer(serializers.ModelSerializer):
             # it may be better to prompt user for manual override
             if (
                 Course.objects.filter(full_code=full_code).exists()
-                and not Course.objects.filter(
-                    rule.get_q_object(), full_code=full_code
-                ).exists()
+                and not Course.objects.filter(rule.get_q_object(), full_code=full_code).exists()
             ):
                 raise serializers.ValidationError(
                     f"Course {full_code} does not satisfy rule {rule.id}"

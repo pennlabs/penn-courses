@@ -56,9 +56,7 @@ class DegreeworksClient:
 
         return res.json()
 
-    def degrees_of(
-        self, program_code: str, year: int, undergrad_only=False
-    ) -> list[Degree]:
+    def degrees_of(self, program_code: str, year: int, undergrad_only=False) -> list[Degree]:
         goals_payload = [
             {
                 "id": "programCollection",
@@ -1881,10 +1879,7 @@ class DegreeworksClient:
 
         # LEVEL
         levels = res.json()[0]["goals"][2]["choices"]
-        if (
-            undergrad_only
-            and len([choice for choice in levels if choice["key"] == "UG"]) < 1
-        ):
+        if undergrad_only and len([choice for choice in levels if choice["key"] == "UG"]) < 1:
             print("No undergraduate degree for program", program_code)
             return []
         goals_payload[0]["goals"][2]["selectedChoices"] = ["UG"]
@@ -3908,9 +3903,7 @@ class DegreeworksClient:
         return [program["key"] for program in res.json()[0]["goals"][1]["choices"]]
 
 
-def write_dp(
-    dp: Degree, audit_json: dict, dir: str | Path = "degrees", overwrite=False
-):
+def write_dp(dp: Degree, audit_json: dict, dir: str | Path = "degrees", overwrite=False):
     file_name = f"{dp.year}-{dp.program}-{dp.degree}-{dp.major}"
     if dp.concentration is not None:
         file_name += f"-{dp.concentration}"

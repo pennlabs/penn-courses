@@ -33,9 +33,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="reviewbit",
             name="median",
-            field=models.DecimalField(
-                blank=True, decimal_places=5, max_digits=6, null=True
-            ),
+            field=models.DecimalField(blank=True, decimal_places=5, max_digits=6, null=True),
         ),
         migrations.AddField(
             model_name="reviewbit",
@@ -65,9 +63,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="reviewbit",
             name="stddev",
-            field=models.DecimalField(
-                blank=True, decimal_places=5, max_digits=6, null=True
-            ),
+            field=models.DecimalField(blank=True, decimal_places=5, max_digits=6, null=True),
         ),
         migrations.AlterField(
             model_name="reviewbit",

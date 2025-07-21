@@ -20,16 +20,12 @@ def recompute_most_recent():
     """
     Topic.objects.update(
         most_recent_id=Subquery(
-            Course.objects.filter(topic_id=OuterRef("id"))
-            .order_by("-semester")
-            .values("id")[:1]
+            Course.objects.filter(topic_id=OuterRef("id")).order_by("-semester").values("id")[:1]
         )
     )
 
 
-def recompute_topics(
-    min_semester: str = None, verbose=False, allow_null_parent_topic=True
-):
+def recompute_topics(min_semester: str = None, verbose=False, allow_null_parent_topic=True):
     """
     Course topics are directly derived from the `Course.parent_course` graph.
         - Any course without a parent gets its own topic.
@@ -48,9 +44,7 @@ def recompute_topics(
         a None parent topic.
     :param verbose: Whether to print status/progress updates.
     """
-    semesters = [
-        sem for sem in all_semesters() if not min_semester or sem >= min_semester
-    ]
+    semesters = [sem for sem in all_semesters() if not min_semester or sem >= min_semester]
     if verbose:
         print("Recomputing topics from the parent_course graph.")
     for i, semester in enumerate(sorted(semesters)):
@@ -88,12 +82,7 @@ def recompute_topics(
                     and parent.title == course.title
                     or parent.children.count() == 1
                     or (
-                        sum(
-                            [
-                                child.manually_set_parent_course
-                                for child in parent.children.all()
-                            ]
-                        )
+                        sum([child.manually_set_parent_course for child in parent.children.all()])
                         == 1
                         and course.manually_set_parent_course
                     )
@@ -112,9 +101,7 @@ def recompute_topics(
                     visited_courses.add(child.id)
                     if child.id == course.id and not branched_from:
                         continue
-                    topics_to_create.append(
-                        Topic(most_recent=child, branched_from=parent.topic)
-                    )
+                    topics_to_create.append(Topic(most_recent=child, branched_from=parent.topic))
 
             # Updating topics
             Topic.objects.bulk_update(
@@ -181,12 +168,8 @@ class Command(BaseCommand):
         semesters = sorted(
             [sem for sem in all_semesters() if not min_semester or sem >= min_semester]
         )
-        recompute_topics(
-            min_semester, verbose=True, allow_null_parent_topic=bool(min_semester)
-        )
-        recompute_historical_semester_probabilities(
-            current_semester=semesters[-1], verbose=True
-        )
+        recompute_topics(min_semester, verbose=True, allow_null_parent_topic=bool(min_semester))
+        recompute_historical_semester_probabilities(current_semester=semesters[-1], verbose=True)
 
 
 def recompute_historical_semester_probabilities(current_semester, verbose=False):
@@ -201,9 +184,7 @@ def recompute_historical_semester_probabilities(current_semester, verbose=False)
         # Calculate historical_year_probability for the current topic
         ordered_courses = topic.courses.all().order_by("semester")
         ordered_semester = [course.semester for course in ordered_courses]
-        historical_prob = historical_semester_probability(
-            current_semester, ordered_semester
-        )
+        historical_prob = historical_semester_probability(current_semester, ordered_semester)
         # Update the historical_probabilities field for the current topic
         topic.historical_probabilities_spring = historical_prob[0]
         topic.historical_probabilities_summer = historical_prob[1]

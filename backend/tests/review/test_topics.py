@@ -32,9 +32,7 @@ class CourseCodeChangedTestCase(TestCase, PCRTestMixin):
             self.instructor_name,
             {"instructor_quality": 4},
         )
-        create_review(
-            "CIS-371-001", "2012A", self.instructor_name, {"instructor_quality": 2}
-        )
+        create_review("CIS-371-001", "2012A", self.instructor_name, {"instructor_quality": 2})
         create_review(
             "CIS-471-001",
             "2017B",
@@ -180,12 +178,8 @@ class CourseCodeChangedNoReviewTestCase(TestCase, PCRTestMixin):
         instructor, _ = Instructor.objects.get_or_create(name=self.instructor_name)
         section.instructors.add(instructor)
 
-        create_review(
-            "CIS-371-001", "2012A", self.instructor_name, {"instructor_quality": 2}
-        )
-        create_review(
-            "CIS-471-001", "2017B", self.instructor_name, {"instructor_quality": 3}
-        )
+        create_review("CIS-371-001", "2012A", self.instructor_name, {"instructor_quality": 2})
+        create_review("CIS-471-001", "2017B", self.instructor_name, {"instructor_quality": 3})
         create_review(
             "CIS-471-001",
             "2017A",
@@ -347,12 +341,8 @@ class InstructorNoReviewTestCase(TestCase, PCRTestMixin):
         instructor, _ = Instructor.objects.get_or_create(name="Instructor Two")
         section.instructors.add(instructor)
 
-        create_review(
-            "CIS-371-001", "2012A", self.instructor_name, {"instructor_quality": 2}
-        )
-        create_review(
-            "CIS-471-001", "2017B", self.instructor_name, {"instructor_quality": 3}
-        )
+        create_review("CIS-371-001", "2012A", self.instructor_name, {"instructor_quality": 2})
+        create_review("CIS-471-001", "2017B", self.instructor_name, {"instructor_quality": 3})
         create_review(
             "CIS-471-001",
             "2017A",
@@ -543,16 +533,10 @@ class CourseCodeChangedTwoInstructorsMultipleSemestersTestCase(TestCase, PCRTest
             self.instructor_name,
             {"instructor_quality": 4},
         )
-        create_review(
-            "CIS-471-001", "2017A", "Instructor Two", {"instructor_quality": 2}
-        )
+        create_review("CIS-471-001", "2017A", "Instructor Two", {"instructor_quality": 2})
 
-        create_review(
-            "CIS-371-900", "2012A", self.instructor_name, {"instructor_quality": 2}
-        )
-        create_review(
-            "CIS-371-003", "2012C", "Instructor Two", {"instructor_quality": 1}
-        )
+        create_review("CIS-371-900", "2012A", self.instructor_name, {"instructor_quality": 2})
+        create_review("CIS-371-003", "2012C", "Instructor Two", {"instructor_quality": 1})
 
         Section.objects.all().update(activity="LEC")
 
@@ -709,9 +693,7 @@ class BranchedFromTestCase(TestCase, PCRTestMixin):
             self.instructor_name,
             {"instructor_quality": 3},
         )
-        create_review(
-            "ARTH-222-001", "2012A", self.instructor_name, {"instructor_quality": 2}
-        )
+        create_review("ARTH-222-001", "2012A", self.instructor_name, {"instructor_quality": 2})
         topic_2220 = Topic.objects.get(most_recent__full_code="ARTH-2220")
         topic_2055 = Topic.objects.get(most_recent__full_code="NELC-2055")
         topic_222 = Topic.objects.get(most_recent__full_code="ARTH-222")
@@ -798,9 +780,7 @@ class CourseOfferedInTestCase(TestCase, PCRTestMixin):
             self.instructor_name,
             {"instructor_quality": 4},
         )
-        create_review(
-            "CIS-371-001", "2012A", self.instructor_name, {"instructor_quality": 2}
-        )
+        create_review("CIS-371-001", "2012A", self.instructor_name, {"instructor_quality": 2})
         create_review(
             "CIS-471-001",
             "2017B",

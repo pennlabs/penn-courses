@@ -20,9 +20,7 @@ class Command(BaseCommand):
     )
 
     def add_arguments(self, parser):
-        parser.add_argument(
-            "days", help="number of days to aggregate.", default=1, type=int
-        )
+        parser.add_argument("days", help="number of days to aggregate.", default=1, type=int)
         parser.add_argument("--slack", action="store_true")
 
     def handle(self, *args, **options):
@@ -31,16 +29,10 @@ class Command(BaseCommand):
 
         start = timezone.now() - timezone.timedelta(days=days)
 
-        qs = Registration.objects.filter(
-            section__course__semester=get_current_semester()
-        )
+        qs = Registration.objects.filter(section__course__semester=get_current_semester())
 
-        num_registrations = qs.filter(
-            created_at__gte=start, resubscribed_from__isnull=True
-        ).count()
-        num_alerts_sent = qs.filter(
-            notification_sent=True, notification_sent_at__gte=start
-        ).count()
+        num_registrations = qs.filter(created_at__gte=start, resubscribed_from__isnull=True).count()
+        num_alerts_sent = qs.filter(notification_sent=True, notification_sent_at__gte=start).count()
         num_resubscribe = qs.filter(
             resubscribed_from__isnull=False,
             created_at__gte=start,

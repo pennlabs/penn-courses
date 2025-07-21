@@ -141,13 +141,9 @@ class MiniSectionSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-course_quality_help = (
-    "The average course quality rating for this section, on a scale of 0-4."
-)
+course_quality_help = "The average course quality rating for this section, on a scale of 0-4."
 difficulty_help = "The average difficult rating for this section, on a scale of 0-4."
-instructor_quality_help = (
-    "The average instructor quality for this section, on a scale of 0-4."
-)
+instructor_quality_help = "The average instructor quality for this section, on a scale of 0-4."
 work_required_help = "The average work required for this section, on a scale of 0-4."
 
 

@@ -53,13 +53,9 @@ def deduplicate_rules(verbose=False):
         hash_to_rule[hashed].append(rule_id)
 
     delete_count = 0
-    for rule_ids in tqdm(
-        hash_to_rule.values(), disable=not verbose, desc="Deleting duplicates"
-    ):
+    for rule_ids in tqdm(hash_to_rule.values(), disable=not verbose, desc="Deleting duplicates"):
         if len(rule_ids) > 1:
-            Rule.objects.filter(parent_id__in=rule_ids[1:]).update(
-                parent_id=rule_ids[0]
-            )
+            Rule.objects.filter(parent_id__in=rule_ids[1:]).update(parent_id=rule_ids[0])
             for degree in Degree.objects.filter(rules__in=rule_ids[1:]):
                 degree.rules.add(rule_ids[0])
                 degree.rules.remove(*rule_ids[1:])

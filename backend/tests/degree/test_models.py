@@ -100,9 +100,7 @@ class RuleEvaluationTest(TestCase):
             "CIS-1910-001", TEST_SEMESTER, course_defaults={"credits": 0.5}
         )
 
-        self.degree = Degree.objects.create(
-            program="EU_BSE", degree="BSE", major="CIS", year=2023
-        )
+        self.degree = Degree.objects.create(program="EU_BSE", degree="BSE", major="CIS", year=2023)
         self.parent_rule = Rule.objects.create()
         self.rule1 = Rule.objects.create(
             parent=self.parent_rule,
@@ -125,20 +123,14 @@ class RuleEvaluationTest(TestCase):
             q=repr(Q(full_code__startswith="CIS")),
             num=2,
         )
-        self.degree.rules.add(
-            self.parent_rule, self.rule1, self.rule2, self.rule3, self.rule4
-        )
+        self.degree.rules.add(self.parent_rule, self.rule1, self.rule2, self.rule3, self.rule4)
 
     def test_satisfied_rule(self):
         self.assertTrue(self.rule1.evaluate([self.cis_1200.full_code]))
 
     def test_satisfied_multiple_courses(self):
-        self.assertTrue(
-            self.rule4.evaluate([self.cis_1600.full_code, self.cis_1200.full_code])
-        )
-        self.assertTrue(
-            self.rule4.evaluate([self.cis_1910.full_code, self.cis_1200.full_code])
-        )
+        self.assertTrue(self.rule4.evaluate([self.cis_1600.full_code, self.cis_1200.full_code]))
+        self.assertTrue(self.rule4.evaluate([self.cis_1910.full_code, self.cis_1200.full_code]))
 
     def test_satisfied_rule_num_courses_and_credits(self):
         self.assertTrue(self.rule3.evaluate([self.cis_1910.full_code]))
@@ -159,9 +151,7 @@ class RuleEvaluationTest(TestCase):
 
     def test_unsatisfiable_rule(self):
         # rule2 is self-contradicting
-        self.assertFalse(
-            self.rule2.evaluate([self.cis_1200.full_code, self.cis_1600.full_code])
-        )
+        self.assertFalse(self.rule2.evaluate([self.cis_1200.full_code, self.cis_1600.full_code]))
 
     def test_nonexistent_course(self):
         # CIS-1857 doesn't exist
@@ -186,9 +176,7 @@ class RuleEvaluationTest(TestCase):
 
     def test_parent_rule_satisfied(self):
         self.assertTrue(
-            self.parent_rule.evaluate(
-                [self.cis_1200.full_code, self.cis_1910.full_code]
-            )
+            self.parent_rule.evaluate([self.cis_1200.full_code, self.cis_1910.full_code])
         )
 
 

@@ -69,9 +69,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "description",
-                    models.TextField(
-                        help_text="\nThe registration restriction description.\n"
-                    ),
+                    models.TextField(help_text="\nThe registration restriction description.\n"),
                 ),
                 (
                     "courses",

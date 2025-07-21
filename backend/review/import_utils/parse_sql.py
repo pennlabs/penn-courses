@@ -185,9 +185,7 @@ def load_sql_dump(fo, T=SQLDumpTransformer, progress=True, lazy=True):
     if lazy:
         total_rows = sum(1 for _ in entry_regex.finditer(contents))
         gc.collect()
-        return total_rows, map(
-            lambda x: parse_row(x.group(), T), entry_regex.finditer(contents)
-        )
+        return total_rows, map(lambda x: parse_row(x.group(), T), entry_regex.finditer(contents))
     else:
         matches = list(entry_regex.finditer(contents))
         return [parse_row(x.group(), T) for x in tqdm(matches, disable=(not progress))]

@@ -131,9 +131,9 @@ def gen_schedule_filter(request):
             return Q()
         meetings = Meeting.objects.filter(
             section_id__in=Subquery(
-                Schedule.objects.filter(
-                    id=int(schedule_id), person_id=request.user.id
-                ).values("sections__id")
+                Schedule.objects.filter(id=int(schedule_id), person_id=request.user.id).values(
+                    "sections__id"
+                )
             )
         )
         query = Q()
@@ -367,9 +367,7 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
         if len(meeting_query) > 0:
             queryset = meeting_filter(queryset, meeting_query)
 
-        return queryset.distinct(
-            "full_code"
-        )  # TODO: THIS COULD BE A BREAKING CHANGE FOR PCX
+        return queryset.distinct("full_code")  # TODO: THIS COULD BE A BREAKING CHANGE FOR PCX
 
     def get_schema_operation_parameters(self, view):
         return [

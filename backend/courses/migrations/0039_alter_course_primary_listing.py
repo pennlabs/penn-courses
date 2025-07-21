@@ -6,16 +6,12 @@ from django.db import migrations, models
 
 def forwards_func(apps, schema_editor):
     Course = apps.get_model("courses", "Course")
-    Course.objects.filter(primary_listing__isnull=True).update(
-        primary_listing_id=models.F("id")
-    )
+    Course.objects.filter(primary_listing__isnull=True).update(primary_listing_id=models.F("id"))
 
 
 def reverse_func(apps, schema_editor):
     Course = apps.get_model("courses", "Course")
-    Course.objects.filter(primary_listing_id=models.F("id")).update(
-        primary_listing=None
-    )
+    Course.objects.filter(primary_listing_id=models.F("id")).update(primary_listing=None)
 
 
 class Migration(migrations.Migration):

@@ -135,17 +135,12 @@ class TopicAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return (
-            super()
-            .get_queryset(request)
-            .select_related("most_recent")
-            .prefetch_related("courses")
+            super().get_queryset(request).select_related("most_recent").prefetch_related("courses")
         )
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         # Hack to limit most_recent choices to courses of the same Topic
-        if db_field.name == "most_recent" and request.resolver_match.kwargs.get(
-            "object_id"
-        ):
+        if db_field.name == "most_recent" and request.resolver_match.kwargs.get("object_id"):
             topic_id = request.resolver_match.kwargs["object_id"]
             kwargs["queryset"] = Course.objects.filter(topic_id=topic_id)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)

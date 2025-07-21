@@ -19,9 +19,7 @@ class EvaluateConditionTest(TestCase):
     @staticmethod
     def relational_operator(left, operator, right):
         """Helper function to create a relational operator condition."""
-        return {
-            "relationalOperator": {"left": left, "operator": operator, "right": right}
-        }
+        return {"relationalOperator": {"left": left, "operator": operator, "right": right}}
 
     def test_unsupported_operator(self):
         comparators = ["<", ">", "<=", ">=", "IS"]
@@ -276,9 +274,7 @@ class RuleArrayParserTest(TestCase):
     ):
         rules = []
         parse_degreeworks.parse_rulearray(
-            self.single_rule_array(
-                ruletype, rule_req, extra_rule_kwargs=extra_rule_kwargs
-            ),
+            self.single_rule_array(ruletype, rule_req, extra_rule_kwargs=extra_rule_kwargs),
             Degree(),
             rules,
         )
@@ -413,9 +409,7 @@ class RuleArrayParserTest(TestCase):
             extra_rule_kwargs={"booleanEvaluation": "True"},
         )
 
-        with patch(
-            "degree.utils.parse_degreeworks.evaluate_condition", return_value=False
-        ):
+        with patch("degree.utils.parse_degreeworks.evaluate_condition", return_value=False):
             self.assertParsedRulesEqual(
                 "IfStmt", ifstmt, [], extra_rule_kwargs={"booleanEvaluation": "False"}
             )
@@ -442,9 +436,7 @@ class RuleArrayParserTest(TestCase):
             extra_rule_kwargs={"booleanEvaluation": "True"},
         )
 
-        with patch(
-            "degree.utils.parse_degreeworks.evaluate_condition", return_value=False
-        ):
+        with patch("degree.utils.parse_degreeworks.evaluate_condition", return_value=False):
             self.assertParsedRulesEqual(
                 "IfStmt",
                 ifstmt,
@@ -483,9 +475,7 @@ class RuleArrayParserTest(TestCase):
                 "IfStmt", ifstmt, [], extra_rule_kwargs={"booleanEvaluation": "Unknown"}
             )
 
-        with patch(
-            "degree.utils.parse_degreeworks.evaluate_condition", return_value=False
-        ):
+        with patch("degree.utils.parse_degreeworks.evaluate_condition", return_value=False):
             with self.assertRaises(AssertionError):
                 self.assertParsedRulesEqual(
                     "IfStmt",
@@ -501,9 +491,7 @@ class RuleArrayParserTest(TestCase):
                     extra_rule_kwargs={"booleanEvaluation": "Unknown"},
                 )
 
-        with patch(
-            "degree.utils.parse_degreeworks.evaluate_condition", return_value=None
-        ):
+        with patch("degree.utils.parse_degreeworks.evaluate_condition", return_value=None):
             assert (
                 parse_degreeworks.evaluate_condition(
                     {
@@ -568,9 +556,7 @@ class RuleArrayParserTest(TestCase):
                         "right": "PHYS",
                     }
                 },
-                "ifPart": {
-                    "ruleArray": self.course_a_rulearray + self.course_b_rulearray
-                },
+                "ifPart": {"ruleArray": self.course_a_rulearray + self.course_b_rulearray},
             },
             [self.rule_a, self.rule_b],
             extra_rule_kwargs={"booleanEvaluation": "True"},
@@ -592,9 +578,7 @@ class RuleArrayParserTest(TestCase):
 
     def test_unknown_ruletype(self, *mocks):
         with self.assertRaises(LookupError):
-            parse_degreeworks.parse_rulearray(
-                self.single_rule_array("Unknown", {}), Degree(), []
-            )
+            parse_degreeworks.parse_rulearray(self.single_rule_array("Unknown", {}), Degree(), [])
 
     def test_other_ruletypes(self, *mocks):
         self.assertParsedRulesEqual("Complete", {}, [])

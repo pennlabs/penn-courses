@@ -31,9 +31,7 @@ def set_all_status(semester=None, add_status_update=False, verbose=False):
     status_updates_out_of_sync = []
 
     department_codes = get_department_codes()
-    path_course_to_status = asyncio.run(
-        get_all_course_status_path(semester, department_codes)
-    )
+    path_course_to_status = asyncio.run(get_all_course_status_path(semester, department_codes))
 
     for status in tqdm(statuses):
         section_code = status.get("section_id_normalized")

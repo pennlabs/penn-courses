@@ -27,9 +27,7 @@ TEST_CURRENT_SEMESTER = "2021C"
 TEST_SEMESTER = "2021A"  # Past semester for reviews
 
 assert TEST_CURRENT_SEMESTER >= "2021C", "TEST_CURRENT_SEMESTER must be at least 2021C"
-assert (
-    "b" not in TEST_CURRENT_SEMESTER.lower()
-), "TEST_CURRENT_SEMESTER cannot be a summer semester"
+assert "b" not in TEST_CURRENT_SEMESTER.lower(), "TEST_CURRENT_SEMESTER cannot be a summer semester"
 assert TEST_SEMESTER >= "2021A", "TEST_SEMESTER must be at least 2021A"
 assert "b" not in TEST_SEMESTER.lower(), "TEST_SEMESTER cannot be a summer semester"
 
@@ -123,9 +121,7 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
             cls.instructor_name,
             {"instructor_quality": 3.5},
         )
-        create_review(
-            "ESE-120-001", "2020C", cls.instructor_name, {"instructor_quality": 2}
-        )
+        create_review("ESE-120-001", "2020C", cls.instructor_name, {"instructor_quality": 2})
         cls.ESE_120_001_TEST_SEMESTER_id = Section.objects.get(
             full_code="ESE-120-001", course__semester=TEST_SEMESTER
         ).id
@@ -353,9 +349,7 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
             self.course_plots_subdict,
         )
 
-        instructor_ids = ",".join(
-            str(id) for id in Instructor.objects.values_list("id", flat=True)
-        )
+        instructor_ids = ",".join(str(id) for id in Instructor.objects.values_list("id", flat=True))
         self.assertRequestContainsAppx(
             "course-plots",
             "ESE-120",
@@ -459,9 +453,7 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
     def test_current_percent_open(self):
         self.assertAlmostEquals(
             self.recent_percent_open,
-            Section.objects.get(
-                id=self.ESE_120_001_TEST_SEMESTER_id
-            ).current_percent_open,
+            Section.objects.get(id=self.ESE_120_001_TEST_SEMESTER_id).current_percent_open,
         )
         self.assertAlmostEquals(
             self.old_percent_open,
@@ -876,12 +868,8 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
             {
                 **reviews_subdict,
                 "instructors": {
-                    Instructor.objects.get(
-                        name=self.instructor_1_name
-                    ).pk: reviews_subdict,
-                    Instructor.objects.get(
-                        name=self.instructor_2_name
-                    ).pk: reviews_subdict,
+                    Instructor.objects.get(name=self.instructor_1_name).pk: reviews_subdict,
+                    Instructor.objects.get(name=self.instructor_2_name).pk: reviews_subdict,
                 },
             },
         )
@@ -961,9 +949,7 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
             "ESE-120",
             self.course_plots_subdict,
             query_params={
-                "instructor_ids": str(
-                    Instructor.objects.get(name=self.instructor_1_name).id
-                ),
+                "instructor_ids": str(Instructor.objects.get(name=self.instructor_1_name).id),
             },
         )
         self.assertRequestContainsAppx(
@@ -971,9 +957,7 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
             "ESE-120",
             self.course_plots_subdict,
             query_params={
-                "instructor_ids": str(
-                    Instructor.objects.get(name=self.instructor_2_name).id
-                ),
+                "instructor_ids": str(Instructor.objects.get(name=self.instructor_2_name).id),
             },
         )
 
@@ -1041,9 +1025,7 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
                         "desc": "ESE",
                         "url": (
                             "/instructor/"
-                            + str(
-                                Instructor.objects.get(name=self.instructor_1_name).pk
-                            )
+                            + str(Instructor.objects.get(name=self.instructor_1_name).pk)
                         ),
                     },
                     {
@@ -1051,9 +1033,7 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
                         "desc": "ESE",
                         "url": (
                             "/instructor/"
-                            + str(
-                                Instructor.objects.get(name=self.instructor_2_name).pk
-                            )
+                            + str(Instructor.objects.get(name=self.instructor_2_name).pk)
                         ),
                     },
                 ],

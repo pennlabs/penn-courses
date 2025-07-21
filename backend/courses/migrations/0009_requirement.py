@@ -40,15 +40,11 @@ class Migration(migrations.Migration):
                 ("name", models.CharField(max_length=255)),
                 (
                     "courses",
-                    models.ManyToManyField(
-                        related_name="overrides", to="courses.Course"
-                    ),
+                    models.ManyToManyField(related_name="overrides", to="courses.Course"),
                 ),
                 (
                     "departments",
-                    models.ManyToManyField(
-                        related_name="requirements", to="courses.Department"
-                    ),
+                    models.ManyToManyField(related_name="requirements", to="courses.Department"),
                 ),
             ],
             options={

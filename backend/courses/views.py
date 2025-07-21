@@ -75,9 +75,7 @@ class BaseCourseMixin(AutoPrefetchViewSetMixin, generics.GenericAPIView):
             queryset = queryset.filter(**{self.get_semester_field(): semester})
         else:  # Only used for Penn Degree Plan (as of 4/10/2024)
             queryset = (
-                queryset.exclude(
-                    credits=None
-                )  # heuristic: if the credits are empty, then ignore
+                queryset.exclude(credits=None)  # heuristic: if the credits are empty, then ignore
                 .order_by("full_code", "-semester")
                 .distinct("full_code")
             )
@@ -125,9 +123,7 @@ class SectionDetail(generics.RetrieveAPIView, BaseCourseMixin):
     schema = PcxAutoSchema(
         response_codes={
             "sections-detail": {
-                "GET": {
-                    200: "[DESCRIBE_RESPONSE_SCHEMA]Section detail retrieved successfully."
-                }
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Section detail retrieved successfully."}
             }
         },
         custom_path_parameter_desc={
@@ -150,9 +146,7 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
 
     schema = PcxAutoSchema(
         response_codes={
-            "courses-list": {
-                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses listed successfully."}
-            }
+            "courses-list": {"GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses listed successfully."}}
         },
         custom_path_parameter_desc={
             "courses-list": {"GET": {"semester": SEMESTER_PARAM_DESCRIPTION}}
@@ -160,9 +154,7 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
     )
 
     serializer_class = CourseListSerializer
-    queryset = Course.with_reviews.filter(
-        sections__isnull=False
-    )  # included redundantly for docs
+    queryset = Course.with_reviews.filter(sections__isnull=False)  # included redundantly for docs
 
     def get_queryset(self):
         queryset = Course.with_reviews.filter(sections__isnull=False)
@@ -226,16 +218,10 @@ class CourseListSearch(CourseList):
         """
         context = super().get_serializer_context()
 
-        if (
-            self.request is None
-            or not self.request.user
-            or not self.request.user.is_authenticated
-        ):
+        if self.request is None or not self.request.user or not self.request.user.is_authenticated:
             return context
 
-        _, _, curr_course_vectors_dict, past_course_vectors_dict = (
-            retrieve_course_clusters()
-        )
+        _, _, curr_course_vectors_dict, past_course_vectors_dict = retrieve_course_clusters()
         user_vector, _ = vectorize_user(
             self.request.user, curr_course_vectors_dict, past_course_vectors_dict
         )
@@ -261,9 +247,7 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
     schema = PcxAutoSchema(
         response_codes={
             "courses-detail": {
-                "GET": {
-                    200: "[DESCRIBE_RESPONSE_SCHEMA]Courses detail retrieved successfully."
-                }
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Courses detail retrieved successfully."}
             }
         },
         custom_path_parameter_desc={
@@ -299,9 +283,7 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
     def get_serializer_context(self):
         context = super().get_serializer_context()
         if self.request and hasattr(self.request, "query_params"):
-            include_location_str = self.request.query_params.get(
-                "include_location", "False"
-            )
+            include_location_str = self.request.query_params.get("include_location", "False")
             context.update({"include_location": include_location_str.lower() == "true"})
         else:
             context.update({"include_location": False})
@@ -364,9 +346,7 @@ class PreNGSSRequirementList(generics.ListAPIView, BaseCourseMixin):
     schema = PcxAutoSchema(
         response_codes={
             "requirements-list": {
-                "GET": {
-                    200: "[DESCRIBE_RESPONSE_SCHEMA]Requirements listed successfully."
-                }
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Requirements listed successfully."}
             },
         },
         custom_path_parameter_desc={
@@ -395,9 +375,7 @@ class AttributeList(generics.ListAPIView):
     schema = PcxAutoSchema(
         response_codes={
             "attributes-list": {
-                "GET": {
-                    200: "[DESCRIBE_RESPONSE_SCHEMA]Attributes listed successfully."
-                }
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Attributes listed successfully."}
             },
         },
     )
@@ -414,9 +392,7 @@ class NGSSRestrictionList(generics.ListAPIView):
     schema = PcxAutoSchema(
         response_codes={
             "restrictions-list": {
-                "GET": {
-                    200: "[DESCRIBE_RESPONSE_SCHEMA]Restrictions listed successfully."
-                }
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Restrictions listed successfully."}
             },
         },
     )
@@ -580,9 +556,7 @@ class FriendshipView(generics.ListAPIView):
         recipient = get_object_or_404(User, username=username.lower())
 
         existing_friendship = (
-            self.get_all_friendships()
-            .filter(Q(recipient=recipient) | Q(sender=recipient))
-            .first()
+            self.get_all_friendships().filter(Q(recipient=recipient) | Q(sender=recipient)).first()
         )
 
         if not existing_friendship:
@@ -624,9 +598,7 @@ class FriendshipView(generics.ListAPIView):
         recipient = get_object_or_404(User, username=username.lower())
 
         existing_friendship = (
-            self.get_all_friendships()
-            .filter(Q(recipient=recipient) | Q(sender=recipient))
-            .first()
+            self.get_all_friendships().filter(Q(recipient=recipient) | Q(sender=recipient)).first()
         )
         if not existing_friendship:
             res["message"] = "Friendship doesn't exist."

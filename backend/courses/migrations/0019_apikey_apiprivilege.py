@@ -43,16 +43,12 @@ class Migration(migrations.Migration):
                 ("email", models.EmailField(max_length=254)),
                 (
                     "code",
-                    models.CharField(
-                        blank=True, default=uuid.uuid4, max_length=100, unique=True
-                    ),
+                    models.CharField(blank=True, default=uuid.uuid4, max_length=100, unique=True),
                 ),
                 ("active", models.BooleanField(blank=True, default=True)),
                 (
                     "privileges",
-                    models.ManyToManyField(
-                        related_name="key_set", to="courses.APIPrivilege"
-                    ),
+                    models.ManyToManyField(related_name="key_set", to="courses.APIPrivilege"),
                 ),
             ],
         ),

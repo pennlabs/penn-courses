@@ -34,15 +34,9 @@ class DeduplicateStatusUpdatesTestCase(TestCase):
     def setUp(self):
         set_semester()
         self.sections = []
-        self.sections.append(
-            get_or_create_course_and_section("CIS-160-001", TEST_SEMESTER)[1]
-        )
-        self.sections.append(
-            get_or_create_course_and_section("CIS-160-002", TEST_SEMESTER)[1]
-        )
-        self.sections.append(
-            get_or_create_course_and_section("CIS-120-001", TEST_SEMESTER)[1]
-        )
+        self.sections.append(get_or_create_course_and_section("CIS-160-001", TEST_SEMESTER)[1])
+        self.sections.append(get_or_create_course_and_section("CIS-160-002", TEST_SEMESTER)[1])
+        self.sections.append(get_or_create_course_and_section("CIS-120-001", TEST_SEMESTER)[1])
         self.old_section = get_or_create_course_and_section("CIS-120-001", "2017C")[1]
 
     def test_no_duplicates(self):
@@ -72,23 +66,15 @@ class DeduplicateStatusUpdatesTestCase(TestCase):
 
         self.assertEqual(
             5,
-            StatusUpdate.objects.filter(
-                section__course__semester=TEST_SEMESTER
-            ).count(),
+            StatusUpdate.objects.filter(section__course__semester=TEST_SEMESTER).count(),
         )
-        self.assertEqual(
-            2, StatusUpdate.objects.filter(section__course__semester="2017C").count()
-        )
+        self.assertEqual(2, StatusUpdate.objects.filter(section__course__semester="2017C").count())
         deduplicate_status_updates(semesters=list(all_semesters()))
         self.assertEqual(
             5,
-            StatusUpdate.objects.filter(
-                section__course__semester=TEST_SEMESTER
-            ).count(),
+            StatusUpdate.objects.filter(section__course__semester=TEST_SEMESTER).count(),
         )
-        self.assertEqual(
-            2, StatusUpdate.objects.filter(section__course__semester="2017C").count()
-        )
+        self.assertEqual(2, StatusUpdate.objects.filter(section__course__semester="2017C").count())
 
     def test_some_duplicates(self):
         StatusUpdate(
@@ -132,23 +118,15 @@ class DeduplicateStatusUpdatesTestCase(TestCase):
 
         self.assertEqual(
             9,
-            StatusUpdate.objects.filter(
-                section__course__semester=TEST_SEMESTER
-            ).count(),
+            StatusUpdate.objects.filter(section__course__semester=TEST_SEMESTER).count(),
         )
-        self.assertEqual(
-            3, StatusUpdate.objects.filter(section__course__semester="2017C").count()
-        )
+        self.assertEqual(3, StatusUpdate.objects.filter(section__course__semester="2017C").count())
         deduplicate_status_updates(semesters=list(all_semesters()))
         self.assertEqual(
             5,
-            StatusUpdate.objects.filter(
-                section__course__semester=TEST_SEMESTER
-            ).count(),
+            StatusUpdate.objects.filter(section__course__semester=TEST_SEMESTER).count(),
         )
-        self.assertEqual(
-            2, StatusUpdate.objects.filter(section__course__semester="2017C").count()
-        )
+        self.assertEqual(2, StatusUpdate.objects.filter(section__course__semester="2017C").count())
 
 
 class RecomputePrecomputedFieldsTestCase(TestCase):
@@ -159,9 +137,7 @@ class RecomputePrecomputedFieldsTestCase(TestCase):
         self.cis_160_001.save()
         building, _ = Building.objects.get_or_create(code=1)
         room, _ = Room.objects.get_or_create(building=building, number=1)
-        new_meeting = Meeting(
-            section=self.cis_160_001, day="R", start=11, end=12, room=room
-        )
+        new_meeting = Meeting(section=self.cis_160_001, day="R", start=11, end=12, room=room)
         new_meeting.save()
 
         self.cis_160_201 = create_mock_data("CIS-160-201", TEST_SEMESTER)[1]
@@ -177,9 +153,7 @@ class RecomputePrecomputedFieldsTestCase(TestCase):
         self.cis_120_001.credits = 2.50
         self.cis_120_001.save()
 
-        self.cis_120_old, self.cis_120_001_old = create_mock_data(
-            "CIS-120-001", "2017C"
-        )
+        self.cis_120_old, self.cis_120_001_old = create_mock_data("CIS-120-001", "2017C")
         self.cis_120_001_old.credits = 3.00
         self.cis_120_001_old.save()
 
@@ -197,9 +171,7 @@ class RecomputePrecomputedFieldsTestCase(TestCase):
 
         self.assertEquals(Course.objects.get(id=self.cis_120_old.id).num_activities, 1)
         self.assertEquals(Course.objects.get(id=self.cis_120_old.id).credits, 3)
-        self.assertEquals(
-            Section.objects.get(id=self.cis_120_001_old.id).num_meetings, 3
-        )
+        self.assertEquals(Section.objects.get(id=self.cis_120_001_old.id).num_meetings, 3)
 
 
 class RecomputeCourseCreditsTestCase(TestCase):
@@ -211,16 +183,12 @@ class RecomputeCourseCreditsTestCase(TestCase):
         self.course, self.section1, _, _ = get_or_create_course_and_section(
             "CIS-120-001", TEST_SEMESTER
         )
-        _, self.section2, _, _ = get_or_create_course_and_section(
-            "CIS-120-101", TEST_SEMESTER
-        )
+        _, self.section2, _, _ = get_or_create_course_and_section("CIS-120-101", TEST_SEMESTER)
         self.section1.activity = "LEC"
         self.section1.credits = 1.50
         self.section1.save()
 
-        _, self.section2, _, _ = get_or_create_course_and_section(
-            "CIS-120-101", TEST_SEMESTER
-        )
+        _, self.section2, _, _ = get_or_create_course_and_section("CIS-120-101", TEST_SEMESTER)
         self.section2.activity = "REC"
         self.section2.credits = 1.00
         self.section2.save()
@@ -236,9 +204,7 @@ class RecomputeCourseCreditsTestCase(TestCase):
         )
 
         # Implictly testing that we exclude sections with code > 500
-        _, self.section5, _, _ = get_or_create_course_and_section(
-            "CIS-1210-500", TEST_SEMESTER
-        )
+        _, self.section5, _, _ = get_or_create_course_and_section("CIS-1210-500", TEST_SEMESTER)
         self.section5.credits = 10.0
 
     def test_null_section_credits(self):
@@ -291,9 +257,7 @@ class RecomputeCourseCreditsTestCase(TestCase):
 
     def test_same_activity_null_credits(self):
         # if we have 2 courses with same activity, where 1 has null credits
-        _, null_section, _, _ = get_or_create_course_and_section(
-            "CIS-120-002", TEST_SEMESTER
-        )
+        _, null_section, _, _ = get_or_create_course_and_section("CIS-120-002", TEST_SEMESTER)
         self.assertIsNone(null_section.credits)
         recompute_course_credits()
         self.course.refresh_from_db()
@@ -309,9 +273,7 @@ class RecomputeCourseCreditsTestCase(TestCase):
         self.assertEqual(self.course.credits, 2.00)
 
     def test_excludes_sections_with_status_besides_closed_and_open(self):
-        _, cancelled_section, _, _ = get_or_create_course_and_section(
-            "CIS-160-102", TEST_SEMESTER
-        )
+        _, cancelled_section, _, _ = get_or_create_course_and_section("CIS-160-102", TEST_SEMESTER)
         cancelled_section.credits = 10.0
         cancelled_section.status = "X"
         recompute_course_credits()

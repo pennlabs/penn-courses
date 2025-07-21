@@ -365,9 +365,7 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "satisfied",
-                    models.BooleanField(
-                        default=False, help_text="Whether the rule is satisfied"
-                    ),
+                    models.BooleanField(default=False, help_text="Whether the rule is satisfied"),
                 ),
                 ("last_updated", models.DateTimeField(auto_now=True)),
                 (

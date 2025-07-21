@@ -179,9 +179,7 @@ class ReviewImportTestCase(TestCase):
         other values are overwritten accordingly.
         """
         get_or_create_course_and_section("CIS-120-001", TEST_SEMESTER)
-        import_course_and_section(
-            "CIS-120-001", TEST_SEMESTER, "title", "CIS-120-001", self.stat
-        )
+        import_course_and_section("CIS-120-001", TEST_SEMESTER, "title", "CIS-120-001", self.stat)
         self.assertEqual(1, Course.objects.count())
         course = Course.objects.get()
         self.assertEqual(1, Section.objects.count())
@@ -365,9 +363,7 @@ class ReviewImportCommandTestCase(TestCase):
         mock_get_files.return_value = [self.summary_fo]
         input_mock.return_value = "N"
 
-        course, section, _, _ = get_or_create_course_and_section(
-            "CIS 120001", TEST_SEMESTER
-        )
+        course, section, _, _ = get_or_create_course_and_section("CIS 120001", TEST_SEMESTER)
         instructor = Instructor.objects.create(name="name")
         r = Review.objects.create(section=section, instructor=instructor)
 
@@ -388,9 +384,7 @@ class ReviewImportCommandTestCase(TestCase):
         mock_get_files.return_value = [self.summary_fo]
         input_mock.return_value = "Y"
 
-        course, section, _, _ = get_or_create_course_and_section(
-            "CIS 120001", TEST_SEMESTER
-        )
+        course, section, _, _ = get_or_create_course_and_section("CIS 120001", TEST_SEMESTER)
         instructor = Instructor.objects.create(name="name")
         r = Review.objects.create(section=section, instructor=instructor)
 
@@ -409,9 +403,7 @@ class ReviewImportCommandTestCase(TestCase):
     def test_reviews_exist_force(self, mock_get_files, mock_close_files):
         mock_get_files.return_value = [self.summary_fo]
 
-        course, section, _, _ = get_or_create_course_and_section(
-            "CIS 120001", TEST_SEMESTER
-        )
+        course, section, _, _ = get_or_create_course_and_section("CIS 120001", TEST_SEMESTER)
         instructor = Instructor.objects.create(name="name")
         r = Review.objects.create(section=section, instructor=instructor)
 
@@ -490,12 +482,8 @@ class ReviewImportCommandTestCase(TestCase):
             show_progress_bar=False,
         )
         self.assertEqual(0, res)
-        self.assertEqual(
-            "Hello, world!", Course.objects.get(semester=TEST_SEMESTER).description
-        )
-        self.assertNotEqual(
-            "Hello, world!", Course.objects.get(semester="3008A").description
-        )
+        self.assertEqual("Hello, world!", Course.objects.get(semester=TEST_SEMESTER).description)
+        self.assertNotEqual("Hello, world!", Course.objects.get(semester="3008A").description)
 
     def test_load_descriptions_all_semester(self, mock_get_files, mock_close_files):
         mock_get_files.return_value = [self.summary_fo, self.description_fo]
@@ -511,9 +499,5 @@ class ReviewImportCommandTestCase(TestCase):
             show_progress_bar=False,
         )
         self.assertEqual(0, res)
-        self.assertEqual(
-            "Hello, world!", Course.objects.get(semester=TEST_SEMESTER).description
-        )
-        self.assertEqual(
-            "Hello, world!", Course.objects.get(semester="3008A").description
-        )
+        self.assertEqual("Hello, world!", Course.objects.get(semester=TEST_SEMESTER).description)
+        self.assertEqual("Hello, world!", Course.objects.get(semester="3008A").description)

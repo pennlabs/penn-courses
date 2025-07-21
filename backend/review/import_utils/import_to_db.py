@@ -34,9 +34,7 @@ def filter_by_term(rows, semesters, semester_key="TERM"):
     return [row for row in rows if row[semester_key] in semesters]
 
 
-def import_course_and_section(
-    full_course_code, semester, course_title, primary_section_code, stat
-):
+def import_course_and_section(full_course_code, semester, course_title, primary_section_code, stat):
     """
     Given course and section info, update/create objects.
     """
@@ -252,9 +250,7 @@ def import_ratings_rows(num_ratings, ratings, semesters=None, show_progress_bar=
     """
     stats = dict()
     stat = gen_stat(stats)
-    for i, row in tqdm(
-        enumerate(ratings), total=num_ratings, disable=(not show_progress_bar)
-    ):
+    for i, row in tqdm(enumerate(ratings), total=num_ratings, disable=(not show_progress_bar)):
         if i % 10000 == 0:
             gc.collect()
         if semesters is None or row["TERM"] in semesters:
@@ -279,9 +275,7 @@ def import_description_rows(num_rows, rows, semesters=None, show_progress_bar=Tr
         desc[int(paragraph_num)] = description_paragraph
         descriptions[course_code] = desc
 
-    for course_id, paragraphs in tqdm(
-        descriptions.items(), disable=(not show_progress_bar)
-    ):
+    for course_id, paragraphs in tqdm(descriptions.items(), disable=(not show_progress_bar)):
         dept_code, course_code, _ = separate_course_code(course_id, allow_partial=True)
         if course_code is None:
             continue

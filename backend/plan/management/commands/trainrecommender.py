@@ -71,8 +71,7 @@ def get_description(course):
 def vectorize_courses_by_description(descriptions):
     vectorizer = TfidfVectorizer()
     has_nonempty_descriptions = (
-        sum(1 for description in descriptions if description and len(description) > 0)
-        > 0
+        sum(1 for description in descriptions if description and len(description) > 0) > 0
     )
     if has_nonempty_descriptions:
         vectors = vectorizer.fit_transform(descriptions)
@@ -135,12 +134,8 @@ def vectorize_by_copresence(
     courses_list = list(courses_set)
     course_to_index = {course: i for i, course in enumerate(courses_list)}
 
-    copresence_vectors_by_course = {
-        course: np.zeros(len(courses_list)) for course in courses_list
-    }
-    order_vectors_by_course = {
-        course: np.zeros(len(courses_list)) for course in courses_list
-    }
+    copresence_vectors_by_course = {course: np.zeros(len(courses_list)) for course in courses_list}
+    order_vectors_by_course = {course: np.zeros(len(courses_list)) for course in courses_list}
 
     for user, courses_by_semester in courses_by_semester_by_user.items():
         for sem, course_multiset in courses_by_semester.items():
@@ -163,18 +158,14 @@ def vectorize_by_copresence(
             for later_sem in ordered_sems[start_sem_index:]:
                 courses_later_sem = courses_by_semester[later_sem]
                 for course_later, freq1 in courses_later_sem.items():
-                    add_to_copres = (
-                        as_past_class and later_sem != ordered_sems[start_sem_index]
-                    )
+                    add_to_copres = as_past_class and later_sem != ordered_sems[start_sem_index]
                     for course_earlier, freq2 in courses_first_sem.items():
                         earlier_index = course_to_index[course_earlier]
                         cofreq = min(freq1, freq2)
                         order_vectors_by_course[course_later][earlier_index] += cofreq
                         if add_to_copres:
                             later_index = course_to_index[course_later]
-                            copresence_vectors_by_course[course_earlier][
-                                later_index
-                            ] += cofreq
+                            copresence_vectors_by_course[course_earlier][later_index] += cofreq
 
     concatenated = {
         key: order_vectors_by_course[key] + copresence_vectors_by_course[key]
@@ -248,9 +239,7 @@ def get_descriptions(courses, preloaded_descriptions):
     return descriptions
 
 
-def generate_course_vectors_dict(
-    courses_data, use_descriptions=True, preloaded_descriptions={}
-):
+def generate_course_vectors_dict(courses_data, use_descriptions=True, preloaded_descriptions={}):
     """
     Generates a dict associating courses to vectors for those courses,
     as well as courses to vector representations
@@ -260,9 +249,7 @@ def generate_course_vectors_dict(
     courses_to_vectors_past = {}
     grouped_courses = group_courses(courses_data)
     copresence_vectors_by_course = vectorize_by_copresence(grouped_courses)
-    copresence_vectors_by_course_past = vectorize_by_copresence(
-        grouped_courses, as_past_class=True
-    )
+    copresence_vectors_by_course_past = vectorize_by_copresence(grouped_courses, as_past_class=True)
     courses_by_user = get_unsequenced_courses_by_user(grouped_courses)
     courses, courses_vectorized_by_schedule_presence = zip(
         *vectorize_courses_by_schedule_presence(courses_by_user).items()
@@ -271,9 +258,7 @@ def generate_course_vectors_dict(
         get_descriptions(courses, preloaded_descriptions)
     )
     copresence_vectors = [copresence_vectors_by_course[course] for course in courses]
-    copresence_vectors_past = [
-        copresence_vectors_by_course_past[course] for course in courses
-    ]
+    copresence_vectors_past = [copresence_vectors_by_course_past[course] for course in courses]
     copresence_vectors = normalize(copresence_vectors)
     copresence_vectors_past = normalize(copresence_vectors_past)
     _, dims = copresence_vectors_past.shape
@@ -307,15 +292,9 @@ def generate_course_vectors_dict(
             )
         else:
             total_vector_curr = np.concatenate([schedule_vector, copresence_vector * 2])
-            total_vector_past = np.concatenate(
-                [schedule_vector, copresence_vector_past * 2]
-            )
-        courses_to_vectors_curr[course] = total_vector_curr / np.linalg.norm(
-            total_vector_curr
-        )
-        courses_to_vectors_past[course] = total_vector_past / np.linalg.norm(
-            total_vector_past
-        )
+            total_vector_past = np.concatenate([schedule_vector, copresence_vector_past * 2])
+        courses_to_vectors_curr[course] = total_vector_curr / np.linalg.norm(total_vector_curr)
+        courses_to_vectors_past[course] = total_vector_past / np.linalg.norm(total_vector_past)
     return courses_to_vectors_curr, courses_to_vectors_past
 
 
@@ -329,9 +308,7 @@ def normalize_class_name(class_name):
     return course_obj.primary_listing.full_code
 
 
-def generate_course_clusters(
-    courses_data, n_per_cluster=100, preloaded_descriptions={}
-):
+def generate_course_clusters(courses_data, n_per_cluster=100, preloaded_descriptions={}):
     """
     Clusters courses and also returns a vector representation of each class
     (one for having taken that class now, and another for having taken it in the past)
@@ -389,18 +366,12 @@ def train_recommender(
             "output path."
         )
     else:
-        assert (
-            output_path is not None
-        ), "You must either specify an output path, or upload to S3"
+        assert output_path is not None, "You must either specify an output path, or upload to S3"
         assert (
             output_path.endswith(".pkl") or output_path == os.devnull
         ), "Output file must have a .pkl extension"
 
-    if (
-        verbose
-        and not upload_to_s3
-        and not output_path.endswith("course-cluster-data.pkl")
-    ):
+    if verbose and not upload_to_s3 and not output_path.endswith("course-cluster-data.pkl"):
         print(
             "Warning: The name of the course recommendation model used in prod (stored in S3) "
             "must be course-cluster-data.pkl."
@@ -426,9 +397,7 @@ def train_recommender(
 
     preloaded_descriptions = dict()
     if preloaded_descriptions_path is not None:
-        preloaded_descriptions = dict(
-            courses_data_from_csv(preloaded_descriptions_path)
-        )
+        preloaded_descriptions = dict(courses_data_from_csv(preloaded_descriptions_path))
 
     if preloaded_descriptions_path is None and verbose:
         print(

@@ -12,9 +12,7 @@ router.register(r"docked", DockedCourseViewset)
 fulfillments_router = NestedDefaultRouter(
     router, r"degreeplans", lookup="degreeplan", trailing_slash=False
 )
-fulfillments_router.register(
-    r"fulfillments", FulfillmentViewSet, basename="degreeplan-fulfillment"
-)
+fulfillments_router.register(r"fulfillments", FulfillmentViewSet, basename="degreeplan-fulfillment")
 
 urlpatterns = [
     path("", include(router.urls)),

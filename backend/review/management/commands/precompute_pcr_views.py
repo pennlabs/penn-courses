@@ -24,21 +24,15 @@ def precompute_pcr_views(verbose=False, is_new_data=False):
         # Mark all the topics as expired.
         CachedReviewResponse.objects.all().update(expired=True)
         cached_responses = CachedReviewResponse.objects.all()
-        topic_id_to_response_obj = {
-            response.topic_id: response for response in cached_responses
-        }
+        topic_id_to_response_obj = {response.topic_id: response for response in cached_responses}
 
         # Iterate through all topics.
         for topic in tqdm(
-            Topic.objects.all()
-            .select_related("most_recent")
-            .order_by("most_recent__semester"),
+            Topic.objects.all().select_related("most_recent").order_by("most_recent__semester"),
             disable=not verbose,
         ):
             # get topic id
-            course_id_list, course_code_list = zip(
-                *topic.courses.values_list("id", "full_code")
-            )
+            course_id_list, course_code_list = zip(*topic.courses.values_list("id", "full_code"))
             topic_id = ".".join([str(id) for id in sorted(course_id_list)])
             total_reviews += 1
 
@@ -78,9 +72,7 @@ def precompute_pcr_views(verbose=False, is_new_data=False):
                     continue
 
                 objs_to_insert.append(
-                    CachedReviewResponse(
-                        topic_id=topic_id, response=review_data, expired=False
-                    )
+                    CachedReviewResponse(topic_id=topic_id, response=review_data, expired=False)
                 )
                 for course_code in course_code_list:
                     curr_topic_id = cache.get(CACHE_PREFIX + course_code)

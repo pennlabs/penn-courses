@@ -107,13 +107,9 @@ class AddNGSSRestrictionTestCase(TestCase):
 
 class ParseOpendataResponseTestCase(TestCase):
     def test_parse_response(self):
-        BASE_DIR = os.path.dirname(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        )
+        BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         if not os.path.basename(BASE_DIR).startswith("backend"):
-            test_file_path = os.path.join(
-                BASE_DIR, "backend/tests/courses/test-opendata.json"
-            )
+            test_file_path = os.path.join(BASE_DIR, "backend/tests/courses/test-opendata.json")
         else:
             test_file_path = os.path.join(BASE_DIR, "tests/courses/test-opendata.json")
         upsert_course_from_opendata(

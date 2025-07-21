@@ -18,9 +18,7 @@ def get_token():
         auth=(settings.OPEN_DATA_CLIENT_ID, settings.OPEN_DATA_OIDC_SECRET),
     )
     if not r.ok:
-        raise ValueError(
-            f"OpenData token URL responded with status code {r.status_code}: {r.text}"
-        )
+        raise ValueError(f"OpenData token URL responded with status code {r.status_code}: {r.text}")
     return r.json()["access_token"]
 
 
@@ -52,9 +50,7 @@ def make_api_request(params):
         headers=headers,
     )
     if not r.ok:
-        raise ValueError(
-            f"OpenData API request failed with status code {r.status_code}: {r.text}"
-        )
+        raise ValueError(f"OpenData API request failed with status code {r.status_code}: {r.text}")
     return r.json()
 
 
@@ -90,13 +86,9 @@ def get_departments():
         if len(result_data) > 0:
             return result_data[0]["subjects_map"]
         else:
-            raise ValueError(
-                "OpenData API returned data with no populated result_data field."
-            )
+            raise ValueError("OpenData API returned data with no populated result_data field.")
     else:
-        raise ValueError(
-            f"OpenData API responded with status code {r.status_code}: {r.text}."
-        )
+        raise ValueError(f"OpenData API responded with status code {r.status_code}: {r.text}.")
 
 
 def get_courses(query, semester):
