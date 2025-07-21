@@ -6,7 +6,10 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("courses", "0050_rename_include_or_exclude_ngssrestriction_inclusive_and_more"),
+        (
+            "courses",
+            "0050_rename_include_or_exclude_ngssrestriction_inclusive_and_more",
+        ),
     ]
 
     operations = [

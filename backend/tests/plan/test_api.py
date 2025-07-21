@@ -75,7 +75,8 @@ class PreNGSSRequirementFilterTestCase(TestCase):
 
     def test_filter_for_req(self):
         response = self.client.get(
-            reverse("courses-search", args=["current"]), {"pre_ngss_requirements": "REQ@SAS"}
+            reverse("courses-search", args=["current"]),
+            {"pre_ngss_requirements": "REQ@SAS"},
         )
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
@@ -83,12 +84,15 @@ class PreNGSSRequirementFilterTestCase(TestCase):
 
     def test_filter_for_req_dif_sem(self):
         req2 = PreNGSSRequirement(
-            semester=("2019A" if TEST_SEMESTER == "2019C" else "2019C"), code="REQ", school="SAS"
+            semester=("2019A" if TEST_SEMESTER == "2019C" else "2019C"),
+            code="REQ",
+            school="SAS",
         )
         req2.save()
         req2.courses.add(self.different_math)
         response = self.client.get(
-            reverse("courses-search", args=["current"]), {"pre_ngss_requirements": "REQ@SAS"}
+            reverse("courses-search", args=["current"]),
+            {"pre_ngss_requirements": "REQ@SAS"},
         )
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
@@ -284,7 +288,9 @@ class CourseReviewAverageTestCase(TestCase):
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data["sections"]))
         self.assertEqual(
-            1.5, response.data["sections"][1]["course_quality"], response.data["sections"][1]
+            1.5,
+            response.data["sections"][1]["course_quality"],
+            response.data["sections"][1],
         )
 
     def test_filter_courses_by_review_included(self):
@@ -433,7 +439,8 @@ class DayFilterTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 4)
         self.assertEqual(
-            {res["id"] for res in response.data}, {"CIS-120", "CIS-121", "CIS-160", "CIS-262"}
+            {res["id"] for res in response.data},
+            {"CIS-120", "CIS-121", "CIS-160", "CIS-262"},
         )
 
 
@@ -626,21 +633,37 @@ class DayTimeFilterTestCase(TestCase):
         )  # time 11.0-12.0, days MWF
 
         _, self.cis_120_002 = create_mock_data(
-            code="CIS-120-002", semester=TEST_SEMESTER, start=1200, end=1330, meeting_days="TR"
+            code="CIS-120-002",
+            semester=TEST_SEMESTER,
+            start=1200,
+            end=1330,
+            meeting_days="TR",
         )
 
         _, self.cis_160_001 = create_mock_data(
-            code="CIS-160-001", semester=TEST_SEMESTER, start=500, end=630, meeting_days="TR"
+            code="CIS-160-001",
+            semester=TEST_SEMESTER,
+            start=500,
+            end=630,
+            meeting_days="TR",
         )
 
         _, self.cis_160_201 = create_mock_data(
-            code="CIS-160-201", semester=TEST_SEMESTER, start=1100, end=1200, meeting_days="M"
+            code="CIS-160-201",
+            semester=TEST_SEMESTER,
+            start=1100,
+            end=1200,
+            meeting_days="M",
         )
         self.cis_160_201.activity = "REC"
         self.cis_160_201.save()
 
         _, self.cis_160_202 = create_mock_data(
-            code="CIS-160-202", semester=TEST_SEMESTER, start=1400, end=1500, meeting_days="W"
+            code="CIS-160-202",
+            semester=TEST_SEMESTER,
+            start=1400,
+            end=1500,
+            meeting_days="W",
         )
         self.cis_160_202.activity = "REC"
         self.cis_160_202.save()
@@ -681,7 +704,8 @@ class DayTimeFilterTestCase(TestCase):
 
     def test_all_match(self):
         response = self.client.get(
-            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "0-23.59", "days": "MTWRFSU"}
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"time": "0-23.59", "days": "MTWRFSU"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), len(self.all_codes))
@@ -698,7 +722,8 @@ class DayTimeFilterTestCase(TestCase):
 
     def test_time_matches_not_days(self):
         response = self.client.get(
-            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "1.00-", "days": "F"}
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"time": "1.00-", "days": "F"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
@@ -706,7 +731,8 @@ class DayTimeFilterTestCase(TestCase):
 
     def test_days_time_partial_match(self):
         response = self.client.get(
-            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "12.0-15.0", "days": "TWR"}
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"time": "12.0-15.0", "days": "TWR"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
@@ -714,7 +740,8 @@ class DayTimeFilterTestCase(TestCase):
 
     def test_multi_meeting_partial_match(self):
         response = self.client.get(
-            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "9.00-10.00", "days": "MTWR"}
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"time": "9.00-10.00", "days": "MTWR"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
@@ -722,7 +749,8 @@ class DayTimeFilterTestCase(TestCase):
 
     def test_multi_meeting_full_match(self):
         response = self.client.get(
-            reverse("courses-search", args=[TEST_SEMESTER]), {"time": "9.00-14.30", "days": "MTWR"}
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"time": "9.00-14.30", "days": "MTWR"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 3)
@@ -736,21 +764,37 @@ class ScheduleFilterTestCase(TestCase):
         )  # time 11.0-12.0, days MWF
 
         _, self.cis_120_002 = create_mock_data(
-            code="CIS-120-002", semester=TEST_SEMESTER, start=1200, end=1330, meeting_days="TR"
+            code="CIS-120-002",
+            semester=TEST_SEMESTER,
+            start=1200,
+            end=1330,
+            meeting_days="TR",
         )
 
         _, self.cis_160_001 = create_mock_data(
-            code="CIS-160-001", semester=TEST_SEMESTER, start=500, end=630, meeting_days="TR"
+            code="CIS-160-001",
+            semester=TEST_SEMESTER,
+            start=500,
+            end=630,
+            meeting_days="TR",
         )
 
         _, self.cis_160_201 = create_mock_data(
-            code="CIS-160-201", semester=TEST_SEMESTER, start=1100, end=1200, meeting_days="M"
+            code="CIS-160-201",
+            semester=TEST_SEMESTER,
+            start=1100,
+            end=1200,
+            meeting_days="M",
         )
         self.cis_160_201.activity = "REC"
         self.cis_160_201.save()
 
         _, self.cis_160_202 = create_mock_data(
-            code="CIS-160-202", semester=TEST_SEMESTER, start=1400, end=1500, meeting_days="W"
+            code="CIS-160-202",
+            semester=TEST_SEMESTER,
+            start=1400,
+            end=1500,
+            meeting_days="W",
         )
         self.cis_160_202.activity = "REC"
         self.cis_160_202.save()

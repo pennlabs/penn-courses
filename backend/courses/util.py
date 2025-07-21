@@ -768,6 +768,10 @@ def historical_semester_probability(current_semester: str, semesters: list[str])
     return list(
         map(
             lambda x: min(round(x, 2), 1.00),
-            [semester_probabilities["A"], semester_probabilities["B"], semester_probabilities["C"]],
+            [
+                semester_probabilities["A"],
+                semester_probabilities["B"],
+                semester_probabilities["C"],
+            ],
         )
     )

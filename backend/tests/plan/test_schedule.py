@@ -56,7 +56,12 @@ class ScheduleTest(TestCase):
         self.assertEqual(section.semester, serialized_section.get("semester"))
 
         if consider_review_data:
-            fields = ["course_quality", "instructor_quality", "difficulty", "work_required"]
+            fields = [
+                "course_quality",
+                "instructor_quality",
+                "difficulty",
+                "work_required",
+            ]
             for field in fields:
                 expected = get_average_reviews(reviews, field)
                 actual = serialized_section.get(field)
@@ -1074,7 +1079,9 @@ class ScheduleTest(TestCase):
 
     def test_update_from_path_registration_schedule_403(self):
         path_schedule = Schedule.objects.create(
-            name=PATH_REGISTRATION_SCHEDULE_NAME, person=self.s.person, semester=TEST_SEMESTER
+            name=PATH_REGISTRATION_SCHEDULE_NAME,
+            person=self.s.person,
+            semester=TEST_SEMESTER,
         )
         response = self.client.put(
             f"/api/plan/schedules/{path_schedule.id}/",
@@ -1090,7 +1097,9 @@ class ScheduleTest(TestCase):
 
     def test_delete_path_registration_schedule_403(self):
         path_schedule = Schedule.objects.create(
-            name=PATH_REGISTRATION_SCHEDULE_NAME, person=self.s.person, semester=TEST_SEMESTER
+            name=PATH_REGISTRATION_SCHEDULE_NAME,
+            person=self.s.person,
+            semester=TEST_SEMESTER,
         )
         response = self.client.delete(f"/api/plan/schedules/{path_schedule.id}/")
         self.assertEqual(response.status_code, 403)
@@ -1145,7 +1154,8 @@ class ScheduleTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
         self.assertEqual(
-            sum([d["name"] == PATH_REGISTRATION_SCHEDULE_NAME for d in response.data]), 1
+            sum([d["name"] == PATH_REGISTRATION_SCHEDULE_NAME for d in response.data]),
+            1,
         )
         for schedule in response.data:
             if schedule["name"] == PATH_REGISTRATION_SCHEDULE_NAME:
@@ -1161,7 +1171,9 @@ class ScheduleTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         Schedule.objects.create(
-            name=PATH_REGISTRATION_SCHEDULE_NAME, person=self.s.person, semester=TEST_SEMESTER
+            name=PATH_REGISTRATION_SCHEDULE_NAME,
+            person=self.s.person,
+            semester=TEST_SEMESTER,
         )
         response = self.client.get("/api/plan/schedules/")
         self.assertEqual(response.status_code, 200)
@@ -1182,7 +1194,8 @@ class ScheduleTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
         self.assertEqual(
-            sum([d["name"] == PATH_REGISTRATION_SCHEDULE_NAME for d in response.data]), 1
+            sum([d["name"] == PATH_REGISTRATION_SCHEDULE_NAME for d in response.data]),
+            1,
         )
         for schedule in response.data:
             if schedule["name"] == PATH_REGISTRATION_SCHEDULE_NAME:
@@ -1195,7 +1208,9 @@ class ScheduleTest(TestCase):
         mock_request.return_value.status_code = 200
         mock_request.return_value.json = self.platform_introspect_response
         Schedule.objects.create(
-            name=PATH_REGISTRATION_SCHEDULE_NAME, person=self.s.person, semester=TEST_SEMESTER
+            name=PATH_REGISTRATION_SCHEDULE_NAME,
+            person=self.s.person,
+            semester=TEST_SEMESTER,
         )
         response = APIClient(enforce_csrf_checks=True).put(
             "/api/plan/schedules/path/",
@@ -1217,7 +1232,8 @@ class ScheduleTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
         self.assertEqual(
-            sum([d["name"] == PATH_REGISTRATION_SCHEDULE_NAME for d in response.data]), 1
+            sum([d["name"] == PATH_REGISTRATION_SCHEDULE_NAME for d in response.data]),
+            1,
         )
         for schedule in response.data:
             if schedule["name"] == PATH_REGISTRATION_SCHEDULE_NAME:

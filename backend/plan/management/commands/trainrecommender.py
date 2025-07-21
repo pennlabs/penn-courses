@@ -329,7 +329,12 @@ def generate_course_clusters(courses_data, n_per_cluster=100, preloaded_descript
         sum(course_vectors_dict_curr[course] for course in cluster) / len(cluster)
         for cluster in clusters
     ]
-    return cluster_centroids, clusters, course_vectors_dict_curr, course_vectors_dict_past
+    return (
+        cluster_centroids,
+        clusters,
+        course_vectors_dict_curr,
+        course_vectors_dict_past,
+    )
 
 
 def train_recommender(

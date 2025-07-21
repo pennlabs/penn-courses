@@ -21,7 +21,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
                 (
@@ -41,13 +44,15 @@ class Migration(migrations.Migration):
                 (
                     "degree",
                     models.CharField(
-                        help_text="\nThe degree code for this degree, e.g., BSE\n", max_length=4
+                        help_text="\nThe degree code for this degree, e.g., BSE\n",
+                        max_length=4,
                     ),
                 ),
                 (
                     "major",
                     models.CharField(
-                        help_text="\nThe major code for this degree, e.g., BIOL\n", max_length=4
+                        help_text="\nThe major code for this degree, e.g., BIOL\n",
+                        max_length=4,
                     ),
                 ),
                 (
@@ -97,13 +102,17 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
                 (
                     "name",
                     models.CharField(
-                        help_text="The user's nickname for the degree plan.", max_length=255
+                        help_text="The user's nickname for the degree plan.",
+                        max_length=255,
                     ),
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
@@ -132,7 +141,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
                 (
@@ -160,7 +172,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
                 ("created_at", models.DateTimeField(auto_now_add=True)),
@@ -180,13 +195,18 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
                 (
                     "title",
                     models.CharField(
-                        blank=True, help_text="\nThe title for this rule.\n", max_length=200
+                        blank=True,
+                        help_text="\nThe title for this rule.\n",
+                        max_length=200,
                     ),
                 ),
                 (
@@ -231,7 +251,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
                 (
@@ -277,7 +300,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
                 (
@@ -331,7 +357,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
                 (
@@ -339,7 +368,10 @@ class Migration(migrations.Migration):
                     models.BooleanField(default=False, help_text="Whether the rule is satisfied"),
                 ),
                 ("last_updated", models.DateTimeField(auto_now=True)),
-                ("last_checked", models.DateTimeField(default=django.utils.timezone.now)),
+                (
+                    "last_checked",
+                    models.DateTimeField(default=django.utils.timezone.now),
+                ),
                 (
                     "degree_plan",
                     models.ForeignKey(
@@ -379,7 +411,8 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="degree",
             constraint=models.UniqueConstraint(
-                fields=("program", "degree", "major", "concentration", "year"), name="unique degree"
+                fields=("program", "degree", "major", "concentration", "year"),
+                name="unique degree",
             ),
         ),
         migrations.AddConstraint(
