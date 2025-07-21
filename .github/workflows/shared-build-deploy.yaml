@@ -13,7 +13,7 @@ jobs:
             projectName: PennCourses
             path: backend
             flake: true
-            black: false
+            black: true
             pythonVersion: 3.11-buster
             codeCoverage: false
 
