@@ -8,10 +8,7 @@ from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
 from courses.models import Course, Instructor, PreNGSSRestriction, Section, StatusUpdate
-from courses.util import (
-    get_or_create_course_and_section,
-    invalidate_current_semester_cache,
-)
+from courses.util import get_or_create_course_and_section, invalidate_current_semester_cache
 from review.import_utils.import_to_db import import_review
 from review.models import Review
 from tests.courses.util import create_mock_data, fill_course_soft_state

@@ -2,12 +2,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 from rest_framework_nested.routers import NestedDefaultRouter
 
-from degree.views import (
-    DegreePlanViewset,
-    DegreeViewset,
-    DockedCourseViewset,
-    FulfillmentViewSet,
-)
+from degree.views import DegreePlanViewset, DegreeViewset, DockedCourseViewset, FulfillmentViewSet
 
 
 router = DefaultRouter(trailing_slash=False)

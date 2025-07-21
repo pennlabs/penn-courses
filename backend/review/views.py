@@ -17,11 +17,7 @@ from courses.models import (
     PreNGSSRestriction,
     Section,
 )
-from courses.util import (
-    get_current_semester,
-    get_or_create_add_drop_period,
-    prettify_semester,
-)
+from courses.util import get_current_semester, get_or_create_add_drop_period, prettify_semester
 from PennCourses.docs_settings import PcxAutoSchema
 from PennCourses.settings.base import CACHE_PREFIX, TIME_ZONE, WAITLIST_DEPARTMENT_CODES
 from review.annotations import annotate_average_and_recent, review_averages

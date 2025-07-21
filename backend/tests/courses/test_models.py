@@ -9,17 +9,8 @@ from options.models import Option
 from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
-from courses.management.commands.recompute_soft_state import (
-    recompute_precomputed_fields,
-)
-from courses.models import (
-    Course,
-    Department,
-    PreNGSSRequirement,
-    Section,
-    Topic,
-    UserProfile,
-)
+from courses.management.commands.recompute_soft_state import recompute_precomputed_fields
+from courses.models import Course, Department, PreNGSSRequirement, Section, Topic, UserProfile
 from courses.util import (
     get_or_create_course,
     get_or_create_course_and_section,

@@ -6,14 +6,7 @@ from django.test import TestCase
 from options.models import Option
 
 from alert.models import AddDropPeriod
-from courses.models import (
-    Attribute,
-    Course,
-    Instructor,
-    Meeting,
-    NGSSRestriction,
-    Section,
-)
+from courses.models import Attribute, Course, Instructor, Meeting, NGSSRestriction, Section
 from courses.util import (
     add_attributes,
     add_restrictions,

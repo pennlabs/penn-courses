@@ -20,11 +20,7 @@ from rest_framework.views import APIView
 
 from courses.models import Course, Meeting, Section
 from courses.serializers import CourseListSerializer
-from courses.util import (
-    get_course_and_section,
-    get_current_semester,
-    normalize_semester,
-)
+from courses.util import get_course_and_section, get_current_semester, normalize_semester
 from courses.views import get_accepted_friends
 from PennCourses.docs_settings import PcxAutoSchema
 from PennCourses.settings.base import PATH_REGISTRATION_SCHEDULE_NAME

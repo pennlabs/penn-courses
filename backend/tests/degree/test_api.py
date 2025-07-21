@@ -7,10 +7,7 @@ from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
 from courses.models import Course, User
-from courses.util import (
-    get_or_create_course_and_section,
-    invalidate_current_semester_cache,
-)
+from courses.util import get_or_create_course_and_section, invalidate_current_semester_cache
 from degree.models import (
     Degree,
     DegreePlan,

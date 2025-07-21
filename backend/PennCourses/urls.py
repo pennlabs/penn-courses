@@ -6,10 +6,7 @@ from rest_framework.schemas import get_schema_view
 
 from alert.views import accept_webhook
 from courses.views import UserView
-from PennCourses.docs_settings import (
-    JSONOpenAPICustomTagGroupsRenderer,
-    openapi_description,
-)
+from PennCourses.docs_settings import JSONOpenAPICustomTagGroupsRenderer, openapi_description
 
 
 api_urlpatterns = [

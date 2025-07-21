@@ -7,12 +7,7 @@ from django.db.models import F, Max, Min, OuterRef, Subquery, Value
 from tqdm import tqdm
 
 from courses.models import Course
-from PennCourses.settings.base import (
-    FIRST_BANNER_SEM,
-    XWALK_S3_BUCKET,
-    XWALK_SRC,
-    S3_client,
-)
+from PennCourses.settings.base import FIRST_BANNER_SEM, XWALK_S3_BUCKET, XWALK_SRC, S3_client
 from review.management.commands.clearcache import clear_cache
 
 

@@ -18,9 +18,7 @@ from alert.models import (
     Section,
     validate_add_drop_semester,
 )
-from courses.management.commands.deduplicate_status_updates import (
-    deduplicate_status_updates,
-)
+from courses.management.commands.deduplicate_status_updates import deduplicate_status_updates
 from courses.management.commands.load_add_drop_dates import (
     fill_in_add_drop_periods,
     load_add_drop_dates,
