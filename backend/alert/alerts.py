@@ -13,6 +13,7 @@ from PennCourses.settings.production import MOBILE_NOTIFICATION_SECRET
 
 
 logger = logging.getLogger(__name__)
+SEPERATOR = ", "
 
 
 def send_email(from_, to, subject, html):
@@ -44,11 +45,15 @@ def send_text(to, text):
 class Alert(ABC):
     def __init__(self, template, reg, close_template=None):
         t = loader.get_template(template)
+        meetings_string = ""
+        if reg.section.meeting_times:
+            meetings_string = SEPERATOR.join(reg.section.meeting_times)
         self.text = t.render(
             {
                 "course": reg.section.full_code,
                 "brand": "Penn Course Alert",
                 "auto_resubscribe": reg.auto_resubscribe,
+                "meetings": meetings_string,
             }
         )
         self.close_text = None
@@ -59,6 +64,7 @@ class Alert(ABC):
                     "course": reg.section.full_code,
                     "brand": "Penn Course Alert",
                     "auto_resubscribe": reg.auto_resubscribe,
+                    "meetings": meetings_string,
                 }
             )
         self.registration = reg
