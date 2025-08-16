@@ -13,7 +13,7 @@ from PennCourses.settings.production import MOBILE_NOTIFICATION_SECRET
 
 
 logger = logging.getLogger(__name__)
-SEPERATOR = ", "
+SEPARATOR = ", "
 
 
 def send_email(from_, to, subject, html):
@@ -47,7 +47,7 @@ class Alert(ABC):
         t = loader.get_template(template)
         meetings_string = ""
         if reg.section.meeting_times:
-            meetings_string = SEPERATOR.join(reg.section.meeting_times)
+            meetings_string = SEPARATOR.join(reg.section.meeting_times)
         self.text = t.render(
             {
                 "course": reg.section.full_code,
