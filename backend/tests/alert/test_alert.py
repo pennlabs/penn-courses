@@ -2969,19 +2969,19 @@ class TestAlertMeetingString(TestCase):
         return reg
 
     def test_json_list_is_parsed_correctly(self):
-        reg = self.create_reg(full_code="CIS-1200-001", user=self.user)
+        reg = self.create_reg(full_code="CIS-1200-001")
         reg.section.meeting_times = '["MW 1:45 PM - 3:14 PM", "T 1:45 PM - 2:44 PM"]'
         expected = "MW 1:45 PM - 3:14 PM, T 1:45 PM - 2:44 PM"
         self.assertEquals(expected, get_meeting_string(reg))
 
     def test_empty_string_returns_empty_string(self):
-        reg = self.create_reg(full_code="CIS-1200-001", user=self.user)
+        reg = self.create_reg(full_code="CIS-1200-001")
         reg.section.meeting_times = ""
         expected = ""
         self.assertEquals(expected, get_meeting_string(reg))
 
     def test_invalid_json_returns_empty_string(self):
-        reg = self.create_reg(full_code="CIS-1200-001", user=self.user)
+        reg = self.create_reg(full_code="CIS-1200-001")
         reg.section.meeting_times = "MW 1:45 PM - 3:14 PM, T 1:45 PM - 2:44 PM"
         expected = ""
         self.assertEquals(expected, get_meeting_string(reg))
