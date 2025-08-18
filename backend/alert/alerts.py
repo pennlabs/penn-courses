@@ -46,8 +46,8 @@ def send_text(to, text):
 class Alert(ABC):
     def __init__(self, template, reg, close_template=None):
         t = loader.get_template(template)
+        
         meetings_string = ""
-
         if reg.section.meeting_times:
             try:
                 meetings_list = json.loads(reg.section.meeting_times)
