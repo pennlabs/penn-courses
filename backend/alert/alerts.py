@@ -1,7 +1,7 @@
+import json
 import logging
 from abc import ABC, abstractmethod
 from email.mime.text import MIMEText
-import json
 from smtplib import SMTP, SMTPRecipientsRefused
 
 import requests
