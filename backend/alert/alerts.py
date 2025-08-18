@@ -1,6 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 from email.mime.text import MIMEText
+import json
 from smtplib import SMTP, SMTPRecipientsRefused
 
 import requests
@@ -47,7 +48,9 @@ class Alert(ABC):
         t = loader.get_template(template)
         meetings_string = ""
         if reg.section.meeting_times:
-            meetings_string = SEPARATOR.join(reg.section.meeting_times)
+            meetings_list = json.loads(reg.section.meeting_times)
+            if isinstance(meetings_list, list):
+                meetings_string = SEPARATOR.join(meetings_list)
         self.text = t.render(
             {
                 "course": reg.section.full_code,
