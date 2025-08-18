@@ -47,10 +47,15 @@ class Alert(ABC):
     def __init__(self, template, reg, close_template=None):
         t = loader.get_template(template)
         meetings_string = ""
+
         if reg.section.meeting_times:
-            meetings_list = json.loads(reg.section.meeting_times)
-            if isinstance(meetings_list, list):
-                meetings_string = SEPARATOR.join(meetings_list)
+            try:
+                meetings_list = json.loads(reg.section.meeting_times)
+                if isinstance(meetings_list, list):
+                    meetings_string = SEPARATOR.join(meetings_list)
+            except json.JSONDecodeError:
+                logger.exception("Error decoding meeting times JSON")
+
         self.text = t.render(
             {
                 "course": reg.section.full_code,
