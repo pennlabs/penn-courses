@@ -43,18 +43,22 @@ def send_text(to, text):
         return None
 
 
+def get_meeting_string(reg):
+    meeting_string = ""
+    if reg.section.meeting_times:
+        try:
+            meetings = json.loads(reg.section.meeting_times)
+            if isinstance(meetings, list):
+                meeting_string = SEPARATOR.join(meetings)
+        except json.JSONDecodeError:
+            logger.exception("Meeting Times JSON Decode Error")
+    return meeting_string
+
+
 class Alert(ABC):
     def __init__(self, template, reg, close_template=None):
         t = loader.get_template(template)
-        meetings_string = ""
-
-        if reg.section.meeting_times:
-            try:
-                meetings_list = json.loads(reg.section.meeting_times)
-                if isinstance(meetings_list, list):
-                    meetings_string = SEPARATOR.join(meetings_list)
-            except json.JSONDecodeError:
-                logger.exception("Error decoding meeting times JSON")
+        meetings_string = get_meeting_string(reg)
 
         self.text = t.render(
             {
