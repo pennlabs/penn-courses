@@ -17,6 +17,7 @@ from options.models import Option
 from rest_framework.test import APIClient
 
 from alert import tasks
+from alert.alerts import get_meeting_string
 from alert.models import SOURCE_PCA, AddDropPeriod, Registration, RegStatus, register_for_course
 from alert.tasks import get_registrations_for_alerts
 from courses.models import StatusUpdate
@@ -2951,3 +2952,36 @@ class AlertRegistrationTestCase(TestCase):
                 reverse("registrations-detail", args=[ids[specific_ids + "_id"]])
             )
             self.assertIsNone(response.data.get("last_notification_sent_at"))
+
+
+class TestAlertMeetingString(TestCase):
+
+    def setUp(self):
+        set_semester()
+        user = User.objects.create_user(username="jacob", password="top_secret")
+        user.save()
+        self.user = user
+
+    def create_reg(self, full_code, **kwargs):
+        _, section, _, _ = get_or_create_course_and_section(full_code, TEST_SEMESTER)
+        reg = Registration(section=section, user=self.user, **kwargs)
+        reg.save()
+        return reg
+
+    def test_json_list_is_parsed_correctly(self):
+        reg = self.create_reg(full_code="CIS-1200-001")
+        reg.section.meeting_times = '["MW 1:45 PM - 3:14 PM", "T 1:45 PM - 2:44 PM"]'
+        expected = "MW 1:45 PM - 3:14 PM, T 1:45 PM - 2:44 PM"
+        self.assertEquals(expected, get_meeting_string(reg))
+
+    def test_empty_string_returns_empty_string(self):
+        reg = self.create_reg(full_code="CIS-1200-001")
+        reg.section.meeting_times = ""
+        expected = ""
+        self.assertEquals(expected, get_meeting_string(reg))
+
+    def test_invalid_json_returns_empty_string(self):
+        reg = self.create_reg(full_code="CIS-1200-001")
+        reg.section.meeting_times = "MW 1:45 PM - 3:14 PM, T 1:45 PM - 2:44 PM"
+        expected = ""
+        self.assertEquals(expected, get_meeting_string(reg))
