@@ -4,7 +4,6 @@ from unittest.mock import patch
 from django.contrib.auth import get_user_model
 from django.db.models.signals import post_save
 from django.test import TestCase
-from django.urls import reverse
 from options.models import Option
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -1241,9 +1240,9 @@ class BreakViewSetTests(TestCase):
         )
         self.break_obj.save()
 
-        self.break_list_url = "/api/plan/breaks/" 
+        self.break_list_url = "/api/plan/breaks/"
         self.break_detail_url = "/api/plan/breaks/{}/".format(self.break_obj.id)
-            
+
     @patch("plan.views.set_meetings")
     def test_create_break(self, mock_set_meetings):
         """
