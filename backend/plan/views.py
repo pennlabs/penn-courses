@@ -726,7 +726,7 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         break_id = request.data.get("id")
         if break_id and Break.objects.filter(id=break_id).exists():
-            return self.update(request, kwargs={"pk": break_id})
+            return self.update(request, pk=break_id)
 
         name = request.data.get("name")
         if not name:
