@@ -666,8 +666,8 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         # context.update({"include_location": eval(include_location_str)})
         return context
 
-    def update(self, request):
-        break_id = request.data.get("id")
+    def update(self, request, *args, **kwargs):
+        break_id = kwargs["pk"]
         if not break_id:
             return Response(
                 {"detail": "Break id is required for update."}, status=status.HTTP_400_BAD_REQUEST
@@ -726,7 +726,7 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         break_id = request.data.get("id")
         if break_id and Break.objects.filter(id=break_id).exists():
-            return self.update(request)
+            return self.update(request, kwargs={"pk": break_id})
 
         name = request.data.get("name")
         if not name:
@@ -784,7 +784,7 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         )
 
     def destroy(self, request, *args, **kwargs):
-        break_id = kwargs["break_pk"]
+        break_id = kwargs["pk"]
         if not break_id:
             return Response(
                 {"detail": "Break id is required for delete."}, status=status.HTTP_400_BAD_REQUEST
