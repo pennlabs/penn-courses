@@ -32,6 +32,7 @@ import { DISABLE_MULTIPLE_TABS } from "../constants/sync_constants";
 import { User } from "../types";
 import { ToastContainer } from "react-toastify";
 import { useRouter } from "next/router";
+import NewLabel from "../components/common/NewLabel";
 
 const GlobalStyle = createGlobalStyle`
   html {
@@ -317,7 +318,6 @@ function Index() {
                 label="Map"
                 onClick={() => setTab(3)}
               />
-
               <Tab
                 className="topTab"
                 label="Breaks"
@@ -475,7 +475,8 @@ function Index() {
                           setSelectedTab(item)
                         }
                       >
-                        {name}
+                        {name}&nbsp;
+                        {item === TabItem.Break && (<NewLabel />)}
                       </CartTab>
                     ))}
                   </div>
