@@ -98,6 +98,7 @@ const NameInput = styled.input`
     border: 1px solid #ccc;
     border-radius: 4px;
     background-color: #f1f1f1;
+    outline: none;
 `;
 
 const SliderInputWrapper = styled.div`
