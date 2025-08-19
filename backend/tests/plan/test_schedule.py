@@ -1241,12 +1241,9 @@ class BreakViewSetTests(TestCase):
         )
         self.break_obj.save()
 
-        # Use Django's reverse to dynamically get the correct endpoint
-        self.break_list_url = reverse("breaks")  # /api/plan/breaks/
-        self.break_detail_url = reverse(
-            "breaks", kwargs={"pk": self.break_obj.id}
-        )  # /api/plan/breaks/{id}/
-
+        self.break_list_url = "/api/plan/breaks/" 
+        self.break_detail_url = "/api/plan/breaks/{}/".format(self.break_obj.id)
+            
     @patch("plan.views.set_meetings")
     def test_create_break(self, mock_set_meetings):
         """
