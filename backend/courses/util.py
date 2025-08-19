@@ -29,6 +29,7 @@ from courses.models import (
     StatusUpdate,
     User,
 )
+from plan.models import Break
 from review.management.commands.mergeinstructors import resolve_duplicates
 
 
@@ -465,17 +466,20 @@ def clean_meetings(meetings):
     }.values()
 
 
-def set_meetings(section, meetings):
+def set_meetings(obj, meetings):
+    print("meetings", meetings)
     meetings = clean_meetings(meetings)
+    print("meetings", meetings)
 
     for meeting in meetings:
         meeting["days"] = "".join(sorted(list(set(meeting["days"]))))
     meeting_times = [
         f"{meeting['days']} {meeting['begin_time']} - {meeting['end_time']}" for meeting in meetings
     ]
-    section.meeting_times = json.dumps(meeting_times)
+    print("meeting_times", meeting_times)
+    obj.meeting_times = json.dumps(meeting_times)
 
-    section.meetings.all().delete()
+    obj.meetings.all().delete()
     for meeting in meetings:
         online = (
             not meeting["building_code"]
@@ -488,12 +492,15 @@ def set_meetings(section, meetings):
         )
         room = None if online else get_room(meeting["building_code"], meeting["room_code"])
         start_time = Decimal(meeting["begin_time_24"]) / 100
+        print(start_time)
         end_time = Decimal(meeting["end_time_24"]) / 100
         start_date = extract_date(meeting.get("start_date"))
         end_date = extract_date(meeting.get("end_date"))
         for day in list(meeting["days"]):
+
             meeting = Meeting.objects.update_or_create(
-                section=section,
+                section=obj if isinstance(obj, Section) else None,
+                associated_break=obj if isinstance(obj, Break) else None,
                 day=day,
                 start=start_time,
                 end=end_time,

@@ -550,7 +550,6 @@ const ScheduleSelectorDropdown = ({
                 </DropdownTriggerContainer>
                 {(!readOnly || !friendshipState.activeFriend) && (
                     <ShareSchedulePromoContainer>
-                        <NewLabel />
                         <ShareSchedulePromo
                             onClick={() => setIsActive(!isActive)}
                         >
