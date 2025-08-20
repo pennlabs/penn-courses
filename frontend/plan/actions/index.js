@@ -72,6 +72,7 @@ export const SET_PRIMARY_SCHEDULE_ID_ON_FRONTEND =
     "SET_PRIMARY_SCHEDULE_ID_ON_FRONTEND";
 
 export const ADD_BREAK_ITEM = "ADD_BREAK_ITEM";
+export const ADD_BREAK = "ADD_BREAK";
 export const TOGGLE_BREAK = "TOGGLE_BREAK";
 export const REMOVE_BREAK = "REMOVE_BREAK";
 
@@ -552,6 +553,21 @@ export const updateContactInfoFrontend = (contactInfo) => ({
     contactInfo,
 });
 
+export const addBreakFrontend = (breakItem) => ({
+    type: ADD_BREAK,
+    breakItem,
+});
+
+export const toggleBreakFrontend = (breakItem) => ({
+    type: TOGGLE_BREAK,
+    breakItem,
+});
+
+export const removeBreakFrontend = (breakId) => ({
+    type: REMOVE_BREAK,
+    breakId,
+});
+
 export const markAlertsSynced = () => ({
     type: MARK_ALERTS_SYNCED,
 });
@@ -643,7 +659,7 @@ function convertToHHMM(decimalHour) {
     return hours * 100 + minutes;
 }
 
-export const createBreakItemBackend = (name, days, timeRange) => (dispatch) => {
+export const createBreakBackend = (name, days, timeRange) => (dispatch) => {
     doAPIRequest("/plan/breaks/", {
         method: "POST",
         credentials: "include",
@@ -669,12 +685,12 @@ export const createBreakItemBackend = (name, days, timeRange) => (dispatch) => {
         }),
     })
         .then((res) => res.json())
-        .then((breakItem) => {
-            dispatch(addBreakItem(name, days, timeRange, breakItem.break_id));
+        .then((breakData) => {
+            dispatch(fetchBreaks(breakData.break_id));
         });
 };
 
-export const removeBreakItemBackend = (breakId) => (dispatch) => {
+export const removeBreakBackend = (breakId) => (dispatch) => {
     doAPIRequest(`/plan/breaks/${breakId}/`, {
         method: "DELETE",
         credentials: "include",
@@ -1057,4 +1073,26 @@ export const updateContactInfo = (contactInfo) => (dispatch) => {
             dispatch(updateContactInfoFrontend(profile));
         }
     });
+};
+
+export const fetchBreaks = (breakId = null) => (dispatch) => {
+    doAPIRequest("/plan/breaks/")
+        .then((res) => res.json())
+        .then((breaks) => {
+            breaks.forEach((breakItem) => {
+                dispatch(addBreakFrontend(breakItem));
+            });
+            return breaks;
+        })
+        .then((breaks) => {
+            if (breakId !== null) {
+                dispatch(
+                    toggleBreakFrontend(
+                        breaks.find((breakItem) => breakItem.id === breakId)
+                    )
+                );
+            }
+        })
+        // eslint-disable-next-line no-console
+        .catch((error) => console.log(error));
 };

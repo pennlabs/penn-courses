@@ -176,11 +176,6 @@ export interface CartCourse {
     overlaps: boolean;
 }
 
-export interface BreakSectionItem {
-    break: Break;
-    checked: boolean;
-}
-
 export interface CoursesByDay {
     M: CartCourse[];
     T: CartCourse[];
@@ -194,7 +189,7 @@ export interface CoursesByDay {
 export interface Schedule {
     id: string;
     sections: Section[];
-    breaks: BreakSectionItem[];
+    breaks: Break[];
     semester: string;
     name: string;
     created_at: string;
@@ -253,7 +248,7 @@ export type FilterType =
 
     export interface FriendshipState {
         activeFriend: User;
-        activeFriendSchedule: { found: boolean; sections: Section[], breaks: BreakSectionItem[] };
+        activeFriendSchedule: { found: boolean; sections: Section[], breaks: Break[] };
         acceptedFriends: User[];
         requestsReceived: Friendship[];
         requestsSent: Friendship[];

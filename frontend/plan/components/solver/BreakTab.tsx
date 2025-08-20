@@ -2,8 +2,9 @@ import React, { useState } from "react";
 import { connect } from "react-redux";
 import { ThunkDispatch } from "redux-thunk";
 import styled from "styled-components";
-import { createBreakItemBackend, removeBreakItemBackend } from "../../actions";
-import { BreakSectionItem } from "../../types";
+import { createBreakBackend, removeBreakBackend } from "../../actions";
+import { showToast } from "../../pages";
+import { Break } from "../../types";
 import { BreakForm } from "./BreakForm";
 import BreakSection from "./BreakSection";
 import { getTimeString } from "../meetUtil";
@@ -46,13 +47,15 @@ interface BreakProps {
         add: (
             name: string,
             days: string[],
-            timeRange: [number, number]
+            timeRange: [number, number],
+            breaks: Break[]
         ) => void;
-        remove: (breakId: string) => void;
+        remove: (breakItem: Break, toggle: boolean) => void;
     };
     mobileView: boolean;
-    breaks: BreakSectionItem[];
-    toggleBreak: (breakId: string) => void;
+    breaks: Break[];
+    scheduleCheckedBreaks: Break[];
+    toggleBreak: (breakItem: Break) => void;
 }
 
 const Button = styled.button`
@@ -93,9 +96,9 @@ const BreakAddSection = styled.div`
 
 const BreakTab: React.FC<BreakProps> = ({
     breaks,
+    scheduleCheckedBreaks,
     toggleBreak,
     manageBreaks,
-    mobileView,
 }) => {
     const [selectedDays, setSelectedDays] = useState<string[]>([]);
     const [selectedTimes, setSelectedTimes] = useState<[number, number]>([
@@ -117,28 +120,31 @@ const BreakTab: React.FC<BreakProps> = ({
                         selectedTimes={selectedTimes}
                         setSelectedTimes={setSelectedTimes}
                         name={name}
+       
                         setName={setName}
                     />
                     <Button
                         onClick={() =>
-                            manageBreaks?.add(name, selectedDays, selectedTimes)
+                            manageBreaks?.add(name, selectedDays, selectedTimes, breaks)
                         }
                     >
                         Add Break
                     </Button>
                 </BreakAddSection>
                 {breaks.map((breakItem, i) => {
-                    if (!breakItem.break) return null;
+                    const isChecked = scheduleCheckedBreaks.some(
+                        br => br.id === breakItem.id
+                    );
                     return (
                         <BreakSection
                             key={i}
-                            name={breakItem.break.name}
-                            checked={breakItem.checked}
-                            time={getTimeString(breakItem.break.meetings ?? [])}
-                            toggleCheck={() => toggleBreak(breakItem.break.id)}
+                            name={breakItem.name}
+                            checked={isChecked}
+                            time={getTimeString(breakItem.meetings ?? [])}
+                            toggleCheck={() => toggleBreak(breakItem)}
                             remove={(e) => {
                                 e.stopPropagation();
-                                manageBreaks?.remove(breakItem.break.id);
+                                manageBreaks?.remove(breakItem, isChecked);
                             }}
                         />
                     );
@@ -148,23 +154,51 @@ const BreakTab: React.FC<BreakProps> = ({
     );
 };
 
+const validateBreakInput = (name: string, days: string[], timeRange: [number, number], existingBreaks: Break[]) => {
+    if (!name || name.trim() === "") {
+        return "Break name cannot be empty.";
+    }
+    if (existingBreaks.some(b => b.name === name)) {
+        return "Break name must be unique.";
+    }
+    if (days.length === 0) {
+        return "Please select at least one day for the break.";
+    }
+    if (timeRange[0] >= timeRange[1]) {
+        return "Start time must be before end time.";
+    }
+    if (existingBreaks.length >= 10) {
+        return "You can only have up to 10 breaks.";
+    }
+    return null;
+}
+
 const mapStateToProps = ({
     schedule: { scheduleSelected, schedules },
+    breaks: {breaks}
 }: any) => ({
-    breaks: schedules[scheduleSelected]?.breaks ?? [],
+    breaks: breaks,
+    scheduleCheckedBreaks: schedules[scheduleSelected]?.breaks || [], 
 });
 
 const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
     manageBreaks: {
-        add: (name: string, days: string[], timeRange: [number, number]) => {
-            dispatch(createBreakItemBackend(name, days, timeRange));
+        add: (name: string, days: string[], timeRange: [number, number], breaks: Break[]) => {
+          const error = validateBreakInput(name, days, timeRange, breaks);
+          if (error) {
+            showToast(error, true);
+          }
+          dispatch(createBreakBackend(name, days, timeRange));
         },
-        remove: (breakId: string) => {
-            dispatch(removeBreakItemBackend(breakId));
+        remove: (breakItem: Break, toggle: boolean) => {
+          if (toggle) {
+            dispatch({ type: "TOGGLE_BREAK", breakItem });
+          }
+          dispatch(removeBreakBackend(breakItem.id));
         },
     },
-    toggleBreak: (breakId: string) => {
-        dispatch({ type: "TOGGLE_BREAK", id: breakId });
+    toggleBreak: (breakItem: Break) => {
+        dispatch({ type: "TOGGLE_BREAK", breakItem });
     },
 });
 
