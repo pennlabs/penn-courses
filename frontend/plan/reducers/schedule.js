@@ -17,9 +17,7 @@ import {
     REMOVE_SCHED_ITEM,
     ADD_CART_ITEM,
     REMOVE_CART_ITEM,
-    ADD_BREAK_ITEM,
     TOGGLE_BREAK,
-    REMOVE_BREAK,
 } from "../actions";
 import { scheduleContainsSection } from "../components/meetUtil";
 import { showToast } from "../pages";
@@ -331,7 +329,6 @@ export const schedule = (state = initialState, action) => {
             return {
                 ...state,
                 schedules: {
-       
                     ...removeSchedule(action.oldName, state.schedules),
                     [action.newName]: {
                         ...state.schedules[action.oldName],
@@ -422,7 +419,7 @@ export const schedule = (state = initialState, action) => {
             }
             if (state.scheduleSelected === PATH_REGISTRATION_SCHEDULE_NAME) {
                 showToast("Cannot edit Path registration here!", true);
-            } else {schedules[scheduleSelected]?.breaks ?? [],
+            } else {
                 showToast("Cannot change a friend's schedule!", true);
             }
 
@@ -476,12 +473,19 @@ export const schedule = (state = initialState, action) => {
                 const oldBreakSections =
                     state.schedules[state.scheduleSelected]?.breaks ?? [];
                 let newBreakSections;
-                if (oldBreakSections.some(br => br.id === action.breakItem.id)) {
-                    newBreakSections = oldBreakSections.filter((br) => br.id !== action.breakItem.id);
+                if (
+                    oldBreakSections.some((br) => br.id === action.breakItem.id)
+                ) {
+                    newBreakSections = oldBreakSections.filter(
+                        (br) => br.id !== action.breakItem.id
+                    );
                 } else {
                     newBreakSections = [
                         ...oldBreakSections,
-                        {...action.breakItem, color: getColor(action.breakItem.name)},
+                        {
+                            ...action.breakItem,
+                            color: getColor(action.breakItem.name),
+                        },
                     ];
                 }
                 const temp = {

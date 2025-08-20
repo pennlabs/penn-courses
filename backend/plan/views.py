@@ -678,7 +678,6 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         serializer = BreakSerializer(breaks, many=True, context=self.get_serializer_context())
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
     def update(self, request, *args, **kwargs):
         break_id = kwargs["pk"]
         if not break_id:

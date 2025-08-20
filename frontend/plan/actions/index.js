@@ -659,7 +659,6 @@ function convertToHHMM(decimalHour) {
     return hours * 100 + minutes;
 }
 
-
 export const createBreakBackend = (name, days, timeRange) => (dispatch) => {
     doAPIRequest("/plan/breaks/", {
         method: "POST",
@@ -687,7 +686,7 @@ export const createBreakBackend = (name, days, timeRange) => (dispatch) => {
     })
         .then((res) => res.json())
         .then((breakData) => {
-            dispatch(fetchBreaks(breakData.break_id)); 
+            dispatch(fetchBreaks(breakData.break_id));
         });
 };
 
@@ -1081,16 +1080,19 @@ export const fetchBreaks = (breakId = null) => (dispatch) => {
         .then((res) => res.json())
         .then((breaks) => {
             breaks.forEach((breakItem) => {
-                dispatch(
-                    addBreakFrontend(breakItem)
-                )
-            })
+                dispatch(addBreakFrontend(breakItem));
+            });
             return breaks;
-        }).then((breaks) => {
+        })
+        .then((breaks) => {
             if (breakId !== null) {
-                dispatch(toggleBreakFrontend(breaks.find((breakItem) => breakItem.id === breakId)));
+                dispatch(
+                    toggleBreakFrontend(
+                        breaks.find((breakItem) => breakItem.id === breakId)
+                    )
+                );
             }
         })
         // eslint-disable-next-line no-console
         .catch((error) => console.log(error));
-}
+};

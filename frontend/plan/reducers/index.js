@@ -16,7 +16,7 @@ const coursePlanApp = combineReducers({
     login,
     friendships,
     alerts,
-    breaks
+    breaks,
 });
 
 export default coursePlanApp;
