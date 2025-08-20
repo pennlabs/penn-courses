@@ -670,6 +670,15 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         # context.update({"include_location": eval(include_location_str)})
         return context
 
+    def get(self):
+        """
+        Get all breaks for the current user.
+        """
+        breaks = self.get_queryset()
+        serializer = BreakSerializer(breaks, many=True, context=self.get_serializer_context())
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
     def update(self, request, *args, **kwargs):
         break_id = kwargs["pk"]
         if not break_id:
@@ -729,8 +738,15 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         break_id = request.data.get("id")
+        print(Break.objects.filter(person=request.user))
         if break_id and Break.objects.filter(id=break_id).exists():
             return self.update(request, pk=break_id)
+
+        if Break.objects.filter(person=request.user).count() >= 10:
+            print(Break.objects.filter(person=request.user))
+            return Response(
+                {"detail": "You can only have up to 10 breaks."}, status=status.HTTP_400_BAD_REQUEST
+            )
 
         name = request.data.get("name")
         if not name:

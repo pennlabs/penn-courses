@@ -85,7 +85,7 @@ export const nextAvailable = (scheduleName, used) => {
 /**
  * Returns a new schedule where the section is present if it was not previously, and vice-versa
  * @param sections
- * @param section
+ * @param sectionschedules[scheduleSelected]?.breaks ?? [],
  */
 const toggleSection = (scheduleSections, section) => {
     if (scheduleContainsSection(scheduleSections, section)) {
@@ -193,10 +193,7 @@ const handleUpdateSchedulesOnFrontend = (state, schedulesFromBackend) => {
                                     ...br,
                                     color: getColor(br.name),
                                 };
-                                return {
-                                    break: newBreak,
-                                    checked: newBreak.checked,
-                                };
+                                return newBreak;
                             }),
                             id: scheduleFromBackend.id,
                             pushedToBackend: true,
@@ -334,6 +331,7 @@ export const schedule = (state = initialState, action) => {
             return {
                 ...state,
                 schedules: {
+       
                     ...removeSchedule(action.oldName, state.schedules),
                     [action.newName]: {
                         ...state.schedules[action.oldName],
@@ -424,7 +422,7 @@ export const schedule = (state = initialState, action) => {
             }
             if (state.scheduleSelected === PATH_REGISTRATION_SCHEDULE_NAME) {
                 showToast("Cannot edit Path registration here!", true);
-            } else {
+            } else {schedules[scheduleSelected]?.breaks ?? [],
                 showToast("Cannot change a friend's schedule!", true);
             }
 
@@ -473,80 +471,19 @@ export const schedule = (state = initialState, action) => {
                 ...state,
             };
 
-        case ADD_BREAK_ITEM:
-            // Check name is not already in use
-            if (
-                state.schedules[state.scheduleSelected].breaks.find(
-                    (br) => br.break.name === action.name
-                )
-            ) {
-                showToast("Break name already in use!", true);
-                return { ...state };
-            }
-
-            // Check that some date is selected
-            if (action.days.length === 0) {
-                showToast("Please select a day!", true);
-                return { ...state };
-            }
-
-            // Check that the name box is not empty
-            if (action.name === "") {
-                showToast("Please enter a name!", true);
-                return { ...state };
-            }
-
-            if (!state.readOnly) {
-                const newBreakItem = {
-                    name: action.name,
-                    id: action.id,
-                    color: getColor(action.name),
-                    meetings: action.days.map((day) => ({
-                        day,
-                        start: action.timeRange[0],
-                        end: action.timeRange[1],
-                        room: "Towne 100",
-                        latitude: 39.9526,
-                        longitude: -75.1652,
-                        overlap: false,
-                    })),
-                };
-
-                return {
-                    ...state,
-                    schedules: {
-                        ...state.schedules,
-                        [state.scheduleSelected]: {
-                            ...state.schedules[state.scheduleSelected],
-                            updated_at: Date.now(),
-                            pushedToBackend: false,
-                            breaks: [
-                                ...state.schedules[state.scheduleSelected]
-                                    .breaks,
-                                { break: newBreakItem, checked: true },
-                            ],
-                        },
-                    },
-                };
-            }
-            showToast("Cannot add breaks to a friend's schedule!", true);
-            return { ...state };
-
         case TOGGLE_BREAK:
             if (!state.readOnly) {
                 const oldBreakSections =
                     state.schedules[state.scheduleSelected]?.breaks ?? [];
-                const newBreakSections = oldBreakSections.map(
-                    (breakSection) => {
-                        if (breakSection.break.id === action.id) {
-                            return {
-                                ...breakSection,
-                                checked: !breakSection.checked,
-                            };
-                        }
-                        return breakSection;
-                    }
-                );
+                let newBreakSections;
+                if (oldBreakSections.some(br => br.id === action.breakItem.id)) {
+                    newBreakSections = oldBreakSections.filter((br) => br.id !== action.breakItem.id);
+                } else {
+                    newBreakSections = [
+                        ...oldBreakSections,
+                        {...action.breakItem, color: getColor(action.breakItem.name)},
+                    ];
+                }
                 const temp = {
                     ...state,
                     schedules: {
@@ -560,29 +497,6 @@ export const schedule = (state = initialState, action) => {
                     },
                 };
                 return temp;
-            }
-            showToast("Cannot remove breaks from a friend's schedule!", true);
-            return { ...state };
-
-        case REMOVE_BREAK:
-            if (!state.readOnly) {
-                const oldBreakSections =
-                    state.schedules[state.scheduleSelected]?.breaks ?? [];
-                const newBreakSections = oldBreakSections.filter(
-                    (breakSection) => breakSection.break.id !== action.id
-                );
-                return {
-                    ...state,
-                    schedules: {
-                        ...state.schedules,
-                        [state.scheduleSelected]: {
-                            ...state.schedules[state.scheduleSelected],
-                            updated_at: Date.now(),
-                            pushedToBackend: false,
-                            breaks: newBreakSections,
-                        },
-                    },
-                };
             }
             showToast("Cannot remove breaks from a friend's schedule!", true);
             return { ...state };
