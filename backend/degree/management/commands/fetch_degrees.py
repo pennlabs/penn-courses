@@ -1,4 +1,5 @@
 from os import getenv
+from dotenv import load_dotenv
 from textwrap import dedent
 
 from django.core.management.base import BaseCommand
@@ -8,13 +9,13 @@ from courses.util import get_current_semester
 from degree.management.commands.deduplicate_rules import deduplicate_rules
 from degree.models import Degree, program_code_to_name
 from degree.utils.degreeworks_client import DegreeworksClient
-from degree.utils.parse_degreeworks import parse_and_save_degreeworks
+from backend.degree.management.commands.parse_degreeworks import parse_and_save_degreeworks
 
 
 class Command(BaseCommand):
     help = dedent(
         """
-        Fetches, parses and stores degrees from degreeworks.
+        Fetches, parses and stores degrees from degreeworks. Just run this one!!
 
         Expects PENN_ID, X_AUTH_TOKEN, REFRESH_TOKEN, NAME environment variables are set.
 
@@ -65,6 +66,8 @@ class Command(BaseCommand):
         since_year = kwargs["since_year"]
         to_year = kwargs["to_year"] or int(get_current_semester()[:4])
 
+        load_dotenv()
+
         pennid = getenv("PENN_ID")
         assert pennid is not None
         auth_token = getenv("X_AUTH_TOKEN")
@@ -89,18 +92,21 @@ class Command(BaseCommand):
                 if program not in program_code_to_name:
                     continue
                 for degree in client.degrees_of(program, year=year):
-                    with transaction.atomic():
-                        Degree.objects.filter(
-                            program=degree.program,
-                            degree=degree.degree,
-                            major=degree.major,
-                            concentration=degree.concentration,
-                            year=degree.year,
-                        ).delete()
-                        degree.save()
-                        if kwargs["verbosity"]:
-                            print(f"Saving degree {degree}...")
-                        parse_and_save_degreeworks(client.audit(degree), degree)
+                    print(degree.major)
+                    if degree.major == "ANTH":
+                        print("Yep")
+                        with transaction.atomic():
+                            Degree.objects.filter(
+                                program=degree.program,
+                                degree=degree.degree,
+                                major=degree.major,
+                                concentration=degree.concentration,
+                                year=degree.year,
+                            ).delete()
+                            degree.save()
+                            if kwargs["verbosity"]:
+                                print(f"Saving degree {degree}...")
+                            parse_and_save_degreeworks(client.audit(degree), degree)
 
         if kwargs["deduplicate_rules"]:
             if kwargs["verbosity"]:

@@ -1,11 +1,12 @@
 from dataclasses import asdict
 from os import getenv
+from dotenv import load_dotenv
 from pprint import pprint
 from textwrap import dedent
-
+from django.forms.models import model_to_dict
 from django.core.management.base import BaseCommand
 
-from backend.degree.utils.degreeworks_client import DegreeworksClient
+from degree.utils.degreeworks_client import DegreeworksClient
 from courses.util import get_current_semester
 
 
@@ -54,8 +55,15 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         out_handle = open(kwargs["out_file"], "w") if kwargs["out_file"] is not None else None
+
         since_year = kwargs["since_year"]
         to_year = kwargs["to_year"] or int(get_current_semester()[:4])
+
+        print(out_handle)
+        print(since_year)
+        print(to_year)
+
+        load_dotenv()
 
         pennid = getenv("PENN_ID")
         assert pennid is not None
@@ -73,8 +81,9 @@ class Command(BaseCommand):
         for year in range(since_year, to_year + 1):
             for program in client.get_programs(year=year):
                 for degrees in client.degrees_of(program, year=year):
+                    print(type(degrees))
                     if out_handle is not None:
-                        out_handle.write(asdict(degrees))
+                        out_handle.write(str(model_to_dict(degrees)))
                     pprint(degrees, width=-1)
 
         if out_handle is not None:
