@@ -38,7 +38,9 @@ class Migration(migrations.Migration):
             model_name="instructor",
             name="name",
             field=models.CharField(
-                db_index=True, help_text="The full name of the instructor.", max_length=255
+                db_index=True,
+                help_text="The full name of the instructor.",
+                max_length=255,
             ),
         ),
         migrations.AlterField(

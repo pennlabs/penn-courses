@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
-from django.db.models import OuterRef, Q, Subquery
+from django.db.models import OuterRef, Q, Subquery, UniqueConstraint
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -1042,7 +1042,7 @@ class Building(models.Model):
     """A building at Penn."""
 
     code = models.CharField(
-        max_length=4,
+        max_length=5,
         unique=True,
         help_text=dedent(
             """
@@ -1126,10 +1126,20 @@ class Meeting(models.Model):
 
     section = models.ForeignKey(
         Section,
+        null=True,
         on_delete=models.CASCADE,
         related_name="meetings",
         help_text="The Section object to which this class meeting belongs.",
     )
+
+    associated_break = models.ForeignKey(
+        "plan.Break",
+        null=True,
+        on_delete=models.CASCADE,
+        related_name="meetings",
+        help_text="The Break object to which this meeting object belongs.",
+    )
+
     day = models.CharField(
         max_length=1,
         help_text="The single day on which the meeting takes place (one of M, T, W, R, or F).",
@@ -1180,8 +1190,26 @@ class Meeting(models.Model):
         ),
     )
 
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
     class Meta:
         unique_together = (("section", "day", "start", "end", "room"),)
+        constraints = [
+            # Ensure that a meeting has either a section or an associated_break, but not both
+            UniqueConstraint(
+                fields=["section", "associated_break"],
+                condition=Q(section__isnull=True) | Q(associated_break__isnull=True),
+                name="unique_meeting_either_section_or_break",
+            ),
+            # Ensure that a meeting must have at least one (not both null)
+            UniqueConstraint(
+                fields=["section", "associated_break"],
+                condition=~(Q(section__isnull=True) & Q(associated_break__isnull=True)),
+                name="meeting_must_have_section_or_break",
+            ),
+        ]
 
     @staticmethod
     def int_to_time(time):
@@ -1516,8 +1544,16 @@ class Friendship(models.Model):
         Checks if two users are friends (lookup by user id)
         """
         return Friendship.objects.filter(
-            Q(sender_id=user1_id, recipient_id=user2_id, status=Friendship.Status.ACCEPTED)
-            | Q(sender_id=user2_id, recipient_id=user1_id, status=Friendship.Status.ACCEPTED)
+            Q(
+                sender_id=user1_id,
+                recipient_id=user2_id,
+                status=Friendship.Status.ACCEPTED,
+            )
+            | Q(
+                sender_id=user2_id,
+                recipient_id=user1_id,
+                status=Friendship.Status.ACCEPTED,
+            )
         ).exists()
 
     def save(self, *args, **kwargs):
@@ -1537,6 +1573,5 @@ class Friendship(models.Model):
         unique_together = (("sender", "recipient"),)
 
     def __str__(self):
-        return (
-            f"Friendship(Sender: {self.sender}, Recipient: {self.recipient}, Status: {self.status})"
-        )
+        s = f"Friendship(Sender: {self.sender}, Recipient: {self.recipient}, Status: {self.status})"
+        return s

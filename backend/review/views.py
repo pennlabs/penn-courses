@@ -166,7 +166,10 @@ def most_recent_course_from_code(course_code, semester):
         Course.objects.filter(
             course_filters_pcr,
             **(
-                {"topic__courses__full_code": course_code, "topic__courses__semester": semester}
+                {
+                    "topic__courses__full_code": course_code,
+                    "topic__courses__semester": semester,
+                }
                 if semester
                 else {"full_code": course_code}
             ),
@@ -261,7 +264,11 @@ def manual_course_reviews(course_code, request_semester):
                 .values("max_sem")
             )
         )
-        .values(instructor_id=F("id"), instructor_name=F("name"), semester=F("most_recent_sem"))
+        .values(
+            instructor_id=F("id"),
+            instructor_name=F("name"),
+            semester=F("most_recent_sem"),
+        )
     )
     for instructor in recent_instructors:
         instructor["exclude_from_recent"] = True
@@ -355,7 +362,10 @@ def course_plots(request, course_code):
             Course.objects.filter(
                 course_filters_pcr,
                 **(
-                    {"topic__courses__full_code": course_code, "topic__courses__semester": semester}
+                    {
+                        "topic__courses__full_code": course_code,
+                        "topic__courses__semester": semester,
+                    }
                     if semester
                     else {"full_code": course_code}
                 ),
@@ -438,10 +448,10 @@ def course_plots(request, course_code):
             },
             "recent_plots": {
                 "pca_demand_plot_since_semester": recent_demand_plot_semester,
-                "pca_demand_plot_num_semesters": 1 if recent_demand_plot is not None else 0,
+                "pca_demand_plot_num_semesters": (1 if recent_demand_plot is not None else 0),
                 "pca_demand_plot": recent_demand_plot,
                 "percent_open_plot_since_semester": recent_percent_open_plot_semester,
-                "percent_open_plot_num_semesters": 1 if recent_demand_plot is not None else 0,
+                "percent_open_plot_num_semesters": (1 if recent_demand_plot is not None else 0),
                 "percent_open_plot": recent_percent_open_plot,
             },
         }
@@ -540,7 +550,10 @@ def instructor_reviews(request, instructor_id):
         if full_code not in max_sem or max_sem[full_code] < r["semester"]:
             max_sem[full_code] = r["semester"]
             courses_res[full_code] = get_average_and_recent_dict_single(
-                r, full_code="most_recent_full_code", code="most_recent_full_code", name="title"
+                r,
+                full_code="most_recent_full_code",
+                code="most_recent_full_code",
+                name="title",
             )
 
     return Response(
@@ -676,7 +689,10 @@ def instructor_for_course_reviews(request, course_code, instructor_id):
             Course.objects.filter(
                 course_filters_pcr,
                 **(
-                    {"topic__courses__full_code": course_code, "topic__courses__semester": semester}
+                    {
+                        "topic__courses__full_code": course_code,
+                        "topic__courses__semester": semester,
+                    }
                     if semester
                     else {"full_code": course_code}
                 ),
@@ -772,6 +788,7 @@ def autocomplete(request):
     all the information necessary for frontend-based autocomplete. It is also cached
     to improve performance.
     """
+
     courses = (
         Course.objects.filter(course_filters_pcr)
         .annotate(
@@ -788,11 +805,16 @@ def autocomplete(request):
         .distinct("full_code", "topic_id")
     )
     code_counter = Counter(c["full_code"] for c in courses)
-    semester_prefix = (
-        lambda course: f"({prettify_semester(course['max_semester'])}) "
-        if code_counter[course["full_code"]] > 1
-        else ""
-    )
+
+    def get_prefix(course: Course) -> str:
+        return (
+            f"({prettify_semester(course['max_semester'])}) "
+            if code_counter[course["full_code"]] > 1
+            else ""
+        )
+
+    semester_prefix = get_prefix
+
     course_set = sorted(
         [
             {
@@ -853,7 +875,11 @@ def autocomplete(request):
     )
 
     return Response(
-        {"courses": course_set, "departments": department_set, "instructors": instructor_set}
+        {
+            "courses": course_set,
+            "departments": department_set,
+            "instructors": instructor_set,
+        }
     )
 
 

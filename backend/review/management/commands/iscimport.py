@@ -117,7 +117,9 @@ class Command(BaseCommand):
         )
 
         parser.add_argument(
-            "--force", action="store_true", help="Complete action in non-interactive mode."
+            "--force",
+            action="store_true",
+            help="Complete action in non-interactive mode.",
         )
 
         parser.set_defaults(summary_file=ISC_SUMMARY_TABLE)
@@ -243,7 +245,8 @@ class Command(BaseCommand):
 
                 print(f"Importing reviews for semester {semester}")
                 stats = import_summary_rows(
-                    (r for r in summary_rows if r["TERM"] == semester), show_progress_bar
+                    (r for r in summary_rows if r["TERM"] == semester),
+                    show_progress_bar,
                 )
                 print(stats)
 

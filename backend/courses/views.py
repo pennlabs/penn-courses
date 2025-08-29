@@ -226,7 +226,10 @@ class CourseListSearch(CourseList):
             self.request.user, curr_course_vectors_dict, past_course_vectors_dict
         )
         context.update(
-            {"user_vector": user_vector, "curr_course_vectors_dict": curr_course_vectors_dict}
+            {
+                "user_vector": user_vector,
+                "curr_course_vectors_dict": curr_course_vectors_dict,
+            }
         )
 
         return context
@@ -279,8 +282,11 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        include_location_str = self.request.query_params.get("include_location", "False")
-        context.update({"include_location": eval(include_location_str)})
+        if self.request and hasattr(self.request, "query_params"):
+            include_location_str = self.request.query_params.get("include_location", "False")
+            context.update({"include_location": include_location_str.lower() == "true"})
+        else:
+            context.update({"include_location": False})
         return context
 
     def get_queryset(self):
@@ -450,9 +456,11 @@ class StatusUpdateView(generics.ListAPIView):
 def get_accepted_friends(user):
     """Return user's accepted friends"""
     return User.objects.filter(
-        received_friendships__sender=user, received_friendships__status=Friendship.Status.ACCEPTED
+        received_friendships__sender=user,
+        received_friendships__status=Friendship.Status.ACCEPTED,
     ) | User.objects.filter(
-        sent_friendships__recipient=user, sent_friendships__status=Friendship.Status.ACCEPTED
+        sent_friendships__recipient=user,
+        sent_friendships__status=Friendship.Status.ACCEPTED,
     )
 
 

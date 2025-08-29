@@ -65,16 +65,36 @@ def set_all_status(semester=None, add_status_update=False, verbose=False):
             sections_to_update.append(section)
             statuses_out_of_sync.append(section_code)
 
-        if add_status_update and last_status_update.new_status != course_status:
-            record_update(
-                section,
-                course_term,
-                last_status_update.new_status,
-                course_status,
-                False,
-                json.dumps(status),
-            )
-            status_updates_out_of_sync.append(section_code)
+        if add_status_update:
+            if not last_status_update and course_status:
+                try:
+                    # If there is no last status update, the course was previously unlisted
+                    record_update(
+                        section,
+                        course_term,
+                        old_status="",
+                        new_status=course_status,
+                        alerted=False,
+                        req=json.dumps(status),
+                    )
+                    status_updates_out_of_sync.append(section_code)
+                except Exception as e:
+                    if verbose:
+                        print(f"Error recording status update for {section_code}: {e}")
+            elif last_status_update.new_status != course_status:
+                try:
+                    record_update(
+                        section,
+                        course_term,
+                        old_status=last_status_update.new_status,
+                        new_status=course_status,
+                        alerted=False,
+                        req=json.dumps(status),
+                    )
+                    status_updates_out_of_sync.append(section_code)
+                except Exception as e:
+                    if verbose:
+                        print(f"Error recording status update for {section_code}: {e}")
 
     if sections_to_update:
         Section.objects.bulk_update(sections_to_update, ["status"])
@@ -93,7 +113,9 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("--semester", default=None, type=str)
         parser.add_argument(
-            "--create-status-updates", action="store_true", help="Create status updates if set"
+            "--create-status-updates",
+            action="store_true",
+            help="Create status updates if set",
         )
         parser.add_argument("--verbose", action="store_true")
 
