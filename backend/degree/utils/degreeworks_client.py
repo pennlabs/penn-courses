@@ -3900,8 +3900,6 @@ class DegreeworksClient:
         )
         res.raise_for_status()
 
-        # print([program["key"] for program in res.json()[0]["goals"][1]["choices"]])
-
         return [program["key"] for program in res.json()[0]["goals"][1]["choices"]]
 
 

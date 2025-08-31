@@ -178,8 +178,6 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
                     curr_rule = curr_rule.parent
                 rule_to_degree[rule] = curr_rule.degrees.all()[0]
 
-            print({k.title: v.major_name for k, v in rule_to_degree.items()})
-
             for rule in rules:
                 if any(
                     r not in rule.can_double_count_with.all()
@@ -191,7 +189,8 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
                     break
 
             # Make request.data mutable before modifying it
-            request.data._mutable = True
+            if hasattr(request.data, '_mutable'):
+                request.data._mutable = True
             request.data["legal"] = legal
 
         try:
@@ -446,7 +445,6 @@ class SatisfiedRuleList(APIView):
     def get(self, request, *args, **kwargs):
         degree_plan_id = kwargs["degree_plan_id"]
         full_code = kwargs["full_code"]
-        print(kwargs["rule_id"])
         rule_selected = (
             None if kwargs["rule_id"] == "-1" else Rule.objects.get(id=kwargs["rule_id"])
         )
@@ -457,11 +455,12 @@ class SatisfiedRuleList(APIView):
         except Fulfillment.DoesNotExist:
             fulfillment = None
 
-        print(rule_selected)
         # This shouldn't happen given frontend fixes, but just in case:
         if rule_selected and not rule_selected.check_belongs([full_code]):
-            print(degree_plan_id, full_code, rule_selected)
-            raise ValidationError("Course passed in doesn't fulfill rule selected!")
+            raise ValidationError(
+                f"Course passed in doesn't fulfill rule selected! "
+                f"{degree_plan_id}, {full_code}, {rule_selected}"
+            )
 
         selected_rules = set()
         unselected_rules = set()
@@ -575,16 +574,6 @@ class SatisfiedRuleList(APIView):
         unselected_rules_to_return = RuleSerializer(
             Rule.objects.filter(id__in=[rule.id for rule in unselected_rules]), many=True
         ).data
-
-        print(
-            [
-                rule.title
-                for rule in selected_rules
-                if not fulfillment or (fulfillment and rule not in fulfillment.rules.all())
-            ]
-        )
-        print([rule.title for rule in unselected_rules])
-        print(legal)
 
         return Response(
             {

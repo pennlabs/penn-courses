@@ -415,9 +415,6 @@ class DegreePlan(models.Model):
         # this also handles updating satisfaction statuses
 
         for fulfillment in self.fulfillments.all():
-            for field in fulfillment._meta.fields:
-                print(getattr(fulfillment, field.name))
-
             rules = fulfillment.rules.all()
             unselected_rules = fulfillment.unselected_rules.all()
 
