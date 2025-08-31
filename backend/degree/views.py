@@ -189,7 +189,7 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
                     break
 
             # Make request.data mutable before modifying it
-            if hasattr(request.data, '_mutable'):
+            if hasattr(request.data, "_mutable"):
                 request.data._mutable = True
             request.data["legal"] = legal
 
