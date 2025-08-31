@@ -209,7 +209,6 @@ const DropdownButton = ({
             >
                 <i className="far fa-copy" aria-hidden="true" />
             </Icon>
-            {/* TODO: Add back when working */}
             <Icon
                 onClick={(e) => {
                     download();

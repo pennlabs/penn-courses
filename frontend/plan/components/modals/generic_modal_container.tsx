@@ -54,8 +54,8 @@ const ModalBackground = styled.div`
 
 const ModalCard = styled.div<{ $isBig: boolean }>`
     border-radius: 4px;
-    max-width: ${(props) => (props.$isBig ? "400px" : "700px")} !important;
-    max-height: ${(props) => (props.$isBig ? "275px" : "400px")} !important;
+    max-width: ${(props) => (props.$isBig ? "1000px" : "700px")} !important;
+    max-height: ${(props) => (props.$isBig ? "600px" : "400px")} !important;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -63,7 +63,7 @@ const ModalCard = styled.div<{ $isBig: boolean }>`
 
     @media (min-width: 769px) {
         margin: 0 auto;
-        width: 400px;
+        width: ${(props) => (props.$isBig ? "600px" : "400px")}
     }
 
     input {
@@ -180,7 +180,7 @@ const ModalContainer = ({
     </OuterModalContainer>
 );
 
-const bigModals = { WELCOME: true };
+const bigModals = { WELCOME: true,  DOWNLOAD_SCHEDULE: true};
 
 const mapStateToProps = (state: any) => ({
     children: generateModalInterior(state),
