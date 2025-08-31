@@ -72,15 +72,6 @@ const ResultsList = ({
     );
     const { createOrUpdate: createOrUpdateDockedCourse } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
 
-    
-
-    // Must make into RuleIds then.
-    courses.map((course) => {
-        // console.log(course)
-        // console.log(ruleId)
-    })
-
-
     return (
         <CourseListContainer>
             <HeaderContainer>

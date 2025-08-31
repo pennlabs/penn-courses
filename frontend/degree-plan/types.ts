@@ -96,6 +96,7 @@ export interface Course {
   work_required: number;
   difficulty: number;
   credits: number;
+  attribute_codes: string[];
 }
 
 // The interface we use with React DND
@@ -105,7 +106,7 @@ export interface DnDCourse {
   rule_id?: number // only used when dragging from REQ panel
   unselected_rules?: number[];
   fulfillment?: Fulfillment;
-  attributes?: string[]
+  course?: Course | null;
 }
 
 export interface Fulfillment extends DBObject {
@@ -116,6 +117,7 @@ export interface Fulfillment extends DBObject {
   degree_plan: number; // id
   full_code: string;
   unselected_rules: number[];
+  legal: boolean;
 }
 
 // Internal representation of a plan (this is derived from fulfillments)

@@ -228,7 +228,7 @@ interface SearchConditionProps extends SearchConditionInnerProps {
 }
 const SearchCondition = ({ cu, num, ruleId, ruleQuery, fulfillments, unselectedFulfillments, ruleIsSatisfied, q, activeDegreeplanId }: SearchConditionProps) => {
     const { setSearchPanelOpen, searchRuleId, setSearchRuleQuery, setSearchRuleId, setSearchFulfillments, } = useContext(SearchPanelContext);
-
+    
     const { search_ref } = useContext(ExpandedCoursesPanelContext);
 
     // TODO: Pls make this less janky. Needed to make it such that clicking off of popup changes
@@ -255,7 +255,7 @@ const SearchCondition = ({ cu, num, ruleId, ruleQuery, fulfillments, unselectedF
             $isExpanded={ref == search_ref}
             ref={ref}
         >   
-            {(num && fulfillments.length + unselectedFulfillments.length > num) || (cu && fulfillments.length + unselectedFulfillments.length > cu) ?
+            {unselectedFulfillments.length > 0 || (num && fulfillments.length + unselectedFulfillments.length > num) || (cu && fulfillments.length + unselectedFulfillments.length > cu) ?
                 <span onClick={() => {if (toExpand && canExpandAgain) {setToExpand(false); setCanExpandAgain(false)}}}>
                     <ExpandedCoursesPanelTrigger searchRef={ref} courses={unselectedFulfillments} ruleId={ruleId} changeExpandIcon={() => {setToExpand(true)}} triggerType="click">
                         <ExpandOrRetractIcon showExpand={toExpand} />

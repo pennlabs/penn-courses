@@ -18,16 +18,15 @@ const CourseInPlan = (props : CoursePlannedProps) => {
   
   const [{ isDragging }, drag] = useDrag<DnDCourse, never, { isDragging: boolean }>(() => ({
     type: ItemTypes.COURSE_IN_PLAN,
-    item: course,
+    item: course as DnDCourse,
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging()
     })
   }), [course])
 
   return (
-    <CourseComponent dragRef={drag} isDragging={isDragging} isUsed {...props} />
+    <CourseComponent courseType={ItemTypes.COURSE_IN_PLAN} fulfillment={course as Fulfillment} dragRef={drag} isDragging={isDragging} isUsed {...props} />
   )
 }
-
 
 export default CourseInPlan;

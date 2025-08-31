@@ -33,7 +33,9 @@ import {
   ArrowRightIcon,
   RulerSquareIcon,
 } from "@radix-ui/react-icons";
+import { PulseLoader } from "react-spinners";
 polyfillPromiseWithResolvers();
+
 
 const { closest } = require('fastest-levenshtein');
 
@@ -232,6 +234,7 @@ export const schoolOptions = [
   { value: "BAS", label: "Engineering BAS" },
   { value: "BS", label: "Wharton" },
   { value: "BSN", label: "Nursing" },
+  { value: "MSE", label: "Engineering AM"}
 ];
 
 const TextInput = styled.input`
@@ -419,6 +422,8 @@ const OnboardingPage = ({
   const [degreeID, setDegreeID] = useState<number | null>(null);
   const [coursesToRules, setCoursesToRules] = useState<any>(null);
 
+  const [loading, setLoading] = useState(false);
+
   const { create: createDegreeplan } = useSWRCrud<DegreePlan>(
     "/api/degree/degreeplans"
   );
@@ -523,6 +528,7 @@ const OnboardingPage = ({
   }, [schools, startingYear]);
 
   const handleAddDegrees = () => {
+    setLoading(true);
     createDegreeplan({ name: name }).then((res) => {
       if (res) {
         if (startingYear && graduationYear) {
@@ -1062,7 +1068,12 @@ const OnboardingPage = ({
                     transition: "all 0.25s",
                   }}
                 >
-                  Next
+                  {!loading && <div>Next</div>}
+                  <PulseLoader 
+                    size={8}
+                    color={"white"}
+                    loading={loading}
+                  />
                 </NextButton>
               </NextButtonContainer>
             </Column>

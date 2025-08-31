@@ -52,7 +52,7 @@ const CourseInExpanded = (props : CourseInReqProps) => {
   
     return (
       <div style={{ display: "inline-block", width: "100%" }} >
-        <CourseComponent removeCourse={handleRemoveCourse} dragRef={drag} isUsed={false} isDragging={isDragging} {...props} />
+        <CourseComponent courseType={ItemTypes.COURSE_IN_EXPAND} removeCourse={handleRemoveCourse} dragRef={drag} isUsed={false} isDragging={isDragging} {...props} />
       </div>
     )
 }

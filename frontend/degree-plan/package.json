@@ -41,6 +41,7 @@
     "react-pdf": "^9.1.1",
     "react-resizable": "^3.0.5",
     "react-select": "^5.8.0",
+    "react-spinners": "^0.17.0",
     "react-split-pane": "^0.1.92",
     "react-string-replace": "^1.1.1",
     "react-tiny-popover": "^8.0.4",

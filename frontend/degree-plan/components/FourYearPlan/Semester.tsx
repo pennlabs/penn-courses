@@ -156,7 +156,6 @@ const FlexSemester = ({
     const [{ isOver, canDrop }, drop] = useDrop<DnDCourse, never, { isOver: boolean, canDrop: boolean }>(() => ({
         accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_DOCK, ItemTypes.COURSE_IN_REQ, ItemTypes.COURSE_IN_SEARCH],
         drop: (course: DnDCourse) => {
-            // console.log(course)
             if (course.rule_id === undefined || course.rule_id == null) { // moved from plan or dock
                 createOrUpdate({ semester }, course.full_code);
                 // fetch(`/api/degree/satisfied-rule-list/${activeDegreeplanId}/${course.full_code}`).then((r) => {
@@ -181,11 +180,13 @@ const FlexSemester = ({
 
 
             } else { // moved from req panel
-                const prev_rules = fulfillments.find((fulfillment) => fulfillment.full_code === course.full_code)?.rules || []
-                // console.log([...prev_rules])
                 fetch(`/api/degree/satisfied-rule-list/${activeDegreeplanId}/${course.full_code}/${course.rule_id}`).then((r) => {
                     r.json().then((data) => {
                         const selectedRules = data["selected_rules"].reduce((res: any, obj: any) => {
+                            res.push(obj.id);
+                            return res;
+                        }, []);
+                        const newSelectedRules = data["new_selected_rules"].reduce((res: any, obj: any) => {
                             res.push(obj.id);
                             return res;
                         }, []);
@@ -193,27 +194,24 @@ const FlexSemester = ({
                             res.push(obj.id);
                             return res;
                         }, []);
+                        
+                        if (selectedRules.length || true) {
+                            createOrUpdate({
+                                rules: selectedRules,
+                                unselected_rules: unselectedRules,
+                                legal: data.legal,
+                                semester
+                            }, course.full_code);
 
-                        // if (!data.some((obj: any) => obj.id === course.rule_id)) {
-                        //     showToast(`${course.full_code} should go somewhere else!`, true);
+                            // Toast only if course has been directly dragged from search (not reqpanel!)
+                            // TODO: This doesn't work for explicitly listed courses.
 
-                        // } else {
-
-
-                        createOrUpdate({
-                            rules: course.rules !== undefined ? [...course.rules, ...selectedRules] : selectedRules,
-                            unselected_rules: course.unselected_rules !== undefined ? [...course.unselected_rules, ...unselectedRules] : unselectedRules, semester
-                        }, course.full_code);
-
-                        // Toast only if course has been directly dragged from search (not reqpanel!)
-                        // TODO: This doesn't work for explicitly listed courses.
-
-                        if (!course.rules)
-                            for (let obj of data["selected_rules"]) {
+                            for (let obj of data["new_selected_rules"]) {
                                 if (obj.id != course.rule_id) {
                                     showToast(`${course.full_code} also fulfilled ${obj.title}!`, false);
                                 }
                             }
+                        }
                         // }
 
                     })

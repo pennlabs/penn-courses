@@ -23,14 +23,6 @@ interface CourseInReqProps {
     onClick?: () => void;
 }
 
-
-// if (isOpenEnded && fulfillment) {
-//   console.log(courses)
-//   courses?.push(fulfillment)
-//   console.log(courses)
-//   set_courses(courses)
-// }
-
 const CourseInReq = (props : CourseInReqProps) => {
     const { course, activeDegreePlanId, rule_id, isOpenEnded, fulfillment } = props;
 
@@ -78,7 +70,7 @@ const CourseInReq = (props : CourseInReqProps) => {
     }), [course])
   
     return (
-        <CourseComponent removeCourse={handleRemoveCourse} dragRef={drag} isDragging={isDragging} {...props} />
+        <CourseComponent courseType={ItemTypes.COURSE_IN_REQ} removeCourse={handleRemoveCourse} dragRef={drag} isDragging={isDragging} {...props} />
     )
 }
   

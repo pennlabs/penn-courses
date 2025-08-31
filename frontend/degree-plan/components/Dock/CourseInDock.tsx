@@ -32,7 +32,7 @@ const CourseInDock = (props : CourseInDockProps) => {
     }), [course])
   
     return (
-      <CourseComponent dragRef={drag} isDragging={isDragging} removeCourse={handleRemoveCourse} isUsed {...props} />
+      <CourseComponent courseType={ItemTypes.COURSE_IN_DOCK} dragRef={drag} isDragging={isDragging} removeCourse={handleRemoveCourse} isUsed {...props} />
     )
   }
   

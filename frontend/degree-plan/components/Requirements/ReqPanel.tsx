@@ -1,3 +1,4 @@
+
 import { useContext, useEffect, useMemo, useState } from 'react';
 import RuleComponent, { SkeletonRule } from './Rule';
 import { Degree as DegreeType, DegreePlan, Fulfillment, Rule, Degree as DegreeD } from '@/types';
