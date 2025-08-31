@@ -138,7 +138,11 @@ class RuleEvaluationTest(TestCase):
     def test_surpass_rule(self):
         self.assertTrue(
             self.rule4.evaluate(
-                [self.cis_1200.full_code, self.cis_1910.full_code, self.cis_1600.full_code]
+                [
+                    self.cis_1200.full_code,
+                    self.cis_1910.full_code,
+                    self.cis_1600.full_code,
+                ]
             )
         )
 

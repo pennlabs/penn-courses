@@ -1,12 +1,21 @@
 import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
 import { Icon } from "../bulma_derived_components";
-import { User, Schedule as ScheduleType, Color, FriendshipState, Section } from "../../types";
+import {
+    User,
+    Schedule as ScheduleType,
+    Color,
+    FriendshipState,
+    Section,
+} from "../../types";
 import { nextAvailable } from "../../reducers/schedule";
 import NewLabel from "../common/NewLabel";
 import { PATH_REGISTRATION_SCHEDULE_NAME } from "../../constants/constants";
 
-const ButtonContainer = styled.div<{ $isActive: boolean; $isPrimary?: boolean }>`
+const ButtonContainer = styled.div<{
+    $isActive: boolean;
+    $isPrimary?: boolean;
+}>`
     line-height: 1.5;
     position: relative;
     border-radius: 0 !important;
@@ -43,7 +52,7 @@ const ButtonContainer = styled.div<{ $isActive: boolean; $isPrimary?: boolean }>
 
     .option-icon i.primary:hover {
         color: ${(props) =>
-        props.$isPrimary ? "#295FCE" : "#7E7E7E"}; !important;
+            props.$isPrimary ? "#295FCE" : "#7E7E7E"}; !important;
     }
 
     .initial-icon {
@@ -86,7 +95,7 @@ interface FriendButtonProps {
     isActive: boolean;
     display: () => void;
     removeFriend: () => void;
-    color: Color
+    color: Color;
 }
 
 const FriendButton = ({
@@ -94,7 +103,7 @@ const FriendButton = ({
     isActive,
     display,
     removeFriend,
-    color
+    color,
 }: FriendButtonProps) => (
     <ButtonContainer $isActive={isActive} onClick={display}>
         <InitialIcon $color={color}>
@@ -171,22 +180,25 @@ const DropdownButton = ({
                     className="option-icon"
                 >
                     <i
-                        className={`primary ${isPrimary ? "fa" : "far"
-                            } fa-user`}
+                        className={`primary ${
+                            isPrimary ? "fa" : "far"
+                        } fa-user`}
                         aria-hidden="true"
                     />
                 </Icon>
             )}
-            {rename && <Icon
-                onClick={(e) => {
-                    rename();
-                    e.stopPropagation();
-                }}
-                role="button"
-                className="option-icon"
-            >
-                <i className="far fa-edit" aria-hidden="true" />
-            </Icon>}
+            {rename && (
+                <Icon
+                    onClick={(e) => {
+                        rename();
+                        e.stopPropagation();
+                    }}
+                    role="button"
+                    className="option-icon"
+                >
+                    <i className="far fa-edit" aria-hidden="true" />
+                </Icon>
+            )}
             <Icon
                 onClick={(e) => {
                     copy();
@@ -208,16 +220,18 @@ const DropdownButton = ({
             >
                 <i className="fa fa-download" aria-hidden="true" />
             </Icon> */}
-            {remove && <Icon
-                onClick={(e) => {
-                    remove();
-                    e.stopPropagation();
-                }}
-                role="button"
-                className="option-icon"
-            >
-                <i className="fa fa-trash" aria-hidden="true" />
-            </Icon>}
+            {remove && (
+                <Icon
+                    onClick={(e) => {
+                        remove();
+                        e.stopPropagation();
+                    }}
+                    role="button"
+                    className="option-icon"
+                >
+                    <i className="fa fa-trash" aria-hidden="true" />
+                </Icon>
+            )}
         </ScheduleOptionsContainer>
     </ButtonContainer>
 );
@@ -249,7 +263,7 @@ const DropdownTrigger = styled.div`
 
 const DropdownMenu = styled.div<{ $isActive: boolean }>`
     margin-top: 0.1rem !important;
-    display: ${({ $isActive }) => $isActive ? "block" : "none"};
+    display: ${({ $isActive }) => ($isActive ? "block" : "none")};
     left: 0;
     min-width: 15rem;
     padding-top: 4px;
@@ -339,18 +353,18 @@ const PendingRequestsNum = styled.div`
     color: white;
     font-size: 0.68rem;
     align-items: center;
-`
+`;
 
 const ScheduleDropdownHeader = styled.div`
     display: flex;
     position: relative;
     width: 100%;
-`
+`;
 
 const ShareSchedulePromoContainer = styled.div`
     display: flex;
     margin-left: auto;
-`
+`;
 
 const ShareSchedulePromo = styled.div`
     display: flex;
@@ -363,9 +377,9 @@ const ShareSchedulePromo = styled.div`
     font-weight: 500;
     justify-content: start;
     padding: 0 0.5rem 0 0.5rem;
-    user-select: none; 
+    user-select: none;
     margin-left: 0.5rem;
-`
+`;
 
 const ReceivedRequestNotice = styled.div`
     background-color: #e58d8d;
@@ -376,7 +390,7 @@ const ReceivedRequestNotice = styled.div`
     position: relative;
     top: 0;
     right: 0.2rem;
-`
+`;
 
 const DropdownTriggerContainer = styled.div<{ $isActive: boolean }>`
     display: flex;
@@ -387,7 +401,7 @@ const DropdownTriggerContainer = styled.div<{ $isActive: boolean }>`
     :hover {
         background: rgba(175, 194, 255, 0.27);
     }
-`
+`;
 
 interface ScheduleSelectorDropdownProps {
     user: User;
@@ -400,9 +414,7 @@ interface ScheduleSelectorDropdownProps {
     friendshipMutators: {
         fetchFriendSchedule: (friend: User) => void;
         fetchBackendFriendships: (user: User) => void;
-        deleteFriendshipOnBackend: (
-            user: User,
-            friendPennkey: string) => void;
+        deleteFriendshipOnBackend: (user: User, friendPennkey: string) => void;
     };
     schedulesMutators: {
         copy: (scheduleName: string, sections: Section[]) => void;
@@ -508,39 +520,51 @@ const ScheduleSelectorDropdown = ({
     return (
         <ScheduleDropdownContainer ref={ref}>
             <ScheduleDropdownHeader>
-                <DropdownTriggerContainer 
+                <DropdownTriggerContainer
                     $isActive={isActive}
-                        onClick={() => {
-                            fetchBackendFriendships(
-                                user);
-                            setIsActive(!isActive);
-                        }}
-                        role="button">
+                    onClick={() => {
+                        fetchBackendFriendships(user);
+                        setIsActive(!isActive);
+                    }}
+                    role="button"
+                >
                     <span className="selected_name">
                         {readOnly && friendshipState.activeFriend
-                            ? friendshipState.activeFriend.first_name + "'s Schedule"
+                            ? friendshipState.activeFriend.first_name +
+                              "'s Schedule"
                             : activeName}
                     </span>
                     <DropdownTrigger>
                         <div aria-haspopup={true} aria-controls="dropdown-menu">
                             <Icon>
-                                <i className={`fa fa-chevron-${isActive ? "up" : "down"}`} aria-hidden="true"/>
+                                <i
+                                    className={`fa fa-chevron-${
+                                        isActive ? "up" : "down"
+                                    }`}
+                                    aria-hidden="true"
+                                />
                             </Icon>
                         </div>
                     </DropdownTrigger>
-                    {numRequests > 0 && <ReceivedRequestNotice/>}
+                    {numRequests > 0 && <ReceivedRequestNotice />}
                 </DropdownTriggerContainer>
-                {(!readOnly || !friendshipState.activeFriend) && <ShareSchedulePromoContainer>
-                    <NewLabel />
-                    <ShareSchedulePromo onClick={() => setIsActive(!isActive)}>
-                        <img
-                            style={{ width: "1.3rem", paddingRight: "0.3rem" }}
-                            src="/icons/share.svg"
-                            alt="share"
-                        />
-                        Share Schedule
-                    </ShareSchedulePromo>
-                </ShareSchedulePromoContainer>}
+                {(!readOnly || !friendshipState.activeFriend) && (
+                    <ShareSchedulePromoContainer>
+                        <ShareSchedulePromo
+                            onClick={() => setIsActive(!isActive)}
+                        >
+                            <img
+                                style={{
+                                    width: "1.3rem",
+                                    paddingRight: "0.3rem",
+                                }}
+                                src="/icons/share.svg"
+                                alt="share"
+                            />
+                            Share Schedule
+                        </ShareSchedulePromo>
+                    </ShareSchedulePromoContainer>
+                )}
             </ScheduleDropdownHeader>
             <DropdownMenu $isActive={isActive} role="menu">
                 <DropdownContent>
@@ -549,31 +573,45 @@ const ScheduleSelectorDropdown = ({
                             .sort(([nameA, dataA], [nameB, dataB]) => {
                                 /* Always putting primary schedule at the top, followed by the path registration schedule,
                                  * then rest of schedules should be ordered by created_at
-                                */ 
-                                
+                                 */
+
                                 if (dataA.id === primaryScheduleId) return -1;
                                 if (dataB.id === primaryScheduleId) return 1;
-                                if (nameA == PATH_REGISTRATION_SCHEDULE_NAME) return -1; 
-                                if (nameB === PATH_REGISTRATION_SCHEDULE_NAME) return -1; 
-                                
-                                return dataA.created_at < dataB.created_at ? -1 : 1;
+                                if (nameA == PATH_REGISTRATION_SCHEDULE_NAME)
+                                    return -1;
+                                if (nameB === PATH_REGISTRATION_SCHEDULE_NAME)
+                                    return -1;
+
+                                return dataA.created_at < dataB.created_at
+                                    ? -1
+                                    : 1;
                             })
                             .map(([name, data]) => {
-                                const mutable = name !== PATH_REGISTRATION_SCHEDULE_NAME;
+                                const mutable =
+                                    name !== PATH_REGISTRATION_SCHEDULE_NAME;
                                 return (
                                     <DropdownButton
                                         key={data.id}
-                                        isActive={name === activeName}
+                                        isActive={
+                                            name === activeName &&
+                                            friendshipState.activeFriend ===
+                                                null
+                                        }
                                         makeActive={() => {
                                             setIsActive(false);
                                         }}
-                                        isPrimary={primaryScheduleId === data.id}
+                                        isPrimary={
+                                            primaryScheduleId === data.id
+                                        }
                                         hasFriends={hasFriends}
                                         onClick={() => displayOwnSchedule(name)}
                                         text={name}
                                         mutators={{
                                             setPrimary: () => {
-                                                if (primaryScheduleId === data.id) {
+                                                if (
+                                                    primaryScheduleId ===
+                                                    data.id
+                                                ) {
                                                     setPrimary(user, null);
                                                 } else {
                                                     setPrimary(user, data.id);
@@ -586,11 +624,20 @@ const ScheduleSelectorDropdown = ({
                                                         allSchedules
                                                     ),
                                                     data.sections
-                                                )
+                                                );
                                             },
                                             download: () => download(name),
-                                            remove: mutable ? (() => remove(user, name, data.id)) : null,
-                                            rename: mutable ? (() => rename(name)) : null,
+                                            remove: mutable
+                                                ? () =>
+                                                      remove(
+                                                          user,
+                                                          name,
+                                                          data.id
+                                                      )
+                                                : null,
+                                            rename: mutable
+                                                ? () => rename(name)
+                                                : null,
                                         }}
                                     />
                                 );
@@ -619,20 +666,22 @@ const ScheduleSelectorDropdown = ({
                                 "Add a friend to share a schedule"
                             )}
                         </div>
-                        {friendshipState.acceptedFriends.map((friend) => (
+                        {friendshipState.acceptedFriends.map((friend, i) => (
                             <FriendButton
+                                key={i}
                                 friendName={`${friend.first_name} ${friend.last_name}`}
                                 display={() => fetchFriendSchedule(friend)}
                                 removeFriend={() => {
                                     deleteFriendshipOnBackend(
                                         user,
-                                        friend.username);
+                                        friend.username
+                                    );
                                 }}
                                 isActive={
                                     readOnly &&
                                     friendshipState.activeFriend &&
                                     friendshipState.activeFriend.username ===
-                                    friend.username
+                                        friend.username
                                 }
                                 color={getColor(friend.username)}
                             />
@@ -649,7 +698,9 @@ const ScheduleSelectorDropdown = ({
                             href="#"
                         >
                             <span> Pending Requests </span>
-                            <PendingRequestsNum>{numRequests}</PendingRequestsNum>
+                            <PendingRequestsNum>
+                                {numRequests}
+                            </PendingRequestsNum>
                         </PendingRequests>
                     </FriendContent>
                 </DropdownContent>

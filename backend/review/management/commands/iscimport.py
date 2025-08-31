@@ -21,11 +21,11 @@ from review.management.commands.precompute_pcr_views import precompute_pcr_views
 from review.models import Review
 
 
-ISC_SUMMARY_TABLE = "TEST_PCR_SUMMARY_V"
-ISC_SUMMARY_HIST_TABLE = "TEST_PCR_SUMMARY_HIST_V"
-ISC_RATING_TABLE = "TEST_PCR_RATING_V"
-ISC_CROSSLIST_TABLE = "TEST_PCR_CROSSLIST_SUMMARY_V"
-ISC_DESC_TABLE = "TEST_PCR_COURSE_DESC_V"
+ISC_SUMMARY_TABLE = "PCR_SUMMARY"
+ISC_SUMMARY_HIST_TABLE = "PCR_SUMMARY_HIST"
+ISC_RATING_TABLE = "PCR_RATING"
+ISC_CROSSLIST_TABLE = "PCR_CROSSLIST_SUMMARY"
+ISC_DESC_TABLE = "PCR_COURSE_DESC"
 
 
 def assert_semesters_not_current(semesters):
@@ -117,7 +117,9 @@ class Command(BaseCommand):
         )
 
         parser.add_argument(
-            "--force", action="store_true", help="Complete action in non-interactive mode."
+            "--force",
+            action="store_true",
+            help="Complete action in non-interactive mode.",
         )
 
         parser.set_defaults(summary_file=ISC_SUMMARY_TABLE)
@@ -243,7 +245,8 @@ class Command(BaseCommand):
 
                 print(f"Importing reviews for semester {semester}")
                 stats = import_summary_rows(
-                    (r for r in summary_rows if r["TERM"] == semester), show_progress_bar
+                    (r for r in summary_rows if r["TERM"] == semester),
+                    show_progress_bar,
                 )
                 print(stats)
 

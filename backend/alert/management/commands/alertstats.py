@@ -34,7 +34,9 @@ class Command(BaseCommand):
         num_registrations = qs.filter(created_at__gte=start, resubscribed_from__isnull=True).count()
         num_alerts_sent = qs.filter(notification_sent=True, notification_sent_at__gte=start).count()
         num_resubscribe = qs.filter(
-            resubscribed_from__isnull=False, created_at__gte=start, auto_resubscribe=False
+            resubscribed_from__isnull=False,
+            created_at__gte=start,
+            auto_resubscribe=False,
         ).count()
         num_status_updates = StatusUpdate.objects.filter(created_at__gte=start).count()
         num_active_perpetual = qs.filter(

@@ -12,7 +12,10 @@ from courses.util import get_semesters, in_dev
 
 
 def recompute_parent_courses(
-    semesters: list[str], overwrite_manual_changes=False, skip_xwalk=False, verbose=False
+    semesters: list[str],
+    overwrite_manual_changes=False,
+    skip_xwalk=False,
+    verbose=False,
 ):
     """
     Attemps to recompute empty `parent_course` fields for all courses in the specified semesters.
@@ -89,9 +92,8 @@ def recompute_parent_courses(
 
 
 class Command(BaseCommand):
-    help = (
-        "This script attempts to recompute unset `parent_course` relations in the given semesters."
-    )
+    help = """This script attempts to recompute unset
+        `parent_course` relations in the given semesters."""
 
     def add_arguments(self, parser):
         parser.add_argument(

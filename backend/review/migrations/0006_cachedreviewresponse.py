@@ -16,10 +16,16 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
-                ("topic_id", models.CharField(db_index=True, max_length=1000, unique=True)),
+                (
+                    "topic_id",
+                    models.CharField(db_index=True, max_length=1000, unique=True),
+                ),
                 ("response", models.JSONField()),
                 ("expired", models.BooleanField(default=True)),
             ],

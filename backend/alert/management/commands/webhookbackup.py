@@ -21,7 +21,9 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--send_alerts", action="store_true", help="Include this flag to send status updates"
+            "--send_alerts",
+            action="store_true",
+            help="Include this flag to send status updates",
         )
 
     def handle(self, *args, **options):

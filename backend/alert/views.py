@@ -130,7 +130,10 @@ def accept_webhook(request):
         if should_send_pca_alert(course_term, course_status):
             try:
                 alert_for_course(
-                    course_id, semester=course_term, sent_by="WEB", course_status=course_status
+                    course_id,
+                    semester=course_term,
+                    sent_by="WEB",
+                    course_status=course_status,
                 )
                 alert_for_course_called = True
                 response = JsonResponse({"message": "webhook recieved, alerts sent"})
@@ -294,7 +297,12 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         override_response_schema={
             "registrations-list": {
                 "POST": {
-                    201: {"properties": {"message": {"type": "string"}, "id": {"type": "integer"}}},
+                    201: {
+                        "properties": {
+                            "message": {"type": "string"},
+                            "id": {"type": "integer"},
+                        }
+                    },
                 }
             }
         },
@@ -460,7 +468,8 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                         registration.deleted_at = timezone.now()
                         registration.save()
                         return Response(
-                            {"detail": "Registration deleted"}, status=status.HTTP_200_OK
+                            {"detail": "Registration deleted"},
+                            status=status.HTTP_200_OK,
                         )
                 elif request.data.get("cancelled", False):
                     if registration.deleted:
@@ -480,7 +489,8 @@ class RegistrationViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                         registration.cancelled_at = timezone.now()
                         registration.save()
                         return Response(
-                            {"detail": "Registration cancelled"}, status=status.HTTP_200_OK
+                            {"detail": "Registration cancelled"},
+                            status=status.HTTP_200_OK,
                         )
                 elif "auto_resubscribe" in request.data or "close_notification" in request.data:
                     if registration.deleted:

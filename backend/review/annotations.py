@@ -101,7 +101,11 @@ def review_averages(
                 {
                     (prefix + "final_enrollment"): Subquery(
                         ReviewBit.objects.filter(reviewbit_subfilters, review__responses__gt=0)
-                        .values("review_id", "review__enrollment", "review__section__capacity")
+                        .values(
+                            "review_id",
+                            "review__enrollment",
+                            "review__section__capacity",
+                        )
                         .order_by()
                         .distinct()
                         .annotate(common=Value(1))

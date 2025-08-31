@@ -1,4 +1,3 @@
-
 # ========================================
 # Note:  If you make changes to this CI/CD, please include someone from DevOps in the list of reviewers for the PR.
 # ========================================
@@ -7,125 +6,137 @@ name: Build and Deploy PennCourses
 on: push
 
 jobs:
-  backend-check:
-    name: "Backend Check"
-    uses: pennlabs/shared-actions/.github/workflows/django.yaml@8785a7d7b9158d8d5705a0202f5695db2c0beb97
-    with:
-      projectName: PennCourses
-      path: backend
-      flake: true
-      black: true
-      pythonVersion: 3.11-buster
+    backend-check:
+        name: "Backend Check"
+        uses: pennlabs/shared-actions/.github/workflows/django.yaml@b227580b1791e5812e58c1244595452fc848eff5
+        with:
+            projectName: PennCourses
+            path: backend
+            flake: true
+            black: false
+            pythonVersion: 3.11-buster
+            codeCoverage: false
 
-  publish-backend:
-    uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@v0.1
-    with:
-      # Inputs
-      imageName: "penn-courses-backend"
-      githubRef: ${{ github.ref }}
-      gitSha: ${{ github.sha }}
+    publish-backend:
+        uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@v0.1.7
+        with:
+            # Inputs
+            imageName: "penn-courses-backend"
+            githubRef: ${{ github.ref }}
+            gitSha: ${{ github.sha }}
 
-      # Optional inputs
-      
-      # Path to the docker context
-      path: backend
-      
-      # Path to the dockerfile (relative to `path` variable)
-      dockerfile: Dockerfile
-      
-      # If enabled, will cache_from the latest version of the docker image.
-      cache: true
-    
-    secrets: 
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-    
-    needs: backend-check
+            # Optional inputs
 
-  
-  # Publish
-  # ========================================================================================================
-  
-  frontend-check:
-    name: "Frontend Check"
-    uses: pennlabs/shared-actions/.github/workflows/react-check.yaml@v0.1
-    strategy:
-      fail-fast: true
-      matrix:
-        product: [review, plan, alert, degree-plan]
-    with:
-      path: frontend/${{ matrix.product }}
-      nodeVersion: 18.19.0
+            # Path to the docker context
+            path: backend
 
-  publish-frontend:
-    uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@v0.1
-    strategy:
-      fail-fast: true
-      matrix:
-        product: [{name: pcr, path: review}, {name: pcp, path: plan}, {name: pca, path: alert}, {name: pdp, path: degree-plan}]
-    with:
-      # Inputs
-      imageName: "${{ matrix.product.name }}-frontend"
-      githubRef: ${{ github.ref }}
-      gitSha: ${{ github.sha }}
-      
-      # Path to the docker context
-      path: frontend
-      
-      # Path to the dockerfile (relative to `path` variable)
-      dockerfile: ${{ matrix.product.path }}/Dockerfile
-      
-      # If enabled, will cache_from the latest version of the docker image.
-      cache: true
-    
-    secrets: 
-      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-      DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-    
-    needs: frontend-check
+            # Path to the dockerfile (relative to `path` variable)
+            dockerfile: Dockerfile
 
+            # If enabled, will cache_from the latest version of the docker image.
+            cache: true
 
-  # ========================================================================================================
+        secrets: inherit
 
-  # Landing
-  # ========================================================================================================
-  publish-landing:
-      uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@v0.1
-      with:
-        # Inputs
-        imageName: "pcx-landing"
-        githubRef: ${{ github.ref }}
-        gitSha: ${{ github.sha }}
-        
-        # Path to the docker context
-        path: frontend/landing
-        
-        # Path to the dockerfile (relative to `path` variable)
-        dockerfile: Dockerfile
-        
-        # If enabled, will cache_from the latest version of the docker image.
-        cache: true
-      
-      secrets: 
-        DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-        DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-  # ========================================================================================================
+        needs: backend-check
 
-  # Deploy
+    # Publish
+    # ========================================================================================================
 
-  deploy:
-    name: "Deploy"
-    uses: pennlabs/shared-actions/.github/workflows/deployment.yaml@v0.1
+    frontend-check:
+        name: "Frontend Check"
+        uses: pennlabs/shared-actions/.github/workflows/react.yaml@b227580b1791e5812e58c1244595452fc848eff5
+        strategy:
+            fail-fast: true
+            matrix:
+                product: [review, plan, alert, degree-plan]
+        with:
+            path: frontend/${{ matrix.product }}
+            imageName: "${{ matrix.product.name }}-frontend"
+            githubRef: ${{ github.ref }}
+            gitSha: ${{ github.sha }}
+            nodeVersion: 18.19.0
+            skipReactPublish: true
+            skipCodecov: true
 
-    with:
-      githubRef: ${{ github.ref }}
-      gitSha: ${{ github.sha }}
+        secrets:
+            DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+            DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
 
-    secrets:
-      AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
-      GH_AWS_ACCESS_KEY_ID: ${{ secrets.GH_AWS_ACCESS_KEY_ID }}
-      GH_AWS_SECRET_ACCESS_KEY: ${{ secrets.GH_AWS_SECRET_ACCESS_KEY }}
+    publish-frontend:
+        uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@v0.1.7
+        strategy:
+            fail-fast: true
+            matrix:
+                product:
+                    [
+                        { name: pcr, path: review },
+                        { name: pcp, path: plan },
+                        { name: pca, path: alert },
+                        { name: pdp, path: degree-plan },
+                    ]
+        with:
+            # Inputs
+            imageName: "${{ matrix.product.name }}-frontend"
+            githubRef: ${{ github.ref }}
+            gitSha: ${{ github.sha }}
 
-    needs:
-      - publish-backend
-      - publish-frontend
+            # Path to the docker context
+            path: frontend
+
+            # Path to the dockerfile (relative to `path` variable)
+            dockerfile: ${{ matrix.product.path }}/Dockerfile
+
+            # If enabled, will cache_from the latest version of the docker image.
+            cache: true
+
+        secrets:
+            DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+            DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+
+        needs: frontend-check
+
+    # ========================================================================================================
+
+    # Landing
+    # ========================================================================================================
+    publish-landing:
+        uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@v0.1.7
+        with:
+            # Inputs
+            imageName: "pcx-landing"
+            githubRef: ${{ github.ref }}
+            gitSha: ${{ github.sha }}
+
+            # Path to the docker context
+            path: frontend/landing
+
+            # Path to the dockerfile (relative to `path` variable)
+            dockerfile: Dockerfile
+
+            # If enabled, will cache_from the latest version of the docker image.
+            cache: true
+
+        secrets:
+            DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+            DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+    # ========================================================================================================
+
+    # Deploy
+
+    deploy:
+        name: "Deploy"
+        uses: pennlabs/shared-actions/.github/workflows/deployment.yaml@v0.1.9
+
+        with:
+            githubRef: ${{ github.ref }}
+            gitSha: ${{ github.sha }}
+
+        secrets:
+            AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+            GH_AWS_ACCESS_KEY_ID: ${{ secrets.GH_AWS_ACCESS_KEY_ID }}
+            GH_AWS_SECRET_ACCESS_KEY: ${{ secrets.GH_AWS_SECRET_ACCESS_KEY }}
+
+        needs:
+            - publish-backend
+            - publish-frontend
