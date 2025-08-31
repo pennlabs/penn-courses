@@ -286,7 +286,6 @@ const InfoBox = ({
     return <h1>Loading data...</h1>;
   }
 
-
   return (
     <InfoBoxCSS className={lato.className}>
       {code ? (
