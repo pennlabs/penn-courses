@@ -3,15 +3,13 @@ import { Button } from "@radix-ui/themes";
 import styled from "@emotion/styled";
 import useSWR, { mutate } from "swr";
 import Select from "react-select";
-import { Document, Page, DocumentProps } from "react-pdf";
+import { Document, Page } from "react-pdf";
 import { pdfjs } from "react-pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
 import {
-  Degree,
   DegreeListing,
   DegreePlan,
-  DockedCourse,
   Fulfillment,
   MajorOption,
   Options,
@@ -22,7 +20,7 @@ import {
   getLocalSemestersKey,
   interpolateSemesters,
 } from "@/components/FourYearPlan/Semesters";
-import { maxWidth, TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
+import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
 import { createMajorLabel } from "@/components/FourYearPlan/DegreeModal";
 import { polyfillPromiseWithResolvers } from "../../pages/polyfilsResolver";
 

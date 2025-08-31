@@ -5,9 +5,8 @@ import {
   SearchPanel,
   SearchPanelContext,
 } from "./Search/SearchPanel";
-// import Plan from "../components/example/Plan";
 import styled from "@emotion/styled";
-import useSWR, { useSWRConfig } from "swr";
+import useSWR from "swr";
 import { Course, DegreePlan, Fulfillment, Options, Rule } from "@/types";
 import ReviewPanel from "@/components/Infobox/ReviewPanel";
 import { ReviewPanelContext } from "@/components/Infobox/ReviewPanel";

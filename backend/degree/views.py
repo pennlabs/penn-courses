@@ -190,6 +190,8 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
                     legal = False
                     break
 
+            # Make request.data mutable before modifying it
+            request.data._mutable = True
             request.data["legal"] = legal
 
         try:

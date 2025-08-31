@@ -16,7 +16,7 @@ declare global {
 }
 
 export function polyfillPromiseWithResolvers() {
-  if (typeof Promise.withResolvers !== 'function') {
+  if (typeof Promise.withResolvers !== "function") {
     Object.defineProperty(Promise, "withResolvers", {
       value: function <T>(): PromiseWithResolvers<T> {
         let resolve!: (value: T | PromiseLike<T>) => void;
@@ -33,4 +33,8 @@ export function polyfillPromiseWithResolvers() {
       configurable: true,
     });
   }
+}
+
+export default function PolyfillWithResolver() {
+  return;
 }
