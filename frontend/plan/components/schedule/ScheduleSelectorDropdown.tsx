@@ -210,7 +210,7 @@ const DropdownButton = ({
                 <i className="far fa-copy" aria-hidden="true" />
             </Icon>
             {/* TODO: Add back when working */}
-            {/* <Icon
+            <Icon
                 onClick={(e) => {
                     download();
                     e.stopPropagation();
@@ -219,7 +219,7 @@ const DropdownButton = ({
                 className="option-icon"
             >
                 <i className="fa fa-download" aria-hidden="true" />
-            </Icon> */}
+            </Icon>
             {remove && (
                 <Icon
                     onClick={(e) => {
