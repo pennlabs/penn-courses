@@ -51,6 +51,7 @@ export async function middleware(request: NextRequest) {
     authorizationUrl.searchParams.set("redirect_uri", OIDC_REDIRECT_URI);
     authorizationUrl.searchParams.set("response_type", "code");
     authorizationUrl.searchParams.set("scope", "openid read");
+    authorizationUrl.searchParams.set("state", request.nextUrl.pathname);
 
     return NextResponse.redirect(authorizationUrl.toString());
 }

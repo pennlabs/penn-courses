@@ -8,6 +8,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
+  const state = request.nextUrl.searchParams.get("state");
+  
   if (!code) {
     throw new Error("Platform Authentication Failed");
   }
@@ -32,7 +34,8 @@ export async function GET(request: NextRequest) {
 
   const tokens = await res.json();
 
-  const response = NextResponse.redirect(new URL("/", request.url));
+  const redirectUrl = state || "/";
+  const response = NextResponse.redirect(new URL(redirectUrl, request.url));
   response.cookies.set("id_token", tokens.id_token, {
     httpOnly: true,
     secure: true,
