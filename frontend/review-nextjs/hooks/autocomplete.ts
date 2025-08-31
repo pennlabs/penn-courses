@@ -47,9 +47,9 @@ export function useAutocomplete(): [
         () =>
             debouncedQuery.trim() && indices
                 ? {
-                      courses: indices.courses.search(debouncedQuery),
-                      departments: indices.depts.search(debouncedQuery),
-                      instructors: indices.instrs.search(debouncedQuery),
+                      courses: indices.courses.search(debouncedQuery, { limit: 25 }),
+                      departments: indices.depts.search(debouncedQuery, { limit: 10 }),
+                      instructors: indices.instrs.search(debouncedQuery, { limit: 25 }),
                   }
                 : null,
         [debouncedQuery]
