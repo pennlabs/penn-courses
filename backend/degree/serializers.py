@@ -27,12 +27,11 @@ class SimpleCourseSerializer(serializers.ModelSerializer):
 
     def get_attribute_codes(self, obj):
         courses = Course.objects.all().filter(title=obj.title).exclude(attributes__isnull=True)
-        if (len(courses) == 0):
+        if len(courses) == 0:
             return []
 
         attributes = courses[0].attributes.all()
         return [attr.code for attr in attributes]
-
 
     id = serializers.ReadOnlyField(
         source="full_code",
@@ -70,7 +69,7 @@ class SimpleCourseSerializer(serializers.ModelSerializer):
             "instructor_quality",
             "difficulty",
             "work_required",
-            "attribute_codes"
+            "attribute_codes",
         ]
         read_only_fields = fields
 
@@ -133,7 +132,16 @@ class FulfillmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Fulfillment
-        fields = ["id", "degree_plan", "full_code", "course", "semester", "rules", "unselected_rules", "legal"]
+        fields = [
+            "id",
+            "degree_plan",
+            "full_code",
+            "course",
+            "semester",
+            "rules",
+            "unselected_rules",
+            "legal",
+        ]
 
     def validate(self, data):
         data = super().validate(data)
@@ -153,7 +161,7 @@ class FulfillmentSerializer(serializers.ModelSerializer):
             unselected_rules = self.instance.unselected_rules.all()
         elif unselected_rules is None:
             unselected_rules = []
-            
+
         if full_code is None:
             full_code = self.instance.full_code
         if degree_plan is None:
@@ -184,7 +192,7 @@ class FulfillmentSerializer(serializers.ModelSerializer):
             else:  # parent rule
                 bfs_queue.extend(curr_rule.children.all())
 
-        if hasattr(rules, 'extend'):
+        if hasattr(rules, "extend"):
             rules.extend(identical_rules)
 
         data["rules"] = rules
@@ -205,7 +213,7 @@ class FulfillmentSerializer(serializers.ModelSerializer):
         double_count_restrictions = DoubleCountRestriction.objects.filter(
             Q(rule__in=rules) | Q(other_rule__in=rules)
         )
-        
+
         for restriction in double_count_restrictions:
             if restriction.is_double_count_violated(degree_plan):
                 raise serializers.ValidationError(
@@ -240,8 +248,10 @@ class DockedCourseSerializer(serializers.ModelSerializer):
     attribute_codes = serializers.SerializerMethodField()
 
     def get_attribute_codes(self, obj):
-        courses = Course.objects.all().filter(full_code=obj.full_code).exclude(attributes__isnull=True)
-        if (len(courses) == 0):
+        courses = (
+            Course.objects.all().filter(full_code=obj.full_code).exclude(attributes__isnull=True)
+        )
+        if len(courses) == 0:
             return []
 
         attributes = courses[0].attributes.all()

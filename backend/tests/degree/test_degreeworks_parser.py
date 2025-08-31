@@ -3,8 +3,8 @@ from unittest.mock import patch
 from django.db.models import Q
 from django.test import TestCase
 
-from degree.models import Degree, Rule
 from backend.degree.management.commands import parse_degreeworks
+from degree.models import Degree, Rule
 
 
 class EvaluateConditionTest(TestCase):

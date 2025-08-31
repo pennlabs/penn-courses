@@ -11,7 +11,7 @@ from django.db.models.functions import Coalesce
 from django.db.models.signals import m2m_changed
 from django.utils import timezone
 
-from courses.models import Course, Attribute
+from courses.models import Course
 from degree.utils.model_utils import json_parser, q_object_parser
 
 
@@ -192,17 +192,17 @@ class Rule(models.Model):
     )
 
     can_double_count_with = models.ManyToManyField(
-        "self", 
+        "self",
         symmetrical=True,
         blank=True,
         help_text=dedent(
             """
-            Parent rules that can double count with this rule. 
-            (i.e. if this rule is Quantitative Data Analysis (a College Foundations req), 
-            then this field would contain the General Educations: Sector rule as well as 
-            the Major in ___ rule.) 
+            Parent rules that can double count with this rule.
+            (i.e. if this rule is Quantitative Data Analysis (a College Foundations req),
+            then this field would contain the General Educations: Sector rule as well as
+            the Major in ___ rule.)
             """
-        )
+        ),
     )
 
     def __str__(self) -> str:
@@ -390,8 +390,6 @@ class DegreePlan(models.Model):
             if rule.evaluate(full_codes):
                 satisfied_rules.add(rule)
 
-        print(violated_dcrs)
-
         return (satisfied_rules, violated_dcrs)
 
     def check_rules_already_satisfied(self, rules: set[Rule]) -> set[Rule]:
@@ -416,10 +414,9 @@ class DegreePlan(models.Model):
 
         # this also handles updating satisfaction statuses
 
-
         for fulfillment in self.fulfillments.all():
             for field in fulfillment._meta.fields:
-                    print(getattr(fulfillment, field.name))
+                print(getattr(fulfillment, field.name))
 
             rules = fulfillment.rules.all()
             unselected_rules = fulfillment.unselected_rules.all()
@@ -429,7 +426,6 @@ class DegreePlan(models.Model):
             fulfillment.save()
             fulfillment.rules.set(rules)
             fulfillment.unselected_rules.set(unselected_rules)
-            
 
         return new_degree_plan
 
@@ -478,7 +474,7 @@ class Fulfillment(models.Model):
         blank=True,
         help_text=dedent(
             """
-            The rules this course fulfills that should be shown in the open-ended rule box 
+            The rules this course fulfills that should be shown in the open-ended rule box
             (as opposed to the expandable box). Blank if this course should not be included in
             any open-ended rule boxes.
             """
@@ -488,7 +484,8 @@ class Fulfillment(models.Model):
         default=True,
         help_text=dedent(
             """
-            True if course associated with this fulfillment isn't illegally double counted anywhere, false otherwise.
+            True if course associated with this fulfillment isn't illegally double counted anywhere,
+            false otherwise.
             """
         ),
     )

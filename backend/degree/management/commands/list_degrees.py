@@ -1,13 +1,13 @@
-from dataclasses import asdict
 from os import getenv
-from dotenv import load_dotenv
 from pprint import pprint
 from textwrap import dedent
-from django.forms.models import model_to_dict
-from django.core.management.base import BaseCommand
 
-from degree.utils.degreeworks_client import DegreeworksClient
+from django.core.management.base import BaseCommand
+from django.forms.models import model_to_dict
+from dotenv import load_dotenv
+
 from courses.util import get_current_semester
+from degree.utils.degreeworks_client import DegreeworksClient
 
 
 class Command(BaseCommand):

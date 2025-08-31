@@ -21,7 +21,7 @@ If you don't want to develop in Dev Container, see the [Running the Backend Nati
    1. `pipenv install --dev` – Downloads necessary packages.
    2. `pipenv shell` – Enters virtual environment for development.
    3. `python manage.py makemigrations` – Generates SQL files that propagate Django Model changes to database.
-   4. ` – Applies migration files to database (requires a running database).
+   4. `python manage.py migrate` – Applies migration files to database (requires a running database).
    5. `python manage.py test` – Run test suite.
    6. `python manage.py test tests.review.test_api.OneReviewTestCase.test_course` – Run a specific test, or a set of tests by specifying a prefix path (e.g. `tests.review.test_api`).
 

@@ -131,18 +131,6 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
         }),
     }), []);
 
-    // React.useEffect(() => {
-    //     if (!isMount) {
-    //         console.log('future render');
-    //         setCourseAdded(true);
-    //         setTimeout(() => {
-    //             setCourseAdded(false);
-    //         }, 3000);
-    //     } else {
-    //         console.log('first render');
-    //     }
-    // }, [isMount, dockedCourses]);
-
     const { asPath } = useRouter();
 
     return (

@@ -12,7 +12,6 @@ def parse_coursearray(courseArray) -> Q:
     """
     q = Q()
     for course in courseArray:
-        print(course)
         course_q = Q()
         match (course["discipline"], course["number"], course.get("numberEnd")):
             # an @ is a placeholder meaning any
