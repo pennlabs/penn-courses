@@ -231,9 +231,12 @@ class OnboardFromTranscript(generics.ListAPIView):
     Primitive method for finding the rule of highest priority given a set of applicable rules.
     Currently determines priority rule by required CU count, or if the rule is explictly mentioned.
     """
-    def get_priority_rule(self, rules, full_code):
-        dept = re.match(r'[A-Z]+', full_code).group()
+    def check_dept(self, q, dept):
+        pattern = r"\('([^']*)',\s*'([^']*)'\)"
+        matches = re.findall(pattern, q)
+        return any([match for match in matches if dept in match[1] and match[0] != "full_code"])
 
+    def get_priority_rule(self, rules, full_code):
         priority_rule = None
         priority_tier = float('inf')
         priority_CUs = float('-inf')
@@ -243,8 +246,6 @@ class OnboardFromTranscript(generics.ListAPIView):
 
             if full_code in r.q:
                 tier = 1
-            elif dept in r.q:
-                tier = 2
             elif r.check_belongs([full_code]):
                 tier = 3
 
@@ -268,27 +269,6 @@ class OnboardFromTranscript(generics.ListAPIView):
         all_courses = self.kwargs["all_codes"].split(',')
 
         degree_plan = DegreePlan.objects.get(id=degree_plan_id)
-
-        # double_within_degree_allowed = [
-        #     "Sector 7: Natural Science Across Disciplines",
-        #     "Sector 6: The Physical World",
-        #     "Sector 5: The Living World",
-        #     "Sector 4: Humanities and Social Sciences",
-        #     "Sector 3: Arts and Letters",
-        #     "Sector 2: History and Tradition",
-        #     "Sector 1: Society",
-        #     "Cultural Diversity in the U.S.",
-        #     "Cross Cultural Analysis",
-        #     "Formal Reasoning and Analysis",
-        #     "Quantitative Data Analysis",
-        #     "Foreign Language",
-        #     "Project",
-        #     "Networking",
-        #     "Databases",
-        #     "Machine Learning/AI",
-        #     "Distributed Systems",
-        #     "Technical Elective (6 CU)",
-        # ]
 
         rules = []
 
@@ -314,12 +294,10 @@ class OnboardFromTranscript(generics.ListAPIView):
 
         satisfied_rules = set()
 
-        # print(rules_per_degree)
         for course in all_courses:
             selected_rules = set()
             unselected_rules = set()
             legal = True
-
 
             full_code, semester = course.split("_")
             if semester == "TRAN":
@@ -390,49 +368,6 @@ class OnboardFromTranscript(generics.ListAPIView):
     
         return set()
 
-            # curr_rules = {degree: set() for degree in rules_per_degree.keys()}
-            # double_count_allowed_rules = {degree: set() for degree in rules_per_degree.keys()}
-            # unselected_rules = {degree: set() for degree in rules_per_degree.keys()}
-            # found_rule = dict.fromkeys(rules_per_degree.keys(), False)
-
-            # for rule in rules:
-            #     curr_degree = [degree for degree in rules_per_degree if rule in rules_per_degree[degree]][0]
-
-            #     if isSatisfied():
-            #         satisfied_rules.append(rule)
-
-            #     if full_code in rule.q:
-            #         if rule in satisfied_rules:
-            #             curr_rules[curr_degree].add(rule.id)
-            #         else:
-            #             unselected_rules[curr_degree].union(curr_rules[curr_degree]).discard(rule.id)
-            #             curr_rules[curr_degree] = set([rule.id])
-            #             found_rule[curr_degree] = True
-            #             if isSatisfied():
-            #                 satisfied_rules.append(rule)
-                        
-
-            #     if rule.check_belongs([full_code]):
-            #         if rule.title in double_within_degree_allowed:
-            #             if rule in satisfied_rules:
-            #                 unselected_rules[curr_degree].add(rule.id)
-            #             else:
-            #                 double_count_allowed_rules[curr_degree].add(rule.id)
-
-            #         if found_rule[curr_degree]:
-            #             if rule.id not in curr_rules[curr_degree] and rule.id not in double_count_allowed_rules[curr_degree]:
-            #                 unselected_rules[curr_degree].add(rule.id)
-            #         else:
-            #             if rule in satisfied_rules:
-            #                 unselected_rules[curr_degree].add(rule.id)
-            #             else:
-            #                 curr_rules[curr_degree].add(rule.id)
-            #                 found_rule[curr_degree] = True
-            #                 # TODO: Change
-
-
-
-
 class SatisfiedRuleList(APIView):
 
     """
@@ -463,10 +398,13 @@ class SatisfiedRuleList(APIView):
     """
     Primitive method for finding the rule of highest priority given a set of applicable rules.
     Currently determines priority rule by required CU count, or if the rule is explictly mentioned.
-    """
-    def get_priority_rule(self, rules, full_code):
-        dept = re.match(r'[A-Z]+', full_code).group()
+    """     
+    def check_dept(self, q, dept):
+        pattern = r"\('([^']*)',\s*'([^']*)'\)"
+        matches = re.findall(pattern, q)
+        return any([match for match in matches if dept in match[1] and match[0] != "full_code"])
 
+    def get_priority_rule(self, rules, full_code):
         priority_rule = None
         priority_tier = float('inf')
         priority_CUs = float('-inf')
@@ -476,8 +414,6 @@ class SatisfiedRuleList(APIView):
 
             if full_code in r.q:
                 tier = 1
-            elif dept in r.q:
-                tier = 2
             elif r.check_belongs([full_code]):
                 tier = 3
 
@@ -493,7 +429,8 @@ class SatisfiedRuleList(APIView):
     def get(self, request, *args, **kwargs):
         degree_plan_id = kwargs["degree_plan_id"]
         full_code = kwargs["full_code"]
-        rule_selected = Rule.objects.get(id=kwargs["rule_id"])
+        print(kwargs["rule_id"])
+        rule_selected = None if kwargs["rule_id"] == "-1" else Rule.objects.get(id=kwargs["rule_id"])
 
         degree_plan = DegreePlan.objects.get(id=degree_plan_id)
         try:
@@ -501,8 +438,10 @@ class SatisfiedRuleList(APIView):
         except Fulfillment.DoesNotExist:
             fulfillment = None
 
+        print(rule_selected)
         # This shouldn't happen given frontend fixes, but just in case:
-        if not rule_selected.check_belongs([full_code]):
+        if rule_selected and not rule_selected.check_belongs([full_code]):
+            print(degree_plan_id, full_code, rule_selected)
             raise ValidationError("Course passed in doesn't fulfill rule selected!")
 
         selected_rules = set()
@@ -600,10 +539,3 @@ class SatisfiedRuleList(APIView):
             "unselected_rules": unselected_rules_to_return,
             "legal": legal
         })
-
-        #  return Response({
-        #     "selected_rules": [RuleSerializer(Rule.objects.get(id=kwargs["rule_id"])).data],
-        #     "new_selected_rules": [],
-        #     "unselected_rules": [],
-        #     "legal": True
-        # })

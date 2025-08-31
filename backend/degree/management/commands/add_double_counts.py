@@ -8,6 +8,7 @@ class Command(BaseCommand):
     help = dedent(
         """
         Adds allowed double counts for every rule of every degree (note that we add double count allows to rule LEAVES.)
+        To add double counts, do this command: python manage.py add_double_counts
         """
     )
 
