@@ -2,7 +2,7 @@ import React from "react";
 import reactStringReplace from "react-string-replace";
 import styled from "@emotion/styled";
 
-import * as ReactTooltip from 'react-tooltip';
+import * as ReactTooltip from "react-tooltip";
 import { toNormalizedSemester } from "./util/helpers";
 
 const TagsNotOffered = ({ data }) => {
