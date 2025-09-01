@@ -32,10 +32,10 @@ export default function SearchDropdown({
         <CommandGroup heading="Departments">
           {results!.departments.map((dept) => (
             <CommandItem
-              key={dept.item.url}
-              onSelect={() => onSelect(dept.item.url)}
+              key={dept.url}
+              onSelect={() => onSelect(dept.url)}
             >
-              {dept.item.title} - {dept.item.desc}
+              {dept.title} - {dept.desc}
             </CommandItem>
           ))}
         </CommandGroup>
@@ -45,10 +45,10 @@ export default function SearchDropdown({
         <CommandGroup heading="Courses">
           {results!.courses.map((course) => (
             <CommandItem
-              key={course.item.url}
-              onSelect={() => onSelect(course.item.url)}
+              key={course.url}
+              onSelect={() => onSelect(course.url)}
             >
-              {course.item.title} - {course.item.desc}
+              {course.title} - {course.desc}
             </CommandItem>
           ))}
         </CommandGroup>
@@ -58,10 +58,10 @@ export default function SearchDropdown({
         <CommandGroup heading="Instructors">
           {results!.instructors.map((ins) => (
             <CommandItem
-              key={ins.item.url}
-              onSelect={() => onSelect(ins.item.url)}
+              key={ins.url}
+              onSelect={() => onSelect(ins.url)}
             >
-              {ins.item.title} - {ins.item.desc}
+              {ins.title} - {ins.desc}
             </CommandItem>
           ))}
         </CommandGroup>

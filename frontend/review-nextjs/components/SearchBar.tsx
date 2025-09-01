@@ -5,33 +5,23 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
   Command,
-  CommandEmpty,
-  CommandGroup,
   CommandInput,
-  CommandItem,
-  CommandList,
 } from "@/components/ui/command";
 import { useAutocomplete } from "@/hooks/useAutocomplete";
 import SearchDropdown from "./SearchDropdown";
 
 export default function SearchBar({ header }: { header?: boolean }) {
   const [query, setQuery] = useState("");
-  const { results, setDebouncedQuery } = useAutocomplete();
+  const autocomplete = useAutocomplete();
   const [isOpen, setIsOpen] = useState(false);
   const commandRef = useRef<HTMLDivElement>(null);
 
   const router = useRouter();
 
-
-
   const handleSelect = (url: string) => {
     setIsOpen(false);
     router.push(url);
   };
-
-  useEffect(() => {
-    setDebouncedQuery(query);
-  }, [query]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -66,7 +56,7 @@ export default function SearchBar({ header }: { header?: boolean }) {
           className={cn("h-[36px]", header && "bg-background")}
         />
         <SearchDropdown 
-          results={results}
+          results={autocomplete(query)}
           isOpen={isOpen}
           onSelect={handleSelect}
         />

@@ -5,6 +5,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
+export function expandCourseCode(course: string) {
+  const a = course.split(" ");
+  return `${course} ${a[0]}-${a[1]} ${a[0]}${a[1]}`;
+}
+
 /**
  * @returns {string | boolean} The CSRF token used by backend
  */
