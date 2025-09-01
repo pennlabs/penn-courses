@@ -1,3 +1,7 @@
+import pako from "pako";
+import { getAutocomplete, setAutocomplete } from "./autocomplete";
+import { AutocompleteData } from "./types";
+
 export const BASE_URL =
     process.env.NODE_ENV === "development"
         ? "http://localhost:3000"
@@ -17,6 +21,39 @@ export const apiFetch = (path: string, options = {}): Promise<Response> =>
         ...options,
         credentials: "include",
     });
+
+// Stale while revalidate strategy:
+// decompress and use potentially stale autocomplete data from localstorage
+// while asynchronously revalidating by fetching and compressing data
+export const apiAutocomplete = async (): Promise<AutocompleteData | null> => {
+    const revalidateAutocomplete = async (): Promise<AutocompleteData | null> => {
+        try {
+            const res = await apiFetch("/api/review/autocomplete");
+            const fresh: AutocompleteData = await res.json();
+            const compressed = pako.gzip(JSON.stringify(fresh));
+            await setAutocomplete(compressed);
+            return fresh;
+        } catch (e) {
+            console.error("Failed to refresh autocomplete data", e);
+            return null;
+        }
+    };
+
+    const cached = await getAutocomplete();
+    if (cached) {
+        try {
+            const decompressed: AutocompleteData = JSON.parse(pako.ungzip(cached, { to: "string" }));
+            // Trigger background refresh
+            revalidateAutocomplete();
+            return decompressed;
+        } catch (e) {
+            console.error("Failed to decompress cached autocomplete data", e);
+        }
+    }
+
+    const fresh = await revalidateAutocomplete();
+    return fresh;
+};
 
 export const apiReviewData = async (
     type: string,

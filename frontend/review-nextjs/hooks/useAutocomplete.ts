@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import fuzzysort from "fuzzysort";
 import { AutocompleteObject, AutocompleteData } from "@/lib/types";
-import { apiFetch } from "@/lib/api";
+import { apiAutocomplete } from "@/lib/api";
 
 type PreparedData = {
   departments: (AutocompleteObject & { search_desc: Fuzzysort.Prepared })[];
@@ -24,8 +24,10 @@ export function useAutocomplete() {
   useEffect(() => {
     async function loadData() {
       try {
-        const response = await apiFetch("/api/review/autocomplete");
-        const data: AutocompleteData = await response.json();
+        const data = await apiAutocomplete();
+        if (!data) {
+          throw new Error("Failed to fetch autocomplete data");
+        }
 
         // Set Prepared data
         setPrepared({

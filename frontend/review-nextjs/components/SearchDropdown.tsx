@@ -1,13 +1,13 @@
-import { AutocompleteResult } from "@/lib/types";
 import {
   CommandEmpty,
   CommandGroup,
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { AutocompleteData } from "@/lib/types";
 
 interface SearchDropdownProps {
-  results: AutocompleteResult | null;
+  results: AutocompleteData | null;
   isOpen: boolean;
   onSelect: (url: string) => void;
 }
