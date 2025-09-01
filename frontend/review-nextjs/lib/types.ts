@@ -1,6 +1,3 @@
-import { FuseResult } from "fuse.js";
-import { SearchResult } from "minisearch";
-
 export enum Rating {
     Bad = "bad",
     Okay = "okay",
@@ -85,12 +82,6 @@ export type AutocompleteObject = {
 };
 
 export type AutocompleteData = {
-    courses: AutocompleteObject[];
-    departments: AutocompleteObject[];
-    instructors: AutocompleteObject[];
-};
-
-export type AutocompleteResult = {
     courses: AutocompleteObject[];
     departments: AutocompleteObject[];
     instructors: AutocompleteObject[];
