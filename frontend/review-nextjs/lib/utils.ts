@@ -10,6 +10,8 @@ export function expandCourseCode(course: string) {
   return `${course} ${a[0]}-${a[1]} ${a[0]}${a[1]}`;
 }
 
+export const normalizeDesc = (desc: string | string[]) => Array.isArray(desc) ? desc.join(" ") : desc;
+
 /**
  * @returns {string | boolean} The CSRF token used by backend
  */

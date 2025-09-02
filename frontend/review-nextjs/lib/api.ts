@@ -1,6 +1,6 @@
 import pako from "pako";
-import { getAutocomplete, setAutocomplete } from "./autocomplete";
-import { AutocompleteData } from "./types";
+import { getAutocomplete, setAutocomplete } from "@/lib/autocomplete";
+import { AutocompleteData } from "@/lib/types";
 
 export const BASE_URL =
     process.env.NODE_ENV === "development"

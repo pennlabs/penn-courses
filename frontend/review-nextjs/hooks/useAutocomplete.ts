@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
 import fuzzysort from "fuzzysort";
-import { AutocompleteObject, AutocompleteData } from "@/lib/types";
+import { AutocompleteObject } from "@/lib/types";
 import { apiAutocomplete } from "@/lib/api";
+import { expandCourseCode, normalizeDesc } from "@/lib/utils";
 
 type PreparedData = {
   departments: (AutocompleteObject & { search_desc: Fuzzysort.Prepared })[];
@@ -9,16 +10,8 @@ type PreparedData = {
   courses: (AutocompleteObject & { search_title: Fuzzysort.Prepared; search_desc: Fuzzysort.Prepared })[];
 };
 
-// Expand course string formats (CIS 160 → CIS-160, CIS160, etc.)
-function expandCombo(course: string) {
-  const [dept, num] = course.split(" ");
-  return `${course} ${dept}-${num} ${dept}${num}`;
-}
-
-const normalizeDesc = (desc: string | string[]) => Array.isArray(desc) ? desc.join(" ") : desc;
-
 export function useAutocomplete() {
-  const [prepared, setPrepared] = useState<PreparedData | null>(null);
+  const [preparedData, setPreparedData] = useState<PreparedData | null>(null);
 
   // Load autocomplete data once
   useEffect(() => {
@@ -30,7 +23,7 @@ export function useAutocomplete() {
         }
 
         // Set Prepared data
-        setPrepared({
+        setPreparedData({
           departments: data.departments.map(i => ({
             ...i,
             search_desc: fuzzysort.prepare(normalizeDesc(i.desc)),
@@ -38,7 +31,7 @@ export function useAutocomplete() {
 
           courses: data.courses.map(c => ({
               ...c,
-              search_title: fuzzysort.prepare(expandCombo(c.title)),
+              search_title: fuzzysort.prepare(expandCourseCode(c.title)),
               search_desc: fuzzysort.prepare(normalizeDesc(c.desc)),
           })),
 
@@ -49,7 +42,7 @@ export function useAutocomplete() {
         });
       } catch (e) {
         console.error(e);
-        setPrepared(null);
+        setPreparedData(null);
       }
     }
 
@@ -59,31 +52,31 @@ export function useAutocomplete() {
   // Search function
   const autocomplete = useCallback(
     (inputValue: string) => {
-      if (!inputValue.trim() || prepared == null) {
+      if (!inputValue.trim() || preparedData == null) {
         return null;
       }
 
       return {
         departments: fuzzysort
-          .go<AutocompleteObject>(inputValue, prepared.departments, {
+          .go<AutocompleteObject>(inputValue, preparedData.departments, {
             keys: ["title", "search_desc"],
             threshold: -200,
             limit: 10
           }).map((r) => r.obj),
-        courses: fuzzysort.go<AutocompleteObject>(inputValue, prepared.courses, {
+        courses: fuzzysort.go<AutocompleteObject>(inputValue, preparedData.courses, {
             keys: ["search_title", "search_desc"],
             threshold: -200,
             limit: 25
           }).map((r) => r.obj),
         instructors: fuzzysort
-          .go<AutocompleteObject>(inputValue, prepared.instructors, {
+          .go<AutocompleteObject>(inputValue, preparedData.instructors, {
             keys: ["title", "search_desc"],
             threshold: -200,
             limit: 10
           }).map((r) => r.obj),
       };
     },
-    [prepared]
+    [preparedData]
   );
 
   return autocomplete;
