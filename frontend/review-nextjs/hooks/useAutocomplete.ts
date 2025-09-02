@@ -24,21 +24,21 @@ export function useAutocomplete() {
 
         // Set Prepared data
         setPreparedData({
-          departments: data.departments.map(i => ({
+          departments: data.departments?.map(i => ({
             ...i,
             search_desc: fuzzysort.prepare(normalizeDesc(i.desc)),
-          })),
+          })) ?? [],
 
-          courses: data.courses.map(c => ({
+          courses: data.courses?.map(c => ({
               ...c,
               search_title: fuzzysort.prepare(expandCourseCode(c.title)),
               search_desc: fuzzysort.prepare(normalizeDesc(c.desc)),
-          })),
+          })) ?? [],
 
-          instructors: data.instructors.map(i => ({
+          instructors: data.instructors?.map(i => ({
             ...i,
             search_desc: fuzzysort.prepare(normalizeDesc(i.desc)),
-          })),
+          })) ?? [],
         });
       } catch (e) {
         console.error(e);
