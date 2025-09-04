@@ -67,6 +67,7 @@ google-api-python-client = "*"
 asyncio = "*"
 aiohttp = "*"
 pyjwt = "*"
+cryptography = "*"
 
 [requires]
 python_full_version = "3.11"
