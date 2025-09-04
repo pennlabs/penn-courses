@@ -395,7 +395,8 @@ def course_plots(request, course_code):
             instructors__id__in=instructor_ids,
         ).distinct()
 
-    section_map = defaultdict(dict)  # a dict mapping semester to section id to section object
+    # a dict mapping semester to section id to section object
+    section_map = defaultdict(dict)
     for section in filtered_sections:
         section_map[section.efficient_semester][section.id] = section
 
@@ -819,7 +820,7 @@ def autocomplete(request):
             {
                 "title": semester_prefix(course) + course["full_code"],
                 "desc": [course["title"]],
-                "url": f"/course/{course['full_code']}/{course['max_semester']}",
+                "url": f"/course/{course['full_code']}",
             }
             for course in courses
         ],
@@ -880,3 +881,18 @@ def autocomplete(request):
             "instructors": instructor_set,
         }
     )
+
+
+@permission_classes([IsAuthenticated])
+@api_view(["GET"])
+@schema(
+    PcxAutoSchema(
+        response_codes={
+            "test-jwt": {
+                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Test dump retrieved successfully."},
+            },
+        },
+    )
+)
+def test_jwt(request):
+    return Response({"hello": "hi"})
