@@ -1,6 +1,6 @@
 import asyncio
 import logging
-
+from celery import shared_task
 import jwt
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
@@ -18,7 +18,7 @@ async def get_jwks_client():
     async with jwks_client_lock:
         return jwks_client
 
-
+@shared_task
 async def refresh_jwks_client():
     global jwks_client
     while True:
@@ -33,8 +33,7 @@ async def refresh_jwks_client():
 
 
 def start_jwks_refresh():
-    loop = asyncio.get_event_loop()
-    loop.create_task(refresh_jwks_client())
+    refresh_jwks_client.delay()
 
 
 async def verify_jwt(token):
