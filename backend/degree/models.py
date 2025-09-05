@@ -21,6 +21,7 @@ program_choices = [
     ("AU_BA", "College BA"),
     ("WU_BS", "Wharton BS"),
     ("NU_BSN", "Nursing BSN"),
+    # ("EM_MSE", "Accelerated Masters"),
 ]
 
 program_code_to_name = dict(program_choices)
@@ -190,10 +191,26 @@ class Rule(models.Model):
         related_name="children",
     )
 
+    can_double_count_with = models.ManyToManyField(
+        "self",
+        symmetrical=True,
+        blank=True,
+        help_text=dedent(
+            """
+            Parent rules that can double count with this rule.
+            (i.e. if this rule is Quantitative Data Analysis (a College Foundations req),
+            then this field would contain the General Educations: Sector rule as well as
+            the Major in ___ rule.)
+            """
+        ),
+    )
+
     def __str__(self) -> str:
+        rules_str = ", ".join([str(rule) for rule in self.children.all()])
         return (
             f"{self.title}, q={self.q}, num={self.num}, cus={self.credits}, "
-            "parent={self.parent.title if self.parent else None}"
+            f"child rules: {rules_str}"
+            f"parent={self.parent.title if self.parent else None}"
         )
 
     @property
@@ -226,6 +243,48 @@ class Rule(models.Model):
             if self.credits is not None and total_credits < self.credits:
                 return False
 
+            return True
+        else:
+            # assert self.children.all().exists()
+            count = 0
+            for child in self.children.all():
+                if not child.evaluate(full_codes):
+                    if self.num is None:
+                        return False
+                else:
+                    count += 1
+            if self.num is not None and count < self.num:
+                return False
+            return True
+
+    # This is scuffed. Only difference with evaluate() is that this is on line 269,
+    # where we check if total_credits = 0 rather than total_credits < self.credits.
+    # Why do we do this? It makes it work, I guess. Please make something better.
+    def check_belongs(self, full_codes: Iterable[str]) -> bool:
+        """
+        Check if provided courses all contribute to fulfilling a rule.
+        """
+        if self.q:
+            assert not self.children.all().exists()
+            total_courses, total_credits = (
+                Course.objects.filter(self.get_q_object() or Q(), full_code__in=full_codes)
+                .aggregate(
+                    total_courses=Count("id"),
+                    total_credits=Coalesce(
+                        Sum("credits"),
+                        0,
+                        output_field=DecimalField(max_digits=4, decimal_places=2),
+                    ),
+                )
+                .values()
+            )
+
+            assert self.num is not None or self.credits is not None
+            if self.num is not None and total_courses < self.num:
+                return False
+
+            if self.credits is not None and total_credits == 0:
+                return False
             return True
         else:
             # assert self.children.all().exists()
@@ -333,6 +392,16 @@ class DegreePlan(models.Model):
 
         return (satisfied_rules, violated_dcrs)
 
+    def check_rules_already_satisfied(self, rules: set[Rule]) -> set[Rule]:
+        satisfied_rules = set()
+
+        for rule in rules:
+            f = Fulfillment.objects.all().filter(degree_plan=self).filter(rules=rule)
+            if (rule.num and len(f) >= rule.num) or (rule.credits and len(f) >= rule.credits):
+                satisfied_rules.add(rule)
+
+        return satisfied_rules
+
     def copy(self, new_name: str) -> DegreePlan:
         """
         Returns a new DegreePlan that is a copy of this DegreePlan.
@@ -344,10 +413,16 @@ class DegreePlan(models.Model):
             new_degree_plan.degrees.add(degree)
 
         # this also handles updating satisfaction statuses
+
         for fulfillment in self.fulfillments.all():
+            rules = fulfillment.rules.all()
+            unselected_rules = fulfillment.unselected_rules.all()
+
             fulfillment.pk = None
             fulfillment.degree_plan = new_degree_plan
             fulfillment.save()
+            fulfillment.rules.set(rules)
+            fulfillment.unselected_rules.set(unselected_rules)
 
         return new_degree_plan
 
@@ -387,6 +462,27 @@ class Fulfillment(models.Model):
             """
             The rules this course fulfills. Blank if this course does not apply
             to any rules.
+            """
+        ),
+    )
+    unselected_rules = models.ManyToManyField(
+        Rule,
+        related_name="unselected",
+        blank=True,
+        help_text=dedent(
+            """
+            The rules this course fulfills that should be shown in the open-ended rule box
+            (as opposed to the expandable box). Blank if this course should not be included in
+            any open-ended rule boxes.
+            """
+        ),
+    )
+    legal = models.BooleanField(
+        default=True,
+        help_text=dedent(
+            """
+            True if course associated with this fulfillment isn't illegally double counted anywhere,
+            false otherwise.
             """
         ),
     )

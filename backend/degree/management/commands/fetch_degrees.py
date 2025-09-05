@@ -3,17 +3,21 @@ from textwrap import dedent
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from dotenv import load_dotenv
 
 from courses.util import get_current_semester
 from degree.management.commands.deduplicate_rules import deduplicate_rules
 from degree.models import Degree, program_code_to_name
 from degree.utils.degreeworks_client import DegreeworksClient
-from degree.utils.parse_degreeworks import parse_and_save_degreeworks
+
+from .parse_degreeworks import parse_and_save_degreeworks
 
 
 class Command(BaseCommand):
     help = dedent(
         """
+        Just run this one to get new degrees.
+
         Fetches, parses and stores degrees from degreeworks.
 
         Expects PENN_ID, X_AUTH_TOKEN, REFRESH_TOKEN, NAME environment variables are set.
@@ -64,6 +68,8 @@ class Command(BaseCommand):
 
         since_year = kwargs["since_year"]
         to_year = kwargs["to_year"] or int(get_current_semester()[:4])
+
+        load_dotenv()
 
         pennid = getenv("PENN_ID")
         assert pennid is not None
