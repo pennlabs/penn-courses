@@ -16,6 +16,7 @@ jobs:
             black: false
             pythonVersion: 3.11-buster
             codeCoverage: false
+            dependencyManager: "uv"
 
     publish-backend:
         uses: pennlabs/shared-actions/.github/workflows/docker-publish.yaml@v0.1.7
