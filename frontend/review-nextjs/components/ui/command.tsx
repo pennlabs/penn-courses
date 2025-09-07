@@ -65,7 +65,6 @@ const CommandList = React.forwardRef<
   React.useEffect(() => {
     if (!listRef.current) return
 
-    // Disable scrollIntoView for ALL children inside the list
     const observer = new MutationObserver(() => {
       listRef.current
         ?.querySelectorAll<HTMLElement>("[cmdk-item]")
