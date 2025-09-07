@@ -272,7 +272,8 @@ class PrimaryScheduleViewSet(viewsets.ModelViewSet):
                 res["message"] = "Primary schedule successfully unset"
             res["message"] = "Primary schedule was already unset"
         else:
-            schedule = Schedule.objects.filter(person_id=user.id, id=schedule_id).first()
+            schedule = Schedule.objects.filter(
+                person_id=user.id, id=schedule_id).first()
             if not schedule:
                 res["message"] = "Schedule does not exist"
                 return JsonResponse(res, status=status.HTTP_400_BAD_REQUEST)
@@ -520,7 +521,8 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             name,
             existing_schedule and existing_schedule.name,
         ] and not (
-            allow_path and isinstance(request.successful_authenticator, PlatformAuthentication)
+            allow_path and isinstance(
+                request.successful_authenticator, PlatformAuthentication)
         ):
             raise PermissionDenied(
                 "You cannot create/update/delete a schedule with the name "
@@ -546,7 +548,8 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             if from_path:
                 schedule, _ = self.get_queryset(semester).get_or_create(
                     name=PATH_REGISTRATION_SCHEDULE_NAME,
-                    defaults={"person": self.request.user, "semester": semester},
+                    defaults={"person": self.request.user,
+                              "semester": semester},
                 )
             else:
                 schedule = self.get_queryset(semester).get(id=pk)
@@ -556,10 +559,12 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        name = self.validate_name(request, existing_schedule=schedule, allow_path=from_path)
+        name = self.validate_name(
+            request, existing_schedule=schedule, allow_path=from_path)
 
         try:
-            sections = self.get_sections(request.data, semester, skip_missing=from_path)
+            sections = self.get_sections(
+                request.data, semester, skip_missing=from_path)
         except ObjectDoesNotExist:
             return Response(
                 {"detail": "One or more sections not found in database."},
@@ -644,7 +649,8 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     def get_queryset(self, semester=None):
         if not semester:
             semester = get_current_semester()
-        queryset = Schedule.objects.filter(person=self.request.user, semester=semester)
+        queryset = Schedule.objects.filter(
+            person=self.request.user, semester=semester)
         queryset = queryset.prefetch_related(
             Prefetch("sections", Section.with_reviews.all()),
             "sections__associated_sections",
@@ -857,7 +863,8 @@ class CalendarAPIView(APIView):
         day_mapping = {"M": "MO", "T": "TU", "W": "WE", "R": "TH", "F": "FR"}
 
         calendar = ICSCal(creator="Penn Labs")
-        calendar.extra.append(ContentLine(name="X-WR-CALNAME", value=f"{schedule.name} Schedule"))
+        calendar.extra.append(ContentLine(
+            name="X-WR-CALNAME", value=f"{schedule.name} Schedule"))
 
         for section in schedule.sections.all():
             e = ICSEvent()
@@ -893,9 +900,9 @@ class CalendarAPIView(APIView):
             end_datetime += end_time
 
             e.begin = arrow.get(
-                start_datetime, "YYYY-MM-DD HH:mm A", tzinfo="America/New York"
+                start_datetime, "YYYY-MM-DD h:mm A", tzinfo="America/New York"
             ).format("YYYYMMDDTHHmmss")
-            e.end = arrow.get(end_datetime, "YYYY-MM-DD HH:mm A", tzinfo="America/New York").format(
+            e.end = arrow.get(end_datetime, "YYYY-MM-DD h:mm A", tzinfo="America/New York").format(
                 "YYYYMMDDTHHmmss"
             )
             end_date = arrow.get(
@@ -913,5 +920,5 @@ class CalendarAPIView(APIView):
             calendar.events.add(e)
 
         response = HttpResponse(calendar, content_type="text/calendar")
-        response["Content-Disposition"] = "attachment; pcp-schedule.ics"
+        response["Content-Disposition"] = f'attachment; filename="{schedule.name}.ics"'
         return response
