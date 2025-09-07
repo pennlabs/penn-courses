@@ -8,8 +8,10 @@ interface RowProps {
 
 const Row = styled.div<RowProps>`
     display: flex;
-    flex-wrap: wrap;
-    align-items: ${(props) => props.$align || "stretch"};
+    width: 100%;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
 `;
 
 const Outer = styled.div`
@@ -18,10 +20,6 @@ const Outer = styled.div`
 
 const Link = styled.div`
     display: flex;
-    width: 100%;
-    gap: 10px;
-    align-items: center;
-    justify-content: center;
 `;
 
 const LoveFromLabs = styled.div`
@@ -38,13 +36,16 @@ const BigText = styled.p`
     line-height: 1.5;
 `;
 
-const Button = styled.button`
-    border-radius: 10px;
+const Button = styled.a`
+    border-radius: 12px;
     display: block;
     background-color: #209cee;
     border-color: transparent;
     color: #fff;
-    padding: 5px 10px;
+    padding: 5px 15px;
+    font-size: 0.75em;
+    width: 100%
+    text-align: center
 `;
 
 interface CalendarModalProps {
@@ -54,45 +55,29 @@ interface CalendarModalProps {
 const CalendarModal = ({ $schedulePk: schedulePk }: CalendarModalProps) => {
     const [url, setUrl] = useState<string>("INVALID");
 
-    console.log(schedulePk)
+    console.log(schedulePk);
     useEffect(() => {
-        setUrl(`http://penncourseplan.com/api/plan/${schedulePk}/calendar`);
+        setUrl(`http://localhost:8000/api/plan/${schedulePk}/calendar/`);
     }, []);
 
     return (
         <Outer>
             <BigText>
-                You can use the ICS URL below to import your schedule into a
-                Google or macOS Calendar. This calendar will display all your
-                classes and class times until the end of the semester.
+                You can use the button below to download your schedule as an ICS
+                file which you can import into a Google or macOS Calendar. This
+                calendar will display all your classes and class times until the
+                end of the semester.
                 <br />
                 <br />
-                This link is personalized for your account, don't share it with
+                This file is personalized for your account, don't share it with
                 others.
+                <br />
+                <br />
             </BigText>
-            <Row $align="center" className="row field has-addons is-expanded">
-                <Link>
-                    <input
-                        type="text"
-                        readOnly
-                        value={url}
-                        onClick={(e) => (e.target as HTMLInputElement).select()}
-                    />
-                    <Button
-                        onClick={async () => {
-                            try {
-                                await navigator.clipboard.writeText(url);
-                                toast.info("Copied to clipboard!");
-                            } catch (error) {
-                                toast.error(
-                                    "Failed to copy! You need to manually copy the URL."
-                                );
-                            }
-                        }}
-                    >
-                        Copy
-                    </Button>
-                </Link>
+            <Row>
+                <Button href={url} download="plan.ics">
+                    Download
+                </Button>
             </Row>
 
             <hr />
@@ -103,11 +88,11 @@ const CalendarModal = ({ $schedulePk: schedulePk }: CalendarModalProps) => {
                         <b>Import to Google Calendar</b>
                     </h3>
                     <BigText>
-                        Use the URL above to import to Google Calendar. Need
+                        Import the downloaded file to Google Calendar app. Need
                         help?
                         <br />
                         <a
-                            href="https://support.google.com/calendar/answer/37100#add_via_link"
+                            href="https://support.google.com/calendar/answer/37118?sjid=16812697295393986554-NA&visit_id=638928653078159420-327839679&rd=1"
                             target="_blank"
                             rel="noreferrer noopener"
                         >
@@ -120,11 +105,11 @@ const CalendarModal = ({ $schedulePk: schedulePk }: CalendarModalProps) => {
                         <b>Import to macOS Calendar</b>
                     </h3>
                     <BigText>
-                        Use the URL above to import to the macOS Calendar app.
+                        Import the downloaded file to the macOS Calendar app.
                         Need help?
                         <br />
                         <a
-                            href="https://support.apple.com/guide/calendar/subscribe-to-calendars-icl1022/mac"
+                            href="https://support.apple.com/guide/calendar/import-or-export-calendars-icl1023/15.0/mac/15.0"
                             target="_blank"
                             rel="noreferrer noopener"
                         >
