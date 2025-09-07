@@ -18,19 +18,17 @@ If you don't want to develop in Dev Container, see the [Running the Backend Nati
       > :warning: Dev Containers should be automatically running the docker daemon. However, if this is not the case (e.g. you're facing Docker connection errors or seeing `unable to start container process` errors) follow the steps in [Running the Backend Natively](#running-the-backend-natively).
       
 3. Set up Django Development Environment
-   1. `pipenv install --dev` – Downloads necessary packages.
-   2. `pipenv shell` – Enters virtual environment for development.
-   3. `python manage.py makemigrations` – Generates SQL files that propagate Django Model changes to database.
-   4. `python manage.py migrate` – Applies migration files to database (requires a running database).
-   5. `python manage.py test` – Run test suite.
-   6. `python manage.py test tests.review.test_api.OneReviewTestCase.test_course` – Run a specific test, or a set of tests by specifying a prefix path (e.g. `tests.review.test_api`).
+   1. `uv run manage.py makemigrations` – Generates SQL files that propagate Django Model changes to database.
+   2. `uv run manage.py migrate` – Applies migration files to database (requires a running database).
+   3. `uv run manage.py test` – Run test suite.
+   4. `uv run manage.py test tests.review.test_api.OneReviewTestCase.test_course` – Run a specific test, or a set of tests by specifying a prefix path (e.g. `tests.review.test_api`).
 
 4. Load test data into DB, following steps in [Loading Courses Data](#loading-courses-data).
 
    > NOTE: If for some reason this is not possible, ensure that you have created a local user named "Penn-Courses" with the password "postgres" in your PostgreSQL. To add the user, navigate to your pgAdmin, and follow the path of Object -> Create -> Login/Group Role and create the appropriate user.
 
 5. Run the backend server.
-   - Run the backend in development mode with the command `python manage.py runserver`. This will start the server at port `8000`.
+   - Run the backend in development mode with the command `uv run manage.py runserver`. This will start the server at port `8000`.
    - Once the server is running, you can access the admin console at `localhost:8000/admin`, browse auto-generated API documentation from the code on your branch at `localhost:8000/api/documentation`, or use any of the other routes supported by this backend (comprehensively described by the API documentation), usually of the form `localhost:8000/api/...`.
 
       > NOTE: if you don't need documentation specific to your branch, it is usually more convenient to browse the API docs at [penncoursereview.com/api/documentation](https://penncoursereview.com/api/documentation).
@@ -47,14 +45,12 @@ If you don't want to develop in Dev Container, see the [Running the Backend Nati
 
 If you are in Penn Labs, reach out to a Penn Courses team lead for a .env file to put in your `backend` directory. This will contain some sensitive credentials (which is why the file contents are not pasted in this public README). If you are not in Penn Labs, see the "Loading Course Data on Demand" section below for instructions on how to get your own credentials.
 
-> NOTE: when using `pipenv`, environment variables are only refreshed when you exit your shell and rerun `pipenv shell` (this is a common source of confusing behavior, so it's good to know about).
-
 ## Linting
 
 We use `black`, `flake8`, and 'isort' to lint our code. Once you are in the `backend` directory, you can run the following commands to lint:
-1. `pipenv run black`
-2. `pipenv run isort`
-3. `pipenv run flake8`
+1. `uv run black`
+2. `uv run isort`
+3. `uv run flake8`
 
 Please try to run these commands before committing your code – CI checks will fail when your code isn't properly linted.
 
@@ -136,8 +132,7 @@ prompts, add the `--force` flag.
 If you don't want to develop within a Docker container, you can also choose to run the dev environment natively.
 
 ### Prerequisites
-- Python 3.11 ([`pyenv`](https://github.com/pyenv/pyenv) is recommended)
-- [`pipenv`](https://pipenv.pypa.io/en/latest/)
+- [`uv`](https://docs.astral.sh/uv/getting-started/installation/)
 - [`docker` and `docker-compose`](https://docs.docker.com/get-docker/)
 - Postgres Server (`psycopg2`)
 
@@ -153,7 +148,7 @@ If you don't want to develop within a Docker container, you can also choose to r
         - `export CPPFLAGS="-I/usr/local/opt/openssl@3/include"`
 
    - **Windows (WSL) or Linux:**
-     - `apt-get install gcc python3-dev libpq-dev postgresql-client`
+     - `apt-get install gcc uv libpq-dev postgresql-client`
 
 ### Running the Backend
 Follow steps from #3 onwards in the [Running the Backend with Docker-Compose](#running-the-backend-with-docker-compose) section.
