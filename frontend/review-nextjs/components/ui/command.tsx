@@ -57,13 +57,42 @@ CommandInput.displayName = CommandPrimitive.Input.displayName
 const CommandList = React.forwardRef<
   React.ElementRef<typeof CommandPrimitive.List>,
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.List>
->(({ className, ...props }, ref) => (
-  <CommandPrimitive.List
-    ref={ref}
-    className={cn("max-h-[400px] w-[600px] overflow-y-auto overflow-x-hidden absolute bg-white mt-12", className)}
-    {...props}
-  />
-))
+>(({ className, ...props }, ref) => {
+  const listRef = React.useRef<HTMLDivElement>(null)
+
+  React.useImperativeHandle(ref, () => listRef.current!)
+
+  React.useEffect(() => {
+    if (!listRef.current) return
+
+    // Disable scrollIntoView for ALL children inside the list
+    const observer = new MutationObserver(() => {
+      listRef.current
+        ?.querySelectorAll<HTMLElement>("[cmdk-item]")
+        .forEach((el) => {
+          el.scrollIntoView = () => {} // no-op
+        })
+    })
+
+    observer.observe(listRef.current, {
+      childList: true,
+      subtree: true,
+    })
+
+    return () => observer.disconnect()
+  }, [])
+
+  return (
+    <CommandPrimitive.List
+      ref={listRef}
+      className={cn(
+        "max-h-[400px] w-[600px] overflow-y-auto overflow-x-hidden fixed bg-white mt-12",
+        className
+      )}
+      {...props}
+    />
+  )
+})
 
 CommandList.displayName = CommandPrimitive.List.displayName
 
