@@ -15,17 +15,19 @@ from review.import_utils.import_to_db import (
     import_ratings_rows,
     import_summary_rows,
 )
-from review.import_utils.parse_sql import load_sql_dump
+from review.import_utils.parse_sql import load_csv_dump, load_sql_dump
 from review.management.commands.clearcache import clear_cache
 from review.management.commands.precompute_pcr_views import precompute_pcr_views
 from review.models import Review
 
 
-ISC_SUMMARY_TABLE = "PCR_SUMMARY"
+ISC_SUMMARY_TABLE = "Eval Ratings Summary"
 ISC_SUMMARY_HIST_TABLE = "PCR_SUMMARY_HIST"
 ISC_RATING_TABLE = "PCR_RATING"
 ISC_CROSSLIST_TABLE = "PCR_CROSSLIST_SUMMARY"
 ISC_DESC_TABLE = "PCR_COURSE_DESC"
+
+ENABLE_CSV = True
 
 
 def assert_semesters_not_current(semesters):
@@ -136,11 +138,11 @@ class Command(BaseCommand):
         if is_zipfile:
             self.zfile = zipfile.ZipFile(src)
             for name in tables_to_get:
-                zf = self.zfile.open(name + ".sql")
+                zf = self.zfile.open(name + ".csv")
                 files.append(io.TextIOWrapper(zf, "latin-1"))
         else:
             for name in tables_to_get:
-                path = os.path.abspath(os.path.join(src, name + ".sql"))
+                path = os.path.abspath(os.path.join(src, name + ".csv"))
                 files.append(open(path, "r", encoding="latin-1"))
         return tuple(files)
 
@@ -210,7 +212,10 @@ class Command(BaseCommand):
         summary_fo = files[0]
 
         print("Loading summary file...")
-        summary_rows = load_sql_dump(summary_fo, progress=show_progress_bar, lazy=False)
+        if ENABLE_CSV:
+            summary_rows = load_csv_dump(summary_fo, progress=show_progress_bar, lazy=False)
+        else:
+            summary_rows = load_sql_dump(summary_fo, progress=show_progress_bar, lazy=False)
         gc.collect()
         print("SQL parsed and loaded!")
         if not import_all:
@@ -255,20 +260,32 @@ class Command(BaseCommand):
         with transaction.atomic():
             if import_details:
                 print("Loading details file...")
-                stats = import_ratings_rows(
-                    *load_sql_dump(files[detail_idx]), semesters, show_progress_bar
-                )
+                if ENABLE_CSV:
+                    stats = import_ratings_rows(
+                        *load_sql_dump(files[detail_idx]), semesters, show_progress_bar
+                    )
+                else:
+                    stats = import_ratings_rows(
+                        *load_csv_dump(files[detail_idx]), semesters, show_progress_bar
+                    )
                 print(stats)
 
             gc.collect()
 
             if import_descriptions:
                 print("Loading descriptions file...")
-                stats = import_description_rows(
-                    *load_sql_dump(files[description_idx]),
-                    None if import_all else semesters,
-                    show_progress_bar,
-                )
+                if ENABLE_CSV:
+                    stats = import_description_rows(
+                        *load_csv_dump(files[description_idx]),
+                        None if import_all else semesters,
+                        show_progress_bar,
+                    )
+                else:
+                    stats = import_description_rows(
+                        *load_sql_dump(files[description_idx]),
+                        None if import_all else semesters,
+                        show_progress_bar,
+                    )
                 print(stats)
 
         self.close_files(files)
