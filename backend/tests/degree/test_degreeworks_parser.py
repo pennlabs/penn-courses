@@ -3,8 +3,8 @@ from unittest.mock import patch
 from django.db.models import Q
 from django.test import TestCase
 
-from degree.management.commands import parse_degreeworks
 from degree.models import Degree, Rule
+from degree.utils import parse_degreeworks
 
 
 class EvaluateConditionTest(TestCase):
@@ -238,8 +238,8 @@ class CourseArrayParserTest(TestCase):
 PATCHED_Q = Q(test="test")
 
 
-@patch("degree.management.commands.parse_degreeworks.parse_coursearray", return_value=PATCHED_Q)
-@patch("degree.management.commands.parse_degreeworks.evaluate_condition", return_value=True)
+@patch("degree.utils.parse_degreeworks.parse_coursearray", return_value=PATCHED_Q)
+@patch("degree.utils.parse_degreeworks.evaluate_condition", return_value=True)
 class RuleArrayParserTest(TestCase):
     def assertRuleDuckEqual(self, a: Rule | None, b: Rule | None):
         """Check duck typing equality of two Django objects (using the __dict__ dunder)"""
@@ -409,8 +409,7 @@ class RuleArrayParserTest(TestCase):
             extra_rule_kwargs={"booleanEvaluation": "True"},
         )
 
-        with patch("degree.management.commands.parse_degreeworks.evaluate_condition",
-                   return_value=False):
+        with patch("degree.utils.parse_degreeworks.evaluate_condition", return_value=False):
             self.assertParsedRulesEqual(
                 "IfStmt", ifstmt, [], extra_rule_kwargs={"booleanEvaluation": "False"}
             )
@@ -437,8 +436,7 @@ class RuleArrayParserTest(TestCase):
             extra_rule_kwargs={"booleanEvaluation": "True"},
         )
 
-        with patch("degree.management.commands.parse_degreeworks.evaluate_condition",
-                   return_value=False):
+        with patch("degree.utils.parse_degreeworks.evaluate_condition", return_value=False):
             self.assertParsedRulesEqual(
                 "IfStmt",
                 ifstmt,
@@ -477,8 +475,7 @@ class RuleArrayParserTest(TestCase):
                 "IfStmt", ifstmt, [], extra_rule_kwargs={"booleanEvaluation": "Unknown"}
             )
 
-        with patch("degree.management.commands.parse_degreeworks.evaluate_condition",
-                   return_value=False):
+        with patch("degree.utils.parse_degreeworks.evaluate_condition", return_value=False):
             with self.assertRaises(AssertionError):
                 self.assertParsedRulesEqual(
                     "IfStmt",
@@ -494,8 +491,7 @@ class RuleArrayParserTest(TestCase):
                     extra_rule_kwargs={"booleanEvaluation": "Unknown"},
                 )
 
-        with patch("degree.management.commands.parse_degreeworks.evaluate_condition",
-                   return_value=None):
+        with patch("degree.utils.parse_degreeworks.evaluate_condition", return_value=None):
             assert (
                 parse_degreeworks.evaluate_condition(
                     {
@@ -592,7 +588,7 @@ class RuleArrayParserTest(TestCase):
         self.assertParsedRulesEqual("Blocktype", {}, [])
 
 
-@patch("degree.management.commands.parse_degreeworks.parse_rulearray", return_value=None)
+@patch("degree.utils.parse_degreeworks.parse_rulearray", return_value=None)
 class ParseDegreeWorksTest(TestCase):
     def test_empty(self, *mocks):
         pass  # TODO
