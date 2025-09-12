@@ -9,8 +9,7 @@ from courses.util import get_current_semester
 from degree.management.commands.deduplicate_rules import deduplicate_rules
 from degree.models import Degree, program_code_to_name
 from degree.utils.degreeworks_client import DegreeworksClient
-
-from .parse_degreeworks import parse_and_save_degreeworks
+from degree.utils.parse_degreeworks import parse_and_save_degreeworks
 
 
 class Command(BaseCommand):
