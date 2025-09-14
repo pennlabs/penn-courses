@@ -13,6 +13,13 @@ import { LightTrashIcon } from '../common/TrashIcon';
 import { TutorialModalContext } from '../FourYearPlan/OnboardingTutorial';
 import ToastContext from '../Toast/Toast';
 
+const TutorialHighlight = styled.div<{ $active: boolean }>`
+  position: relative;
+  border-radius: 6px;
+  outline: ${p => p.$active ? '2px solid var(--selected-color)' : 'none'};
+  outline-offset: 2px;
+`;
+
 const EmptyPanelContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -283,6 +290,7 @@ const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: 
     const showToast = useContext(ToastContext);
 
     useEffect(() => {
+        if (!componentRefs || !('current' in componentRefs)) return;
         if (reqPanelRef.current) {
             if (tutorialModalKey === "requirements-panel-1" || tutorialModalKey === "requirements-panel-2" || tutorialModalKey === "edit-requirements") {
                 reqPanelRef.current.style.zIndex = "11";
@@ -344,6 +352,7 @@ const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: 
     return (
         <PanelContainer style={{ position: "relative" }} ref={(el) => {
             reqPanelRef.current = el;
+            if (!componentRefs || !('current' in componentRefs)) return;
             if (tutorialModalKey === "requirements-panel-1" || tutorialModalKey === "requirements-panel-2") {
                 componentRefs.current["reqPanel"] = el;
             }
@@ -352,13 +361,14 @@ const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: 
             <PanelHeader>
                 <ReqPanelTitle>Requirements</ReqPanelTitle>
                 <PanelTopBarIconList>
-                    <div style={{ position: "relative" }} ref={(el) => {
+                    <TutorialHighlight $active={tutorialModalKey === 'edit-requirements'} style={{ position: 'relative' }} ref={(el) => {
+                        if (!componentRefs || !('current' in componentRefs)) return;
                         if (tutorialModalKey === "edit-requirements") {
                             componentRefs.current["editReqs"] = el;
                         }
                     }}>
                         <EditButton editMode={editMode} setEditMode={setEditMode} />
-                    </div>
+                    </TutorialHighlight>
                 </PanelTopBarIconList>
             </PanelHeader>
             {!activeDegreeplan ? <ReqPanelBody><Degree isLoading={true} /></ReqPanelBody> :

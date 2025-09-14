@@ -9,6 +9,14 @@ import { PanelTopBarButton, PanelTopBarIcon } from "./PanelCommon";
 import { PanelContainer, PanelHeader, PanelTopBarIconList, PanelBody } from "./PanelCommon";
 import { ModalKey } from "./DegreeModal";
 import { TutorialModalContext } from "./OnboardingTutorial";
+import { SemestersContext } from "./Semesters";
+
+const TutorialHighlight = styled.div<{ $active: boolean }>`
+  position: relative;
+  border-radius: 6px;
+  outline: ${p => p.$active ? '2px solid var(--selected-color)' : 'none'};
+  outline-offset: 2px;
+`
 
 import ToastContext from "../Toast/Toast";
 
@@ -55,22 +63,51 @@ const PlanPanel = ({
     const [editMode, setEditMode] = useState(false);
 
     const { tutorialModalKey, componentRefs } = useContext(TutorialModalContext);
+    const { semesterRefs } = useContext(SemestersContext);
     const planPanelRef = React.useRef<HTMLDivElement | null>(null);
+    const showStatsRef = React.useRef<HTMLDivElement | null>(null);
+    const editSemesterRef = React.useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
-        if (!planPanelRef.current) return;
-
-        if (tutorialModalKey === "calendar-panel" || tutorialModalKey === "current-semester" || tutorialModalKey === "future-semesters" || tutorialModalKey === "past-semesters" || tutorialModalKey === "edit-mode" || tutorialModalKey === "show-stats") {
+        if (!planPanelRef.current || !componentRefs || !('current' in componentRefs)) return;
+        const activeKeys = ["calendar-panel", "current-semester", "future-semesters", "past-semesters", "edit-mode", "show-stats"];
+        if (activeKeys.includes(tutorialModalKey || '')) {
             planPanelRef.current.style.zIndex = "11";
             componentRefs.current["planPanel"] = planPanelRef.current;
         } else {
             planPanelRef.current.style.zIndex = "0";
         }
+        if (showStatsRef.current && tutorialModalKey === 'show-stats') {
+            componentRefs.current['showStatsButton'] = showStatsRef.current;
+        }
+        if (editSemesterRef.current && tutorialModalKey === 'edit-mode') {
+            componentRefs.current['editSemesterButton'] = editSemesterRef.current;
+        }
     }, [tutorialModalKey, componentRefs]);
+
+    useEffect(() => {
+        if (tutorialModalKey !== 'current-semester') return;
+        if (!currentSemester) return;
+        let attempts = 0;
+        const maxAttempts = 10;
+        const attemptScroll = () => {
+            attempts++;
+            const target = semesterRefs?.current?.[currentSemester];
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+            } else if (attempts < maxAttempts) {
+                setTimeout(attemptScroll, 120);
+            }
+        };
+        // slight delay to allow modal and semesters render
+        const startTimer = setTimeout(attemptScroll, 50);
+        return () => clearTimeout(startTimer);
+    }, [tutorialModalKey, currentSemester, semesterRefs]);
 
     return (
         <PanelContainer style={{ position: "relative" }} ref={(el) => {
             planPanelRef.current = el;
+            if (!componentRefs || !('current' in componentRefs)) return;
             if (tutorialModalKey === "calendar-panel" || tutorialModalKey === "current-semester" || tutorialModalKey === "future-semesters" || tutorialModalKey === "past-semesters" || tutorialModalKey === "edit-mode" || tutorialModalKey === "show-stats") {
                 componentRefs.current["planPanel"] = el;
             }
@@ -102,8 +139,12 @@ const PlanPanel = ({
                     isLoading={isLoading}
                 />
                 <PanelTopBarIconList>
-                    <ShowStatsButton showStats={showStats} setShowStats={setShowStats} />
-                    <EditButton editMode={editMode} setEditMode={setEditMode} />
+                    <TutorialHighlight $active={tutorialModalKey === 'show-stats'} ref={(el) => { showStatsRef.current = el; if (el && componentRefs && ('current' in componentRefs) && tutorialModalKey === 'show-stats') { componentRefs.current['showStatsButton'] = el; } }}>
+                        <ShowStatsButton showStats={showStats} setShowStats={setShowStats} />
+                    </TutorialHighlight>
+                    <TutorialHighlight $active={tutorialModalKey === 'edit-mode'} ref={(el) => { editSemesterRef.current = el; if (el && componentRefs && ('current' in componentRefs) && tutorialModalKey === 'edit-mode') { componentRefs.current['editSemesterButton'] = el; } }}>
+                        <EditButton editMode={editMode} setEditMode={setEditMode} />
+                    </TutorialHighlight>
                 </PanelTopBarIconList>
             </PanelHeader>
             {/** map to semesters */}

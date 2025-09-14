@@ -1,5 +1,5 @@
 import styled from "@emotion/styled";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ModalContainer from "../common/ModalContainer";
 import OnboardingTutorialPanel from "./OnboardingTutorialPanel";
 import { createContext } from 'react';
@@ -137,7 +137,7 @@ interface TutorialModalContextProps {
     tutorialModalKey: TutorialModalKey;
     setTutorialModalKey: (key: TutorialModalKey) => void;
     highlightedComponentRef: any;
-    componentRefs: any;
+    componentRefs: React.MutableRefObject<Record<string, HTMLElement | null>> | null;
 }
 
 export const TutorialModalContext = createContext<TutorialModalContextProps>({
@@ -152,93 +152,157 @@ interface ModalInteriorProps {
     modalKey: TutorialModalKey;
     nextOnboardingStep: (forward: boolean) => void;
     close: () => void;
+    componentRefs: any;
 }
+
+// Function to calculate modal position based on component position
+const calculateModalPosition = (modalKey: TutorialModalKey, componentRefs: React.MutableRefObject<Record<string, HTMLElement | null>> | null) => {
+    if (!modalKey || modalKey === "welcome") {
+        return { top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
+    }
+    if (!componentRefs) return { top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
+
+    const componentMap: { [key in NonNullable<TutorialModalKey>]?: string } = {
+        "requirements-panel-1": "reqPanel",
+        "requirements-panel-2": "reqPanel",
+        "edit-requirements": "editReqs",
+        "calendar-panel": "planPanel",
+        "past-semesters": "planPanel",
+        "current-semester": "planPanel",
+        "future-semesters": "planPanel",
+        "edit-mode": "editSemesterButton",
+        "show-stats": "showStatsButton",
+        "courses-dock": "dock",
+        "general-search": "dock",
+    };
+
+    const componentKey = componentMap[modalKey as NonNullable<TutorialModalKey>];
+    if (!componentKey || !componentRefs.current[componentKey]) {
+        // Fallback to center if component not found
+        return { top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
+    }
+
+    const component = componentRefs.current[componentKey];
+    const rect = component.getBoundingClientRect();
+    const windowHeight = window.innerHeight;
+    const windowWidth = window.innerWidth;
+
+    const modalWidth = 400;
+    const modalHeight = 200;
+
+    // Calculate position based on component location
+    let top: string;
+    let left: string;
+    let transform = "";
+
+    switch (modalKey) {
+        case "requirements-panel-1":
+        case "requirements-panel-2":
+            top = `${rect.top + rect.height / 2}px`;
+            left = `${rect.left - modalWidth - 30}px`;
+            transform = "translateY(-50%)";
+            break;
+        case "edit-requirements":
+            top = `${rect.top + rect.height + 20}px`;
+            left = `${rect.left + rect.width / 2}px`;
+            transform = "translateX(-50%)";
+            break;
+        case "calendar-panel":
+        case "past-semesters":
+        case "current-semester":
+        case "future-semesters":
+            top = `${rect.top + rect.height / 2}px`;
+            left = `${rect.right + 10}px`;
+            transform = "translateY(-50%)";
+            break;
+        case "edit-mode":
+            top = `${rect.bottom + 10}px`;
+            left = `${rect.left + rect.width / 2}px`;
+            transform = "translateX(-50%)";
+            break;
+        case "show-stats":
+            top = `${rect.bottom + 10}px`;
+            left = `${rect.left + rect.width / 2}px`;
+            transform = "translateX(-50%)";
+            break;
+        case "courses-dock":
+        case "general-search":
+            top = `${rect.top - modalHeight + 20}px`;
+            left = `${rect.left}px`;
+            transform = "translateX(-50%)";
+            break;
+        default:
+            return { top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
+    }
+
+    // Adjust position if off-screen
+    const leftValue = parseInt(left);
+    if (leftValue + modalWidth > windowWidth) {
+        left = `${windowWidth - modalWidth - 20}px`;
+        transform = transform.replace("translateX(-50%)", "").replace("translate(-100%, -50%)", "translateY(-50%)");
+    } else if (leftValue < 20) {
+        left = "20px";
+        transform = transform.replace("translateX(-50%)", "").replace("translate(-100%, -50%)", "translateY(-50%)");
+    }
+
+    const topValue = parseInt(top);
+    if (topValue < 20) {
+        top = "20px";
+        transform = transform.replace("translateY(-50%)", "").replace("translateX(-50%)", "");
+    } else if (topValue + modalHeight > windowHeight) {
+        top = `${windowHeight - modalHeight - 20}px`;
+        transform = transform.replace("translateY(-50%)", "").replace("translateX(-50%)", "");
+    }
+
+    return { top, left, transform };
+};
+
 const ModalInterior = ({
     modalKey,
     nextOnboardingStep,
-    close
+    close,
+    componentRefs
 }: ModalInteriorProps) => {
+    const [position, setPosition] = useState({ top: "50%", left: "50%", transform: "translate(-50%, -50%)" });
+
+    useEffect(() => {
+        if (modalKey) {
+            // wait until components are rendered
+            const timer = setTimeout(() => {
+                const newPosition = calculateModalPosition(modalKey, componentRefs);
+                setPosition(newPosition);
+            }, 20);
+
+            return () => clearTimeout(timer);
+        }
+    }, [modalKey, componentRefs]);
+
+    // Window resize
+    useEffect(() => {
+        const handleResize = () => {
+            if (modalKey) {
+                const newPosition = calculateModalPosition(modalKey, componentRefs);
+                setPosition(newPosition);
+            }
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [modalKey, componentRefs]);
+
     if (!modalKey) return <div></div>;
-
-    const topLocation = () => {
-        switch (modalKey) {
-            case "welcome":
-                return "0";
-            case "requirements-panel-1":
-                return "-40%";
-            case "requirements-panel-2":
-                return "-30%";
-            case "edit-requirements":
-                return "-65%";
-            case "calendar-panel":
-                return "0%";
-            case "past-semesters":
-                return "20%";
-            case "current-semester":
-                return "20%";
-            case "future-semesters":
-                return "20%";
-            case "edit-mode":
-                return "-65%";
-            case "show-stats":
-                return "-62%";
-            case "courses-dock":
-                return "60%";
-            case "general-search":
-                return "60%";
-            case null:
-                return "";
-            default:
-                throw Error("Invalid modal key: ");
-        }
-    }
-
-    const leftLocation = () => {
-        switch (modalKey) {
-            case "welcome":
-                return "0%";
-            case "requirements-panel-1":
-                return "-25%";
-            case "requirements-panel-2":
-                return "-25%";
-            case "edit-requirements":
-                return "70%";
-            case "calendar-panel":
-                return "30%";
-            case "past-semesters":
-                return "-40%";
-            case "current-semester":
-                return "-10%";
-            case "future-semesters":
-                return "25%";
-            case "edit-mode":
-                return "-30%";
-            case "show-stats":
-                return "-20%";
-            case "courses-dock":
-                return "-20%";
-            case "general-search":
-                return "-50%";
-            case null:
-                return "";
-            default:
-                throw Error("Invalid modal key: ");
-        }
-    }
-
-    const arrowLocation = () => {
-        switch (modalKey) {
-            case "welcome":
-                return { top: 0, left: 0 };
-            case "requirements-panel-1":
-                return { top: 50, left: 50 };
-        }
-    }
 
     return (
         <>
             <ModalBackground />
-            <OnboardingTutorialPanel title={getModalTitle(modalKey)} position={"absolute"} top={topLocation()} left={leftLocation()} close={close}>
+            <OnboardingTutorialPanel
+                title={getModalTitle(modalKey)}
+                position="fixed"
+                top={position.top}
+                left={position.left}
+                transform={position.transform}
+                close={close}
+            >
                 <ModalInteriorWrapper>
                     {modalKey === "welcome" && <img src="pdp-porcupine.svg" alt="Porcupine" />}
                     <ModalTextWrapper>
@@ -256,7 +320,7 @@ const ModalInterior = ({
 };
 
 const TutorialModal = () => {
-    const { tutorialModalKey, setTutorialModalKey } = React.useContext(TutorialModalContext);
+    const { tutorialModalKey, setTutorialModalKey, componentRefs } = React.useContext(TutorialModalContext);
 
     const onboardingStep = (forward: boolean) => {
         const steps: TutorialModalKey[] = [
@@ -290,17 +354,12 @@ const TutorialModal = () => {
     }
 
     return (
-        // <ModalContainer
-        //     title={getModalTitle(modalKey)}
-        //     close={() => setModalKey(null)}
-        //     modalKey={modalKey}
-        // >
         <ModalInterior
             modalKey={tutorialModalKey}
             nextOnboardingStep={(forward: boolean) => onboardingStep(forward)}
             close={() => setTutorialModalKey(null)}
+            componentRefs={componentRefs}
         />
-        // </ModalContainer>
     )
 };
 

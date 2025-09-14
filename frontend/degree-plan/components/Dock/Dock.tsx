@@ -1,4 +1,3 @@
-
 import styled from '@emotion/styled';
 import { DarkBlueIcon } from '../Requirements/QObject';
 import React, { useContext, useEffect } from "react";
@@ -135,25 +134,29 @@ const Dock = ({ user, login, logout, activeDegreeplanId }: DockProps) => {
 
     const { asPath } = useRouter();
 
-    const { tutorialModalKey, highlightedComponentRef } = useContext(TutorialModalContext);
+    const { tutorialModalKey, highlightedComponentRef, componentRefs } = useContext(TutorialModalContext);
     const dockRef = React.useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
         if (!dockRef.current) return;
+        if (!componentRefs || !('current' in componentRefs)) return;
 
         if (tutorialModalKey === "courses-dock" || tutorialModalKey === "general-search") {
             dockRef.current.style.zIndex = "11";
             highlightedComponentRef.current = dockRef.current;
+            componentRefs.current["dock"] = dockRef.current;
         } else {
             dockRef.current.style.zIndex = "0";
         }
-    }, [tutorialModalKey, highlightedComponentRef]);
+    }, [tutorialModalKey, highlightedComponentRef, componentRefs]);
 
     return (
         <div style={{ position: "relative" }} ref={(el) => {
             dockRef.current = el;
+            if (!componentRefs || !('current' in componentRefs)) return;
             if (tutorialModalKey === "courses-dock" || tutorialModalKey === "general-search") {
                 highlightedComponentRef.current = el;
+                componentRefs.current["dock"] = el;
             }
         }}>
             <DockWrapper ref={drop} >

@@ -68,7 +68,7 @@ const FourYearPlanPage = ({
     // tutorial
     const [tutorialModalKey, setTutorialModalKey] = useState<TutorialModalKey>("welcome");
     const highlightedComponentRef = useRef<HTMLElement | null>(null);
-    const componentRefs = useRef<{ [key: string]: HTMLElement | null }>({});
+    const componentRefs = useRef<Record<string, HTMLElement | null>>({});
 
     // edit modals for degree and degree plan
     const [modalKey, setModalKey] = useState<ModalKey>(null);
