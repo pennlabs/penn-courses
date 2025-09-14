@@ -96,9 +96,9 @@ interface PanelProps {
     title: string;
     top?: string;
     left?: string;
+    transform?: string;
     position?: string;
     headerIcon?: string;
-    arrowPosition?: { top?: number, left?: number };
     close?: () => void;
 }
 
@@ -108,21 +108,29 @@ const OnboardingTutorialPanel = ({
     top,
     left,
     position,
+    transform,
     headerIcon,
-    arrowPosition,
     close,
 }: PropsWithChildren<PanelProps>) => (
     <ModalContainer $top={top} $left={left} $position={position}>
-        {/* <ModalBackground /> */}
-        {/* <ModalCardArrow $top={arrowPosition?.top} $left={15} /> */}
-        <ModalCard>
-            <ModalCardHead $center={!headerIcon}>
-                <header>{title}</header>
-                {headerIcon && <img alt="" src={headerIcon} />}
-                {close && <CloseButton onClick={close}><Cross2Icon /></CloseButton>}
-            </ModalCardHead>
-            {children && <ModalCardBody>{children}</ModalCardBody>}
-        </ModalCard>
+        <div style={{
+            position: "fixed",
+            top: top,
+            left: left,
+            transform: transform,
+            zIndex: 41,
+            pointerEvents: "auto",
+        }}>
+            {/* <ModalBackground /> */}
+            {/* <ModalCardArrow $top={arrowPosition?.top} $left={15} /> */}
+            <ModalCard>
+                <ModalCardHead $center={!headerIcon}>
+                    <header>{title}</header>
+                    {headerIcon && <img alt="" src={headerIcon} />}
+                    {close && <CloseButton onClick={close}><Cross2Icon /></CloseButton>}
+                </ModalCardHead>
+                {children && <ModalCardBody>{children}</ModalCardBody>}
+            </ModalCard></div>
     </ModalContainer>
 );
 
