@@ -2,7 +2,6 @@ import React from "react";
 import dynamic from "next/dynamic";
 import {
     renameSchedule,
-    downloadSchedule,
     createScheduleOnBackend,
     updateContactInfo,
     registerAlertItem,
@@ -15,7 +14,6 @@ import {
 import NameScheduleModalInterior from "./AddScheduleFriendsModalInterior";
 import PendingRequestsModalInterior from "./PendingRequestsModalInterior";
 import WelcomeModalInterior from "./WelcomeModalInterior";
-import CalendarModal from "./CalendarModal";
 import AlertFormModal from "./AlertFormModal";
 
 /**
@@ -84,16 +82,6 @@ export const generateModalInterior = (reduxState) => {
                     )}
                 />
             );
-        case "DOWNLOAD_SCHEDULE":
-            return (
-                <CalendarModal
-                    $schedulePk={
-                        reduxState.schedule.schedules[
-                            reduxState.schedule.scheduleSelected
-                        ].id
-                    }
-                />
-            );
         case "MULTITAB":
             return (
                 <div>
@@ -151,11 +139,6 @@ export const generateModalActions = (dispatch, modalKey, modalProps) => {
                     ),
                 deleteFriendshipOnBackend: (user, friendPennkey) =>
                     dispatch(deleteFriendshipOnBackend(user, friendPennkey)),
-            };
-        case "DOWNLOAD_SCHEDULE":
-            return {
-                namingFunction: (newName) =>
-                    dispatch(downloadSchedule(newName)),
             };
         case "ALERT_FORM":
             return {

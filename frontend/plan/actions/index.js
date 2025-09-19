@@ -61,7 +61,6 @@ export const DELETE_SCHEDULE_ON_FRONTEND = "DELETE_SCHEDULE_ON_FRONTEND";
 export const CHANGE_MY_SCHEDULE = "CHANGE_MY_SCHEDULE";
 export const RENAME_SCHEDULE = "RENAME_SCHEDULE";
 export const CLEAR_SCHEDULE = "CLEAR_SCHEDULE";
-export const DOWNLOAD_SCHEDULE = "DOWNLOAD_SCHEDULE";
 
 export const UPDATE_SCHEDULES_ON_FRONTEND = "UPDATE_SCHEDULES_ON_FRONTEND";
 export const MARK_SCHEDULE_SYNCED = "MARK_SCHEDULE_SYNCED";
@@ -103,11 +102,6 @@ export const markScheduleSynced = (scheduleName) => ({
 
 export const markCartSynced = () => ({
     type: MARK_CART_SYNCED,
-});
-
-export const downloadSchedule = (scheduleName) => ({
-    type: DOWNLOAD_SCHEDULE,
-    scheduleName,
 });
 
 export const addCartItem = (section) => ({

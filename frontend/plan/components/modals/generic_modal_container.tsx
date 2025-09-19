@@ -180,7 +180,7 @@ const ModalContainer = ({
     </OuterModalContainer>
 );
 
-const bigModals = { WELCOME: true,  DOWNLOAD_SCHEDULE: true};
+const bigModals = { WELCOME: true};
 
 const mapStateToProps = (state: any) => ({
     children: generateModalInterior(state),

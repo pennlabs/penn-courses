@@ -71,7 +71,6 @@ interface ScheduleProps {
     download: (scheduleName: string) => void;
     remove: (user: User, scheduleName: string, scheduleId: string) => void;
     rename: (oldName: string) => void;
-
     createSchedule: () => void;
     addFriend: () => void;
     showRequests: () => void;
