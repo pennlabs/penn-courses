@@ -134,6 +134,7 @@ MONTH_IN_SECONDS = DAY_IN_SECONDS * 30
 )
 @permission_classes([IsAuthenticated])
 def course_reviews(request, course_code, semester=None):
+    print("hello")
     request_semester = request.GET.get("semester")
 
     topic_id = cache.get(CACHE_PREFIX + course_code)
