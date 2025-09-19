@@ -17,6 +17,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from plan.util import get_first_matching_date
 
 from courses.models import Course, Meeting, Section
 from courses.serializers import CourseListSerializer
@@ -681,7 +682,8 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         Get all breaks for the current user.
         """
         breaks = self.get_queryset()
-        serializer = BreakSerializer(breaks, many=True, context=self.get_serializer_context())
+        serializer = BreakSerializer(
+            breaks, many=True, context=self.get_serializer_context())
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def update(self, request, *args, **kwargs):
@@ -903,8 +905,10 @@ class CalendarAPIView(APIView):
                 start_datetime = ""
                 end_datetime = ""
             else:
-                start_datetime = first_meeting.start_date + " "
-                end_datetime = first_meeting.start_date + " "
+                start_datetime = get_first_matching_date(
+                    first_meeting.start_date, days) + " "
+                end_datetime = get_first_matching_date(
+                    first_meeting.start_date, days) + " "
 
             if int(first_meeting.start) < 10:
                 start_datetime += "0"
@@ -914,12 +918,12 @@ class CalendarAPIView(APIView):
             start_datetime += start_time
             end_datetime += end_time
 
-            e.begin = arrow.get(
-                start_datetime, "YYYY-MM-DD h:mm A", tzinfo="America/New York"
-            ).format("YYYYMMDDTHHmmss")
-            e.end = arrow.get(end_datetime, "YYYY-MM-DD h:mm A", tzinfo="America/New York").format(
-                "YYYYMMDDTHHmmss"
-            )
+            e.begin = arrow.get(start_datetime, "YYYY-MM-DD h:mm A",
+                                tzinfo="America/New_York")
+
+            e.end = arrow.get(end_datetime, "YYYY-MM-DD h:mm A",
+                              tzinfo="America/New York")
+
             end_date = arrow.get(
                 first_meeting.end_date, "YYYY-MM-DD", tzinfo="America/New York"
             ).format("YYYYMMDDTHHmmss")
