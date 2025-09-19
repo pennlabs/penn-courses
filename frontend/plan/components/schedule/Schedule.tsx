@@ -9,12 +9,10 @@ import {
   changeMySchedule,
   createScheduleOnBackend,
   deleteScheduleOnBackend,
-  downloadSchedule,
   openModal,
   setCurrentUserPrimarySchedule,
 } from "../../actions";
 import ScheduleSelectorDropdown from "./ScheduleSelectorDropdown";
-
 import {
   Section,
   Break,
@@ -141,7 +139,8 @@ const mapStateToProps = (state: any) => {
 };
 
 const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
-  removeSection: (idDashed: string, type: string) => dispatch(removeSchedItem(idDashed, type)),
+  removeSection: (idDashed: string, type: string) =>
+    dispatch(removeSchedItem(idDashed, type)),
   focusSection: (id: string) => dispatch(fetchCourseDetails(id)),
   changeMySchedule: (scheduleName: string) =>
     dispatch(changeMySchedule(scheduleName)),
@@ -151,26 +150,33 @@ const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
       dispatch(fetchFriendPrimarySchedule(friend)),
     fetchBackendFriendships: (user: User) =>
       dispatch(fetchBackendFriendships(user)),
-    deleteFriendshipOnBackend: (
-      user: User,
-      friendPennkey: string) =>
-      dispatch(
-        deleteFriendshipOnBackend(user, friendPennkey)
-      ),
+    deleteFriendshipOnBackend: (user: User, friendPennkey: string) =>
+      dispatch(deleteFriendshipOnBackend(user, friendPennkey)),
   },
   schedulesMutator: {
     setPrimary: (user: User, scheduleId: string | null) =>
       dispatch(setCurrentUserPrimarySchedule(user, scheduleId)),
     copy: (scheduleName: string, sections: Section[]) =>
       dispatch(createScheduleOnBackend(scheduleName, sections)),
-    download: (scheduleName: string) =>
-      dispatch(
-        openModal(
-          "DOWNLOAD_SCHEDULE",
-          { scheduleName: scheduleName },
-          "Download Schedule"
-        )
-      ),
+    download: (scheduleName: string) => {
+      dispatch((_: any, getState: any) => {
+          const allSchedulesObj = getState().schedule.schedules;
+          const schedule = allSchedulesObj[scheduleName];
+          console.log(allSchedulesObj);
+          console.log(scheduleName);
+          if (!schedule) {
+              alert("Schedule not found");
+              return;
+          }
+          const url = `http://localhost:8000/api/plan/${schedule.id}/calendar/`;
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = "plan.ics";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+      });
+    },
     remove: (user: User, scheduleName: string, scheduleId: string) =>
       dispatch(deleteScheduleOnBackend(user, scheduleName, scheduleId)),
     rename: (oldName: string) =>
