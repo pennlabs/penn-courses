@@ -17,7 +17,6 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from plan.util import get_first_matching_date
 
 from courses.models import Course, Meeting, Section
 from courses.serializers import CourseListSerializer
@@ -39,6 +38,7 @@ from plan.management.commands.recommendcourses import (
 )
 from plan.models import Break, PrimarySchedule, Schedule
 from plan.serializers import BreakSerializer, PrimaryScheduleSerializer, ScheduleSerializer
+from plan.util import get_first_matching_date
 
 
 @api_view(["POST"])
