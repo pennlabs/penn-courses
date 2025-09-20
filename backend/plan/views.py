@@ -924,6 +924,14 @@ class CalendarAPIView(APIView):
             e.end = arrow.get(end_datetime, "YYYY-MM-DD h:mm A",
                               tzinfo="America/New York")
 
+            location = None
+            if hasattr(first_meeting, "room") and first_meeting.room:
+                location = str(first_meeting.room)
+            elif hasattr(first_meeting, "location") and first_meeting.location:
+                location = str(first_meeting.location)
+            if location:
+                e.location = location
+
             end_date = arrow.get(
                 first_meeting.end_date, "YYYY-MM-DD", tzinfo="America/New York"
             ).format("YYYYMMDDTHHmmss")
