@@ -476,7 +476,6 @@ function Index() {
                         }
                       >
                         {name}&nbsp;
-                        {item === TabItem.Break && (<NewLabel />)}
                       </CartTab>
                     ))}
                   </div>

@@ -9,8 +9,8 @@ import {
     Section,
 } from "../../types";
 import { nextAvailable } from "../../reducers/schedule";
-import NewLabel from "../common/NewLabel";
 import { PATH_REGISTRATION_SCHEDULE_NAME } from "../../constants/constants";
+import NewLabel from "../common/NewLabel"
 
 const ButtonContainer = styled.div<{
     $isActive: boolean;
@@ -360,24 +360,42 @@ const ScheduleDropdownHeader = styled.div`
     width: 100%;
 `;
 
-const ShareSchedulePromoContainer = styled.div`
+const DownloadSchedulePromoContainer = styled.div`
     display: flex;
     margin-left: auto;
+    align-items: center;
 `;
 
-const ShareSchedulePromo = styled.div`
+const DownloadSchedulePromo = styled.div`
     display: flex;
+    gap: 4px;
     border-radius: 0.81rem;
     background-color: #878ed8;
     color: white;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     align-items: center;
     justify-items: center;
     font-weight: 500;
     justify-content: start;
-    padding: 0 0.5rem 0 0.5rem;
+    padding: 0.1rem 0.5rem;
     user-select: none;
     margin-left: 0.5rem;
+    transition: background 0.15s ease;
+
+    &:hover {
+        background-color: #767ac2ff;
+        cursor: pointer;
+    }
+`;
+
+const DownloadScheduleInfo = styled.a`
+    color: #c4c7eeff;
+    transition: background 0.15s ease;
+
+    &:hover {
+        color: #b3b5e1ff;
+        cursor: pointer;
+    }
 `;
 
 const ReceivedRequestNotice = styled.div`
@@ -547,22 +565,32 @@ const ScheduleSelectorDropdown = ({
                     </DropdownTrigger>
                     {numRequests > 0 && <ReceivedRequestNotice />}
                 </DropdownTriggerContainer>
-                {(!readOnly || !friendshipState.activeFriend) && (
-                    <ShareSchedulePromoContainer>
-                        <ShareSchedulePromo
-                            onClick={() => setIsActive(!isActive)}
+                {!readOnly && (
+                    <DownloadSchedulePromoContainer
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => download(activeName)}
+                        aria-label="Download schedule"
+                    >
+                        <DownloadScheduleInfo
+                            href="https://support.google.com/calendar/answer/37118?sjid=16812697295393986554-NA&visit_id=638928653078159420-327839679&rd=1"
+                            target="_blank"
+                            onClick={(e) => e.stopPropagation()}
                         >
-                            <img
-                                style={{
-                                    width: "1.3rem",
-                                    paddingRight: "0.3rem",
-                                }}
-                                src="/icons/share.svg"
-                                alt="share"
+                            <i
+                                className="fa fa-info-circle fa-md"
+                                aria-hidden="true"
                             />
-                            Share Schedule
-                        </ShareSchedulePromo>
-                    </ShareSchedulePromoContainer>
+                        </DownloadScheduleInfo>
+
+                        <DownloadSchedulePromo>
+                            <i
+                                className="fa fa-download fa-sm"
+                                aria-hidden="true"
+                            />
+                            Download Schedule
+                        </DownloadSchedulePromo>
+                    </DownloadSchedulePromoContainer>
                 )}
             </ScheduleDropdownHeader>
             <DropdownMenu $isActive={isActive} role="menu">
