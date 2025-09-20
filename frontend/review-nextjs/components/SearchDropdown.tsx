@@ -1,13 +1,13 @@
-import { AutocompleteResult } from "@/lib/types";
 import {
   CommandEmpty,
   CommandGroup,
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { AutocompleteData } from "@/lib/types";
 
 interface SearchDropdownProps {
-  results: AutocompleteResult | null;
+  results: AutocompleteData | null;
   isOpen: boolean;
   onSelect: (url: string) => void;
 }
@@ -30,12 +30,12 @@ export default function SearchDropdown({
 
       {hasDepartments && (
         <CommandGroup heading="Departments">
-          {results!.departments.map((dept) => (
+          {results.departments.map((dept) => (
             <CommandItem
-              key={dept.item.url}
-              onSelect={() => onSelect(dept.item.url)}
+              key={dept.url}
+              onSelect={() => onSelect(dept.url)}
             >
-              {dept.item.title} - {dept.item.desc}
+              {dept.title} - {dept.desc}
             </CommandItem>
           ))}
         </CommandGroup>
@@ -43,12 +43,12 @@ export default function SearchDropdown({
 
       {hasCourses && (
         <CommandGroup heading="Courses">
-          {results!.courses.map((course) => (
+          {results.courses.map((course) => (
             <CommandItem
-              key={course.item.url}
-              onSelect={() => onSelect(course.item.url)}
+              key={course.url}
+              onSelect={() => onSelect(course.url)}
             >
-              {course.item.title} - {course.item.desc}
+              {course.title} - {course.desc}
             </CommandItem>
           ))}
         </CommandGroup>
@@ -56,12 +56,12 @@ export default function SearchDropdown({
 
       {hasInstructors && (
         <CommandGroup heading="Instructors">
-          {results!.instructors.map((ins) => (
+          {results.instructors.map((ins) => (
             <CommandItem
-              key={ins.item.url}
-              onSelect={() => onSelect(ins.item.url)}
+              key={ins.url}
+              onSelect={() => onSelect(ins.url)}
             >
-              {ins.item.title} - {ins.item.desc}
+              {ins.title} - {ins.desc}
             </CommandItem>
           ))}
         </CommandGroup>
