@@ -352,7 +352,7 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
                     {
                         "title": "CIS-120",
                         "desc": [""],
-                        "url": f"/course/CIS-120",
+                        "url": "/course/CIS-120",
                     }
                 ],
                 "departments": [{"title": "CIS", "desc": "", "url": "/department/CIS"}],

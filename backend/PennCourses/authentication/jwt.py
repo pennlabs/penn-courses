@@ -1,5 +1,6 @@
 import asyncio
 import logging
+
 import jwt
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
@@ -16,6 +17,7 @@ jwks_client_lock = asyncio.Lock()
 async def get_jwks_client():
     async with jwks_client_lock:
         return jwks_client
+
 
 async def refresh_jwks_client():
     global jwks_client

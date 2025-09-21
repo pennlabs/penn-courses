@@ -2955,7 +2955,6 @@ class AlertRegistrationTestCase(TestCase):
 
 
 class TestAlertMeetingString(TestCase):
-
     def setUp(self):
         set_semester()
         user = User.objects.create_user(username="jacob", password="top_secret")
