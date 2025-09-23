@@ -380,7 +380,7 @@ const DownloadSchedulePromo = styled.a`
     justify-items: center;
     font-weight: 500;
     justify-content: start;
-    padding: 0.1rem 0.5rem;
+    padding: 0.25rem 0.6rem;
     user-select: none;
     margin-left: 0.5rem;
     transition: background 0.15s ease;
