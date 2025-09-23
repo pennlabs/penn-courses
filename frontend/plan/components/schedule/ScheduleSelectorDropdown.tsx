@@ -213,8 +213,8 @@ const DropdownButton = ({
                 <a
                     href={
                         allSchedules[text]
-                            ? `http://localhost:8000/api/plan/${allSchedules[text].id}/calendar/`
-                            : ""
+                            ? `/api/plan/${allSchedules[text].id}/calendar/`
+                            : undefined
                     }
                     onClick={(e) => e.stopPropagation()}
                     download
@@ -583,8 +583,8 @@ const ScheduleSelectorDropdown = ({
                         <DownloadSchedulePromo
                             href={
                                 allSchedules[activeName]
-                                    ? `http://localhost:8000/api/plan/${allSchedules[activeName].id}/calendar/`
-                                    : ""
+                                    ? `/api/plan/${allSchedules[activeName].id}/calendar/`
+                                    : undefined
                             }
                             onClick={(e) => e.stopPropagation()}
                             download
