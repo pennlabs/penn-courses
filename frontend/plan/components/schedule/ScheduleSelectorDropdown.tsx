@@ -10,7 +10,6 @@ import {
 } from "../../types";
 import { nextAvailable } from "../../reducers/schedule";
 import { PATH_REGISTRATION_SCHEDULE_NAME } from "../../constants/constants";
-import NewLabel from "../common/NewLabel"
 
 const ButtonContainer = styled.div<{
     $isActive: boolean;
@@ -131,6 +130,7 @@ const ScheduleOptionsContainer = styled.div`
 `;
 
 interface DropdownButton {
+    allSchedules: { [name: string]: ScheduleType };
     isActive: boolean;
     isPrimary: boolean;
     text: string;
@@ -140,20 +140,20 @@ interface DropdownButton {
     mutators: {
         setPrimary: () => void;
         copy: () => void;
-        download: () => void;
         remove: (() => void) | null;
         rename: (() => void) | null;
     };
 }
 
 const DropdownButton = ({
+    allSchedules,
     isActive,
     isPrimary,
     text,
     hasFriends,
     onClick,
     makeActive,
-    mutators: { setPrimary, copy, download, remove, rename },
+    mutators: { setPrimary, copy, remove, rename },
 }: DropdownButton) => (
     <ButtonContainer
         role="button"
@@ -209,15 +209,18 @@ const DropdownButton = ({
             >
                 <i className="far fa-copy" aria-hidden="true" />
             </Icon>
-            <Icon
-                onClick={(e) => {
-                    download();
-                    e.stopPropagation();
-                }}
-                role="button"
-                className="option-icon"
-            >
-                <i className="fa fa-download" aria-hidden="true" />
+            <Icon role="button" className="option-icon">
+                <a
+                    href={
+                        allSchedules[text]
+                            ? `http://localhost:8000/api/plan/${allSchedules[text].id}/calendar/`
+                            : ""
+                    }
+                    onClick={(e) => e.stopPropagation()}
+                    download
+                >
+                    <i className="fa fa-download" aria-hidden="true" />
+                </a>
             </Icon>
             {remove && (
                 <Icon
@@ -366,7 +369,7 @@ const DownloadSchedulePromoContainer = styled.div`
     align-items: center;
 `;
 
-const DownloadSchedulePromo = styled.div`
+const DownloadSchedulePromo = styled.a`
     display: flex;
     gap: 4px;
     border-radius: 0.81rem;
@@ -384,6 +387,7 @@ const DownloadSchedulePromo = styled.div`
 
     &:hover {
         background-color: #767ac2ff;
+        color: white;
         cursor: pointer;
     }
 `;
@@ -424,7 +428,7 @@ interface ScheduleSelectorDropdownProps {
     user: User;
     activeName: string;
     primaryScheduleId: string;
-    allSchedules: ScheduleType[];
+    allSchedules: { [key: string]: ScheduleType };
     friendshipState: FriendshipState;
     displayOwnSchedule: (scheduleName: string) => void;
     readOnly: boolean;
@@ -435,7 +439,6 @@ interface ScheduleSelectorDropdownProps {
     };
     schedulesMutators: {
         copy: (scheduleName: string, sections: Section[]) => void;
-        download: (scheduleName: string) => void;
         remove: (user: User, scheduleName: string, scheduleId: string) => void;
         rename: (oldName: string) => void;
         createSchedule: () => void;
@@ -460,7 +463,6 @@ const ScheduleSelectorDropdown = ({
     },
     schedulesMutators: {
         copy,
-        download,
         remove,
         rename,
         createSchedule,
@@ -566,12 +568,7 @@ const ScheduleSelectorDropdown = ({
                     {numRequests > 0 && <ReceivedRequestNotice />}
                 </DropdownTriggerContainer>
                 {!readOnly && (
-                    <DownloadSchedulePromoContainer
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => download(activeName)}
-                        aria-label="Download schedule"
-                    >
+                    <DownloadSchedulePromoContainer>
                         <DownloadScheduleInfo
                             href="https://support.google.com/calendar/answer/37118?sjid=16812697295393986554-NA&visit_id=638928653078159420-327839679&rd=1"
                             target="_blank"
@@ -583,7 +580,15 @@ const ScheduleSelectorDropdown = ({
                             />
                         </DownloadScheduleInfo>
 
-                        <DownloadSchedulePromo>
+                        <DownloadSchedulePromo
+                            href={
+                                allSchedules[activeName]
+                                    ? `http://localhost:8000/api/plan/${allSchedules[activeName].id}/calendar/`
+                                    : ""
+                            }
+                            onClick={(e) => e.stopPropagation()}
+                            download
+                        >
                             <i
                                 className="fa fa-download fa-sm"
                                 aria-hidden="true"
@@ -618,6 +623,7 @@ const ScheduleSelectorDropdown = ({
                                     name !== PATH_REGISTRATION_SCHEDULE_NAME;
                                 return (
                                     <DropdownButton
+                                        allSchedules={allSchedules}
                                         key={data.id}
                                         isActive={
                                             name === activeName &&
@@ -653,7 +659,6 @@ const ScheduleSelectorDropdown = ({
                                                     data.sections
                                                 );
                                             },
-                                            download: () => download(name),
                                             remove: mutable
                                                 ? () =>
                                                       remove(

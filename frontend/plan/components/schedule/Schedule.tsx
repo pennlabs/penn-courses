@@ -48,7 +48,7 @@ interface ScheduleProps {
   user: User;
   activeScheduleName: string;
   currScheduleData: { sections: Section[], breaks: Break[] };
-  allSchedules: ScheduleType[];
+  allSchedules: { [key: string]: ScheduleType };
   primaryScheduleId: string;
   readOnly: boolean;
   friendshipState: FriendshipState;
@@ -68,7 +68,6 @@ interface ScheduleProps {
   schedulesMutator: {
     setPrimary: (user: User, scheduleId: string | null) => void;
     copy: (scheduleName: string, sections: Section[]) => void;
-    download: (scheduleName: string) => void;
     remove: (user: User, scheduleName: string, scheduleId: string) => void;
     rename: (oldName: string) => void;
     createSchedule: () => void;
@@ -157,25 +156,6 @@ const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
       dispatch(setCurrentUserPrimarySchedule(user, scheduleId)),
     copy: (scheduleName: string, sections: Section[]) =>
       dispatch(createScheduleOnBackend(scheduleName, sections)),
-    download: (scheduleName: string) => {
-      dispatch((_: any, getState: any) => {
-          const allSchedulesObj = getState().schedule.schedules;
-          const schedule = allSchedulesObj[scheduleName];
-          console.log(allSchedulesObj);
-          console.log(scheduleName);
-          if (!schedule) {
-              alert("Schedule not found");
-              return;
-          }
-          const url = `http://localhost:8000/api/plan/${schedule.id}/calendar/`;
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = "plan.ics";
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-      });
-    },
     remove: (user: User, scheduleName: string, scheduleId: string) =>
       dispatch(deleteScheduleOnBackend(user, scheduleName, scheduleId)),
     rename: (oldName: string) =>
