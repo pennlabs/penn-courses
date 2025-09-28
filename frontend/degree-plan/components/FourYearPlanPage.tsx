@@ -8,7 +8,7 @@ import {
 // import Plan from "../components/example/Plan";
 import styled from "@emotion/styled";
 import useSWR, { useSWRConfig } from "swr";
-import { Course, DegreePlan, Fulfillment, Options, Rule } from "@/types";
+import { Course, DegreePlan, Fulfillment, Options, Rule, User } from "@/types";
 import ReviewPanel, { ReviewPanelContext } from "@/components/Infobox/ReviewPanel";
 import TutorialModal, { TutorialModalKey, TutorialModalContext } from "./FourYearPlan/OnboardingTutorial";
 import DegreeModal, { ModalKey } from "@/components/FourYearPlan/DegreeModal";
@@ -18,6 +18,7 @@ import useWindowDimensions from "@/hooks/window";
 import OnboardingPage from "../pages/OnboardingPage";
 import Footer from "./Footer";
 import { SemestersContext } from "./FourYearPlan/Semesters";
+import { getCsrf } from "@/hooks/swrcrud";
 
 const PageContainer = styled.div`
   height: 100vh;
@@ -115,9 +116,6 @@ const FourYearPlanPage = ({
     // Scroll to current semester
     useEffect(() => {
         if (options?.SEMESTER) {
-            console.log(options.SEMESTER);
-            console.log("hello");
-            console.log(semesterRefs.current[options.SEMESTER]);
             const ref = semesterRefs.current[options.SEMESTER];
             if (ref) {
                 ref.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -130,6 +128,32 @@ const FourYearPlanPage = ({
     const [searchRuleId, setSearchRuleId] = useState<Rule["id"] | null>(null);
     const [searchRuleQuery, setSearchRuleQuery] = useState<string | null>(null); // a query object
     const [searchFulfillments, setSearchFulfillments] = useState<Fulfillment[]>([]); // fulfillments matching the ruleId
+
+    const updateOnboardedFlag = async () => {
+        try {
+            const url = `/accounts/me/`;
+
+            const res = await fetch(url, {
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCsrf() as string,
+                },
+                body: JSON.stringify({
+                    first_name: user.first_name,
+                    last_name: user.last_name,
+                    profile: { ...user.profile, has_been_onboarded: true },
+                }),
+            });
+
+            if (!res.ok) {
+                return;
+            }
+        } catch (err) {
+            console.error("Error updating user:", err);
+        }
+    };
 
     return (
         <>
@@ -164,7 +188,7 @@ const FourYearPlanPage = ({
                         <SemestersContext.Provider value={{
                             semesterRefs: semesterRefs
                         }}>
-                            <TutorialModal />
+                            {showTutorialModal && <TutorialModal updateOnboardingFlag={updateOnboardedFlag} />}
                             {reviewPanelFullCode && (
                                 <ReviewPanel
                                     currentSemester={options?.SEMESTER}

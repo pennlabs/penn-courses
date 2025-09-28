@@ -324,6 +324,7 @@ const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: 
                             {activeDegreeplanDetail.degrees.length == 0 && !editMode && <EmptyPanel />}
                             {activeDegreeplanDetail.degrees.map(degree => (
                                 <Degree
+                                    key={degree.id}
                                     degree={degree}
                                     rulesToFulfillments={rulesToFulfillments}
                                     activeDegreeplan={activeDegreeplan}
