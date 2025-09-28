@@ -322,8 +322,8 @@ const Semesters = ({
     return (
         <SemestersContainer className={className}>
             {isLoading
-                ? Array.from(Array(8).keys()).map(() => (
-                    <SkeletonSemester showStats={showStats} />
+                ? Array.from(Array(8).keys()).map((index) => (
+                    <SkeletonSemester key={index} showStats={showStats} />
                 ))
                 : Object.keys(semesters)
                     .sort((a, b) => a.localeCompare(b))

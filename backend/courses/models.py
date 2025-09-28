@@ -1436,6 +1436,11 @@ class UserProfile(models.Model):
     )
     # phone field defined underneath validate_phone function below
 
+    has_been_onboarded = models.BooleanField(
+                default=False,
+                help_text="True if the user has completed onboarding and should not see the tutorial again."
+            )
+
     def validate_phone(value):
         """
         Validator to check that a phone number is in the proper form. The number must be in a

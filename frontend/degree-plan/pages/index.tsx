@@ -1,11 +1,9 @@
-import "react-toastify/dist/ReactToastify.css";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import FourYearPlanPage from "../components/FourYearPlanPage";
 import React, { useEffect, useState } from "react";
 import { DegreePlan, type User } from "../types";
 import LoginModal from "pcx-shared-components/src/accounts/LoginModal";
-import TutorialModal, { TutorialModalContext } from "../components/FourYearPlan/OnboardingTutorial";
 import { SWRConfig } from "swr";
 import { toast, ToastContainer } from "react-toastify";
 import styled from "@emotion/styled";
@@ -17,19 +15,18 @@ import ToastContext from "@/components/Toast/Toast";
 export default function Home() {
     const [user, setUser] = useState<User | null>(null);
     const [showLoginModal, setShowLoginModal] = useState(false);
-    const [showOnboardingModal, setShowOnboardingModal] = useState(true);
+    const [showTutorialModal, setShowTutorialModal] = useState(false);
 
     const updateUser = (newUserVal: User | null) => {
         if (!newUserVal) {
             // the user has logged out; show the login modal
             setShowLoginModal(true);
-            setShowOnboardingModal(false);
+            setShowTutorialModal(false);
         } else {
             // the user has logged in; hide the login modal
             setShowLoginModal(false);
 
-            // TODO: only show if the user logs in for the first time
-            setShowOnboardingModal(true);
+            setShowTutorialModal(newUserVal.profile ? !newUserVal.profile.has_been_onboarded : false);
         }
         setUser(newUserVal);
     };
@@ -83,7 +80,7 @@ export default function Home() {
                                 siteName="Penn Degree Plan"
                             />
                         )}
-                        <FourYearPlanPage user={user} updateUser={updateUser} showTutorial={true} />
+                        <FourYearPlanPage user={user} updateUser={updateUser} showTutorialModal={showTutorialModal} />
                     </SWRConfig>
                 </ToastContext.Provider>
             </DndProvider>

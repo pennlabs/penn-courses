@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import ModalContainer from "../common/ModalContainer";
 import OnboardingTutorialPanel from "./OnboardingTutorialPanel";
 import { createContext } from 'react';
+import { useSWRCrud } from "@/hooks/swrcrud";
 
 export type TutorialModalKey =
     | "welcome"
@@ -153,6 +154,7 @@ interface ModalInteriorProps {
     nextOnboardingStep: (forward: boolean) => void;
     close: () => void;
     componentRefs: any;
+    handleClose: () => void;
 }
 
 // Function to calculate modal position based on component position
@@ -261,7 +263,8 @@ const ModalInterior = ({
     modalKey,
     nextOnboardingStep,
     close,
-    componentRefs
+    componentRefs,
+    handleClose,
 }: ModalInteriorProps) => {
     const [position, setPosition] = useState({ top: "50%", left: "50%", transform: "translate(-50%, -50%)" });
 
@@ -301,7 +304,7 @@ const ModalInterior = ({
                 top={position.top}
                 left={position.left}
                 transform={position.transform}
-                close={close}
+                close={modalKey === "general-search" ? handleClose : close}
             >
                 <ModalInteriorWrapper>
                     {modalKey === "welcome" && <img src="pdp-porcupine.svg" alt="Porcupine" />}
@@ -311,7 +314,7 @@ const ModalInterior = ({
                     <ButtonRow>
                         {modalKey !== "welcome" && <ModalButton onClick={() => nextOnboardingStep(false)}>Back</ModalButton>}
                         {modalKey !== "general-search" && <ModalButton onClick={() => nextOnboardingStep(true)}>Next</ModalButton>}
-                        {modalKey === "general-search" && <ModalButton onClick={() => nextOnboardingStep(true)}>Close</ModalButton>}
+                        {modalKey === "general-search" && <ModalButton onClick={handleClose}>Close</ModalButton>}
                     </ButtonRow>
                 </ModalInteriorWrapper>
             </OnboardingTutorialPanel>
@@ -319,8 +322,19 @@ const ModalInterior = ({
     );
 };
 
-const TutorialModal = () => {
+interface TutorialModalProps {
+    updateOnboardingFlag: () => void;
+}
+
+const TutorialModal = ({
+    updateOnboardingFlag
+}: TutorialModalProps) => {
     const { tutorialModalKey, setTutorialModalKey, componentRefs } = React.useContext(TutorialModalContext);
+
+    const handleTutorialClose = () => {
+        updateOnboardingFlag();
+        setTutorialModalKey(null);
+    }
 
     const onboardingStep = (forward: boolean) => {
         const steps: TutorialModalKey[] = [
@@ -359,6 +373,7 @@ const TutorialModal = () => {
             nextOnboardingStep={(forward: boolean) => onboardingStep(forward)}
             close={() => setTutorialModalKey(null)}
             componentRefs={componentRefs}
+            handleClose={handleTutorialClose}
         />
     )
 };
