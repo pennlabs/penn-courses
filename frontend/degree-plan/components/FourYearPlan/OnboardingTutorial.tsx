@@ -152,7 +152,6 @@ export const TutorialModalContext = createContext<TutorialModalContextProps>({
 interface ModalInteriorProps {
     modalKey: TutorialModalKey;
     nextOnboardingStep: (forward: boolean) => void;
-    close: () => void;
     componentRefs: any;
     handleClose: () => void;
 }
@@ -262,18 +261,19 @@ const calculateModalPosition = (modalKey: TutorialModalKey, componentRefs: React
 const ModalInterior = ({
     modalKey,
     nextOnboardingStep,
-    close,
     componentRefs,
     handleClose,
 }: ModalInteriorProps) => {
     const [position, setPosition] = useState({ top: "50%", left: "50%", transform: "translate(-50%, -50%)" });
+    const [displayedModalKey, setDisplayedModalKey] = useState<TutorialModalKey>(modalKey);
 
     useEffect(() => {
         if (modalKey) {
-            // wait until components are rendered
+            // wait until components are rendered, then update position and displayed content together
             const timer = setTimeout(() => {
                 const newPosition = calculateModalPosition(modalKey, componentRefs);
                 setPosition(newPosition);
+                setDisplayedModalKey(modalKey);
             }, 20);
 
             return () => clearTimeout(timer);
@@ -299,22 +299,22 @@ const ModalInterior = ({
         <>
             <ModalBackground />
             <OnboardingTutorialPanel
-                title={getModalTitle(modalKey)}
+                title={getModalTitle(displayedModalKey)}
                 position="fixed"
                 top={position.top}
                 left={position.left}
                 transform={position.transform}
-                close={modalKey === "general-search" ? handleClose : close}
+                handleClose={handleClose}
             >
                 <ModalInteriorWrapper>
-                    {modalKey === "welcome" && <img src="pdp-porcupine.svg" alt="Porcupine" />}
+                    {displayedModalKey === "welcome" && <img src="pdp-porcupine.svg" alt="Porcupine" />}
                     <ModalTextWrapper>
-                        <ModalText>{getModalDescription(modalKey)}</ModalText>
+                        <ModalText>{getModalDescription(displayedModalKey)}</ModalText>
                     </ModalTextWrapper>
                     <ButtonRow>
-                        {modalKey !== "welcome" && <ModalButton onClick={() => nextOnboardingStep(false)}>Back</ModalButton>}
-                        {modalKey !== "general-search" && <ModalButton onClick={() => nextOnboardingStep(true)}>Next</ModalButton>}
-                        {modalKey === "general-search" && <ModalButton onClick={handleClose}>Close</ModalButton>}
+                        {displayedModalKey !== "welcome" && <ModalButton onClick={() => nextOnboardingStep(false)}>Back</ModalButton>}
+                        {displayedModalKey !== "general-search" && <ModalButton onClick={() => nextOnboardingStep(true)}>Next</ModalButton>}
+                        {displayedModalKey === "general-search" && <ModalButton onClick={handleClose}>Close</ModalButton>}
                     </ButtonRow>
                 </ModalInteriorWrapper>
             </OnboardingTutorialPanel>
@@ -331,7 +331,7 @@ const TutorialModal = ({
 }: TutorialModalProps) => {
     const { tutorialModalKey, setTutorialModalKey, componentRefs } = React.useContext(TutorialModalContext);
 
-    const handleTutorialClose = () => {
+    const handleClose = () => {
         updateOnboardingFlag();
         setTutorialModalKey(null);
     }
@@ -371,9 +371,8 @@ const TutorialModal = ({
         <ModalInterior
             modalKey={tutorialModalKey}
             nextOnboardingStep={(forward: boolean) => onboardingStep(forward)}
-            close={() => setTutorialModalKey(null)}
             componentRefs={componentRefs}
-            handleClose={handleTutorialClose}
+            handleClose={handleClose}
         />
     )
 };
