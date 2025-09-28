@@ -99,7 +99,7 @@ interface PanelProps {
     transform?: string;
     position?: string;
     headerIcon?: string;
-    close?: () => void;
+    handleClose?: () => void;
 }
 
 const OnboardingTutorialPanel = ({
@@ -110,7 +110,7 @@ const OnboardingTutorialPanel = ({
     position,
     transform,
     headerIcon,
-    close,
+    handleClose,
 }: PropsWithChildren<PanelProps>) => (
     <ModalContainer $top={top} $left={left} $position={position}>
         <div style={{
@@ -127,7 +127,7 @@ const OnboardingTutorialPanel = ({
                 <ModalCardHead $center={!headerIcon}>
                     <header>{title}</header>
                     {headerIcon && <img alt="" src={headerIcon} />}
-                    {close && <CloseButton onClick={close}><Cross2Icon /></CloseButton>}
+                    {handleClose && <CloseButton onClick={handleClose}><Cross2Icon /></CloseButton>}
                 </ModalCardHead>
                 {children && <ModalCardBody>{children}</ModalCardBody>}
             </ModalCard></div>
