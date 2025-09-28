@@ -64,4 +64,4 @@ class JWTAuthentication(authentication.BaseAuthentication):
             payload = asyncio.run(verify_jwt(id_token))
             if payload:
                 return (payload, None)
-        return (AnonymousUser, None)
+        return (None, None)

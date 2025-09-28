@@ -1000,7 +1000,7 @@ class RecitationInstructorTestCase(TestCase, PCRTestMixin):
                     {
                         "title": "CIS-120",
                         "desc": [""],
-                        "url": f"/course/CIS-120/{TEST_SEMESTER}",
+                        "url": f"/course/CIS-120",
                     }
                 ],
                 "departments": [{"title": "CIS", "desc": "", "url": "/department/CIS"}],
@@ -1123,17 +1123,17 @@ class DuplicateCodeTestCase(TestCase, PCRTestMixin):
                     {
                         "title": "(Fall 2010) CIS-120",
                         "desc": [""],
-                        "url": "/course/CIS-120/2010C",
+                        "url": "/course/CIS-120",
                     },
                     {
                         "title": "(Fall 2019) CIS-120",
                         "desc": [""],
-                        "url": "/course/CIS-120/2019C",
+                        "url": "/course/CIS-120",
                     },
                     {
                         "title": "(Spring 2012) CIS-120",
                         "desc": [""],
-                        "url": "/course/CIS-120/2012A",
+                        "url": "/course/CIS-120",
                     },
                 ],
                 "departments": [{"title": "CIS", "desc": "", "url": "/department/CIS"}],

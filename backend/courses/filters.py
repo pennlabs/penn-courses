@@ -127,7 +127,7 @@ def gen_schedule_filter(request):
             return Q()
         if not schedule_id.isdigit():
             return Q()
-        if not request.user.is_authenticated:
+        if not request.user or not request.user.is_authenticated:
             return Q()
         meetings = Meeting.objects.filter(
             section_id__in=Subquery(
