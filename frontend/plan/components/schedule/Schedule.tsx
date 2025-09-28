@@ -9,12 +9,10 @@ import {
   changeMySchedule,
   createScheduleOnBackend,
   deleteScheduleOnBackend,
-  downloadSchedule,
   openModal,
   setCurrentUserPrimarySchedule,
 } from "../../actions";
 import ScheduleSelectorDropdown from "./ScheduleSelectorDropdown";
-
 import {
   Section,
   Break,
@@ -50,7 +48,7 @@ interface ScheduleProps {
   user: User;
   activeScheduleName: string;
   currScheduleData: { sections: Section[], breaks: Break[] };
-  allSchedules: ScheduleType[];
+  allSchedules: { [key: string]: ScheduleType };
   primaryScheduleId: string;
   readOnly: boolean;
   friendshipState: FriendshipState;
@@ -70,10 +68,8 @@ interface ScheduleProps {
   schedulesMutator: {
     setPrimary: (user: User, scheduleId: string | null) => void;
     copy: (scheduleName: string, sections: Section[]) => void;
-    download: (scheduleName: string) => void;
     remove: (user: User, scheduleName: string, scheduleId: string) => void;
     rename: (oldName: string) => void;
-
     createSchedule: () => void;
     addFriend: () => void;
     showRequests: () => void;
@@ -141,7 +137,8 @@ const mapStateToProps = (state: any) => {
 };
 
 const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
-  removeSection: (idDashed: string, type: string) => dispatch(removeSchedItem(idDashed, type)),
+  removeSection: (idDashed: string, type: string) =>
+    dispatch(removeSchedItem(idDashed, type)),
   focusSection: (id: string) => dispatch(fetchCourseDetails(id)),
   changeMySchedule: (scheduleName: string) =>
     dispatch(changeMySchedule(scheduleName)),
@@ -151,26 +148,14 @@ const mapDispatchToProps = (dispatch: ThunkDispatch<any, any, any>) => ({
       dispatch(fetchFriendPrimarySchedule(friend)),
     fetchBackendFriendships: (user: User) =>
       dispatch(fetchBackendFriendships(user)),
-    deleteFriendshipOnBackend: (
-      user: User,
-      friendPennkey: string) =>
-      dispatch(
-        deleteFriendshipOnBackend(user, friendPennkey)
-      ),
+    deleteFriendshipOnBackend: (user: User, friendPennkey: string) =>
+      dispatch(deleteFriendshipOnBackend(user, friendPennkey)),
   },
   schedulesMutator: {
     setPrimary: (user: User, scheduleId: string | null) =>
       dispatch(setCurrentUserPrimarySchedule(user, scheduleId)),
     copy: (scheduleName: string, sections: Section[]) =>
       dispatch(createScheduleOnBackend(scheduleName, sections)),
-    download: (scheduleName: string) =>
-      dispatch(
-        openModal(
-          "DOWNLOAD_SCHEDULE",
-          { scheduleName: scheduleName },
-          "Download Schedule"
-        )
-      ),
     remove: (user: User, scheduleName: string, scheduleId: string) =>
       dispatch(deleteScheduleOnBackend(user, scheduleName, scheduleId)),
     rename: (oldName: string) =>
