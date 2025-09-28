@@ -44,20 +44,12 @@ def start_jwks_refresh():
 async def verify_jwt(token):
     try:
         client = await get_jwks_client()
-        print(client)
-        print("--------------------------------")
         signing_key = client.get_signing_key_from_jwt(token).key
-        print(signing_key)
-        print("--------------------------------")
         payload = jwt.decode(
             token, signing_key, audience=settings.AUTH_OIDC_CLIENT_ID, algorithms=["RS256"]
         )
-        print(payload)
-        print("--------------------------------")
         return payload
-    except jwt.PyJWTError as e:
-        print(e)
-        print("--------------------------------")
+    except jwt.PyJWTError:
         raise exceptions.AuthenticationFailed("Invalid JWT Token.")
 
 
