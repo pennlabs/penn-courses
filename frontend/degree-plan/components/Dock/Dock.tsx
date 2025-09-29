@@ -138,27 +138,22 @@ const Dock = ({ user, login, logout, activeDegreeplanId }: DockProps) => {
     const dockRef = React.useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
-        if (!dockRef.current) return;
-        if (!componentRefs || !('current' in componentRefs)) return;
+        if (!componentRefs?.current) return;
 
         if (tutorialModalKey === "courses-dock" || tutorialModalKey === "general-search") {
-            dockRef.current.style.zIndex = "11";
-            highlightedComponentRef.current = dockRef.current;
             componentRefs.current["dock"] = dockRef.current;
+            if (dockRef.current) {
+                dockRef.current.style.zIndex = "20";
+            }
         } else {
-            dockRef.current.style.zIndex = "0";
+            if (dockRef.current) {
+                dockRef.current.style.zIndex = "0";
+            }
         }
     }, [tutorialModalKey, highlightedComponentRef, componentRefs]);
 
     return (
-        <div style={{ position: "relative" }} ref={(el) => {
-            dockRef.current = el;
-            if (!componentRefs || !('current' in componentRefs)) return;
-            if (tutorialModalKey === "courses-dock" || tutorialModalKey === "general-search") {
-                highlightedComponentRef.current = el;
-                componentRefs.current["dock"] = el;
-            }
-        }}>
+        <div style={{ position: "relative" }} ref={dockRef}>
             <DockWrapper ref={drop} >
                 <DockContainer $isDroppable={canDrop} $isOver={isOver}>
                     <AccountIndicator

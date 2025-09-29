@@ -66,7 +66,7 @@ const FourYearPlanPage = ({
     user,
     showTutorialModal,
 }: any) => {
-    // tutorial
+    // onboarding tutorial
     const [tutorialModalKey, setTutorialModalKey] = useState<TutorialModalKey>("welcome");
     const highlightedComponentRef = useRef<HTMLElement | null>(null);
     const componentRefs = useRef<Record<string, HTMLElement | null>>({});
@@ -149,9 +149,7 @@ const FourYearPlanPage = ({
 
     const updateOnboardedFlag = async () => {
         try {
-            const url = `/accounts/me/`;
-
-            const res = await fetch(url, {
+            await fetch("/accounts/me/", {
                 method: "POST",
                 credentials: "include",
                 headers: {
@@ -164,10 +162,6 @@ const FourYearPlanPage = ({
                     profile: { ...user.profile, has_been_onboarded: true },
                 }),
             });
-
-            if (!res.ok) {
-                return;
-            }
         } catch (err) {
             console.error("Error updating user:", err);
         }

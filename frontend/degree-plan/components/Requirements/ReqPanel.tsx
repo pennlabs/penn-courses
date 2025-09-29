@@ -290,23 +290,22 @@ const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: 
     const showToast = useContext(ToastContext);
 
     useEffect(() => {
-        if (!componentRefs || !('current' in componentRefs)) return;
-        if (reqPanelRef.current) {
-            if (tutorialModalKey === "requirements-panel-1" || tutorialModalKey === "requirements-panel-2" || tutorialModalKey === "edit-requirements") {
-                reqPanelRef.current.style.zIndex = "11";
-                componentRefs.current["reqPanel"] = reqPanelRef.current;
-            } else {
-                reqPanelRef.current.style.zIndex = "0";
+        if (!componentRefs?.current) return;
+
+        if (tutorialModalKey === "requirements-panel-1" || tutorialModalKey === "requirements-panel-2" || tutorialModalKey === "edit-requirements") {
+            componentRefs.current["reqPanel"] = reqPanelRef.current;
+
+            if (reqPanelRef.current) {
+                reqPanelRef.current.style.zIndex = "20";
+            }
+        } else {
+            if (reqPanelRef.current) {
+                reqPanelRef.current.style.zIndex = "";
             }
         }
 
-        if (editReqRef.current) {
-            if (tutorialModalKey === "edit-requirements") {
-                editReqRef.current.style.zIndex = "11";
-                componentRefs.current["editReqs"] = editReqRef.current;
-            } else {
-                editReqRef.current.style.zIndex = "0";
-            }
+        if (tutorialModalKey === "edit-requirements") {
+            componentRefs.current["editReqs"] = editReqRef.current;
         }
 
     }, [tutorialModalKey, componentRefs]);
@@ -350,23 +349,12 @@ const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: 
 
 
     return (
-        <PanelContainer style={{ position: "relative" }} ref={(el) => {
-            reqPanelRef.current = el;
-            if (!componentRefs || !('current' in componentRefs)) return;
-            if (tutorialModalKey === "requirements-panel-1" || tutorialModalKey === "requirements-panel-2") {
-                componentRefs.current["reqPanel"] = el;
-            }
-        }}>
+        <PanelContainer style={{ position: "relative" }} ref={reqPanelRef}>
             <ReqPanelBackground />
             <PanelHeader>
                 <ReqPanelTitle>Requirements</ReqPanelTitle>
                 <PanelTopBarIconList>
-                    <TutorialHighlight $active={tutorialModalKey === 'edit-requirements'} style={{ position: 'relative' }} ref={(el) => {
-                        if (!componentRefs || !('current' in componentRefs)) return;
-                        if (tutorialModalKey === "edit-requirements") {
-                            componentRefs.current["editReqs"] = el;
-                        }
-                    }}>
+                    <TutorialHighlight $active={tutorialModalKey === 'edit-requirements'} style={{ position: 'relative' }} ref={editReqRef}>
                         <EditButton editMode={editMode} setEditMode={setEditMode} />
                     </TutorialHighlight>
                 </PanelTopBarIconList>
