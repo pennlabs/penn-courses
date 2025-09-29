@@ -1,9 +1,6 @@
 import styled from "@emotion/styled";
-import React, { useState, useEffect } from "react";
-import ModalContainer from "../common/ModalContainer";
-import OnboardingTutorialPanel from "./OnboardingTutorialPanel";
-import { createContext } from 'react';
-import { useSWRCrud } from "@/hooks/swrcrud";
+import React, { useState, useEffect, useContext, createContext, MutableRefObject } from "react";
+import { Cross2Icon } from "@radix-ui/react-icons";
 
 export type TutorialModalKey =
     | "welcome"
@@ -22,69 +19,73 @@ export type TutorialModalKey =
     | "general-search"
     | null; // null is closed
 
-const getModalTitle = (modalState: TutorialModalKey) => {
+const getModalContent = (modalState: TutorialModalKey) => {
     switch (modalState) {
         case "welcome":
-            return "Welcome to Penn Degree Plan!";
+            return {
+                title: "Welcome to Penn Degree Plan!",
+                description: "Our newest four-year degree planning website, brought to you by Penn Labs."
+            };
         case "requirements-panel-1":
-            return "Requirements Panel";
         case "requirements-panel-2":
-            return "Requirements Panel";
+            return {
+                title: "Requirements Panel",
+                description: "Requirements for your degree are listed here, organized by majors, school requirements, and electives. Use the dropdown to expand a section and view specific requirements."
+            };
         case "edit-requirements":
-            return "Edit Requirements";
+            return {
+                title: "Edit Requirements",
+                description: "Add or delete majors by entering edit mode."
+            };
         case "calendar-panel":
-            return "Calendar Panel";
+            return {
+                title: "Calendar Panel",
+                description: "This is an overview of your degree plan by semester. Drag and drop between here and the requirements panel, the courses dock, or between semesters."
+            };
         case "past-semesters":
-            return "Past Semesters";
+            return {
+                title: "Past Semesters",
+                description: "Gray represents past semesters."
+            };
         case "current-semester":
-            return "Current Semester";
+            return {
+                title: "Current Semester",
+                description: "Blue represents the current semester."
+            };
         case "future-semesters":
-            return "Future Semesters";
+            return {
+                title: "Future Semesters",
+                description: "White represents future semesters."
+            };
         case "edit-mode":
-            return "Edit Mode";
+            return {
+                title: "Edit Mode",
+                description: "Enter edit mode to add or remove semesters."
+            };
         case "show-stats":
-            return "Show Stats";
+            return {
+                title: "Show Stats",
+                description: "Show or hide the course statistics, Course Quality, Instructor Quality, Difficulty, and Work Required."
+            };
         case "courses-dock":
-            return "Courses Dock";
+            return {
+                title: "Courses Dock",
+                description: "Drag any courses here from the general search, requirements panel, or the schedule panel to view later."
+            };
         case "general-search":
-            return "General Search";
+            return {
+                title: "General Search",
+                description: "Search for any other courses you would like to be added to electives or to keep on standby."
+            };
         case null:
-            return "";
+            return {
+                title: "",
+                description: ""
+            };
+        default:
+            throw Error("Invalid modal key");
     }
 };
-
-const getModalDescription = (modalState: TutorialModalKey) => {
-    switch (modalState) {
-        case "welcome":
-            return "Our newest four-year degree planning website, brought to you by Penn Labs.";
-        case "requirements-panel-1":
-            return "Requirements for your degree are listed here, organized by majors, school requirements, and electives. Use the dropdown to expand a section and view specific requirements.";
-        case "requirements-panel-2":
-            return "Requirements for your degree are listed here, organized by majors, school requirements, and electives. Use the dropdown to expand a section and view specific requirements.";
-        case "edit-requirements":
-            return "Add or delete majors by entering edit mode.";
-        case "calendar-panel":
-            return "This is an overview of your degree plan by semester. Drag and drop between here and the requirements panel, the courses dock, or between semesters.";
-        case "past-semesters":
-            return "Gray represents past semesters.";
-        case "current-semester":
-            return "Blue represents the current semester.";
-        case "future-semesters":
-            return "White represents future semesters.";
-        case "edit-mode":
-            return "Enter edit mode to add or remove semesters.";
-        case "show-stats":
-            return "Show or hide the course statistics, Course Quality, Instructor Quality, Difficulty, and Work Required.";
-        case "courses-dock":
-            return "Drag any courses here from the general search, requirements panel, or the schedule panel to view later.";
-        case "general-search":
-            return "Search for any other courses you would like to be added to electives or to keep on standby.";
-        case null:
-            return "";
-        default:
-            throw Error("Invalid modal key: ");
-    }
-}
 
 const ModalInteriorWrapper = styled.div<{ $row?: boolean }>`
   display: flex;
@@ -123,6 +124,80 @@ const ButtonRow = styled.div<{ $center?: boolean }>`
   gap: 0.5rem;
 `;
 
+const ModalContainer = styled.div<{ $top?: string; $left?: string; $position?: string }>`
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+    position: ${({ $position }) => $position || "fixed"};
+    z-index: 40;
+    bottom: 0;
+    left: ${({ $left }) => $left || "0"};
+    right: 0;
+    top: ${({ $top }) => $top || "0"};
+    color: #4a4a4a;
+`;
+
+const ModalCard = styled.div`
+    max-width: 400px !important;
+    max-height: 400px !important;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    margin: 0 20px;
+    position: relative;
+    width: 100%;
+    box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.3);
+`;
+
+const ModalCardHead = styled.header<{ $center?: boolean }>`
+    border: none !important;
+    border-bottom: none !important;
+    background-color: #fff !important;
+    font-weight: 700;
+    padding-left: 2rem;
+    padding-right: 2rem;
+    align-items: center;
+    display: flex;
+    flex-shrink: 0;
+    justify-content: ${({ $center }) => ($center ? "center" : "space-between")};
+    padding: 1.5rem;
+    padding-bottom: 0.5rem;
+    position: relative;
+    font-size: 1.4rem;
+    margin: 0;
+    box-shadow: none;
+`;
+
+const ModalCardBody = styled.div`
+    padding: 2rem;
+    padding-top: 0.5rem;
+    padding-bottom: 1.5rem;
+    background-color: #fff;
+    flex-grow: 1;
+    flex-shrink: 1;
+    overflow: auto;
+    display: block;
+    border: none;
+`;
+
+const CloseButton = styled.button`
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #4a4a4a;
+    cursor: pointer;
+
+    &:hover {
+        color: #000;
+    }
+`;
+
 const ModalBackground = styled.div`
     background-color: #707070;
     opacity: 0.75;
@@ -146,18 +221,10 @@ export const TutorialModalContext = createContext<TutorialModalContextProps>({
     setTutorialModalKey: (key: TutorialModalKey) => { }, // placeholder
     highlightedComponentRef: null,
     componentRefs: null,
-    // setHighlightedComponent: (component: any) => { } // placeholder
 });
 
-interface ModalInteriorProps {
-    modalKey: TutorialModalKey;
-    nextOnboardingStep: (forward: boolean) => void;
-    componentRefs: any;
-    handleClose: () => void;
-}
-
 // Function to calculate modal position based on component position
-const calculateModalPosition = (modalKey: TutorialModalKey, componentRefs: React.MutableRefObject<Record<string, HTMLElement | null>> | null) => {
+const calculateModalPosition = (modalKey: TutorialModalKey, componentRefs: MutableRefObject<Record<string, HTMLElement | null>> | null) => {
     if (!modalKey || modalKey === "welcome") {
         return { top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
     }
@@ -179,7 +246,6 @@ const calculateModalPosition = (modalKey: TutorialModalKey, componentRefs: React
 
     const componentKey = componentMap[modalKey as NonNullable<TutorialModalKey>];
     if (!componentKey || !componentRefs.current[componentKey]) {
-        // Fallback to center if component not found
         return { top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
     }
 
@@ -258,70 +324,6 @@ const calculateModalPosition = (modalKey: TutorialModalKey, componentRefs: React
     return { top, left, transform };
 };
 
-const ModalInterior = ({
-    modalKey,
-    nextOnboardingStep,
-    componentRefs,
-    handleClose,
-}: ModalInteriorProps) => {
-    const [position, setPosition] = useState({ top: "50%", left: "50%", transform: "translate(-50%, -50%)" });
-    const [displayedModalKey, setDisplayedModalKey] = useState<TutorialModalKey>(modalKey);
-
-    useEffect(() => {
-        if (modalKey) {
-            // wait until components are rendered, then update position and displayed content together
-            const timer = setTimeout(() => {
-                const newPosition = calculateModalPosition(modalKey, componentRefs);
-                setPosition(newPosition);
-                setDisplayedModalKey(modalKey);
-            }, 20);
-
-            return () => clearTimeout(timer);
-        }
-    }, [modalKey, componentRefs]);
-
-    // Window resize
-    useEffect(() => {
-        const handleResize = () => {
-            if (modalKey) {
-                const newPosition = calculateModalPosition(modalKey, componentRefs);
-                setPosition(newPosition);
-            }
-        };
-
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, [modalKey, componentRefs]);
-
-    if (!modalKey) return <div></div>;
-
-    return (
-        <>
-            <ModalBackground />
-            <OnboardingTutorialPanel
-                title={getModalTitle(displayedModalKey)}
-                position="fixed"
-                top={position.top}
-                left={position.left}
-                transform={position.transform}
-                handleClose={handleClose}
-            >
-                <ModalInteriorWrapper>
-                    {displayedModalKey === "welcome" && <img src="pdp-porcupine.svg" alt="Porcupine" />}
-                    <ModalTextWrapper>
-                        <ModalText>{getModalDescription(displayedModalKey)}</ModalText>
-                    </ModalTextWrapper>
-                    <ButtonRow>
-                        {displayedModalKey !== "welcome" && <ModalButton onClick={() => nextOnboardingStep(false)}>Back</ModalButton>}
-                        {displayedModalKey !== "general-search" && <ModalButton onClick={() => nextOnboardingStep(true)}>Next</ModalButton>}
-                        {displayedModalKey === "general-search" && <ModalButton onClick={handleClose}>Close</ModalButton>}
-                    </ButtonRow>
-                </ModalInteriorWrapper>
-            </OnboardingTutorialPanel>
-        </>
-    );
-};
-
 interface TutorialModalProps {
     updateOnboardingFlag: () => void;
 }
@@ -329,14 +331,14 @@ interface TutorialModalProps {
 const TutorialModal = ({
     updateOnboardingFlag
 }: TutorialModalProps) => {
-    const { tutorialModalKey, setTutorialModalKey, componentRefs } = React.useContext(TutorialModalContext);
+    const { tutorialModalKey, setTutorialModalKey, componentRefs } = useContext(TutorialModalContext);
 
     const handleClose = () => {
         updateOnboardingFlag();
         setTutorialModalKey(null);
     }
 
-    const onboardingStep = (forward: boolean) => {
+    const nextOnboardingStep = (forward: boolean) => {
         const steps: TutorialModalKey[] = [
             "welcome",
             "requirements-panel-1",
@@ -367,14 +369,73 @@ const TutorialModal = ({
         }
     }
 
+    const [position, setPosition] = useState({ top: "50%", left: "50%", transform: "translate(-50%, -50%)" });
+    const [displayedModalKey, setDisplayedModalKey] = useState<TutorialModalKey>(tutorialModalKey);
+
+    useEffect(() => {
+        if (tutorialModalKey) {
+            // Wait until components are rendered, then update position and displayed content together
+            const timer = setTimeout(() => {
+                const newPosition = calculateModalPosition(tutorialModalKey, componentRefs);
+                setPosition(newPosition);
+                setDisplayedModalKey(tutorialModalKey);
+            }, 20);
+
+            return () => clearTimeout(timer);
+        }
+    }, [tutorialModalKey, componentRefs]);
+
+    // Window resize
+    useEffect(() => {
+        const handleResize = () => {
+            if (tutorialModalKey) {
+                const newPosition = calculateModalPosition(tutorialModalKey, componentRefs);
+                setPosition(newPosition);
+            }
+        };
+
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, [tutorialModalKey, componentRefs]);
+
+    if (!tutorialModalKey) return <div></div>;
+
+    const modalContent = getModalContent(displayedModalKey);
+
     return (
-        <ModalInterior
-            modalKey={tutorialModalKey}
-            nextOnboardingStep={(forward: boolean) => onboardingStep(forward)}
-            componentRefs={componentRefs}
-            handleClose={handleClose}
-        />
-    )
+        <>
+            <ModalBackground />
+            <ModalContainer $top={position.top} $left={position.left} $position="fixed">
+                <div style={{
+                    position: "fixed",
+                    top: position.top,
+                    left: position.left,
+                    transform: position.transform,
+                    pointerEvents: "auto",
+                }}>
+                    <ModalCard>
+                        <ModalCardHead>
+                            <header>{modalContent.title}</header>
+                            {handleClose && <CloseButton onClick={handleClose}><Cross2Icon /></CloseButton>}
+                        </ModalCardHead>
+                        <ModalCardBody>
+                            <ModalInteriorWrapper>
+                                {displayedModalKey === "welcome" && <img src="pdp-porcupine.svg" alt="Porcupine" />}
+                                <ModalTextWrapper>
+                                    <ModalText>{modalContent.description}</ModalText>
+                                </ModalTextWrapper>
+                                <ButtonRow>
+                                    {displayedModalKey !== "welcome" && <ModalButton onClick={() => nextOnboardingStep(false)}>Back</ModalButton>}
+                                    {displayedModalKey !== "general-search" && <ModalButton onClick={() => nextOnboardingStep(true)}>Next</ModalButton>}
+                                    {displayedModalKey === "general-search" && <ModalButton onClick={handleClose}>Close</ModalButton>}
+                                </ButtonRow>
+                            </ModalInteriorWrapper>
+                        </ModalCardBody>
+                    </ModalCard>
+                </div>
+            </ModalContainer>
+        </>
+    );
 };
 
 export default TutorialModal;
