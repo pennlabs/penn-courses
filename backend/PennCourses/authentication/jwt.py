@@ -3,7 +3,6 @@ import logging
 
 import jwt
 from django.conf import settings
-from django.contrib.auth.models import AnonymousUser
 from rest_framework import authentication, exceptions
 
 
@@ -64,4 +63,4 @@ class JWTAuthentication(authentication.BaseAuthentication):
             payload = asyncio.run(verify_jwt(id_token))
             if payload:
                 return (payload, None)
-        return (AnonymousUser, None)
+        return (None, None)
