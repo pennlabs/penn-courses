@@ -39,6 +39,14 @@ from courses.util import get_current_semester
 from PennCourses.docs_settings import PcxAutoSchema
 from plan.management.commands.recommendcourses import retrieve_course_clusters, vectorize_user
 
+configfile = './../../../django-labs-accounts/'
+import os
+import sys
+sys.path.append(os.path.dirname(os.path.expanduser(configfile)))
+from identity.identity import get_platform_jwks, attest, authenticated_b2b_request
+
+get_platform_jwks()
+attest()
 
 SEMESTER_PARAM_DESCRIPTION = (
     "The semester of the course (of the form YYYYx where x is A [for spring], "
@@ -155,6 +163,13 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
 
     serializer_class = CourseListSerializer
     queryset = Course.with_reviews.filter(sections__isnull=False)  # included redundantly for docs
+
+    def list(self, request, *args, **kwargs):
+        payload = {"users": ["tuneer"], "service": "PENN_MOBILE", "title": "haha", "body": "haha"}
+        result = authenticated_b2b_request('POST', 'http://localhost:8080/api/user/notifications/alerts/', data=payload)
+        print(result.text)
+        print("===========================================")
+
 
     def get_queryset(self):
         queryset = Course.with_reviews.filter(sections__isnull=False)
