@@ -39,6 +39,8 @@ from courses.util import get_current_semester
 from PennCourses.docs_settings import PcxAutoSchema
 from plan.management.commands.recommendcourses import retrieve_course_clusters, vectorize_user
 
+from identity.identity import get_platform_jwks, attest, authenticated_b2b_request
+
 
 SEMESTER_PARAM_DESCRIPTION = (
     "The semester of the course (of the form YYYYx where x is A [for spring], "
@@ -170,6 +172,12 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
         )
         queryset = self.filter_by_semester(queryset)
         return queryset
+
+    def list(self, request, *args, **kwargs):
+        payload = {"users": ["tuneer"], "service": "PENN_MOBILE", "title": "haha", "body": "haha"}
+        result = authenticated_b2b_request('POST', 'http://localhost:8080/api/user/notifications/alerts/', data=payload)
+        print(result.text)
+        print("===========================================")
 
 
 class CourseListSearch(CourseList):
