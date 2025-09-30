@@ -888,6 +888,9 @@ class CalendarAPIView(APIView):
             e.name = section.full_code
             e.created = timezone.now()
 
+            if not section.meetings.all():
+                continue
+
             days = []
             for meeting in section.meetings.all():
                 days.append(day_mapping[meeting.day])
