@@ -2,12 +2,14 @@ import SelectListDropdown from "./SelectListDropdown";
 import Semesters from "./Semesters";
 import styled from "@emotion/styled";
 import type { DegreePlan } from "@/types";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { useSWRCrud } from '@/hooks/swrcrud';
 import { EditButton } from './EditButton';
 import { PanelTopBarButton, PanelTopBarIcon } from "./PanelCommon";
 import { PanelContainer, PanelHeader, PanelTopBarIconList, PanelBody } from "./PanelCommon";
 import { ModalKey } from "./DegreeModal";
+
+import ToastContext from "../Toast/Toast";
 
 const ShowStatsText = styled.div`
     min-width: 6rem;
@@ -45,8 +47,10 @@ const PlanPanel = ({
     activeDegreeplan,
     degreeplans,
     isLoading,
-    currentSemester
+    currentSemester,
 } : PlanPanelProps) => {
+    
+
     const { copy: copyDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans');
     const [showStats, setShowStats] = useState(true);
     const [editMode, setEditMode] = useState(false);
@@ -63,7 +67,7 @@ const PlanPanel = ({
                         mutators={{
                             copy: (item: DegreePlan) => {
                                 (copyDegreeplan({...item, name: `${item.name} (copy)`}, item.id) as Promise<any>)
-                                .then((copied) => copied && setActiveDegreeplan(copied.id))
+                                .then((copied) => copied && setActiveDegreeplan(copied))
                             },
                             remove: (item: DegreePlan) => {
                                 setModalKey("plan-remove")
@@ -88,7 +92,7 @@ const PlanPanel = ({
                 <PanelBody>
                     <Semesters 
                     activeDegreeplan={activeDegreeplan || undefined} 
-                    showStats={showStats} 
+                    showStats={showStats}
                     editMode={editMode}
                     setEditMode={setEditMode}
                     setModalKey={setModalKey}
