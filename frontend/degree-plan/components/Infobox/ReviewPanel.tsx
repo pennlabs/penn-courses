@@ -12,27 +12,27 @@ const REVIEWPANEL_TRIGGER_TIME = 200 // in ms, how long you have to hover for re
 const useOutsideAlerter = (ref: any) => {
     const { set_full_code } = useContext(ReviewPanelContext);
     useEffect(() => {
-      /**
-       * Alert if clicked on outside of element
-       */
-      const handleClickOutside = (event: any) => {
-        if (ref.current && !ref.current.contains(event.target)) {
-            set_full_code(null);
+        /**
+         * Alert if clicked on outside of element
+         */
+        const handleClickOutside = (event: any) => {
+            if (ref.current && !ref.current.contains(event.target)) {
+                set_full_code(null);
+            }
         }
-      }
-      // Bind the event listener
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => {
-        // Unbind the event listener on clean up
-        document.removeEventListener("mousedown", handleClickOutside);
-      };
+        // Bind the event listener
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            // Unbind the event listener on clean up
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
     }, [ref]);
-  }
+}
 
 const Trigger = styled.div`
   
 `
-export const ReviewPanelTrigger = ({ full_code, triggerType, children }: PropsWithChildren<{full_code: Course["id"], triggerType: "click" | "hover" | undefined}>) => {
+export const ReviewPanelTrigger = ({ full_code, triggerType, children }: PropsWithChildren<{ full_code: Course["id"], triggerType: "click" | "hover" | undefined }>) => {
     const ref = useRef<HTMLDivElement>(null);
     const { setPosition, set_full_code } = useContext(ReviewPanelContext);
     const timer = useRef<NodeJS.Timeout | null>(null);
@@ -48,7 +48,7 @@ export const ReviewPanelTrigger = ({ full_code, triggerType, children }: PropsWi
             if (!ref.current) return;
             const position: ReviewPanelContextType["position"] = {}
             const { left, top, right, bottom } = ref.current.getBoundingClientRect();
-            
+
             // calculate the optimal position
             let vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0)
             let vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0)
@@ -56,7 +56,7 @@ export const ReviewPanelTrigger = ({ full_code, triggerType, children }: PropsWi
             else position["left"] = right;
             if (top > (vh - bottom)) position["bottom"] = vh - top;
             else position["top"] = bottom;
-            
+
             setPosition(position);
         }
     }
@@ -85,9 +85,9 @@ interface ReviewPanelContextType {
 
 export const ReviewPanelContext = createContext<ReviewPanelContextType>({
     position: { top: 0, left: 0 },
-    setPosition: (arg0) => {}, // placeholder
+    setPosition: (arg0) => { }, // placeholder
     full_code: null,
-    set_full_code: (course) => {}, // placeholder
+    set_full_code: (course) => { }, // placeholder
 });
 
 interface ReviewPanelProps extends ReviewPanelContextType {
@@ -114,12 +114,12 @@ const ReviewPanelContainer = styled.div`
     height: 100%;
 `
 
-const ReviewPanel = ({ 
+const ReviewPanel = ({
     full_code,
     set_full_code,
     position,
     setPosition,
-    currentSemester 
+    currentSemester
 }: ReviewPanelProps) => {
     const { data } = useSWR(`/api/base/all/courses/${full_code}`, { refreshInterval: 0 }); // data is largely static  
     let { left, right, top, bottom } = position;
@@ -135,7 +135,7 @@ const ReviewPanel = ({
             <ReviewPanelContainer ref={wrapperRef}>
                 {data &&
                     <InfoBox
-                        close={() => { 
+                        close={() => {
                             set_full_code(null)
                         }}
                         data={data}

@@ -12,7 +12,7 @@ interface SWRCrudError extends Error {
 /**
  * @returns {string | boolean} The CSRF token used by the Django REST Framework
  */
-const getCsrf = (): string | boolean => {
+export const getCsrf = (): string | boolean => {
     const result =
         document.cookie &&
         document.cookie
@@ -71,14 +71,14 @@ const normalizeFinalSlash = (resource: string) => {
 }
 
 export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
-    endpoint: string, 
+    endpoint: string,
     config = {}
 ) => {
     const { createFetcher, updateFetcher, removeFetcher, createOrUpdateFetcher, copyFetcher, idKey, createDefaultOptimisticData } = {
-        createFetcher: postFetcher, 
+        createFetcher: postFetcher,
         copyFetcher: postFetcher,
-        updateFetcher: patchFetcher, 
-        removeFetcher: deleteFetcher, 
+        updateFetcher: patchFetcher,
+        removeFetcher: deleteFetcher,
         createOrUpdateFetcher: postFetcher,
         idKey: "id" as keyof T,
         createDefaultOptimisticData: {} as Partial<T>, // e.g., for fields computed by the backend
@@ -89,7 +89,7 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
 
     const create = (newItem: Partial<T>) => {
         const created = createFetcher(endpoint, newItem);
-        const optimistic = {...createDefaultOptimisticData, ...newItem} as T;
+        const optimistic = { ...createDefaultOptimisticData, ...newItem } as T;
         mutate(endpoint, created, {
             optimisticData: (list?: Array<T>) => list ? [...list, optimistic] : [optimistic],
             populateCache: (created: T, list?: Array<T>) => list ? [...list, created] : [created],
@@ -105,7 +105,7 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
         const copied = copyFetcher(key, optimisticData); // the copy endpoint will pull out whatever data it needs
         mutate(endpoint, copied, {
             optimisticData: (list?: Array<T>) => list ? [...list, optimisticData] : [optimisticData],
-            populateCache: (copied: T, list?: Array<T>) => { 
+            populateCache: (copied: T, list?: Array<T>) => {
                 if (!copied) return list || [];
                 return list ? [...list, copied] : [copied]
             },
@@ -121,10 +121,10 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
         const updated = updateFetcher(key, updatedData);
         mutate(key, updated, {
             optimisticData: (data?: T) => {
-                const optimistic = {...data, ...updatedData} as T;
+                const optimistic = { ...data, ...updatedData } as T;
                 assertValueType(optimistic, idKey, id)
                 optimistic[idKey] = id;
-                return ({ id, ...data, ...updatedData} as T)
+                return ({ id, ...data, ...updatedData } as T)
             },
             revalidate: false,
             throwOnError: false
@@ -138,7 +138,7 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
                     mutate(endpoint) // trigger revalidation
                     return list;
                 }
-                list.splice(index, 1, {...list[index], ...updatedData});
+                list.splice(index, 1, { ...list[index], ...updatedData });
                 return list;
             },
             populateCache: (updated: T, list?: Array<T>) => {
@@ -183,16 +183,16 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
 
     const createOrUpdate = (data: Partial<T>, id: any) => {
         if (!id) return;
-        const updated: Partial<T> = {...data}
+        const updated: Partial<T> = { ...data }
         updated[idKey] = id;
         mutate(
             endpoint,
-            createOrUpdateFetcher(endpoint, updated), 
+            createOrUpdateFetcher(endpoint, updated),
             {
                 optimisticData: (list: Array<T> | undefined) => {
                     if (!list) return [];
                     const old = list.find((item: T) => item[idKey] === id) || {};
-                    const optimistic = {...createDefaultOptimisticData, ...old, ...updated} as T;
+                    const optimistic = { ...createDefaultOptimisticData, ...old, ...updated } as T;
                     return [...list.filter((item: T) => item[idKey] !== id), optimistic]
                 },
                 populateCache: (updated: T, list: Array<T> | undefined) => {
@@ -204,6 +204,6 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
             }
         )
     }
-    
+
     return { create, copy, update, remove, createOrUpdate };
 }

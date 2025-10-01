@@ -92,7 +92,7 @@ export const Label = styled.h5<{ required: boolean }>`
 
 export const schoolOptions = [
   { value: "BA", label: "Arts & Sciences" },
-  { value: "BSE", label: "Engineering BSE" }, 
+  { value: "BSE", label: "Engineering BSE" },
   { value: "BAS", label: "Engineering BAS" },
   { value: "BS", label: "Wharton" },
   { value: "BSN", label: "Nursing" }
@@ -204,10 +204,10 @@ const OnboardingPage = ({
   );
 
   const complete = startingYear !== null &&
-        graduationYear !== null &&
-        schools.length > 0 &&
-        majors.length > 0 &&
-        name !== "";
+    graduationYear !== null &&
+    schools.length > 0 &&
+    majors.length > 0 &&
+    name !== "";
 
   const { data: degrees, isLoading: isLoadingDegrees } =
     useSWR<DegreeListing[]>(`/api/degree/degrees`);
@@ -236,9 +236,10 @@ const OnboardingPage = ({
 
   const startingYearOptions = getYearOptions()?.startYears;
   const graduationYearOptions = getYearOptions()?.gradYears;
-  
+
   const getMajorOptions = React.useCallback(() => {
     /** Filter major options based on selected schools/degrees */
+    console.log(degrees);
     const majorOptions =
       degrees
         ?.filter((d) => schools.map((s) => s.value).includes(d.degree))
