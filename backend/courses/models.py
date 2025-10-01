@@ -1437,9 +1437,9 @@ class UserProfile(models.Model):
     # phone field defined underneath validate_phone function below
 
     has_been_onboarded = models.BooleanField(
-                default=False,
-                help_text="True if the user has completed onboarding and should not see the tutorial again."
-            )
+        default=False,
+        help_text="Defaults to False, changed to True once the user completes onboarding.",
+    )
 
     def validate_phone(value):
         """
