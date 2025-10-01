@@ -55,7 +55,9 @@ class Migration(migrations.Migration):
             model_name="course",
             name="code",
             field=models.CharField(
-                db_index=True, help_text="The course code, e.g. '120' for CIS-120.", max_length=8
+                db_index=True,
+                help_text="The course code, e.g. '120' for CIS-120.",
+                max_length=8,
             ),
         ),
         migrations.AlterField(
@@ -257,7 +259,11 @@ class Migration(migrations.Migration):
             model_name="requirement",
             name="school",
             field=models.CharField(
-                choices=[("SEAS", "Engineering"), ("WH", "Wharton"), ("SAS", "College")],
+                choices=[
+                    ("SEAS", "Engineering"),
+                    ("WH", "Wharton"),
+                    ("SAS", "College"),
+                ],
                 db_index=True,
                 help_text='\nWhat school this requirement belongs to, e.g. \'SAS\' for the SAS \'Formal Reasoning Course\'\nrequirement satisfied by CIS-120. Options and meanings:\n<table width=100%><tr><td>"SEAS"</td><td>"Engineering"</td></tr><tr><td>"WH"</td><td>"Wharton"</td></tr><tr><td>"SAS"</td><td>"College"</td></tr></table>',
                 max_length=5,
@@ -421,7 +427,12 @@ class Migration(migrations.Migration):
             model_name="section",
             name="status",
             field=models.CharField(
-                choices=[("O", "Open"), ("C", "Closed"), ("X", "Cancelled"), ("", "Unlisted")],
+                choices=[
+                    ("O", "Open"),
+                    ("C", "Closed"),
+                    ("X", "Cancelled"),
+                    ("", "Unlisted"),
+                ],
                 db_index=True,
                 help_text='The registration status of the section. Options and meanings: <table width=100%><tr><td>"O"</td><td>"Open"</td></tr><tr><td>"C"</td><td>"Closed"</td></tr><tr><td>"X"</td><td>"Cancelled"</td></tr><tr><td>""</td><td>"Unlisted"</td></tr></table>',
                 max_length=4,
@@ -438,7 +449,12 @@ class Migration(migrations.Migration):
             model_name="statusupdate",
             name="new_status",
             field=models.CharField(
-                choices=[("O", "Open"), ("C", "Closed"), ("X", "Cancelled"), ("", "Unlisted")],
+                choices=[
+                    ("O", "Open"),
+                    ("C", "Closed"),
+                    ("X", "Cancelled"),
+                    ("", "Unlisted"),
+                ],
                 help_text='The new status code (to which the section changed). Options and meanings: <table width=100%><tr><td>"O"</td><td>"Open"</td></tr><tr><td>"C"</td><td>"Closed"</td></tr><tr><td>"X"</td><td>"Cancelled"</td></tr><tr><td>""</td><td>"Unlisted"</td></tr></table>',
                 max_length=16,
             ),
@@ -447,7 +463,12 @@ class Migration(migrations.Migration):
             model_name="statusupdate",
             name="old_status",
             field=models.CharField(
-                choices=[("O", "Open"), ("C", "Closed"), ("X", "Cancelled"), ("", "Unlisted")],
+                choices=[
+                    ("O", "Open"),
+                    ("C", "Closed"),
+                    ("X", "Cancelled"),
+                    ("", "Unlisted"),
+                ],
                 help_text='The old status code (from which the section changed). Options and meanings: <table width=100%><tr><td>"O"</td><td>"Open"</td></tr><tr><td>"C"</td><td>"Closed"</td></tr><tr><td>"X"</td><td>"Cancelled"</td></tr><tr><td>""</td><td>"Unlisted"</td></tr></table>',
                 max_length=16,
             ),

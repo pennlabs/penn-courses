@@ -1,12 +1,17 @@
-FROM pennlabs/django-base:b269ea1613686b1ac6370154debbb741b012de1a-3.11
+FROM pennlabs/django-base:11d476546bd11c7a499e0e93be8db6af035d360f-3.11
 
 LABEL maintainer="Penn Labs"
 
 # Copy project dependencies
-COPY Pipfile* /app/
+COPY pyproject.toml uv.lock /app/
 
 # Install project dependencies
-RUN pipenv install --system --deploy
+RUN uv sync --frozen --no-dev --no-install-project --python $(which python); \
+    ln -s /app/.venv/bin/uwsgi /usr/local/bin/uwsgi; \
+    ln -s /app/.venv/bin/gunicorn /usr/local/bin/gunicorn
+
+# Make installed binaries available for POSIX compliant scripts
+ENV PATH="/app/.venv/bin:$PATH"
 
 # Copy project files
 COPY . /app/

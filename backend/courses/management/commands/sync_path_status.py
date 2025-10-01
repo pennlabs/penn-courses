@@ -15,8 +15,6 @@ from courses.models import Department, Section
 from courses.util import get_current_semester, translate_semester
 
 
-path_semaphore = asyncio.Semaphore(25)
-webhook_semaphore = asyncio.Semaphore(25)
 auth = base64.standard_b64encode(
     f"{settings.WEBHOOK_USERNAME}:{settings.WEBHOOK_PASSWORD}".encode("ascii")
 )
@@ -47,7 +45,10 @@ def denormalize_section_code(section_code: str) -> str:
 
 
 def format_webhook_request_body(
-    section_code: str, previous_course_status: str, new_course_status: str, semester: str
+    section_code: str,
+    previous_course_status: str,
+    new_course_status: str,
+    semester: str,
 ) -> Dict[str, str]:
     return {
         "previous_status": previous_course_status,
@@ -65,6 +66,7 @@ async def send_webhook_request(
     course: str,
     previous_course_status: str,
     course_status: str,
+    webhook_semaphore: asyncio.Semaphore,
 ) -> None:
     async with webhook_semaphore:
         await async_session.post(
@@ -72,7 +74,10 @@ async def send_webhook_request(
             data=json.dumps(
                 format_webhook_request_body(course, previous_course_status, course_status, semester)
             ),
-            headers={"Content-Type": "application/json", "Authorization": f"Basic {auth.decode()}"},
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Basic {auth.decode()}",
+            },
         )
 
 
@@ -82,6 +87,7 @@ async def send_webhook_requests(
     db_course_to_status: Dict[str, str],
     path_course_to_status: Dict[str, str],
 ) -> None:
+    webhook_semaphore = asyncio.Semaphore(25)  # Limit concurrent webhook requests
     async with aiohttp.ClientSession() as async_session:
         tasks = [
             asyncio.create_task(
@@ -91,6 +97,7 @@ async def send_webhook_requests(
                     course,
                     db_course_to_status[course],
                     path_course_to_status[course],
+                    webhook_semaphore,
                 )
             )
             for course in course_list
@@ -100,7 +107,10 @@ async def send_webhook_requests(
 
 
 async def get_department_path_status(
-    async_session: aiohttp.ClientSession, semester: str, department: str
+    async_session: aiohttp.ClientSession,
+    semester: str,
+    department: str,
+    path_semaphore: asyncio.Semaphore,
 ) -> Tuple[str, str]:
     headers = {
         "accept": "application/json, text/javascript, */*; q=0.01",
@@ -131,7 +141,10 @@ async def get_department_path_status(
 
     async with path_semaphore:
         response = await async_session.post(
-            url="https://courses.upenn.edu/api/", params=params, headers=headers, data=data
+            url="https://courses.upenn.edu/api/",
+            params=params,
+            headers=headers,
+            data=data,
         )
         if response.ok:
             response_json = await response.json()
@@ -156,9 +169,12 @@ def get_department_codes() -> List[str]:
 
 
 async def get_all_course_status_path(semester: str, department_codes: List[str]) -> Dict[str, str]:
+    path_semaphore = asyncio.Semaphore(25)  # Limit concurrent Path requests
     async with aiohttp.ClientSession() as async_session:
         tasks = [
-            asyncio.create_task(coro=get_department_path_status(async_session, semester, dept_code))
+            asyncio.create_task(
+                coro=get_department_path_status(async_session, semester, dept_code, path_semaphore)
+            )
             for dept_code in department_codes
         ]
         responses = await asyncio.gather(*tasks, return_exceptions=False)

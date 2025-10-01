@@ -41,7 +41,10 @@ course_review_aggregation_schema = {
         },
     },
     **{
-        to_r_camel(bit_label[2]): {"type": "number", "description": f"Average {bit_label[1]}"}
+        to_r_camel(bit_label[2]): {
+            "type": "number",
+            "description": f"Average {bit_label[1]}",
+        }
         for bit_label in EXPANDED_REVIEW_BIT_LABEL
     },
 }
@@ -119,7 +122,10 @@ instructor_review_aggregation_schema = {
     # This dict contains the schema of the "_reviews" fields returned in the
     # course-specific instructor review aggregation object within the response returned by
     # course review views
-    to_r_camel(bit_label[2]): {"type": "number", "description": f"Average {bit_label[1]}"}
+    to_r_camel(bit_label[2]): {
+        "type": "number",
+        "description": f"Average {bit_label[1]}",
+    }
     for bit_label in EXPANDED_REVIEW_BIT_LABEL
 }
 
@@ -289,7 +295,10 @@ instructor_reviews_response_schema = {
         "GET": {
             200: {
                 "properties": {
-                    "name": {"type": "string", "description": "The full name of the instructor."},
+                    "name": {
+                        "type": "string",
+                        "description": "The full name of the instructor.",
+                    },
                     "num_sections_recent": {
                         "type": "integer",
                         "description": "The number of sections this instructor taught in his/her most recent semester teaching.",  # noqa E501
@@ -477,7 +486,10 @@ department_reviews_response_schema = {
                                         "type": "integer",
                                         "description": "The number of semesters this class has been taught (that we have data for).",  # noqa E501
                                     },
-                                    "code": {"type": "string", "description": "Same as `id`."},
+                                    "code": {
+                                        "type": "string",
+                                        "description": "Same as `id`.",
+                                    },
                                     "name": {
                                         "type": "string",
                                         "description": "The title of the course, e.g. 'Programming Languages and Techniques I' for CIS-120.",  # noqa E501

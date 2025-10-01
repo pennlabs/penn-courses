@@ -96,7 +96,10 @@ def vectorize_user(user, curr_course_vectors_dict, past_course_vectors_dict):
     )
     past_courses = past_courses - curr_courses
     return vectorize_user_by_courses(
-        list(curr_courses), list(past_courses), curr_course_vectors_dict, past_course_vectors_dict
+        list(curr_courses),
+        list(past_courses),
+        curr_course_vectors_dict,
+        past_course_vectors_dict,
     )
 
 
@@ -123,7 +126,8 @@ def best_recommendations(
     recs = [
         (c.full_code, rec_course_to_score[c.full_code])
         for c in Course.objects.filter(
-            semester=get_current_semester(), full_code__in=list(rec_course_to_score.keys())
+            semester=get_current_semester(),
+            full_code__in=list(rec_course_to_score.keys()),
         )
     ]  # only recommend currently offered courses
     if n_recommendations > len(recs):
@@ -254,6 +258,10 @@ class Command(BaseCommand):
 
         print(
             recommend_courses(
-                curr_course_vectors_dict, cluster_centroids, clusters, user_vector, user_courses
+                curr_course_vectors_dict,
+                cluster_centroids,
+                clusters,
+                user_vector,
+                user_courses,
             )
         )

@@ -4,18 +4,18 @@ import getCsrf from "../components/csrf";
 export const SWITCH_ACTIVE_FRIEND = "SWITCH_ACTIVE_FRIEND";
 export const UPDATE_FRIENDSHIPS_ON_FRONTEND = "UPDATE_FRIENDSHIPS_ON_FRONTEND";
 
-export const switchActiveFriend = (friend, found, sections) => ({
+export const switchActiveFriend = (friend, found, schedule) => ({
     type: SWITCH_ACTIVE_FRIEND,
     friend,
     found,
-    sections,
+    schedule,
 });
 
 export const unsetActiveFriend = () => ({
     type: SWITCH_ACTIVE_FRIEND,
     friend: null,
     found: null,
-    sections: null,
+    schedule: null,
 });
 
 export const updateFriendshipsOnFrontend = (
@@ -67,6 +67,7 @@ export const fetchBackendFriendships = (user) => (dispatch) => {
                 )
             );
         })
+        // eslint-disable-next-line no-console
         .catch((error) => console.log(error));
 };
 
@@ -90,6 +91,7 @@ export const deleteFriendshipOnBackend = (user, friendPennkey) => (
         .then(() => {
             dispatch(fetchBackendFriendships(user));
         })
+        // eslint-disable-next-line no-console
         .catch((error) => console.log(error));
 };
 
@@ -129,13 +131,14 @@ export const fetchFriendPrimarySchedule = (friend) => (dispatch) => {
                     switchActiveFriend(
                         foundSched.user,
                         true,
-                        foundSched.schedule.sections
+                        foundSched.schedule
                     )
                 );
             } else {
-                dispatch(switchActiveFriend(friend, false, []));
+                dispatch(switchActiveFriend(friend, false, {}));
             }
             dispatch(setStateReadOnly(true));
         })
+        // eslint-disable-next-line no-console
         .catch((error) => console.log(error));
 };

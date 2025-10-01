@@ -1,3 +1,4 @@
+import json
 import logging
 from abc import ABC, abstractmethod
 from email.mime.text import MIMEText
@@ -13,6 +14,7 @@ from PennCourses.settings.production import MOBILE_NOTIFICATION_SECRET
 
 
 logger = logging.getLogger(__name__)
+SEPARATOR = ", "
 
 
 def send_email(from_, to, subject, html):
@@ -41,14 +43,29 @@ def send_text(to, text):
         return None
 
 
+def get_meeting_string(reg):
+    meeting_string = ""
+    if reg.section.meeting_times:
+        try:
+            meetings = json.loads(reg.section.meeting_times)
+            if isinstance(meetings, list):
+                meeting_string = SEPARATOR.join(meetings)
+        except json.JSONDecodeError:
+            logger.exception("Meeting Times JSON Decode Error")
+    return meeting_string
+
+
 class Alert(ABC):
     def __init__(self, template, reg, close_template=None):
         t = loader.get_template(template)
+        meetings_string = get_meeting_string(reg)
+
         self.text = t.render(
             {
                 "course": reg.section.full_code,
                 "brand": "Penn Course Alert",
                 "auto_resubscribe": reg.auto_resubscribe,
+                "meetings": meetings_string,
             }
         )
         self.close_text = None
@@ -59,6 +76,7 @@ class Alert(ABC):
                     "course": reg.section.full_code,
                     "brand": "Penn Course Alert",
                     "auto_resubscribe": reg.auto_resubscribe,
+                    "meetings": meetings_string,
                 }
             )
         self.registration = reg

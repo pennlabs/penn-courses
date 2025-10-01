@@ -55,7 +55,15 @@ class Command(BaseCommand):
             lines = list(reader)
             print("Starting upload...")
             for row in tqdm(lines):
-                dept, course_id, section_id, year, semester_num, instructor_name, comment = row
+                (
+                    dept,
+                    course_id,
+                    section_id,
+                    year,
+                    semester_num,
+                    instructor_name,
+                    comment,
+                ) = row
                 section_code = f"{dept}-{course_id}-{leftpad(int(section_id))}"
                 semester = f"{year}{get_semester(semester_num)}"
                 instructor_name = instructor_name.lower()

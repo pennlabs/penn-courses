@@ -19,23 +19,31 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
                 ("course_quality", models.DecimalField(decimal_places=2, max_digits=3)),
                 ("difficulty", models.DecimalField(decimal_places=2, max_digits=3)),
-                ("instructor_quality", models.DecimalField(decimal_places=2, max_digits=3)),
+                (
+                    "instructor_quality",
+                    models.DecimalField(decimal_places=2, max_digits=3),
+                ),
                 ("work_required", models.DecimalField(decimal_places=2, max_digits=3)),
                 (
                     "instructor",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, to="courses.Instructor"
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="courses.Instructor",
                     ),
                 ),
                 (
                     "section",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.CASCADE, to="courses.Section"
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to="courses.Section",
                     ),
                 ),
             ],

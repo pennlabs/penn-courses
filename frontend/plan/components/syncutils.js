@@ -8,6 +8,7 @@ import {
     checkForDefaultSchedules,
     fetchContactInfo,
     fetchAlerts,
+    fetchBreaks,
 } from "../actions";
 import { fetchBackendFriendships } from "../actions/friendshipUtil";
 import { SYNC_INTERVAL } from "../constants/sync_constants";
@@ -140,6 +141,7 @@ const initiateSync = async (store) => {
         // run on initial page load, but not during sync loop
         await store.dispatch(fetchContactInfo());
         await store.dispatch(fetchAlerts());
+        await store.dispatch(fetchBreaks());
         while (store.getState().login.user) {
             // ensure that the minimum distance between syncs is SYNC_INTERVAL
             // eslint-disable-next-line no-await-in-loop

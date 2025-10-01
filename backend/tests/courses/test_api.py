@@ -240,7 +240,9 @@ class TypedSearchBackendTestCase(TestCase):
             req = self.factory.get("/", {"type": "auto", "search": kw})
             terms = self.search.get_search_fields(None, req)
             self.assertEqual(
-                ["^full_code", "title", "sections__instructors__name"], terms, f"search:{kw}"
+                ["^full_code", "title", "sections__instructors__name"],
+                terms,
+                f"search:{kw}",
             )
 
     def test_auto_keyword_only(self):
@@ -260,7 +262,8 @@ class CourseSearchTestCase(TestCase):
 
     def test_search_by_dept(self):
         response = self.client.get(
-            reverse("courses-search", args=["current"]), {"search": "math", "type": "auto"}
+            reverse("courses-search", args=["current"]),
+            {"search": "math", "type": "auto"},
         )
         self.assertEqual(200, response.status_code)
         self.assertEqual(len(response.data), 1)
@@ -273,13 +276,15 @@ class CourseSearchTestCase(TestCase):
         searches = ["Tiffany", "Chang"]
         for search in searches:
             response = self.client.get(
-                reverse("courses-search", args=["current"]), {"search": search, "type": "auto"}
+                reverse("courses-search", args=["current"]),
+                {"search": search, "type": "auto"},
             )
             self.assertEqual(200, response.status_code)
             self.assertEqual(len(response.data), 1)
             course_codes = [d["id"] for d in response.data]
             self.assertTrue(
-                "CIS-120" in course_codes and "MATH-114" not in course_codes, f"search:{search}"
+                "CIS-120" in course_codes and "MATH-114" not in course_codes,
+                f"search:{search}",
             )
 
 
@@ -297,12 +302,15 @@ class CourseSearchRecommendationScoreTestCase(TestCase):
         self.user = User.objects.create_user(username=self.username, password=self.password)
         self.client = APIClient()
 
-    def test_recommendation_is_null_when_course_not_part_of_model_even_when_logged_in(self):
+    def test_recommendation_is_null_when_course_not_part_of_model_even_when_logged_in(
+        self,
+    ):
         self.client.login(username=self.username, password=self.password)
 
         self.course, self.section = create_mock_data("PSCI-437-001", TEST_SEMESTER)
         response = self.client.get(
-            reverse("courses-search", args=["current"]), {"search": "PSCI-437", "type": "auto"}
+            reverse("courses-search", args=["current"]),
+            {"search": "PSCI-437", "type": "auto"},
         )
 
         self.assertEqual(200, response.status_code)
@@ -311,7 +319,8 @@ class CourseSearchRecommendationScoreTestCase(TestCase):
 
     def test_recommendation_is_null_when_user_not_logged_in(self):
         response = self.client.get(
-            reverse("courses-search", args=["current"]), {"search": "PSCI", "type": "auto"}
+            reverse("courses-search", args=["current"]),
+            {"search": "PSCI", "type": "auto"},
         )
 
         self.assertEqual(200, response.status_code)
@@ -346,7 +355,8 @@ class CourseSearchRecommendationScoreTestCase(TestCase):
         )
 
         response = self.client.get(
-            reverse("courses-search", args=["current"]), {"search": "PSCI", "type": "auto"}
+            reverse("courses-search", args=["current"]),
+            {"search": "PSCI", "type": "auto"},
         )
 
         self.assertEqual(200, response.status_code)
@@ -611,7 +621,8 @@ class AttributeFilterTestCase(TestCase):
 
     def test_and_or(self):
         response = self.client.get(
-            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "(EMCI*WUOM)|EMCI"}
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"attributes": "(EMCI*WUOM)|EMCI"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "ECON-001"})
@@ -640,7 +651,8 @@ class AttributeFilterTestCase(TestCase):
 
     def test_and_or_not(self):
         response = self.client.get(
-            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "(EMCI*WUOM)|~EMCI"}
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"attributes": "(EMCI*WUOM)|~EMCI"},
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual({res["id"] for res in response.data}, {"ECON-001", "MGMT-117", "ANTH-001"})
@@ -713,7 +725,8 @@ class AttributeFilterTestCase(TestCase):
         )
         self.assertEqual(response.status_code, 400)
         response = self.client.get(
-            reverse("courses-search", args=[TEST_SEMESTER]), {"attributes": "(EMCI*(WUOM|LLLL)"}
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            {"attributes": "(EMCI*(WUOM|LLLL)"},
         )
         self.assertEqual(response.status_code, 400)
 
@@ -745,7 +758,8 @@ class SectionListTestCase(TestCase):
 
     def test_sections_appear(self):
         response = self.client.get(
-            reverse("section-search", args=["current"]), kwargs={"semester": TEST_SEMESTER}
+            reverse("section-search", args=["current"]),
+            kwargs={"semester": TEST_SEMESTER},
         )
         course_codes = [d["section_id"] for d in response.data]
         self.assertTrue("CIS-120-001" in course_codes and "MATH-114-001" in course_codes)
@@ -755,7 +769,8 @@ class SectionListTestCase(TestCase):
         self.math1.activity = ""
         self.math1.save()
         response = self.client.get(
-            reverse("section-search", args=["current"]), kwargs={"semester": TEST_SEMESTER}
+            reverse("section-search", args=["current"]),
+            kwargs={"semester": TEST_SEMESTER},
         )
         self.assertEqual(1, len(response.data))
         self.assertEqual("CIS-120-001", response.data[0]["section_id"])
@@ -1131,7 +1146,13 @@ class UserTestCase(TestCase):
         response = self.client.put(
             reverse("user-view"),
             json.dumps(
-                {"profile": {"email": None, "phone": "19178286431", "push_notifications": True}}
+                {
+                    "profile": {
+                        "email": None,
+                        "phone": "19178286431",
+                        "push_notifications": True,
+                    }
+                }
             ),
             content_type="application/json",
         )

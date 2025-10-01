@@ -58,6 +58,7 @@ export default function MapDropdown({
         <RadioContainer>
             {Object.keys(DAYS_TO_DAYSTRINGS).map((day) => (
                 <Radio
+                    key={day}
                     $isSelected={selectedDay === day}
                     onClick={() => {
                         setSelectedDay(day as Day);

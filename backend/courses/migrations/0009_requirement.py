@@ -16,7 +16,10 @@ class Migration(migrations.Migration):
                 (
                     "id",
                     models.AutoField(
-                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
                     ),
                 ),
                 ("semester", models.CharField(max_length=5)),
@@ -35,7 +38,10 @@ class Migration(migrations.Migration):
                 ),
                 ("satisfies", models.BooleanField()),
                 ("name", models.CharField(max_length=255)),
-                ("courses", models.ManyToManyField(related_name="overrides", to="courses.Course")),
+                (
+                    "courses",
+                    models.ManyToManyField(related_name="overrides", to="courses.Course"),
+                ),
                 (
                     "departments",
                     models.ManyToManyField(related_name="requirements", to="courses.Department"),

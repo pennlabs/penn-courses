@@ -215,21 +215,41 @@ class ReviewImportTestCase(TestCase):
 class DescriptionImportTestCase(TestCase):
     def test_one_paragraph(self):
         get_or_create_course("CIS", "120", TEST_SEMESTER)
-        rows = [{"COURSE_ID": "CIS120", "PARAGRAPH_NUMBER": "1", "COURSE_DESCRIPTION": "Hello"}]
+        rows = [
+            {
+                "COURSE_ID": "CIS120",
+                "PARAGRAPH_NUMBER": "1",
+                "COURSE_DESCRIPTION": "Hello",
+            }
+        ]
         import_description_rows(len(rows), iter(rows), show_progress_bar=False)
         self.assertEqual(1, Course.objects.count())
         self.assertEqual("Hello", Course.objects.get().description)
 
     def test_no_course(self):
-        rows = [{"COURSE_ID": "CIS120", "PARAGRAPH_NUMBER": "1", "COURSE_DESCRIPTION": "Hello"}]
+        rows = [
+            {
+                "COURSE_ID": "CIS120",
+                "PARAGRAPH_NUMBER": "1",
+                "COURSE_DESCRIPTION": "Hello",
+            }
+        ]
         import_description_rows(len(rows), iter(rows), show_progress_bar=False)
         self.assertEqual(0, Course.objects.count())
 
     def test_two_paragraphs(self):
         get_or_create_course("CIS", "120", TEST_SEMESTER)
         rows = [
-            {"COURSE_ID": "CIS120", "PARAGRAPH_NUMBER": "2", "COURSE_DESCRIPTION": "world!"},
-            {"COURSE_ID": "CIS120", "PARAGRAPH_NUMBER": "1", "COURSE_DESCRIPTION": "Hello"},
+            {
+                "COURSE_ID": "CIS120",
+                "PARAGRAPH_NUMBER": "2",
+                "COURSE_DESCRIPTION": "world!",
+            },
+            {
+                "COURSE_ID": "CIS120",
+                "PARAGRAPH_NUMBER": "1",
+                "COURSE_DESCRIPTION": "Hello",
+            },
         ]
         import_description_rows(len(rows), iter(rows), show_progress_bar=False)
         self.assertEqual(1, Course.objects.count())
@@ -239,7 +259,13 @@ class DescriptionImportTestCase(TestCase):
         get_or_create_course("CIS", "120", TEST_SEMESTER)
         get_or_create_course("CIS", "120", "3008A")
 
-        rows = [{"COURSE_ID": "CIS120", "PARAGRAPH_NUMBER": "1", "COURSE_DESCRIPTION": "Hello"}]
+        rows = [
+            {
+                "COURSE_ID": "CIS120",
+                "PARAGRAPH_NUMBER": "1",
+                "COURSE_DESCRIPTION": "Hello",
+            }
+        ]
         import_description_rows(len(rows), iter(rows), show_progress_bar=False)
         self.assertEqual(2, Course.objects.count())
         c1 = Course.objects.get(semester=TEST_SEMESTER)
@@ -254,7 +280,13 @@ class DescriptionImportTestCase(TestCase):
         c.description = "TILL 3005"
         c.save()
 
-        rows = [{"COURSE_ID": "CIS120", "PARAGRAPH_NUMBER": "1", "COURSE_DESCRIPTION": "Hello"}]
+        rows = [
+            {
+                "COURSE_ID": "CIS120",
+                "PARAGRAPH_NUMBER": "1",
+                "COURSE_DESCRIPTION": "Hello",
+            }
+        ]
         import_description_rows(len(rows), iter(rows), show_progress_bar=False)
         self.assertEqual(3, Course.objects.count())
         c1 = Course.objects.get(semester=TEST_SEMESTER)
@@ -268,8 +300,16 @@ class DescriptionImportTestCase(TestCase):
         get_or_create_course("CIS", "120", TEST_SEMESTER)
         get_or_create_course("CIS", "121", TEST_SEMESTER)
         rows = [
-            {"COURSE_ID": "CIS120", "PARAGRAPH_NUMBER": "1", "COURSE_DESCRIPTION": "World"},
-            {"COURSE_ID": "CIS121", "PARAGRAPH_NUMBER": "1", "COURSE_DESCRIPTION": "Hello"},
+            {
+                "COURSE_ID": "CIS120",
+                "PARAGRAPH_NUMBER": "1",
+                "COURSE_DESCRIPTION": "World",
+            },
+            {
+                "COURSE_ID": "CIS121",
+                "PARAGRAPH_NUMBER": "1",
+                "COURSE_DESCRIPTION": "Hello",
+            },
         ]
         import_description_rows(len(rows), iter(rows), show_progress_bar=False)
         c120 = Course.objects.get(code="120")

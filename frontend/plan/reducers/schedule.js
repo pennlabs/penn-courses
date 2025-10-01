@@ -5,7 +5,6 @@ import {
     CHANGE_MY_SCHEDULE,
     RENAME_SCHEDULE,
     CLEAR_SCHEDULE,
-    DOWNLOAD_SCHEDULE,
     MARK_CART_SYNCED,
     MARK_SCHEDULE_SYNCED,
     UPDATE_SCHEDULES_ON_FRONTEND,
@@ -17,6 +16,7 @@ import {
     REMOVE_SCHED_ITEM,
     ADD_CART_ITEM,
     REMOVE_CART_ITEM,
+    TOGGLE_BREAK,
 } from "../actions";
 import { scheduleContainsSection } from "../components/meetUtil";
 import { showToast } from "../pages";
@@ -82,7 +82,7 @@ export const nextAvailable = (scheduleName, used) => {
 /**
  * Returns a new schedule where the section is present if it was not previously, and vice-versa
  * @param sections
- * @param section
+ * @param sectionschedules[scheduleSelected]?.breaks ?? [],
  */
 const toggleSection = (scheduleSections, section) => {
     if (scheduleContainsSection(scheduleSections, section)) {
@@ -185,6 +185,13 @@ const handleUpdateSchedulesOnFrontend = (state, schedulesFromBackend) => {
                                     color: getColor(section.id),
                                 })
                             ),
+                            breaks: scheduleFromBackend.breaks.map((br) => {
+                                const newBreak = {
+                                    ...br,
+                                    color: getColor(br.name),
+                                };
+                                return newBreak;
+                            }),
                             id: scheduleFromBackend.id,
                             pushedToBackend: true,
                             updated_at: Date.now(),
@@ -338,11 +345,6 @@ export const schedule = (state = initialState, action) => {
                 state,
                 action.schedulesFromBackend
             );
-        case DOWNLOAD_SCHEDULE:
-            return {
-                ...state,
-                clickedOnSchedule: state.schedules[action.scheduleName].id,
-            };
         case CREATE_SCHEDULE_ON_FRONTEND:
             if (action.scheduleName === "cart") {
                 return {
@@ -359,6 +361,7 @@ export const schedule = (state = initialState, action) => {
                     ...state.schedules,
                     [action.scheduleName]: {
                         sections: action.scheduleSections,
+                        breaks: action.scheduleBreaks,
                         id: action.scheduleId,
                         pushedToBackend: true,
                         updated_at: Date.now(),
@@ -420,6 +423,22 @@ export const schedule = (state = initialState, action) => {
 
         case REMOVE_SCHED_ITEM:
             if (!state.readOnly) {
+                if (action.itemType === "section") {
+                    return {
+                        ...state,
+                        schedules: {
+                            ...state.schedules,
+                            [state.scheduleSelected]: {
+                                ...state.schedules[state.scheduleSelected],
+                                updated_at: Date.now(),
+                                pushedToBackend: false,
+                                sections: state.schedules[
+                                    state.scheduleSelected
+                                ].sections.filter((m) => m.id !== action.id),
+                            },
+                        },
+                    };
+                }
                 return {
                     ...state,
                     schedules: {
@@ -428,9 +447,11 @@ export const schedule = (state = initialState, action) => {
                             ...state.schedules[state.scheduleSelected],
                             updated_at: Date.now(),
                             pushedToBackend: false,
-                            sections: state.schedules[
+                            breaks: state.schedules[
                                 state.scheduleSelected
-                            ].sections.filter((m) => m.id !== action.id),
+                            ].breaks.filter(
+                                (br) => br.break.name !== action.id
+                            ),
                         },
                     },
                 };
@@ -440,6 +461,43 @@ export const schedule = (state = initialState, action) => {
             return {
                 ...state,
             };
+
+        case TOGGLE_BREAK:
+            if (!state.readOnly) {
+                const oldBreakSections =
+                    state.schedules[state.scheduleSelected]?.breaks ?? [];
+                let newBreakSections;
+                if (
+                    oldBreakSections.some((br) => br.id === action.breakItem.id)
+                ) {
+                    newBreakSections = oldBreakSections.filter(
+                        (br) => br.id !== action.breakItem.id
+                    );
+                } else {
+                    newBreakSections = [
+                        ...oldBreakSections,
+                        {
+                            ...action.breakItem,
+                            color: getColor(action.breakItem.name),
+                        },
+                    ];
+                }
+                const temp = {
+                    ...state,
+                    schedules: {
+                        ...state.schedules,
+                        [state.scheduleSelected]: {
+                            ...state.schedules[state.scheduleSelected],
+                            updated_at: Date.now(),
+                            pushedToBackend: false,
+                            breaks: newBreakSections,
+                        },
+                    },
+                };
+                return temp;
+            }
+            showToast("Cannot remove breaks from a friend's schedule!", true);
+            return { ...state };
 
         case ADD_CART_ITEM:
             return {

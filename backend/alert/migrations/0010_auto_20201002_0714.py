@@ -54,7 +54,8 @@ class Migration(migrations.Migration):
             model_name="registration",
             name="created_at",
             field=models.DateTimeField(
-                auto_now_add=True, help_text="The datetime at which this registration was created."
+                auto_now_add=True,
+                help_text="The datetime at which this registration was created.",
             ),
         ),
         migrations.AlterField(

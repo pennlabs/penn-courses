@@ -145,8 +145,15 @@ class FulfillmentViewsetTest(TestCase):
 
     def test_create_fulfillment(self):
         response = self.client.post(
-            reverse("degreeplan-fulfillment-list", kwargs={"degreeplan_pk": self.degree_plan.id}),
-            {"full_code": "CIS-1200", "semester": TEST_SEMESTER, "rules": [self.rule1.id]},
+            reverse(
+                "degreeplan-fulfillment-list",
+                kwargs={"degreeplan_pk": self.degree_plan.id},
+            ),
+            {
+                "full_code": "CIS-1200",
+                "semester": TEST_SEMESTER,
+                "rules": [self.rule1.id],
+            },
         )
         self.assertEqual(response.status_code, 201, response.json())
         self.assertSerializedFulfillmentEquals(
@@ -179,7 +186,10 @@ class FulfillmentViewsetTest(TestCase):
         b.rules.add(self.rule2)
 
         response = self.client.get(
-            reverse("degreeplan-fulfillment-list", kwargs={"degreeplan_pk": self.degree_plan.id})
+            reverse(
+                "degreeplan-fulfillment-list",
+                kwargs={"degreeplan_pk": self.degree_plan.id},
+            )
         )
         self.assertEqual(response.status_code, 200, response.json())
         response_a, response_b = sorted(

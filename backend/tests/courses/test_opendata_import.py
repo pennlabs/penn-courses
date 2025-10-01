@@ -38,7 +38,10 @@ class AddAttributesTestCase(TestCase):
             "MUSC-0050-001", TEST_SEMESTER
         )
         self.AMTH = {"attribute_code": "AMTH", "attribute_desc": "MUSC M Tier Thre"}
-        self.NUFC = {"attribute_code": "NUFC", "attribute_desc": "NUR-ADMIN-FCH Department"}
+        self.NUFC = {
+            "attribute_code": "NUFC",
+            "attribute_desc": "NUR-ADMIN-FCH Department",
+        }
 
     def test_add_attribute(self):
         add_attributes(self.MUSC_0050, [self.AMTH])
@@ -65,7 +68,8 @@ class AddAttributesTestCase(TestCase):
 
     def test_add_attribute_with_no_school(self):
         add_attributes(
-            self.MUSC_0050, [{"attribute_code": "ZPRS", "attribute_desc": "VIPER seminar"}]
+            self.MUSC_0050,
+            [{"attribute_code": "ZPRS", "attribute_desc": "VIPER seminar"}],
         )
         VPRS_obj = Attribute.objects.get(code="ZPRS")
         self.assertIsNone(VPRS_obj.school)

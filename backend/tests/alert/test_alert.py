@@ -17,6 +17,7 @@ from options.models import Option
 from rest_framework.test import APIClient
 
 from alert import tasks
+from alert.alerts import get_meeting_string
 from alert.models import SOURCE_PCA, AddDropPeriod, Registration, RegStatus, register_for_course
 from alert.tasks import get_registrations_for_alerts
 from courses.models import StatusUpdate
@@ -205,10 +206,12 @@ class SendAlertTestCase(TestCase):
             r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="C")
         )
         self.assertEquals(
-            0, len(get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="X"))
+            0,
+            len(get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="X")),
         )
         self.assertEquals(
-            0, len(get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status=""))
+            0,
+            len(get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="")),
         )
         tasks.send_alert(self.r.id, False, sent_by="ADM")
         r = Registration.objects.get(id=self.r.id)
@@ -386,7 +389,12 @@ class SendAlertTestCase(TestCase):
         )
 
     def resend_alert_forced_helper(
-        self, mock_email, mock_text, mock_push_notification, push_notification, close_notification
+        self,
+        mock_email,
+        mock_text,
+        mock_push_notification,
+        push_notification,
+        close_notification,
     ):
         """
         This helper checks that calling tasks.send_alert with the forced parameter as True
@@ -1054,7 +1062,8 @@ class AlertRegistrationTestCase(TestCase):
         self.assertEqual(model.close_notification, data["close_notification"])
         self.assertEqual(model.close_notification_sent, data["close_notification_sent"])
         self.assertEqual(
-            model.close_notification_sent_at, self.convert_date(data["close_notification_sent_at"])
+            model.close_notification_sent_at,
+            self.convert_date(data["close_notification_sent_at"]),
         )
         self.assertEqual(model.original_created_at, self.convert_date(data["original_created_at"]))
         self.assertEqual(model.created_at, self.convert_date(data["created_at"]))
@@ -1165,42 +1174,52 @@ class AlertRegistrationTestCase(TestCase):
                         },
                     )
                     self.assertEqual(
-                        0
-                        if not should_send
-                        else len([c for c in contact_infos if "email" in c.keys() and c["email"]]),
+                        (
+                            0
+                            if not should_send
+                            else len(
+                                [c for c in contact_infos if "email" in c.keys() and c["email"]]
+                            )
+                        ),
                         send_email_mock.call_count,
                     )
                     self.assertEqual(
-                        0
-                        if not should_send
-                        else len(
-                            [
-                                c
-                                for c in contact_infos
-                                if "number" in c.keys()
-                                and c["number"]
-                                and ("push_username" not in c.keys() or not c["push_username"])
-                            ]
+                        (
+                            0
+                            if not should_send
+                            else len(
+                                [
+                                    c
+                                    for c in contact_infos
+                                    if "number" in c.keys()
+                                    and c["number"]
+                                    and ("push_username" not in c.keys() or not c["push_username"])
+                                ]
+                            )
                         ),
                         send_text_mock.call_count,
                     )
                     self.assertEqual(
-                        0
-                        if not should_send
-                        else len(
-                            [
-                                c
-                                for c in contact_infos
-                                if "push_username" in c.keys() and c["push_username"]
-                            ]
+                        (
+                            0
+                            if not should_send
+                            else len(
+                                [
+                                    c
+                                    for c in contact_infos
+                                    if "push_username" in c.keys() and c["push_username"]
+                                ]
+                            )
                         ),
                         push_notification_mock.call_count,
                     )
                     for c in contact_infos:
                         self.assertEqual(
-                            0
-                            if not should_send or "email" not in c.keys() or not c["email"]
-                            else 1,
+                            (
+                                0
+                                if not should_send or "email" not in c.keys() or not c["email"]
+                                else 1
+                            ),
                             len(
                                 [
                                     m
@@ -1210,12 +1229,14 @@ class AlertRegistrationTestCase(TestCase):
                             ),
                         )
                         self.assertEqual(
-                            0
-                            if not should_send
-                            or "number" not in c.keys()
-                            or not c["number"]
-                            or ("push_username" in c.keys() and c["push_username"])
-                            else 1,
+                            (
+                                0
+                                if not should_send
+                                or "number" not in c.keys()
+                                or not c["number"]
+                                or ("push_username" in c.keys() and c["push_username"])
+                                else 1
+                            ),
                             len(
                                 [
                                     m
@@ -1225,11 +1246,13 @@ class AlertRegistrationTestCase(TestCase):
                             ),
                         )
                         self.assertEqual(
-                            0
-                            if not should_send
-                            or "push_username" not in c.keys()
-                            or not c["push_username"]
-                            else 1,
+                            (
+                                0
+                                if not should_send
+                                or "push_username" not in c.keys()
+                                or not c["push_username"]
+                                else 1
+                            ),
                             len(
                                 [
                                     m
@@ -1661,7 +1684,11 @@ class AlertRegistrationTestCase(TestCase):
                     "email": new_user.profile.email,
                     "push_username": new_user.username,
                 },
-                {"number": "+19178286431", "email": "j@gmail.com", "push_username": None},
+                {
+                    "number": "+19178286431",
+                    "email": "j@gmail.com",
+                    "push_username": None,
+                },
             ],
             should_send=True,
             close_notification=False,
@@ -2172,10 +2199,12 @@ class AlertRegistrationTestCase(TestCase):
         self.assertEqual(3, len(set(item.get("id") for item in response.data)))
         self.assertEqual(1, len([item for item in response.data if item.get("id") == sixth_id]))
         self.assertEqual(
-            1, len([item for item in response.data if item.get("id") == ids["second_id"]])
+            1,
+            len([item for item in response.data if item.get("id") == ids["second_id"]]),
         )
         self.assertEqual(
-            1, len([item for item in response.data if item.get("id") == ids["fifth_id"]])
+            1,
+            len([item for item in response.data if item.get("id") == ids["fifth_id"]]),
         )
 
     def cancel_and_resub_helper(self, auto_resub, put, cancel_before_sim_webhook):
@@ -2390,7 +2419,11 @@ class AlertRegistrationTestCase(TestCase):
                 self.client.put(
                     reverse("registrations-detail", args=[first_id]),
                     json.dumps(
-                        {"deleted": True, "auto_resubscribe": True, "close_notification": True}
+                        {
+                            "deleted": True,
+                            "auto_resubscribe": True,
+                            "close_notification": True,
+                        }
                     ),
                     content_type="application/json",
                 )
@@ -2443,7 +2476,11 @@ class AlertRegistrationTestCase(TestCase):
         response = self.client.post(
             reverse("registrations-list"),
             json.dumps(
-                {"section": "CIS-1600-001", "auto_resubscribe": True, "close_notification": True}
+                {
+                    "section": "CIS-1600-001",
+                    "auto_resubscribe": True,
+                    "close_notification": True,
+                }
             ),
             content_type="application/json",
         )
@@ -2462,7 +2499,11 @@ class AlertRegistrationTestCase(TestCase):
             r in get_registrations_for_alerts("CIS-1600-001", TEST_SEMESTER, course_status="C")
         )
         self.simulate_alert(
-            self.cis1600, 1, close_notification=True, should_send=False, contact_infos=contact_infos
+            self.cis1600,
+            1,
+            close_notification=True,
+            should_send=False,
+            contact_infos=contact_infos,
         )
         r = Registration.objects.get(id=first_id)
         self.assertTrue(
@@ -2481,7 +2522,11 @@ class AlertRegistrationTestCase(TestCase):
         )
         contact_infos[0]["number"] = None
         self.simulate_alert(
-            self.cis1600, 3, close_notification=True, should_send=True, contact_infos=contact_infos
+            self.cis1600,
+            3,
+            close_notification=True,
+            should_send=True,
+            contact_infos=contact_infos,
         )
         r = Registration.objects.get(id=first_id)
         self.assertFalse(
@@ -2505,7 +2550,11 @@ class AlertRegistrationTestCase(TestCase):
         response = self.client.post(
             reverse("registrations-list"),
             json.dumps(
-                {"section": "CIS-1600-001", "auto_resubscribe": True, "close_notification": True}
+                {
+                    "section": "CIS-1600-001",
+                    "auto_resubscribe": True,
+                    "close_notification": True,
+                }
             ),
             content_type="application/json",
         )
@@ -2530,7 +2579,11 @@ class AlertRegistrationTestCase(TestCase):
             self.client.post(
                 reverse("registrations-list"),
                 json.dumps(
-                    {"id": first_id, "auto_resubscribe": auto_resub, "close_notification": True}
+                    {
+                        "id": first_id,
+                        "auto_resubscribe": auto_resub,
+                        "close_notification": True,
+                    }
                 ),
                 content_type="application/json",
             )
@@ -2562,7 +2615,11 @@ class AlertRegistrationTestCase(TestCase):
         Ensure that cancelling or deleting a registration also cancels a pending close notification
         """
         contact_infos = [
-            {"number": "+19178286431", "email": "j@gmail.com", "push_username": self.user.username}
+            {
+                "number": "+19178286431",
+                "email": "j@gmail.com",
+                "push_username": self.user.username,
+            }
         ]
         first_id = self.registration_cis1200.id
 
@@ -2591,7 +2648,11 @@ class AlertRegistrationTestCase(TestCase):
             self.assertTrue(first_reg.cancelled)
 
         self.simulate_alert(
-            self.cis1200, 2, close_notification=True, should_send=False, contact_infos=contact_infos
+            self.cis1200,
+            2,
+            close_notification=True,
+            should_send=False,
+            contact_infos=contact_infos,
         )
 
     def test_close_notification_cancel(self):
@@ -2869,7 +2930,8 @@ class AlertRegistrationTestCase(TestCase):
             ob_lst = [ob for ob in response.data if ob.get("id") == ids[specific_ids + "_id"]]
             self.assertEquals(1, len(ob_lst))
             self.assertEquals(
-                last_notification_sent_at_vals["fourth"], ob_lst[0].get("last_notification_sent_at")
+                last_notification_sent_at_vals["fourth"],
+                ob_lst[0].get("last_notification_sent_at"),
             )
         for specific_ids in ["second", "fifth"]:
             ob_lst = [ob for ob in response.data if ob.get("id") == ids[specific_ids + "_id"]]
@@ -2890,3 +2952,36 @@ class AlertRegistrationTestCase(TestCase):
                 reverse("registrations-detail", args=[ids[specific_ids + "_id"]])
             )
             self.assertIsNone(response.data.get("last_notification_sent_at"))
+
+
+class TestAlertMeetingString(TestCase):
+
+    def setUp(self):
+        set_semester()
+        user = User.objects.create_user(username="jacob", password="top_secret")
+        user.save()
+        self.user = user
+
+    def create_reg(self, full_code, **kwargs):
+        _, section, _, _ = get_or_create_course_and_section(full_code, TEST_SEMESTER)
+        reg = Registration(section=section, user=self.user, **kwargs)
+        reg.save()
+        return reg
+
+    def test_json_list_is_parsed_correctly(self):
+        reg = self.create_reg(full_code="CIS-1200-001")
+        reg.section.meeting_times = '["MW 1:45 PM - 3:14 PM", "T 1:45 PM - 2:44 PM"]'
+        expected = "MW 1:45 PM - 3:14 PM, T 1:45 PM - 2:44 PM"
+        self.assertEquals(expected, get_meeting_string(reg))
+
+    def test_empty_string_returns_empty_string(self):
+        reg = self.create_reg(full_code="CIS-1200-001")
+        reg.section.meeting_times = ""
+        expected = ""
+        self.assertEquals(expected, get_meeting_string(reg))
+
+    def test_invalid_json_returns_empty_string(self):
+        reg = self.create_reg(full_code="CIS-1200-001")
+        reg.section.meeting_times = "MW 1:45 PM - 3:14 PM, T 1:45 PM - 2:44 PM"
+        expected = ""
+        self.assertEquals(expected, get_meeting_string(reg))

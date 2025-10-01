@@ -108,7 +108,9 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--new_data", action="store_true", help="Include this flag to recalculate review data."
+            "--new_data",
+            action="store_true",
+            help="Include this flag to recalculate review data.",
         )
 
     def handle(self, *args, **kwargs):
