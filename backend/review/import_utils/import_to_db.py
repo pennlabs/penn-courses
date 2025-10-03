@@ -126,11 +126,10 @@ def import_summary_row(row, stat):
     review_bits = {}
     for col, slug in COLUMN_TO_SLUG.items():
         if col in row:
-            if row.get(col) is not None and row.get(col) != '':
+            if row.get(col) is not None and row.get(col) != "":
                 review_bits[slug] = float(row.get(col))
             else:
                 review_bits[slug] = None
-
 
     import_review(
         section,
