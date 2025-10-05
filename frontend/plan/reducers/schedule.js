@@ -449,9 +449,7 @@ export const schedule = (state = initialState, action) => {
                             pushedToBackend: false,
                             breaks: state.schedules[
                                 state.scheduleSelected
-                            ].breaks.filter(
-                                (br) => br.break.name !== action.id
-                            ),
+                            ].breaks.filter((br) => br.name !== action.id),
                         },
                     },
                 };
