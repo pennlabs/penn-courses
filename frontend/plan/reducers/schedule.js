@@ -450,7 +450,7 @@ export const schedule = (state = initialState, action) => {
                             breaks: state.schedules[
                                 state.scheduleSelected
                             ].breaks.filter(
-                                (br) => br.break.name !== action.id
+                                (br) => br.name !== action.id
                             ),
                         },
                     },
