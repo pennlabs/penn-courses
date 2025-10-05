@@ -131,7 +131,7 @@ class Command(BaseCommand):
 
         parser.set_defaults(summary_file=ISC_SUMMARY_TABLE)
 
-    def get_files(self, src, is_zipfile, tables_to_get):
+    def get_files(self, src, is_zipfile, tables_to_get, use_csv=False):
         """
         Get file objects for the given tables at the root defined in `src.`
         Works for flat directories and zip files as well.
@@ -143,11 +143,11 @@ class Command(BaseCommand):
         if is_zipfile:
             self.zfile = zipfile.ZipFile(src)
             for name in tables_to_get:
-                zf = self.zfile.open(name + ".csv")
+                zf = self.zfile.open(name + (".csv" if use_csv else ".sql"))
                 files.append(io.TextIOWrapper(zf, "latin-1"))
         else:
             for name in tables_to_get:
-                path = os.path.abspath(os.path.join(src, name + ".csv"))
+                path = os.path.abspath(os.path.join(src, name + (".csv" if use_csv else ".sql")))
                 files.append(open(path, "r", encoding="latin-1"))
         return tuple(files)
 
@@ -214,7 +214,7 @@ class Command(BaseCommand):
             description_idx = idx
             idx += 1
 
-        files = self.get_files(src, is_zip_file, tables_to_get)
+        files = self.get_files(src, is_zip_file, tables_to_get, use_csv)
         summary_fo = files[0]
 
         print("Loading summary file...")
