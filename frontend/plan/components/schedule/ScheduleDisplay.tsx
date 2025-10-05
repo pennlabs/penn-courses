@@ -6,6 +6,7 @@ import Times from "./Times";
 import Block from "./Block";
 import GridLines from "./GridLines";
 import Stats from "./Stats";
+import {dayMap} from "./util";
 
 import {
   Day,
@@ -280,17 +281,6 @@ const ScheduleDisplay = ({
     const now = new Date();
     let currentHour = now.getHours() + now.getMinutes() / 60;
     let dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-
-    // Map JavaScript day of week to schedule days
-    const dayMap: { [key: number]: Day | null } = {
-      0: Weekends.U, // Sunday
-      1: Weekdays.M, // Monday
-      2: Weekdays.T, // Tuesday
-      3: Weekdays.W, // Wednesday
-      4: Weekdays.R, // Thursday
-      5: Weekdays.F, // Friday
-      6: Weekends.S, // Saturday
-    };
 
     const currentDay = dayMap[dayOfWeek];
 
