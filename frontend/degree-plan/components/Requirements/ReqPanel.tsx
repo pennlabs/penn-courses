@@ -1,5 +1,4 @@
-
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useContext, useRef, useMemo, useState, useLayoutEffect, useEffect } from 'react';
 import RuleComponent, { SkeletonRule } from './Rule';
 import { Degree as DegreeType, DegreePlan, Fulfillment, Rule, Degree as DegreeD } from '@/types';
 import styled from '@emotion/styled';
@@ -45,6 +44,9 @@ const DegreeHeaderContainer = styled.div`
   color: #FFF;
   padding: 0.75rem 1.25rem;
   border-radius: var(--req-item-radius);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 `
 
 const ReqPanelTitle = styled.div`
@@ -54,9 +56,10 @@ const ReqPanelTitle = styled.div`
 
 const DegreeBody = styled.div`
   margin-top: .5rem;
-  overflow-y: auto;
-  overflow-x: hidden;
-`
+  `
+//   overflow-y: auto;
+//   overflow-x: hidden;
+// `
 
 export const DegreeYear = styled.span`
   margin-left: .25rem;
@@ -94,12 +97,21 @@ interface DegreeHeaderProps {
   collapsed: boolean,
   editMode: boolean,
   skeleton?: boolean,
+  containerRef?: React.Ref<HTMLDivElement>
 }
 
-const DegreeHeader = ({ degree, remove, setCollapsed, collapsed, editMode, skeleton }: DegreeHeaderProps) => {
+const DegreeHeader = ({ 
+  degree, 
+  remove, 
+  setCollapsed, 
+  collapsed, 
+  editMode, 
+  skeleton,
+  containerRef
+}: DegreeHeaderProps) => {
   const degreeName = !skeleton ? `${degree.degree} in ${degree.major_name} ${degree.concentration ? `(${degree.concentration_name})` : ''}` : <DarkBlueBackgroundSkeleton width="10em" />;
   return (
-    <DegreeHeaderContainer onClick={() => setCollapsed(!collapsed)}>
+    <DegreeHeaderContainer ref={containerRef} onClick={() => setCollapsed(!collapsed)}>
       <DegreeTitleWrapper>
         <div>
           {degreeName}
@@ -168,12 +180,37 @@ const computeRuleTree = ({activeDegreePlanId, rule, rulesToFulfillments, rulesTo
 }
 
 
-const Degree = ({ allRuleLeaves, degree, rulesToFulfillments, rulesToUnselectedFulfillments, activeDegreeplan, editMode, setModalKey, setModalObject, isLoading }: any) => {
+const Degree = ({ 
+  allRuleLeaves, 
+  degree, 
+  rulesToFulfillments, 
+  rulesToUnselectedFulfillments, 
+  activeDegreeplan, 
+  editMode, 
+  setModalKey, 
+  setModalObject, 
+  isLoading
+}: any) => {
   const [collapsed, setCollapsed] = useState(false);
+
+  const headerRef = useRef<HTMLDivElement>(null);
+  const [headerHeight, setHeaderHeight] = useState<number>(0);
+
+  useLayoutEffect(() => {
+    if (headerRef.current) {
+      setHeaderHeight(headerRef.current.offsetHeight);
+    }
+  }, []);
+
+  useEffect(() => {
+    console.log("headerHeight From Degree", headerHeight);
+  }, [headerHeight]);
+
   if (isLoading) {
     return (
       <div>
         <DegreeHeader
+          // containerRef={headerRef}
           degree={degree}
           remove={() => void {}}
           setCollapsed={setCollapsed}
@@ -207,6 +244,7 @@ const Degree = ({ allRuleLeaves, degree, rulesToFulfillments, rulesToUnselectedF
   return (
     <div>
       <DegreeHeader
+        containerRef={headerRef}
         degree={degree}
         key={degree.id}
         remove={() => {
@@ -223,6 +261,7 @@ const Degree = ({ allRuleLeaves, degree, rulesToFulfillments, rulesToUnselectedF
           {degree && degree.rules.map((rule: any) => {
             return (
             <RuleComponent
+              headerHeight={headerHeight}
               {...computeRuleTree({activeDegreePlanId: activeDegreeplan.id, rule, rulesToFulfillments, rulesToUnselectedFulfillments, degree })}
             />
           )}
