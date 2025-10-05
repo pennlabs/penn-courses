@@ -281,12 +281,6 @@ const ScheduleDisplay = ({
     let currentHour = now.getHours() + now.getMinutes() / 60;
     let dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
 
-      // TODO testing values, remove later
-      if (false) {
-        currentHour = 10.9;
-        dayOfWeek = 0; // Sunday
-      }
-
     // Map JavaScript day of week to schedule days
     const dayMap: { [key: number]: Day | null } = {
       0: Weekends.U, // Sunday
@@ -300,10 +294,6 @@ const ScheduleDisplay = ({
 
     const currentDay = dayMap[dayOfWeek];
 
-    // Don't show indicator on weekends
-    // if (currentDay === Weekends.S || currentDay === Weekends.U) {
-    //   return null;
-    // }
     // Don't show indicator if there is nothing in the weekend
       const showWeekend =
           sections.some((sec: Section) =>
