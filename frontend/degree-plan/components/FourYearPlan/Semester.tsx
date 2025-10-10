@@ -143,6 +143,8 @@ const FlexSemester = ({
 }: SemesterProps) => {
     const { semesterRefs } = useContext(SemestersContext);
 
+    const showToast = useContext(ToastContext);
+
     const credits = fulfillments.reduce((acc, curr) => acc + (curr.course?.credits || 1), 0)
 
     const { createOrUpdate: addToDock } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
