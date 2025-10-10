@@ -194,7 +194,7 @@ const DropdownMenu = styled.div<{$isActive: boolean}>`
     padding-top: 4px;
     position: absolute;
     top: 100%;
-    z-index: 20;
+    z-index: 200000;
     font-size: 1rem;
 `;
 
