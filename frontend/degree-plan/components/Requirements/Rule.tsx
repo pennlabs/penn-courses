@@ -18,7 +18,7 @@ const RuleTitleWrapper = styled.div<{ $headerHeight?: number }>`
   border-radius: var(--req-item-radius);
   position: sticky;
   top: ${(props) => props.$headerHeight}px;
-  z-index: 2000;
+  z-index: 999;
 `;
 
 const ProgressBar = styled.div<{ $progress: number }>`

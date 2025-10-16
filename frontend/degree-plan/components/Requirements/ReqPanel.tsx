@@ -56,10 +56,8 @@ const ReqPanelTitle = styled.div`
 
 const DegreeBody = styled.div`
   margin-top: .5rem;
-  `
-//   overflow-y: auto;
-//   overflow-x: hidden;
-// `
+  overflow-y: none;
+`
 
 export const DegreeYear = styled.span`
   margin-left: .25rem;
@@ -86,10 +84,16 @@ const AddButton = styled.div`
 `
 
 const ReqPanelBody = styled(PanelBody)`
-  overflow-y: scroll;
   padding: 1.5rem;
+  gap: 0;
 `
-
+const ReqContent = styled.div`
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  overflow-y: scroll;
+`
 interface DegreeHeaderProps {
   degree: DegreeType,
   remove: (degreeId: DegreeType["id"]) => void,
@@ -330,29 +334,31 @@ const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: 
         <>
           {activeDegreeplanDetail &&
             <ReqPanelBody>
-              {activeDegreeplanDetail.degrees.length == 0 && !editMode && <EmptyPanel />}
-              {activeDegreeplanDetail.degrees.map(degree => (
-                <Degree
-                  allRuleLeaves={allRuleLeaves}
-                  degree={degree}
-                  rulesToFulfillments={rulesToFulfillments}
-                  rulesToUnselectedFulfillments={rulesToUnselectedFulfillments}
-                  activeDegreeplan={activeDegreeplan}
-                  editMode={editMode}
-                  setModalKey={setModalKey}
-                  setModalObject={setModalObject}
-                  isLoading={isLoading}
-                />
-              ))}
-              {editMode && <AddButton role="button" onClick={() => {
-                setModalObject(activeDegreeplan);
-                setModalKey("degree-add");
-              }}>
-                <i className="fa fa-plus" />
-                <div>
-                  Add Degree
-                </div>
-              </AddButton>}
+              <ReqContent>
+                {activeDegreeplanDetail.degrees.length == 0 && !editMode && <EmptyPanel />}
+                {activeDegreeplanDetail.degrees.map(degree => (
+                  <Degree
+                    allRuleLeaves={allRuleLeaves}
+                    degree={degree}
+                    rulesToFulfillments={rulesToFulfillments}
+                    rulesToUnselectedFulfillments={rulesToUnselectedFulfillments}
+                    activeDegreeplan={activeDegreeplan}
+                    editMode={editMode}
+                    setModalKey={setModalKey}
+                    setModalObject={setModalObject}
+                    isLoading={isLoading}
+                  />
+                ))}
+                {editMode && <AddButton role="button" onClick={() => {
+                  setModalObject(activeDegreeplan);
+                  setModalKey("degree-add");
+                }}>
+                  <i className="fa fa-plus" />
+                  <div>
+                    Add Degree
+                  </div>
+                </AddButton>}
+              </ReqContent>
             </ReqPanelBody>
           }
         </>}
