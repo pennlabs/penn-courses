@@ -18,7 +18,7 @@ import {
 import useSWR, { useSWRConfig } from "swr";
 import ModalContainer from "../common/ModalContainer";
 import Select from "react-select";
-import { schoolOptions } from "@/pages/OnboardingPage";
+import { schoolOptions } from "./OnboardingPage";
 
 export type ModalKey =
   | "plan-create"
@@ -141,6 +141,7 @@ interface RemoveSemesterProps {
 interface ModalInteriorProps {
   modalKey: ModalKey;
   modalObject: DegreePlan | null | RemoveSemesterProps | RemoveDegreeProps | Degree;
+  activeDegreePlan: DegreePlan | null;
   setActiveDegreeplan: (arg0: DegreePlan | null) => void;
   close: () => void;
   modalRef: React.RefObject<HTMLSelectElement | null>;
@@ -148,6 +149,7 @@ interface ModalInteriorProps {
 const ModalInterior = ({
   modalObject,
   modalKey,
+  activeDegreePlan,
   setActiveDegreeplan,
   close,
   modalRef
@@ -159,6 +161,13 @@ const ModalInterior = ({
   } = useSWRCrud<DegreePlan>("/api/degree/degreeplans");
 
   const { mutate } = useSWRConfig();
+
+  // Need to add modalRef
+  const [modalRefCurrent, setModalRefCurrent] = useState<HTMLSelectElement | null>(null);
+
+  React.useEffect(() => {
+    setModalRefCurrent(modalRef.current);
+  }, [modalRef]);
 
   const add_degreeplan = async (name: string) => {
     const _new = await postFetcher("/api/degree/degreeplans", { name: name });
@@ -204,6 +213,7 @@ const ModalInterior = ({
 
   const remove_degree = async (degreeplanId: number, degreeId: number) => {
     await deleteFetcher(`/api/degree/degreeplans/${degreeplanId}/degrees`, {
+      
       degree_ids: [degreeId],
     }); // remove degree
     await mutate(`/api/degree/degreeplans/${degreeplanId}`); // use updated degree plan returned
@@ -246,6 +256,14 @@ const ModalInterior = ({
           <ModalButton
             onClick={() => {
               updateDegreeplan({ name }, (modalObject as DegreePlan).id);
+              
+              
+
+              if ((modalObject as DegreePlan).id == activeDegreePlan?.id) {
+                let newNameDegPlan = (modalObject as DegreePlan);
+                newNameDegPlan.name = name;
+                setActiveDegreeplan(newNameDegPlan);
+              }
               close();
             }}
           >
@@ -288,14 +306,15 @@ const ModalInterior = ({
                 placeholder="Select School or Program"
                 isLoading={false}
                 styles={{ menuPortal: base => ({ ...base, zIndex: 999 }) }}
-                menuPortalTarget={modalRef.current}
+                menuPortalTarget={modalRefCurrent}
+
               />
               <Select
                 options={getMajorOptions()}
                 value={major}
                 onChange={(selectedOption) => setMajor(selectedOption || undefined)}
                 styles={{ menuPortal: base => ({ ...base, zIndex: 999 }) }}
-                menuPortalTarget={modalRef.current}
+                menuPortalTarget={modalRefCurrent}
                 isClearable
                 isDisabled={!school}
                 placeholder={
@@ -326,7 +345,7 @@ const ModalInterior = ({
           <ModalTextWrapper>
             <ModalText>
               Are you sure you want to remove this degree? All of your planning
-              for this degree will be lost
+              for this degree will be lost.
             </ModalText>
           </ModalTextWrapper>
           <ModalButton
@@ -345,7 +364,7 @@ const ModalInterior = ({
           <ModalTextWrapper>
             <ModalText>
               Are you sure you want to remove this semester? All of your
-              planning for this semester will be lost
+              planning for this semester will be lost.
             </ModalText>
           </ModalTextWrapper>
           <ModalButton
@@ -366,12 +385,14 @@ interface DegreeModalProps {
   setModalKey: (arg0: ModalKey) => void;
   modalKey: ModalKey;
   modalObject: DegreePlan | null;
+  activeDegreePlan: DegreePlan | null;
   setActiveDegreeplan: (arg0: DegreePlan | null) => void;
 }
 const DegreeModal = ({
   setModalKey,
   modalKey,
   modalObject,
+  activeDegreePlan,
   setActiveDegreeplan,
 }: DegreeModalProps) => (
   <ModalContainer
@@ -383,6 +404,7 @@ const DegreeModal = ({
     // @ts-ignore */}
     <ModalInterior
       modalObject={modalObject}
+      activeDegreePlan={activeDegreePlan}
       setActiveDegreeplan={setActiveDegreeplan}
       close={() => setModalKey(null)}
     />
