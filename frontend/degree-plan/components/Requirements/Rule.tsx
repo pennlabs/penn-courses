@@ -12,13 +12,13 @@ import assert from "assert";
 import SatisfiedCheck from "../FourYearPlan/SatisfiedCheck";
 import { ExpandedCoursesPanelContext } from "../FourYearPlan/ExpandedCoursesPanel";
 
-const RuleTitleWrapper = styled.div<{ $headerHeight?: number }>`
+const RuleTitleWrapper = styled.div<{ $headerHeight?: number, $zIndex?: number }>`
   background-color: var(--primary-color);
   position: relative;
   border-radius: var(--req-item-radius);
   position: sticky;
   top: ${(props) => props.$headerHeight}px;
-  z-index: 999;
+  z-index: ${(props) => props.$zIndex || 999};
 `;
 
 const ProgressBar = styled.div<{ $progress: number }>`
@@ -155,7 +155,7 @@ export const SkeletonRule: React.FC<React.PropsWithChildren> = ({
 /**
  * Recursive component to represent a rule.
  */
-const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number }) => {
+const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: number }) => {
 
   const { set_courses, courses } = useContext(ExpandedCoursesPanelContext);
   const { type, activeDegreePlanId, rule, progress } = ruleTree;
@@ -163,6 +163,7 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number }) => {
 
   // Header height is the height of the header of the parent degree (?)
   const headerHeight = ruleTree.headerHeight;
+  const zIndex = ruleTree.zIndex || -1;
 
   const myHeaderRef = useRef<HTMLDivElement>(null);
   const [myHeight, setMyHeight] = useState(0);
@@ -420,7 +421,7 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number }) => {
 
   return (
     <>
-      <RuleTitleWrapper $headerHeight={headerHeight} onClick={() => setCollapsed(!collapsed)} ref={myHeaderRef}>
+      <RuleTitleWrapper $headerHeight={headerHeight} $zIndex={zIndex} onClick={() => setCollapsed(!collapsed)} ref={myHeaderRef}>
         <ProgressBar $progress={progress}></ProgressBar>
         <RuleTitle>
           <div>
@@ -438,7 +439,7 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number }) => {
           <Column>
             {children.map((ruleTree) => (
               <div>
-                <RuleComponent headerHeight={myHeight + (headerHeight || 0)} {...ruleTree} />
+                <RuleComponent headerHeight={myHeight + (headerHeight || 0)} zIndex={zIndex - 1} {...ruleTree} />
               </div>
             ))}
           </Column>

@@ -275,6 +275,7 @@ const Degree = ({
             return (
             <RuleComponent
               headerHeight={headerHeight}
+              zIndex={999}
               {...computeRuleTree({activeDegreePlanId: activeDegreeplan.id, rule, rulesToFulfillments, rulesToUnselectedFulfillments, degree })}
             />
           )}
