@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState, useLayoutEffect, useRef } from "react";
 import RuleLeaf, { SkeletonRuleLeaf } from "./QObject";
 import { Course, DnDCourse, Fulfillment, Rule } from "@/types";
 import styled from "@emotion/styled";
@@ -12,10 +12,13 @@ import assert from "assert";
 import SatisfiedCheck from "../FourYearPlan/SatisfiedCheck";
 import { ExpandedCoursesPanelContext } from "../FourYearPlan/ExpandedCoursesPanel";
 
-const RuleTitleWrapper = styled.div`
+const RuleTitleWrapper = styled.div<{ $headerHeight?: number, $zIndex?: number }>`
   background-color: var(--primary-color);
   position: relative;
   border-radius: var(--req-item-radius);
+  position: sticky;
+  top: ${(props) => props.$headerHeight}px;
+  z-index: ${(props) => props.$zIndex || 999};
 `;
 
 const ProgressBar = styled.div<{ $progress: number }>`
@@ -152,10 +155,35 @@ export const SkeletonRule: React.FC<React.PropsWithChildren> = ({
 /**
  * Recursive component to represent a rule.
  */
-const RuleComponent = (ruleTree: RuleTree) => {
+const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: number }) => {
+
   const { set_courses, courses } = useContext(ExpandedCoursesPanelContext);
   const { type, activeDegreePlanId, rule, progress } = ruleTree;
   const satisfied = progress === 1;
+
+  // Header height is the height of the header of the parent degree (?)
+  const headerHeight = ruleTree.headerHeight;
+  const zIndex = ruleTree.zIndex || -1;
+
+  const myHeaderRef = useRef<HTMLDivElement>(null);
+  const [myHeight, setMyHeight] = useState(0);
+
+  useLayoutEffect(() => {
+    if (!myHeaderRef.current) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.target instanceof HTMLElement) {
+          setMyHeight(entry.target.clientHeight);
+        }
+      }
+    });
+    resizeObserver.observe(myHeaderRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
 
   // state for INTERNAL_NODEs
   const [collapsed, setCollapsed] = useState(false);
@@ -393,7 +421,7 @@ const RuleComponent = (ruleTree: RuleTree) => {
 
   return (
     <>
-      <RuleTitleWrapper onClick={() => setCollapsed(!collapsed)}>
+      <RuleTitleWrapper $headerHeight={headerHeight} $zIndex={zIndex} onClick={() => setCollapsed(!collapsed)} ref={myHeaderRef}>
         <ProgressBar $progress={progress}></ProgressBar>
         <RuleTitle>
           <div>
@@ -411,7 +439,7 @@ const RuleComponent = (ruleTree: RuleTree) => {
           <Column>
             {children.map((ruleTree) => (
               <div>
-                <RuleComponent {...ruleTree} />
+                <RuleComponent headerHeight={myHeight + (headerHeight || 0)} zIndex={zIndex - 1} {...ruleTree} />
               </div>
             ))}
           </Column>
