@@ -164,17 +164,24 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number }) => {
   // Header height is the height of the header of the parent degree (?)
   const headerHeight = ruleTree.headerHeight;
 
-  // useEffect(() => {
-  //   console.log("headerHeight", headerHeight);
-  // }, [headerHeight]);
-
   const myHeaderRef = useRef<HTMLDivElement>(null);
   const [myHeight, setMyHeight] = useState(0);
 
   useLayoutEffect(() => {
-    if (myHeaderRef.current) {
-      setMyHeight(myHeaderRef.current.offsetHeight);
-    }
+    if (!myHeaderRef.current) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.target instanceof HTMLElement) {
+          setMyHeight(entry.target.clientHeight);
+        }
+      }
+    });
+    resizeObserver.observe(myHeaderRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
   }, []);
 
   // state for INTERNAL_NODEs

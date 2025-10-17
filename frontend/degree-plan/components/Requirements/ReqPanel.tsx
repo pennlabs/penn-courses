@@ -201,9 +201,18 @@ const Degree = ({
   const [headerHeight, setHeaderHeight] = useState<number>(0);
 
   useLayoutEffect(() => {
-    if (headerRef.current) {
-      setHeaderHeight(headerRef.current.offsetHeight);
-    }
+    if (!headerRef.current) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setHeaderHeight(entry.target.clientHeight);
+      }
+    });
+    resizeObserver.observe(headerRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
   }, []);
 
   useEffect(() => {
