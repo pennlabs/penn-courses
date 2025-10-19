@@ -7,18 +7,17 @@ import { useSWRCrud } from "@/hooks/swrcrud";
 import { useDrop } from "react-dnd";
 import { ItemTypes } from "../Dock/dnd/constants";
 import { DarkBlueBackgroundSkeleton } from "../FourYearPlan/PanelCommon";
-import { DegreeYear, RuleTree } from "./ReqPanel";
+import { DegreeYear, RuleTree, WhiteSpace, HEADER_DEFAULT_BUFFER } from "./ReqPanel";
 import assert from "assert";
 import SatisfiedCheck from "../FourYearPlan/SatisfiedCheck";
 import { ExpandedCoursesPanelContext } from "../FourYearPlan/ExpandedCoursesPanel";
 
 const RuleTitleWrapper = styled.div<{ $headerHeight?: number, $zIndex?: number }>`
   background-color: var(--primary-color);
-  position: relative;
-  border-radius: var(--req-item-radius);
   position: sticky;
-  top: ${(props) => props.$headerHeight}px;
-  z-index: ${(props) => props.$zIndex || 999};
+  border-radius: var(--req-item-radius);
+  top: ${(props) => (props.$headerHeight || 0) + HEADER_DEFAULT_BUFFER}px;
+  z-index: ${(props) => props.$zIndex || 995};
 `;
 
 const ProgressBar = styled.div<{ $progress: number }>`
@@ -40,7 +39,6 @@ const RuleTitle = styled.div`
   width: 100%;
   color: #575757;
   padding: 0.5rem 1.25rem;
-  margin-bottom: 0.5rem;
 `;
 
 const RuleLeafWrapper = styled.div<{ $isDroppable: boolean; $isOver: boolean }>`
@@ -434,12 +432,13 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
           )}
         </RuleTitle>
       </RuleTitleWrapper>
+      <WhiteSpace $headerHeight={myHeight + (headerHeight || 0) + HEADER_DEFAULT_BUFFER} $zIndex={500} />
       {!collapsed && (
         <Indented>
           <Column>
             {children.map((ruleTree) => (
               <div>
-                <RuleComponent headerHeight={myHeight + (headerHeight || 0)} zIndex={zIndex - 1} {...ruleTree} />
+                <RuleComponent headerHeight={myHeight + (headerHeight || 0) + HEADER_DEFAULT_BUFFER} zIndex={zIndex - 5} {...ruleTree} />
               </div>
             ))}
           </Column>

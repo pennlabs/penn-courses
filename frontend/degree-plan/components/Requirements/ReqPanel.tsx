@@ -55,7 +55,6 @@ const ReqPanelTitle = styled.div`
 `
 
 const DegreeBody = styled.div`
-  margin-top: .5rem;
   overflow-y: none;
 `
 
@@ -94,6 +93,16 @@ const ReqContent = styled.div`
   gap: .5rem;
   overflow-y: scroll;
 `
+
+export const HEADER_DEFAULT_BUFFER = 8;
+export const WhiteSpace = styled.div<{ $headerHeight: number , $zIndex: number}>`
+  height: ${HEADER_DEFAULT_BUFFER}px;
+  background-color: white;
+  z-index: ${(props) => props.$zIndex || 500};
+  position: sticky;
+  top: ${(props) => props.$headerHeight}px;
+`
+
 interface DegreeHeaderProps {
   degree: DegreeType,
   remove: (degreeId: DegreeType["id"]) => void,
@@ -269,18 +278,22 @@ const Degree = ({
         editMode={editMode}
         skeleton={false}
       />
+      <WhiteSpace $headerHeight={headerHeight} $zIndex={999} />
       {!collapsed && !editMode && 
-        <DegreeBody>
-          {degree && degree.rules.map((rule: any) => {
-            return (
-            <RuleComponent
-              headerHeight={headerHeight}
-              zIndex={999}
-              {...computeRuleTree({activeDegreePlanId: activeDegreeplan.id, rule, rulesToFulfillments, rulesToUnselectedFulfillments, degree })}
-            />
-          )}
-          )}
-        </DegreeBody>}
+        <>
+          <DegreeBody>
+            {degree && degree.rules.map((rule: any) => {
+              return (
+              <RuleComponent
+                headerHeight={headerHeight}
+                zIndex={999}
+                {...computeRuleTree({activeDegreePlanId: activeDegreeplan.id, rule, rulesToFulfillments, rulesToUnselectedFulfillments, degree })}
+              />
+            )}
+            )}
+          </DegreeBody>
+        </>
+        }
     </div>
   )
 }
