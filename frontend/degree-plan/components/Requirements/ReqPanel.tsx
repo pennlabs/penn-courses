@@ -1,5 +1,4 @@
-
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useContext, useRef, useMemo, useState, useLayoutEffect, useEffect } from 'react';
 import RuleComponent, { SkeletonRule } from './Rule';
 import { Degree as DegreeType, DegreePlan, Fulfillment, Rule, Degree as DegreeD } from '@/types';
 import styled from '@emotion/styled';
@@ -45,6 +44,9 @@ const DegreeHeaderContainer = styled.div`
   color: #FFF;
   padding: 0.75rem 1.25rem;
   border-radius: var(--req-item-radius);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
 `
 
 const ReqPanelTitle = styled.div`
@@ -53,9 +55,7 @@ const ReqPanelTitle = styled.div`
 `
 
 const DegreeBody = styled.div`
-  margin-top: .5rem;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow-y: none;
 `
 
 export const DegreeYear = styled.span`
@@ -83,8 +83,24 @@ const AddButton = styled.div`
 `
 
 const ReqPanelBody = styled(PanelBody)`
-  overflow-y: scroll;
   padding: 1.5rem;
+  gap: 0;
+`
+const ReqContent = styled.div`
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  overflow-y: scroll;
+`
+
+export const HEADER_DEFAULT_BUFFER = 8;
+export const WhiteSpace = styled.div<{ $headerHeight: number , $zIndex: number}>`
+  height: ${HEADER_DEFAULT_BUFFER}px;
+  background-color: white;
+  z-index: ${(props) => props.$zIndex || 500};
+  position: sticky;
+  top: ${(props) => props.$headerHeight}px;
 `
 
 interface DegreeHeaderProps {
@@ -94,12 +110,21 @@ interface DegreeHeaderProps {
   collapsed: boolean,
   editMode: boolean,
   skeleton?: boolean,
+  containerRef?: React.Ref<HTMLDivElement>
 }
 
-const DegreeHeader = ({ degree, remove, setCollapsed, collapsed, editMode, skeleton }: DegreeHeaderProps) => {
+const DegreeHeader = ({ 
+  degree, 
+  remove, 
+  setCollapsed, 
+  collapsed, 
+  editMode, 
+  skeleton,
+  containerRef
+}: DegreeHeaderProps) => {
   const degreeName = !skeleton ? `${degree.degree} in ${degree.major_name} ${degree.concentration ? `(${degree.concentration_name})` : ''}` : <DarkBlueBackgroundSkeleton width="10em" />;
   return (
-    <DegreeHeaderContainer onClick={() => setCollapsed(!collapsed)}>
+    <DegreeHeaderContainer ref={containerRef} onClick={() => setCollapsed(!collapsed)}>
       <DegreeTitleWrapper>
         <div>
           {degreeName}
@@ -168,12 +193,46 @@ const computeRuleTree = ({activeDegreePlanId, rule, rulesToFulfillments, rulesTo
 }
 
 
-const Degree = ({ allRuleLeaves, degree, rulesToFulfillments, rulesToUnselectedFulfillments, activeDegreeplan, editMode, setModalKey, setModalObject, isLoading }: any) => {
+const Degree = ({ 
+  allRuleLeaves, 
+  degree, 
+  rulesToFulfillments, 
+  rulesToUnselectedFulfillments, 
+  activeDegreeplan, 
+  editMode, 
+  setModalKey, 
+  setModalObject, 
+  isLoading
+}: any) => {
   const [collapsed, setCollapsed] = useState(false);
+
+  const headerRef = useRef<HTMLDivElement>(null);
+  const [headerHeight, setHeaderHeight] = useState<number>(0);
+
+  useLayoutEffect(() => {
+    if (!headerRef.current) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setHeaderHeight(entry.target.clientHeight);
+      }
+    });
+    resizeObserver.observe(headerRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    console.log("headerHeight From Degree", headerHeight);
+  }, [headerHeight]);
+
   if (isLoading) {
     return (
       <div>
         <DegreeHeader
+          // containerRef={headerRef}
           degree={degree}
           remove={() => void {}}
           setCollapsed={setCollapsed}
@@ -207,6 +266,7 @@ const Degree = ({ allRuleLeaves, degree, rulesToFulfillments, rulesToUnselectedF
   return (
     <div>
       <DegreeHeader
+        containerRef={headerRef}
         degree={degree}
         key={degree.id}
         remove={() => {
@@ -218,16 +278,22 @@ const Degree = ({ allRuleLeaves, degree, rulesToFulfillments, rulesToUnselectedF
         editMode={editMode}
         skeleton={false}
       />
+      <WhiteSpace $headerHeight={headerHeight} $zIndex={999} />
       {!collapsed && !editMode && 
-        <DegreeBody>
-          {degree && degree.rules.map((rule: any) => {
-            return (
-            <RuleComponent
-              {...computeRuleTree({activeDegreePlanId: activeDegreeplan.id, rule, rulesToFulfillments, rulesToUnselectedFulfillments, degree })}
-            />
-          )}
-          )}
-        </DegreeBody>}
+        <>
+          <DegreeBody>
+            {degree && degree.rules.map((rule: any) => {
+              return (
+              <RuleComponent
+                headerHeight={headerHeight}
+                zIndex={999}
+                {...computeRuleTree({activeDegreePlanId: activeDegreeplan.id, rule, rulesToFulfillments, rulesToUnselectedFulfillments, degree })}
+              />
+            )}
+            )}
+          </DegreeBody>
+        </>
+        }
     </div>
   )
 }
@@ -291,29 +357,31 @@ const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: 
         <>
           {activeDegreeplanDetail &&
             <ReqPanelBody>
-              {activeDegreeplanDetail.degrees.length == 0 && !editMode && <EmptyPanel />}
-              {activeDegreeplanDetail.degrees.map(degree => (
-                <Degree
-                  allRuleLeaves={allRuleLeaves}
-                  degree={degree}
-                  rulesToFulfillments={rulesToFulfillments}
-                  rulesToUnselectedFulfillments={rulesToUnselectedFulfillments}
-                  activeDegreeplan={activeDegreeplan}
-                  editMode={editMode}
-                  setModalKey={setModalKey}
-                  setModalObject={setModalObject}
-                  isLoading={isLoading}
-                />
-              ))}
-              {editMode && <AddButton role="button" onClick={() => {
-                setModalObject(activeDegreeplan);
-                setModalKey("degree-add");
-              }}>
-                <i className="fa fa-plus" />
-                <div>
-                  Add Degree
-                </div>
-              </AddButton>}
+              <ReqContent>
+                {activeDegreeplanDetail.degrees.length == 0 && !editMode && <EmptyPanel />}
+                {activeDegreeplanDetail.degrees.map(degree => (
+                  <Degree
+                    allRuleLeaves={allRuleLeaves}
+                    degree={degree}
+                    rulesToFulfillments={rulesToFulfillments}
+                    rulesToUnselectedFulfillments={rulesToUnselectedFulfillments}
+                    activeDegreeplan={activeDegreeplan}
+                    editMode={editMode}
+                    setModalKey={setModalKey}
+                    setModalObject={setModalObject}
+                    isLoading={isLoading}
+                  />
+                ))}
+                {editMode && <AddButton role="button" onClick={() => {
+                  setModalObject(activeDegreeplan);
+                  setModalKey("degree-add");
+                }}>
+                  <i className="fa fa-plus" />
+                  <div>
+                    Add Degree
+                  </div>
+                </AddButton>}
+              </ReqContent>
             </ReqPanelBody>
           }
         </>}
