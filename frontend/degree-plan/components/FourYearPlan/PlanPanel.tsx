@@ -2,14 +2,12 @@ import SelectListDropdown from "./SelectListDropdown";
 import Semesters from "./Semesters";
 import styled from "@emotion/styled";
 import type { DegreePlan } from "@/types";
-import React, { useEffect, useState, useContext } from "react";
+import React, { useState } from "react";
 import { useSWRCrud } from '@/hooks/swrcrud';
 import { EditButton } from './EditButton';
 import { PanelTopBarButton, PanelTopBarIcon } from "./PanelCommon";
 import { PanelContainer, PanelHeader, PanelTopBarIconList, PanelBody } from "./PanelCommon";
 import { ModalKey } from "./DegreeModal";
-
-import ToastContext from "../Toast/Toast";
 
 const ShowStatsText = styled.div`
     min-width: 6rem;

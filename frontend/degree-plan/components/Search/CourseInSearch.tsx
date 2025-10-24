@@ -1,14 +1,12 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 import { useDrag } from "react-dnd";
-import { ItemTypes } from "../Dock/dnd/constants";
-
+import { ItemTypes } from "@/components/Dock/dnd/constants";
 import Badge from "./Badge";
-import { Draggable } from "../common/DnD";
 import { Course as CourseType, DnDCourse, Rule } from "@/types";
 import Skeleton from "react-loading-skeleton";
 import 'react-loading-skeleton/dist/skeleton.css'
-import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
+import { ReviewPanelTrigger } from "@/components/Infobox/ReviewPanel";
 
 
 const RowSelectors = styled.li`
@@ -138,8 +136,6 @@ interface CourseProps {
     onClickDelete?: () => void;
     isStar?: boolean;
 }
-
-
 
 export default function Course({
     course,

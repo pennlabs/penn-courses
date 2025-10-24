@@ -23,8 +23,7 @@ interface CourseInReqProps {
     onClick?: () => void;
 }
 
-const CourseInReq = (props : CourseInReqProps) => {
-    const { course, activeDegreePlanId, rule_id, isOpenEnded, fulfillment } = props;
+const CourseInReq = ({ course, isUsed, isDisabled, rule_id, fulfillment, activeDegreePlanId, isOpenEnded } : CourseInReqProps) => {
 
     const { courses, set_courses } = useContext(ExpandedCoursesPanelContext);
 
@@ -70,7 +69,16 @@ const CourseInReq = (props : CourseInReqProps) => {
     }), [course])
   
     return (
-        <CourseComponent courseType={ItemTypes.COURSE_IN_REQ} removeCourse={handleRemoveCourse} dragRef={drag} isDragging={isDragging} {...props} />
+        <CourseComponent 
+          courseType={ItemTypes.COURSE_IN_REQ} 
+          removeCourse={handleRemoveCourse} 
+          dragRef={drag} 
+          isDragging={isDragging} 
+          isDisabled={isDisabled}
+          isUsed={isUsed}
+          course={course}
+          fulfillment={fulfillment}
+        />
     )
 }
   

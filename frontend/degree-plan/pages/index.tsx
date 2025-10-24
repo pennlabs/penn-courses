@@ -2,14 +2,11 @@ import "react-toastify/dist/ReactToastify.css";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import FourYearPlanPage from "../components/FourYearPlanPage";
-import React, { useEffect, useState } from "react";
-import { DegreePlan, type User } from "../types";
+import React, { useState } from "react";
+import { type User } from "../types";
 import LoginModal from "pcx-shared-components/src/accounts/LoginModal";
 import { SWRConfig } from "swr";
 import { toast, ToastContainer } from "react-toastify";
-import styled from "@emotion/styled";
-import { createContext } from "react";
-
 import ToastContext from "@/components/Toast/Toast";
 
 
@@ -28,8 +25,6 @@ export default function Home() {
     setUser(newUserVal);
   };
 
-
-
   function showToast(text: string, error: boolean) {
     if (error) {
       toast.error(text, {
@@ -42,19 +37,6 @@ export default function Home() {
     }
   }
 
-  //   const Toast = styled(ToastContainer)`
-  //     .Toastify__toast {
-  //         border-radius: 0.5rem;
-  //         background-color: white;
-  //     }
-  //     .Toastify__toast-body {
-  //         font-family: BlinkMacSystemFont;
-  //         color: black;
-  //         font-size: 1rem;
-  //     }
-  // `;
-
-
   return (
     <>
       <DndProvider backend={HTML5Backend}>
@@ -64,11 +46,7 @@ export default function Home() {
               fetcher: (resource, init) =>
                 fetch(resource, init).then((res) => res.json()),
               provider: () => new Map(),
-              onError: (error, key) => {
-                // if (error.status !== 403 && error.status !== 404) {
-                //   alert(error.info);
-                // }
-              },
+              onError: () => {},
             }}
           >
             {showLoginModal && (

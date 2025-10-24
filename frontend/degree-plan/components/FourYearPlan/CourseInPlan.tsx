@@ -18,7 +18,7 @@ const CourseInPlan = (props : CoursePlannedProps) => {
   
   const [{ isDragging }, drag] = useDrag<DnDCourse, never, { isDragging: boolean }>(() => ({
     type: ItemTypes.COURSE_IN_PLAN,
-    item: course as DnDCourse,
+    item: course,
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging()
     })

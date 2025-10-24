@@ -1,5 +1,5 @@
 
-import { useContext, useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import RuleComponent, { SkeletonRule } from './Rule';
 import { Degree as DegreeType, DegreePlan, Fulfillment, Rule, Degree as DegreeD } from '@/types';
 import styled from '@emotion/styled';
@@ -10,7 +10,6 @@ import { Icon } from '../common/bulma_derived_components';
 import React from 'react';
 import { ModalKey } from '../FourYearPlan/DegreeModal';
 import { LightTrashIcon } from '../common/TrashIcon';
-import ToastContext from '../Toast/Toast';
 
 const EmptyPanelContainer = styled.div`
   display: flex;
@@ -109,7 +108,7 @@ const DegreeHeader = ({ degree, remove, setCollapsed, collapsed, editMode, skele
         </DegreeYear>
       </DegreeTitleWrapper>
       <span>
-        {!skeleton && !!editMode ?
+        {!skeleton && editMode ?
           <LightTrashIcon role="button" onClick={() => remove(degree.id)}>
             <i className="fa fa-trash fa-md" />
           </LightTrashIcon>
@@ -239,9 +238,6 @@ interface ReqPanelProps {
   isLoading: boolean;
 }
 const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: ReqPanelProps) => {
-  const showToast = useContext(ToastContext);
-
-
   const [editMode, setEditMode] = React.useState(false);
   const [allRuleLeaves, setAllRuleLeaves] = React.useState(false);
 

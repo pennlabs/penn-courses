@@ -1,11 +1,7 @@
 import { DnDCourse, Fulfillment } from '@/types';
-import Draggable from 'react-draggable';
-import useSWR from 'swr';
 import styled from '@emotion/styled';
-import InfoBox from './index'
 import React, { MutableRefObject, PropsWithChildren, useContext, useEffect, useRef, useState } from 'react';
 import { createContext } from 'react';
-import { RightCurriedFunction1 } from 'lodash';
 import CourseInExpanded from './CourseInExpanded';
 import { useSWRCrud } from '@/hooks/swrcrud';
 import { useDrop } from 'react-dnd';
@@ -13,12 +9,9 @@ import { ItemTypes } from '../Dock/dnd/constants';
 
 const REVIEWPANEL_TRIGGER_TIME = 200 // in ms, how long you have to hover for review panel to open
 
-const useOutsideAlerter = (ref: any, retract: () => void, set_open: (arg0: boolean) => void) => {
+const useOutsideAlerter = (ref: MutableRefObject<any>, retract: () => void, set_open: (arg0: boolean) => void) => {
     const { set_courses, set_rule_id, search_ref } = useContext(ExpandedCoursesPanelContext);
     useEffect(() => {
-        /**
-         * Alert if clicked on outside of element
-         */
         const handleClickOutside = (event: any) => {
             if (ref.current && !ref.current.contains(event.target) && !search_ref?.current.contains(event.target)) {
                 set_courses(null);
@@ -27,19 +20,12 @@ const useOutsideAlerter = (ref: any, retract: () => void, set_open: (arg0: boole
                 set_open(false);
             }
         }
-        // Bind the event listener
         document.addEventListener("mousedown", handleClickOutside);
         return () => {
-            // Unbind the event listener on clean up
             document.removeEventListener("mousedown", handleClickOutside);
         };
     }, [ref]);
 }
-
-const Trigger = styled.div`
-  
-`
-
 
 export const ExpandedCoursesPanelTrigger = ({ courses, triggerType, changeExpandIcon, ruleId, searchRef, children }: PropsWithChildren<{ courses: Fulfillment[], triggerType: "click" | "hover" | undefined, changeExpandIcon: () => void, ruleId: number, searchRef: MutableRefObject<any> }>) => {
     const ref = useRef<HTMLDivElement>(null);
@@ -47,7 +33,7 @@ export const ExpandedCoursesPanelTrigger = ({ courses, triggerType, changeExpand
     const timer = useRef<NodeJS.Timeout | null>(null);
 
     const showExpandedCourses = () => {
-        if (!!open) {
+        if (open) {
             set_courses(null);
             set_open(false);
             set_rule_id(null);
@@ -75,7 +61,7 @@ export const ExpandedCoursesPanelTrigger = ({ courses, triggerType, changeExpand
     }
 
     return (
-        <Trigger
+        <div
             ref={ref}
             onMouseEnter={() => {
                 if (triggerType === "hover") {
@@ -86,7 +72,7 @@ export const ExpandedCoursesPanelTrigger = ({ courses, triggerType, changeExpand
             className="review-panel-trigger"
         >
             {children}
-        </Trigger>
+        </div>
     )
 }
 interface ExpandedCoursesPanelContextType {
@@ -156,7 +142,6 @@ const ExpandedCourses = styled.div`
     height: 100%;
     gap: .5rem;
     padding: 1rem;
-
 `
 
 const EmptyExpandedText = styled.div`
@@ -235,7 +220,6 @@ const ExpandedCoursesPanel = ({
     }, [createOrUpdate]);
 
     return (
-
         <ExpandedCoursesPanelWrapper $right={right} $left={left} $top={top} $bottom={bottom} $isDroppable={canDrop} $isOver={isOver} ref={drop}>
             <ExpandedCoursesPanelContainer ref={wrapperRef}>
                 <ExpandedCourses>

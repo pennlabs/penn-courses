@@ -1,33 +1,29 @@
 import { useDrag } from "react-dnd";
-import { ItemTypes } from "../Dock/dnd/constants";
-import { GrayIcon } from '../common/bulma_derived_components';
-import styled from '@emotion/styled';
-import { Course, DnDCourse, DockedCourse, Fulfillment } from "@/types";
-import { Draggable } from "../common/DnD";
-import CourseComponent, { PlannedCourseContainer } from "../Course/Course";
-import { CourseXButton } from "../Course/Course";
-import { deleteFetcher, useSWRCrud } from "@/hooks/swrcrud";
-import { mutate } from "swr";
+import { ItemTypes } from "@/components/Dock/dnd/constants";
+import { DnDCourse, DockedCourse, Fulfillment } from "@/types";
+import CourseComponent from "@/components/Course/Course";
+import { useSWRCrud } from "@/hooks/swrcrud";
+import styled from "styled-components";
 
 interface CourseInReqProps {
-    course: DnDCourse;
-    isDisabled: boolean;
-    rule_id: number;
-    fulfillment?: Fulfillment;
-    className?: string;
-    activeDegreePlanId: number;
-    
-    onClick?: () => void;
+  course: DnDCourse;
+  isDisabled: boolean;
+  rule_id: number;
+  fulfillment?: Fulfillment;
+  className?: string;
+  activeDegreePlanId: number;
+  
+  onClick?: () => void;
 }
 
-const CourseInExpanded = (props : CourseInReqProps) => {
-    const { course, activeDegreePlanId, rule_id } = props;
+const CourseComponentContainer = styled.div`
+  display: inline-block;
+  width: 100%;
+`
 
+const CourseInExpanded = ( { course, isDisabled, rule_id, fulfillment, activeDegreePlanId } : CourseInReqProps) => {
     const { remove: removeFulfillment, createOrUpdate: updateFulfillment } = useSWRCrud<Fulfillment>(
-        `/api/degree/degreeplans/${activeDegreePlanId}/fulfillments`,
-        { idKey: "full_code",
-        // createDefaultOptimisticData: { semester: null, rules: [] }
-    });
+        `/api/degree/degreeplans/${activeDegreePlanId}/fulfillments`, { idKey: "full_code" });
     const { createOrUpdate } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
 
     const handleRemoveCourse = async (full_code: string) => {
@@ -51,11 +47,19 @@ const CourseInExpanded = (props : CourseInReqProps) => {
     }), [course])
   
     return (
-      <div style={{ display: "inline-block", width: "100%" }} >
-        <CourseComponent courseType={ItemTypes.COURSE_IN_EXPAND} removeCourse={handleRemoveCourse} dragRef={drag} isUsed={false} isDragging={isDragging} {...props} />
-      </div>
+      <CourseComponentContainer>
+        <CourseComponent 
+          courseType={ItemTypes.COURSE_IN_EXPAND} 
+          removeCourse={handleRemoveCourse} 
+          dragRef={drag} 
+          isUsed={false} 
+          isDragging={isDragging} 
+          isDisabled={isDisabled}
+          course={course}
+          fulfillment={fulfillment}
+        />
+      </CourseComponentContainer>
     )
 }
-  
-  
-  export default CourseInExpanded;
+ 
+export default CourseInExpanded;

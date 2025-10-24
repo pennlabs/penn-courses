@@ -106,7 +106,7 @@ const FourYearPlanPage = ({
   >(null);
   const ref = useRef(null);
 
-    const [expandedCoursesPanelCoords, setExpandedCoursesPanelCoords] = useState<{
+  const [expandedCoursesPanelCoords, setExpandedCoursesPanelCoords] = useState<{
     top?: number;
     left?: number;
     right?: number;

@@ -12,17 +12,10 @@ import 'react-loading-skeleton/dist/skeleton.css'
 import { mutate } from "swr";
 import { ModalKey } from "./DegreeModal";
 import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
-
 import { Tooltip } from 'react-tooltip';
-
 import { useContext } from "react";
-
 import ToastContext from "../Toast/Toast";
 import { DisabledTrashIcon } from "../common/DisabledTrashIcon";
-
-const SEMESTER_REGEX = /\d{4}[ABC]/
-
-
 
 const translateSemester = (semester: Course["semester"]) => {
     if (semester === TRANSFER_CREDIT_SEMESTER_KEY) return "AP & Transfer Credit";
@@ -158,35 +151,10 @@ const FlexSemester = ({
         drop: (course: DnDCourse) => {
             if (course.rule_id === undefined || course.rule_id == null) { // moved from plan or dock
                 createOrUpdate({ semester }, course.full_code);
-                // fetch(`/api/degree/satisfied-rule-list/${activeDegreeplanId}/${course.full_code}`).then((r) => {
-                //     r.json().then((data) => {
-                //         const otherFulfilledRules = data.reduce((res: any, obj: any) => {
-                //           res.push(obj.id);
-                //           return res;
-                //         }, [])
-
-                //         createOrUpdate({ rules: course.rules !== undefined ? [...course.rules, ...otherFulfilledRules] : otherFulfilledRules, semester }, course.full_code);
-
-                //         // Toast only if course has been directly dragged from search (not reqpanel!)
-                //         if (!course.rules)
-                //             for (let obj of data) {
-                //                 if (obj.id != course.rule_id) {
-                //                     showToast(`${course.full_code} also fulfilled ${obj.title}!`, false);
-                //                 }
-                //             }
-
-                //     })
-                // })
-
-
             } else { // moved from req panel
                 fetch(`/api/degree/satisfied-rule-list/${activeDegreeplanId}/${course.full_code}/${course.rule_id}`).then((r) => {
                     r.json().then((data) => {
                         const selectedRules = data["selected_rules"].reduce((res: any, obj: any) => {
-                            res.push(obj.id);
-                            return res;
-                        }, []);
-                        const newSelectedRules = data["new_selected_rules"].reduce((res: any, obj: any) => {
                             res.push(obj.id);
                             return res;
                         }, []);
@@ -212,12 +180,8 @@ const FlexSemester = ({
                                 }
                             }
                         }
-                        // }
-
                     })
                 })
-
-                // createOrUpdate({ rules: [...prev_rules, course.rule_id], semester }, course.full_code);
             }
 
             return undefined;
@@ -247,49 +211,47 @@ const FlexSemester = ({
     }
 
     return (
-        <>
-            <SemesterCard
-                $isDroppable={canDrop}
-                $isOver={isOver}
-                ref={drop}
-                $semesterComparison={currentSemester ? semester.localeCompare(currentSemester) : 1}
-            >
-                <SemesterHeader>
-                    <SemesterLabel>
-                        {translateSemester(semester)}
-                    </SemesterLabel>
-                    {/* TODO: Current structure doesn't allow for last semester to be deleted.
-                        Disabling deletion when there is only one semester 
-                        is a quick fix that could be addressed later. */}
-                    {!!editMode && (numSemesters > 1 ?
-                        <TrashIcon role="button" onClick={handleRemoveSemester}>
-                            <i className="fa fa-trash fa-md" />
-                        </TrashIcon>
-                        : <>
-                            <a
-                                data-tooltip-id="my-tooltip"
-                                data-tooltip-content="You must have at least one semester!"
-                            >
-                                <DisabledTrashIcon role="button">
-                                    <i className="fa fa-trash fa-md" />
-                                </DisabledTrashIcon>
-                            </a>
-                            <Tooltip id="my-tooltip" place="top" />
-                        </>)
-                    }
-                </SemesterHeader>
-                <SemesterContent>
-                    <FlexCoursesPlanned
-                        semester={semester}
-                        fulfillments={fulfillments}
-                        removeCourse={handleRemoveCourse} />
-                    {!!showStats && <FlexStats fulfillments={fulfillments} />}
-                </SemesterContent>
-                <CreditsLabel>
-                    {credits} CUs
-                </CreditsLabel>
-            </SemesterCard>
-        </>
+        <SemesterCard
+            $isDroppable={canDrop}
+            $isOver={isOver}
+            ref={drop}
+            $semesterComparison={currentSemester ? semester.localeCompare(currentSemester) : 1}
+        >
+            <SemesterHeader>
+                <SemesterLabel>
+                    {translateSemester(semester)}
+                </SemesterLabel>
+                {/* TODO: Current structure doesn't allow for last semester to be deleted.
+                    Disabling deletion when there is only one semester 
+                    is a quick fix that could be addressed later. */}
+                {editMode && (numSemesters > 1 ?
+                    <TrashIcon role="button" onClick={handleRemoveSemester}>
+                        <i className="fa fa-trash fa-md" />
+                    </TrashIcon>
+                    : <>
+                        <a
+                            data-tooltip-id="my-tooltip"
+                            data-tooltip-content="You must have at least one semester!"
+                        >
+                            <DisabledTrashIcon role="button">
+                                <i className="fa fa-trash fa-md" />
+                            </DisabledTrashIcon>
+                        </a>
+                        <Tooltip id="my-tooltip" place="top" />
+                    </>)
+                }
+            </SemesterHeader>
+            <SemesterContent>
+                <FlexCoursesPlanned
+                    semester={semester}
+                    fulfillments={fulfillments}
+                    removeCourse={handleRemoveCourse} />
+                {showStats && <FlexStats fulfillments={fulfillments} />}
+            </SemesterContent>
+            <CreditsLabel>
+                {credits} CUs
+            </CreditsLabel>
+        </SemesterCard>
     )
 }
 
