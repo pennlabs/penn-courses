@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from collections import deque
 from textwrap import dedent
 from typing import Iterable
 
@@ -12,6 +11,7 @@ from django.db.models.signals import m2m_changed
 from django.utils import timezone
 
 from courses.models import Course
+from degree.utils.degree_logic import aggregate_rule_leaves
 from degree.utils.model_utils import json_parser, q_object_parser
 
 
@@ -21,7 +21,6 @@ program_choices = [
     ("AU_BA", "College BA"),
     ("WU_BS", "Wharton BS"),
     ("NU_BSN", "Nursing BSN"),
-    # ("EM_MSE", "Accelerated Masters"),
 ]
 
 program_code_to_name = dict(program_choices)
@@ -223,6 +222,8 @@ class Rule(models.Model):
         """
         if self.q:
             assert not self.children.all().exists()
+            # Sums all courses (and corresponding credits), from full_codes,
+            # that satisfy this rule's q object.
             total_courses, total_credits = (
                 Course.objects.filter(self.get_q_object() or Q(), full_code__in=full_codes)
                 .aggregate(
@@ -257,40 +258,22 @@ class Rule(models.Model):
                 return False
             return True
 
-    # This is scuffed. Only difference with evaluate() is that this is on line 269,
-    # where we check if total_credits = 0 rather than total_credits < self.credits.
-    # Why do we do this? It makes it work, I guess. Please make something better.
-    def check_belongs(self, full_codes: Iterable[str]) -> bool:
+    def check_belongs(self, full_code: str) -> bool:
         """
-        Check if provided courses all contribute to fulfilling a rule.
+        Given a course, check if it can count towards this rule.
         """
         if self.q:
             assert not self.children.all().exists()
-            total_courses, total_credits = (
-                Course.objects.filter(self.get_q_object() or Q(), full_code__in=full_codes)
-                .aggregate(
-                    total_courses=Count("id"),
-                    total_credits=Coalesce(
-                        Sum("credits"),
-                        0,
-                        output_field=DecimalField(max_digits=4, decimal_places=2),
-                    ),
-                )
-                .values()
-            )
-
+            check_course = Course.objects.filter(self.get_q_object() or Q(), full_code=full_code)
             assert self.num is not None or self.credits is not None
-            if self.num is not None and total_courses < self.num:
-                return False
 
-            if self.credits is not None and total_credits == 0:
-                return False
-            return True
+            if check_course.count():
+                return True
+            return False
         else:
-            # assert self.children.all().exists()
             count = 0
             for child in self.children.all():
-                if not child.evaluate(full_codes):
+                if not child.evaluate([full_code]):
                     if self.num is None:
                         return False
                 else:
@@ -310,7 +293,7 @@ class Rule(models.Model):
         return json_parser.parse(self.q)
 
 
-class DegreePlan(models.Model):
+class DegreePlan(models.Model):  #
     """
     Stores a users plan for an associated degree.
     """
@@ -344,14 +327,9 @@ class DegreePlan(models.Model):
         """
 
         fulfillments = set()  # a Fulfillment might fulfill multiple Rules
-        bfs_queue = deque()
-        bfs_queue.append(rule)
-        while bfs_queue:
-            for child in bfs_queue.pop().children.all():
-                if child.q:  # i.e., if this child is a leaf
-                    fulfillments.add(child.fulfillments.filter(degree_plan=self))
-                else:
-                    bfs_queue.append(child)
+        aggregate_rule_leaves(
+            [rule], lambda child: fulfillments.add(child.fulfillments.filter(degree_plan=self))
+        )
         return fulfillments
 
     def check_satisfactions(self) -> bool:

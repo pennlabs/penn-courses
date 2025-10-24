@@ -1,5 +1,5 @@
 import re
-from collections import deque
+from collections import defaultdict
 
 from django.db import IntegrityError
 from django.http import Http404
@@ -23,6 +23,7 @@ from degree.serializers import (
     Rule,
     RuleSerializer,
 )
+from degree.utils.degree_logic import aggregate_rule_leaves
 from PennCourses.docs_settings import PcxAutoSchema
 
 
@@ -247,7 +248,7 @@ class OnboardFromTranscript(generics.ListAPIView):
 
             if full_code in r.q:
                 tier = 1
-            elif r.check_belongs([full_code]):
+            elif r.check_belongs(full_code):
                 tier = 3
 
             if tier is not None:
@@ -262,7 +263,7 @@ class OnboardFromTranscript(generics.ListAPIView):
     def get_queryset(self):
         satisfied_lookup = {}
 
-        def isSatisfied(rule):
+        def is_satisfied(rule):
             f = satisfied_lookup[rule.id]
             return (rule.num and f >= rule.num) or (rule.credits and f >= rule.credits)
 
@@ -273,24 +274,17 @@ class OnboardFromTranscript(generics.ListAPIView):
 
         rules = []
 
-        rules_per_degree = {}
+        rules_per_degree = defaultdict(set)
         rule_to_degree = {}
         for degree in degree_plan.degrees.all():
-            bfs_queue = deque()
-            rules_per_degree[degree] = set()
-            for rule_in_degree in degree.rules.all():
-                bfs_queue.append(rule_in_degree)
 
-            while len(bfs_queue):
-                curr_rule = bfs_queue.pop()
-                # this is a leaf rule
-                if curr_rule.q:
-                    rules.append(curr_rule)
-                    rules_per_degree[degree].add(curr_rule)
-                    rule_to_degree[curr_rule] = degree
-                    satisfied_lookup[curr_rule.id] = 0
-                else:  # parent rule
-                    bfs_queue.extend(curr_rule.children.all())
+            def on_child_rule(curr_rule):
+                rules.append(curr_rule)
+                rules_per_degree[degree].add(curr_rule)
+                rule_to_degree[curr_rule] = degree
+                satisfied_lookup[curr_rule.id] = 0
+
+            aggregate_rule_leaves(degree.rules.all(), on_child_rule)
 
         satisfied_rules = set()
 
@@ -315,7 +309,7 @@ class OnboardFromTranscript(generics.ListAPIView):
                     relevant_dcrs = {
                         r
                         for r in chosen_rule.can_double_count_with.all()
-                        if r.check_belongs([full_code])
+                        if r.check_belongs(full_code)
                     }
                     relevant_dcrs.add(chosen_rule)
 
@@ -347,7 +341,7 @@ class OnboardFromTranscript(generics.ListAPIView):
                 for rule in rules:
                     if full_code in rule.q and rule not in satisfied_rules:
                         selected_rules.add(rule)
-                    elif rule.check_belongs([full_code]):
+                    elif rule.check_belongs(full_code):
                         unselected_rules.add(rule)
 
             # Check for illegal double counting
@@ -377,7 +371,7 @@ class OnboardFromTranscript(generics.ListAPIView):
 
             for rule in selected_rules:
                 satisfied_lookup[rule.id] += 1
-                if isSatisfied(rule):
+                if is_satisfied(rule):
                     satisfied_rules.add(rule)
 
         return set()
@@ -430,7 +424,7 @@ class SatisfiedRuleList(APIView):
 
             if full_code in r.q:
                 tier = 1
-            elif r.check_belongs([full_code]):
+            elif r.check_belongs(full_code):
                 tier = 3
 
             if tier is not None:
@@ -456,7 +450,7 @@ class SatisfiedRuleList(APIView):
             fulfillment = None
 
         # This shouldn't happen given frontend fixes, but just in case:
-        if rule_selected and not rule_selected.check_belongs([full_code]):
+        if rule_selected and not rule_selected.check_belongs(full_code):
             raise ValidationError(
                 f"Course passed in doesn't fulfill rule selected! "
                 f"{degree_plan_id}, {full_code}, {rule_selected}"
@@ -472,21 +466,13 @@ class SatisfiedRuleList(APIView):
         rule_to_degree = {}
 
         for degree in degree_plan.degrees.all():
-            # Get leaf rules
             rules = set()
-            bfs_queue = deque()
-            for rule_in_degree in degree.rules.all():
-                bfs_queue.append(rule_in_degree)
 
-            while len(bfs_queue):
-                curr_rule = bfs_queue.pop()
-                # this is a leaf rule
-                if curr_rule.q:
-                    rules.add(curr_rule)
-                    rule_to_degree[curr_rule] = degree
-                else:  # parent rule
-                    bfs_queue.extend(curr_rule.children.all())
+            def on_child_rule(curr_rule):
+                rules.add(curr_rule)
+                rule_to_degree[curr_rule] = degree
 
+            aggregate_rule_leaves(degree.rules.all(), on_child_rule)
             satisfied_rules = degree_plan.check_rules_already_satisfied(rules)
 
             # Find rule whose double counts we should consider.
@@ -507,9 +493,7 @@ class SatisfiedRuleList(APIView):
                 # countable
 
                 relevant_dcrs = {
-                    r
-                    for r in chosen_rule.can_double_count_with.all()
-                    if r.check_belongs([full_code])
+                    r for r in chosen_rule.can_double_count_with.all() if r.check_belongs(full_code)
                 }
                 relevant_dcrs.add(chosen_rule)
 
@@ -543,7 +527,7 @@ class SatisfiedRuleList(APIView):
             for rule in rules:
                 if full_code in rule.q and rule not in satisfied_rules:
                     selected_rules.add(rule)
-                elif rule.check_belongs([full_code]):
+                elif rule.check_belongs(full_code):
                     unselected_rules.add(rule)
 
         # Check for illegal double counting

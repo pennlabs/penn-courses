@@ -3,7 +3,6 @@ from textwrap import dedent
 
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from dotenv import load_dotenv
 
 from courses.util import get_current_semester
 from degree.management.commands.deduplicate_rules import deduplicate_rules
@@ -67,8 +66,6 @@ class Command(BaseCommand):
 
         since_year = kwargs["since_year"]
         to_year = kwargs["to_year"] or int(get_current_semester()[:4])
-
-        load_dotenv()
 
         pennid = getenv("PENN_ID")
         assert pennid is not None
