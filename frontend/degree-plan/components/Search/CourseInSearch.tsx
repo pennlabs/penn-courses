@@ -1,14 +1,12 @@
 import React, { useState } from "react";
 import styled from "styled-components";
 import { useDrag } from "react-dnd";
-import { ItemTypes } from "../dnd/constants";
-
+import { ItemTypes } from "@/components/Dock/dnd/constants";
 import Badge from "./Badge";
-import { Draggable } from "../common/DnD";
 import { Course as CourseType, DnDCourse, Rule } from "@/types";
 import Skeleton from "react-loading-skeleton";
 import 'react-loading-skeleton/dist/skeleton.css'
-import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
+import { ReviewPanelTrigger } from "@/components/Infobox/ReviewPanel";
 
 
 const RowSelectors = styled.li`
@@ -148,9 +146,10 @@ export default function Course({
     isStar,
 }: CourseProps) {
     /** React dnd */
+
     const [{ isDragging }, drag] = useDrag<DnDCourse, never, { isDragging: boolean }>(() => ({
-        type: ItemTypes.COURSE_IN_PLAN,
-        item: {full_code: course.id},
+        type: ItemTypes.COURSE_IN_SEARCH,
+        item: {full_code: course.id, rule_id: ruleId == null ? -1 : ruleId},
         collect: (monitor) => ({
           isDragging: !!monitor.isDragging()
         })

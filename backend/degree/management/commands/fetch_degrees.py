@@ -14,6 +14,8 @@ from degree.utils.parse_degreeworks import parse_and_save_degreeworks
 class Command(BaseCommand):
     help = dedent(
         """
+        Just run this one to get new degrees.
+
         Fetches, parses and stores degrees from degreeworks.
 
         Expects PENN_ID, X_AUTH_TOKEN, REFRESH_TOKEN, NAME environment variables are set.
