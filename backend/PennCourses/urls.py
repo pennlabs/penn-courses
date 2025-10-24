@@ -10,6 +10,7 @@ from PennCourses.docs_settings import JSONOpenAPICustomTagGroupsRenderer, openap
 
 
 api_urlpatterns = [
+    path("", include("health.urls")),
     path("review/", include("review.urls")),
     path("plan/", include("plan.urls")),
     path("alert/", include("alert.urls")),
