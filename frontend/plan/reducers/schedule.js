@@ -238,6 +238,17 @@ const handleRemoveCartItem = (sectionId, state) => ({
     cartUpdatedAt: Date.now(),
     cartSections: state.cartSections.filter(({ id }) => id !== sectionId),
     cartPushedToBackend: false,
+    schedules: Object.fromEntries(
+        Object.entries(state.schedules).map(([key, schedule]) => [
+            key,
+            {
+                ...schedule,
+                updated_at: Date.now(),
+                pushedToBackend: false,
+                sections: schedule.sections.filter((m) => m.id !== sectionId),
+            },
+        ])
+    ),
 });
 
 // Used for box coloring, from StackOverflow:
