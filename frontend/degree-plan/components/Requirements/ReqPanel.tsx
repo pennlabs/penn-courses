@@ -88,10 +88,39 @@ const ReqPanelBody = styled(PanelBody)`
 `
 const ReqContent = styled.div`
   padding: 0;
+  padding-right: 12px;
+  margin-right: -12px;
   display: flex;
   flex-direction: column;
   gap: .5rem;
   overflow-y: scroll;
+  
+  /* Webkit browsers (Chrome, Safari, Edge) */
+  &::-webkit-scrollbar {
+    width: 12px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 4px 0;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: #4a4a4a;
+    border-radius: 6px;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background: #333333;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+  }
+  
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: #4a4a4a transparent;
 `
 
 export const HEADER_DEFAULT_BUFFER = 8;
