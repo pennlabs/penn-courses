@@ -1,4 +1,4 @@
-import { useContext, useRef, useMemo, useState, useLayoutEffect, useEffect } from 'react';
+import { useContext, useRef, useMemo, useState, useLayoutEffect  } from 'react';
 import RuleComponent, { SkeletonRule } from './Rule';
 import { Degree as DegreeType, DegreePlan, Fulfillment, Rule, Degree as DegreeD } from '@/types';
 import styled from '@emotion/styled';
@@ -224,15 +224,10 @@ const Degree = ({
     };
   }, []);
 
-  useEffect(() => {
-    console.log("headerHeight From Degree", headerHeight);
-  }, [headerHeight]);
-
   if (isLoading) {
     return (
       <div>
         <DegreeHeader
-          // containerRef={headerRef}
           degree={degree}
           remove={() => void {}}
           setCollapsed={setCollapsed}
