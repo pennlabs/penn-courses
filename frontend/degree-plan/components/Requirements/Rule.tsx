@@ -181,7 +181,7 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
     return () => {
       resizeObserver.disconnect();
     };
-  }, []);
+  }, [rule.id]);
 
   // state for INTERNAL_NODEs
   const [collapsed, setCollapsed] = useState(false);
