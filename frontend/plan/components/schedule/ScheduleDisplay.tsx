@@ -109,14 +109,14 @@ const CurrentTimeIndicator = styled.div<{
   height: 2px;
   background-color: #ea4335;
   position: relative;
-  z-index: 100;
+  z-index: 8;
   pointer-events: none;
   top: ${({ $topOffset }) => $topOffset}%;
   
   &::before {
     content: '';
     position: absolute;
-    left: -6px;
+    left: -5px;
     top: -5px;
     width: 12px;
     height: 12px;
@@ -278,46 +278,45 @@ const ScheduleDisplay = ({
   const getCurrentTimeIndicatorPosition = () => {
     if (!notEmpty) return null;
 
+    // Don't show indicator if there is nothing in the weekend
+    const showWeekend =
+      sections.some((sec: Section) =>
+        sec.meetings?.some(
+          (meeting: Meeting) => meeting.day === Weekends.S || meeting.day === Weekends.U
+        )
+      ) ||
+      breaks.some((brk: Break) =>
+        brk.meetings?.some(
+          (meeting: Meeting) => meeting.day === Weekends.S || meeting.day === Weekends.U
+        )
+      );
+
     const now = new Date();
     let currentHour = now.getHours() + now.getMinutes() / 60;
-    let dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-
+    let dayOfWeek = now.getDay();
     const currentDay = dayMap[dayOfWeek];
 
-    // Don't show indicator if there is nothing in the weekend
-      const showWeekend =
-          sections.some((sec: Section) =>
-              sec.meetings?.some(
-                  (meeting: Meeting) => meeting.day === "S" || meeting.day === "U"
-              )
-          ) ||
-          breaks.some((brk: Break) =>
-              brk.meetings?.some(
-                  (meeting: Meeting) => meeting.day === "S" || meeting.day === "U"
-              )
-          );
-      if (!showWeekend && (currentDay === Weekends.S || currentDay === Weekends.U)) {
-          return null;
-      }
+    if (!currentDay || (!showWeekend && (currentDay === Weekends.S || currentDay === Weekends.U))) {
+      return null;
+    }
 
-
-    // Don't show if current time is outside schedule range
+    // Don't show if current t  ime is outside schedule range
     if (currentHour < startHour || currentHour > endHour) {
       return null;
     }
 
     // Find the column index for the current day
     const days = [Weekdays.M, Weekdays.T, Weekdays.W, Weekdays.R, Weekdays.F, Weekends.S, Weekends.U];
-    const dayIndex = days.indexOf(currentDay as Weekdays);
+    const dayIndex = days.indexOf(currentDay);
 
     if (dayIndex === -1) return null;
 
     // Calculate grid position (grid uses 15-minute intervals, 4 rows per hour)
     // Instead of snapping to grid lines, calculate the exact position
     const timeFromStart = currentHour - startHour;
-    const rowsFromStart = timeFromStart * 4; // Total rows as a decimal
+    const rowsFromStart = timeFromStart * 4;
     const gridRowStart = Math.floor(rowsFromStart) + rowOffset + 1;
-    const topOffset = (rowsFromStart % 1) * 100; // Percentage offset within the grid row
+    const topOffset = (rowsFromStart % 1) * 100;
     const gridColumn = dayIndex + 1 + colOffset;
 
     return { gridRowStart, gridColumn, topOffset };
