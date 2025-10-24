@@ -196,7 +196,7 @@ export const toggleBreak = (breakItem) => ({
     breakItem,
 });
 
-export const removeBreakItem = (breakId) => ({
+export const removeBreakFrontend = (breakId) => ({
     type: REMOVE_BREAK,
     id: breakId,
 });
@@ -557,11 +557,6 @@ export const toggleBreakFrontend = (breakItem) => ({
     breakItem,
 });
 
-export const removeBreakFrontend = (breakId) => ({
-    type: REMOVE_BREAK,
-    breakId,
-});
-
 export const markAlertsSynced = () => ({
     type: MARK_ALERTS_SYNCED,
 });
@@ -696,7 +691,7 @@ export const removeBreakBackend = (breakId) => (dispatch) => {
         },
     })
         .then(() => {
-            dispatch(removeBreakItem(breakId));
+            dispatch(removeBreakFrontend(breakId));
         })
         .catch((error) => {
             // eslint-disable-next-line no-console
