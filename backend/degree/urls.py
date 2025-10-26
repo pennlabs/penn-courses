@@ -25,7 +25,7 @@ urlpatterns = [
     path("", include(router.urls)),
     path("", include(fulfillments_router.urls)),
     path(
-        "onboard-from-transcript/<slug:degree_plan_id>/<path:all_codes>",
+        "onboard-from-transcript/<slug:degree_plan_id>",
         OnboardFromTranscript.as_view(),
         name="onboard-from-transcript",
     ),

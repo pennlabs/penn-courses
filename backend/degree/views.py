@@ -1,10 +1,9 @@
-import re
 from collections import defaultdict
 
 from django.db import IntegrityError
 from django.http import Http404
 from django_auto_prefetching import AutoPrefetchViewSetMixin
-from rest_framework import generics, status, viewsets
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import SearchFilter
@@ -23,7 +22,7 @@ from degree.serializers import (
     Rule,
     RuleSerializer,
 )
-from degree.utils.degree_logic import aggregate_rule_leaves
+from degree.utils.degree_logic import allocate_rules, check_legal, map_rules_and_degrees
 from PennCourses.docs_settings import PcxAutoSchema
 
 
@@ -169,25 +168,18 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
 
         # Add check for if double counting is now legal
         legal = True
-        if request.data.get("rules"):
-            rules = Rule.objects.all().filter(id__in=request.data.get("rules"))
+        request_rules = request.data.get("rules")
+        if request_rules:
+            rules = Rule.objects.all().filter(id__in=request_rules)
 
             rule_to_degree = {}
             for rule in rules:
                 curr_rule = rule
                 while curr_rule.parent is not None:
                     curr_rule = curr_rule.parent
-                rule_to_degree[rule] = curr_rule.degrees.all()[0]
+                rule_to_degree[rule] = curr_rule.degrees.first()
 
-            for rule in rules:
-                if any(
-                    r not in rule.can_double_count_with.all()
-                    and rule_to_degree[r] == rule_to_degree[rule]
-                    and r != rule
-                    for r in rules
-                ):
-                    legal = False
-                    break
+            legal = legal and check_legal(rules, rule_to_degree)
 
             # Make request.data mutable before modifying it
             if hasattr(request.data, "_mutable"):
@@ -226,159 +218,62 @@ class DockedCourseViewset(viewsets.ModelViewSet):
             return super().create(request, *args, **kwargs)
 
 
-class OnboardFromTranscript(generics.ListAPIView):
-    serializer_class = RuleSerializer
+class OnboardFromTranscript(APIView):
     """
-    Primitive method for finding the rule of highest priority given a set of applicable rules.
-    Currently determines priority rule by required CU count, or if the rule is explictly mentioned.
+    Given courses taken and degrees pursuing, determines an optimized assignment
+    of courses to degree rules and creates relevant Fulfillment objects.
     """
 
-    def check_dept(self, q, dept):
-        pattern = r"\('([^']*)',\s*'([^']*)'\)"
-        matches = re.findall(pattern, q)
-        return any([match for match in matches if dept in match[1] and match[0] != "full_code"])
-
-    def get_priority_rule(self, rules, full_code):
-        priority_rule = None
-        priority_tier = float("inf")
-        priority_CUs = float("-inf")
-
-        for r in rules:
-            tier = None
-
-            if full_code in r.q:
-                tier = 1
-            elif r.check_belongs(full_code):
-                tier = 3
-
-            if tier is not None:
-                rule_CUs = r.credits if r.credits else r.num
-                if tier < priority_tier or (tier == priority_tier and rule_CUs > priority_CUs):
-                    priority_rule = r
-                    priority_tier = tier
-                    priority_CUs = rule_CUs
-
-        return priority_rule
-
-    def get_queryset(self):
+    @action(detail=True, methods=["post"])
+    def post(self, request, degree_plan_id):
         satisfied_lookup = {}
 
         def is_satisfied(rule):
             f = satisfied_lookup[rule.id]
             return (rule.num and f >= rule.num) or (rule.credits and f >= rule.credits)
 
-        degree_plan_id = self.kwargs["degree_plan_id"]
-        all_courses = self.kwargs["all_codes"].split(",")
-
         degree_plan = DegreePlan.objects.get(id=degree_plan_id)
+        course_data = request.data["courses"]
 
-        rules = []
+        satisfied_lookup = defaultdict(int)
 
-        rules_per_degree = defaultdict(set)
-        rule_to_degree = {}
-        for degree in degree_plan.degrees.all():
-
-            def on_child_rule(curr_rule):
-                rules.append(curr_rule)
-                rules_per_degree[degree].add(curr_rule)
-                rule_to_degree[curr_rule] = degree
-                satisfied_lookup[curr_rule.id] = 0
-
-            aggregate_rule_leaves(degree.rules.all(), on_child_rule)
-
+        rules_per_degree, rule_to_degree = map_rules_and_degrees(degree_plan)
         satisfied_rules = set()
+        for semester in course_data:
+            for full_code in semester["courses"]:
+                semester_code = semester["sem"]
+                selected_rules, unselected_rules, legal = allocate_rules(
+                    full_code,
+                    rules_per_degree,
+                    rule_to_degree,
+                    degree_plan=degree_plan,
+                    satisfied_rules=satisfied_rules,
+                )
 
-        for course in all_courses:
-            selected_rules = set()
-            unselected_rules = set()
-            legal = True
-
-            full_code, semester = course.split("_")
-            if semester == "TRAN":
-                semester = "_TRAN"
-
-            for degree in rules_per_degree:
-                rules = rules_per_degree[degree].copy()
-
-                # Find rule whose double counts we should consider.
-                chosen_rule = self.get_priority_rule(rules.difference(satisfied_rules), full_code)
-
-                # Add rules that can double count with chosen rule, and remove them from future
-                # consideration.
-                if chosen_rule:
-                    relevant_dcrs = {
-                        r
-                        for r in chosen_rule.can_double_count_with.all()
-                        if r.check_belongs(full_code)
-                    }
-                    relevant_dcrs.add(chosen_rule)
-
-                    mutual_rules = relevant_dcrs.copy()
-                    pick_one_rules = set()
-                    for r1 in relevant_dcrs:
-                        for r2 in relevant_dcrs:
-                            if r2 not in r1.can_double_count_with.all():
-                                mutual_rules.discard(r2)
-                                pick_one_rules.add(r2)
-
-                    selected_rules = selected_rules.union(mutual_rules)
-                    rules.difference_update(mutual_rules)
-
-                    if len(pick_one_rules):
-                        picked_rule = (
-                            chosen_rule
-                            if chosen_rule in pick_one_rules
-                            else self.get_priority_rule(pick_one_rules, full_code)
-                        )
-                        selected_rules.add(picked_rule)
-                        # TODO: We use .discard() because can_double_count_with contains rules that
-                        # AREN'T leaf rules. (ex. BREADTH REQUIREMENTS for Cog Sci Major). Fix!
-                        rules.discard(picked_rule)
-
-                # Consider all other rules within degree. If satisfies, add to unselected rules.
-                # However, if full_code is listed and rule is currently unsatisfied, add to
-                # satisfied rules (Intentionally should cause illegal double count)
-                for rule in rules:
-                    if full_code in rule.q and rule not in satisfied_rules:
-                        selected_rules.add(rule)
-                    elif rule.check_belongs(full_code):
-                        unselected_rules.add(rule)
-
-            # Check for illegal double counting
-            # TODO: Remove after testing -> obviously should produce legal assignments
-            if legal:
-                for rule in selected_rules:
-                    if any(
-                        r not in rule.can_double_count_with.all()
-                        and rule_to_degree[r] == rule_to_degree[rule]
-                        and r != rule
-                        for r in selected_rules
-                    ):
-                        legal = False
-                        break
-
-            f, just_created = Fulfillment.objects.get_or_create(
-                degree_plan=degree_plan, full_code=full_code, semester=semester, legal=legal
-            )
-            if just_created:
+                f, just_created = Fulfillment.objects.get_or_create(
+                    degree_plan=degree_plan,
+                    full_code=full_code,
+                    semester=semester_code,
+                    legal=legal,
+                )
+                if just_created:
+                    f.save()
+                    f.rules.set(selected_rules)
+                    f.unselected_rules.set(unselected_rules)
+                else:
+                    f.rules.add(selected_rules)
+                    f.unselected_rules.add(unselected_rules)
                 f.save()
-                f.rules.set(selected_rules)
-                f.unselected_rules.set(unselected_rules)
-            else:
-                f.rules.add(selected_rules)
-                f.unselected_rules.add(unselected_rules)
-            f.save()
 
-            for rule in selected_rules:
-                satisfied_lookup[rule.id] += 1
-                if is_satisfied(rule):
-                    satisfied_rules.add(rule)
+                for rule in selected_rules:
+                    satisfied_lookup[rule.id] += 1
+                    if is_satisfied(rule):
+                        satisfied_rules.add(rule)
 
-        return set()
+        return Response({"message": "OK"}, status=status.HTTP_200_OK)
 
 
 class SatisfiedRuleList(APIView):
-
     """
     Provided a degree plan and a course code, retrieve a sublist
     of the degrees' rules that are satisfied by the course.
@@ -386,55 +281,26 @@ class SatisfiedRuleList(APIView):
 
     schema = PcxAutoSchema(
         response_codes={
-            "requirements-list": {
-                "GET": {200: "[DESCRIBE_RESPONSE_SCHEMA]Requirements listed successfully."}
+            "satisfied-rule-list": {
+                "GET": {
+                    200: """Returns a list of degree requirements satisfied by the course,
+                    including selected rules, newly selected rules, unselected rules that could
+                    be satisfied, and whether the selections can be legally double counted."""
+                }
             },
         },
         custom_path_parameter_desc={
-            "requirements-list": {
+            "satisfied-rule-list": {
                 "GET": {
-                    "semester": (
-                        "The semester of the requirement (of the form YYYYx where x is A "
-                        "[for spring], B [summer], or C [fall]), e.g. `2019C` for fall 2019. "
-                        "We organize requirements by semester so that we don't get huge related "
-                        "sets which don't give particularly good info."
-                    )
+                    "degree_plan_id": "The ID of the degree plan to query",
+                    "full_code": """The full course code (e.g., 'CIS-1200')
+                                    to check against requirements""",
+                    "rule_id": """The ID of a specific rule to check, or '-1'
+                                to automatically determine the highest priority rule""",
                 }
             }
         },
     )
-
-    """
-    Primitive method for finding the rule of highest priority given a set of applicable rules.
-    Currently determines priority rule by required CU count, or if the rule is explictly mentioned.
-    """
-
-    def check_dept(self, q, dept):
-        pattern = r"\('([^']*)',\s*'([^']*)'\)"
-        matches = re.findall(pattern, q)
-        return any([match for match in matches if dept in match[1] and match[0] != "full_code"])
-
-    def get_priority_rule(self, rules, full_code):
-        priority_rule = None
-        priority_tier = float("inf")
-        priority_CUs = float("-inf")
-
-        for r in rules:
-            tier = None
-
-            if full_code in r.q:
-                tier = 1
-            elif r.check_belongs(full_code):
-                tier = 3
-
-            if tier is not None:
-                rule_CUs = r.credits if r.credits else r.num
-                if tier < priority_tier or (tier == priority_tier and rule_CUs > priority_CUs):
-                    priority_rule = r
-                    priority_tier = tier
-                    priority_CUs = rule_CUs
-
-        return priority_rule
 
     def get(self, request, *args, **kwargs):
         degree_plan_id = kwargs["degree_plan_id"]
@@ -456,91 +322,16 @@ class SatisfiedRuleList(APIView):
                 f"{degree_plan_id}, {full_code}, {rule_selected}"
             )
 
-        selected_rules = set()
-        unselected_rules = set()
-        legal = True
+        rules_per_degree, rule_to_degree = map_rules_and_degrees(degree_plan)
+        selected_rules, unselected_rules, legal = allocate_rules(
+            full_code, rules_per_degree, rule_to_degree, rule_selected, degree_plan=degree_plan
+        )
 
         if fulfillment:
             selected_rules = selected_rules.union(fulfillment.rules.all())
 
-        rule_to_degree = {}
-
-        for degree in degree_plan.degrees.all():
-            rules = set()
-
-            def on_child_rule(curr_rule):
-                rules.add(curr_rule)
-                rule_to_degree[curr_rule] = degree
-
-            aggregate_rule_leaves(degree.rules.all(), on_child_rule)
-            satisfied_rules = degree_plan.check_rules_already_satisfied(rules)
-
-            # Find rule whose double counts we should consider.
-            # If we're in the right degree, then it's rule_selected
-            chosen_rule = None
-            if rule_selected in rules:
-                chosen_rule = rule_selected
-            else:
-                chosen_rule = self.get_priority_rule(rules.difference(satisfied_rules), full_code)
-
-            # Add rules that can double count with chosen rule, and remove them from future
-            # consideration.
-            if chosen_rule:
-                # Only double count where mutually allowed
-                # Ex. Adding CIS 5550 -> area lists double count with all other area lists,
-                # cis electives, tech electives, etc. However, we can't add CIS 5550 to
-                # both cis electives and tech electives, and they're not mutually double
-                # countable
-
-                relevant_dcrs = {
-                    r for r in chosen_rule.can_double_count_with.all() if r.check_belongs(full_code)
-                }
-                relevant_dcrs.add(chosen_rule)
-
-                mutual_rules = relevant_dcrs.copy()
-                pick_one_rules = set()
-                for r1 in relevant_dcrs:
-                    for r2 in relevant_dcrs:
-                        if r2 not in r1.can_double_count_with.all():
-                            mutual_rules.discard(r2)
-                            pick_one_rules.add(r2)
-
-                selected_rules = selected_rules.union(mutual_rules)
-
-                rules.difference_update(mutual_rules)
-
-                # Pick one of the pick_one_rules (if not chosen rule, it's random right now)
-                if len(pick_one_rules):
-                    picked_rule = (
-                        chosen_rule
-                        if chosen_rule in pick_one_rules
-                        else self.get_priority_rule(pick_one_rules, full_code)
-                    )
-                    selected_rules.add(picked_rule)
-                    # TODO: We use .discard() because can_double_count_with contains rules
-                    # that AREN'T leaf rules. (ex. BREADTH REQUIREMENTS for Cog Sci Major). Fix!
-                    rules.discard(picked_rule)
-
-            # Consider all other rules within degree. If satisfies, add to unselected rules.
-            # However, if full_code is listed and rule is currently unsatisfied, add
-            # to satisfied rules (Intentionally should cause illegal double count)
-            for rule in rules:
-                if full_code in rule.q and rule not in satisfied_rules:
-                    selected_rules.add(rule)
-                elif rule.check_belongs(full_code):
-                    unselected_rules.add(rule)
-
         # Check for illegal double counting
-        if legal:
-            for rule in selected_rules:
-                if any(
-                    r not in rule.can_double_count_with.all()
-                    and rule_to_degree[r] == rule_to_degree[rule]
-                    and r != rule
-                    for r in selected_rules
-                ):
-                    legal = False
-                    break
+        legal = check_legal(selected_rules, rule_to_degree)
 
         selected_rules_to_return = RuleSerializer(
             Rule.objects.filter(id__in=[rule.id for rule in selected_rules]), many=True
