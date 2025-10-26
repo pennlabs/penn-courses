@@ -246,21 +246,53 @@ export type FilterType =
       }
     | number;
 
-    export interface FriendshipState {
-        activeFriend: User;
-        activeFriendSchedule: { found: boolean; sections: Section[], breaks: Break[] };
-        acceptedFriends: User[];
-        requestsReceived: Friendship[];
-        requestsSent: Friendship[];
-    }
+export type AdvancedSearchEnum = {
+    type: "enum";
+    field: string;
+    operator: "is" | "is_not" | "is_any_of" | "is_non_of";
+    value: string | string[];
+}
 
-    export interface ColorsMap {
-        [key: string]: Color
-    }
+export type AdvancedSearchNumeric = {
+    type: "numeric";
+    field: string;
+    operator: "lt" | "lte" | "gt" | "gte" | "equals";
+    value: number;
+}
 
-    export type Location = {
-        lat: number;
-        lng: number;
-        color?: string;
-    }
+export type AdvancedSearchBoolean = {
+    type: "boolean";
+    field: string;
+    value: boolean;
+}
 
+export type AdvancedSearchGroup = {
+    type: "group";
+    op: "AND" | "OR";
+    children: AdvancedSearchCondition[];
+}
+
+export type AdvancedSearchCondition = AdvancedSearchEnum | AdvancedSearchNumeric | AdvancedSearchBoolean | AdvancedSearchGroup;
+
+export type AdvancedSearchData = {
+    query: string;
+    filters: AdvancedSearchGroup;
+}
+
+export interface FriendshipState {
+    activeFriend: User;
+    activeFriendSchedule: { found: boolean; sections: Section[], breaks: Break[] };
+    acceptedFriends: User[];
+    requestsReceived: Friendship[];
+    requestsSent: Friendship[];
+}
+
+export interface ColorsMap {
+    [key: string]: Color
+}
+
+export type Location = {
+    lat: number;
+    lng: number;
+    color?: string;
+}

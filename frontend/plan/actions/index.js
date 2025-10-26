@@ -34,6 +34,7 @@ export const UPDATE_CHECKBOX_FILTER = "UPDATE_CHECKBOX_FILTER";
 export const UPDATE_BUTTON_FILTER = "UPDATE_BUTTON_FILTER";
 export const CLEAR_FILTER = "CLEAR_FILTER";
 export const CLEAR_ALL = "CLEAR_ALL";
+export const UPDATE_SEARCH_FILTER = "UPDATE_SEARCH_FILTER";
 
 export const SECTION_INFO_SEARCH_ERROR = "SECTION_INFO_SEARCH_ERROR";
 export const SECTION_INFO_SEARCH_LOADING = "SECTION_INFO_SEARCH_LOADING";
@@ -402,6 +403,42 @@ export function fetchCourseSearch(filterData) {
     };
 }
 
+const advancedCourseSearch = (_, searchData) =>
+    doAPIRequest("/base/current/search/courses/v2", {
+        method: "GET",
+        credentials: "include",
+        mode: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrf(),
+        },
+        body: JSON.stringify(searchData),
+    });
+
+const debouncedAdvancedCourseSearch = AwesomeDebouncePromise(
+    advancedCourseSearch,
+    500
+);
+
+export function fetchAdvancedCourseSearch(searchData) {
+    return (dispatch) => {
+        dispatch(updateSearchRequest());
+        debouncedAdvancedCourseSearch(dispatch, searchData)
+            .then((res) => res.json())
+            .then((res) => res.filter((course) => course.num_sections > 0))
+            .then((res) =>
+                batch(() => {
+                    dispatch(updateScrollPos());
+                    dispatch(updateSearch(res));
+                    if (res.length === 1)
+                        dispatch(fetchCourseDetails(res[0].id));
+                })
+            )
+            .catch((error) => dispatch(courseSearchError(error)));
+    };
+}
+
 export function updateSearchText(s) {
     return {
         type: UPDATE_SEARCH_TEXT,
@@ -470,6 +507,13 @@ export function clearFilter(propertyName) {
     return {
         type: CLEAR_FILTER,
         propertyName,
+    };
+}
+
+export function updateSearchFilter(path, filters) {
+    return {
+        type: UPDATE_SEARCH_FILTER,
+        filters,
     };
 }
 

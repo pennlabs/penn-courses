@@ -633,6 +633,18 @@ SearchBarProps) {
                             Clear all
                         </ClearButton>
                     </LevelItem>
+                    <LevelItem
+                        onClick={() => {
+                            
+                        }}
+                    >
+                        <button>
+                            <i
+                                className="fas fa-filter"
+                                style={{ color: "#c6c6c6" }}
+                            />
+                        </button>
+                    </LevelItem>
                 </LevelRight>
             </SearchBarFilters>
             <LevelRight>
