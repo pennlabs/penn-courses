@@ -5,13 +5,14 @@ from django.db.models import Prefetch, Q
 from django.http import Http404, JsonResponse
 from django.shortcuts import get_object_or_404
 from django_auto_prefetching import AutoPrefetchViewSetMixin
+from lark import ParseError
 from rest_framework import generics, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from courses.filters import CourseSearchFilterBackend
+from courses.filters import CourseSearchAdvancedFilterBackend, CourseSearchFilterBackend
 from courses.models import (
     Attribute,
     Course,
@@ -175,7 +176,7 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
 class CourseListSearch(CourseList):
     """
     This route allows you to list courses by certain search terms and/or filters.
-    Without any GET parameters, this route simply returns all courses
+    - **GET**: Without any GET parameters, this route simply returns all courses
     for a given semester. There are a few filter query parameters which constitute ranges of
     floating-point numbers. The values for these are <min>-<max> , with minimum excluded.
     For example, looking for classes in the range of 0-2.5 in difficulty, you would add the
@@ -183,6 +184,9 @@ class CourseListSearch(CourseList):
     backend/plan/filters.py/CourseSearchFilterBackend. If you are reading the frontend docs,
     these filters are listed below in the query parameters list (with description starting with
     "Filter").
+    - **POST**: This route also accepts POST requests, where the body is a JSON object
+    containing a "filters" key, which maps to an object containing the same filters as
+    described above. This API will allow for a more extensible filtering system.
     """
 
     schema = PcxAutoSchema(
@@ -191,11 +195,18 @@ class CourseListSearch(CourseList):
                 "GET": {
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Courses listed successfully.",
                     400: "Bad request (invalid query).",
-                }
+                },
+                "POST": {
+                    200: "Advanced search results listed successfully.",
+                    400: "Bad request (invalid query).",
+                },
             }
         },
         custom_path_parameter_desc={
-            "courses-search": {"GET": {"semester": SEMESTER_PARAM_DESCRIPTION}}
+            "courses-search": {
+                "GET": {"semester": SEMESTER_PARAM_DESCRIPTION},
+                "POST": {"semester": SEMESTER_PARAM_DESCRIPTION},
+            }
         },
     )
 
@@ -234,8 +245,51 @@ class CourseListSearch(CourseList):
 
         return context
 
-    filter_backends = [TypedCourseSearchBackend, CourseSearchFilterBackend]
+    # filter_backends = [TypedCourseSearchBackend, CourseSearchFilterBackend]
     search_fields = ("full_code", "title", "sections__instructors__name")
+    # parser_classes = [json_parser]
+
+    def get(self, request, *args, **kwargs):
+        queryset = super().get_queryset()
+
+        # Apply text-based search first
+        queryset = TypedCourseSearchBackend().filter_queryset(request, queryset, self)
+
+        # Apply simple filters (query params)
+        queryset = CourseSearchFilterBackend().filter_queryset(request, queryset, self)
+
+        # Handle pagination (preserve DRF behavior)
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, *args, **kwargs):
+        if not isinstance(request.data, dict):
+            raise ParseError("Expected JSON body with 'query' and 'filters' fields.")
+
+        queryset = super().get_queryset()
+
+        # Apply text-based search
+        queryset = TypedCourseSearchBackend().filter_queryset(request, queryset, self)
+
+        # Apply advanced structured filters
+        if request.data.get("filters"):
+            queryset = CourseSearchAdvancedFilterBackend().filter_queryset_from_json(
+                request, queryset, request.data["filters"]
+            )
+
+        # Apply pagination again for consistency
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):

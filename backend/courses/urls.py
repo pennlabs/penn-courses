@@ -1,15 +1,14 @@
 from django.urls import path
 
 from courses import views
-from courses.views import CourseListSearch, Health
 
 
 urlpatterns = [
-    path("health/", Health.as_view(), name="health"),
+    path("health/", views.Health.as_view(), name="health"),
     path("<slug:semester>/courses/", views.CourseList.as_view(), name="courses-list"),
     path(
         "<slug:semester>/search/courses/",
-        CourseListSearch.as_view(),
+        views.CourseListSearch.as_view(),
         name="courses-search",
     ),
     path(

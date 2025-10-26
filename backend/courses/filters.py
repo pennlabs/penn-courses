@@ -545,3 +545,11 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                 "example": "true",
             },
         ]
+
+
+class CourseSearchAdvancedFilterBackend(CourseSearchFilterBackend):
+    def filter_queryset(self, request, queryset, view):
+        pass
+
+    def get_schema_operation_parameters(self, view):
+        pass
