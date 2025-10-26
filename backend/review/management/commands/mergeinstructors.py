@@ -60,7 +60,7 @@ def resolve_duplicates(
     """
     if not stat:
         stat = lambda key, amt=1, element=None: None  # noqa E731
-    for instructor_set in tqdm(duplicate_instructor_groups):
+    for instructor_set in tqdm(duplicate_instructor_groups, leave=False):
         # Find a primary instance in the duplicate set. This should be the instance that is most
         # "complete" -- in the case of instructors, this means that there is a linked user object.
         potential_primary = [inst for inst in instructor_set if inst.user is not None]

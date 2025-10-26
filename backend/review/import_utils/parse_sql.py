@@ -1,3 +1,4 @@
+import csv
 import gc
 import re
 from datetime import datetime
@@ -189,3 +190,18 @@ def load_sql_dump(fo, T=SQLDumpTransformer, progress=True, lazy=True):
     else:
         matches = list(entry_regex.finditer(contents))
         return [parse_row(x.group(), T) for x in tqdm(matches, disable=(not progress))]
+
+
+def load_csv_dump(fo, progress=True, lazy=True):
+    """
+    Read in and parse a CSV dump, with each row as a Python dictionary.
+    """
+    reader = csv.DictReader(fo)
+    rows = list(reader)
+
+    for row in rows:
+        if "TERM" in row:
+            stripped_term = row["TERM"].strip()
+            if stripped_term[-2:] in semester_suffix_map_inv:
+                row["TERM"] = translate_semester_inv(stripped_term)
+    return rows if not lazy else (len(rows), iter(rows))
