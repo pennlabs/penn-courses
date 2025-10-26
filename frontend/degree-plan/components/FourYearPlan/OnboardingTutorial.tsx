@@ -114,7 +114,7 @@ const ModalContainer = styled.div`
     pointer-events: none;
 `;
 
-const ModalCard = styled.div`
+const ModalCard = styled.div<ModalPosition>`
     max-width: 400px;
     max-height: 400px;
     border-radius: 8px;
@@ -122,6 +122,10 @@ const ModalCard = styled.div`
     background-color: #fff;
     margin: 0 20px;
     pointer-events: auto;
+    position: fixed;
+    top: ${props => props.top};
+    left: ${props => props.left};
+    transform: ${props => props.transform};
 `;
 
 const ModalCardHead = styled.header`
@@ -373,43 +377,36 @@ const TutorialModal = ({ updateOnboardingFlag }: TutorialModalProps) => {
         <>
             <ModalBackground />
             <ModalContainer>
-                <div style={{
-                    position: "fixed",
-                    top: position.top,
-                    left: position.left,
-                    transform: position.transform,
-                }}>
-                    <ModalCard>
-                        <ModalCardHead>
-                            {modalContent.title}
-                            <CloseButton onClick={handleClose}>
-                                <Cross2Icon />
-                            </CloseButton>
-                        </ModalCardHead>
-                        <ModalCardBody>
-                            <ModalInteriorWrapper>
-                                {isFirstStep && <img src="pdp-porcupine.svg" alt="Porcupine" />}
-                                <ModalText>{modalContent.description}</ModalText>
-                                <ButtonRow>
-                                    {!isFirstStep && (
-                                        <ModalButton onClick={() => navigateStep(false)}>
-                                            Back
-                                        </ModalButton>
-                                    )}
-                                    {isLastStep ? (
-                                        <ModalButton onClick={handleClose}>
-                                            Close
-                                        </ModalButton>
-                                    ) : (
-                                        <ModalButton onClick={() => navigateStep(true)}>
-                                            Next
-                                        </ModalButton>
-                                    )}
-                                </ButtonRow>
-                            </ModalInteriorWrapper>
-                        </ModalCardBody>
-                    </ModalCard>
-                </div>
+                <ModalCard top={position.top} left={position.left} transform={position.transform}>
+                    <ModalCardHead>
+                        {modalContent.title}
+                        <CloseButton onClick={handleClose}>
+                            <Cross2Icon />
+                        </CloseButton>
+                    </ModalCardHead>
+                    <ModalCardBody>
+                        <ModalInteriorWrapper>
+                            {isFirstStep && <img src="pdp-porcupine.svg" alt="Porcupine" />}
+                            <ModalText>{modalContent.description}</ModalText>
+                            <ButtonRow>
+                                {!isFirstStep && (
+                                    <ModalButton onClick={() => navigateStep(false)}>
+                                        Back
+                                    </ModalButton>
+                                )}
+                                {isLastStep ? (
+                                    <ModalButton onClick={handleClose}>
+                                        Close
+                                    </ModalButton>
+                                ) : (
+                                    <ModalButton onClick={() => navigateStep(true)}>
+                                        Next
+                                    </ModalButton>
+                                )}
+                            </ButtonRow>
+                        </ModalInteriorWrapper>
+                    </ModalCardBody>
+                </ModalCard>
             </ModalContainer>
         </>
     );
