@@ -131,15 +131,7 @@ const FourYearPlanPage = ({
 
     const semesterRefs = React.useRef<{ [semester: string]: HTMLDivElement | null }>({});
 
-    // Scroll to current semester
-    useEffect(() => {
-        if (options?.SEMESTER) {
-            const ref = semesterRefs.current[options.SEMESTER];
-            if (ref) {
-                ref.scrollIntoView({ behavior: "smooth", block: "center" });
-            }
-        }
-    }, [semesterRefs]);
+
 
     // search panel
     const [searchPanelOpen, setSearchPanelOpen] = useState<boolean>(false);
