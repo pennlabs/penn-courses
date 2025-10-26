@@ -79,7 +79,7 @@ class DegreeworksClient:
                         "errorMessage": "",
                         "catalogYear": "",
                         "choices": [],
-                        "selectedChoices": ["2024"],
+                        "selectedChoices": ["2025"],
                         "ruleGoalCode": None,
                         "links": [],
                     },

@@ -1,10 +1,9 @@
-
 import styled from '@emotion/styled';
 import { DarkBlueIcon } from '../Requirements/QObject';
 import React, { useContext, useEffect } from "react";
 import { useDrop } from "react-dnd";
 import { Course, DegreePlan, DnDCourse, DockedCourse, Fulfillment, User } from "@/types";
-import { ItemTypes } from "../dnd/constants";
+import { ItemTypes } from "./dnd/constants";
 import { SearchPanelContext } from '../Search/SearchPanel';
 import { useSWRCrud } from '@/hooks/swrcrud';
 import useSWR, { useSWRConfig } from 'swr';
@@ -16,6 +15,7 @@ import _ from 'lodash';
 import CoursePlanned from '../FourYearPlan/CourseInPlan';
 import CourseInDock from './CourseInDock';
 import { useRouter } from 'next/router';
+import { TutorialModalContext } from '../FourYearPlan/OnboardingTutorial';
 
 const DockWrapper = styled.div`
     z-index: 1;
@@ -25,7 +25,7 @@ const DockWrapper = styled.div`
     flex-grow: 0;
 `
 
-const DockContainer = styled.div<{$isDroppable:boolean, $isOver: boolean}>`
+const DockContainer = styled.div<{ $isDroppable: boolean, $isOver: boolean }>`
     border-radius: 0px;
     box-shadow: 0px 0px 4px 2px ${props => props.$isOver ? 'var(--selected-color);' : props.$isDroppable ? 'var(--primary-color-dark);' : 'rgba(0, 0, 0, 0.05);'}
     background-color: var(--primary-color);
@@ -97,7 +97,7 @@ const AnimatedDockedCourseItem = styled(CourseInDock)`
       animation-duration: 1.5s;
       animation-iteration-count: 1;
       animation-timing-function: linear;
-` 
+`
 
 interface DockProps {
     login: (u: User) => void;
@@ -106,98 +106,106 @@ interface DockProps {
     activeDegreeplanId: DegreePlan["id"] | null;
 }
 
-const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
+const Dock = ({ user, login, logout, activeDegreeplanId }: DockProps) => {
     // const [courseAdded, setCourseAdded] = React.useState(false);
     const { searchPanelOpen, setSearchPanelOpen, setSearchRuleQuery, setSearchRuleId } = useContext(SearchPanelContext)
     const { createOrUpdate } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
-    const { data: dockedCourses = [], isLoading } = useSWR<DockedCourse[]>(user ? `/api/degree/docked` : null); 
+    const { data: dockedCourses = [], isLoading } = useSWR<DockedCourse[]>(user ? `/api/degree/docked` : null);
 
     // Returns a boolean that indiates whether this is the first render
     const useIsMount = () => {
         const isMountRef = React.useRef(true);
         useEffect(() => {
-          isMountRef.current = false;
+            isMountRef.current = false;
         }, []);
         return isMountRef.current;
-      };
-    
+    };
+
     const [{ isOver, canDrop }, drop] = useDrop(() => ({
-        accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_REQ],
+        accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_REQ, ItemTypes.COURSE_IN_SEARCH],
         drop: (course: DnDCourse) => {
-           createOrUpdate({"full_code": course.full_code}, course.full_code);
+            createOrUpdate({ "full_code": course.full_code }, course.full_code);
         },
         collect: monitor => ({
-          isOver: !!monitor.isOver(),
-          canDrop: !!monitor.canDrop()
+            isOver: !!monitor.isOver(),
+            canDrop: !!monitor.canDrop()
         }),
     }), []);
 
-    // React.useEffect(() => {
-    //     if (!isMount) {
-    //         console.log('future render');
-    //         setCourseAdded(true);
-    //         setTimeout(() => {
-    //             setCourseAdded(false);
-    //         }, 3000);
-    //     } else {
-    //         console.log('first render');
-    //     }
-    // }, [isMount, dockedCourses]);
-
     const { asPath } = useRouter();
 
+    const { tutorialModalKey, highlightedComponentRef, componentRefs } = useContext(TutorialModalContext);
+    const dockRef = React.useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        if (!componentRefs?.current) return;
+
+        if (tutorialModalKey === "courses-dock" || tutorialModalKey === "general-search") {
+            componentRefs.current["dock"] = dockRef.current;
+            if (dockRef.current) {
+                dockRef.current.style.zIndex = "20";
+            }
+        } else {
+            if (dockRef.current) {
+                dockRef.current.style.zIndex = "0";
+            }
+        }
+    }, [tutorialModalKey, highlightedComponentRef, componentRefs]);
+
     return (
-        <DockWrapper ref={drop} >
-            <DockContainer $isDroppable={canDrop} $isOver={isOver}>
-                <AccountIndicator
-                leftAligned={true}
-                user={user}
-                backgroundColor="light"
-                nameLength={2}
-                login={login}
-                logout={logout}
-                dropdownTop={true}
-                pathname={asPath}
-                />
-                <SearchIconContainer onClick={() => {
-                    setSearchRuleQuery("");
-                    setSearchRuleId(null);
-                    setSearchPanelOpen(!searchPanelOpen);
-                }}>
-                    <DarkBlueIcon>
-                        <i className="fas fa-plus fa-lg"/>
-                    </DarkBlueIcon>
-                    <div>
-                        Add Course
-                    </div>
-                </SearchIconContainer>
-                <DockedCoursesWrapper>
-                    {isLoading ?
-                    <CenteringCourseDock>
-                        <DarkBlueBackgroundSkeleton width="20rem"/>
-                    </CenteringCourseDock> 
-                    :
-                    !dockedCourses.length ? <CenteringCourseDock>Drop courses in the dock for later.</CenteringCourseDock> :
-                        // courseAdded ?
-                        // <DockedCourses>
-                        //     {dockedCourses.map((course, i) => {
-                        //         if (i == dockedCourses.length - 1) {
-                        //             return <AnimatedDockedCourseItem course={course} isUsed isDisabled={false} />
-                        //         }
-                        //         return <DockedCourseItem course={course} isUsed isDisabled={false} />
-                        //     }
-                        //     )}
-                        // </DockedCourses>
-                        // :
-                        <DockedCourses>
-                            {dockedCourses.map((course) => 
-                                <AnimatedDockedCourseItem course={course} isDisabled={false} />
-                            )}
-                        </DockedCourses>}
-                </DockedCoursesWrapper>
-                <Logo src='pdp-logo.svg' width='30' height='45'/>
-            </DockContainer>
-        </DockWrapper>
+        <div style={{ position: "relative" }} ref={dockRef}>
+            <DockWrapper ref={drop} >
+                <DockContainer $isDroppable={canDrop} $isOver={isOver}>
+                    <AccountIndicator
+                        leftAligned={true}
+                        user={user}
+                        backgroundColor="light"
+                        nameLength={2}
+                        login={login}
+                        logout={logout}
+                        dropdownTop={true}
+                        pathname={asPath}
+                    />
+                    <SearchIconContainer onClick={() => {
+                        setSearchRuleQuery("");
+                        setSearchRuleId(null);
+                        setSearchPanelOpen(!searchPanelOpen);
+                    }}>
+                        <DarkBlueIcon>
+                            <i className="fas fa-plus fa-lg" />
+                        </DarkBlueIcon>
+                        <div>
+                            Add Course
+                        </div>
+                    </SearchIconContainer>
+                    <DockedCoursesWrapper>
+                        {isLoading ?
+                            <CenteringCourseDock>
+                                <DarkBlueBackgroundSkeleton width="20rem" />
+                            </CenteringCourseDock>
+                            :
+                            !dockedCourses.length ? <CenteringCourseDock>Drop courses in the dock for later.</CenteringCourseDock> :
+                                // courseAdded ?
+                                // <DockedCourses>
+                                //     {dockedCourses.map((course, i) => {
+                                //         if (i == dockedCourses.length - 1) {
+                                //             return <AnimatedDockedCourseItem course={course} isUsed isDisabled={false} />
+                                //         }
+                                //         return <DockedCourseItem course={course} isUsed isDisabled={false} />
+                                //     }
+                                //     )}
+                                // </DockedCourses>
+                                // :
+                                <DockedCourses>
+                                    {dockedCourses.map((course) =>
+                                        <AnimatedDockedCourseItem course={course} isDisabled={false} />
+                                    )}
+                                </DockedCourses>}
+                    </DockedCoursesWrapper>
+                    <Logo src='pdp-logo.svg' width='30' height='45' />
+                </DockContainer>
+            </DockWrapper>
+        </div>
     )
 }
 
