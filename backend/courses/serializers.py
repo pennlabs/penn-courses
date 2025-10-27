@@ -517,3 +517,84 @@ class FriendshipRequestSerializer(serializers.Serializer):
 
     def to_representation(self, instance):
         return super().to_representation(instance)
+
+
+class AdvancedSearchEnumSerializer(serializers.Serializer):
+    type = serializers.ChoiceField(choices=["enum"])
+    field = serializers.CharField()
+    op = serializers.ChoiceField(choices=["is", "is_not", "is_any_of", "is_none_of"])
+    value = serializers.ListField(
+        child=serializers.CharField(), allow_empty=False
+    )  # string or list of strings
+
+
+class AdvancedSearchNumericSerializer(serializers.Serializer):
+    type = serializers.ChoiceField(choices=["numeric"])
+    field = serializers.CharField()
+    op = serializers.ChoiceField(choices=["lt", "lte", "gt", "gte", "equals"])
+    value = serializers.FloatField()
+
+
+class AdvancedSearchBooleanSerializer(serializers.Serializer):
+    type = serializers.ChoiceField(choices=["boolean"])
+    field = serializers.CharField()
+    value = serializers.BooleanField()
+
+
+class AdvancedSearchConditionSerializer(serializers.Serializer):
+    def to_internal_value(self, data):
+        type_map = {
+            "enum": AdvancedSearchEnumSerializer,
+            "numeric": AdvancedSearchNumericSerializer,
+            "boolean": AdvancedSearchBooleanSerializer,
+        }
+        serializer_class = type_map.get(data.get("type"))
+        if serializer_class is None:
+            raise serializers.ValidationError({"type": "Invalid type"})
+        serializer = serializer_class(data=data)
+        serializer.is_valid(raise_exception=True)
+        return serializer.validated_data
+
+
+class AdvancedSearchGroupSerializer(serializers.Serializer):
+    type = serializers.ChoiceField(choices=["group"])
+    op = serializers.ChoiceField(choices=["AND", "OR"])
+    children = serializers.ListField(
+        child=AdvancedSearchConditionSerializer(),
+        allow_empty=False,
+        max_length=5,
+    )
+
+
+class AdvancedSearchDataSerializer(serializers.Serializer):
+    query = serializers.CharField(allow_blank=True)
+    filters = serializers.DictField()
+
+    def validate_filters(self, filters):
+        if filters.get("type") != "group":
+            raise serializers.ValidationError("Top level filters must be a group object.")
+
+        op = filters.get("op")
+        if op not in ["AND", "OR"]:
+            raise serializers.ValidationError("filters.op must be 'AND' or 'OR'.")
+
+        children = filters.get("children", [])
+
+        if len(children) == 0:
+            raise serializers.ValidationError("filters.children must be a non-empty list.")
+        if len(children) > 10:
+            raise serializers.ValidationError("filters.children cannot have more than 10 items.")
+
+        validated_children = []
+        for f in children:
+            if f.get("type") == "group":
+                serializer = AdvancedSearchGroupSerializer(data=f)
+            else:
+                serializer = AdvancedSearchConditionSerializer(data=f)
+            serializer.is_valid(raise_exception=True)
+            validated_children.append(serializer.validated_data)
+        return {
+            "type": "group",
+            "op": op,
+            "children": validated_children,
+        }

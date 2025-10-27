@@ -8,6 +8,7 @@ from lark.exceptions import UnexpectedInput
 from rest_framework import filters
 
 from courses.models import Course, Meeting, PreNGSSRequirement, Section
+from courses.serializers import AdvancedSearchDataSerializer
 from courses.util import get_current_semester
 from degree.models import Rule
 from plan.models import Schedule
@@ -548,8 +549,98 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
 
 
 class CourseSearchAdvancedFilterBackend(CourseSearchFilterBackend):
+    field_map = {
+        "enum": {
+            "cu": "sections__credits",
+        }
+    }
+
+    def _apply_filter_group(self, queryset, filter_group):
+        op = filter_group.get("op")
+        children = filter_group.get("children", [])
+        q = Q()
+        for child in children:
+            if child.get("type") == "group":
+                child_q = self._apply_filter_group(queryset, child)
+            else:
+                child_q = self._get_filter_condition(queryset, child)
+            if op == "AND":
+                q &= child_q
+            else:
+                q |= child_q
+
+        return q
+
+    def _get_filter_condition(self, queryset, filter_condition):
+        condition_type = filter_condition["type"]
+        field = self.field_map[condition_type].get(filter_condition["field"])
+        if field is None:
+            raise BadRequest(f"Invalid field for {condition_type} filter: {field}")
+
+        match condition_type:
+            case "enum":
+                op = filter_condition["op"]
+                values = filter_condition["value"]
+
+                match op:
+                    case "is":
+                        return Q(**{field: values[0]})
+                    case "is_not":
+                        return ~Q(**{field: values[0]})
+                    case "is_any_of":
+                        return Q(**{f"{field}__in": values})
+                    case "is_none_of":
+                        return ~Q(**{f"{field}__in": values})
+        return Q()
+
     def filter_queryset(self, request, queryset, view):
-        pass
+        filters = request.data.get("filters")
+        if not filters:
+            return queryset
+        q = self._apply_filter_group(queryset, filters)
+        return queryset.filter(q).distinct("full_code")
 
     def get_schema_operation_parameters(self, view):
-        pass
+        return [
+            {
+                "name": "search_data",
+                "in": "body",
+                "required": True,
+                "description": "Advanced search parameters with query string and filters.",
+                "schema": AdvancedSearchDataSerializer().data,
+                "example": {
+                    "query": "machine learning",
+                    "filters": {
+                        "type": "group",
+                        "op": "AND",
+                        "children": [
+                            {
+                                "type": "enum",
+                                "field": "activity",
+                                "operator": "is_any_of",
+                                "value": ["LEC", "REC"],
+                            },
+                            {
+                                "type": "numeric",
+                                "field": "difficulty",
+                                "operator": "lte",
+                                "value": 3,
+                            },
+                            {
+                                "type": "group",
+                                "op": "OR",
+                                "children": [
+                                    {"type": "boolean", "field": "is_open", "value": True},
+                                    {
+                                        "type": "enum",
+                                        "field": "credit_units",
+                                        "operator": "is",
+                                        "value": "1.0",
+                                    },
+                                ],
+                            },
+                        ],
+                    },
+                },
+            }
+        ]

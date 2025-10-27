@@ -277,10 +277,7 @@ class CourseListSearch(CourseList):
         queryset = TypedCourseSearchBackend().filter_queryset(request, queryset, self)
 
         # Apply advanced structured filters
-        if request.data.get("filters"):
-            queryset = CourseSearchAdvancedFilterBackend().filter_queryset_from_json(
-                request, queryset, request.data["filters"]
-            )
+        queryset = CourseSearchAdvancedFilterBackend().filter_queryset(request, queryset, self)
 
         # Apply pagination again for consistency
         page = self.paginate_queryset(queryset)

@@ -249,14 +249,14 @@ export type FilterType =
 export type AdvancedSearchEnum = {
     type: "enum";
     field: string;
-    operator: "is" | "is_not" | "is_any_of" | "is_non_of";
-    value: string | string[];
+    op: "is" | "is_not" | "is_any_of" | "is_none_of";
+    value: string[];
 }
 
 export type AdvancedSearchNumeric = {
     type: "numeric";
     field: string;
-    operator: "lt" | "lte" | "gt" | "gte" | "equals";
+    op: "lt" | "lte" | "gt" | "gte" | "equals";
     value: number;
 }
 
@@ -272,11 +272,15 @@ export type AdvancedSearchGroup = {
     children: AdvancedSearchCondition[];
 }
 
-export type AdvancedSearchCondition = AdvancedSearchEnum | AdvancedSearchNumeric | AdvancedSearchBoolean | AdvancedSearchGroup;
+export type AdvancedSearchCondition = AdvancedSearchEnum | AdvancedSearchNumeric | AdvancedSearchBoolean;
 
 export type AdvancedSearchData = {
     query: string;
-    filters: AdvancedSearchGroup;
+    filters: {
+        type: "group";
+        op: "AND" | "OR";
+        children: (AdvancedSearchCondition | AdvancedSearchGroup)[];
+    };
 }
 
 export interface FriendshipState {

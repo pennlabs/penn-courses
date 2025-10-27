@@ -404,17 +404,20 @@ export function fetchCourseSearch(filterData) {
 }
 
 const advancedCourseSearch = (_, searchData) =>
-    doAPIRequest("/base/current/search/courses/v2", {
-        method: "GET",
-        credentials: "include",
-        mode: "same-origin",
-        headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCsrf(),
-        },
-        body: JSON.stringify(searchData),
-    });
+    doAPIRequest(
+        `/base/current/search/courses/v2/?search=${searchData.query}`,
+        {
+            method: "POST",
+            credentials: "include",
+            mode: "same-origin",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCsrf(),
+            },
+            body: JSON.stringify(searchData.filters),
+        }
+    );
 
 const debouncedAdvancedCourseSearch = AwesomeDebouncePromise(
     advancedCourseSearch,
