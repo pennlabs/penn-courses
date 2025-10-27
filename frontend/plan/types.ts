@@ -256,7 +256,7 @@ export type AdvancedSearchEnum = {
 export type AdvancedSearchNumeric = {
     type: "numeric";
     field: string;
-    op: "lt" | "lte" | "gt" | "gte" | "equals";
+    op: "lt" | "lte" | "gt" | "gte" | "eq" | "neq";
     value: number;
 }
 

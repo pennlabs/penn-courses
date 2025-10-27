@@ -531,7 +531,7 @@ class AdvancedSearchEnumSerializer(serializers.Serializer):
 class AdvancedSearchNumericSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=["numeric"])
     field = serializers.CharField()
-    op = serializers.ChoiceField(choices=["lt", "lte", "gt", "gte", "equals"])
+    op = serializers.ChoiceField(choices=["lt", "lte", "gt", "gte", "eq", "neq"])
     value = serializers.FloatField()
 
 

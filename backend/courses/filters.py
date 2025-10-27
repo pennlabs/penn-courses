@@ -547,23 +547,72 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
             },
         ]
 
+def _enum(field):
+    def filter_enum(filter_condition):
+        op = filter_condition["op"]
+        values = filter_condition["value"]
+
+        match op:
+            case "is":
+                return Q(**{field: values[0]})
+            case "is_not":
+                return ~Q(**{field: values[0]})
+            case "is_any_of":
+                return Q(**{f"{field}__in": values})
+            case "is_none_of":
+                return ~Q(**{f"{field}__in": values})
+        return Q()
+    return filter_enum
+
+def _numeric(field):
+    def filter_numeric(filter_condition):
+        op = filter_condition["op"]
+        value = Decimal(filter_condition["value"])
+
+        q = Q(**{f"{field}__isnull": True})
+
+        match op:
+            case "eq":
+                return q | Q(**{field: value})
+            case "neq":
+                return q | ~Q(**{field: value})
+            case _:
+                return q | Q(**{f"{field}__{op}": value})
+        return Q()
+    return filter_numeric
+
+def _boolean(field):
+    def filter_boolean(filter_condition):
+        value = filter_condition["value"]
+        return Q(**{field: value})
+    return filter_boolean
 
 class CourseSearchAdvancedFilterBackend(CourseSearchFilterBackend):
     field_map = {
         "enum": {
-            "cu": "sections__credits",
+            "cu": _enum("sections__credits"),
+            "activity": _enum("sections__activity"),
+        },
+        "numeric": {
+            "difficulty": _numeric("difficulty"),
+            "course_quality": _numeric("course_quality"),
+            "instructor_quality": _numeric("instructor_quality"),
         }
     }
 
-    def _apply_filter_group(self, queryset, filter_group):
+    def _apply_filters(self, queryset, filter_group):
         op = filter_group.get("op")
         children = filter_group.get("children", [])
         q = Q()
         for child in children:
-            if child.get("type") == "group":
-                child_q = self._apply_filter_group(queryset, child)
+            if child["type"] == "group":
+                child_q = self._apply_filters(queryset, child)
             else:
-                child_q = self._get_filter_condition(queryset, child)
+                condition_type = child["type"]
+                filter_func = self.field_map[condition_type].get(child["field"])
+                if filter_func is None:
+                    raise BadRequest(f"Invalid field for {condition_type} filter: {child['field']}")
+                child_q = filter_func(child)
             if op == "AND":
                 q &= child_q
             else:
@@ -571,33 +620,11 @@ class CourseSearchAdvancedFilterBackend(CourseSearchFilterBackend):
 
         return q
 
-    def _get_filter_condition(self, queryset, filter_condition):
-        condition_type = filter_condition["type"]
-        field = self.field_map[condition_type].get(filter_condition["field"])
-        if field is None:
-            raise BadRequest(f"Invalid field for {condition_type} filter: {field}")
-
-        match condition_type:
-            case "enum":
-                op = filter_condition["op"]
-                values = filter_condition["value"]
-
-                match op:
-                    case "is":
-                        return Q(**{field: values[0]})
-                    case "is_not":
-                        return ~Q(**{field: values[0]})
-                    case "is_any_of":
-                        return Q(**{f"{field}__in": values})
-                    case "is_none_of":
-                        return ~Q(**{f"{field}__in": values})
-        return Q()
-
     def filter_queryset(self, request, queryset, view):
         filters = request.data.get("filters")
         if not filters:
             return queryset
-        q = self._apply_filter_group(queryset, filters)
+        q = self._apply_filters(queryset, filters)
         return queryset.filter(q).distinct("full_code")
 
     def get_schema_operation_parameters(self, view):
