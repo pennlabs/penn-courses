@@ -8,7 +8,7 @@ from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
 from courses.management.commands.recompute_soft_state import recompute_precomputed_fields
-from courses.models import Instructor
+from courses.models import Instructor, Section
 from review.models import Review
 from courses.util import invalidate_current_semester_cache, set_meetings
 from tests.courses.util import create_mock_data, create_mock_async_class
@@ -595,3 +595,106 @@ class DayFilterTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
         self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "CIS-262"})
+
+class IsOpenFilterTestCase(TestCase):
+    def setUp(self):
+        _, self.cis_160_001 = create_mock_data(
+            code="CIS-160-001", semester=TEST_SEMESTER, meeting_days="TR"
+        )
+
+        _, self.cis_160_201 = create_mock_data(
+            code="CIS-160-201", semester=TEST_SEMESTER, meeting_days="M"
+        )
+        self.cis_160_201.activity = "REC"
+        self.cis_160_201.save()
+
+        _, self.cis_160_202 = create_mock_data(
+            code="CIS-160-202", semester=TEST_SEMESTER, meeting_days="W"
+        )
+        self.cis_160_202.activity = "REC"
+        self.cis_160_202.save()
+
+        def save_all():
+            for section in [self.cis_160_001, self.cis_160_201, self.cis_160_202]:
+                section.save()
+
+        self.save_all = save_all
+        self.all_codes = {"CIS-160"}
+        self.non_open_statuses = [
+            status[0] for status in Section.STATUS_CHOICES if status[0] not in ["O"]
+        ]
+
+        recompute_precomputed_fields()
+
+        self.client = APIClient()
+        set_semester()
+    
+    def _post_is_open(self):
+        return self.client.post(
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            data=json.dumps(
+                {
+                    "filters": {
+                        "type": "group",
+                        "op": "AND",
+                        "children": [
+                            {
+                                "type": "boolean",
+                                "field": "is_open",
+                                "value": True,
+                            }
+                        ],
+                    }
+                }
+            ),
+            content_type="application/json",
+        )
+
+    def test_lec_open_all_rec_open(self):
+        response = self._post_is_open()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual({res["id"] for res in response.data}, self.all_codes)
+
+    def test_lec_open_one_rec_not_open(self):
+        for status in self.non_open_statuses:
+            self.cis_160_202.status = status
+            self.save_all()
+
+            response = self._post_is_open()
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(response.data), 1)
+            self.assertEqual({res["id"] for res in response.data}, self.all_codes)
+
+    def test_lec_open_all_rec_not_open(self):
+        for status in self.non_open_statuses:
+            self.cis_160_202.status = status
+            self.cis_160_201.status = status
+            self.save_all()
+
+            response = self._post_is_open()
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(response.data), 0)
+            self.assertEqual({res["id"] for res in response.data}, set())
+
+    def test_rec_open_lec_not_open(self):
+        for status in self.non_open_statuses:
+            self.cis_160_001.status = status
+            self.save_all()
+
+            response = self._post_is_open()
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(response.data), 0)
+            self.assertEqual({res["id"] for res in response.data}, set())
+
+    def test_lec_not_open_all_rec_not_open(self):
+        for status in self.non_open_statuses:
+            self.cis_160_202.status = status
+            self.cis_160_201.status = status
+            self.cis_160_001.status = status
+            self.save_all()
+
+            response = self._post_is_open()
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(len(response.data), 0)
+            self.assertEqual({res["id"] for res in response.data}, set())

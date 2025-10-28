@@ -601,7 +601,7 @@ def _combine(op, q1, q2):
                 return q1 | q2
         raise BadRequest(f"Invalid group operator: {op}")
 
-def _is_open_filter(queryset, *args):
+def _is_open_filter(filter_condition):
     """
     Filters the given queryset of courses by the following condition:
     include a course only if filtering its sections by `status="O"` does
@@ -629,7 +629,7 @@ class CourseSearchAdvancedFilterBackend(filters.BaseFilterBackend):
         }
     }
 
-    meeting_fields = {"days", "time", "schedule-fit"}
+    meeting_fields = {"days", "time", "fits_schedule"}
 
     def _apply_filters(self, queryset, filter_group):
         op = filter_group.get("op")
@@ -663,6 +663,7 @@ class CourseSearchAdvancedFilterBackend(filters.BaseFilterBackend):
             return queryset
         q, meeting_q = self._apply_filters(queryset, filters)
         queryset = queryset.filter(q)
+        # Separate meeting filter for optimization
         queryset = queryset.filter(
             id__in=course_ids_by_section_query(
                 Q(num_meetings=0) | Q(id__in=section_ids_by_meeting_query(meeting_q))
