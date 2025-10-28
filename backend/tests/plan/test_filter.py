@@ -7,10 +7,11 @@ from options.models import Option
 from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
+from courses.management.commands.recompute_soft_state import recompute_precomputed_fields
 from courses.models import Instructor
 from review.models import Review
-from courses.util import invalidate_current_semester_cache
-from tests.courses.util import create_mock_data
+from courses.util import invalidate_current_semester_cache, set_meetings
+from tests.courses.util import create_mock_data, create_mock_async_class
 
 
 TEST_SEMESTER = "2021C"
@@ -27,7 +28,7 @@ def set_semester():
     AddDropPeriod(semester=TEST_SEMESTER).save()
 
 
-class EnumFilterTestCase(TestCase):
+class CuFilterTestCase(TestCase):
     def setUp(self):
         self.course, self.section = create_mock_data("CIS-120-001", TEST_SEMESTER)
         _, self.section2 = create_mock_data("CIS-120-201", TEST_SEMESTER)
@@ -258,3 +259,339 @@ class NumericFilterTestCase(TestCase):
         )
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data))
+
+class DayFilterTestCase(TestCase):
+    def setUp(self):
+        _, self.cis_120_001 = create_mock_data("CIS-120-001", TEST_SEMESTER)  # days MWF
+
+        _, self.cis_120_002 = create_mock_data(
+            code="CIS-120-002", semester=TEST_SEMESTER, meeting_days="TR"
+        )
+
+        _, self.cis_160_001 = create_mock_data(
+            code="CIS-160-001", semester=TEST_SEMESTER, meeting_days="TR"
+        )
+
+        _, self.cis_160_201 = create_mock_data(
+            code="CIS-160-201", semester=TEST_SEMESTER, meeting_days="M"
+        )
+        self.cis_160_201.activity = "REC"
+        self.cis_160_201.save()
+
+        _, self.cis_160_202 = create_mock_data(
+            code="CIS-160-202", semester=TEST_SEMESTER, meeting_days="W"
+        )
+        self.cis_160_202.activity = "REC"
+        self.cis_160_202.save()
+
+        _, self.cis_121_001 = create_mock_data(code="CIS-121-001", semester=TEST_SEMESTER)
+        set_meetings(
+            self.cis_121_001,
+            [
+                {
+                    "building_code": "LLAB",
+                    "room_code": "10",
+                    "days": "MT",
+                    "begin_time_24": 900,
+                    "begin_time": "9:00 AM",
+                    "end_time_24": 1000,
+                    "end_time": "10:00 AM",
+                },
+                {
+                    "building_code": "LLAB",
+                    "room_code": "10",
+                    "days": "WR",
+                    "begin_time_24": 1330,
+                    "begin_time": "1:30 PM",
+                    "end_time_24": 1430,
+                    "end_time": "2:30 PM",
+                },
+            ],
+        )
+
+        _, self.cis_262_001 = create_mock_async_class(code="CIS-262-001", semester=TEST_SEMESTER)
+
+        recompute_precomputed_fields()
+
+        self.all_codes = {"CIS-120", "CIS-160", "CIS-121", "CIS-262"}
+
+        self.client = APIClient()
+        set_semester()
+
+    def test_only_async(self):
+        response = self.client.post(
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            data=json.dumps(
+                {
+                    "filters": {
+                        "type": "group",
+                        "op": "AND",
+                        "children": [
+                            {
+                                "type": "enum",
+                                "field": "days",
+                                "op": "is_any_of",
+                                "value": [],
+                            }
+                        ],
+                    }
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(1, len(response.data))
+        self.assertEqual({"CIS-262"}, {res["id"] for res in response.data})  # only async
+
+    def test_all_days(self):
+        response = self.client.post(
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            data=json.dumps(
+                {
+                    "filters": {
+                        "type": "group",
+                        "op": "AND",
+                        "children": [
+                            {
+                                "type": "enum",
+                                "field": "days",
+                                "op": "is_any_of",
+                                "value": ["M", "T", "W", "R", "F", "S", "U"],
+                            }
+                        ],
+                    }
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), len(self.all_codes))
+        self.assertEqual({res["id"] for res in response.data}, self.all_codes)
+
+    def test_illegal_characters(self):
+        response = self.client.post(
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            data=json.dumps(
+                {
+                    "filters": {
+                        "type": "group",
+                        "op": "AND",
+                        "children": [
+                            {
+                                "type": "enum",
+                                "field": "days",
+                                "op": "is_any_of",
+                                "value": ["T", "R", "X", 2],
+                            }
+                        ],
+                    }
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "CIS-262"})
+
+    def test_lec_no_rec(self):
+        response = self.client.post(
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            data=json.dumps(
+                {
+                    "filters": {
+                        "type": "group",
+                        "op": "AND",
+                        "children": [
+                            {
+                                "type": "enum",
+                                "field": "days",
+                                "op": "is_any_of",
+                                "value": ["T", "R"],
+                            }
+                        ],
+                    }
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "CIS-262"})
+
+    def test_rec_no_lec(self):
+        response = self.client.post(
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            data=json.dumps(
+                {
+                    "filters": {
+                        "type": "group",
+                        "op": "AND",
+                        "children": [
+                            {
+                                "type": "enum",
+                                "field": "days",
+                                "op": "is_any_of",
+                                "value": ["M", "W"],
+                            }
+                        ],
+                    }
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-262"})
+
+    def test_lec_and_rec(self):
+        response = self.client.post(
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            data=json.dumps(
+                {
+                    "filters": {
+                        "type": "group",
+                        "op": "AND",
+                        "children": [
+                            {
+                                "type": "enum",
+                                "field": "days",
+                                "op": "is_any_of",
+                                "value": ["T", "W", "R"],
+                            }
+                        ],
+                    }
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 3)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-160", "CIS-120", "CIS-262"})
+
+    def test_partial_match(self):
+        response = self.client.post(
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            data=json.dumps(
+                {
+                    "filters": {
+                        "type": "group",
+                        "op": "AND",
+                        "children": [
+                            {
+                                "type": "enum",
+                                "field": "days",
+                                "op": "is",
+                                "value": ["T"],
+                            }
+                        ],
+                    }
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-262"})
+
+    def test_contains_rec_no_sec(self):
+        response = self.client.post(
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            data=json.dumps(
+                {
+                    "filters": {
+                        "type": "group",
+                        "op": "AND",
+                        "children": [
+                            {
+                                "type": "enum",
+                                "field": "days",
+                                "op": "is",
+                                "value": ["W"],
+                            }
+                        ],
+                    }
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-262"})
+
+    def test_partial_multi_meeting_match(self):
+        response = self.client.post(
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            data=json.dumps(
+                {
+                    "filters": {
+                        "type": "group",
+                        "op": "AND",
+                        "children": [
+                            {
+                                "type": "enum",
+                                "field": "days",
+                                "op": "is_any_of",
+                                "value": ["M", "W"],
+                            }
+                        ],
+                    }
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-262"})
+
+    def test_full_multi_meeting_match(self):
+        response = self.client.post(
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            data=json.dumps(
+                {
+                    "filters": {
+                        "type": "group",
+                        "op": "AND",
+                        "children": [
+                            {
+                                "type": "enum",
+                                "field": "days",
+                                "op": "is_any_of",
+                                "value": ["M", "T", "W", "R"],
+                            }
+                        ],
+                    }
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 4)
+        self.assertEqual(
+            {res["id"] for res in response.data},
+            {"CIS-120", "CIS-121", "CIS-160", "CIS-262"},
+        )
+    
+    def test_none_of(self):
+        response = self.client.post(
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            data=json.dumps(
+                {
+                    "filters": {
+                        "type": "group",
+                        "op": "AND",
+                        "children": [
+                            {
+                                "type": "enum",
+                                "field": "days",
+                                "op": "is_none_of",
+                                "value": ["M", "W", "F"],
+                            }
+                        ],
+                    }
+                }
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "CIS-262"})

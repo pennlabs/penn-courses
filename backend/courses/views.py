@@ -187,6 +187,8 @@ class CourseListSearch(CourseList):
     - **POST**: This route also accepts POST requests, where the body is a JSON object
     containing a "filters" key, which maps to an object containing the same filters as
     described above. This API will allow for a more extensible filtering system.
+    If you are a backend or frontenddeveloper, you can find these filters and request
+    body schema in backend/plan/filters.py/CourseSearchAdvancedFilterBackend.
     """
 
     schema = PcxAutoSchema(
@@ -247,7 +249,6 @@ class CourseListSearch(CourseList):
 
     # filter_backends = [TypedCourseSearchBackend, CourseSearchFilterBackend]
     search_fields = ("full_code", "title", "sections__instructors__name")
-    # parser_classes = [json_parser]
 
     def get(self, request, *args, **kwargs):
         queryset = super().get_queryset()
@@ -268,9 +269,6 @@ class CourseListSearch(CourseList):
         return Response(serializer.data)
 
     def post(self, request, *args, **kwargs):
-        if not isinstance(request.data, dict):
-            raise ParseError("Expected JSON body with 'query' and 'filters' fields.")
-
         queryset = super().get_queryset()
 
         # Apply text-based search

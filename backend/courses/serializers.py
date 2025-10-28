@@ -524,9 +524,9 @@ class AdvancedSearchEnumSerializer(serializers.Serializer):
     field = serializers.CharField()
     op = serializers.ChoiceField(choices=["is", "is_not", "is_any_of", "is_none_of"])
     value = serializers.ListField(
-        child=serializers.CharField(), allow_empty=False
-    )  # string or list of strings
-
+        child=serializers.CharField(),
+        allow_empty=True,
+    )
 
 class AdvancedSearchNumericSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=["numeric"])

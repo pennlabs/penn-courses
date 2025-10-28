@@ -548,6 +548,9 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
         ]
 
 def _enum(field):
+    """
+    Constructs an enum filter function for the given field, operators, and values
+    """
     def filter_enum(filter_condition):
         op = filter_condition["op"]
         values = filter_condition["value"]
@@ -558,13 +561,16 @@ def _enum(field):
             case "is_not":
                 return ~Q(**{field: values[0]})
             case "is_any_of":
-                return Q(**{f"{field}__in": values})
+                return Q(**{f"{field}__in": set(values)})
             case "is_none_of":
-                return ~Q(**{f"{field}__in": values})
+                return ~Q(**{f"{field}__in": set(values)})
         return Q()
     return filter_enum
 
 def _numeric(field):
+    """
+    Constructs a numeric filter function for the given field, operators, and values
+    """
     def filter_numeric(filter_condition):
         op = filter_condition["op"]
         value = Decimal(filter_condition["value"])
@@ -587,45 +593,82 @@ def _boolean(field):
         return Q(**{field: value})
     return filter_boolean
 
-class CourseSearchAdvancedFilterBackend(CourseSearchFilterBackend):
+def _combine(op, q1, q2):
+        match op:
+            case "AND":
+                return q1 & q2
+            case "OR":
+                return q1 | q2
+        raise BadRequest(f"Invalid group operator: {op}")
+
+def _is_open_filter(queryset, *args):
+    """
+    Filters the given queryset of courses by the following condition:
+    include a course only if filtering its sections by `status="O"` does
+    not does not limit the set of section activities we can participate in for the course.
+    In other words, include only courses for which all activities have open sections.
+    Note that for compatibility, this function can take additional positional
+    arguments, but these are ignored.
+    """
+    return Q(id__in=course_ids_by_section_query(Q(status="O")))
+
+class CourseSearchAdvancedFilterBackend(filters.BaseFilterBackend):
     field_map = {
         "enum": {
             "cu": _enum("sections__credits"),
             "activity": _enum("sections__activity"),
+            "days": _enum("day"),
         },
         "numeric": {
             "difficulty": _numeric("difficulty"),
             "course_quality": _numeric("course_quality"),
             "instructor_quality": _numeric("instructor_quality"),
+        },
+        "boolean": {
+            "is_open": _is_open_filter,
         }
     }
+
+    meeting_fields = {"days", "time", "schedule-fit"}
 
     def _apply_filters(self, queryset, filter_group):
         op = filter_group.get("op")
         children = filter_group.get("children", [])
         q = Q()
+        meeting_q = Q()
         for child in children:
+            child_q = Q()
+            child_meeting_q = Q()
             if child["type"] == "group":
-                child_q = self._apply_filters(queryset, child)
+                child_q, child_meeting_q = self._apply_filters(queryset, child)
+                q = _combine(op, q, child_q)
+                meeting_q = _combine(op, meeting_q, child_meeting_q)
             else:
                 condition_type = child["type"]
                 filter_func = self.field_map[condition_type].get(child["field"])
                 if filter_func is None:
                     raise BadRequest(f"Invalid field for {condition_type} filter: {child['field']}")
-                child_q = filter_func(child)
-            if op == "AND":
-                q &= child_q
-            else:
-                q |= child_q
+                if child["field"] not in self.meeting_fields:
+                    child_q = filter_func(child)
+                    q = _combine(op, q, child_q)
+                else:
+                    child_meeting_q = filter_func(child)
+                    meeting_q = _combine(op, meeting_q, child_meeting_q)
 
-        return q
+        return q, meeting_q
 
     def filter_queryset(self, request, queryset, view):
         filters = request.data.get("filters")
         if not filters:
             return queryset
-        q = self._apply_filters(queryset, filters)
-        return queryset.filter(q).distinct("full_code")
+        q, meeting_q = self._apply_filters(queryset, filters)
+        queryset = queryset.filter(q)
+        queryset = queryset.filter(
+            id__in=course_ids_by_section_query(
+                Q(num_meetings=0) | Q(id__in=section_ids_by_meeting_query(meeting_q))
+            )
+        )
+        return queryset.distinct("full_code")
 
     def get_schema_operation_parameters(self, view):
         return [
