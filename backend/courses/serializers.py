@@ -521,23 +521,26 @@ class FriendshipRequestSerializer(serializers.Serializer):
 
 class AdvancedSearchEnumSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=["enum"])
-    field = serializers.CharField()
+    field = serializers.ChoiceField(choices=["days", "activity", "cu"])
     op = serializers.ChoiceField(choices=["is", "is_not", "is_any_of", "is_none_of"])
     value = serializers.ListField(
         child=serializers.CharField(),
         allow_empty=True,
     )
 
+
 class AdvancedSearchNumericSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=["numeric"])
-    field = serializers.CharField()
+    field = serializers.ChoiceField(
+        choices=["start_time", "end_time", "difficulty", "course_quality", "instructor_quality"]
+    )
     op = serializers.ChoiceField(choices=["lt", "lte", "gt", "gte", "eq", "neq"])
     value = serializers.FloatField()
 
 
 class AdvancedSearchBooleanSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=["boolean"])
-    field = serializers.CharField()
+    field = serializers.ChoiceField(choices=["fits_schedule", "is_open"])
     value = serializers.BooleanField()
 
 

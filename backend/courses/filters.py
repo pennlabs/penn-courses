@@ -547,10 +547,12 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
             },
         ]
 
+
 def _enum(field):
     """
     Constructs an enum filter function for the given field, operators, and values
     """
+
     def filter_enum(filter_condition):
         op = filter_condition["op"]
         values = filter_condition["value"]
@@ -565,12 +567,15 @@ def _enum(field):
             case "is_none_of":
                 return ~Q(**{f"{field}__in": set(values)})
         return Q()
+
     return filter_enum
+
 
 def _numeric(field):
     """
     Constructs a numeric filter function for the given field, operators, and values
     """
+
     def filter_numeric(filter_condition):
         op = filter_condition["op"]
         value = Decimal(filter_condition["value"])
@@ -585,21 +590,26 @@ def _numeric(field):
             case _:
                 return q | Q(**{f"{field}__{op}": value})
         return Q()
+
     return filter_numeric
+
 
 def _boolean(field):
     def filter_boolean(filter_condition):
         value = filter_condition["value"]
         return Q(**{field: value})
+
     return filter_boolean
 
+
 def _combine(op, q1, q2):
-        match op:
-            case "AND":
-                return q1 & q2
-            case "OR":
-                return q1 | q2
-        raise BadRequest(f"Invalid group operator: {op}")
+    match op:
+        case "AND":
+            return q1 & q2
+        case "OR":
+            return q1 | q2
+    raise BadRequest(f"Invalid group operator: {op}")
+
 
 def _is_open_filter(filter_condition):
     """
@@ -612,6 +622,7 @@ def _is_open_filter(filter_condition):
     """
     return Q(id__in=course_ids_by_section_query(Q(status="O")))
 
+
 class CourseSearchAdvancedFilterBackend(filters.BaseFilterBackend):
     field_map = {
         "enum": {
@@ -623,13 +634,16 @@ class CourseSearchAdvancedFilterBackend(filters.BaseFilterBackend):
             "difficulty": _numeric("difficulty"),
             "course_quality": _numeric("course_quality"),
             "instructor_quality": _numeric("instructor_quality"),
+            "start_time": _numeric("start"),
+            "end_time": _numeric("end"),
         },
         "boolean": {
             "is_open": _is_open_filter,
-        }
+            "fits_schedule": _boolean("TODO"),
+        },
     }
 
-    meeting_fields = {"days", "time", "fits_schedule"}
+    meeting_fields = {"days", "start_time", "end_time", "fits_schedule"}
 
     def _apply_filters(self, queryset, filter_group):
         op = filter_group.get("op")
@@ -646,8 +660,10 @@ class CourseSearchAdvancedFilterBackend(filters.BaseFilterBackend):
             else:
                 condition_type = child["type"]
                 filter_func = self.field_map[condition_type].get(child["field"])
+
                 if filter_func is None:
                     raise BadRequest(f"Invalid field for {condition_type} filter: {child['field']}")
+
                 if child["field"] not in self.meeting_fields:
                     child_q = filter_func(child)
                     q = _combine(op, q, child_q)

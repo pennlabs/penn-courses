@@ -9,9 +9,9 @@ from rest_framework.test import APIClient
 from alert.models import AddDropPeriod
 from courses.management.commands.recompute_soft_state import recompute_precomputed_fields
 from courses.models import Instructor, Section
-from review.models import Review
 from courses.util import invalidate_current_semester_cache, set_meetings
-from tests.courses.util import create_mock_data, create_mock_async_class
+from review.models import Review
+from tests.courses.util import create_mock_async_class, create_mock_data
 
 
 TEST_SEMESTER = "2021C"
@@ -110,6 +110,7 @@ class CuFilterTestCase(TestCase):
         )
         self.assertEqual(200, response.status_code)
         self.assertEqual(0, len(response.data))
+
 
 class NumericFilterTestCase(TestCase):
     def setUp(self):
@@ -229,7 +230,7 @@ class NumericFilterTestCase(TestCase):
         )
         self.assertEqual(200, response.status_code)
         self.assertEqual(1, len(response.data))
-    
+
     def test_or(self):
         response = self.client.post(
             reverse("courses-search", args=[TEST_SEMESTER]),
@@ -259,6 +260,7 @@ class NumericFilterTestCase(TestCase):
         )
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data))
+
 
 class DayFilterTestCase(TestCase):
     def setUp(self):
@@ -570,7 +572,7 @@ class DayFilterTestCase(TestCase):
             {res["id"] for res in response.data},
             {"CIS-120", "CIS-121", "CIS-160", "CIS-262"},
         )
-    
+
     def test_none_of(self):
         response = self.client.post(
             reverse("courses-search", args=[TEST_SEMESTER]),
@@ -595,6 +597,7 @@ class DayFilterTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 2)
         self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "CIS-262"})
+
 
 class IsOpenFilterTestCase(TestCase):
     def setUp(self):
@@ -628,7 +631,7 @@ class IsOpenFilterTestCase(TestCase):
 
         self.client = APIClient()
         set_semester()
-    
+
     def _post_is_open(self):
         return self.client.post(
             reverse("courses-search", args=[TEST_SEMESTER]),
@@ -698,3 +701,165 @@ class IsOpenFilterTestCase(TestCase):
             self.assertEqual(response.status_code, 200)
             self.assertEqual(len(response.data), 0)
             self.assertEqual({res["id"] for res in response.data}, set())
+
+
+class TimeFilterTestCase(TestCase):
+    def setUp(self):
+        _, self.cis_120_001 = create_mock_data("CIS-120-001", TEST_SEMESTER)  # time 11.0-12.0
+
+        _, self.cis_120_002 = create_mock_data(
+            code="CIS-120-002", semester=TEST_SEMESTER, start=1200, end=1330
+        )
+
+        _, self.cis_160_001 = create_mock_data(
+            code="CIS-160-001", semester=TEST_SEMESTER, start=500, end=630
+        )
+
+        _, self.cis_160_201 = create_mock_data(
+            code="CIS-160-201", semester=TEST_SEMESTER, start=1100, end=1200
+        )
+        self.cis_160_201.activity = "REC"
+        self.cis_160_201.save()
+
+        _, self.cis_160_202 = create_mock_data(
+            code="CIS-160-202", semester=TEST_SEMESTER, start=1400, end=1500
+        )
+        self.cis_160_202.activity = "REC"
+        self.cis_160_202.save()
+
+        _, self.cis_121_001 = create_mock_data(code="CIS-121-001", semester=TEST_SEMESTER)
+        set_meetings(
+            self.cis_121_001,
+            [
+                {
+                    "building_code": "LLAB",
+                    "room_code": "10",
+                    "days": "MT",
+                    "begin_time_24": 900,
+                    "begin_time": "9:00 AM",
+                    "end_time_24": 1000,
+                    "end_time": "10:00 AM",
+                },
+                {
+                    "building_code": "LLAB",
+                    "room_code": "10",
+                    "days": "WR",
+                    "begin_time_24": 1330,
+                    "begin_time": "1:30 PM",
+                    "end_time_24": 1430,
+                    "end_time": "2:30 PM",
+                },
+            ],
+        )
+
+        _, self.cis_262_001 = create_mock_async_class(code="CIS-262-001", semester=TEST_SEMESTER)
+
+        recompute_precomputed_fields()
+
+        self.all_codes = {"CIS-120", "CIS-160", "CIS-121", "CIS-262"}
+
+        self.client = APIClient()
+        set_semester()
+
+    def _post_time(self, start_time, end_time):
+        children = []
+        if start_time is not None:
+            children.append(
+                {
+                    "type": "numeric",
+                    "field": "start_time",
+                    "op": "gte",
+                    "value": start_time,
+                }
+            )
+        if end_time is not None:
+            children.append(
+                {
+                    "type": "numeric",
+                    "field": "end_time",
+                    "op": "lte",
+                    "value": end_time,
+                }
+            )
+
+        return self.client.post(
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            data=json.dumps(
+                {
+                    "filters": {
+                        "type": "group",
+                        "op": "AND",
+                        "children": children,
+                    }
+                }
+            ),
+            content_type="application/json",
+        )
+
+    def test_whole_day(self):
+        response = self._post_time(0, 23.59)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), len(self.all_codes))
+        self.assertEqual({res["id"] for res in response.data}, self.all_codes)
+
+    def test_crossover_times(self):
+        response = self._post_time(15.0, 2.0)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-262"})  # only async
+
+    def test_start_end_same(self):
+
+        response = self._post_time(5.5, 5.5)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-262"})  # only async
+
+    def test_lec_no_rec(self):
+        response = self._post_time(4.59, 6.30)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-262"})  # only async
+
+    def test_one_match(self):
+        response = self._post_time(11.30, 13.30)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "CIS-262"})
+
+    def test_lec_and_rec(self):
+        response = self._post_time(5.0, 12.0)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 3)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-160", "CIS-120", "CIS-262"})
+
+    def test_contains_parts_of_two_sec(self):
+        response = self._post_time(11.30, 13.0)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-262"})
+
+    def test_contains_rec_no_sec(self):
+        response = self._post_time(11.30, 16.0)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "CIS-262"})
+
+    def test_unbounded_right(self):
+        response = self._post_time(11.30, None)
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "CIS-262"})
+
+    def test_unbounded_left(self):
+        response = self._post_time(None, 12.0)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 3)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "CIS-160", "CIS-262"})
+
+    def test_multi_meeting_match(self):
+        response = self._post_time(9.0, 15.0)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 3)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "CIS-121", "CIS-262"})
