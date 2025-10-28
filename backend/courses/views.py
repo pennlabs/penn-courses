@@ -233,7 +233,12 @@ class CourseListSearch(CourseList):
         if self.request is None or not self.request.user or not self.request.user.is_authenticated:
             return context
 
-        _, _, curr_course_vectors_dict, past_course_vectors_dict = retrieve_course_clusters()
+        (
+            _,
+            _,
+            curr_course_vectors_dict,
+            past_course_vectors_dict,
+        ) = retrieve_course_clusters()
         user_vector, _ = vectorize_user(
             self.request.user, curr_course_vectors_dict, past_course_vectors_dict
         )

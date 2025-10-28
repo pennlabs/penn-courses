@@ -8,8 +8,9 @@ from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
 from courses.management.commands.recompute_soft_state import recompute_precomputed_fields
-from courses.models import Instructor, Section
+from courses.models import Instructor, Section, User
 from courses.util import invalidate_current_semester_cache, set_meetings
+from plan.models import Schedule
 from review.models import Review
 from tests.courses.util import create_mock_async_class, create_mock_data
 
@@ -863,3 +864,190 @@ class TimeFilterTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 3)
         self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "CIS-121", "CIS-262"})
+
+
+class ScheduleFilterTestCase(TestCase):
+    def setUp(self):
+        _, self.cis_120_001 = create_mock_data(
+            "CIS-120-001", TEST_SEMESTER
+        )  # time 11.0-12.0, days MWF
+
+        _, self.cis_120_002 = create_mock_data(
+            code="CIS-120-002",
+            semester=TEST_SEMESTER,
+            start=1200,
+            end=1330,
+            meeting_days="TR",
+        )
+
+        _, self.cis_160_001 = create_mock_data(
+            code="CIS-160-001",
+            semester=TEST_SEMESTER,
+            start=500,
+            end=630,
+            meeting_days="TR",
+        )
+
+        _, self.cis_160_201 = create_mock_data(
+            code="CIS-160-201",
+            semester=TEST_SEMESTER,
+            start=1100,
+            end=1200,
+            meeting_days="M",
+        )
+        self.cis_160_201.activity = "REC"
+        self.cis_160_201.save()
+
+        _, self.cis_160_202 = create_mock_data(
+            code="CIS-160-202",
+            semester=TEST_SEMESTER,
+            start=1400,
+            end=1500,
+            meeting_days="W",
+        )
+        self.cis_160_202.activity = "REC"
+        self.cis_160_202.save()
+
+        _, self.cis_121_001 = create_mock_data(code="CIS-121-001", semester=TEST_SEMESTER)
+        set_meetings(
+            self.cis_121_001,
+            [
+                {
+                    "building_code": "LLAB",
+                    "room_code": "10",
+                    "days": "MT",
+                    "begin_time_24": 900,
+                    "begin_time": "9:00 AM",
+                    "end_time_24": 1000,
+                    "end_time": "10:00 AM",
+                },
+                {
+                    "building_code": "LLAB",
+                    "room_code": "10",
+                    "days": "WR",
+                    "begin_time_24": 1330,
+                    "begin_time": "1:30 PM",
+                    "end_time_24": 1430,
+                    "end_time": "2:30 PM",
+                },
+            ],
+        )
+
+        _, self.cis_262_001 = create_mock_async_class(code="CIS-262-001", semester=TEST_SEMESTER)
+
+        recompute_precomputed_fields()
+
+        self.all_codes = {"CIS-120", "CIS-160", "CIS-121", "CIS-262"}
+
+        self.user = User.objects.create_user(
+            username="jacob", email="jacob@example.com", password="top_secret"
+        )
+
+        self.empty_schedule = Schedule(
+            person=self.user,
+            semester=TEST_SEMESTER,
+            name="Empty Schedule",
+        )
+        self.empty_schedule.save()
+
+        self.all_available_schedule = Schedule(
+            person=self.user,
+            semester=TEST_SEMESTER,
+            name="All Classes Available Schedule",
+        )
+        self.all_available_schedule.save()
+        self.all_available_schedule.sections.set([self.cis_120_001])
+
+        self.only_120_262_available_schedule = Schedule(
+            person=self.user,
+            semester=TEST_SEMESTER,
+            name="Only CIS-120 and CIS-262 Available Schedule",
+        )
+        self.only_120_262_available_schedule.save()
+        self.only_120_262_available_schedule.sections.set([self.cis_120_001, self.cis_121_001])
+
+        self.only_262_available_schedule = Schedule(
+            person=self.user,
+            semester=TEST_SEMESTER,
+            name="Only CIS-262 Available Schedule",
+        )
+        self.only_262_available_schedule.save()
+        self.only_262_available_schedule.sections.set(
+            [self.cis_120_001, self.cis_120_002, self.cis_121_001]
+        )
+
+        self.client = APIClient()
+        set_semester()
+
+    def _post_fit_schedule(self, schedule_id):
+        return self.client.post(
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            data=json.dumps(
+                {
+                    "filters": {
+                        "type": "group",
+                        "op": "AND",
+                        "children": [
+                            {
+                                "type": "value",
+                                "field": "fit_schedule",
+                                "value": str(schedule_id),
+                            }
+                        ],
+                    }
+                }
+            ),
+            content_type="application/json",
+        )
+
+    def test_not_authenticated(self):
+        response = self._post_fit_schedule(self.only_262_available_schedule.id)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), len(self.all_codes))
+        self.assertEqual({res["id"] for res in response.data}, self.all_codes)
+
+    def test_different_authenticated(self):
+        User.objects.create_user(
+            username="charley", email="charley@example.com", password="top_secret"
+        )
+        client2 = APIClient()
+        client2.login(username="charley", password="top_secret")
+        response = self._post_fit_schedule(self.only_262_available_schedule.id)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), len(self.all_codes))
+        self.assertEqual({res["id"] for res in response.data}, self.all_codes)
+
+    def test_invalid_schedule(self):
+        self.client.login(username="jacob", password="top_secret")
+        response = self._post_fit_schedule(-1)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), len(self.all_codes))
+        self.assertEqual({res["id"] for res in response.data}, self.all_codes)
+
+    def test_empty_schedule(self):
+        self.client.login(username="jacob", password="top_secret")
+        response = self._post_fit_schedule(self.empty_schedule.id)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), len(self.all_codes))
+        self.assertEqual({res["id"] for res in response.data}, self.all_codes)
+
+    def test_all_available_schedule(self):
+        self.client.login(username="jacob", password="top_secret")
+        response = self._post_fit_schedule(self.all_available_schedule.id)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), len(self.all_codes))
+        self.assertEqual({res["id"] for res in response.data}, self.all_codes)
+
+    def test_only_120_262_available_schedule(self):
+        self.client.login(username="jacob", password="top_secret")
+        response = self._post_fit_schedule(self.only_120_262_available_schedule.id)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 2)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-120", "CIS-262"})
+
+    def test_only_262_available_schedule(self):
+        self.client.login(username="jacob", password="top_secret")
+        response = self._post_fit_schedule(self.only_262_available_schedule.id)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual({res["id"] for res in response.data}, {"CIS-262"})

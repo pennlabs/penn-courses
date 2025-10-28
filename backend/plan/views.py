@@ -683,7 +683,8 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         break_id = kwargs["pk"]
         if not break_id:
             return Response(
-                {"detail": "Break id is required for update."}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Break id is required for update."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
@@ -692,13 +693,15 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             return Response({"detail": "Break not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response(
-                {"detail": "Error retrieving break: " + str(e)}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Error retrieving break: " + str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         name = request.data.get("name")
         if not name:
             return Response(
-                {"detail": "Break name is required."}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Break name is required."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
         location_string = request.data.get("location_string")
 
@@ -718,7 +721,8 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             set_meetings(current_break, meetings_with_codes)
         except Exception as e:
             return Response(
-                {"detail": "Error setting meetings: " + str(e)}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Error setting meetings: " + str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         checked = request.data.get("checked")
@@ -729,11 +733,13 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
         except Exception as e:
             return Response(
-                {"detail": "Error saving break: " + str(e)}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Error saving break: " + str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         return Response(
-            {"message": "success", "break_id": current_break.id}, status=status.HTTP_200_OK
+            {"message": "success", "break_id": current_break.id},
+            status=status.HTTP_200_OK,
         )
 
     def create(self, request, *args, **kwargs):
@@ -745,13 +751,15 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         if Break.objects.filter(person=request.user).count() >= 10:
             print(Break.objects.filter(person=request.user))
             return Response(
-                {"detail": "You can only have up to 10 breaks."}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "You can only have up to 10 breaks."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         name = request.data.get("name")
         if not name:
             return Response(
-                {"detail": "Break name is required."}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Break name is required."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
         location_string = request.data.get("location_string")
         try:
@@ -795,7 +803,8 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             set_meetings(new_break, meetings_with_codes)
         except Exception as e:
             return Response(
-                {"detail": "Error setting meetings: " + str(e)}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Error setting meetings: " + str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         return Response(
@@ -807,7 +816,8 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         break_id = kwargs["pk"]
         if not break_id:
             return Response(
-                {"detail": "Break id is required for delete."}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Break id is required for delete."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
@@ -818,7 +828,8 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             return Response({"detail": "Break not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response(
-                {"detail": "Error deleting break: " + str(e)}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Error deleting break: " + str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
     def get_queryset(self):
