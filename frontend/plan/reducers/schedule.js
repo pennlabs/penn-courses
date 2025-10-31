@@ -17,6 +17,7 @@ import {
     ADD_CART_ITEM,
     REMOVE_CART_ITEM,
     TOGGLE_BREAK,
+    REMOVE_BREAK,
 } from "../actions";
 import { scheduleContainsSection } from "../components/meetUtil";
 import { showToast } from "../pages";
@@ -232,6 +233,17 @@ const handleRemoveCartItem = (sectionId, state) => ({
     cartUpdatedAt: Date.now(),
     cartSections: state.cartSections.filter(({ id }) => id !== sectionId),
     cartPushedToBackend: false,
+    schedules: Object.fromEntries(
+        Object.entries(state.schedules).map(([key, schedule]) => [
+            key,
+            {
+                ...schedule,
+                updated_at: Date.now(),
+                pushedToBackend: false,
+                sections: schedule.sections.filter((m) => m.id !== sectionId),
+            },
+        ])
+    ),
 });
 
 // Used for box coloring, from StackOverflow:
@@ -449,9 +461,7 @@ export const schedule = (state = initialState, action) => {
                             pushedToBackend: false,
                             breaks: state.schedules[
                                 state.scheduleSelected
-                            ].breaks.filter(
-                                (br) => br.break.name !== action.id
-                            ),
+                            ].breaks.filter((br) => br.name !== action.id),
                         },
                     },
                 };
@@ -461,7 +471,25 @@ export const schedule = (state = initialState, action) => {
             return {
                 ...state,
             };
-
+        case REMOVE_BREAK:
+            if (!state.readOnly) {
+                return {
+                    ...state,
+                    schedules: Object.fromEntries(
+                        Object.entries(state.schedules).map(([key, s]) => [
+                            key,
+                            {
+                                ...s,
+                                updated_at: Date.now(),
+                                pushedToBackend: false,
+                                breaks: s.breaks.filter(
+                                    (b) => b.id !== action.id
+                                ),
+                            },
+                        ])
+                    ),
+                };
+            }
         case TOGGLE_BREAK:
             if (!state.readOnly) {
                 const oldBreakSections =

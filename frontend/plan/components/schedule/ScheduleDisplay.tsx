@@ -307,16 +307,16 @@ const ScheduleDisplay = ({
 
     // Find the column index for the current day
     const days = [Weekdays.M, Weekdays.T, Weekdays.W, Weekdays.R, Weekdays.F, Weekends.S, Weekends.U];
-    const dayIndex = days.indexOf(currentDay);
+    const dayIndex = days.indexOf(currentDay as Weekdays);
 
     if (dayIndex === -1) return null;
 
     // Calculate grid position (grid uses 15-minute intervals, 4 rows per hour)
     // Instead of snapping to grid lines, calculate the exact position
     const timeFromStart = currentHour - startHour;
-    const rowsFromStart = timeFromStart * 4;
+    const rowsFromStart = timeFromStart * 4; // Total rows as a decimal
     const gridRowStart = Math.floor(rowsFromStart) + rowOffset + 1;
-    const topOffset = (rowsFromStart % 1) * 100;
+    const topOffset = (rowsFromStart % 1) * 100; // Percentage offset within the grid row
     const gridColumn = dayIndex + 1 + colOffset;
 
     return { gridRowStart, gridColumn, topOffset };
