@@ -490,6 +490,7 @@ export const schedule = (state = initialState, action) => {
                     ),
                 };
             }
+            return state;
         case TOGGLE_BREAK:
             if (!state.readOnly) {
                 const oldBreakSections =
@@ -526,7 +527,6 @@ export const schedule = (state = initialState, action) => {
             }
             showToast("Cannot remove breaks from a friend's schedule!", true);
             return { ...state };
-
         case ADD_CART_ITEM:
             return {
                 ...state,

@@ -27,7 +27,9 @@ class Migration(migrations.Migration):
             model_name="meeting",
             constraint=models.UniqueConstraint(
                 condition=models.Q(
-                    ("section__isnull", True), ("associated_break__isnull", True), _connector="OR"
+                    ("section__isnull", True),
+                    ("associated_break__isnull", True),
+                    _connector="OR",
                 ),
                 fields=("section", "associated_break"),
                 name="unique_meeting_either_section_or_break",
@@ -37,7 +39,9 @@ class Migration(migrations.Migration):
             model_name="meeting",
             constraint=models.UniqueConstraint(
                 condition=models.Q(
-                    ("section__isnull", True), ("associated_break__isnull", True), _negated=True
+                    ("section__isnull", True),
+                    ("associated_break__isnull", True),
+                    _negated=True,
                 ),
                 fields=("section", "associated_break"),
                 name="meeting_must_have_section_or_break",

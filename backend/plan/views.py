@@ -273,8 +273,7 @@ class PrimaryScheduleViewSet(viewsets.ModelViewSet):
                 res["message"] = "Primary schedule successfully unset"
             res["message"] = "Primary schedule was already unset"
         else:
-            schedule = Schedule.objects.filter(
-                person_id=user.id, id=schedule_id).first()
+            schedule = Schedule.objects.filter(person_id=user.id, id=schedule_id).first()
             if not schedule:
                 res["message"] = "Schedule does not exist"
                 return JsonResponse(res, status=status.HTTP_400_BAD_REQUEST)
@@ -522,8 +521,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             name,
             existing_schedule and existing_schedule.name,
         ] and not (
-            allow_path and isinstance(
-                request.successful_authenticator, PlatformAuthentication)
+            allow_path and isinstance(request.successful_authenticator, PlatformAuthentication)
         ):
             raise PermissionDenied(
                 "You cannot create/update/delete a schedule with the name "
@@ -549,8 +547,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             if from_path:
                 schedule, _ = self.get_queryset(semester).get_or_create(
                     name=PATH_REGISTRATION_SCHEDULE_NAME,
-                    defaults={"person": self.request.user,
-                              "semester": semester},
+                    defaults={"person": self.request.user, "semester": semester},
                 )
             else:
                 schedule = self.get_queryset(semester).get(id=pk)
@@ -560,12 +557,10 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 status=status.HTTP_403_FORBIDDEN,
             )
 
-        name = self.validate_name(
-            request, existing_schedule=schedule, allow_path=from_path)
+        name = self.validate_name(request, existing_schedule=schedule, allow_path=from_path)
 
         try:
-            sections = self.get_sections(
-                request.data, semester, skip_missing=from_path)
+            sections = self.get_sections(request.data, semester, skip_missing=from_path)
         except ObjectDoesNotExist:
             return Response(
                 {"detail": "One or more sections not found in database."},
@@ -650,8 +645,7 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     def get_queryset(self, semester=None):
         if not semester:
             semester = get_current_semester()
-        queryset = Schedule.objects.filter(
-            person=self.request.user, semester=semester)
+        queryset = Schedule.objects.filter(person=self.request.user, semester=semester)
         queryset = queryset.prefetch_related(
             Prefetch("sections", Section.with_reviews.all()),
             "sections__associated_sections",
@@ -682,15 +676,15 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         Get all breaks for the current user.
         """
         breaks = self.get_queryset()
-        serializer = BreakSerializer(
-            breaks, many=True, context=self.get_serializer_context())
+        serializer = BreakSerializer(breaks, many=True, context=self.get_serializer_context())
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def update(self, request, *args, **kwargs):
         break_id = kwargs["pk"]
         if not break_id:
             return Response(
-                {"detail": "Break id is required for update."}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Break id is required for update."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
@@ -699,13 +693,15 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             return Response({"detail": "Break not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response(
-                {"detail": "Error retrieving break: " + str(e)}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Error retrieving break: " + str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         name = request.data.get("name")
         if not name:
             return Response(
-                {"detail": "Break name is required."}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Break name is required."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
         location_string = request.data.get("location_string")
 
@@ -725,7 +721,8 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             set_meetings(current_break, meetings_with_codes)
         except Exception as e:
             return Response(
-                {"detail": "Error setting meetings: " + str(e)}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Error setting meetings: " + str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         checked = request.data.get("checked")
@@ -736,11 +733,13 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
         except Exception as e:
             return Response(
-                {"detail": "Error saving break: " + str(e)}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Error saving break: " + str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         return Response(
-            {"message": "success", "break_id": current_break.id}, status=status.HTTP_200_OK
+            {"message": "success", "break_id": current_break.id},
+            status=status.HTTP_200_OK,
         )
 
     def create(self, request, *args, **kwargs):
@@ -752,13 +751,15 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         if Break.objects.filter(person=request.user).count() >= 10:
             print(Break.objects.filter(person=request.user))
             return Response(
-                {"detail": "You can only have up to 10 breaks."}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "You can only have up to 10 breaks."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         name = request.data.get("name")
         if not name:
             return Response(
-                {"detail": "Break name is required."}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Break name is required."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
         location_string = request.data.get("location_string")
         try:
@@ -802,7 +803,8 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             set_meetings(new_break, meetings_with_codes)
         except Exception as e:
             return Response(
-                {"detail": "Error setting meetings: " + str(e)}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Error setting meetings: " + str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         return Response(
@@ -814,7 +816,8 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         break_id = kwargs["pk"]
         if not break_id:
             return Response(
-                {"detail": "Break id is required for delete."}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Break id is required for delete."},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
@@ -825,7 +828,8 @@ class BreakViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             return Response({"detail": "Break not found."}, status=status.HTTP_404_NOT_FOUND)
         except Exception as e:
             return Response(
-                {"detail": "Error deleting break: " + str(e)}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "Error deleting break: " + str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
     def get_queryset(self):
@@ -880,8 +884,7 @@ class CalendarAPIView(APIView):
         day_mapping = {"M": "MO", "T": "TU", "W": "WE", "R": "TH", "F": "FR"}
 
         calendar = ICSCal(creator="Penn Labs")
-        calendar.extra.append(ContentLine(
-            name="X-WR-CALNAME", value=f"{schedule.name} Schedule"))
+        calendar.extra.append(ContentLine(name="X-WR-CALNAME", value=f"{schedule.name} Schedule"))
 
         for section in schedule.sections.all():
             e = ICSEvent()
@@ -908,10 +911,8 @@ class CalendarAPIView(APIView):
                 start_datetime = ""
                 end_datetime = ""
             else:
-                start_datetime = get_first_matching_date(
-                    first_meeting.start_date, days) + " "
-                end_datetime = get_first_matching_date(
-                    first_meeting.start_date, days) + " "
+                start_datetime = get_first_matching_date(first_meeting.start_date, days) + " "
+                end_datetime = get_first_matching_date(first_meeting.start_date, days) + " "
 
             if int(first_meeting.start) < 10:
                 start_datetime += "0"
@@ -921,11 +922,9 @@ class CalendarAPIView(APIView):
             start_datetime += start_time
             end_datetime += end_time
 
-            e.begin = arrow.get(start_datetime, "YYYY-MM-DD h:mm A",
-                                tzinfo="America/New_York")
+            e.begin = arrow.get(start_datetime, "YYYY-MM-DD h:mm A", tzinfo="America/New_York")
 
-            e.end = arrow.get(end_datetime, "YYYY-MM-DD h:mm A",
-                              tzinfo="America/New York")
+            e.end = arrow.get(end_datetime, "YYYY-MM-DD h:mm A", tzinfo="America/New York")
 
             location = None
             if hasattr(first_meeting, "room") and first_meeting.room:
