@@ -266,21 +266,27 @@ export type AdvancedSearchBoolean = {
     value: boolean;
 }
 
+export type AdvancedSearchValue = {
+    type: "value";
+    field: string;
+    value: number;
+}
+
 export type AdvancedSearchGroup = {
     type: "group";
     op: "AND" | "OR";
     children: AdvancedSearchCondition[];
 }
 
-export type AdvancedSearchCondition = AdvancedSearchEnum | AdvancedSearchNumeric | AdvancedSearchBoolean;
+export type AdvancedSearchCondition = AdvancedSearchEnum | AdvancedSearchNumeric | AdvancedSearchBoolean | AdvancedSearchValue;
 
 export type AdvancedSearchData = {
     query: string;
     filters: {
-        type: "group";
         op: "AND" | "OR";
         children: (AdvancedSearchCondition | AdvancedSearchGroup)[];
-    };
+    }
+    
 }
 
 export interface FriendshipState {

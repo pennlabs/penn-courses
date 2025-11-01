@@ -530,51 +530,11 @@ class AdvancedSearchEnumSerializer(serializers.Serializer):
     )
 
 
-class AdvancedSearchDaySerializer(AdvancedSearchEnumSerializer):
-    field = serializers.ChoiceField(choices=["days"])
-    value = serializers.ListField(
-        child=serializers.ChoiceField(choices=["M", "T", "W", "R", "F", "S", "U"]),
-        allow_empty=True,
-    )
-
-
-class AdvancedSearchActivitySerializer(AdvancedSearchEnumSerializer):
-    field = serializers.ChoiceField(choices=["activity"])
-    value = serializers.ListField(
-        child=serializers.ChoiceField(
-            choices=[
-                "CLN",
-                "CRT",
-                "DAB",
-                "DIS",
-                "DPC",
-                "FLD",
-                "HYB",
-                "IND",
-                "LAB",
-                "LEC",
-                "MST",
-                "ONL",
-                "PRC",
-                "REC",
-                "SEM",
-                "SRT",
-                "STU",
-            ]
-        ),
-        allow_empty=True,
-    )
-
-
-class AdvancedSearchCreditSerializer(AdvancedSearchEnumSerializer):
-    field = serializers.ChoiceField(choices=["cu"])
-
-
 class AdvancedSearchNumericSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=["numeric"])
     field = serializers.CharField()
     op = serializers.ChoiceField(choices=["lt", "lte", "gt", "gte", "eq", "neq"])
-    value = serializers.FloatField()
+    value = serializers.DecimalField(max_digits=4, decimal_places=2)
 
 
 class AdvancedSearchStartTimeSerializer(AdvancedSearchNumericSerializer):
@@ -584,68 +544,31 @@ class AdvancedSearchStartTimeSerializer(AdvancedSearchNumericSerializer):
     )
 
 
-class AdvancedSearchEndTimeSerializer(AdvancedSearchNumericSerializer):
-    field = serializers.ChoiceField(choices=["end_time"])
-    value = serializers.DecimalField(
-        min_value=Decimal(0.0), max_value=Decimal(23.99), max_digits=4, decimal_places=2
-    )
-
-
-class AdvancedSearchDifficultySerializer(AdvancedSearchNumericSerializer):
-    field = serializers.ChoiceField(choices=["difficulty"])
-    value = serializers.DecimalField(
-        min_value=Decimal(0.0), max_value=Decimal(4.0), max_digits=2, decimal_places=1
-    )
-
-
-class AdvancedSearchCourseQualitySerializer(AdvancedSearchNumericSerializer):
-    field = serializers.ChoiceField(choices=["course_quality"])
-    value = serializers.DecimalField(
-        min_value=Decimal(0.0), max_value=Decimal(4.0), max_digits=2, decimal_places=1
-    )
-
-
-class AdvancedSearchInstructorQualitySerializer(AdvancedSearchNumericSerializer):
-    field = serializers.ChoiceField(choices=["instructor_quality"])
-    value = serializers.DecimalField(
-        min_value=Decimal(0.0), max_value=Decimal(4.0), max_digits=2, decimal_places=1
-    )
-
-
 class AdvancedSearchBooleanSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=["boolean"])
     field = serializers.CharField()
     value = serializers.BooleanField()
 
 
-class AdvancedSearchIsOpenSerializer(AdvancedSearchBooleanSerializer):
-    field = serializers.ChoiceField(choices=["is_open"])
-
-
-class AdvancedSearchValueSerializer:
+class AdvancedSearchValueSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=["value"])
     field = serializers.CharField()
     value = serializers.Field()
 
 
-class AdvancedSearchFitScheduleSerializer(AdvancedSearchValueSerializer):
-    field = serializers.ChoiceField(choices=["fit_schedule"])
-    value = serializers.IntegerField()
-
-
 class AdvancedSearchConditionSerializer(serializers.Serializer):
     def to_internal_value(self, data):
         field_map = {
-            "days": AdvancedSearchDaySerializer,
-            "activity": AdvancedSearchActivitySerializer,
-            "cu": AdvancedSearchCreditSerializer,
-            "start_time": AdvancedSearchStartTimeSerializer,
-            "end_time": AdvancedSearchEndTimeSerializer,
-            "difficulty": AdvancedSearchDifficultySerializer,
-            "course_quality": AdvancedSearchCourseQualitySerializer,
-            "instructor_quality": AdvancedSearchInstructorQualitySerializer,
-            "is_open": AdvancedSearchIsOpenSerializer,
-            "fit_schedule": AdvancedSearchFitScheduleSerializer,
+            "days": AdvancedSearchEnumSerializer,
+            "activity": AdvancedSearchEnumSerializer,
+            "cu": AdvancedSearchEnumSerializer,
+            "start_time": AdvancedSearchNumericSerializer,
+            "end_time": AdvancedSearchNumericSerializer,
+            "difficulty": AdvancedSearchNumericSerializer,
+            "course_quality": AdvancedSearchNumericSerializer,
+            "instructor_quality": AdvancedSearchNumericSerializer,
+            "is_open": AdvancedSearchBooleanSerializer,
+            "fit_schedule": AdvancedSearchValueSerializer,
         }
         serializer_class = field_map.get(data.get("field"))
         if serializer_class is None:
@@ -667,24 +590,13 @@ class AdvancedSearchGroupSerializer(serializers.Serializer):
 
 
 class AdvancedSearchDataSerializer(serializers.Serializer):
-    query = serializers.CharField(allow_blank=True)
-    filters = serializers.DictField()
+    op = serializers.ChoiceField(choices=["AND", "OR"])
+    children = serializers.ListField(
+        max_length=10,
+        allow_empty=True,
+    )
 
-    def validate_filters(self, filters):
-        if filters.get("type") != "group":
-            raise serializers.ValidationError("Top level filters must be a group object.")
-
-        op = filters.get("op")
-        if op not in ["AND", "OR"]:
-            raise serializers.ValidationError("filters.op must be 'AND' or 'OR'.")
-
-        children = filters.get("children", [])
-
-        if len(children) == 0:
-            raise serializers.ValidationError("filters.children must be a non-empty list.")
-        if len(children) > 10:
-            raise serializers.ValidationError("filters.children cannot have more than 10 items.")
-
+    def validate_children(self, children):
         validated_children = []
         for f in children:
             if f.get("type") == "group":
@@ -693,8 +605,4 @@ class AdvancedSearchDataSerializer(serializers.Serializer):
                 serializer = AdvancedSearchConditionSerializer(data=f)
             serializer.is_valid(raise_exception=True)
             validated_children.append(serializer.validated_data)
-        return {
-            "type": "group",
-            "op": op,
-            "children": validated_children,
-        }
+        return validated_children

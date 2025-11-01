@@ -256,36 +256,16 @@ class CourseListSearch(CourseList):
 
     def get(self, request, *args, **kwargs):
         queryset = super().get_queryset()
-
-        # Apply text-based search first
         queryset = TypedCourseSearchBackend().filter_queryset(request, queryset, self)
-
-        # Apply simple filters (query params)
         queryset = CourseSearchFilterBackend().filter_queryset(request, queryset, self)
-
-        # Handle pagination (preserve DRF behavior)
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)
 
     def post(self, request, *args, **kwargs):
         queryset = super().get_queryset()
-
-        # Apply text-based search
         queryset = TypedCourseSearchBackend().filter_queryset(request, queryset, self)
-
-        # Apply advanced structured filters
         queryset = CourseSearchAdvancedFilterBackend().filter_queryset(request, queryset, self)
-
-        # Apply pagination again for consistency
-        page = self.paginate_queryset(queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data)

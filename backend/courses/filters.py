@@ -719,42 +719,38 @@ class CourseSearchAdvancedFilterBackend(filters.BaseFilterBackend):
                 "description": "Advanced search parameters with query string and filters.",
                 "schema": AdvancedSearchDataSerializer().data,
                 "example": {
-                    "query": "machine learning",
-                    "filters": {
-                        "type": "group",
-                        "op": "AND",
-                        "children": [
-                            {
-                                "type": "enum",
-                                "field": "activity",
-                                "operator": "is_any_of",
-                                "value": ["LEC", "REC"],
-                            },
-                            {
-                                "type": "numeric",
-                                "field": "difficulty",
-                                "operator": "lte",
-                                "value": 3,
-                            },
-                            {
-                                "type": "group",
-                                "op": "OR",
-                                "children": [
-                                    {
-                                        "type": "boolean",
-                                        "field": "is_open",
-                                        "value": True,
-                                    },
-                                    {
-                                        "type": "enum",
-                                        "field": "credit_units",
-                                        "operator": "is",
-                                        "value": "1.0",
-                                    },
-                                ],
-                            },
-                        ],
-                    },
+                    "op": "AND",
+                    "children": [
+                        {
+                            "type": "enum",
+                            "field": "activity",
+                            "operator": "is_any_of",
+                            "value": ["LEC", "REC"],
+                        },
+                        {
+                            "type": "numeric",
+                            "field": "difficulty",
+                            "operator": "lte",
+                            "value": 3,
+                        },
+                        {
+                            "type": "group",
+                            "op": "OR",
+                            "children": [
+                                {
+                                    "type": "boolean",
+                                    "field": "is_open",
+                                    "value": True,
+                                },
+                                {
+                                    "type": "enum",
+                                    "field": "credit_units",
+                                    "operator": "is",
+                                    "value": "1.0",
+                                },
+                            ],
+                        },
+                    ],
                 },
             }
         ]

@@ -4,7 +4,6 @@ import { AdvancedSearchData } from "../types";
 export const initialState = {
     query: "",
     filters: {
-        type: "group",
         op: "AND",
         children: [],
     }
@@ -21,15 +20,6 @@ export const search = (state = initialState, action: any): AdvancedSearchData =>
             return {
                 ...state,
                 filters: action.filters,
-            }
-        case CLEAR_FILTER:
-            return {
-                ...state,
-                filters: {
-                    type: "group",
-                    op: "AND",
-                    children: [],
-                }
             }
         case CLEAR_ALL:
             return initialState;
