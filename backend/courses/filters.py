@@ -589,6 +589,7 @@ def _numeric(field):
                 return q | ~Q(**{field: value})
             case _:
                 return q | Q(**{f"{field}__{op}": value})
+
         return Q()
 
     return filter_numeric
@@ -697,17 +698,12 @@ class CourseSearchAdvancedFilterBackend(filters.BaseFilterBackend):
         return q, meeting_q
 
     def filter_queryset(self, request, queryset, view):
-        filters = request.data.get("filters")
-        if not filters:
-            return queryset
-        q, meeting_q = self._apply_filters(request, queryset, filters)
+        q, meeting_q = self._apply_filters(request, queryset, request.data)
         queryset = queryset.filter(q)
         # Separate meeting filter for optimization
-        queryset = queryset.filter(
-            id__in=course_ids_by_section_query(
-                Q(num_meetings=0) | Q(id__in=section_ids_by_meeting_query(meeting_q))
-            )
-        )
+        if len(meeting_q) > 0:
+            queryset = meeting_filter(queryset, meeting_q)
+
         return queryset.distinct("full_code")
 
     def get_schema_operation_parameters(self, view):
@@ -724,13 +720,13 @@ class CourseSearchAdvancedFilterBackend(filters.BaseFilterBackend):
                         {
                             "type": "enum",
                             "field": "activity",
-                            "operator": "is_any_of",
+                            "op": "is_any_of",
                             "value": ["LEC", "REC"],
                         },
                         {
                             "type": "numeric",
                             "field": "difficulty",
-                            "operator": "lte",
+                            "op": "lte",
                             "value": 3,
                         },
                         {
@@ -745,7 +741,7 @@ class CourseSearchAdvancedFilterBackend(filters.BaseFilterBackend):
                                 {
                                     "type": "enum",
                                     "field": "credit_units",
-                                    "operator": "is",
+                                    "op": "is",
                                     "value": "1.0",
                                 },
                             ],

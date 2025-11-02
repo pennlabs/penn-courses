@@ -45,18 +45,15 @@ class CuFilterTestCase(TestCase):
             reverse("courses-search", args=[TEST_SEMESTER]),
             data=json.dumps(
                 {
-                    "filters": {
-                        "type": "group",
-                        "op": "AND",
-                        "children": [
-                            {
-                                "type": "enum",
-                                "field": "cu",
-                                "op": "is",
-                                "value": ["1.0"],
-                            }
-                        ],
-                    }
+                    "op": "AND",
+                    "children": [
+                        {
+                            "type": "enum",
+                            "field": "cu",
+                            "op": "is",
+                            "value": ["1.0"],
+                        }
+                    ],
                 }
             ),
             content_type="application/json",
@@ -69,18 +66,15 @@ class CuFilterTestCase(TestCase):
             reverse("courses-search", args=[TEST_SEMESTER]),
             data=json.dumps(
                 {
-                    "filters": {
-                        "type": "group",
-                        "op": "AND",
-                        "children": [
-                            {
-                                "type": "enum",
-                                "op": "is_any_of",
-                                "field": "cu",
-                                "value": ["0.5", "1.0"],
-                            }
-                        ],
-                    }
+                    "op": "AND",
+                    "children": [
+                        {
+                            "type": "enum",
+                            "op": "is_any_of",
+                            "field": "cu",
+                            "value": ["0.5", "1.0"],
+                        }
+                    ],
                 }
             ),
             content_type="application/json",
@@ -93,18 +87,15 @@ class CuFilterTestCase(TestCase):
             reverse("courses-search", args=[TEST_SEMESTER]),
             data=json.dumps(
                 {
-                    "filters": {
-                        "type": "group",
-                        "op": "AND",
-                        "children": [
-                            {
-                                "type": "enum",
-                                "op": "is_none_of",
-                                "field": "cu",
-                                "value": ["0.0", "1.0"],
-                            }
-                        ],
-                    }
+                    "op": "AND",
+                    "children": [
+                        {
+                            "type": "enum",
+                            "op": "is_none_of",
+                            "field": "cu",
+                            "value": ["0.0", "1.0"],
+                        }
+                    ],
                 }
             ),
             content_type="application/json",
@@ -159,18 +150,15 @@ class NumericFilterTestCase(TestCase):
             reverse("courses-search", args=[TEST_SEMESTER]),
             data=json.dumps(
                 {
-                    "filters": {
-                        "type": "group",
-                        "op": "AND",
-                        "children": [
-                            {
-                                "type": "numeric",
-                                "op": "lt",
-                                "field": "difficulty",
-                                "value": 2.0,
-                            }
-                        ],
-                    }
+                    "op": "AND",
+                    "children": [
+                        {
+                            "type": "numeric",
+                            "op": "lt",
+                            "field": "difficulty",
+                            "value": 2.0,
+                        }
+                    ],
                 }
             ),
             content_type="application/json",
@@ -183,18 +171,15 @@ class NumericFilterTestCase(TestCase):
             reverse("courses-search", args=[TEST_SEMESTER]),
             data=json.dumps(
                 {
-                    "filters": {
-                        "type": "group",
-                        "op": "AND",
-                        "children": [
-                            {
-                                "type": "numeric",
-                                "op": "gte",
-                                "field": "course_quality",
-                                "value": 2.0,
-                            }
-                        ],
-                    }
+                    "op": "AND",
+                    "children": [
+                        {
+                            "type": "numeric",
+                            "op": "gte",
+                            "field": "course_quality",
+                            "value": 2.0,
+                        }
+                    ],
                 }
             ),
             content_type="application/json",
@@ -207,24 +192,21 @@ class NumericFilterTestCase(TestCase):
             reverse("courses-search", args=[TEST_SEMESTER]),
             data=json.dumps(
                 {
-                    "filters": {
-                        "type": "group",
-                        "op": "AND",
-                        "children": [
-                            {
-                                "type": "numeric",
-                                "op": "gt",
-                                "field": "course_quality",
-                                "value": 1.0,
-                            },
-                            {
-                                "type": "numeric",
-                                "op": "lt",
-                                "field": "course_quality",
-                                "value": 2.1,
-                            },
-                        ],
-                    }
+                    "op": "AND",
+                    "children": [
+                        {
+                            "type": "numeric",
+                            "op": "gt",
+                            "field": "course_quality",
+                            "value": 1.0,
+                        },
+                        {
+                            "type": "numeric",
+                            "op": "lt",
+                            "field": "course_quality",
+                            "value": 2.1,
+                        },
+                    ],
                 }
             ),
             content_type="application/json",
@@ -237,24 +219,21 @@ class NumericFilterTestCase(TestCase):
             reverse("courses-search", args=[TEST_SEMESTER]),
             data=json.dumps(
                 {
-                    "filters": {
-                        "type": "group",
-                        "op": "OR",
-                        "children": [
-                            {
-                                "type": "numeric",
-                                "op": "gt",
-                                "field": "course_quality",
-                                "value": 3.0,
-                            },
-                            {
-                                "type": "numeric",
-                                "op": "lt",
-                                "field": "difficulty",
-                                "value": 3.0,
-                            },
-                        ],
-                    }
+                    "op": "OR",
+                    "children": [
+                        {
+                            "type": "numeric",
+                            "op": "gt",
+                            "field": "course_quality",
+                            "value": 3.0,
+                        },
+                        {
+                            "type": "numeric",
+                            "op": "lt",
+                            "field": "difficulty",
+                            "value": 3.0,
+                        },
+                    ],
                 }
             ),
             content_type="application/json",
@@ -326,18 +305,15 @@ class DayFilterTestCase(TestCase):
             reverse("courses-search", args=[TEST_SEMESTER]),
             data=json.dumps(
                 {
-                    "filters": {
-                        "type": "group",
-                        "op": "AND",
-                        "children": [
-                            {
-                                "type": "enum",
-                                "field": "days",
-                                "op": "is_any_of",
-                                "value": [],
-                            }
-                        ],
-                    }
+                    "op": "AND",
+                    "children": [
+                        {
+                            "type": "enum",
+                            "field": "days",
+                            "op": "is_any_of",
+                            "value": [],
+                        }
+                    ],
                 }
             ),
             content_type="application/json",
@@ -351,18 +327,15 @@ class DayFilterTestCase(TestCase):
             reverse("courses-search", args=[TEST_SEMESTER]),
             data=json.dumps(
                 {
-                    "filters": {
-                        "type": "group",
-                        "op": "AND",
-                        "children": [
-                            {
-                                "type": "enum",
-                                "field": "days",
-                                "op": "is_any_of",
-                                "value": ["M", "T", "W", "R", "F", "S", "U"],
-                            }
-                        ],
-                    }
+                    "op": "AND",
+                    "children": [
+                        {
+                            "type": "enum",
+                            "field": "days",
+                            "op": "is_any_of",
+                            "value": ["M", "T", "W", "R", "F", "S", "U"],
+                        }
+                    ],
                 }
             ),
             content_type="application/json",
@@ -376,18 +349,15 @@ class DayFilterTestCase(TestCase):
             reverse("courses-search", args=[TEST_SEMESTER]),
             data=json.dumps(
                 {
-                    "filters": {
-                        "type": "group",
-                        "op": "AND",
-                        "children": [
-                            {
-                                "type": "enum",
-                                "field": "days",
-                                "op": "is_any_of",
-                                "value": ["T", "R", "X", 2],
-                            }
-                        ],
-                    }
+                    "op": "AND",
+                    "children": [
+                        {
+                            "type": "enum",
+                            "field": "days",
+                            "op": "is_any_of",
+                            "value": ["T", "R", "X", 2],
+                        }
+                    ],
                 }
             ),
             content_type="application/json",
@@ -401,18 +371,15 @@ class DayFilterTestCase(TestCase):
             reverse("courses-search", args=[TEST_SEMESTER]),
             data=json.dumps(
                 {
-                    "filters": {
-                        "type": "group",
-                        "op": "AND",
-                        "children": [
-                            {
-                                "type": "enum",
-                                "field": "days",
-                                "op": "is_any_of",
-                                "value": ["T", "R"],
-                            }
-                        ],
-                    }
+                    "op": "AND",
+                    "children": [
+                        {
+                            "type": "enum",
+                            "field": "days",
+                            "op": "is_any_of",
+                            "value": ["T", "R"],
+                        }
+                    ],
                 }
             ),
             content_type="application/json",
@@ -426,18 +393,15 @@ class DayFilterTestCase(TestCase):
             reverse("courses-search", args=[TEST_SEMESTER]),
             data=json.dumps(
                 {
-                    "filters": {
-                        "type": "group",
-                        "op": "AND",
-                        "children": [
-                            {
-                                "type": "enum",
-                                "field": "days",
-                                "op": "is_any_of",
-                                "value": ["M", "W"],
-                            }
-                        ],
-                    }
+                    "op": "AND",
+                    "children": [
+                        {
+                            "type": "enum",
+                            "field": "days",
+                            "op": "is_any_of",
+                            "value": ["M", "W"],
+                        }
+                    ],
                 }
             ),
             content_type="application/json",
@@ -451,18 +415,15 @@ class DayFilterTestCase(TestCase):
             reverse("courses-search", args=[TEST_SEMESTER]),
             data=json.dumps(
                 {
-                    "filters": {
-                        "type": "group",
-                        "op": "AND",
-                        "children": [
-                            {
-                                "type": "enum",
-                                "field": "days",
-                                "op": "is_any_of",
-                                "value": ["T", "W", "R"],
-                            }
-                        ],
-                    }
+                    "op": "AND",
+                    "children": [
+                        {
+                            "type": "enum",
+                            "field": "days",
+                            "op": "is_any_of",
+                            "value": ["T", "W", "R"],
+                        }
+                    ],
                 }
             ),
             content_type="application/json",
@@ -476,18 +437,15 @@ class DayFilterTestCase(TestCase):
             reverse("courses-search", args=[TEST_SEMESTER]),
             data=json.dumps(
                 {
-                    "filters": {
-                        "type": "group",
-                        "op": "AND",
-                        "children": [
-                            {
-                                "type": "enum",
-                                "field": "days",
-                                "op": "is",
-                                "value": ["T"],
-                            }
-                        ],
-                    }
+                    "op": "AND",
+                    "children": [
+                        {
+                            "type": "enum",
+                            "field": "days",
+                            "op": "is",
+                            "value": ["T"],
+                        }
+                    ],
                 }
             ),
             content_type="application/json",
@@ -501,18 +459,15 @@ class DayFilterTestCase(TestCase):
             reverse("courses-search", args=[TEST_SEMESTER]),
             data=json.dumps(
                 {
-                    "filters": {
-                        "type": "group",
-                        "op": "AND",
-                        "children": [
-                            {
-                                "type": "enum",
-                                "field": "days",
-                                "op": "is",
-                                "value": ["W"],
-                            }
-                        ],
-                    }
+                    "op": "AND",
+                    "children": [
+                        {
+                            "type": "enum",
+                            "field": "days",
+                            "op": "is",
+                            "value": ["W"],
+                        }
+                    ],
                 }
             ),
             content_type="application/json",
@@ -526,18 +481,15 @@ class DayFilterTestCase(TestCase):
             reverse("courses-search", args=[TEST_SEMESTER]),
             data=json.dumps(
                 {
-                    "filters": {
-                        "type": "group",
-                        "op": "AND",
-                        "children": [
-                            {
-                                "type": "enum",
-                                "field": "days",
-                                "op": "is_any_of",
-                                "value": ["M", "W"],
-                            }
-                        ],
-                    }
+                    "op": "AND",
+                    "children": [
+                        {
+                            "type": "enum",
+                            "field": "days",
+                            "op": "is_any_of",
+                            "value": ["M", "W"],
+                        }
+                    ],
                 }
             ),
             content_type="application/json",
@@ -551,18 +503,15 @@ class DayFilterTestCase(TestCase):
             reverse("courses-search", args=[TEST_SEMESTER]),
             data=json.dumps(
                 {
-                    "filters": {
-                        "type": "group",
-                        "op": "AND",
-                        "children": [
-                            {
-                                "type": "enum",
-                                "field": "days",
-                                "op": "is_any_of",
-                                "value": ["M", "T", "W", "R"],
-                            }
-                        ],
-                    }
+                    "op": "AND",
+                    "children": [
+                        {
+                            "type": "enum",
+                            "field": "days",
+                            "op": "is_any_of",
+                            "value": ["M", "T", "W", "R"],
+                        }
+                    ],
                 }
             ),
             content_type="application/json",
@@ -579,18 +528,15 @@ class DayFilterTestCase(TestCase):
             reverse("courses-search", args=[TEST_SEMESTER]),
             data=json.dumps(
                 {
-                    "filters": {
-                        "type": "group",
-                        "op": "AND",
-                        "children": [
-                            {
-                                "type": "enum",
-                                "field": "days",
-                                "op": "is_none_of",
-                                "value": ["M", "W", "F"],
-                            }
-                        ],
-                    }
+                    "op": "AND",
+                    "children": [
+                        {
+                            "type": "enum",
+                            "field": "days",
+                            "op": "is_none_of",
+                            "value": ["M", "W", "F"],
+                        }
+                    ],
                 }
             ),
             content_type="application/json",
@@ -638,17 +584,14 @@ class IsOpenFilterTestCase(TestCase):
             reverse("courses-search", args=[TEST_SEMESTER]),
             data=json.dumps(
                 {
-                    "filters": {
-                        "type": "group",
-                        "op": "AND",
-                        "children": [
-                            {
-                                "type": "boolean",
-                                "field": "is_open",
-                                "value": True,
-                            }
-                        ],
-                    }
+                    "op": "AND",
+                    "children": [
+                        {
+                            "type": "boolean",
+                            "field": "is_open",
+                            "value": True,
+                        }
+                    ],
                 }
             ),
             content_type="application/json",
@@ -787,11 +730,8 @@ class TimeFilterTestCase(TestCase):
             reverse("courses-search", args=[TEST_SEMESTER]),
             data=json.dumps(
                 {
-                    "filters": {
-                        "type": "group",
-                        "op": "AND",
-                        "children": children,
-                    }
+                    "op": "AND",
+                    "children": children,
                 }
             ),
             content_type="application/json",
@@ -984,17 +924,14 @@ class ScheduleFilterTestCase(TestCase):
             reverse("courses-search", args=[TEST_SEMESTER]),
             data=json.dumps(
                 {
-                    "filters": {
-                        "type": "group",
-                        "op": "AND",
-                        "children": [
-                            {
-                                "type": "value",
-                                "field": "fit_schedule",
-                                "value": str(schedule_id),
-                            }
-                        ],
-                    }
+                    "op": "AND",
+                    "children": [
+                        {
+                            "type": "value",
+                            "field": "fit_schedule",
+                            "value": str(schedule_id),
+                        }
+                    ],
                 }
             ),
             content_type="application/json",
