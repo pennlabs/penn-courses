@@ -9,7 +9,7 @@ import { CourseXButton } from "../Course/Course";
 import { deleteFetcher, useSWRCrud } from "@/hooks/swrcrud";
 import { mutate } from "swr";
 import { useContext } from "react";
-import { ExpandedCoursesPanelContext } from "../FourYearPlan/ExpandedCoursesPanel";
+import { ExpandedCoursesPanelContext } from "@/components/ExpandedBox/ExpandedCoursesPanelTrigger";
 
 interface CourseInReqProps {
     course: DnDCourse;
@@ -25,7 +25,7 @@ interface CourseInReqProps {
 
 const CourseInReq = ({ course, isUsed, isDisabled, rule_id, fulfillment, activeDegreePlanId, isOpenEnded } : CourseInReqProps) => {
 
-    const { courses, set_courses } = useContext(ExpandedCoursesPanelContext);
+    const { courses, setCourses } = useContext(ExpandedCoursesPanelContext);
 
     const { remove: removeFulfillment, createOrUpdate: updateFulfillment } = useSWRCrud<Fulfillment>(
         `/api/degree/degreeplans/${activeDegreePlanId}/fulfillments`,
@@ -40,7 +40,7 @@ const CourseInReq = ({ course, isUsed, isDisabled, rule_id, fulfillment, activeD
         // If removing course from open-ended, add to list of unselected courses.
         if (fulfillment && isOpenEnded) {
           if (courses)
-            set_courses([...courses, fulfillment]);
+            setCourses([...courses, fulfillment]);
           
           course.unselected_rules?.push(rule_id);
         }

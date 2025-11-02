@@ -1,10 +1,7 @@
 import React, { useState, useEffect, useRef, MutableRefObject } from "react";
 import ReqPanel from "./Requirements/ReqPanel";
 import PlanPanel from "./FourYearPlan/PlanPanel";
-import {
-  SearchPanel,
-  SearchPanelContext,
-} from "./Search/SearchPanel";
+import { SearchPanel, SearchPanelContext } from "./Search/SearchPanel";
 import styled from "@emotion/styled";
 import useSWR from "swr";
 import { Course, DegreePlan, Fulfillment, Options, Rule } from "@/types";
@@ -14,11 +11,11 @@ import DegreeModal, { ModalKey } from "@/components/FourYearPlan/DegreeModal";
 import SplitPane, { Pane } from "react-split-pane";
 import Dock from "@/components/Dock/Dock";
 import useWindowDimensions from "@/hooks/window";
-import OnboardingPage from "./FourYearPlan/OnboardingPage";
+import OnboardingPage from "../pages/OnboardingPage";
 import Footer from "./Footer";
 
-import ExpandedCoursesPanel from "./FourYearPlan/ExpandedCoursesPanel";
-import { ExpandedCoursesPanelContext } from "./FourYearPlan/ExpandedCoursesPanel";
+import ExpandedCoursesPanel from "@/components/ExpandedBox/ExpandedCoursesPanel";
+import { ExpandedCoursesPanelContext } from "@/components/ExpandedBox/ExpandedCoursesPanelTrigger";
 
 const PageContainer = styled.div`
   height: 100vh;
@@ -45,29 +42,31 @@ const PanelWrapper = styled(Pane)`
   display: flex;
   flex-direction: row;
   gap: 1rem;
-`
+`;
 
-const PanelInteriorWrapper = styled.div<{ $maxWidth?: string; $minWidth?: string }>`
+const PanelInteriorWrapper = styled.div<{
+  $maxWidth?: string;
+  $minWidth?: string;
+}>`
   border-radius: 10px;
   box-shadow: 0px 0px 5px 1px #00000026;
   overflow: hidden; /* Hide scrollbars */
-  width: ${(props) => (props.$maxWidth || "100%")};
+  width: ${(props) => props.$maxWidth || "100%"};
   max-width: ${(props) => (props.$maxWidth ? props.$maxWidth : "auto")};
   min-width: ${(props) => (props.$minWidth ? props.$minWidth : "auto")};
   position: relative;
   height: 100%;
 `;
 
-
-const FourYearPlanPage = ({
-  updateUser,
-  user
-}: any) => {
+const FourYearPlanPage = ({ updateUser, user }: any) => {
   // edit modals for degree and degree plan
   const [modalKey, setModalKey] = useState<ModalKey>(null);
   const [modalObject, setModalObject] = useState<DegreePlan | null>(null); // stores the which degreeplan is being updated using the modal
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
-  const [activeDegreeplan, setActiveDegreeplan] = React.useState<DegreePlan | null>(null);
+  const [
+    activeDegreeplan,
+    setActiveDegreeplan,
+  ] = React.useState<DegreePlan | null>(null);
 
   const { data: degreeplans, isLoading: isLoadingDegreeplans } = useSWR<
     DegreePlan[]
@@ -81,7 +80,8 @@ const FourYearPlanPage = ({
     if (!degreeplans?.length) {
       setActiveDegreeplan(null);
     } else if (
-      !activeDegreeplan || !degreeplans.find((d) => d.id === activeDegreeplan.id)
+      !activeDegreeplan ||
+      !degreeplans.find((d) => d.id === activeDegreeplan.id)
     ) {
       const mostRecentUpdated = degreeplans.reduce((a, b) =>
         a.updated_at > b.updated_at ? a : b
@@ -112,23 +112,28 @@ const FourYearPlanPage = ({
     right?: number;
     bottom?: number;
   }>({ top: 0, left: 0 });
-  const [expandedCoursesPanelCourses, setExpandedCoursesPanelCourses] = useState<
-    Fulfillment[] | null | undefined
-  >(null);
+  const [
+    expandedCoursesPanelCourses,
+    setExpandedCoursesPanelCourses,
+  ] = useState<Fulfillment[] | null | undefined>(null);
 
-  const [retract, setRetract] = useState<(() => void)>(() => () => console.log('this is a placeholder'));
+  const [retract, setRetract] = useState<() => void>(() => () =>
+    console.log("this is a placeholder")
+  );
   const [open, setOpen] = useState<boolean>(false);
   const [ruleId, setRuleId] = useState<number | null>(null);
-  const [searchRef, setSearchRef] = useState<MutableRefObject<any> | null>(null);
+  const [searchRef, setSearchRef] = useState<MutableRefObject<any> | null>(
+    null
+  );
 
   // search panel
   const [searchPanelOpen, setSearchPanelOpen] = useState<boolean>(false);
   const [searchRuleId, setSearchRuleId] = useState<Rule["id"] | null>(null);
   const [searchRuleQuery, setSearchRuleQuery] = useState<string | null>(null); // a query object
-  const [searchFulfillments, setSearchFulfillments] = useState<Fulfillment[]>([]); // fulfillments matching the ruleId
+  const [searchFulfillments, setSearchFulfillments] = useState<Fulfillment[]>(
+    []
+  ); // fulfillments matching the ruleId
 
-
-  
   return (
     <>
       <SearchPanelContext.Provider
@@ -140,7 +145,7 @@ const FourYearPlanPage = ({
           setSearchRuleQuery,
           searchRuleQuery,
           setSearchFulfillments,
-          searchFulfillments
+          searchFulfillments,
         }}
       >
         <ReviewPanelContext.Provider
@@ -154,18 +159,18 @@ const FourYearPlanPage = ({
           <ExpandedCoursesPanelContext.Provider
             value={{
               courses: expandedCoursesPanelCourses,
-              set_courses: setExpandedCoursesPanelCourses,
+              setCourses: setExpandedCoursesPanelCourses,
               position: expandedCoursesPanelCoords,
               setPosition: setExpandedCoursesPanelCoords,
-              retract: retract, 
+              retract: retract,
               set_retract: setRetract,
               open: open,
-              set_open: setOpen,
-              rule_id: ruleId,
-              set_rule_id: setRuleId,
-              search_ref: searchRef,
-              set_search_ref: setSearchRef,
-              degree_plan_id: activeDegreeplan?.id
+              setOpen: setOpen,
+              ruleId: ruleId,
+              setRuleId: setRuleId,
+              searchRef: searchRef,
+              setSearchRef: setSearchRef,
+              degreePlanId: activeDegreeplan?.id,
             }}
           >
             {reviewPanelFullCode && (
@@ -181,18 +186,18 @@ const FourYearPlanPage = ({
               <ExpandedCoursesPanel
                 currentSemester={options?.SEMESTER}
                 courses={expandedCoursesPanelCourses}
-                set_courses={setExpandedCoursesPanelCourses}
+                setCourses={setExpandedCoursesPanelCourses}
                 position={expandedCoursesPanelCoords}
                 setPosition={setExpandedCoursesPanelCoords}
                 retract={retract}
                 set_retract={setRetract}
                 open={open}
-                set_open={setOpen}
-                rule_id={ruleId}
-                set_rule_id={setRuleId}
-                search_ref={searchRef}
-                set_search_ref={setSearchRef}
-                degree_plan_id={activeDegreeplan?.id}
+                setOpen={setOpen}
+                ruleId={ruleId}
+                setRuleId={setRuleId}
+                searchRef={searchRef}
+                setSearchRef={setSearchRef}
+                degreePlanId={activeDegreeplan?.id}
               />
             )}
             {modalKey && (
@@ -217,14 +222,16 @@ const FourYearPlanPage = ({
                 // @ts-ignore */}
                     <SplitPane
                       split="vertical"
-                      maxSize={searchPanelOpen ?
-                        (windowWidth ? windowWidth : 1000) * 0.5
-                        : (windowWidth ? windowWidth : 1000) * 0.66}
+                      maxSize={
+                        searchPanelOpen
+                          ? (windowWidth ? windowWidth : 1000) * 0.5
+                          : (windowWidth ? windowWidth : 1000) * 0.66
+                      }
                       minSize={(windowWidth ? windowWidth : 400) * 0.33}
                       defaultSize="50%"
                       style={{
                         padding: "1.5rem",
-                        paddingBottom: "1rem" // less padding on bottom for penn labs footer
+                        paddingBottom: "1rem", // less padding on bottom for penn labs footer
                       }}
                     >
                       {/*
@@ -258,8 +265,15 @@ const FourYearPlanPage = ({
                           />
                         </PanelInteriorWrapper>
                         {searchPanelOpen && (
-                          <PanelInteriorWrapper $minWidth={"48%"} $maxWidth={"48%"}>
-                            <SearchPanel activeDegreeplanId={activeDegreeplan ? activeDegreeplan.id : null} />
+                          <PanelInteriorWrapper
+                            $minWidth={"48%"}
+                            $maxWidth={"48%"}
+                          >
+                            <SearchPanel
+                              activeDegreeplanId={
+                                activeDegreeplan ? activeDegreeplan.id : null
+                              }
+                            />
                           </PanelInteriorWrapper>
                         )}
                       </PanelWrapper>
@@ -268,7 +282,14 @@ const FourYearPlanPage = ({
                 )}
               </BodyContainer>
               <Footer />
-              <Dock user={user} login={updateUser} logout={() => updateUser(null)} activeDegreeplanId={activeDegreeplan ? activeDegreeplan.id : null} />
+              <Dock
+                user={user}
+                login={updateUser}
+                logout={() => updateUser(null)}
+                activeDegreeplanId={
+                  activeDegreeplan ? activeDegreeplan.id : null
+                }
+              />
             </PageContainer>
           </ExpandedCoursesPanelContext.Provider>
         </ReviewPanelContext.Provider>

@@ -11,7 +11,7 @@ import { deleteFetcher, postFetcher, useSWRCrud } from "@/hooks/swrcrud";
 import useSWR, { useSWRConfig } from "swr";
 import ModalContainer from "../common/ModalContainer";
 import Select from "react-select";
-import { schoolOptions } from "./OnboardingPage";
+import { schoolOptions } from "@/components/OnboardingPanels/SharedComponents";
 
 export type ModalKey =
   | "plan-create"
@@ -43,7 +43,8 @@ const getModalTitle = (modalState: ModalKey) => {
   }
 };
 
-const DELETE_CONFIRMATION_MESSAGE = (subject: string) => `Are you sure you want to remove this ${subject}? All of your planning for this ${subject} will be lost.`
+const DELETE_CONFIRMATION_MESSAGE = (subject: string) =>
+  `Are you sure you want to remove this ${subject}? All of your planning for this ${subject} will be lost.`;
 
 const ModalInteriorWrapper = styled.div<{ $row?: boolean }>`
   display: flex;
@@ -256,10 +257,12 @@ const ModalInterior = ({
           />
           <ModalButton
             onClick={() => {
-              if (modalObject &&
+              if (
+                modalObject &&
                 "id" in modalObject &&
                 "name" in modalObject &&
-                "degrees" in modalObject) {
+                "degrees" in modalObject
+              ) {
                 updateDegreeplan({ name }, modalObject.id);
                 if (modalObject.id == activeDegreePlan?.id) {
                   let newNameDegPlan = modalObject;
@@ -348,9 +351,7 @@ const ModalInterior = ({
       return (
         <ModalInteriorWrapper>
           <ModalTextWrapper>
-            <ModalText>
-              {DELETE_CONFIRMATION_MESSAGE("degree")}
-            </ModalText>
+            <ModalText>{DELETE_CONFIRMATION_MESSAGE("degree")}</ModalText>
           </ModalTextWrapper>
           <ModalButton
             onClick={() => {
@@ -369,9 +370,7 @@ const ModalInterior = ({
       return (
         <ModalInteriorWrapper>
           <ModalTextWrapper>
-            <ModalText>
-              {DELETE_CONFIRMATION_MESSAGE("semester")}
-            </ModalText>
+            <ModalText>{DELETE_CONFIRMATION_MESSAGE("semester")}</ModalText>
           </ModalTextWrapper>
           <ModalButton
             onClick={() => {

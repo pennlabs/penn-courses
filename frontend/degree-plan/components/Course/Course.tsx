@@ -9,7 +9,8 @@ import "react-loading-skeleton/dist/skeleton.css";
 import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
 import { Tooltip } from "react-tooltip";
 
-const DOUBLE_COUNT_ERROR_MESSAGE = "This course is being illegally double counted in your plan!";
+const DOUBLE_COUNT_ERROR_MESSAGE =
+  "This course is being illegally double counted in your plan!";
 const COURSE_BORDER_RADIUS = "9px";
 
 export const BaseCourseContainer = styled.div<{
@@ -177,7 +178,7 @@ const CourseComponent = ({
             className={className}
           >
             {!fulfillment?.legal && (
-              <div style={{"paddingRight": "5px"}}>
+              <div style={{ paddingRight: "5px" }}>
                 <a
                   data-tooltip-id={fulfillment.full_code + courseType}
                   data-tooltip-content={DOUBLE_COUNT_ERROR_MESSAGE}
@@ -206,7 +207,7 @@ const CourseComponent = ({
         </ReviewPanelTrigger>
       </Draggable>
     );
-  } 
+  }
   return (
     <Draggable isDragging={isDragging} onClick={onClick}>
       <ReviewPanelTrigger full_code={course.full_code} triggerType="click">
@@ -217,9 +218,7 @@ const CourseComponent = ({
           ref={dragRef}
           className={className}
         >
-          <CourseBadge>
-            {course.full_code.replace("-", " ")}
-          </CourseBadge>
+          <CourseBadge>{course.full_code.replace("-", " ")}</CourseBadge>
           {isUsed && (
             <CourseXButton
               onClick={(e) => {
@@ -232,7 +231,7 @@ const CourseComponent = ({
         </PlannedCourseContainer>
       </ReviewPanelTrigger>
     </Draggable>
-  )
-}
+  );
+};
 
 export default CourseComponent;

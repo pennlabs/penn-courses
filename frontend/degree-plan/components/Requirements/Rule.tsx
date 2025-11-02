@@ -1,6 +1,6 @@
 import React, { useContext, useState } from "react";
 import RuleLeaf, { SkeletonRuleLeaf } from "./QObject";
-import { Course, DnDCourse, Fulfillment, Rule } from "@/types";
+import { DnDCourse, Fulfillment } from "@/types";
 import styled from "@emotion/styled";
 import { Icon } from "../common/bulma_derived_components";
 import { useSWRCrud } from "@/hooks/swrcrud";
@@ -8,9 +8,8 @@ import { useDrop } from "react-dnd";
 import { ItemTypes } from "../Dock/dnd/constants";
 import { DarkBlueBackgroundSkeleton } from "../FourYearPlan/PanelCommon";
 import { DegreeYear, RuleTree } from "./ReqPanel";
-import assert from "assert";
 import SatisfiedCheck from "../FourYearPlan/SatisfiedCheck";
-import { ExpandedCoursesPanelContext } from "../FourYearPlan/ExpandedCoursesPanel";
+import { ExpandedCoursesPanelContext } from "@/components/ExpandedBox/ExpandedCoursesPanelTrigger";
 
 const RuleTitleWrapper = styled.div`
   background-color: var(--primary-color);
@@ -153,7 +152,7 @@ export const SkeletonRule: React.FC<React.PropsWithChildren> = ({
  * Recursive component to represent a rule.
  */
 const RuleComponent = (ruleTree: RuleTree) => {
-  const { set_courses, courses } = useContext(ExpandedCoursesPanelContext);
+  const { setCourses, courses } = useContext(ExpandedCoursesPanelContext);
   const { type, activeDegreePlanId, rule, progress } = ruleTree;
   const satisfied = progress === 1;
 
@@ -273,7 +272,7 @@ const RuleComponent = (ruleTree: RuleTree) => {
             }
           });
 
-          set_courses(new_courses);
+          setCourses(new_courses);
         } else {
           createOrUpdate(
             {
@@ -340,7 +339,7 @@ const RuleComponent = (ruleTree: RuleTree) => {
   if (type === "LEAF") {
     const { fulfillments, unselectedFulfillments, cus, num } = ruleTree;
     return (
-      <RuleLeafContainer >
+      <RuleLeafContainer>
         <RuleLeafLabel>{rule.title}</RuleLeafLabel>
         <RuleLeafWrapper $isDroppable={canDrop} $isOver={isOver} ref={drop}>
           <RuleLeaf

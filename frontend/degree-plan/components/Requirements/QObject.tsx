@@ -8,8 +8,10 @@ import assert from "assert";
 import { useContext, useEffect, useRef, useState } from "react";
 import { SearchPanelContext } from "../Search/SearchPanel";
 import CourseInReq from "./CourseInReq";
-import { ExpandedCoursesPanelContext, ExpandedCoursesPanelTrigger } from "../FourYearPlan/ExpandedCoursesPanel";
-import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
+import {
+  ExpandedCoursesPanelContext,
+  ExpandedCoursesPanelTrigger,
+} from "@/components/ExpandedBox/ExpandedCoursesPanelTrigger";import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
 
 const interpolate = <T,>(arr: T[], separator: T) =>
     arr.flatMap(
@@ -229,7 +231,7 @@ interface SearchConditionProps extends SearchConditionInnerProps {
 const SearchCondition = ({ cu, num, ruleId, ruleQuery, fulfillments, unselectedFulfillments, ruleIsSatisfied, q, activeDegreeplanId }: SearchConditionProps) => {
     const { setSearchPanelOpen, searchRuleId, setSearchRuleQuery, setSearchRuleId, setSearchFulfillments, } = useContext(SearchPanelContext);
     
-    const { search_ref } = useContext(ExpandedCoursesPanelContext);
+    const { searchRef } = useContext(ExpandedCoursesPanelContext);
 
     // TODO: Pls make this less janky. Needed to make it such that clicking off of popup changes
     // arrows to right direction, but had issues if user clicked directly on the arrows to close them
@@ -252,7 +254,7 @@ const SearchCondition = ({ cu, num, ruleId, ruleQuery, fulfillments, unselectedF
             $isDisabled={false}
             $isUsed={false}
             $isSearched={searchRuleId == ruleId}
-            $isExpanded={ref == search_ref}
+            $isExpanded={ref == searchRef}
             ref={ref}
         >   
             {unselectedFulfillments.length > 0 || (num && fulfillments.length + unselectedFulfillments.length > num) || (cu && fulfillments.length + unselectedFulfillments.length > cu) ?
