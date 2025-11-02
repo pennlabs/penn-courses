@@ -1,6 +1,4 @@
-import {
-  ArrowLeftIcon,
-} from "@radix-ui/react-icons";
+import { ArrowLeftIcon } from "@radix-ui/react-icons";
 import {
   Dispatch,
   SetStateAction,
@@ -41,7 +39,7 @@ import {
 } from "@/components/FourYearPlan/Semesters";
 import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
 import { postFetcher, useSWRCrud } from "@/hooks/swrcrud";
-import { getMajorOptions } from "@/pages/parseUtils";
+import { getMajorOptions } from "@/utils/parseUtils";
 
 type WelcomeLayoutProps = {
   inputtedStartingYear: { value: number; label: number } | null;

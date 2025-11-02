@@ -9,7 +9,7 @@ import { polyfillPromiseWithResolvers } from "./polyfilsResolver";
 
 import "core-js/full/promise/with-resolvers.js";
 
-import { parseItems, parseTranscript } from "./parseUtils";
+import { parseItems, parseTranscript } from "../utils/parseUtils";
 import WelcomeLayout from "@/components/OnboardingPanels/WelcomePanel";
 import CreateWithTranscriptPanel from "@/components/OnboardingPanels/CreateWithTranscriptPanel";
 polyfillPromiseWithResolvers();
