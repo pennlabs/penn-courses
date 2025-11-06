@@ -247,13 +247,14 @@ export default function Section({
                                                 <div key={room}>
                                                     {latitude ? (
                                                         <span
-                                                            onClick={() =>
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
                                                                 toggleMap.open(
                                                                     room,
                                                                     latitude,
                                                                     longitude
-                                                                )
-                                                            }
+                                                                );
+                                                            }}
                                                             style={{
                                                                 color:
                                                                     "#878ED8",
