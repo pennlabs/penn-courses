@@ -4,7 +4,7 @@ import PlanPanel from "./FourYearPlan/PlanPanel";
 import { SearchPanel, SearchPanelContext } from "./Search/SearchPanel";
 import styled from "@emotion/styled";
 import useSWR from "swr";
-import { Course, DegreePlan, Fulfillment, Options, Rule } from "@/types";
+import { Course, DegreePlan, Fulfillment, Options, Rule, User } from "@/types";
 import ReviewPanel from "@/components/Infobox/ReviewPanel";
 import { ReviewPanelContext } from "@/components/Infobox/ReviewPanel";
 import DegreeModal, { ModalKey } from "@/components/FourYearPlan/DegreeModal";
@@ -58,7 +58,12 @@ const PanelInteriorWrapper = styled.div<{
   height: 100%;
 `;
 
-const FourYearPlanPage = ({ updateUser, user }: any) => {
+type FourYearPlanPageProps = {
+  updateUser: (newUserVal: User | null) => void;
+  user: User | null;
+};
+
+const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
   // edit modals for degree and degree plan
   const [modalKey, setModalKey] = useState<ModalKey>(null);
   const [modalObject, setModalObject] = useState<DegreePlan | null>(null); // stores the which degreeplan is being updated using the modal

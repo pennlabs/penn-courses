@@ -10,6 +10,7 @@ import { DarkBlueBackgroundSkeleton } from "../FourYearPlan/PanelCommon";
 import { DegreeYear, RuleTree } from "./ReqPanel";
 import SatisfiedCheck from "../FourYearPlan/SatisfiedCheck";
 import { ExpandedCoursesPanelContext } from "@/components/ExpandedBox/ExpandedCoursesPanelTrigger";
+import { parseQJson } from "./ruleUtils";
 
 const RuleTitleWrapper = styled.div`
   background-color: var(--primary-color);
@@ -168,71 +169,7 @@ const RuleComponent = (ruleTree: RuleTree) => {
     }
   );
 
-  const parseQJson = (qJson: any, course: any) => {
-    if (qJson?.type == "LEAF") {
-      if (qJson?.key == "attributes__code__in") {
-        if (course.course.attribute_codes) {
-          return qJson.value.some((attribute: string) =>
-            course.course.attribute_codes.includes(attribute)
-          );
-        }
-        console.log("Error: LEAF key not handled: ", qJson?.key);
-        return false;
-      }
-    } else if (qJson?.type == "AND") {
-      const clauses = qJson.clauses;
-      if (
-        clauses.some((clause: any) =>
-          ["code__gte", "code__lte"].includes(clause.key)
-        )
-      ) {
-        let digits = parseInt(course.full_code.match(/\d+/)[0]);
-        if (digits < 1000) {
-          digits *= 10;
-        }
-        const dept = course.full_code.match(/[a-zA-Z]+/g)[0];
-
-        for (let clause of clauses) {
-          if (clause.key == "code__gte") {
-            if (parseInt(clause.value) > digits) {
-              return false;
-            }
-          } else if (clause.key == "code__lte") {
-            if (parseInt(clause.value) < digits) {
-              return false;
-            }
-          } else if (clause.key == "attributes__code__in") {
-            if (
-              !clause.value.some((attribute: any) =>
-                course.course.attribute_codes.includes(attribute)
-              )
-            ) {
-              return false;
-            }
-          } else if (clause.key == "department__code") {
-            if (dept != clause.value) {
-              return false;
-            }
-          } else {
-            console.log("Error: AND key not accounted for.");
-          }
-        }
-        return true;
-      } else {
-        return clauses.some((clause: any) => parseQJson(clause, course));
-      }
-    } else if (qJson?.type == "OR") {
-      return qJson.clauses.some((clause: any) => parseQJson(clause, course));
-    } else if (qJson?.type == "COURSE") {
-      return (
-        course.full_code == qJson.full_code ||
-        course.full_code == qJson?.full_code__startswith
-      );
-    } else {
-      console.log("Error: Unhandled qJson type.");
-      return true;
-    }
-  };
+  // Handle 
 
   const [{ isOver, canDrop }, drop] = useDrop<
     DnDCourse,
@@ -297,18 +234,11 @@ const RuleComponent = (ruleTree: RuleTree) => {
         // Right now, if you drag from dock to reqPanel there's no semester, so we just have an X button on the course.
         // Looks buggy, so I'm just disabling that and only allowing users to drag to semester panel.
         if (monitor.getItemType() === ItemTypes.COURSE_IN_DOCK) {
-          // const formattedCourse = {
-          //   course: {
-          //     "attribute_codes": course.attribute_codes,
-          //   },
-          //   full_code: course.full_code
-          // }
-
           const formattedCourse = {
             course: {
               attribute_codes: [],
             },
-            full_code: "NOPE-0000",
+            full_code: "TMP-0000",
           };
 
           return parseQJson(rule.q_json, formattedCourse);

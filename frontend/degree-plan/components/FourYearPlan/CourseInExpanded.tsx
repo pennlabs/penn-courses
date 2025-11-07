@@ -27,13 +27,13 @@ const CourseInExpanded = ( { course, isDisabled, rule_id, fulfillment, activeDeg
     const { createOrUpdate } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
 
     const handleRemoveCourse = async (full_code: string) => {
-        const updated_rules = course.rules?.filter(rule => rule != rule_id);
+        const updatedRules = course.rules?.filter(rule => rule != rule_id);
         /** If the current rule about to be removed is the only rule 
         * the course satisfied, then we delete the fulfillment */
-        if (updated_rules && updated_rules.length == 0) {
+        if (updatedRules && updatedRules.length == 0) {
           removeFulfillment(full_code);
         } else {
-          updateFulfillment({rules: updated_rules}, full_code);
+          updateFulfillment({rules: updatedRules}, full_code);
         }
         createOrUpdate({"full_code": full_code}, full_code); 
     }

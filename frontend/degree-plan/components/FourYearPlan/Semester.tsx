@@ -163,21 +163,19 @@ const FlexSemester = ({
                             return res;
                         }, []);
                         
-                        if (selectedRules.length || true) {
-                            createOrUpdate({
-                                rules: selectedRules,
-                                unselected_rules: unselectedRules,
-                                legal: data.legal,
-                                semester
-                            }, course.full_code);
+                        createOrUpdate({
+                            rules: selectedRules,
+                            unselected_rules: unselectedRules,
+                            legal: data.legal,
+                            semester
+                        }, course.full_code);
 
-                            // Toast only if course has been directly dragged from search (not reqpanel!)
-                            // TODO: This doesn't work for explicitly listed courses.
+                        // Toast only if course has been directly dragged from search (not reqpanel!)
+                        // TODO: This doesn't work for explicitly listed courses.
 
-                            for (let obj of data["new_selected_rules"]) {
-                                if (obj.id != course.rule_id) {
-                                    showToast(`${course.full_code} also fulfilled ${obj.title}!`, false);
-                                }
+                        for (let obj of data["new_selected_rules"]) {
+                            if (obj.id != course.rule_id) {
+                                showToast(`${course.full_code} also fulfilled ${obj.title}!`, false);
                             }
                         }
                     })

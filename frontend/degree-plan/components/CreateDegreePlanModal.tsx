@@ -42,30 +42,30 @@ const CreateDegreePlanModal = ({
   // create a new degree plan
   const createDegreePlan = () => {
     if (!selectedDegree || name === "") return;
-    fetch("/api/degree/degreeplans", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        degreePlanId: selectedDegree.value.id,
-        name: name,
-      }),
-    })
-      .then((res) => {
-        if (!res.ok) {
-          console.error(res);
-        }
-        return res.json();
-      })
-      .then((res) => {
-        if (res) {
-          addDegreePlan(res);
-          setOpen(false);
-        } else {
-          console.error(res);
-        }
+    async () => {
+      const res = await fetch("/api/degree/degreeplans", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          degreePlanId: selectedDegree.value.id,
+          name: name,
+        }),
       });
+
+      if (!res.ok) {
+        console.error(res);
+      }
+
+      const data = await res.json();
+      if (data) {
+        addDegreePlan(data);
+        setOpen(false);
+      } else {
+        console.error(data);
+      }
+    };
   };
 
   // get all degrees
