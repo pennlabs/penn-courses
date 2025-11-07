@@ -115,7 +115,7 @@ export default function CreateWithTranscriptPanel({
       if (courses.length == 0) {
         setShowOnboardingModal(false);
       } else {
-        postFetcher(`/api/degree/onboard-from-transcript/${degreeID}/`, {
+        postFetcher(`/api/degree/onboard-from-transcript/${degreeID}`, {
           courses: courses,
         }).then((r) => setShowOnboardingModal(false));
       }
