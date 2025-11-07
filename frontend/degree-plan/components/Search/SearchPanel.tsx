@@ -1,4 +1,4 @@
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, useEffect } from "react";
 import useSWR from "swr";
 import ResultsList from "./ResultsList";
 import styled from "@emotion/styled";
@@ -14,7 +14,7 @@ interface SearchPanelContextType {
     setSearchFulfillments: (arg0: Fulfillment[]) => void,
     searchFulfillments: Fulfillment[],
     setSearchRuleQuery: (arg0: string | null) => void;
-    searchRuleQuery: string | null; // the q string associated with the rule
+    searchRuleQuery: string | null; // the q string associated with the rulez
 }
 
 export const SearchPanelContext = createContext<SearchPanelContextType>({
@@ -91,6 +91,7 @@ export const SearchPanel = ({ activeDegreeplanId }: SearchPanelProp) => {
         searchRuleQuery: ruleQuery,
         searchFulfillments: fulfillments
     } = useContext(SearchPanelContext); 
+
 
     // queryString and searchRuleQuery are different (queryString is the actual query e.g., "World Civ",
     // and searchRuleQuery is a q object)

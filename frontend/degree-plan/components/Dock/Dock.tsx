@@ -3,17 +3,16 @@ import styled from '@emotion/styled';
 import { DarkBlueIcon } from '../Requirements/QObject';
 import React, { useContext, useEffect } from "react";
 import { useDrop } from "react-dnd";
-import { Course, DegreePlan, DnDCourse, DockedCourse, Fulfillment, User } from "@/types";
-import { ItemTypes } from "../dnd/constants";
+import { DegreePlan, DnDCourse, DockedCourse, User } from "@/types";
+import { ItemTypes } from "./dnd/constants";
 import { SearchPanelContext } from '../Search/SearchPanel';
 import { useSWRCrud } from '@/hooks/swrcrud';
-import useSWR, { useSWRConfig } from 'swr';
+import useSWR from 'swr';
 import { DarkBlueBackgroundSkeleton } from "../FourYearPlan/PanelCommon";
 // TODO: Move shared components to typescript
 // @ts-ignore
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
 import _ from 'lodash';
-import CoursePlanned from '../FourYearPlan/CourseInPlan';
 import CourseInDock from './CourseInDock';
 import { useRouter } from 'next/router';
 
@@ -107,7 +106,6 @@ interface DockProps {
 }
 
 const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
-    // const [courseAdded, setCourseAdded] = React.useState(false);
     const { searchPanelOpen, setSearchPanelOpen, setSearchRuleQuery, setSearchRuleId } = useContext(SearchPanelContext)
     const { createOrUpdate } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
     const { data: dockedCourses = [], isLoading } = useSWR<DockedCourse[]>(user ? `/api/degree/docked` : null); 
@@ -122,7 +120,7 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
       };
     
     const [{ isOver, canDrop }, drop] = useDrop(() => ({
-        accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_REQ],
+        accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_REQ, ItemTypes.COURSE_IN_SEARCH],
         drop: (course: DnDCourse) => {
            createOrUpdate({"full_code": course.full_code}, course.full_code);
         },
@@ -131,18 +129,6 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
           canDrop: !!monitor.canDrop()
         }),
     }), []);
-
-    // React.useEffect(() => {
-    //     if (!isMount) {
-    //         console.log('future render');
-    //         setCourseAdded(true);
-    //         setTimeout(() => {
-    //             setCourseAdded(false);
-    //         }, 3000);
-    //     } else {
-    //         console.log('first render');
-    //     }
-    // }, [isMount, dockedCourses]);
 
     const { asPath } = useRouter();
 

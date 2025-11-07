@@ -22,6 +22,16 @@ class DegreeListSerializer(serializers.ModelSerializer):
 
 
 class SimpleCourseSerializer(serializers.ModelSerializer):
+    attribute_codes = serializers.SerializerMethodField()
+
+    def get_attribute_codes(self, obj):
+        courses = Course.objects.all().filter(title=obj.title).exclude(attributes__isnull=True)
+        if len(courses) == 0:
+            return []
+
+        attributes = courses[0].attributes.all()
+        return [attr.code for attr in attributes]
+
     id = serializers.ReadOnlyField(
         source="full_code",
         help_text=dedent(
@@ -58,6 +68,7 @@ class SimpleCourseSerializer(serializers.ModelSerializer):
             "instructor_quality",
             "difficulty",
             "work_required",
+            "attribute_codes",
         ]
         read_only_fields = fields
 
@@ -120,24 +131,42 @@ class FulfillmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Fulfillment
-        fields = ["id", "degree_plan", "full_code", "course", "semester", "rules"]
+        fields = [
+            "id",
+            "degree_plan",
+            "full_code",
+            "course",
+            "semester",
+            "rules",
+            "unselected_rules",
+            "legal",
+        ]
 
     def validate(self, data):
         data = super().validate(data)
         rules = data.get("rules")  # for patch requests without a rules field
+        unselected_rules = data.get("unselected_rules")
         full_code = data.get("full_code")
         degree_plan = data.get("degree_plan")
 
-        if rules is None and full_code is None and degree_plan is None:
+        if rules is None and unselected_rules is None and full_code is None and degree_plan is None:
             return data  # Nothing to validate
         if rules is None and self.instance is not None:
             rules = self.instance.rules.all()
         elif rules is None:
             rules = []
+
+        if unselected_rules is None and self.instance is not None:
+            unselected_rules = self.instance.unselected_rules.all()
+        elif unselected_rules is None:
+            unselected_rules = []
+
         if full_code is None:
             full_code = self.instance.full_code
         if degree_plan is None:
             degree_plan = self.instance.degree_plan
+
+        data["rules"] = rules
 
         # TODO: check that rules belong to this degree plan
         for rule in rules:
@@ -155,6 +184,7 @@ class FulfillmentSerializer(serializers.ModelSerializer):
         double_count_restrictions = DoubleCountRestriction.objects.filter(
             Q(rule__in=rules) | Q(other_rule__in=rules)
         )
+
         for restriction in double_count_restrictions:
             if restriction.is_double_count_violated(degree_plan):
                 raise serializers.ValidationError(
@@ -186,6 +216,18 @@ class DockedCourseSerializer(serializers.ModelSerializer):
     id = serializers.ReadOnlyField(help_text="The id of the docked course")
     person = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
+    attribute_codes = serializers.SerializerMethodField()
+
+    def get_attribute_codes(self, obj):
+        courses = (
+            Course.objects.all().filter(full_code=obj.full_code).exclude(attributes__isnull=True)
+        )
+        if len(courses) == 0:
+            return []
+
+        attributes = courses[0].attributes.all()
+        return [attr.code for attr in attributes]
+
     class Meta:
         model = DockedCourse
-        fields = ["full_code", "id", "person"]
+        fields = ["full_code", "id", "person", "attribute_codes"]

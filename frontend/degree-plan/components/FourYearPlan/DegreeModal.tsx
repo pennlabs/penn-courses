@@ -3,22 +3,15 @@ import type {
   Degree,
   DegreeListing,
   DegreePlan,
-  Fulfillment,
   MajorOption,
   SchoolOption,
-  Semester,
 } from "@/types";
-import React, { useState } from "react";
-import {
-  deleteFetcher,
-  getFetcher,
-  postFetcher,
-  useSWRCrud,
-} from "@/hooks/swrcrud";
+import React, { useState, useEffect } from "react";
+import { deleteFetcher, postFetcher, useSWRCrud } from "@/hooks/swrcrud";
 import useSWR, { useSWRConfig } from "swr";
 import ModalContainer from "../common/ModalContainer";
 import Select from "react-select";
-import { schoolOptions } from "@/pages/OnboardingPage";
+import { schoolOptions } from "@/components/OnboardingPanels/SharedComponents";
 
 export type ModalKey =
   | "plan-create"
@@ -49,6 +42,9 @@ const getModalTitle = (modalState: ModalKey) => {
       throw Error("Invalid modal key: ");
   }
 };
+
+const DELETE_CONFIRMATION_MESSAGE = (subject: string) =>
+  `Are you sure you want to remove this ${subject}? All of your planning for this ${subject} will be lost.`;
 
 const ModalInteriorWrapper = styled.div<{ $row?: boolean }>`
   display: flex;
@@ -140,7 +136,13 @@ interface RemoveSemesterProps {
 
 interface ModalInteriorProps {
   modalKey: ModalKey;
-  modalObject: DegreePlan | null | RemoveSemesterProps | RemoveDegreeProps | Degree;
+  modalObject:
+    | DegreePlan
+    | null
+    | RemoveSemesterProps
+    | RemoveDegreeProps
+    | Degree;
+  activeDegreePlan: DegreePlan | null;
   setActiveDegreeplan: (arg0: DegreePlan | null) => void;
   close: () => void;
   modalRef: React.RefObject<HTMLSelectElement | null>;
@@ -148,9 +150,10 @@ interface ModalInteriorProps {
 const ModalInterior = ({
   modalObject,
   modalKey,
+  activeDegreePlan,
   setActiveDegreeplan,
   close,
-  modalRef
+  modalRef,
 }: ModalInteriorProps) => {
   const {
     create: createDegreeplan,
@@ -159,6 +162,15 @@ const ModalInterior = ({
   } = useSWRCrud<DegreePlan>("/api/degree/degreeplans");
 
   const { mutate } = useSWRConfig();
+
+  const [
+    modalRefCurrent,
+    setModalRefCurrent,
+  ] = useState<HTMLSelectElement | null>(null);
+
+  useEffect(() => {
+    setModalRefCurrent(modalRef.current);
+  }, [modalRef]);
 
   const add_degreeplan = async (name: string) => {
     const _new = await postFetcher("/api/degree/degreeplans", { name: name });
@@ -175,8 +187,9 @@ const ModalInterior = ({
   const [major, setMajor] = useState<MajorOption>();
   const [name, setName] = useState<string>("");
 
-  const { data: degrees, isLoading: isLoadingDegrees } =
-    useSWR<DegreeListing[]>(`/api/degree/degrees`);
+  const { data: degrees, isLoading: isLoadingDegrees } = useSWR<
+    DegreeListing[]
+  >(`/api/degree/degrees`);
 
   const getMajorOptions = React.useCallback(() => {
     /** Filter major options based on selected schools/degrees */
@@ -242,16 +255,26 @@ const ModalInterior = ({
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
-          {/* <ButtonRow> */}
           <ModalButton
             onClick={() => {
-              updateDegreeplan({ name }, (modalObject as DegreePlan).id);
+              if (
+                modalObject &&
+                "id" in modalObject &&
+                "name" in modalObject &&
+                "degrees" in modalObject
+              ) {
+                updateDegreeplan({ name }, modalObject.id);
+                if (modalObject.id == activeDegreePlan?.id) {
+                  let newNameDegPlan = modalObject;
+                  newNameDegPlan.name = name;
+                  setActiveDegreeplan(newNameDegPlan);
+                }
+              }
               close();
             }}
           >
             Rename
           </ModalButton>
-          {/* </ButtonRow> */}
         </ModalInteriorWrapper>
       );
     case "plan-remove":
@@ -283,19 +306,23 @@ const ModalInterior = ({
               <Select
                 options={schoolOptions}
                 value={school}
-                onChange={(selectedOption) => setSchool(selectedOption || undefined)}
+                onChange={(selectedOption) =>
+                  setSchool(selectedOption || undefined)
+                }
                 isClearable
                 placeholder="Select School or Program"
                 isLoading={false}
-                styles={{ menuPortal: base => ({ ...base, zIndex: 999 }) }}
-                menuPortalTarget={modalRef.current}
+                styles={{ menuPortal: (base) => ({ ...base, zIndex: 999 }) }}
+                menuPortalTarget={modalRefCurrent}
               />
               <Select
                 options={getMajorOptions()}
                 value={major}
-                onChange={(selectedOption) => setMajor(selectedOption || undefined)}
-                styles={{ menuPortal: base => ({ ...base, zIndex: 999 }) }}
-                menuPortalTarget={modalRef.current}
+                onChange={(selectedOption) =>
+                  setMajor(selectedOption || undefined)
+                }
+                styles={{ menuPortal: (base) => ({ ...base, zIndex: 999 }) }}
+                menuPortalTarget={modalRefCurrent}
                 isClearable
                 isDisabled={!school}
                 placeholder={
@@ -324,14 +351,14 @@ const ModalInterior = ({
       return (
         <ModalInteriorWrapper>
           <ModalTextWrapper>
-            <ModalText>
-              Are you sure you want to remove this degree? All of your planning
-              for this degree will be lost
-            </ModalText>
+            <ModalText>{DELETE_CONFIRMATION_MESSAGE("degree")}</ModalText>
           </ModalTextWrapper>
           <ModalButton
             onClick={() => {
-              remove_degree((modalObject as RemoveDegreeProps).degreeplanId, (modalObject as RemoveDegreeProps).degreeId);
+              remove_degree(
+                (modalObject as RemoveDegreeProps).degreeplanId,
+                (modalObject as RemoveDegreeProps).degreeId
+              );
               close();
             }}
           >
@@ -343,10 +370,7 @@ const ModalInterior = ({
       return (
         <ModalInteriorWrapper>
           <ModalTextWrapper>
-            <ModalText>
-              Are you sure you want to remove this semester? All of your
-              planning for this semester will be lost
-            </ModalText>
+            <ModalText>{DELETE_CONFIRMATION_MESSAGE("semester")}</ModalText>
           </ModalTextWrapper>
           <ModalButton
             onClick={() => {
@@ -366,12 +390,14 @@ interface DegreeModalProps {
   setModalKey: (arg0: ModalKey) => void;
   modalKey: ModalKey;
   modalObject: DegreePlan | null;
+  activeDegreePlan: DegreePlan | null;
   setActiveDegreeplan: (arg0: DegreePlan | null) => void;
 }
 const DegreeModal = ({
   setModalKey,
   modalKey,
   modalObject,
+  activeDegreePlan,
   setActiveDegreeplan,
 }: DegreeModalProps) => (
   <ModalContainer
@@ -383,6 +409,7 @@ const DegreeModal = ({
     // @ts-ignore */}
     <ModalInterior
       modalObject={modalObject}
+      activeDegreePlan={activeDegreePlan}
       setActiveDegreeplan={setActiveDegreeplan}
       close={() => setModalKey(null)}
     />

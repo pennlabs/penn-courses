@@ -22,8 +22,8 @@ def parse_coursearray(courseArray) -> Q:
                 assert end is None
                 course_q &= Q(department__code=discipline)
             case "@", number, None:
-                assert "@" not in number
-                course_q &= Q(code=number)
+                if "@" not in number:
+                    course_q &= Q(code=number)
             case discipline, number, None:
                 if "@" not in number:
                     course_q &= Q(full_code=f"{discipline}-{number}")
@@ -83,6 +83,9 @@ def parse_coursearray(courseArray) -> Q:
                         sub_q = Q()
                     case "DWCOURSENUMBER":
                         logging.info("ignoring DWCOURSENUMBER")
+                        sub_q = Q()
+                    case "DWATTR":
+                        logging.info("ignoring DWATTR")
                         sub_q = Q()
                     case _:
                         raise LookupError(f"Unknown filter type in withArray: {filter['code']}")

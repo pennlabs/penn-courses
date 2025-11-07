@@ -67,6 +67,7 @@ export const PanelContainer = styled.div`
     flex-direction: column;
     width: 100%;
     height: 100%;
+    overflow: visible;
 `;
 
 export const PanelTopBarIconList = styled.div`

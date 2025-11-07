@@ -1,11 +1,7 @@
 import { useDrag } from "react-dnd";
-import { ItemTypes } from "../dnd/constants";
-import { GrayIcon } from '../common/bulma_derived_components';
-import styled from '@emotion/styled';
-import { Course, DnDCourse, DockedCourse, Fulfillment } from "@/types";
-import { Draggable } from "../common/DnD";
-import CourseComponent, { PlannedCourseContainer } from "../Course/Course";
-import { CourseXButton } from "../Course/Course";
+import { ItemTypes } from "@/components/Dock/dnd/constants";
+import { DnDCourse, DockedCourse } from "@/types";
+import CourseComponent from "@/components/Course/Course";
 import { useSWRCrud } from "@/hooks/swrcrud";
 
 interface CourseInDockProps {
@@ -32,7 +28,7 @@ const CourseInDock = (props : CourseInDockProps) => {
     }), [course])
   
     return (
-      <CourseComponent dragRef={drag} isDragging={isDragging} removeCourse={handleRemoveCourse} isUsed {...props} />
+      <CourseComponent courseType={ItemTypes.COURSE_IN_DOCK} dragRef={drag} isDragging={isDragging} removeCourse={handleRemoveCourse} isUsed {...props} />
     )
   }
   

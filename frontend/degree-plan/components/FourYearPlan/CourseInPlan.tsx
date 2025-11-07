@@ -1,5 +1,5 @@
 import { useDrag } from "react-dnd";
-import { ItemTypes } from "../dnd/constants";
+import { ItemTypes } from "../Dock/dnd/constants";
 import { Course, DnDCourse, Fulfillment } from "@/types";
 import 'react-loading-skeleton/dist/skeleton.css'
 import CourseComponent from "../Course/Course";
@@ -25,9 +25,8 @@ const CourseInPlan = (props : CoursePlannedProps) => {
   }), [course])
 
   return (
-    <CourseComponent dragRef={drag} isDragging={isDragging} isUsed {...props} />
+    <CourseComponent courseType={ItemTypes.COURSE_IN_PLAN} fulfillment={course as Fulfillment} dragRef={drag} isDragging={isDragging} isUsed {...props} />
   )
 }
-
 
 export default CourseInPlan;

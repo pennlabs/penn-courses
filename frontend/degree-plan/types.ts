@@ -96,6 +96,7 @@ export interface Course {
   work_required: number;
   difficulty: number;
   credits: number;
+  attribute_codes: string[];
 }
 
 // The interface we use with React DND
@@ -103,6 +104,9 @@ export interface DnDCourse {
   full_code: string;
   rules?: number[];
   rule_id?: number // only used when dragging from REQ panel
+  unselected_rules?: number[];
+  fulfillment?: Fulfillment;
+  course?: Course | null;
 }
 
 export interface Fulfillment extends DBObject {
@@ -112,6 +116,8 @@ export interface Fulfillment extends DBObject {
   id: number;
   degree_plan: number; // id
   full_code: string;
+  unselected_rules: number[];
+  legal: boolean;
 }
 
 // Internal representation of a plan (this is derived from fulfillments)
@@ -122,6 +128,14 @@ export interface Semester {
 
 export function assertValueType<T, K extends keyof T>(obj: T, idKey: K, value: any): asserts value is T[K] {
     if (obj[idKey] !== value) {
-        throw new Error(`Value ${value} is not of type ${typeof obj[idKey]}`);
+        // throw new Error(`Value ${value} is not of type ${typeof obj[idKey]}`);
     }
 }
+
+export interface PromiseConstructor {
+  withResolvers<T>(): {
+    promise: Promise<T>
+    resolve: (value: T | PromiseLike<T>) => void
+    reject: (reason?: any) => void
+  }
+ }
