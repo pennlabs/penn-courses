@@ -665,6 +665,7 @@ class CourseSearchAdvancedFilterBackend(filters.BaseFilterBackend):
         "end_time": _numeric("end"),
         "is_open": _is_open,
         "fit_schedule": _fit_schedule(request=None),
+        "attribute": _enum("attributes__code"),
     }
 
     meeting_fields = {"days", "start_time", "end_time", "fit_schedule"}
@@ -728,6 +729,12 @@ class CourseSearchAdvancedFilterBackend(filters.BaseFilterBackend):
                             "field": "difficulty",
                             "op": "lte",
                             "value": 3,
+                        },
+                        {
+                            "type": "enum",
+                            "field": "attribute",
+                            "op": "is_any_of",
+                            "value": ["WUOM", "EMCI"],
                         },
                         {
                             "type": "group",

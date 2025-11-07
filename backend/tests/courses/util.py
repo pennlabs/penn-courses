@@ -3,7 +3,7 @@ from courses.management.commands.recompute_soft_state import (
     recompute_precomputed_fields,
     recompute_topics,
 )
-from courses.models import Instructor
+from courses.models import Attribute, Instructor
 from courses.util import all_semesters, get_or_create_course_and_section, set_meetings
 from review.models import Review
 
@@ -19,9 +19,16 @@ def fill_course_soft_state():
     recompute_topics(min_semester=min(semesters), verbose=False)
 
 
-def create_mock_data(code, semester, meeting_days="MWF", start=1100, end=1200):
+def get_or_create_attribute(code, description=""):
+    return Attribute.objects.get_or_create(code=code, defaults={"description": description})
+
+
+def create_mock_data(code, semester, meeting_days="MWF", start=1100, end=1200, attributes=[]):
     course, section, _, _ = get_or_create_course_and_section(code, semester)
     course.description = "This is a fake class."
+    for attr in attributes:
+        attribute_obj, _ = get_or_create_attribute(attr)
+        attribute_obj.courses.add(course)
     course.save()
     section.credits = 1
     section.status = "O"

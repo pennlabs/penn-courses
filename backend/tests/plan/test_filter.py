@@ -988,3 +988,40 @@ class ScheduleFilterTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
         self.assertEqual({res["id"] for res in response.data}, {"CIS-262"})
+
+
+class AttributeFilterTestCase(TestCase):
+    def setUp(self):
+        self.course1, self.section1 = create_mock_data(
+            "CIS-120-001", TEST_SEMESTER, attributes=["EUNG", "NURS"]
+        )
+        self.course2, self.section2 = create_mock_data(
+            "CIS-160-001", TEST_SEMESTER, attributes=["EUNG", "EUMA", "WUNM"]
+        )
+
+        self.client = APIClient()
+        set_semester()
+
+    def _post_attribute_filter(self, op, values):
+        return self.client.post(
+            reverse("courses-search", args=[TEST_SEMESTER]),
+            data=json.dumps(
+                {
+                    "op": "AND",
+                    "children": [
+                        {
+                            "type": "enum",
+                            "field": "attribute",
+                            "op": op,
+                            "value": values,
+                        }
+                    ],
+                }
+            ),
+            content_type="application/json",
+        )
+
+    def test_attribute_included(self):
+        response = self._post_attribute_filter("is_any_of", ["EUNG", "EUMA"])
+        self.assertEqual(200, response.status_code)
+        self.assertEqual(2, len(response.data))
