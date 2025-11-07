@@ -8,6 +8,15 @@ from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework import status
+from openai import OpenAI
+import os
+import re
+import json
+import time
+import uuid
+import redis
+# client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 from courses.models import (
     Course,
@@ -19,7 +28,7 @@ from courses.models import (
 )
 from courses.util import get_current_semester, get_or_create_add_drop_period, prettify_semester
 from PennCourses.docs_settings import PcxAutoSchema
-from PennCourses.settings.base import CACHE_PREFIX, TIME_ZONE, WAITLIST_DEPARTMENT_CODES
+from PennCourses.settings.base import CACHE_PREFIX, TIME_ZONE, WAITLIST_DEPARTMENT_CODES, REDIS_URL
 from review.annotations import annotate_average_and_recent, review_averages
 from review.documentation import (
     ACTIVITY_CHOICES,
@@ -41,7 +50,7 @@ from review.util import (
     get_status_updates_map,
     make_subdict,
 )
-
+r = redis.Redis.from_url(REDIS_URL)
 
 """
 You might be wondering why these API routes are using the @api_view function decorator
@@ -68,10 +77,12 @@ extra_metrics_section_filters = (
     & ~Q(course__semester__icontains="b")  # Filter out summer classes
     & Q(has_status_updates=True)
     & ~Q(
-        id__in=Subquery(NGSSRestriction.special_approval().values("sections__id"))
+        id__in=Subquery(
+            NGSSRestriction.special_approval().values("sections__id"))
     )  # Filter out sections that require permit for registration
     & ~Q(
-        id__in=Subquery(PreNGSSRestriction.special_approval().values("sections__id"))
+        id__in=Subquery(
+            PreNGSSRestriction.special_approval().values("sections__id"))
     )  # Filter out sections that require permit for registration (pre-NGSS)
 )
 
@@ -86,9 +97,11 @@ def extra_metrics_section_filters_pcr(current_semester=None):
     return extra_metrics_section_filters & Q(course__semester__lt=current_semester) & ~Q(status="X")
 
 
-course_filters_pcr = ~Q(title="") | ~Q(description="") | Q(sections__has_reviews=True)
+course_filters_pcr = ~Q(title="") | ~Q(
+    description="") | Q(sections__has_reviews=True)
 section_filters_pcr = Q(has_reviews=True) | (
-    (~Q(course__title="") | ~Q(course__description="")) & ~Q(activity="REC") & ~Q(status="X")
+    (~Q(course__title="") | ~Q(course__description="")) & ~Q(
+        activity="REC") & ~Q(status="X")
 )
 
 HOUR_IN_SECONDS = 60 * 60
@@ -139,7 +152,8 @@ def course_reviews(request, course_code, semester=None):
     topic_id = cache.get(CACHE_PREFIX + course_code)
     if topic_id is None:
         try:
-            recent_course = most_recent_course_from_code(course_code, request_semester)
+            recent_course = most_recent_course_from_code(
+                course_code, request_semester)
         except Course.DoesNotExist:
             raise Http404()
         topic = recent_course.topic
@@ -149,7 +163,8 @@ def course_reviews(request, course_code, semester=None):
 
     response = cache.get(CACHE_PREFIX + topic_id)
     if response is None:
-        cached_response = CachedReviewResponse.objects.filter(topic_id=topic_id).first()
+        cached_response = CachedReviewResponse.objects.filter(
+            topic_id=topic_id).first()
         if cached_response is None:
             response = manual_course_reviews(course_code, request_semester)
             if not response:
@@ -176,8 +191,10 @@ def most_recent_course_from_code(course_code, semester):
         )
         .order_by("-semester")[:1]
         .annotate(
-            branched_from_full_code=F("topic__branched_from__most_recent__full_code"),
-            branched_from_semester=F("topic__branched_from__most_recent__semester"),
+            branched_from_full_code=F(
+                "topic__branched_from__most_recent__full_code"),
+            branched_from_semester=F(
+                "topic__branched_from__most_recent__semester"),
         )
         .select_related("topic__most_recent")
         .get()
@@ -257,7 +274,8 @@ def manual_course_reviews(course_code, request_semester):
         .distinct()
         .annotate(
             most_recent_sem=Subquery(
-                Section.objects.filter(instructors__id=OuterRef("id"), course__topic=topic)
+                Section.objects.filter(
+                    instructors__id=OuterRef("id"), course__topic=topic)
                 .annotate(common=Value(1))
                 .values("common")
                 .annotate(max_sem=Max("course__semester"))
@@ -273,10 +291,12 @@ def manual_course_reviews(course_code, request_semester):
     for instructor in recent_instructors:
         instructor["exclude_from_recent"] = True
     all_instructors = list(instructor_reviews.values()) + recent_instructors
-    instructors = aggregate_reviews(all_instructors, "instructor_id", name="instructor_name")
+    instructors = aggregate_reviews(
+        all_instructors, "instructor_id", name="instructor_name")
 
     course_qs = annotate_average_and_recent(
-        Course.objects.filter(course_filters_pcr, topic_id=topic.id).order_by("-semester")[:1],
+        Course.objects.filter(course_filters_pcr,
+                              topic_id=topic.id).order_by("-semester")[:1],
         match_review_on=Q(section__course__topic=topic),
         match_section_on=Q(course__topic=topic) & section_filters_pcr,
         extra_metrics=True,
@@ -395,7 +415,8 @@ def course_plots(request, course_code):
             instructors__id__in=instructor_ids,
         ).distinct()
 
-    section_map = defaultdict(dict)  # a dict mapping semester to section id to section object
+    # a dict mapping semester to section id to section object
+    section_map = defaultdict(dict)
     for section in filtered_sections:
         section_map[section.efficient_semester][section.id] = section
 
@@ -505,7 +526,8 @@ def instructor_reviews(request, instructor_id):
     instructor_qs = annotate_average_and_recent(
         Instructor.objects.filter(id=instructor_id),
         match_review_on=Q(instructor_id=instructor_id),
-        match_section_on=Q(instructors__id=instructor_id) & section_filters_pcr,
+        match_section_on=Q(
+            instructors__id=instructor_id) & section_filters_pcr,
         extra_metrics=True,
     )
     inst = get_single_dict_from_qs(instructor_qs)
@@ -635,7 +657,8 @@ def department_reviews(request, department_code):
         review["course_title"] = course["course_title"]
 
     all_courses = reviews + list(topic_id_to_course.values())
-    courses = aggregate_reviews(all_courses, "course_code", code="course_code", name="course_title")
+    courses = aggregate_reviews(
+        all_courses, "course_code", code="course_code", name="course_title")
 
     return Response({"code": department.code, "name": department.name, "courses": courses})
 
@@ -792,7 +815,8 @@ def autocomplete(request):
         Course.objects.filter(course_filters_pcr)
         .annotate(
             max_semester=Subquery(
-                Course.objects.filter(full_code=OuterRef("full_code"), topic=OuterRef("topic"))
+                Course.objects.filter(full_code=OuterRef(
+                    "full_code"), topic=OuterRef("topic"))
                 .annotate(common=Value(1))
                 .values("common")
                 .annotate(max_semester=Max("semester"))
@@ -840,7 +864,8 @@ def autocomplete(request):
 
     instructors = (
         Instructor.objects.filter(
-            id__in=Subquery(Section.objects.filter(section_filters_pcr).values("instructors__id"))
+            id__in=Subquery(Section.objects.filter(
+                section_filters_pcr).values("instructors__id"))
         )
         .distinct()
         .values("name", "id", "section__course__department__code")
@@ -853,7 +878,8 @@ def autocomplete(request):
                 "desc": set([inst["section__course__department__code"]]),
                 "url": f"/instructor/{inst['id']}",
             }
-        instructor_set[inst["id"]]["desc"].add(inst["section__course__department__code"])
+        instructor_set[inst["id"]]["desc"].add(
+            inst["section__course__department__code"])
 
     def join_depts(depts):
         try:
@@ -880,3 +906,180 @@ def autocomplete(request):
             "instructors": instructor_set,
         }
     )
+
+
+CHAT_TTL_SECONDS = 7 * 24 * 3600
+MAX_MESSAGES_PER_CHAT = 50
+MAX_CHATS_PER_DAY = 5
+
+
+def _today():
+    return time.strftime("%Y-%m-%d", time.gmtime())
+
+
+def _new_chat_id():
+    return uuid.uuid4().hex[:8]
+
+
+def _make_msg(role, content, citations=None):
+    return json.dumps({
+        "id": uuid.uuid4().hex,
+        "role": role,
+        "content": content,
+        "citations": citations or [],
+        "ts": int(time.time()),
+    })
+
+# key naming helpers
+
+def _quota_key(user_id, date, what):
+    return f"quota:{user_id}:{date}:{what}"
+
+
+def _chat_meta_key(chat_id):
+    return f"chat:{chat_id}:meta"
+
+
+def _chat_messages_key(chat_id):
+    return f"chat:{chat_id}:messages"
+
+
+def check_and_incr_quota(key, limit, ttl):
+    used_raw = r.get(key)
+    used = int(used_raw) if used_raw is not None else 0
+    if used >= limit:
+        return False
+    
+    pipe = r.pipeline()
+    pipe.incr(key)
+    pipe.expire(key, ttl)
+    pipe.execute()
+    return True
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def chat_start(request):
+    user_id = request.user.id
+    today = _today()
+
+    if not check_and_incr_quota(
+            _quota_key(user_id, today, "chats"),
+            MAX_CHATS_PER_DAY,
+            24 * 60 * 60):
+        return Response({"error": "Daily quota exceeded"}, status=429)
+
+    chat_id = _new_chat_id()
+    meta = {"user_id": user_id, "created_at": int(time.time())}
+    r.set(_chat_meta_key(chat_id), json.dumps(meta), ex=CHAT_TTL_SECONDS)
+    r.delete(_chat_messages_key(chat_id))
+    r.expire(_chat_messages_key(chat_id), CHAT_TTL_SECONDS)
+
+    return Response({
+        "chat_id": chat_id,
+        "expires_at": int(time.time()) + CHAT_TTL_SECONDS,
+    })
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
+def chat_message(request, chat_id):
+    user_id = request.user.id
+    text = request.data.get("text")
+    if not text:
+        return Response({"error": "Missing 'text'"}, status=400)
+
+    meta = r.get(_chat_meta_key(chat_id))
+    if not meta:
+        return Response({"error": "Chat not found or expired"}, status=404)
+
+    mquota = f"quota:{chat_id}:messages"
+    used_raw = r.get(mquota)
+    used = int(used_raw) if used_raw is not None else 0
+    if used >= MAX_MESSAGES_PER_CHAT:
+        return Response({"error": "Message quota exceeded"}, status=429)
+
+    pipe = r.pipeline()
+    pipe.incr(mquota)
+    pipe.expire(mquota, CHAT_TTL_SECONDS)
+    pipe.execute()
+
+    umsg = _make_msg("user", text)
+    r.rpush(_chat_messages_key(chat_id), umsg)
+
+    # stub assistant reply
+    reply_text = f"Stub reply"
+    amsg = _make_msg("assistant", reply_text, citations=[])
+    r.rpush(_chat_messages_key(chat_id), amsg)
+    r.expire(_chat_messages_key(chat_id), CHAT_TTL_SECONDS)
+
+    return Response(json.loads(amsg))
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def chat_history(request, chat_id):
+    limit = int(request.GET.get("limit", 20))
+    msgs = r.lrange(_chat_messages_key(chat_id), -limit, -1) or []
+    parsed = [json.loads(m) for m in msgs]
+    return Response({"messages": parsed})
+
+
+SYSTEM_PROMPT = """You are the Penn Course Review assistant.
+Answer only using the provided 'Context'.
+If information is missing, respond: 
+"I'm not sure. Try using Penn Course Review search."
+
+Always:
+- Include course codes (e.g., CIS 1200)
+- Cite every factual claim using citations like (1), (2)
+- Be concise: short bullet points or a short paragraph
+- Avoid quoting long student reviews
+- Never invent courses, stats, prerequisites, or opinions
+"""
+
+def build_prompt(history_msgs, retrieved_docs, user_query, max_history_turns=3):
+    """
+    history_msgs: list[dict] - messages stored in Redis (user + assistant)
+    retrieved_docs: list[dict] - docs returned by RAG
+    user_query: str
+    """
+    
+    prompt_msgs = [{"role": "system", "content": SYSTEM_PROMPT}]
+
+    context = []
+    for i, doc in enumerate(retrieved_docs, start=1):
+        code = doc.get("course_code", "UNKNOWN")
+        text = doc.get("text", "")
+        url = doc.get("url", "")
+        context.append(f"({i}) {code}: {text} [cite]({url})")
+
+    if context:
+        context_block = "Context:\n" + "\n".join(context)
+        prompt_msgs.append({"role": "system", "content": context_block})
+    
+    if history_msgs:
+        trimmed = history_msgs[-(max_history_turns * 2):]
+        for msg in trimmed:
+            prompt_msgs.append({
+                "role": msg.get("role", "user"),
+                "content": msg.get("content", "")
+            })
+    
+    prompt_msgs.append({"role": "user", "content": user_query})
+    return prompt_msgs
+
+def _extract_citations(text: str):
+    return re.findall(r"\[cite\]\((/course/[^)]+)\)", text)
+
+'''
+def call_llm(messages: list):
+    if not stream:
+        response = client.responses.create(
+            model="gpt-5",
+            input=messages
+        )
+        output_text = response.output_text
+        citations = _extract_citations(full_text)
+        return full_text, citations
+'''

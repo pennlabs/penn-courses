@@ -8,6 +8,9 @@ from review.views import (
     department_reviews,
     instructor_for_course_reviews,
     instructor_reviews,
+    chat_start,
+    chat_message,
+    chat_history,
 )
 
 
@@ -45,5 +48,20 @@ urlpatterns = [
         "autocomplete",
         cache_page(MONTH_IN_SECONDS)(autocomplete),
         name="review-autocomplete",
+    ),
+    path(
+        "chat/start",
+        chat_start,
+        name="chat-start",
+    ),
+    path(
+        "chat/<slug:chat_id>/message",
+        chat_message,
+        name="chat-message",
+    ),
+    path(
+        "chat/<slug:chat_id>/history",
+        chat_history,
+        name="chat-history",
     ),
 ]
