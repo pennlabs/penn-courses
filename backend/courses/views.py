@@ -193,6 +193,10 @@ class CourseListSearch(CourseList):
     schema = PcxAutoSchema(
         response_codes={
             "courses-search": {
+                "GET": {
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Courses listed successfully.",
+                    400: "Bad request (invalid query).",
+                },
                 "POST": {
                     200: "[DESCRIBE_RESPONSE_SCHEMA]Courses listed successfully.",
                     400: "Bad request (invalid query).",
@@ -248,6 +252,13 @@ class CourseListSearch(CourseList):
         return context
 
     search_fields = ("full_code", "title", "sections__instructors__name")
+
+    def get(self, request, *args, **kwargs):
+        queryset = super().get_queryset()
+        queryset = TypedCourseSearchBackend().filter_queryset(request, queryset, self)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
     def post(self, request, *args, **kwargs):
         queryset = super().get_queryset()
