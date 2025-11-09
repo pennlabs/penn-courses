@@ -11,7 +11,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from courses.filters import CourseSearchAdvancedFilterBackend, CourseSearchFilterBackend
+from courses.filters import CourseSearchAdvancedFilterBackend
 from courses.models import (
     Attribute,
     Course,
@@ -175,7 +175,7 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
 class CourseListSearch(CourseList):
     """
     This route allows you to list courses by certain search terms and/or filters.
-    - **GET**: Without any GET parameters, this route simply returns all courses
+    - **GET**: (Deprecated) Without any GET parameters, this route simply returns all courses
     for a given semester. There are a few filter query parameters which constitute ranges of
     floating-point numbers. The values for these are <min>-<max> , with minimum excluded.
     For example, looking for classes in the range of 0-2.5 in difficulty, you would add the
@@ -193,12 +193,8 @@ class CourseListSearch(CourseList):
     schema = PcxAutoSchema(
         response_codes={
             "courses-search": {
-                "GET": {
-                    200: "[DESCRIBE_RESPONSE_SCHEMA]Courses listed successfully.",
-                    400: "Bad request (invalid query).",
-                },
                 "POST": {
-                    200: "Advanced search results listed successfully.",
+                    200: "[DESCRIBE_RESPONSE_SCHEMA]Courses listed successfully.",
                     400: "Bad request (invalid query).",
                 },
             }
@@ -251,16 +247,7 @@ class CourseListSearch(CourseList):
 
         return context
 
-    # filter_backends = [TypedCourseSearchBackend, CourseSearchFilterBackend]
     search_fields = ("full_code", "title", "sections__instructors__name")
-
-    def get(self, request, *args, **kwargs):
-        queryset = super().get_queryset()
-        queryset = TypedCourseSearchBackend().filter_queryset(request, queryset, self)
-        queryset = CourseSearchFilterBackend().filter_queryset(request, queryset, self)
-
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
 
     def post(self, request, *args, **kwargs):
         queryset = super().get_queryset()
