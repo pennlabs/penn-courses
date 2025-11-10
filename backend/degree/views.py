@@ -90,7 +90,7 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             raise ValidationError({"name": "This field is required."})
         if DegreePlan.objects.filter(name=name, person=self.request.user).exists():
             return Response(
-                {"warning": f"A degree plan with name {name} already exists."}, 
+                {"warning": f"A degree plan with name {name} already exists."},
                 status=status.HTTP_409_CONFLICT
             )
         new_degree_plan = DegreePlan(name=name, person=self.request.user)
