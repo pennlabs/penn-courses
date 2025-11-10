@@ -11,6 +11,7 @@ import {
   Column,
   ColumnsContainer,
   CourseContainer,
+  ErrorText,
   customSelectStylesCourses,
   customSelectStylesLeft,
   customSelectStylesRight,
@@ -38,7 +39,7 @@ import {
   interpolateSemesters,
 } from "@/components/FourYearPlan/Semesters";
 import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
-import { postFetcher, useSWRCrud } from "@/hooks/swrcrud";
+import { postFetcher, getCsrf } from "@/hooks/swrcrud";
 import { getMajorOptions } from "@/utils/parseUtils";
 
 type WelcomeLayoutProps = {
@@ -77,13 +78,12 @@ export default function CreateWithTranscriptPanel({
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
 
+  const [nameAlreadyExists, setNameAlreadyExists] = useState(false);
+
   const { data: options } = useSWR<Options>("/api/options");
   const { data: degrees, isLoading: isLoadingDegrees } = useSWR<
     DegreeListing[]
   >(`/api/degree/degrees`);
-  const { create: createDegreeplan } = useSWRCrud<DegreePlan>(
-    "/api/degree/degreeplans"
-  );
 
   // Workaround solution to only input courses once degree has been created and degreeID exists.
   // Will likely change in the future!
@@ -124,8 +124,23 @@ export default function CreateWithTranscriptPanel({
 
   const handleAddDegrees = () => {
     setLoading(true);
-    createDegreeplan({ name: name }).then((res) => {
-      if (res) {
+
+    const createDegreeplan = async () => {
+      // Need to handle the case where degree plan of same name already exists.
+      const res = await fetch("/api/degree/degreeplans", {
+        credentials: "include",
+        mode: "same-origin",
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCsrf(),
+          "Accept": "application/json",
+        } as HeadersInit,
+        body: JSON.stringify({ name: name }),
+      });
+
+      if (res.ok) {
+        const _new = await res.json();
         if (startingYear && graduationYear) {
           const semesters = interpolateSemesters(
             startingYear.value,
@@ -133,17 +148,29 @@ export default function CreateWithTranscriptPanel({
           );
           semesters[TRANSFER_CREDIT_SEMESTER_KEY] = [];
           window.localStorage.setItem(
-            getLocalSemestersKey(res.id),
+            getLocalSemestersKey(_new.id),
             JSON.stringify(semesters)
           );
         }
-        postFetcher(`/api/degree/degreeplans/${res.id}/degrees`, {
+        postFetcher(`/api/degree/degreeplans/${_new.id}/degrees`, {
           degree_ids: majors.map((m) => m.value.id),
         }); // add degree
-        setActiveDegreeplan(res);
-        setDegreeID(res.id);
+        setActiveDegreeplan(_new);
+        setDegreeID(_new.id);
+      } else if (res.status === 409) {
+        // Case where degree plan of same name already exists.
+        setNameAlreadyExists(true);
+        setLoading(false);
+
+        setTimeout(() => {
+          setNameAlreadyExists(false);
+        }, 5000);
+      } else {
+        console.error(await res.text());
       }
-    });
+    }
+
+    createDegreeplan().then(() => {});
   };
 
   const complete =
@@ -203,6 +230,14 @@ export default function CreateWithTranscriptPanel({
                 onChange={(e) => setName(e.target.value)}
                 placeholder=""
               />
+              <ErrorText
+                style={{
+                  color: "red",
+                  visibility: nameAlreadyExists ? "visible" : "hidden",
+                }}
+              >
+                A degree plan with this name already exists. Please choose a different name.
+              </ErrorText>
             </FieldWrapper>
 
             <FieldWrapper>

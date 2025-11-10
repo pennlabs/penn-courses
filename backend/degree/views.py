@@ -85,9 +85,14 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def create(self, request, *args, **kwargs):
-        if request.data.get("name") is None:
+        name = request.data.get("name")
+        if name is None:
             raise ValidationError({"name": "This field is required."})
-        new_degree_plan = DegreePlan(name=request.data.get("name"), person=self.request.user)
+        
+        if DegreePlan.objects.filter(name=name, person=self.request.user).exists():
+            return Response({"warning": f"A degree plan with name {name} already exists."}, status=status.HTTP_409_CONFLICT)
+
+        new_degree_plan = DegreePlan(name=name, person=self.request.user)
         new_degree_plan.save()
         serializer = self.get_serializer(new_degree_plan)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
