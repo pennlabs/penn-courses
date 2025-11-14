@@ -84,6 +84,20 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         serializer = self.get_serializer(degree_plan)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+    def update(self, request, *args, **kwargs):
+        name = request.data.get("name")
+        instance = self.get_object()
+        if (
+            name
+            and instance.name != name
+            and DegreePlan.objects.filter(name=name, person=request.user).exists()
+        ):
+            return Response(
+                {"warning": f"A degree plan with name {name} already exists."},
+                status=status.HTTP_409_CONFLICT,
+            )
+        return super().update(request, *args, **kwargs)
+
     def create(self, request, *args, **kwargs):
         name = request.data.get("name")
         if name is None:
