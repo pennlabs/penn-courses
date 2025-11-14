@@ -78,8 +78,6 @@ export const parseTranscript = (
           tempSchools.push({ value: "BSE", label: "Engineering BSE" });
         else tempSchools.push({ value: "BAS", label: "Engineering BAS" });
       }
-
-      // TODO: Ensure these are right!
       if (program.includes("wharton"))
         tempSchools.push({ value: "BS", label: "Wharton" });
       if (program.includes("nursing"))
@@ -117,31 +115,60 @@ export const parseTranscript = (
     }
 
     // SCRAPE COURSES (BY SEM)
+    let firstNonSummerSemReached = false;
+    
+    let courseToSem: { [key: string]: string } = {};
+    
     if (textResult[l].includes("institution credit")) {
       let truncatedTranscript = textResult.slice(parseInt(l) + 1);
       let currentSem = "";
       for (let line of truncatedTranscript) {
         if (/(fall|spring|summer)\s\d{4}/i.test(line)) {
           currentSem = line;
-          separatedCourses[currentSem] = [];
+          if (!firstNonSummerSemReached && !currentSem.includes("summer")) {
+            firstNonSummerSemReached = true;
+          }
+          // Only start creating sems after first non-summer semester is reached
+          if (firstNonSummerSemReached) {
+            separatedCourses[currentSem] = [];
+          }
         } else {
           let courseMatch = line.match(/\b\w+\s\d{3,4}\b/);
-
+          
           if (courseMatch) {
-            // Check if course didn't get an F or a W. If current sem's courses are empty, remove sem key from separatedCourses
-            if (
-              (line[line.length - 1] == "f" || line[line.length - 1] == "w") &&
-              separatedCourses[currentSem].length == 0
-            ) {
-              delete separatedCourses[currentSem];
-            } else {
-              separatedCourses[currentSem].push(courseMatch[0]);
+            // Check if course didn't get an F or a W. If so, add to current sem or _TRAN           
+            if (!(line[line.length - 1] == "f" || line[line.length - 1] == "w")) {
+              // TODO: We don't yet have a way to track courses that can be taken multiple times, 
+              // so we store a course that appears multiple times only in the most recent semester it appears in.
+              if (courseMatch[0] in courseToSem) {
+                const prevSem = courseToSem[courseMatch[0]];
+                separatedCourses[currentSem].push(courseMatch[0]);
+                courseToSem[courseMatch[0]] = currentSem;
+                separatedCourses[prevSem] = separatedCourses[prevSem].filter((c: string) => c !== courseMatch[0]);
+              } else {
+                // Add all pre-college courses to _TRAN semester
+                if (firstNonSummerSemReached) {
+                  separatedCourses[currentSem].push(courseMatch[0]);
+                  courseToSem[courseMatch[0]] = currentSem;
+                } else {
+                  separatedCourses["_TRAN"].push(courseMatch[0]);
+                  courseToSem[courseMatch[0]] = "_TRAN";
+                }
+              }
             }
           }
         }
       }
+
+      // Remove any empty semesters (handles edge case where user fails/withdraws from all courses in a semester)
+      for (let sem of Object.keys(separatedCourses)) {
+        if (separatedCourses[sem].length == 0) {
+          delete separatedCourses[sem];
+        }
+      }
+      
       separatedCourses = Object.keys(separatedCourses).map(
-        (key) => [{ sem: key, courses: separatedCourses[key] }][0]
+        (key) => ({ sem: key, courses: separatedCourses[key] })
       );
 
       // SCRAPE START YEAR AND INFER GRAD YEAR
