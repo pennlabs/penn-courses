@@ -246,21 +246,63 @@ export type FilterType =
       }
     | number;
 
-    export interface FriendshipState {
-        activeFriend: User;
-        activeFriendSchedule: { found: boolean; sections: Section[], breaks: Break[] };
-        acceptedFriends: User[];
-        requestsReceived: Friendship[];
-        requestsSent: Friendship[];
-    }
+export type AdvancedSearchEnum = {
+    type: "enum";
+    field: string;
+    op: "is" | "is_not" | "is_any_of" | "is_none_of";
+    value: string[];
+}
 
-    export interface ColorsMap {
-        [key: string]: Color
-    }
+export type AdvancedSearchNumeric = {
+    type: "numeric";
+    field: string;
+    op: "lt" | "lte" | "gt" | "gte" | "eq" | "neq";
+    value: number;
+}
 
-    export type Location = {
-        lat: number;
-        lng: number;
-        color?: string;
-    }
+export type AdvancedSearchBoolean = {
+    type: "boolean";
+    field: string;
+    value: boolean;
+}
 
+export type AdvancedSearchValue = {
+    type: "value";
+    field: string;
+    value: number;
+}
+
+export type AdvancedSearchGroup = {
+    type: "group";
+    op: "AND" | "OR";
+    children: AdvancedSearchCondition[];
+}
+
+export type AdvancedSearchCondition = AdvancedSearchEnum | AdvancedSearchNumeric | AdvancedSearchBoolean | AdvancedSearchValue;
+
+export type AdvancedSearchData = {
+    query: string;
+    filters: {
+        op: "AND" | "OR";
+        children: (AdvancedSearchCondition | AdvancedSearchGroup)[];
+    }
+    
+}
+
+export interface FriendshipState {
+    activeFriend: User;
+    activeFriendSchedule: { found: boolean; sections: Section[], breaks: Break[] };
+    acceptedFriends: User[];
+    requestsReceived: Friendship[];
+    requestsSent: Friendship[];
+}
+
+export interface ColorsMap {
+    [key: string]: Color
+}
+
+export type Location = {
+    lat: number;
+    lng: number;
+    color?: string;
+}
