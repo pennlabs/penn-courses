@@ -260,8 +260,7 @@ const ModalInterior = ({
               if (
                 modalObject &&
                 "id" in modalObject &&
-                "name" in modalObject &&
-                "degrees" in modalObject
+                "name" in modalObject
               ) {
                 updateDegreeplan({ name }, modalObject.id);
                 if (modalObject.id == activeDegreePlan?.id) {
