@@ -48,10 +48,7 @@ class ScheduleSerializer(serializers.ModelSerializer):
         required=True,
     )
     breaks = BreakSerializer(
-        many=True,
-        read_only=False,
-        help_text="The breaks in the schedule.",
-        required=False,
+        many=True, read_only=False, help_text="The breaks in the schedule.", required=False
     )
     id = serializers.IntegerField(
         read_only=False, required=False, help_text="The id of the schedule."
