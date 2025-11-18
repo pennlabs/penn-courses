@@ -251,22 +251,24 @@ class CourseListSearch(CourseList):
 
         return context
 
+    http_method_names = ["get", "post"]
     search_fields = ("full_code", "title", "sections__instructors__name")
+    filter_backends = [TypedCourseSearchBackend, CourseSearchAdvancedFilterBackend]
 
-    def get(self, request, *args, **kwargs):
-        queryset = super().get_queryset()
-        queryset = TypedCourseSearchBackend().filter_queryset(request, queryset, self)
+    def get_filter_backends(self):
+        if self.request.method == "GET":
+            return [TypedCourseSearchBackend]
 
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+        if self.request.method == "POST":
+            return [TypedCourseSearchBackend, CourseSearchAdvancedFilterBackend]
+
+        return super().get_filter_backends()
 
     def post(self, request, *args, **kwargs):
-        queryset = super().get_queryset()
-        queryset = TypedCourseSearchBackend().filter_queryset(request, queryset, self)
-        queryset = CourseSearchAdvancedFilterBackend().filter_queryset(request, queryset, self)
+        return self.list(request, *args, **kwargs)
 
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
 
 
 class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
