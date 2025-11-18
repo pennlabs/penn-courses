@@ -274,41 +274,28 @@ export function fetchCourseSearch(filterData) {
     };
 }
 
-const advancedCourseSearch = (_, searchData) =>
-    doAPIRequest(`/base/current/search/courses/?search=${searchData.query}`, {
-        method: "POST",
-        credentials: "include",
-        mode: "same-origin",
-        headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCsrf(),
-        },
-        body: JSON.stringify(searchData.filters),
-    });
+function advancedCourseSearch(_, searchData) {
+    const empty = searchData.filters.children.length === 0;
+    return doAPIRequest(
+        `/base/current/search/courses/?search=${searchData.query}`,
+        {
+            method: empty ? "GET" : "POST",
+            credentials: "include",
+            mode: "same-origin",
+            headers: {
+                Accept: "application/json",
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCsrf(),
+            },
+            body: empty ? null : JSON.stringify(searchData.filters),
+        }
+    );
+}
 
 const debouncedAdvancedCourseSearch = AwesomeDebouncePromise(
     advancedCourseSearch,
     500
 );
-
-export function fetchAdvancedCourseSearch(searchData) {
-    return (dispatch) => {
-        dispatch(updateSearchRequest());
-        debouncedAdvancedCourseSearch(dispatch, searchData)
-            .then((res) => res.json())
-            .then((res) => res.filter((course) => course.num_sections > 0))
-            .then((res) =>
-                batch(() => {
-                    dispatch(updateScrollPos());
-                    dispatch(updateSearch(res));
-                    if (res.length === 1)
-                        dispatch(fetchCourseDetails(res[0].id));
-                })
-            )
-            .catch((error) => dispatch(courseSearchError(error)));
-    };
-}
 
 export function updateSearchText(s) {
     return {
