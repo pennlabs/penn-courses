@@ -136,14 +136,14 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
         <DockWrapper ref={drop} >
             <DockContainer $isDroppable={canDrop} $isOver={isOver}>
                 <AccountIndicator
-                leftAligned={true}
-                user={user}
-                backgroundColor="light"
-                nameLength={2}
-                login={login}
-                logout={logout}
-                dropdownTop={true}
-                pathname={asPath}
+                    leftAligned={true}
+                    user={user}
+                    backgroundColor="light"
+                    nameLength={2}
+                    login={login}
+                    logout={logout}
+                    dropdownTop={true}
+                    pathname={asPath}
                 />
                 <SearchIconContainer onClick={() => {
                     setSearchRuleQuery("");
