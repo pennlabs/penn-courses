@@ -49,7 +49,6 @@ export const parseItems = (items: LineItem[]) => {
     else allText[currentCol][pos] = [items[i]?.str];
   }
 
-  console.log(allText);
   return allText;
 };
 
