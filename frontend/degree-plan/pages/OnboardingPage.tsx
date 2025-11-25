@@ -46,7 +46,7 @@ const OnboardingPage = ({
   // TRANSCRIPT PARSING
   const total = useRef<any>({});
   const addText = (items: any[], index: number) => {
-    const allText: any = parseItems(items, index);
+    const allText: any = parseItems(items);
     let textResult = [];
     for (let col in allText) {
       let poses = Object.keys(allText[col]).reverse();
