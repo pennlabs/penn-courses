@@ -57,7 +57,7 @@ export const parseItems = (items: LineItem[]) => {
 export const getMajorOptions = (
   degrees: DegreeListing[] | undefined,
   schools: SchoolOption[],
-  startingYear: number
+  startingYear: number | null
 ): DegreeOption[] | undefined => {
   const majorOptions = degrees
     ?.filter((d) => schools.map((s) => s.value).includes(d.degree))
