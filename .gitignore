@@ -25,5 +25,3 @@ pcr-backup*
 ./package.json
 ./yarn.lock
 .tool-versions
-.Pipfile
-.Pipfile.lock
