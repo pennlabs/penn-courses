@@ -204,7 +204,7 @@ export default function CreateWithTranscriptPanel({
   const graduationYearOptions = getYearOptions()?.gradYears;
 
   const majorOptionsCallback = useCallback(() => {
-    const majorOptions = getMajorOptions(degrees, schools, startingYear);
+    const majorOptions = getMajorOptions(degrees, schools, startingYear?.value ?? null);
     return majorOptions;
   }, [schools, startingYear]);
 
