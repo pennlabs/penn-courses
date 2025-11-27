@@ -9,9 +9,10 @@ import { polyfillPromiseWithResolvers } from "./polyfilsResolver";
 
 import "core-js/full/promise/with-resolvers.js";
 
-import { parseItems, parseTranscript } from "../utils/parseUtils";
+import { parseItems, parseTranscript, ParsedText, flattenParsedText } from "../utils/parseUtils";
 import WelcomeLayout from "@/components/OnboardingPanels/WelcomePanel";
 import CreateWithTranscriptPanel from "@/components/OnboardingPanels/CreateWithTranscriptPanel";
+
 polyfillPromiseWithResolvers();
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.mjs`;
@@ -44,24 +45,26 @@ const OnboardingPage = ({
   >(`/api/degree/degrees`);
 
   // TRANSCRIPT PARSING
-  const total = useRef<any>({});
+  const total = useRef<Record<number, ParsedText[]>>({});
   const addText = (items: any[], index: number) => {
-    const allText: any = parseItems(items);
-    let textResult = [];
-    for (let col in allText) {
-      let poses = Object.keys(allText[col]).reverse();
-      for (let i in poses) {
-        textResult.push(allText[col][poses[i]].join("").toLowerCase());
-      }
-      total.current[index] = textResult;
-    }
+    const parsed = parseItems(items);
+    total.current[index] = total.current[index] ?? [];
+    total.current[index].push(parsed);
 
     // If all pages have been read, begin to parse text from transcript
     if (Object.keys(total.current).length === numPages) {
-      let all: any = [];
-      for (let key in Object.keys(total.current).sort()) {
-        all = all.concat(total.current[key]);
-      }
+      let all: string[] = [];
+      const sortedPageIndexes = Object.keys(total.current)
+        .map((key) => Number(key))
+        .sort((a, b) => a - b);
+
+      sortedPageIndexes.forEach((pageIndex) => {
+        const pageEntries = total.current[pageIndex];
+        if (!pageEntries) return;
+        pageEntries.forEach((pageText) => {
+          all = all.concat(flattenParsedText(pageText));
+        });
+      });
 
       const {
         scrapedCourses,

@@ -17,10 +17,35 @@ type DegreeOption = {
   label: string;
 };
 
+type ParsedTextColumn = Record<string, string[]>;
+
+export type ParsedText = {
+  col0: ParsedTextColumn;
+  col1: ParsedTextColumn;
+};
+
+// Given a parsed text object, return a flattened array of strings.
+export const flattenParsedText = (parsedText: ParsedText): string[] => {
+  const columns: (keyof ParsedText)[] = ["col0", "col1"];
+  const flattened: string[] = [];
+
+  columns.forEach((column) => {
+    const columnRows = parsedText[column];
+    const poses = Object.keys(columnRows).reverse();
+    poses.forEach((pose) => {
+      const row = columnRows[pose];
+      flattened.push(row.join("").toLowerCase());
+    });
+  });
+
+  return flattened;
+};
+
+
 // Given a list of line items from the PDF, return an object of columns and the lines in each column.
 export const parseItems = (items: LineItem[]) => {
   // At most the transcript will have two columns - we account for that here.
-  let allText: { col0: string[][]; col1: string[][] } = { col0: [], col1: [] };
+  let allText: ParsedText = { col0: {}, col1: {} };
 
   // Find x value for when second column begins using convenient lines.
   let maxCol = items.reduce(function (acc, el) {
@@ -41,7 +66,7 @@ export const parseItems = (items: LineItem[]) => {
 
     // Ignore potential high school program transcript
     if (items[i].str === "Level:High School") {
-      allText[currentCol] = [];
+      allText[currentCol] = {};
       break;
     }
     if (pos in allText[currentCol])
