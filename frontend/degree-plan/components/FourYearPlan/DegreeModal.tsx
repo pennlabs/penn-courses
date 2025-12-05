@@ -211,7 +211,6 @@ const ModalInterior = ({
 
   const [isAddingDegree, setIsAddingDegree] = useState(false);
   const add_degree = async (degreeplanId: number, degreeId: number) => {
-    // const { mutate } = useSWR(`/api/degree/degreeplans/${degreeplanId}/degrees`, getFetcher);
     setIsAddingDegree(true);
     try {
       const updated = await postFetcher(
