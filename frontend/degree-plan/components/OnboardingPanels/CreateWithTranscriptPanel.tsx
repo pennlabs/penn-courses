@@ -230,14 +230,16 @@ export default function CreateWithTranscriptPanel({
                 onChange={(e) => setName(e.target.value)}
                 placeholder=""
               />
-              <ErrorText
-                style={{
-                  color: "red",
-                  visibility: nameAlreadyExists ? "visible" : "hidden",
-                }}
-              >
-                A degree plan with this name already exists. Please choose a different name.
-              </ErrorText>
+              {nameAlreadyExists && (
+                <ErrorText
+                  style={{
+                    color: "red",
+                    visibility: nameAlreadyExists ? "visible" : "hidden",
+                  }}
+                  >
+                    A degree plan with this name already exists. Please choose a different name.
+                  </ErrorText>
+              )}
             </FieldWrapper>
 
             <FieldWrapper>
