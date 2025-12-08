@@ -125,6 +125,107 @@ def course_reviews(queryset):
         extra_metrics=False,
     )
 
+class OptimizedCourseManager(models.Manager):
+    """
+    Optimized replacement for CourseManager that uses materialized views.
+    
+    This provides the same fields as course_reviews() but by joining to
+    materialized views instead of computing aggregations on each query.
+    """
+    
+    def get_queryset(self):
+        from courses.materialized_views import (
+            CourseReviewMaterialized,
+            RecentCourseReviewMaterialized,
+        )
+        
+        # Get base queryset
+        qs = super().get_queryset()
+        
+        # Subquery to get average review data
+        avg_reviews = CourseReviewMaterialized.objects.filter(
+            course_id=OuterRef('id')
+        )
+        
+        # Subquery to get recent review data
+        recent_reviews = RecentCourseReviewMaterialized.objects.filter(
+            course_id=OuterRef('id')
+        )
+        
+        # Annotate with review averages
+        return qs.annotate(
+            # Average reviews (all semesters)
+            course_quality=Subquery(
+                avg_reviews.values('course_quality')[:1]
+            ),
+            difficulty=Subquery(
+                avg_reviews.values('difficulty')[:1]
+            ),
+            instructor_quality=Subquery(
+                avg_reviews.values('instructor_quality')[:1]
+            ),
+            work_required=Subquery(
+                avg_reviews.values('work_required')[:1]
+            ),
+            
+            # Recent reviews (most recent semester only)
+            recent_course_quality=Subquery(
+                recent_reviews.values('recent_course_quality')[:1]
+            ),
+            recent_difficulty=Subquery(
+                recent_reviews.values('recent_difficulty')[:1]
+            ),
+            recent_instructor_quality=Subquery(
+                recent_reviews.values('recent_instructor_quality')[:1]
+            ),
+            recent_work_required=Subquery(
+                recent_reviews.values('recent_work_required')[:1]
+            ),
+            
+            # Metadata
+            semester_calc=Subquery(
+                recent_reviews.values('semester_calc')[:1]
+            ),
+        )
+
+
+class OptimizedSectionManager(models.Manager):
+    """
+    Optimized replacement for SectionManager that uses materialized views.
+    
+    This provides the same fields as sections_with_reviews() but by joining
+    to materialized views instead of computing aggregations on each query.
+    """
+    
+    def get_queryset(self):
+        from courses.materialized_views import SectionReviewMaterialized
+
+        print("HELLO from OptimizedSectionManager")
+        
+        # Get base queryset
+        qs = super().get_queryset()
+        
+        # Subquery to get review data
+        section_reviews = SectionReviewMaterialized.objects.filter(
+            section_id=OuterRef('id')
+        )
+        
+        # Annotate with review averages
+        return qs.annotate(
+            course_quality=Subquery(
+                section_reviews.values('course_quality')[:1]
+            ),
+            difficulty=Subquery(
+                section_reviews.values('difficulty')[:1]
+            ),
+            instructor_quality=Subquery(
+                section_reviews.values('instructor_quality')[:1]
+            ),
+            work_required=Subquery(
+                section_reviews.values('work_required')[:1]
+            ),
+        ).distinct().order_by('code')
+
 
 class CourseManager(models.Manager):
     def get_queryset(self):
@@ -137,7 +238,7 @@ class Course(models.Model):
     """
 
     objects = models.Manager()
-    with_reviews = CourseManager()
+    with_reviews = OptimizedCourseManager()
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -607,7 +708,7 @@ class Section(models.Model):
     """
 
     objects = models.Manager()
-    with_reviews = SectionManager()
+    with_reviews = OptimizedSectionManager()
 
     STATUS_CHOICES = (
         ("O", "Open"),
