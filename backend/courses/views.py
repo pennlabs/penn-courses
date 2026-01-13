@@ -446,6 +446,12 @@ class UserView(generics.RetrieveAPIView, generics.UpdateAPIView):
     def get_object(self):
         return self.request.user
 
+    def post(self, request, *args, **kwargs):
+        if "has_seen_onboarding" in request.data and request.data["has_seen_onboarding"] is True:
+            request.user.has_seen_onboarding = True
+            request.user.save()
+        return self.partial_update(request, *args, **kwargs)
+
 
 class StatusUpdateView(generics.ListAPIView):
     """

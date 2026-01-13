@@ -1,5 +1,5 @@
 
-import { useMemo, useState, useContext, useRef, useLayoutEffect } from 'react';
+import { useMemo, useState, useContext, useRef, useLayoutEffect, useEffect } from 'react';
 import RuleComponent, { SkeletonRule } from './Rule';
 import { Degree as DegreeType, DegreePlan, Fulfillment, Rule, Degree as DegreeD } from '@/types';
 import styled from '@emotion/styled';
@@ -10,6 +10,14 @@ import { Icon } from '../common/bulma_derived_components';
 import React from 'react';
 import { ModalKey } from '../FourYearPlan/DegreeModal';
 import { LightTrashIcon } from '../common/TrashIcon';
+import { TutorialModalContext } from '../FourYearPlan/OnboardingTutorial';
+
+const TutorialHighlight = styled.div<{ $active: boolean }>`
+  position: relative;
+  border-radius: 6px;
+  outline: ${p => p.$active ? '2px solid var(--selected-color)' : 'none'};
+  outline-offset: 2px;
+`;
 
 const EmptyPanelContainer = styled.div`
   display: flex;
@@ -46,8 +54,8 @@ const DegreeHeaderContainer = styled.div`
   border-radius: var(--req-item-radius);
   position: sticky;
   top: 0;
-  z-index: 1000;
-`
+  z-index: 2;
+`;
 
 const ReqPanelTitle = styled.div`
   font-size: 1.25rem;
@@ -100,10 +108,9 @@ const ReqContent = styled.div`
 `
 
 export const HEADER_DEFAULT_BUFFER = 8;
-export const WhiteSpace = styled.div<{ $headerHeight: number, $zIndex: number }>`
+export const WhiteSpace = styled.div<{ $headerHeight: number }>`
   height: ${HEADER_DEFAULT_BUFFER}px;
   background-color: white;
-  z-index: ${(props) => props.$zIndex || 500};
   position: sticky;
   top: ${(props) => props.$headerHeight}px;
 `
@@ -115,7 +122,7 @@ interface DegreeHeaderProps {
   collapsed: boolean,
   editMode: boolean,
   skeleton?: boolean,
-  containerRef?: React.Ref<HTMLDivElement>
+  containerRef?: React.Ref<HTMLDivElement>,
 }
 
 const DegreeHeader = ({ 
@@ -207,7 +214,7 @@ const Degree = ({
   editMode, 
   setModalKey, 
   setModalObject, 
-  isLoading 
+  isLoading,
 }: any) => {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -278,7 +285,7 @@ const Degree = ({
         editMode={editMode}
         skeleton={false}
       />
-      <WhiteSpace $headerHeight={headerHeight} $zIndex={999} />
+      <WhiteSpace $headerHeight={headerHeight} />
       {!collapsed && !editMode &&
         <>
           <DegreeBody>
@@ -286,7 +293,6 @@ const Degree = ({
               return (
               <RuleComponent
                 headerHeight={headerHeight}
-                zIndex={999}
                 {...computeRuleTree({activeDegreePlanId: activeDegreeplan.id, rule, rulesToFulfillments, rulesToUnselectedFulfillments, degree })}
               />
             )}
@@ -307,6 +313,32 @@ interface ReqPanelProps {
 const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: ReqPanelProps) => {
   const [editMode, setEditMode] = React.useState(false);
   const [allRuleLeaves, setAllRuleLeaves] = React.useState(false);
+  const { tutorialModalKey, componentRefs } = useContext(TutorialModalContext);
+  const reqPanelRef = React.useRef<HTMLDivElement | null>(null);
+  const editReqRef = React.useRef<HTMLDivElement | null>(null);
+  
+  const isRequirementsPanelStep = tutorialModalKey === "requirements-panel-1" || tutorialModalKey === "edit-requirements";
+  
+  useEffect(() => {
+    if (!componentRefs?.current) return;
+
+    if (isRequirementsPanelStep) {
+        componentRefs.current["reqPanel"] = reqPanelRef.current;
+
+        if (reqPanelRef.current) {
+            reqPanelRef.current.style.zIndex = "20";
+        }
+    } else {
+        if (reqPanelRef.current) {
+            reqPanelRef.current.style.zIndex = "";
+        }
+    }
+
+    if (tutorialModalKey === "edit-requirements") {
+        componentRefs.current["editReqs"] = editReqRef.current;
+    }
+
+}, [tutorialModalKey, componentRefs, isRequirementsPanelStep]);
 
   const { data: activeDegreeplanDetail = null, isLoading: isLoadingDegrees } = useSWR<DegreePlan>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}` : null);
   const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null);
@@ -343,11 +375,13 @@ const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: 
   }, [fulfillments, isLoadingFulfillments])
 
   return (
-    <PanelContainer>
+    <PanelContainer style={{ position: "relative" }} ref={reqPanelRef}>
       <PanelHeader>
         <ReqPanelTitle>Requirements</ReqPanelTitle>
         <PanelTopBarIconList>
-          <EditButton editMode={editMode} setEditMode={setEditMode} />
+          <TutorialHighlight $active={tutorialModalKey === 'edit-requirements'} ref={editReqRef}>
+            <EditButton editMode={editMode} setEditMode={setEditMode} />
+          </TutorialHighlight>
         </PanelTopBarIconList>
       </PanelHeader>
       {!activeDegreeplan ? <ReqPanelBody><Degree isLoading={true} /></ReqPanelBody> :

@@ -16,6 +16,7 @@ import { Tooltip } from 'react-tooltip';
 import { useContext } from "react";
 import ToastContext from "../Toast/Toast";
 import { DisabledTrashIcon } from "../common/DisabledTrashIcon";
+import { SemestersContext } from "./Semesters";
 
 const translateSemester = (semester: Course["semester"]) => {
     if (semester === TRANSFER_CREDIT_SEMESTER_KEY) return "AP & Transfer Credit";

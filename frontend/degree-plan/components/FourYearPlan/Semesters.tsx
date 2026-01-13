@@ -182,6 +182,14 @@ export const interpolateSemesters = (startingYear: number, graduationYear: numbe
   return res;
 }
 
+interface SemestersContextProps {
+  semesterRefs: React.MutableRefObject<{ [semester: string]: HTMLDivElement | null }>;
+}
+
+export const SemestersContext = React.createContext<SemestersContextProps>({
+  semesterRefs: { current: {} },
+});
+
 interface SemestersProps {
   activeDegreeplan?: DegreePlan;
   showStats: any;
@@ -192,6 +200,7 @@ interface SemestersProps {
   setEditMode: (arg0: boolean) => void;
   isLoading: boolean;
   currentSemester?: string;
+  ref?: React.RefObject<HTMLDivElement>;
 }
 
 const Semesters = ({
@@ -204,6 +213,7 @@ const Semesters = ({
   setEditMode,
   currentSemester,
   isLoading,
+  ref,
 }: SemestersProps) => {
   const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<
     Fulfillment[]
@@ -311,8 +321,8 @@ const Semesters = ({
   return (
     <SemestersContainer className={className}>
       {isLoading
-        ? Array.from(Array(8).keys()).map(() => (
-            <SkeletonSemester showStats={showStats} />
+        ? Array.from(Array(8).keys()).map((_, idx) => (
+            <SkeletonSemester key={`skeleton-${idx}`} showStats={showStats} />
           ))
         : Object.keys(semesters)
             .sort((a,b) => a.localeCompare(b))

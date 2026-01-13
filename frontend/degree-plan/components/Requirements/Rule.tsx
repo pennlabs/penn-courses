@@ -131,7 +131,7 @@ export const SkeletonRule: React.FC<React.PropsWithChildren> = ({
               <DarkBlueBackgroundSkeleton width="2em" />
             </Row>
           </CusCourses>
-        </div>
+        </div>  
       </RuleLeafWrapper>
     ) : (
       <RuleTitleWrapper>
@@ -160,7 +160,7 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
   const satisfied = progress === 1;
 
   const headerHeight = ruleTree.headerHeight;
-  const zIndex = ruleTree.zIndex || -1;
+  const zIndex = ruleTree.zIndex || 5;
 
   const myHeaderRef = useRef<HTMLDivElement>(null);
   const [myHeight, setMyHeight] = useState(0);
@@ -360,7 +360,7 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
           )}
         </RuleTitle>
       </RuleTitleWrapper>
-      <WhiteSpace $headerHeight={myHeight + (headerHeight ||0) + HEADER_DEFAULT_BUFFER} $zIndex={500} />
+      <WhiteSpace $headerHeight={myHeight + (headerHeight ||0) + HEADER_DEFAULT_BUFFER} />
       {!collapsed && (
         <Indented>
           <Column>
