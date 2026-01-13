@@ -134,6 +134,42 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        # Handle updating fulfillments when a new degree is added to the degree plan.
+        def update_fulfillments():
+            rules_per_degree, rule_to_degree = map_rules_and_degrees(degree_plan)
+            # Helper to track satisfaction
+            satisfied_lookup = defaultdict(int)
+            satisfied_rules = set()
+
+            def is_satisfied(rule):
+                f = satisfied_lookup[rule.id]
+                return (rule.num and f >= rule.num) or (rule.credits and f >= rule.credits)
+
+            fulfillments = Fulfillment.objects.filter(degree_plan=degree_plan).order_by(
+                "semester", "full_code"
+            )
+
+            for fulfillment in fulfillments:
+                selected_rules, unselected_rules, legal = allocate_rules(
+                    fulfillment.full_code,
+                    rules_per_degree,
+                    rule_to_degree,
+                    degree_plan=degree_plan,
+                    satisfied_rules=satisfied_rules,
+                )
+
+                fulfillment.rules.set(selected_rules)
+                fulfillment.unselected_rules.set(unselected_rules)
+                fulfillment.legal = legal
+                fulfillment.save()
+
+                for rule in selected_rules:
+                    satisfied_lookup[rule.id] += 1
+                    if is_satisfied(rule):
+                        satisfied_rules.add(rule)
+
+        update_fulfillments()
+
         serializer = self.get_serializer(degree_plan)
         return Response(serializer.data, status=status.HTTP_200_OK)
 

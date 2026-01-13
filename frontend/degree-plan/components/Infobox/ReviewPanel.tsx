@@ -96,7 +96,7 @@ interface ReviewPanelProps extends ReviewPanelContextType {
 
 const ReviewPanelWrapper = styled.div<{ $left?: number, $right?: number, $top?: number, $bottom?: number }>`
     position: absolute;
-    z-index: 100;
+    z-index: 1001;
     height: 35vh;
     width: 20rem;
     overflow: hidden;

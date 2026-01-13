@@ -79,6 +79,10 @@ const ModalButton = styled.button`
   padding: 0.25rem 0.5rem;
   color: white;
   border: none;
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
 `;
 
 const ButtonRow = styled.div<{ $center?: boolean }>`
@@ -205,14 +209,21 @@ const ModalInterior = ({
 
   if (!modalKey && !modalObject) return <div></div>;
 
+  const [isAddingDegree, setIsAddingDegree] = useState(false);
   const add_degree = async (degreeplanId: number, degreeId: number) => {
-    // const { mutate } = useSWR(`/api/degree/degreeplans/${degreeplanId}/degrees`, getFetcher);
-    const updated = await postFetcher(
-      `/api/degree/degreeplans/${degreeplanId}/degrees`,
-      { degree_ids: [degreeId] }
-    );
-    await mutate(`/api/degree/degreeplans/${degreeplanId}`); // use updated degree plan returned
-    await mutate(`/api/degree/degreeplans/${degreeplanId}/fulfillments`);
+    setIsAddingDegree(true);
+    try {
+      const updated = await postFetcher(
+        `/api/degree/degreeplans/${degreeplanId}/degrees`,
+        { degree_ids: [degreeId] }
+      );
+      await mutate(`/api/degree/degreeplans/${degreeplanId}`); // use updated degree plan returned
+      await mutate(`/api/degree/degreeplans/${degreeplanId}/fulfillments`);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsAddingDegree(false);
+    }
   };
 
   const remove_degree = async (degreeplanId: number, degreeId: number) => {
@@ -334,13 +345,14 @@ const ModalInterior = ({
             </SelectList>
             <ButtonRow $center={true}>
               <ModalButton
-                onClick={() => {
+                disabled={isAddingDegree}
+                onClick={async () => {
                   if (!major?.value.id) return;
-                  add_degree((modalObject as Degree).id, major?.value.id);
+                  await add_degree((modalObject as Degree).id, major?.value.id);
                   close();
                 }}
               >
-                Add
+                {isAddingDegree ? "Adding..." : "Add"}
               </ModalButton>
             </ButtonRow>
           </DegreeAddInterior>

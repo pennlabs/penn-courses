@@ -7,7 +7,6 @@ import { login } from "./login";
 import { friendships } from "./friendships";
 import { alerts } from "./alerts";
 import { breaks } from "./breaks";
-import { search } from "./search";
 
 const coursePlanApp = combineReducers({
     schedule,
@@ -18,7 +17,6 @@ const coursePlanApp = combineReducers({
     friendships,
     alerts,
     breaks,
-    search,
 });
 
 export default coursePlanApp;

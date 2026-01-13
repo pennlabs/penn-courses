@@ -36,9 +36,12 @@ const InnerMenu = styled.div`
     position: absolute;
     padding: 0.32rem;
     font-size: 0.85rem;
-    top: 70px;
     box-shadow: 0 0 5px 0 lightgrey;
-    right: ${(props) => (props.$leftAligned ? "0%" : "61%")};
+    right: ${(props) => (props.$leftAligned ? "-61%" : "61%")};
+    ${(props) =>
+        props.$floattop
+            ? "bottom: 100%; top: unset;"
+            : "top: 100%; bottom: unset;"}
 `;
 
 const NameContainer = styled.p`
@@ -64,7 +67,7 @@ const LogoutButton = styled.div`
 `;
 
 const TriangleUp = styled.div`
-    transform: ${({ down }) => (down ? "rotate(180deg)" : "rotate(0)")};
+    transform: ${({ $down }) => ($down ? "rotate(180deg)" : "rotate(0)")};
     width: 0;
     height: 0;
     border-left: 5px solid transparent;
@@ -84,13 +87,13 @@ const LogoutDropdownContainer = styled.div`
 const LogoutDropdownMenu = styled.div`
     min-width: 7rem !important;
     margin-top: 0;
-    display: ${({ selected }) => (selected ? "block" : "none")};
+    display: ${({ $selected }) => ($selected ? "block" : "none")};
     left: 0;
     min-width: 12rem;
-    ${({ floattop }) =>
-        floattop ? "padding-bottom: 4px" : "padding-top: 4px"};
+    ${({ $floattop }) =>
+        $floattop ? "padding-bottom: 4px" : "padding-top: 4px"};
     position: absolute;
-    ${({ floattop }) => (floattop ? "bottom: 100%" : "top: 100%")};
+    ${({ $floattop }) => ($floattop ? "bottom: 100%" : "top: 100%")};
     z-index: 20;
 `;
 
@@ -123,6 +126,30 @@ const UserSelector = ({
         setSelected(false);
     }, !selected);
 
+    const menuContent = (
+        <InnerMenu $leftAligned={leftAligned} $floattop={dropdownTop}>
+            <NameContainer>
+                {" "}
+                {firstName} {lastName}{" "}
+            </NameContainer>
+            <EmailContainer> {username} </EmailContainer>
+            <LogoutButton
+                role="button"
+                onClick={() => {
+                    fetch("/accounts/logout/", {
+                        method: "GET",
+                        redirect: "follow",
+                    }).then(onLogout);
+                }}
+            >
+                Logout
+                <LogoutIconContainer>
+                    <i className="fas fa-sign-out-alt" />
+                </LogoutIconContainer>
+            </LogoutButton>
+        </InnerMenu>
+    );
+
     return (
         <Dropdown ref={onClickOutside}>
             <NameBubble
@@ -139,32 +166,21 @@ const UserSelector = ({
                 </span>
             </NameBubble>
             <LogoutDropdownMenu
-                selected={selected}
-                floattop={dropdownTop.toString()}
+                $selected={selected}
+                $floattop={dropdownTop}
             >
                 <LogoutDropdownContainer className="dropdown-menu-container">
-                    <TriangleUp down={dropdownTop.toString()} />
-                    <InnerMenu $leftAligned={leftAligned}>
-                        <NameContainer>
-                            {" "}
-                            {firstName} {lastName}{" "}
-                        </NameContainer>
-                        <EmailContainer> {username} </EmailContainer>
-                        <LogoutButton
-                            role="button"
-                            onClick={() => {
-                                fetch("/accounts/logout/", {
-                                    method: "GET",
-                                    redirect: "follow",
-                                }).then(onLogout);
-                            }}
-                        >
-                            Logout
-                            <LogoutIconContainer>
-                                <i className="fas fa-sign-out-alt" />
-                            </LogoutIconContainer>
-                        </LogoutButton>
-                    </InnerMenu>
+                    {dropdownTop ? (
+                        <>
+                            {menuContent}
+                            <TriangleUp $down={dropdownTop} />
+                        </>
+                    ) : (
+                        <>
+                            <TriangleUp $down={dropdownTop} />
+                            {menuContent}
+                        </>
+                    )}
                 </LogoutDropdownContainer>
             </LogoutDropdownMenu>
         </Dropdown>

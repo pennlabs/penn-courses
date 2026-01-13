@@ -5,7 +5,6 @@ import { parsePhoneNumberFromString } from "libphonenumber-js";
 import getCsrf from "../components/csrf";
 import { MIN_FETCH_INTERVAL } from "../constants/sync_constants";
 import { PATH_REGISTRATION_SCHEDULE_NAME } from "../constants/constants";
-import { buildCourseSearchRequest } from "../util.ts";
 
 export const UPDATE_SEARCH = "UPDATE_SEARCH";
 export const UPDATE_SEARCH_REQUEST = "UPDATE_SEARCH_REQUEST";
@@ -35,7 +34,6 @@ export const UPDATE_CHECKBOX_FILTER = "UPDATE_CHECKBOX_FILTER";
 export const UPDATE_BUTTON_FILTER = "UPDATE_BUTTON_FILTER";
 export const CLEAR_FILTER = "CLEAR_FILTER";
 export const CLEAR_ALL = "CLEAR_ALL";
-export const UPDATE_SEARCH_FILTER = "UPDATE_SEARCH_FILTER";
 
 export const SECTION_INFO_SEARCH_ERROR = "SECTION_INFO_SEARCH_ERROR";
 export const SECTION_INFO_SEARCH_LOADING = "SECTION_INFO_SEARCH_LOADING";
@@ -252,50 +250,144 @@ export const loadRequirements = () => (dispatch) =>
         }
     );
 
+function buildCourseSearchUrl(filterData) {
+    let queryString = `/base/current/search/courses/?search=${filterData.searchString}`;
+
+    // Requirements filter
+    const reqs = [];
+    if (filterData.selectedReq) {
+        for (const key of Object.keys(filterData.selectedReq)) {
+            if (filterData.selectedReq[key]) {
+                reqs.push(key);
+            }
+        }
+
+        if (reqs.length > 0) {
+            queryString += `&requirements=${reqs[0]}`;
+            for (let i = 1; i < reqs.length; i += 1) {
+                queryString += `,${reqs[i]}`;
+            }
+        }
+    }
+
+    // Range filters
+    const filterFields = [
+        "difficulty",
+        "course_quality",
+        "instructor_quality",
+        "time",
+    ];
+    const defaultFilters = [
+        [0, 4],
+        [0, 4],
+        [0, 4],
+        [1.5, 17],
+    ];
+    const decimalToTime = (t) => {
+        const hour = Math.floor(t);
+        const mins = parseFloat(((t % 1) * 0.6).toFixed(2));
+        return Math.min(23.59, hour + mins);
+    };
+    for (let i = 0; i < filterFields.length; i += 1) {
+        if (
+            filterData[filterFields[i]] &&
+            JSON.stringify(filterData[filterFields[i]]) !==
+                JSON.stringify(defaultFilters[i])
+        ) {
+            const filterRange = filterData[filterFields[i]];
+            if (filterFields[i] === "time") {
+                const start = decimalToTime(24 - filterRange[1]);
+                const end = decimalToTime(24 - filterRange[0]);
+                queryString += `&${filterFields[i]}=${
+                    start === 7 ? "" : start
+                }-${end === 10.3 ? "" : end}`;
+            } else {
+                queryString += `&${filterFields[i]}=${filterRange[0]}-${filterRange[1]}`;
+            }
+        }
+    }
+
+    // Checkbox Filters
+    const checkboxFields = ["cu", "activity", "days"];
+    const checkboxDefaultFields = [
+        {
+            0.5: 0,
+            1: 0,
+            1.5: 0,
+        },
+        {
+            LAB: 0,
+            REC: 0,
+            SEM: 0,
+            STU: 0,
+        },
+        {
+            M: 1,
+            T: 1,
+            W: 1,
+            R: 1,
+            F: 1,
+            S: 1,
+            U: 1,
+        },
+    ];
+    for (let i = 0; i < checkboxFields.length; i += 1) {
+        if (
+            filterData[checkboxFields[i]] &&
+            JSON.stringify(filterData[checkboxFields[i]]) !==
+                JSON.stringify(checkboxDefaultFields[i])
+        ) {
+            const applied = [];
+            Object.keys(filterData[checkboxFields[i]]).forEach((item) => {
+                // eslint-disable-line
+                if (filterData[checkboxFields[i]][item]) {
+                    applied.push(item);
+                }
+            });
+            if (applied.length > 0) {
+                if (checkboxFields[i] === "days") {
+                    queryString +=
+                        applied.length < 7 ? `&days=${applied.join("")}` : "";
+                } else {
+                    queryString += `&${checkboxFields[i]}=${applied[0]}`;
+                    for (let j = 1; j < applied.length; j += 1) {
+                        queryString += `,${applied[j]}`;
+                    }
+                }
+            }
+        }
+    }
+
+    // toggle button filters
+    const buttonFields = ["schedule-fit", "is_open"];
+    const buttonDefaultFields = [-1, 0];
+
+    for (let i = 0; i < buttonFields.length; i += 1) {
+        if (
+            filterData[buttonFields[i]] &&
+            JSON.stringify(filterData[buttonFields[i]]) !==
+                JSON.stringify(buttonDefaultFields[i])
+        ) {
+            // get each filter's value
+            const applied = filterData[buttonFields[i]];
+            if (applied !== undefined && applied !== "" && applied !== null) {
+                queryString += `&${buttonFields[i]}=${applied}`;
+            }
+        }
+    }
+
+    return queryString;
+}
+
+const courseSearch = (_, filterData) =>
+    doAPIRequest(buildCourseSearchUrl(filterData));
+
+const debouncedCourseSearch = AwesomeDebouncePromise(courseSearch, 500);
+
 export function fetchCourseSearch(filterData) {
     return (dispatch) => {
         dispatch(updateSearchRequest());
-        debouncedAdvancedCourseSearch(
-            dispatch,
-            buildCourseSearchRequest(filterData)
-        )
-            // debouncedCourseSearch(dispatch, filterData)
-            .then((res) => res.json())
-            .then((res) => res.filter((course) => course.num_sections > 0))
-            .then((res) =>
-                batch(() => {
-                    dispatch(updateScrollPos());
-                    dispatch(updateSearch(res));
-                    if (res.length === 1)
-                        dispatch(fetchCourseDetails(res[0].id));
-                })
-            )
-            .catch((error) => dispatch(courseSearchError(error)));
-    };
-}
-
-const advancedCourseSearch = (_, searchData) =>
-    doAPIRequest(`/base/current/search/courses/?search=${searchData.query}`, {
-        method: "POST",
-        credentials: "include",
-        mode: "same-origin",
-        headers: {
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "X-CSRFToken": getCsrf(),
-        },
-        body: JSON.stringify(searchData.filters),
-    });
-
-const debouncedAdvancedCourseSearch = AwesomeDebouncePromise(
-    advancedCourseSearch,
-    500
-);
-
-export function fetchAdvancedCourseSearch(searchData) {
-    return (dispatch) => {
-        dispatch(updateSearchRequest());
-        debouncedAdvancedCourseSearch(dispatch, searchData)
+        debouncedCourseSearch(dispatch, filterData)
             .then((res) => res.json())
             .then((res) => res.filter((course) => course.num_sections > 0))
             .then((res) =>
@@ -378,13 +470,6 @@ export function clearFilter(propertyName) {
     return {
         type: CLEAR_FILTER,
         propertyName,
-    };
-}
-
-export function updateSearchFilter(path, filters) {
-    return {
-        type: UPDATE_SEARCH_FILTER,
-        filters,
     };
 }
 

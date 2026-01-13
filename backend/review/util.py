@@ -417,9 +417,7 @@ def avg_and_recent_demand_plots(section_map, status_updates_map, bin_size=0.01):
                     (
                         1
                         if x["type"] == "status_update"
-                        else 2
-                        if x["type"] == "distribution_estimate_change"
-                        else 3
+                        else 2 if x["type"] == "distribution_estimate_change" else 3
                     ),
                 ),
             )

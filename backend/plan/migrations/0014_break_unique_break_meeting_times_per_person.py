@@ -16,8 +16,7 @@ class Migration(migrations.Migration):
             model_name="break",
             constraint=models.UniqueConstraint(
                 condition=models.Q(
-                    ("meeting_times__isnull", False),
-                    models.Q(("meeting_times", ""), _negated=True),
+                    ("meeting_times__isnull", False), models.Q(("meeting_times", ""), _negated=True)
                 ),
                 fields=("person", "meeting_times"),
                 name="unique_break_meeting_times_per_person",
