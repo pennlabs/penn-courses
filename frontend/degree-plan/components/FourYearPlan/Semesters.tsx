@@ -3,7 +3,7 @@ import styled from "@emotion/styled";
 import { Icon } from "../common/bulma_derived_components";
 import { Course, DegreePlan, Fulfillment } from "@/types";
 import useSWR from "swr";
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useContext } from "react";
 import Select from "react-select";
 import { ModalKey } from "./DegreeModal";
 
@@ -182,6 +182,14 @@ export const interpolateSemesters = (startingYear: number, graduationYear: numbe
   return res;
 }
 
+interface SemestersContextProps {
+  semesterRefs: React.MutableRefObject<{ [semester: string]: HTMLDivElement | null }>;
+}
+
+export const SemestersContext = React.createContext<SemestersContextProps>({
+  semesterRefs: { current: {} },
+});
+
 interface SemestersProps {
   activeDegreeplan?: DegreePlan;
   showStats: any;
@@ -192,6 +200,7 @@ interface SemestersProps {
   setEditMode: (arg0: boolean) => void;
   isLoading: boolean;
   currentSemester?: string;
+  ref?: React.RefObject<HTMLDivElement>;
 }
 
 const Semesters = ({
@@ -204,7 +213,9 @@ const Semesters = ({
   setEditMode,
   currentSemester,
   isLoading,
+  ref,
 }: SemestersProps) => {
+  const { semesterRefs } = useContext(SemestersContext);
   const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<
     Fulfillment[]
   >(
@@ -311,8 +322,8 @@ const Semesters = ({
   return (
     <SemestersContainer className={className}>
       {isLoading
-        ? Array.from(Array(8).keys()).map(() => (
-            <SkeletonSemester showStats={showStats} />
+        ? Array.from(Array(8).keys()).map((_, idx) => (
+            <SkeletonSemester key={`skeleton-${idx}`} showStats={showStats} />
           ))
         : Object.keys(semesters)
             .sort((a,b) => a.localeCompare(b))
@@ -329,6 +340,10 @@ const Semesters = ({
                 setModalObject={setModalObject}
                 currentSemester={currentSemester}
                 numSemesters={Object.keys(semesters).length}
+                ref={(el) => {
+                  if (!semesterRefs?.current) return;
+                  semesterRefs.current[semester] = el;
+                }}
               />
             ))}
       {editMode && (

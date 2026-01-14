@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, MutableRefObject } from "react";
+import React, { useState, useEffect, useRef, MutableRefObject, useContext } from "react";
 import ReqPanel from "./Requirements/ReqPanel";
 import PlanPanel from "./FourYearPlan/PlanPanel";
 import { SearchPanel, SearchPanelContext } from "./Search/SearchPanel";
@@ -16,6 +16,10 @@ import Footer from "./Footer";
 
 import ExpandedCoursesPanel from "@/components/ExpandedBox/ExpandedCoursesPanel";
 import { ExpandedCoursesPanelContext } from "@/components/ExpandedBox/ExpandedCoursesPanelTrigger";
+import { getCsrf } from "@/hooks/swrcrud";
+import { TutorialModalContext } from "./FourYearPlan/OnboardingTutorial";
+import { SemestersContext } from "./FourYearPlan/Semesters";
+import TutorialModal, { TutorialModalKey } from "./FourYearPlan/OnboardingTutorial";
 
 const PageContainer = styled.div`
   height: 100vh;
@@ -61,9 +65,15 @@ const PanelInteriorWrapper = styled.div<{
 type FourYearPlanPageProps = {
   updateUser: (newUserVal: User | null) => void;
   user: User | null;
+  showTutorialModal: boolean;
 };
 
-const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
+const FourYearPlanPage = ({ updateUser, user, showTutorialModal }: FourYearPlanPageProps) => {
+  const [tutorialModalKey, setTutorialModalKey] = useState<TutorialModalKey>("welcome");
+  const semesterRefs = useRef<{ [semester: string]: HTMLDivElement | null }>({});
+  const highlightedComponentRef = useRef<HTMLElement | null>(null);
+  const componentRefs = useRef<Record<string, HTMLElement | null>>({});
+
   // edit modals for degree and degree plan
   const [modalKey, setModalKey] = useState<ModalKey>(null);
   const [modalObject, setModalObject] = useState<DegreePlan | null>(null); // stores the which degreeplan is being updated using the modal
@@ -139,6 +149,26 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
     []
   ); // fulfillments matching the ruleId
 
+  const updateOnboardedFlag = async () => {
+    try {
+      await fetch("/accounts/me/", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCsrf() as string,
+        },
+        body: JSON.stringify({
+          first_name: user?.first_name,
+          last_name: user?.last_name,
+          profile: { ...user?.profile || {}, has_been_onboarded: true },
+        }),
+      });
+    } catch (err) {
+      console.error("Error updating user:", err);
+    }
+  };
+
   return (
     <>
       <SearchPanelContext.Provider
@@ -178,125 +208,140 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
               degreePlanId: activeDegreeplan?.id,
             }}
           >
-            {reviewPanelFullCode && (
-              <ReviewPanel
-                currentSemester={options?.SEMESTER}
-                full_code={reviewPanelFullCode}
-                set_full_code={setReviewPanelFullCode}
-                position={reviewPanelCoords}
-                setPosition={setReviewPanelCoords}
-              />
-            )}
-            {expandedCoursesPanelCourses && (
-              <ExpandedCoursesPanel
-                currentSemester={options?.SEMESTER}
-                courses={expandedCoursesPanelCourses}
-                setCourses={setExpandedCoursesPanelCourses}
-                position={expandedCoursesPanelCoords}
-                setPosition={setExpandedCoursesPanelCoords}
-                retract={retract}
-                set_retract={setRetract}
-                open={open}
-                setOpen={setOpen}
-                ruleId={ruleId}
-                setRuleId={setRuleId}
-                searchRef={searchRef}
-                setSearchRef={setSearchRef}
-                degreePlanId={activeDegreeplan?.id}
-              />
-            )}
-            {modalKey && (
-              <DegreeModal
-                setModalKey={setModalKey}
-                modalKey={modalKey}
-                modalObject={modalObject}
-                activeDegreePlan={activeDegreeplan}
-                setActiveDegreeplan={setActiveDegreeplan}
-              />
-            )}
-            <PageContainer>
-              <BodyContainer ref={ref}>
-                {!!showOnboardingModal ? (
-                  <OnboardingPage
-                    setShowOnboardingModal={setShowOnboardingModal}
+            <TutorialModalContext.Provider
+              value={{
+                tutorialModalKey: tutorialModalKey,
+                setTutorialModalKey: setTutorialModalKey,
+                highlightedComponentRef: highlightedComponentRef,
+                componentRefs: componentRefs,
+              }}
+            >
+              <SemestersContext.Provider value={{
+                semesterRefs: semesterRefs
+              }}>
+                {showTutorialModal && <TutorialModal updateOnboardingFlag={updateOnboardedFlag} />}
+                {reviewPanelFullCode && (
+                  <ReviewPanel
+                    currentSemester={options?.SEMESTER}
+                    full_code={reviewPanelFullCode}
+                    set_full_code={setReviewPanelFullCode}
+                    position={reviewPanelCoords}
+                    setPosition={setReviewPanelCoords}
+                  />
+                )}
+                {expandedCoursesPanelCourses && (
+                  <ExpandedCoursesPanel
+                    currentSemester={options?.SEMESTER}
+                    courses={expandedCoursesPanelCourses}
+                    setCourses={setExpandedCoursesPanelCourses}
+                    position={expandedCoursesPanelCoords}
+                    setPosition={setExpandedCoursesPanelCoords}
+                    retract={retract}
+                    set_retract={setRetract}
+                    open={open}
+                    setOpen={setOpen}
+                    ruleId={ruleId}
+                    setRuleId={setRuleId}
+                    searchRef={searchRef}
+                    setSearchRef={setSearchRef}
+                    degreePlanId={activeDegreeplan?.id}
+                  />
+                )}
+                {modalKey && (
+                  <DegreeModal
+                    setModalKey={setModalKey}
+                    modalKey={modalKey}
+                    modalObject={modalObject}
+                    activeDegreePlan={activeDegreeplan}
                     setActiveDegreeplan={setActiveDegreeplan}
                   />
-                ) : (
-                  <Row>
-                    {/*
-                // @ts-ignore */}
-                    <SplitPane
-                      split="vertical"
-                      maxSize={
-                        searchPanelOpen
-                          ? (windowWidth ? windowWidth : 1000) * 0.5
-                          : (windowWidth ? windowWidth : 1000) * 0.66
-                      }
-                      minSize={(windowWidth ? windowWidth : 400) * 0.33}
-                      defaultSize="50%"
-                      style={{
-                        padding: "1.5rem",
-                        paddingBottom: "1rem", // less padding on bottom for penn labs footer
-                      }}
-                    >
-                      {/*
-                  // @ts-ignore */}
-                      <PanelWrapper>
-                        <PanelInteriorWrapper>
-                          <PlanPanel
-                            currentSemester={options?.SEMESTER}
-                            setModalKey={setModalKey}
-                            modalKey={modalKey}
-                            setModalObject={setModalObject}
-                            isLoading={
-                              isLoadingDegreeplans // || isLoadingActiveDegreePlan
-                            }
-                            activeDegreeplan={activeDegreeplan}
-                            degreeplans={degreeplans}
-                            setActiveDegreeplan={setActiveDegreeplan}
-                            setShowOnboardingModal={setShowOnboardingModal}
-                          />
-                        </PanelInteriorWrapper>
-                      </PanelWrapper>
-                      {/*
-                  // @ts-ignore */}
-                      <PanelWrapper>
-                        <PanelInteriorWrapper>
-                          <ReqPanel
-                            setModalKey={setModalKey}
-                            setModalObject={setModalObject}
-                            isLoading={isLoadingDegreeplans}
-                            activeDegreeplan={activeDegreeplan}
-                          />
-                        </PanelInteriorWrapper>
-                        {searchPanelOpen && (
-                          <PanelInteriorWrapper
-                            $minWidth={"48%"}
-                            $maxWidth={"48%"}
-                          >
-                            <SearchPanel
-                              activeDegreeplanId={
-                                activeDegreeplan ? activeDegreeplan.id : null
-                              }
-                            />
-                          </PanelInteriorWrapper>
-                        )}
-                      </PanelWrapper>
-                    </SplitPane>
-                  </Row>
                 )}
-              </BodyContainer>
-              <Footer />
-              <Dock
-                user={user}
-                login={updateUser}
-                logout={() => updateUser(null)}
-                activeDegreeplanId={
-                  activeDegreeplan ? activeDegreeplan.id : null
-                }
-              />
-            </PageContainer>
+                <PageContainer>
+                  <BodyContainer ref={ref}>
+                    {!!showOnboardingModal ? (
+                      <OnboardingPage
+                        setShowOnboardingModal={setShowOnboardingModal}
+                        setActiveDegreeplan={setActiveDegreeplan}
+                      />
+                    ) : (
+                      <Row>
+                        {/*
+                // @ts-ignore */}
+                        <SplitPane
+                          split="vertical"
+                          maxSize={
+                            searchPanelOpen
+                              ? (windowWidth ? windowWidth : 1000) * 0.5
+                              : (windowWidth ? windowWidth : 1000) * 0.66
+                          }
+                          minSize={(windowWidth ? windowWidth : 400) * 0.33}
+                          defaultSize="50%"
+                          style={{
+                            padding: "1.5rem",
+                            paddingBottom: "1rem", // less padding on bottom for penn labs footer
+                          }}
+                        >
+                          {/*
+                  // @ts-ignore */}
+                          <PanelWrapper>
+                            <PanelInteriorWrapper>
+                              <PlanPanel
+                                currentSemester={options?.SEMESTER}
+                                setModalKey={setModalKey}
+                                modalKey={modalKey}
+                                setModalObject={setModalObject}
+                                isLoading={
+                                  isLoadingDegreeplans // || isLoadingActiveDegreePlan
+                                }
+                                activeDegreeplan={activeDegreeplan}
+                                degreeplans={degreeplans}
+                                setActiveDegreeplan={setActiveDegreeplan}
+                                setShowOnboardingModal={setShowOnboardingModal}
+                              />
+                            </PanelInteriorWrapper>
+                          </PanelWrapper>
+                          {/*
+                  // @ts-ignore */}
+                          <PanelWrapper>
+                            <PanelInteriorWrapper>
+                              <ReqPanel
+                                setModalKey={setModalKey}
+                                setModalObject={setModalObject}
+                                isLoading={isLoadingDegreeplans}
+                                activeDegreeplan={activeDegreeplan}
+                              />
+                            </PanelInteriorWrapper>
+                            {searchPanelOpen && (
+                              <PanelInteriorWrapper
+                                $minWidth={"48%"}
+                                $maxWidth={"48%"}
+                              >
+                                <SearchPanel
+                                  activeDegreeplanId={
+                                    activeDegreeplan ? activeDegreeplan.id : null
+                                  }
+                                />
+                              </PanelInteriorWrapper>
+                            )}
+                          </PanelWrapper>
+                        </SplitPane>
+                      </Row>
+                    )}
+                  </BodyContainer>
+                  <Footer />
+                  <Dock
+                    user={user}
+                    login={updateUser}
+                    logout={() => updateUser(null)}
+                    activeDegreeplanId={
+                      activeDegreeplan ? activeDegreeplan.id : null
+                    }
+                  />
+                </PageContainer>
+              </SemestersContext.Provider>
+            </TutorialModalContext.Provider>
           </ExpandedCoursesPanelContext.Provider>
+
         </ReviewPanelContext.Provider>
       </SearchPanelContext.Provider>
     </>
