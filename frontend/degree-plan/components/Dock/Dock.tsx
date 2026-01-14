@@ -138,19 +138,11 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
     const isDockStep = tutorialModalKey === "courses-dock" || tutorialModalKey === "general-search";
 
     useEffect(() => {
-        if (!componentRefs?.current) return;
+        if (!componentRefs?.current || !dockRef.current) return;
 
-        if (isDockStep) {
-            componentRefs.current["dock"] = dockRef.current;
-            if (dockRef.current) {
-                dockRef.current.style.zIndex = "20";
-            }
-        } else {
-            if (dockRef.current) {
-                dockRef.current.style.zIndex = "0";
-            }
-        }
-    }, [tutorialModalKey, highlightedComponentRef, componentRefs, isDockStep]);
+        componentRefs.current["dock"] = dockRef.current;
+        dockRef.current.style.zIndex = isDockStep ? "20" : "0";
+    }, [componentRefs, isDockStep]);
 
     return (
         <div style={{ position: "relative"}} ref={dockRef}>
@@ -185,17 +177,6 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
                         </CenteringCourseDock> 
                         :
                         !dockedCourses.length ? <CenteringCourseDock>Drop courses in the dock for later.</CenteringCourseDock> :
-                            // courseAdded ?
-                            // <DockedCourses>
-                            //     {dockedCourses.map((course, i) => {
-                            //         if (i == dockedCourses.length - 1) {
-                            //             return <AnimatedDockedCourseItem course={course} isUsed isDisabled={false} />
-                            //         }
-                            //         return <DockedCourseItem course={course} isUsed isDisabled={false} />
-                            //     }
-                            //     )}
-                            // </DockedCourses>
-                            // :
                             <DockedCourses>
                                 {dockedCourses.map((course) => 
                                     <AnimatedDockedCourseItem course={course} isDisabled={false} />

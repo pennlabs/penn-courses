@@ -316,29 +316,15 @@ const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: 
   const { tutorialModalKey, componentRefs } = useContext(TutorialModalContext);
   const reqPanelRef = React.useRef<HTMLDivElement | null>(null);
   const editReqRef = React.useRef<HTMLDivElement | null>(null);
-  
   const isRequirementsPanelStep = tutorialModalKey === "requirements-panel-1" || tutorialModalKey === "edit-requirements";
   
   useEffect(() => {
-    if (!componentRefs?.current) return;
+    if (!componentRefs?.current || !reqPanelRef.current || !editReqRef.current) return;
 
-    if (isRequirementsPanelStep) {
-        componentRefs.current["reqPanel"] = reqPanelRef.current;
-
-        if (reqPanelRef.current) {
-            reqPanelRef.current.style.zIndex = "20";
-        }
-    } else {
-        if (reqPanelRef.current) {
-            reqPanelRef.current.style.zIndex = "";
-        }
-    }
-
-    if (tutorialModalKey === "edit-requirements") {
-        componentRefs.current["editReqs"] = editReqRef.current;
-    }
-
-}, [tutorialModalKey, componentRefs, isRequirementsPanelStep]);
+    componentRefs.current["reqPanel"] = reqPanelRef.current;
+    componentRefs.current["editReqs"] = editReqRef.current;
+    reqPanelRef.current.style.zIndex = isRequirementsPanelStep ? "20" : "";
+    }, [tutorialModalKey, componentRefs]);
 
   const { data: activeDegreeplanDetail = null, isLoading: isLoadingDegrees } = useSWR<DegreePlan>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}` : null);
   const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null);

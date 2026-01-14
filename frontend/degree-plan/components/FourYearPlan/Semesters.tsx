@@ -3,7 +3,7 @@ import styled from "@emotion/styled";
 import { Icon } from "../common/bulma_derived_components";
 import { Course, DegreePlan, Fulfillment } from "@/types";
 import useSWR from "swr";
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useContext } from "react";
 import Select from "react-select";
 import { ModalKey } from "./DegreeModal";
 
@@ -215,6 +215,7 @@ const Semesters = ({
   isLoading,
   ref,
 }: SemestersProps) => {
+  const { semesterRefs } = useContext(SemestersContext);
   const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<
     Fulfillment[]
   >(
@@ -339,6 +340,10 @@ const Semesters = ({
                 setModalObject={setModalObject}
                 currentSemester={currentSemester}
                 numSemesters={Object.keys(semesters).length}
+                ref={(el) => {
+                  if (!semesterRefs?.current) return;
+                  semesterRefs.current[semester] = el;
+                }}
               />
             ))}
       {editMode && (

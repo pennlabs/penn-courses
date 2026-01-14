@@ -2,7 +2,7 @@ import SelectListDropdown from "./SelectListDropdown";
 import Semesters from "./Semesters";
 import styled from "@emotion/styled";
 import type { DegreePlan } from "@/types";
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useMemo } from "react";
 import { useSWRCrud } from '@/hooks/swrcrud';
 import { EditButton } from './EditButton';
 import { PanelTopBarButton, PanelTopBarIcon } from "./PanelCommon";
@@ -70,23 +70,23 @@ const PlanPanel = ({
     useEffect(() => {
         if (!componentRefs?.current) return;
 
-        if (["calendar-panel", "current-semester", "future-semesters", "past-semesters", "edit-mode", "show-stats"].includes(tutorialModalKey || '')) {
-            componentRefs.current["planPanel"] = planPanelRef.current;
-            if (planPanelRef.current) {
-                planPanelRef.current.style.zIndex = "20";
-            }
-        } else {
-            if (planPanelRef.current) {
-                planPanelRef.current.style.zIndex = "";
-            }
+        const planPanelKeys = [
+            "calendar-panel",
+            "current-semester",
+            "future-semesters",
+            "past-semesters",
+            "edit-mode",
+            "show-stats"
+        ];
+
+        const isPlanPanelActive = planPanelKeys.includes(tutorialModalKey || '');
+        componentRefs.current["planPanel"] = planPanelRef.current;
+        if (planPanelRef.current) {
+            planPanelRef.current.style.zIndex = isPlanPanelActive ? "20" : "";
         }
 
-        if (tutorialModalKey === 'show-stats') {
-            componentRefs.current['showStatsButton'] = showStatsRef.current;
-        }
-        if (tutorialModalKey === 'edit-mode') {
-            componentRefs.current['editSemesterButton'] = editSemesterRef.current;
-        }
+        componentRefs.current['showStatsButton'] = showStatsRef.current;
+        componentRefs.current['editSemesterButton'] = editSemesterRef.current;
     }, [tutorialModalKey, componentRefs]);
 
     useEffect(() => {
@@ -94,8 +94,12 @@ const PlanPanel = ({
         if (!currentSemester) return;
 
         const attemptScroll = () => {
+            console.log(semesterRefs);
+            console.log(semesterRefs?.current);
             const target = semesterRefs?.current?.[currentSemester];
+            console.log("target", target);
             if (target) {
+                console.log("scrolling to", target);
                 target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
             }
         };
