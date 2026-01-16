@@ -65,7 +65,7 @@ def parse_coursearray(courseArray) -> Q:
                                     sub_q = Q(semester=f"{year}C")
                                 case _:
                                     raise LookupError(f"Unknown semester in withArray: {semester}")
-                        elif len(contents) == 1 and bool(re.match(r'^\d{4}[ABC]$', contents[0])):
+                        elif len(contents) == 1 and bool(re.match(r"^\d{4}[ABC]$", contents[0])):
                             sub_q = Q(semester=contents)
                         else:
                             logging.warn(f"Unexpected format of valueList: {filter['valueList']}")
