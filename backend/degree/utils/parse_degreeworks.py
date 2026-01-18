@@ -55,7 +55,7 @@ def parse_coursearray(courseArray) -> Q:
                         assert len(filter["valueList"]) == 1
                         contents = filter["valueList"][0].split()
                         if len(contents) == 2:
-                            semester, year = filter["valueList"][0].split()
+                            semester, year = contents
                             match semester:
                                 case "Spring":
                                     sub_q = Q(semester=f"{year}A")
