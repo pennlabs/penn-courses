@@ -185,7 +185,11 @@ const CourseComponent = ({
                 >
                   <ExclamationIcon color={"#E66161"} />
                 </a>
-                <Tooltip id={fulfillment.full_code + courseType} place="top" />
+                <Tooltip 
+                  id={fulfillment.full_code + courseType} 
+                  place="top" 
+                  style={{ zIndex: 9999 }}
+                />
               </div>
             )}
             <CourseBadge>

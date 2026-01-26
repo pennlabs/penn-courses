@@ -7,7 +7,7 @@ import { useSWRCrud } from "@/hooks/swrcrud";
 import { useDrop } from "react-dnd";
 import { ItemTypes } from "../Dock/dnd/constants";
 import { DarkBlueBackgroundSkeleton } from "../FourYearPlan/PanelCommon";
-import { DegreeYear, RuleTree, WhiteSpace, HEADER_DEFAULT_BUFFER } from "./ReqPanel";
+import { DegreeYear, RuleTree, FaultyRuleTree, WhiteSpace, HEADER_DEFAULT_BUFFER } from "./ReqPanel";
 import SatisfiedCheck from "../FourYearPlan/SatisfiedCheck";
 import { ExpandedCoursesPanelContext } from "@/components/ExpandedBox/ExpandedCoursesPanelTrigger";
 import { parseQJson } from "./ruleUtils";
@@ -330,6 +330,20 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
   const { children, num } = ruleTree;
 
   if (num && children.length > num) {
+    /** 
+    * This was a hack to fix the data format from physics 
+    * requirements for engineering degree
+    */
+    for (let i = 0; i < children.length; i++) {
+      if (children[i].rule.rules.length == 0) {
+        continue;
+      }
+
+      if ((children[i] as FaultyRuleTree).children) {
+        children[i] = (children[i] as FaultyRuleTree).children[0];
+      }
+    }
+
     return (
       <PickNWrapper>
         <PickNTitle>
