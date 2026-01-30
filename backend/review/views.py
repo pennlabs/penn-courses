@@ -9,6 +9,7 @@ from rest_framework.decorators import api_view, permission_classes, schema
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from dotenv import load_dotenv
 from openai import OpenAI
 import os
 import re
@@ -16,7 +17,11 @@ import json
 import time
 import uuid
 import redis
-# client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+from django.db import connection
+import numpy as np
+
+load_dotenv()
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 from courses.models import (
     Course,
@@ -931,7 +936,8 @@ def _make_msg(role, content, citations=None):
     })
 
 # key naming helpers
-
+#api that we can call to and check if it works 
+#call build llm with retreived rag courses
 def _quota_key(user_id, date, what):
     return f"quota:{user_id}:{date}:{what}"
 
@@ -1007,9 +1013,14 @@ def chat_message(request, chat_id):
     umsg = _make_msg("user", text)
     r.rpush(_chat_messages_key(chat_id), umsg)
 
-    # stub assistant reply
-    reply_text = f"Stub reply"
-    amsg = _make_msg("assistant", reply_text, citations=[])
+    # Get chat history
+    history_msgs_raw = r.lrange(_chat_messages_key(chat_id), 0, -1) or []
+    history_msgs = [json.loads(m) for m in history_msgs_raw]
+    
+    # RAG: Retrieve courses → Build prompt → Call LLM (all in one function)
+    reply_text, citations = call_llm(text, history_msgs=history_msgs, top_k=10)
+    
+    amsg = _make_msg("assistant", reply_text, citations=citations)
     r.rpush(_chat_messages_key(chat_id), amsg)
     r.expire(_chat_messages_key(chat_id), CHAT_TTL_SECONDS)
 
@@ -1026,14 +1037,19 @@ def chat_history(request, chat_id):
 
 
 SYSTEM_PROMPT = """You are the Penn Course Review assistant.
-Answer only using the provided 'Context'.
-If information is missing, respond: 
+Answer questions using the provided 'Context' about courses.
+
+If the user asks about courses in general (e.g., "CS courses", "computer science courses"), 
+provide information about the courses mentioned in the Context, even if it's just a few examples.
+
+If specific information is completely missing from Context, respond: 
 "I'm not sure. Try using Penn Course Review search."
 
 Always:
-- Include course codes (e.g., CIS 1200)
+- Include course codes (e.g., CIS-120, CIS 1200)
 - Cite every factual claim using citations like (1), (2)
 - Be concise: short bullet points or a short paragraph
+- If asked about course types/categories, describe the courses in Context as examples
 - Avoid quoting long student reviews
 - Never invent courses, stats, prerequisites, or opinions
 """
@@ -1072,14 +1088,96 @@ def build_prompt(history_msgs, retrieved_docs, user_query, max_history_turns=3):
 def _extract_citations(text: str):
     return re.findall(r"\[cite\]\((/course/[^)]+)\)", text)
 
-'''
-def call_llm(messages: list):
-    if not stream:
-        response = client.responses.create(
-            model="gpt-5",
-            input=messages
+
+def retrieve_courses(user_query: str, top_k: int = 10):
+    """
+    RAG: Retrieve relevant courses from pgvector database based on user query.
+    Searches ALL 27,106 embedded courses using semantic similarity.
+    
+    Args:
+        user_query: The user's query text
+        top_k: Number of top courses to retrieve (default: 10)
+    
+    Returns:
+        List of dicts with course_code, text, url, and similarity score
+    """
+    if not user_query:
+        return []
+    
+    try:
+        # Embed the user query
+        response = client.embeddings.create(
+            model="text-embedding-3-small",
+            input=user_query
         )
-        output_text = response.output_text
-        citations = _extract_citations(full_text)
-        return full_text, citations
-'''
+        query_embedding = response.data[0].embedding
+        embedding_str = "[" + ",".join(map(str, query_embedding)) + "]"
+        
+        # Search ALL courses in pgvector using cosine similarity
+        with connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT 
+                    course_code,
+                    text,
+                    url,
+                    1 - (embedding <=> %s::vector) as similarity
+                FROM course_documents
+                WHERE embedding IS NOT NULL
+                ORDER BY embedding <=> %s::vector
+                LIMIT %s
+            """, [embedding_str, embedding_str, top_k])
+            
+            results = cursor.fetchall()
+            
+            retrieved_docs = []
+            for row in results:
+                course_code, text, url, similarity = row
+                retrieved_docs.append({
+                    "course_code": course_code or "UNKNOWN",
+                    "text": text or "",
+                    "url": url or "",
+                    "similarity": float(similarity) if similarity else 0.0
+                })
+            
+            return retrieved_docs
+    except Exception as e:
+        print(f"Error retrieving courses: {e}")
+        return []
+
+
+def call_llm(user_query: str, history_msgs: list = None, top_k: int = 10):
+    """
+    Complete RAG pipeline: Retrieve courses → Build prompt → Query LLM.
+    
+    Args:
+        user_query: The user's query text
+        history_msgs: Optional chat history (list of message dicts)
+        top_k: Number of courses to retrieve for context (default: 10)
+    
+    Returns:
+        Tuple of (response_text, citations)
+    """
+    if not user_query:
+        return "Please provide a query.", []
+    
+    # Step 1: Retrieve relevant courses using RAG
+    retrieved_docs = retrieve_courses(user_query, top_k=top_k)
+    
+    # Step 2: Build prompt with retrieved context
+    prompt_messages = build_prompt(history_msgs or [], retrieved_docs, user_query)
+    
+    # Step 3: Call LLM with the prompt
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=prompt_messages,
+            temperature=0.7,
+            max_tokens=1000
+        )
+        
+        output_text = response.choices[0].message.content
+        citations = _extract_citations(output_text)
+        return output_text, citations
+    except Exception as e:
+        print(f"Error calling LLM: {e}")
+        return "I'm sorry, I encountered an error. Please try again.", []
