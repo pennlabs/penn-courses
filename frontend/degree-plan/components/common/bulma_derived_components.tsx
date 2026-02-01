@@ -1,5 +1,5 @@
 // TODO: this is copied from plan. we should just factor it out
-import styled from '@emotion/styled';
+import styled from "@emotion/styled";
 
 export const Icon = styled.span`
     align-items: center;
@@ -8,7 +8,7 @@ export const Icon = styled.span`
     height: 1rem;
     width: 1rem;
     cursor: pointer;
-`
+`;
 
 export const GrayIcon = styled(Icon)`
     color: #999999;

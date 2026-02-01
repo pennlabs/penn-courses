@@ -1,5 +1,11 @@
 import styled from "@emotion/styled";
-import React, { useState, useEffect, useContext, createContext, MutableRefObject } from "react";
+import React, {
+    useState,
+    useEffect,
+    useContext,
+    createContext,
+    MutableRefObject,
+} from "react";
 import { Cross2Icon } from "@radix-ui/react-icons";
 
 export type TutorialModalKey =
@@ -31,17 +37,22 @@ const TUTORIAL_STEPS: TutorialModalKey[] = [
     "show-stats",
     "courses-dock",
     "general-search",
-    null
+    null,
 ];
 
-const MODAL_CONTENT: Record<NonNullable<TutorialModalKey>, { title: string; description: string }> = {
+const MODAL_CONTENT: Record<
+    NonNullable<TutorialModalKey>,
+    { title: string; description: string }
+> = {
     welcome: {
         title: "Welcome to Penn Degree Plan!",
-        description: "Our newest four-year degree planning website, brought to you by Penn Labs."
+        description:
+            "Our newest four-year degree planning website, brought to you by Penn Labs.",
     },
     "requirements-panel-1": {
         title: "Requirements Panel",
-        description: "Requirements for your degree are listed here, organized by majors, school requirements, and electives. Use the dropdown to expand a section and view specific requirements."
+        description:
+            "Requirements for your degree are listed here, organized by majors, school requirements, and electives. Use the dropdown to expand a section and view specific requirements.",
     },
     // "requirements-panel-2": {
     //     title: "Requirements Panel",
@@ -49,44 +60,51 @@ const MODAL_CONTENT: Record<NonNullable<TutorialModalKey>, { title: string; desc
     // },
     "edit-requirements": {
         title: "Edit Requirements",
-        description: "Add or delete majors by entering edit mode."
+        description: "Add or delete majors by entering edit mode.",
     },
     "calendar-panel": {
         title: "Calendar Panel",
-        description: "This is an overview of your degree plan by semester. Drag and drop between here and the requirements panel, the courses dock, or between semesters."
+        description:
+            "This is an overview of your degree plan by semester. Drag and drop between here and the requirements panel, the courses dock, or between semesters.",
     },
     "past-semesters": {
         title: "Past Semesters",
-        description: "Gray represents past semesters."
+        description: "Gray represents past semesters.",
     },
     "current-semester": {
         title: "Current Semester",
-        description: "Blue represents the current semester."
+        description: "Blue represents the current semester.",
     },
     "future-semesters": {
         title: "Future Semesters",
-        description: "White represents future semesters."
+        description: "White represents future semesters.",
     },
     "edit-mode": {
         title: "Edit Mode",
-        description: "Enter edit mode to add or remove semesters."
+        description: "Enter edit mode to add or remove semesters.",
     },
     "show-stats": {
         title: "Show Stats",
-        description: "Show or hide the course statistics, Course Quality, Instructor Quality, Difficulty, and Work Required."
+        description:
+            "Show or hide the course statistics, Course Quality, Instructor Quality, Difficulty, and Work Required.",
     },
     "courses-dock": {
         title: "Courses Dock",
-        description: "Drag any courses here from the general search, requirements panel, or the schedule panel to view later."
+        description:
+            "Drag any courses here from the general search, requirements panel, or the schedule panel to view later.",
     },
     "general-search": {
         title: "General Search",
-        description: "Search for any other courses you would like to be added to electives or to keep on standby."
-    }
+        description:
+            "Search for any other courses you would like to be added to electives or to keep on standby.",
+    },
 };
 
 // Component reference mapping
-const COMPONENT_REF_MAP: Partial<Record<NonNullable<TutorialModalKey>, string>> = {
+const COMPONENT_REF_MAP: Partial<Record<
+    NonNullable<TutorialModalKey>,
+    string
+>> = {
     "requirements-panel-1": "reqPanel",
     // "requirements-panel-2": "reqPanel",
     "edit-requirements": "editReqs",
@@ -123,9 +141,9 @@ const ModalCard = styled.div<ModalPosition>`
     margin: 0 20px;
     pointer-events: auto;
     position: fixed;
-    top: ${props => props.top};
-    left: ${props => props.left};
-    transform: ${props => props.transform};
+    top: ${(props) => props.top};
+    left: ${(props) => props.left};
+    transform: ${(props) => props.transform};
 `;
 
 const ModalCardHead = styled.header`
@@ -198,12 +216,12 @@ const SCREEN_PADDING = 20;
 const DEFAULT_POSITION: ModalPosition = {
     top: "50%",
     left: "50%",
-    transform: "translate(-50%, -50%)"
+    transform: "translate(-50%, -50%)",
 };
 
 const getComponentRect = (
     modalKey: TutorialModalKey,
-    componentRefs: MutableRefObject<Record<string, HTMLElement | null>> | null
+    componentRefs: MutableRefObject<Record<string, HTMLElement | null>> | null,
 ): DOMRect | null => {
     if (!modalKey || modalKey === "welcome" || !componentRefs) return null;
 
@@ -213,12 +231,18 @@ const getComponentRect = (
     return componentRefs.current[componentKey]!.getBoundingClientRect();
 };
 
-const calculatePositionForKey = (modalKey: NonNullable<TutorialModalKey>, rect: DOMRect): ModalPosition => {
-    const positions: Partial<Record<NonNullable<TutorialModalKey>, ModalPosition>> = {
+const calculatePositionForKey = (
+    modalKey: NonNullable<TutorialModalKey>,
+    rect: DOMRect,
+): ModalPosition => {
+    const positions: Partial<Record<
+        NonNullable<TutorialModalKey>,
+        ModalPosition
+    >> = {
         "requirements-panel-1": {
             top: "50%",
             left: `${rect.left - MODAL_WIDTH - 30}px`,
-            transform: "translateY(-50%)"
+            transform: "translateY(-50%)",
         },
         // "requirements-panel-2": {
         //     top: "50%",
@@ -228,36 +252,41 @@ const calculatePositionForKey = (modalKey: NonNullable<TutorialModalKey>, rect: 
         "edit-requirements": {
             top: `${rect.top + rect.height + 20}px`,
             left: `${rect.left + rect.width / 2}px`,
-            transform: "translateX(-50%)"
+            transform: "translateX(-50%)",
         },
         "edit-mode": {
             top: `${rect.bottom + 10}px`,
             left: `${rect.left + rect.width}px`,
-            transform: "translateX(-50%)"
+            transform: "translateX(-50%)",
         },
         "show-stats": {
             top: `${rect.bottom + 10}px`,
             left: `${rect.left + rect.width / 2}px`,
-            transform: "translateX(-50%)"
+            transform: "translateX(-50%)",
         },
         "courses-dock": {
             top: `${rect.top - MODAL_HEIGHT + 20}px`,
             left: `${rect.left}px`,
-            transform: "translateX(-50%)"
+            transform: "translateX(-50%)",
         },
         "general-search": {
             top: `${rect.top - MODAL_HEIGHT + 20}px`,
             left: `${rect.left}px`,
-            transform: "translateX(-50%)"
-        }
+            transform: "translateX(-50%)",
+        },
     };
 
-    const calendarPanelKeys = ["calendar-panel", "past-semesters", "current-semester", "future-semesters"];
+    const calendarPanelKeys = [
+        "calendar-panel",
+        "past-semesters",
+        "current-semester",
+        "future-semesters",
+    ];
     if (calendarPanelKeys.includes(modalKey)) {
         return {
             top: `${rect.top + rect.height / 2}px`,
             left: `${rect.right + 10}px`,
-            transform: "translateY(-50%)"
+            transform: "translateY(-50%)",
         };
     }
 
@@ -273,18 +302,26 @@ const constrainToViewport = (position: ModalPosition): ModalPosition => {
 
     if (leftValue + MODAL_WIDTH > windowWidth) {
         left = `${windowWidth - MODAL_WIDTH - SCREEN_PADDING}px`;
-        transform = transform.replace("translateX(-50%)", "").replace("translate(-100%, -50%)", "translateY(-50%)");
+        transform = transform
+            .replace("translateX(-50%)", "")
+            .replace("translate(-100%, -50%)", "translateY(-50%)");
     } else if (leftValue < SCREEN_PADDING) {
         left = `${SCREEN_PADDING}px`;
-        transform = transform.replace("translateX(-50%)", "").replace("translate(-100%, -50%)", "translateY(-50%)");
+        transform = transform
+            .replace("translateX(-50%)", "")
+            .replace("translate(-100%, -50%)", "translateY(-50%)");
     }
 
     if (topValue < SCREEN_PADDING) {
         top = `${SCREEN_PADDING}px`;
-        transform = transform.replace("translateY(-50%)", "").replace("translateX(-50%)", "");
+        transform = transform
+            .replace("translateY(-50%)", "")
+            .replace("translateX(-50%)", "");
     } else if (topValue + MODAL_HEIGHT > windowHeight) {
         top = `${windowHeight - MODAL_HEIGHT - SCREEN_PADDING}px`;
-        transform = transform.replace("translateY(-50%)", "").replace("translateX(-50%)", "");
+        transform = transform
+            .replace("translateY(-50%)", "")
+            .replace("translateX(-50%)", "");
     }
 
     return { top, left, transform };
@@ -292,12 +329,15 @@ const constrainToViewport = (position: ModalPosition): ModalPosition => {
 
 const calculateModalPosition = (
     modalKey: TutorialModalKey,
-    componentRefs: MutableRefObject<Record<string, HTMLElement | null>> | null
+    componentRefs: MutableRefObject<Record<string, HTMLElement | null>> | null,
 ): ModalPosition => {
     const rect = getComponentRect(modalKey, componentRefs);
     if (!rect) return DEFAULT_POSITION;
 
-    const position = calculatePositionForKey(modalKey as NonNullable<TutorialModalKey>, rect);
+    const position = calculatePositionForKey(
+        modalKey as NonNullable<TutorialModalKey>,
+        rect,
+    );
     return constrainToViewport(position);
 };
 
@@ -305,12 +345,14 @@ interface TutorialModalContextProps {
     tutorialModalKey: TutorialModalKey;
     setTutorialModalKey: (key: TutorialModalKey) => void;
     highlightedComponentRef: any;
-    componentRefs: React.MutableRefObject<Record<string, HTMLElement | null>> | null;
+    componentRefs: React.MutableRefObject<
+        Record<string, HTMLElement | null>
+    > | null;
 }
 
 export const TutorialModalContext = createContext<TutorialModalContextProps>({
     tutorialModalKey: null,
-    setTutorialModalKey: () => { },
+    setTutorialModalKey: () => {},
     highlightedComponentRef: null,
     componentRefs: null,
 });
@@ -320,9 +362,13 @@ interface TutorialModalProps {
 }
 
 const TutorialModal = ({ updateOnboardingFlag }: TutorialModalProps) => {
-    const { tutorialModalKey, setTutorialModalKey, componentRefs } = useContext(TutorialModalContext);
+    const { tutorialModalKey, setTutorialModalKey, componentRefs } = useContext(
+        TutorialModalContext,
+    );
     const [position, setPosition] = useState<ModalPosition>(DEFAULT_POSITION);
-    const [displayedModalKey, setDisplayedModalKey] = useState<TutorialModalKey>(tutorialModalKey);
+    const [displayedModalKey, setDisplayedModalKey] = useState<
+        TutorialModalKey
+    >(tutorialModalKey);
 
     const handleClose = () => {
         updateOnboardingFlag();
@@ -345,7 +391,10 @@ const TutorialModal = ({ updateOnboardingFlag }: TutorialModalProps) => {
         if (!tutorialModalKey) return;
 
         const timer = setTimeout(() => {
-            const newPosition = calculateModalPosition(tutorialModalKey, componentRefs);
+            const newPosition = calculateModalPosition(
+                tutorialModalKey,
+                componentRefs,
+            );
             setPosition(newPosition);
             setDisplayedModalKey(tutorialModalKey);
         }, 20);
@@ -358,7 +407,10 @@ const TutorialModal = ({ updateOnboardingFlag }: TutorialModalProps) => {
         if (!tutorialModalKey) return;
 
         const handleResize = () => {
-            const newPosition = calculateModalPosition(tutorialModalKey, componentRefs);
+            const newPosition = calculateModalPosition(
+                tutorialModalKey,
+                componentRefs,
+            );
             setPosition(newPosition);
         };
 
@@ -369,7 +421,9 @@ const TutorialModal = ({ updateOnboardingFlag }: TutorialModalProps) => {
     // Reached last step
     if (!tutorialModalKey) return null;
 
-    const modalContent = displayedModalKey ? MODAL_CONTENT[displayedModalKey] : { title: "", description: "" };
+    const modalContent = displayedModalKey
+        ? MODAL_CONTENT[displayedModalKey]
+        : { title: "", description: "" };
     const isFirstStep = displayedModalKey === "welcome";
     const isLastStep = displayedModalKey === "general-search";
 
@@ -377,7 +431,11 @@ const TutorialModal = ({ updateOnboardingFlag }: TutorialModalProps) => {
         <>
             <ModalBackground />
             <ModalContainer>
-                <ModalCard top={position.top} left={position.left} transform={position.transform}>
+                <ModalCard
+                    top={position.top}
+                    left={position.left}
+                    transform={position.transform}
+                >
                     <ModalCardHead>
                         {modalContent.title}
                         <CloseButton onClick={handleClose}>
@@ -386,11 +444,15 @@ const TutorialModal = ({ updateOnboardingFlag }: TutorialModalProps) => {
                     </ModalCardHead>
                     <ModalCardBody>
                         <ModalInteriorWrapper>
-                            {isFirstStep && <img src="pdp-porcupine.svg" alt="Porcupine" />}
+                            {isFirstStep && (
+                                <img src="pdp-porcupine.svg" alt="Porcupine" />
+                            )}
                             <ModalText>{modalContent.description}</ModalText>
                             <ButtonRow>
                                 {!isFirstStep && (
-                                    <ModalButton onClick={() => navigateStep(false)}>
+                                    <ModalButton
+                                        onClick={() => navigateStep(false)}
+                                    >
                                         Back
                                     </ModalButton>
                                 )}
@@ -399,7 +461,9 @@ const TutorialModal = ({ updateOnboardingFlag }: TutorialModalProps) => {
                                         Close
                                     </ModalButton>
                                 ) : (
-                                    <ModalButton onClick={() => navigateStep(true)}>
+                                    <ModalButton
+                                        onClick={() => navigateStep(true)}
+                                    >
                                         Next
                                     </ModalButton>
                                 )}

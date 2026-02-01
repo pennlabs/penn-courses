@@ -1,7 +1,7 @@
 import { useDrag } from "react-dnd";
 import { ItemTypes } from "../Dock/dnd/constants";
-import { GrayIcon } from '../common/bulma_derived_components';
-import styled from '@emotion/styled';
+import { GrayIcon } from "../common/bulma_derived_components";
+import styled from "@emotion/styled";
 import { Course, DnDCourse, DockedCourse, Fulfillment } from "@/types";
 import { Draggable } from "../common/DnD";
 import CourseComponent, { PlannedCourseContainer } from "../Course/Course";
@@ -23,64 +23,88 @@ interface CourseInReqProps {
     onClick?: () => void;
 }
 
-const CourseInReq = ({ course, isUsed, isDisabled, rule_id, fulfillment, activeDegreePlanId, isOpenEnded } : CourseInReqProps) => {
-
+const CourseInReq = ({
+    course,
+    isUsed,
+    isDisabled,
+    rule_id,
+    fulfillment,
+    activeDegreePlanId,
+    isOpenEnded,
+}: CourseInReqProps) => {
     const { courses, setCourses } = useContext(ExpandedCoursesPanelContext);
 
-    const { remove: removeFulfillment, createOrUpdate: updateFulfillment } = useSWRCrud<Fulfillment>(
+    const {
+        remove: removeFulfillment,
+        createOrUpdate: updateFulfillment,
+    } = useSWRCrud<Fulfillment>(
         `/api/degree/degreeplans/${activeDegreePlanId}/fulfillments`,
-        { idKey: "full_code",
-        // createDefaultOptimisticData: { semester: null, rules: [] }
+        {
+            idKey: "full_code",
+            // createDefaultOptimisticData: { semester: null, rules: [] }
+        },
+    );
+    const { createOrUpdate } = useSWRCrud<DockedCourse>(`/api/degree/docked`, {
+        idKey: "full_code",
     });
-    const { createOrUpdate } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
 
     const handleRemoveCourse = async (full_code: string) => {
-        const updated_rules = course.rules?.filter(rule => rule != rule_id);
-        
+        const updated_rules = course.rules?.filter((rule) => rule != rule_id);
+
         // If removing course from open-ended, add to list of unselected courses.
         if (fulfillment && isOpenEnded) {
-          if (courses)
-            setCourses([...courses, fulfillment]);
-          
-          course.unselected_rules?.push(rule_id);
+            if (courses) setCourses([...courses, fulfillment]);
+
+            course.unselected_rules?.push(rule_id);
         }
 
-
-        /** If the current rule about to be removed is the only rule 
-        * the course satisfied, then we delete the fulfillment */
+        /** If the current rule about to be removed is the only rule
+         * the course satisfied, then we delete the fulfillment */
         if (updated_rules && updated_rules.length == 0) {
-          removeFulfillment(full_code);
+            removeFulfillment(full_code);
         } else {
-          if (isOpenEnded) {
-            updateFulfillment({rules: updated_rules, unselected_rules: course.unselected_rules }, full_code);
-          } else {
-            updateFulfillment({rules: updated_rules}, full_code);
-          }
+            if (isOpenEnded) {
+                updateFulfillment(
+                    {
+                        rules: updated_rules,
+                        unselected_rules: course.unselected_rules,
+                    },
+                    full_code,
+                );
+            } else {
+                updateFulfillment({ rules: updated_rules }, full_code);
+            }
         }
-        createOrUpdate({"full_code": full_code}, full_code); 
-    }
+        createOrUpdate({ full_code: full_code }, full_code);
+    };
 
-    const [{ isDragging }, drag] = useDrag<DnDCourse, never, { isDragging: boolean }>(() => ({
-      type: ItemTypes.COURSE_IN_REQ,
-      item: {...course, rule_id: rule_id, fulfillment: fulfillment},
-      collect: (monitor) => ({
-        isDragging: !!monitor.isDragging()
-      })
-    }), [course])
-  
+    const [{ isDragging }, drag] = useDrag<
+        DnDCourse,
+        never,
+        { isDragging: boolean }
+    >(
+        () => ({
+            type: ItemTypes.COURSE_IN_REQ,
+            item: { ...course, rule_id: rule_id, fulfillment: fulfillment },
+            collect: (monitor) => ({
+                isDragging: !!monitor.isDragging(),
+            }),
+        }),
+        [course],
+    );
+
     return (
-        <CourseComponent 
-          courseType={ItemTypes.COURSE_IN_REQ} 
-          removeCourse={handleRemoveCourse} 
-          dragRef={drag} 
-          isDragging={isDragging} 
-          isDisabled={isDisabled}
-          isUsed={isUsed}
-          course={course}
-          fulfillment={fulfillment}
+        <CourseComponent
+            courseType={ItemTypes.COURSE_IN_REQ}
+            removeCourse={handleRemoveCourse}
+            dragRef={drag}
+            isDragging={isDragging}
+            isDisabled={isDisabled}
+            isUsed={isUsed}
+            course={course}
+            fulfillment={fulfillment}
         />
-    )
-}
-  
-  
-  export default CourseInReq;
+    );
+};
+
+export default CourseInReq;

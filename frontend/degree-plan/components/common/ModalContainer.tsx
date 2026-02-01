@@ -1,6 +1,5 @@
 // TODO: this is copied from plan, we should factor out into a shared component
 
-
 import React, { PropsWithChildren, useRef } from "react";
 import styled from "@emotion/styled";
 
@@ -150,19 +149,19 @@ const ModalContainer = ({
                     </div>
                 </ModalCardHead>
                 <ModalCardBody>
-                    {modalKey && 
+                    {modalKey &&
                         React.Children.map(children, (child: React.ReactNode) =>
                             React.cloneElement(child as React.ReactElement, {
                                 close,
                                 modalKey,
                                 modalRef,
-                                ...modalProps
-                            })
+                                ...modalProps,
+                            }),
                         )}
                 </ModalCardBody>
             </ModalCard>
         </OuterModalContainer>
-    )
+    );
 };
 
 export default ModalContainer;

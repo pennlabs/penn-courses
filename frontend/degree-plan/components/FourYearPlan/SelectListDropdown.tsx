@@ -4,7 +4,7 @@ import { GrayIcon } from "../common/bulma_derived_components";
 import { DBObject, DegreePlan } from "../../types";
 import { DarkBlueBackgroundSkeleton } from "./PanelCommon";
 
-const ButtonContainer = styled.div<{ $isActive: boolean; }>`
+const ButtonContainer = styled.div<{ $isActive: boolean }>`
     line-height: 1.5;
     position: relative;
     border-radius: 0 !important;
@@ -96,12 +96,12 @@ const DropdownRenameButton = ({ rename }: { rename: () => void }) => (
     >
         <i className="far fa-edit" aria-hidden="true" />
     </GrayIcon>
-)
+);
 
 const ScheduleOptionsContainer = styled.div`
     display: flex;
     flex-grow: 0.5;
-    gap: .25rem;
+    gap: 0.25rem;
     justify-content: flex-end;
     width: 25%;
 `;
@@ -113,8 +113,8 @@ interface DropdownButton {
     makeActive: () => void;
     mutators: {
         copy?: () => void;
-        remove?: (() => void);
-        rename?: (() => void);
+        remove?: () => void;
+        rename?: () => void;
     };
 }
 
@@ -139,14 +139,18 @@ const DropdownButton = ({
     >
         <ButtonLabelContainer width={50}>{text}</ButtonLabelContainer>
         <ScheduleOptionsContainer>
-            {rename && <DropdownRenameButton rename={rename}></DropdownRenameButton>}
+            {rename && (
+                <DropdownRenameButton rename={rename}></DropdownRenameButton>
+            )}
             {copy && <DropdownCopyButton copy={copy}></DropdownCopyButton>}
-            {remove && <DropdownRemoveButton remove={remove}></DropdownRemoveButton>}
+            {remove && (
+                <DropdownRemoveButton remove={remove}></DropdownRemoveButton>
+            )}
         </ScheduleOptionsContainer>
     </ButtonContainer>
 );
 
-const ScheduleDropdownContainer = styled.div<{$isActive: boolean}>`
+const ScheduleDropdownContainer = styled.div<{ $isActive: boolean }>`
     border-radius: 0.5rem;
     border: 0;
     outline: none;
@@ -162,11 +166,11 @@ const ScheduleDropdownContainer = styled.div<{$isActive: boolean}>`
 
     i.fa.fa-chevron-down::before {
         content: ${({ $isActive }: { $isActive: boolean }) =>
-        $isActive ? '"\f077"' : ""} !important;
+            $isActive ? '"\f077"' : ""} !important;
     }
 `;
 
-const DropdownTrigger = styled.div<{$isActive: boolean}>`
+const DropdownTrigger = styled.div<{ $isActive: boolean }>`
     margin: 0.35rem 0rem 0rem;
     height: 1.5rem;
     width: 1.5rem;
@@ -177,7 +181,7 @@ const DropdownTrigger = styled.div<{$isActive: boolean}>`
 
     div {
         background: ${({ $isActive }: { $isActive: boolean }) =>
-        $isActive ? "rgba(162, 180, 237, 0.38) !important" : "none"};
+            $isActive ? "rgba(162, 180, 237, 0.38) !important" : "none"};
     }
 
     div:hover {
@@ -185,7 +189,7 @@ const DropdownTrigger = styled.div<{$isActive: boolean}>`
     }
 `;
 
-const DropdownMenu = styled.div<{$isActive: boolean}>`
+const DropdownMenu = styled.div<{ $isActive: boolean }>`
     margin-top: 0.1rem !important;
     display: ${({ $isActive }: { $isActive: boolean }) =>
         $isActive ? "block" : "none"};
@@ -233,15 +237,15 @@ const ScheduleDropdownHeader = styled.div`
     align-items: center;
     position: relative;
     width: 100%;
-`
+`;
 
 const SelectedName = styled.span`
     font-weight: 700;
     min-width: 5rem;
     font-size: 1.25rem;
-`
+`;
 
-interface SelectListDropdownProps<T extends DBObject,> {
+interface SelectListDropdownProps<T extends DBObject> {
     itemType: string; // e.g., Degree Plan or Degree
     active?: T;
     allItems: T[];
@@ -256,18 +260,13 @@ interface SelectListDropdownProps<T extends DBObject,> {
     isLoading: boolean;
 }
 
-const SelectListDropdown = <T extends DBObject,>({
+const SelectListDropdown = <T extends DBObject>({
     itemType,
     active,
     allItems,
     selectItem,
     getItemName,
-    mutators: {
-        copy,
-        remove,
-        rename,
-        create,
-    },
+    mutators: { copy, remove, rename, create },
     isLoading,
 }: SelectListDropdownProps<T>) => {
     const [isActive, setIsActive] = useState(false);
@@ -291,7 +290,13 @@ const SelectListDropdown = <T extends DBObject,>({
     return (
         <ScheduleDropdownContainer ref={ref} $isActive={isActive}>
             <ScheduleDropdownHeader>
-                <SelectedName>{active ? getItemName(active) : <DarkBlueBackgroundSkeleton />}</SelectedName>
+                <SelectedName>
+                    {active ? (
+                        getItemName(active)
+                    ) : (
+                        <DarkBlueBackgroundSkeleton />
+                    )}
+                </SelectedName>
                 <DropdownTrigger
                     $isActive={isActive}
                     onClick={() => {
@@ -301,7 +306,14 @@ const SelectListDropdown = <T extends DBObject,>({
                 >
                     <div aria-haspopup={true} aria-controls="dropdown-menu">
                         <GrayIcon>
-                            <i className={`fa ${isActive ? 'fa-chevron-up' : 'fa-chevron-down'}`} aria-hidden="true" />
+                            <i
+                                className={`fa ${
+                                    isActive
+                                        ? "fa-chevron-up"
+                                        : "fa-chevron-down"
+                                }`}
+                                aria-hidden="true"
+                            />
                         </GrayIcon>
                     </div>
                 </DropdownTrigger>
@@ -309,25 +321,24 @@ const SelectListDropdown = <T extends DBObject,>({
             <DropdownMenu $isActive={isActive} role="menu">
                 <DropdownContent>
                     {allItems &&
-                        Object.entries(allItems)
-                            .map(([idx, data]) => {
-                                return (
-                                    <DropdownButton
-                                        key={String(data.id)}
-                                        isActive={data.id === active?.id}
-                                        makeActive={() => {
-                                            setIsActive(false);
-                                        }}
-                                        onClick={() => selectItem(data.id)}
-                                        text={getItemName(data)}
-                                        mutators={{
-                                            copy: copy && (() => copy(data)),
-                                            remove: remove && (() => remove(data)),
-                                            rename: rename && (() => rename(data))
-                                        }}
-                                    />
-                                );
-                            })}
+                        Object.entries(allItems).map(([idx, data]) => {
+                            return (
+                                <DropdownButton
+                                    key={String(data.id)}
+                                    isActive={data.id === active?.id}
+                                    makeActive={() => {
+                                        setIsActive(false);
+                                    }}
+                                    onClick={() => selectItem(data.id)}
+                                    text={getItemName(data)}
+                                    mutators={{
+                                        copy: copy && (() => copy(data)),
+                                        remove: remove && (() => remove(data)),
+                                        rename: rename && (() => rename(data)),
+                                    }}
+                                />
+                            );
+                        })}
                     <AddNew onClick={create} role="button" disabled={isLoading}>
                         <GrayIcon>
                             <i className="fa fa-plus" aria-hidden="true" />
