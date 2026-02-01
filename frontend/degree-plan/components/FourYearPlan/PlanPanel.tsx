@@ -94,12 +94,8 @@ const PlanPanel = ({
         if (!currentSemester) return;
 
         const attemptScroll = () => {
-            console.log(semesterRefs);
-            console.log(semesterRefs?.current);
             const target = semesterRefs?.current?.[currentSemester];
-            console.log("target", target);
             if (target) {
-                console.log("scrolling to", target);
                 target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
             }
         };
