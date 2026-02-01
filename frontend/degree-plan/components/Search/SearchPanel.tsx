@@ -11,8 +11,8 @@ interface SearchPanelContextType {
     searchPanelOpen: boolean;
     setSearchRuleId: (arg0: Rule["id"] | null) => void;
     searchRuleId: Rule["id"] | null;
-    setSearchFulfillments: (arg0: Fulfillment[]) => void,
-    searchFulfillments: Fulfillment[],
+    setSearchFulfillments: (arg0: Fulfillment[]) => void;
+    searchFulfillments: Fulfillment[];
     setSearchRuleQuery: (arg0: string | null) => void;
     searchRuleQuery: string | null; // the q string associated with the rulez
 }
@@ -25,30 +25,29 @@ export const SearchPanelContext = createContext<SearchPanelContextType>({
     setSearchFulfillments: (arg0) => {},
     searchFulfillments: [],
     setSearchRuleQuery: (arg0) => {},
-    searchRuleQuery: ""
+    searchRuleQuery: "",
 });
 
-
 const SearchPanelBody = styled.div`
-    margin: .6rem;
+    margin: 0.6rem;
     overflow-y: auto;
-`
+`;
 
 const SearchPanelResult = styled.div`
-    margin-top: .5rem;
+    margin-top: 0.5rem;
     overflow-x: hidden;
-`
+`;
 
 const SearchContainer = styled.div`
     position: sticky;
     top: 0;
-    padding: .5rem .75rem;
+    padding: 0.5rem 0.75rem;
     background-color: var(--background-grey);
-    border-radius: .75rem;
+    border-radius: 0.75rem;
     display: flex;
     align-items: center;
     gap: 1rem;
-`
+`;
 
 const SearchField = styled.input`
     flex: 1;
@@ -62,7 +61,7 @@ const SearchField = styled.input`
 const PanelContainer = styled.div`
     border-radius: 10px;
     box-shadow: 0px 0px 10px 6px rgba(0, 0, 0, 0.05);
-    background-color: #FFFFFF;
+    background-color: #ffffff;
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -71,27 +70,26 @@ const PanelContainer = styled.div`
 
 const PanelTitle = styled.div`
     font-weight: 700;
-`
+`;
 
 const SearchPanelHeader = styled(PanelHeader)`
     display: flex;
     justify-content: space-between;
     font-size: 1.25rem;
-`
+`;
 
 interface SearchPanelProp {
     activeDegreeplanId: DegreePlan["id"] | null;
 }
 
 export const SearchPanel = ({ activeDegreeplanId }: SearchPanelProp) => {
-    const { 
-        setSearchPanelOpen, 
-        searchRuleId: ruleId, 
+    const {
+        setSearchPanelOpen,
+        searchRuleId: ruleId,
         setSearchRuleId,
         searchRuleQuery: ruleQuery,
-        searchFulfillments: fulfillments
-    } = useContext(SearchPanelContext); 
-
+        searchFulfillments: fulfillments,
+    } = useContext(SearchPanelContext);
 
     // queryString and searchRuleQuery are different (queryString is the actual query e.g., "World Civ",
     // and searchRuleQuery is a q object)
@@ -99,13 +97,13 @@ export const SearchPanel = ({ activeDegreeplanId }: SearchPanelProp) => {
 
     React.useEffect(() => {
         setQueryString("");
-    }, [ruleId])
+    }, [ruleId]);
 
     const handleCloseSearch = () => {
-        setQueryString(""); 
+        setQueryString("");
         setSearchPanelOpen(false);
         setSearchRuleId(null);
-    }
+    };
 
     return (
         <PanelContainer>
@@ -116,8 +114,7 @@ export const SearchPanel = ({ activeDegreeplanId }: SearchPanelProp) => {
                 </label>
             </SearchPanelHeader>
             <SearchPanelBody>
-                <SearchContainer
-                >
+                <SearchContainer>
                     <GrayIcon>
                         <i className="fas fa-search fa-lg" />
                     </GrayIcon>
@@ -126,58 +123,83 @@ export const SearchPanel = ({ activeDegreeplanId }: SearchPanelProp) => {
                         autoFocus
                         type="text"
                         value={queryString}
-                        onChange={(e) => {setQueryString(e.target.value)}}
+                        onChange={(e) => {
+                            setQueryString(e.target.value);
+                        }}
                         autoComplete="off"
-                        placeholder={!ruleId ? "Search for a course!" : `Filtering for a requirement`}
+                        placeholder={
+                            !ruleId
+                                ? "Search for a course!"
+                                : `Filtering for a requirement`
+                        }
                     />
                 </SearchContainer>
-                <SearchResults ruleId={ruleId} query={queryString} activeDegreeplanId={activeDegreeplanId} fulfillments={fulfillments}/> 
+                <SearchResults
+                    ruleId={ruleId}
+                    query={queryString}
+                    activeDegreeplanId={activeDegreeplanId}
+                    fulfillments={fulfillments}
+                />
             </SearchPanelBody>
         </PanelContainer>
-    )
-}
+    );
+};
 
 export const useDebounce = (value: any, delay: number) => {
-  const [debouncedValue, setDebouncedValue] = React.useState(value);
+    const [debouncedValue, setDebouncedValue] = React.useState(value);
 
-  React.useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
+    React.useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedValue(value);
+        }, delay);
 
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [value, delay]);
 
-  return debouncedValue;
-}
+    return debouncedValue;
+};
 
-const buildSearchKey = (ruleId: Rule["id"] | null, query: string): string | null => {
-    return query.length >= 3 || ruleId ? `api/base/all/search/courses?search=${query}${ruleId ? `&rule_ids=${ruleId}` : ""}` : null
-}
-
-interface SearchResultsProps {
+const buildSearchKey = (
     ruleId: Rule["id"] | null,
     query: string,
-    activeDegreeplanId: DegreePlan["id"] | null,
-    fulfillments: Fulfillment[]
+): string | null => {
+    return query.length >= 3 || ruleId
+        ? `api/base/all/search/courses?search=${query}${
+              ruleId ? `&rule_ids=${ruleId}` : ""
+          }`
+        : null;
+};
+
+interface SearchResultsProps {
+    ruleId: Rule["id"] | null;
+    query: string;
+    activeDegreeplanId: DegreePlan["id"] | null;
+    fulfillments: Fulfillment[];
 }
-const SearchResults = ({ ruleId, query, activeDegreeplanId, fulfillments }: SearchResultsProps) => {
-    const DISABLE_SEARCH = true
-    const debouncedQuery = useDebounce(query, 400)
-    const { data: courses = [], isLoading: isLoadingCourses, error } = useSWR(DISABLE_SEARCH ? null : buildSearchKey(ruleId, debouncedQuery)); 
+const SearchResults = ({
+    ruleId,
+    query,
+    activeDegreeplanId,
+    fulfillments,
+}: SearchResultsProps) => {
+    const DISABLE_SEARCH = true;
+    const debouncedQuery = useDebounce(query, 400);
+    const { data: courses = [], isLoading: isLoadingCourses, error } = useSWR(
+        DISABLE_SEARCH ? null : buildSearchKey(ruleId, debouncedQuery),
+    );
     return (
         <>
             <SearchPanelResult>
                 <ResultsList
-                activeDegreeplanId={activeDegreeplanId} 
-                ruleId={ruleId} 
-                courses={courses}
-                fulfillments={fulfillments}
-                isLoading={isLoadingCourses}
+                    activeDegreeplanId={activeDegreeplanId}
+                    ruleId={ruleId}
+                    courses={courses}
+                    fulfillments={fulfillments}
+                    isLoading={isLoadingCourses}
                 />
             </SearchPanelResult>
         </>
-    )
-}
+    );
+};

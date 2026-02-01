@@ -8,15 +8,18 @@ import { Theme } from "@radix-ui/themes";
 import Head from "next/head";
 
 function App({ Component, pageProps }: AppProps) {
-  return (
-    <main className={inter.className}>
-      <Head>
-        <title>Penn Degree Plan</title>
-        <meta name="description" content="Penn Degree Plan by Penn Labs" />
-      </Head>
-      <Component {...pageProps} />
-    </main>
-  );
+    return (
+        <main className={inter.className}>
+            <Head>
+                <title>Penn Degree Plan</title>
+                <meta
+                    name="description"
+                    content="Penn Degree Plan by Penn Labs"
+                />
+            </Head>
+            <Component {...pageProps} />
+        </main>
+    );
 }
 
 export default App;
