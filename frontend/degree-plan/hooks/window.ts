@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 type WindowDimentions = {
     width: number | undefined;
@@ -18,8 +18,8 @@ const useWindowDimensions = (): WindowDimentions => {
             });
         }
         handleResize();
-        window.addEventListener('resize', handleResize);
-        return (): void => window.removeEventListener('resize', handleResize);
+        window.addEventListener("resize", handleResize);
+        return (): void => window.removeEventListener("resize", handleResize);
     }, []); // Empty array ensures that effect is only run on mount
 
     return windowDimensions;

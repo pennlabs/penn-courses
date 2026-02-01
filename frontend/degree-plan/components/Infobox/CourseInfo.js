@@ -73,7 +73,8 @@ export const CourseHeader = ({ close, aliases, code, name, notes, data }) => (
         >
           <span className="tooltip-text">
             This course was last offered in{" "}
-            {toNormalizedSemester(data.last_offered_sem_if_superceded)}.
+            {toNormalizedSemester(data.last_offered_sem_if_superceded)}
+            .
             <br />
             It has more recently been superseeded by another course
             <br />

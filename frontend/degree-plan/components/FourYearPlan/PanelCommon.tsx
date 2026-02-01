@@ -1,6 +1,6 @@
 import styled from "@emotion/styled";
 import React from "react";
-import 'react-loading-skeleton/dist/skeleton.css'
+import "react-loading-skeleton/dist/skeleton.css";
 import Skeleton from "react-loading-skeleton";
 import { Icon } from "../common/bulma_derived_components";
 
@@ -12,7 +12,7 @@ export const PanelTopBarIcon = styled(Icon)`
 
 export const PanelTopBarString = styled.div`
     flex-shrink: 1;
-`
+`;
 
 export const PanelTopBarButton = styled.button`
     border: none;
@@ -20,8 +20,8 @@ export const PanelTopBarButton = styled.button`
     flex-direction: row;
     justify-content: start;
     align-items: center;
-    padding: .5rem 1rem;
-    gap: .5rem;
+    padding: 0.5rem 1rem;
+    gap: 0.5rem;
     min-height: 1.5rem;
     font-family: inherit;
 
@@ -30,11 +30,9 @@ export const PanelTopBarButton = styled.button`
     border-radius: 5px;
     color: var(--primary-color-xxx-dark);
 `;
-export const DarkBlueBackgroundSkeleton: React.FC<{ width?: string; }> = (props) => (
-    <Skeleton
-        baseColor="var(--primary-color-dark)"
-        {...props} />
-);
+export const DarkBlueBackgroundSkeleton: React.FC<{ width?: string }> = (
+    props,
+) => <Skeleton baseColor="var(--primary-color-dark)" {...props} />;
 
 export const PanelHeader = styled.div`
     display: flex;
@@ -56,13 +54,13 @@ export const PanelBody = styled.div`
     flex-grow: 1;
     display: flex;
     flex-direction: column;
-    gap: .5rem;
+    gap: 0.5rem;
 `;
 
 export const PanelContainer = styled.div`
     border-radius: 10px;
     box-shadow: 0px 0px 10px 6px rgba(0, 0, 0, 0.05);
-    background-color: #FFFFFF;
+    background-color: #ffffff;
     display: flex;
     flex-direction: column;
     width: 100%;
@@ -75,4 +73,3 @@ export const PanelTopBarIconList = styled.div`
     flex-direction: row;
     gap: 0.8rem;
 `;
-

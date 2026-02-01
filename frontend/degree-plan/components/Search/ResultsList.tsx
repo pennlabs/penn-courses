@@ -1,7 +1,13 @@
 import React, { useEffect, useRef } from "react";
-import styled from '@emotion/styled';
+import styled from "@emotion/styled";
 import Course, { SkeletonCourse } from "./CourseInSearch";
-import { Course as CourseType, DegreePlan, DockedCourse, Fulfillment, Rule } from "../../types";
+import {
+    Course as CourseType,
+    DegreePlan,
+    DockedCourse,
+    Fulfillment,
+    Rule,
+} from "../../types";
 import { useSWRCrud } from "@/hooks/swrcrud";
 
 const goodEasy = ({ difficulty, course_quality: courseQuality }: CourseType) =>
@@ -46,11 +52,10 @@ const CoursesContainer = styled.ul`
     }
 `;
 
-
 export interface ResultListProps {
     courses: CourseType[];
     activeDegreeplanId: DegreePlan["id"] | null;
-    fulfillments: Fulfillment[],
+    fulfillments: Fulfillment[];
     ruleId: Rule["id"] | null;
     isLoading: boolean;
 }
@@ -59,18 +64,19 @@ const ResultsList = ({
     activeDegreeplanId,
     fulfillments,
     courses,
-    isLoading
+    isLoading,
 }: ResultListProps) => {
     // TODO: what if activeDegreeplan is not defined
 
-    const { createOrUpdate: createOrUpdateFulfillment } = useSWRCrud<Fulfillment>(
-        `/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`,
-        { 
-            idKey: "full_code",
-            createDefaultOptimisticData: { semester: null, rules: [ruleId] }
-        }
-    );
-    const { createOrUpdate: createOrUpdateDockedCourse } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
+    const { createOrUpdate: createOrUpdateFulfillment } = useSWRCrud<
+        Fulfillment
+    >(`/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`, {
+        idKey: "full_code",
+        createDefaultOptimisticData: { semester: null, rules: [ruleId] },
+    });
+    const { createOrUpdate: createOrUpdateDockedCourse } = useSWRCrud<
+        DockedCourse
+    >(`/api/degree/docked`, { idKey: "full_code" });
 
     return (
         <CourseListContainer>
@@ -80,22 +86,37 @@ const ResultsList = ({
                 <Header width="20%">DIFF</Header>
             </HeaderContainer>
             <CoursesContainer>
-                {!isLoading ? courses.map((course) =>  
-                <Course
-                    ruleId={ruleId}
-                    key={course.id + course.semester}
-                    course={course}
-                    onClick={() => {
-                        if (ruleId) {
-                            const rules = fulfillments.find(fulfillment => fulfillment.full_code == course.id)?.rules || [];
-                            createOrUpdateFulfillment({ rules: [...rules, ruleId] }, course.id);
-                        } else createOrUpdateDockedCourse({}, course.id);
-                    }}
-                    // star means the course is a fulfillment
-                    isStar={!!fulfillments.find((fulfillment) => fulfillment.full_code == course.id)}
-                />) :
-                Array.from(Array(6).keys()).map(() => <SkeletonCourse />)
-                }
+                {!isLoading
+                    ? courses.map((course) => (
+                          <Course
+                              ruleId={ruleId}
+                              key={course.id + course.semester}
+                              course={course}
+                              onClick={() => {
+                                  if (ruleId) {
+                                      const rules =
+                                          fulfillments.find(
+                                              (fulfillment) =>
+                                                  fulfillment.full_code ==
+                                                  course.id,
+                                          )?.rules || [];
+                                      createOrUpdateFulfillment(
+                                          { rules: [...rules, ruleId] },
+                                          course.id,
+                                      );
+                                  } else
+                                      createOrUpdateDockedCourse({}, course.id);
+                              }}
+                              // star means the course is a fulfillment
+                              isStar={
+                                  !!fulfillments.find(
+                                      (fulfillment) =>
+                                          fulfillment.full_code == course.id,
+                                  )
+                              }
+                          />
+                      ))
+                    : Array.from(Array(6).keys()).map(() => <SkeletonCourse />)}
             </CoursesContainer>
         </CourseListContainer>
     );

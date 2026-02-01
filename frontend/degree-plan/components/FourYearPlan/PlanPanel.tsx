@@ -3,34 +3,46 @@ import Semesters from "./Semesters";
 import styled from "@emotion/styled";
 import type { DegreePlan } from "@/types";
 import React, { useState, useEffect, useContext, useMemo } from "react";
-import { useSWRCrud } from '@/hooks/swrcrud';
-import { EditButton } from './EditButton';
+import { useSWRCrud } from "@/hooks/swrcrud";
+import { EditButton } from "./EditButton";
 import { PanelTopBarButton, PanelTopBarIcon } from "./PanelCommon";
-import { PanelContainer, PanelHeader, PanelTopBarIconList, PanelBody } from "./PanelCommon";
+import {
+    PanelContainer,
+    PanelHeader,
+    PanelTopBarIconList,
+    PanelBody,
+} from "./PanelCommon";
 import { ModalKey } from "./DegreeModal";
 import { TutorialModalContext } from "./OnboardingTutorial";
 import { SemestersContext } from "./Semesters";
 
-
 const TutorialHighlight = styled.div<{ $active: boolean }>`
-  position: relative;
-  border-radius: 6px;
-  outline: ${p => p.$active ? '2px solid var(--selected-color)' : 'none'};
-  outline-offset: 2px;
-`
+    position: relative;
+    border-radius: 6px;
+    outline: ${(p) => (p.$active ? "2px solid var(--selected-color)" : "none")};
+    outline-offset: 2px;
+`;
 
 const ShowStatsText = styled.div`
     min-width: 6rem;
-`
+`;
 
-const ShowStatsButton = ({ showStats, setShowStats }: { showStats: boolean, setShowStats: (arg0: boolean) => void }) => (
+const ShowStatsButton = ({
+    showStats,
+    setShowStats,
+}: {
+    showStats: boolean;
+    setShowStats: (arg0: boolean) => void;
+}) => (
     <PanelTopBarButton onClick={() => setShowStats(!showStats)}>
         <PanelTopBarIcon>
-            <i className={`fas fa-md fa-chart-bar ${showStats ? "" : "icon-crossed-out"}`} />
+            <i
+                className={`fas fa-md fa-chart-bar ${
+                    showStats ? "" : "icon-crossed-out"
+                }`}
+            />
         </PanelTopBarIcon>
-        <ShowStatsText>
-            {showStats ? "Hide Stats" : "Show Stats"}
-        </ShowStatsText>
+        <ShowStatsText>{showStats ? "Hide Stats" : "Show Stats"}</ShowStatsText>
     </PanelTopBarButton>
 );
 
@@ -57,11 +69,15 @@ const PlanPanel = ({
     isLoading,
     currentSemester,
 }: PlanPanelProps) => {
-    const { copy: copyDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans');
+    const { copy: copyDegreeplan } = useSWRCrud<DegreePlan>(
+        "/api/degree/degreeplans",
+    );
     const [showStats, setShowStats] = useState(true);
     const [editMode, setEditMode] = useState(false);
 
-    const { tutorialModalKey, componentRefs } = useContext(TutorialModalContext);
+    const { tutorialModalKey, componentRefs } = useContext(
+        TutorialModalContext,
+    );
     const { semesterRefs } = useContext(SemestersContext);
     const planPanelRef = React.useRef<HTMLDivElement | null>(null);
     const showStatsRef = React.useRef<HTMLDivElement | null>(null);
@@ -76,21 +92,23 @@ const PlanPanel = ({
             "future-semesters",
             "past-semesters",
             "edit-mode",
-            "show-stats"
+            "show-stats",
         ];
 
-        const isPlanPanelActive = planPanelKeys.includes(tutorialModalKey || '');
+        const isPlanPanelActive = planPanelKeys.includes(
+            tutorialModalKey || "",
+        );
         componentRefs.current["planPanel"] = planPanelRef.current;
         if (planPanelRef.current) {
             planPanelRef.current.style.zIndex = isPlanPanelActive ? "20" : "";
         }
 
-        componentRefs.current['showStatsButton'] = showStatsRef.current;
-        componentRefs.current['editSemesterButton'] = editSemesterRef.current;
+        componentRefs.current["showStatsButton"] = showStatsRef.current;
+        componentRefs.current["editSemesterButton"] = editSemesterRef.current;
     }, [tutorialModalKey, componentRefs]);
 
     useEffect(() => {
-        if (tutorialModalKey !== 'current-semester') return;
+        if (tutorialModalKey !== "current-semester") return;
         if (!currentSemester) return;
 
         const attemptScroll = () => {
@@ -100,7 +118,11 @@ const PlanPanel = ({
             console.log("target", target);
             if (target) {
                 console.log("scrolling to", target);
-                target.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+                target.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center",
+                    inline: "center",
+                });
             }
         };
         // slight delay to allow modal and semesters to render
@@ -116,32 +138,53 @@ const PlanPanel = ({
                     active={activeDegreeplan || undefined}
                     getItemName={(item: DegreePlan) => item.name}
                     allItems={degreeplans || []}
-                    selectItem={(id: DegreePlan["id"]) => setActiveDegreeplan(degreeplans?.filter(d => d.id === id)[0] || null)}
+                    selectItem={(id: DegreePlan["id"]) =>
+                        setActiveDegreeplan(
+                            degreeplans?.filter((d) => d.id === id)[0] || null,
+                        )
+                    }
                     mutators={{
                         copy: (item: DegreePlan) => {
-                            (copyDegreeplan({ ...item, name: `${item.name} (copy)` }, item.id) as Promise<any>)
-                                .then((copied) => copied && setActiveDegreeplan(copied))
+                            (copyDegreeplan(
+                                { ...item, name: `${item.name} (copy)` },
+                                item.id,
+                            ) as Promise<any>).then(
+                                (copied) =>
+                                    copied && setActiveDegreeplan(copied),
+                            );
                         },
                         remove: (item: DegreePlan) => {
-                            setModalKey("plan-remove")
-                            setModalObject(item)
+                            setModalKey("plan-remove");
+                            setModalObject(item);
                         },
                         rename: (item: DegreePlan) => {
-                            setModalKey("plan-rename")
-                            setModalObject(item)
+                            setModalKey("plan-rename");
+                            setModalObject(item);
                         },
                         create: () => {
                             setShowOnboardingModal(true);
-                        }
+                        },
                     }}
                     isLoading={isLoading}
                 />
                 <PanelTopBarIconList>
-                    <TutorialHighlight $active={tutorialModalKey === 'show-stats'} ref={showStatsRef}>
-                        <ShowStatsButton showStats={showStats} setShowStats={setShowStats} />
+                    <TutorialHighlight
+                        $active={tutorialModalKey === "show-stats"}
+                        ref={showStatsRef}
+                    >
+                        <ShowStatsButton
+                            showStats={showStats}
+                            setShowStats={setShowStats}
+                        />
                     </TutorialHighlight>
-                    <TutorialHighlight $active={tutorialModalKey === 'edit-mode'} ref={editSemesterRef}>
-                        <EditButton editMode={editMode} setEditMode={setEditMode} />
+                    <TutorialHighlight
+                        $active={tutorialModalKey === "edit-mode"}
+                        ref={editSemesterRef}
+                    >
+                        <EditButton
+                            editMode={editMode}
+                            setEditMode={setEditMode}
+                        />
                     </TutorialHighlight>
                 </PanelTopBarIconList>
             </PanelHeader>
@@ -160,6 +203,6 @@ const PlanPanel = ({
             </PanelBody>
         </PanelContainer>
     );
-}
+};
 
 export default PlanPanel;
