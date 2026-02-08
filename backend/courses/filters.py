@@ -60,8 +60,10 @@ def meeting_filter(queryset, meeting_query):
     lab section, and thus the set of course activities available to us is incomplete).
     """
     return queryset.filter(
-        id__in=course_ids_by_section_query(
-            Q(num_meetings=0) | Q(id__in=section_ids_by_meeting_query(meeting_query))
+        id__in=Subquery(
+            course_ids_by_section_query(
+                Q(num_meetings=0) | Q(id__in=Subquery(section_ids_by_meeting_query(meeting_query)))
+            )
         )
     )
 
@@ -75,7 +77,7 @@ def is_open_filter(queryset, *args):
     Note that for compatibility, this function can take additional positional
     arguments, but these are ignored.
     """
-    return queryset.filter(id__in=course_ids_by_section_query(Q(status="O")))
+    return queryset.filter(id__in=Subquery(course_ids_by_section_query(Q(status="O"))))
 
 
 def day_filter(days):
@@ -157,6 +159,22 @@ def pre_ngss_requirement_filter(queryset, req_ids):
         except PreNGSSRequirement.DoesNotExist:
             continue
         query &= Q(id__in=requirement.satisfying_courses.all())
+
+    return queryset.filter(query)
+
+
+def requirements_filter(queryset, requirements):
+    """
+    :param queryset: initial Course object queryset
+    :param requirements: the requirements query string; a comma separated list of requirement codes.
+    :return: filtered queryset
+    """
+    if not requirements:
+        return queryset
+
+    query = Q()
+    for requirement in requirements.split(","):
+        query |= Q(requirements__code=requirement)
 
     return queryset.filter(query)
 
@@ -340,6 +358,7 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
         filters = {
             "attributes": attribute_filter,
             "pre_ngss_requirements": pre_ngss_requirement_filter,
+            "requirements": requirements_filter,
             "cu": choice_filter("sections__credits"),
             "activity": choice_filter("sections__activity"),
             "course_quality": bound_filter("course_quality"),
@@ -367,7 +386,7 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
         if len(meeting_query) > 0:
             queryset = meeting_filter(queryset, meeting_query)
 
-        return queryset.distinct("full_code")  # TODO: THIS COULD BE A BREAKING CHANGE FOR PCX
+        return queryset
 
     def get_schema_operation_parameters(self, view):
         return [
@@ -408,6 +427,20 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                 ),
                 "schema": {"type": "string"},
                 "example": "SS@SEAS,H@SEAS",
+            },
+            {
+                "name": "requirements",
+                "required": False,
+                "in": "query",
+                "description": (
+                    "Filter by course requirements. Use the "
+                    "[List Requirements](/api/documentation/#operation/penn_courses_api_v1_courses_requirements_list) "
+                    "endpoint to get a list of valid requirement codes. "
+                    "This parameter accepts a comma-separated list of requirement codes. "
+                    "Courses that satisfy any of the requirements will be returned."
+                ),
+                "schema": {"type": "string"},
+                "example": "MFR/MATH,MFR/PHYS",
             },
             {
                 "name": "attributes",

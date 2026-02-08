@@ -132,3 +132,33 @@ class ReviewBit(models.Model):
 
     def __str__(self):
         return f"#{self.review.pk} - {self.field}: {self.average}"
+
+
+class CachedCourseReviews(models.Model):
+    id = models.IntegerField(primary_key=True)
+    created_at = models.DateTimeField()
+    updated_at = models.DateTimeField()
+    department_id = models.IntegerField()
+    code = models.CharField(max_length=50)
+    semester = models.CharField(max_length=20)
+    title = models.TextField()
+    description = models.TextField(null=True)
+    syllabus_url = models.TextField(null=True)
+    full_code = models.CharField(max_length=100)
+    credits = models.FloatField()
+    prerequisites = models.TextField(null=True)
+    topic_id = models.IntegerField()
+    parent_course_id = models.IntegerField(null=True)
+    manually_set_parent_course = models.BooleanField()
+    primary_listing_id = models.IntegerField(null=True)
+    num_activities = models.IntegerField()
+
+    # Calculated fields from subqueries
+    course_quality = models.FloatField(null=True)
+    difficulty = models.FloatField(null=True)
+    instructor_quality = models.FloatField(null=True)
+    work_required = models.FloatField(null=True)
+
+    class Meta:
+        managed = False
+        db_table = "cached_review_ratings"

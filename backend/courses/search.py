@@ -39,8 +39,6 @@ class TypedCourseSearchBackend(filters.SearchFilter):
     def infer_search_type(self, query):
         if not any(r.match(query) for r in self.code_res):
             return "keyword"
-        elif re.search(r"[A-Za-z]{5,}", query):
-            return "both"
         else:
             return "course"
 
@@ -70,19 +68,14 @@ class TypedCourseSearchBackend(filters.SearchFilter):
                 return "-".join([c for c in components if c])
 
         terms = [get_code_prefix(r) for r in self.code_res]
-        if search_type == "both":
-            terms.append(query)
-
         return [t for t in terms if t]
 
     def get_search_fields(self, view, request):
         search_type = self.get_search_type(request)
         if search_type == "course":
             return ["^full_code"]
-        elif search_type == "keyword":
+        else:  # keyword
             return ["title", "sections__instructors__name"]
-        else:
-            return ["^full_code", "title", "sections__instructors__name"]
 
     def filter_queryset(self, request, queryset, view):
         if not self.get_query(request):

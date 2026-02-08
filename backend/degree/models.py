@@ -292,6 +292,12 @@ class Rule(models.Model):
             return None
         return json_parser.parse(self.q)
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["parent"]),
+            models.Index(fields=["id", "q"])
+        ]
+
 
 class DegreePlan(models.Model):  #
     """

@@ -164,9 +164,10 @@ interface SearchResultsProps {
     fulfillments: Fulfillment[]
 }
 const SearchResults = ({ ruleId, query, activeDegreeplanId, fulfillments }: SearchResultsProps) => {
-    const DISABLE_SEARCH = true
+    const DISABLE_SEARCH = false
     const debouncedQuery = useDebounce(query, 400)
-    const { data: courses = [], isLoading: isLoadingCourses, error } = useSWR(DISABLE_SEARCH ? null : buildSearchKey(ruleId, debouncedQuery)); 
+    const { data: courses = [], isLoading: isLoadingCourses, error } = useSWR(DISABLE_SEARCH ? null : buildSearchKey(ruleId, debouncedQuery),
+    { revalidateOnFocus: false, dedupingInterval: Infinity, revalidateIfStale: false }); 
     return (
         <>
             <SearchPanelResult>

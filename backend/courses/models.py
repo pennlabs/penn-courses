@@ -89,46 +89,15 @@ class Department(models.Model):
         return self.code
 
 
-def sections_with_reviews(queryset):
-    from review.views import section_filters_pcr
-
-    # ^ imported here to avoid circular imports
-    # get all the reviews for instructors in the Section.instructors many-to-many
-    instructors_subquery = Subquery(
-        Instructor.objects.filter(section__id=OuterRef(OuterRef("id"))).values("id")
-    )
-
-    return review_averages(
-        queryset,
-        reviewbit_subfilters=(
-            Q(review__section__course__topic=OuterRef("course__topic"))
-            & Q(review__instructor__in=instructors_subquery)
-        ),
-        section_subfilters=(
-            section_filters_pcr
-            & Q(course__topic=OuterRef("course__topic"))
-            & Q(instructors__in=instructors_subquery)
-        ),
-        extra_metrics=False,
-    ).order_by("code")
 
 
-def course_reviews(queryset):
-    from review.views import section_filters_pcr
 
-    # ^ imported here to avoid circular imports
 
-    return review_averages(
-        queryset,
-        reviewbit_subfilters=(Q(review__section__course__topic=OuterRef("topic"))),
-        section_subfilters=(section_filters_pcr & Q(course__topic=OuterRef("topic"))),
-        extra_metrics=False,
-    )
 
 
 class CourseManager(models.Manager):
     def get_queryset(self):
-        return course_reviews(super().get_queryset())
+        return super().get_queryset()
 
 
 class Course(models.Model):
@@ -271,15 +240,10 @@ class Course(models.Model):
         ),
     )
 
-    num_activities = models.IntegerField(
-        default=0,
-        help_text=dedent(
-            """
-            The number of distinct activities belonging to this course (precomputed for efficiency).
-            Maintained by the registrar import / recomputestats script.
-            """
-        ),
-    )
+    course_quality = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
+    instructor_quality = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
+    difficulty = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
+    work_required = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
 
     class Meta:
         unique_together = (
@@ -556,7 +520,7 @@ class NGSSRestriction(models.Model):
 
 class SectionManager(models.Manager):
     def get_queryset(self):
-        return sections_with_reviews(super().get_queryset()).distinct()
+        return super().get_queryset().distinct()
 
 
 class PreNGSSRestriction(models.Model):
@@ -826,6 +790,10 @@ class Section(models.Model):
         default=0,
         help_text="The number of active PCA registrations watching this section.",
     )  # For the set of PCA registrations for this section, use the related field `registrations`.
+    course_quality = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
+    instructor_quality = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
+    difficulty = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
+    work_required = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
 
     def __str__(self):
         return "%s %s" % (self.full_code, self.course.semester)
@@ -1142,16 +1110,19 @@ class Meeting(models.Model):
 
     day = models.CharField(
         max_length=1,
+        db_index=True,
         help_text="The single day on which the meeting takes place (one of M, T, W, R, or F).",
     )
     start = models.DecimalField(
         max_digits=4,
         decimal_places=2,
+        db_index=True,
         help_text="The start time of the meeting; hh:mm is formatted as hh.mm = h+mm/100.",
     )
     end = models.DecimalField(
         max_digits=4,
         decimal_places=2,
+        db_index=True,
         help_text="The end time of the meeting; hh:mm is formatted as hh.mm = h+mm/100.",
     )
     room = models.ForeignKey(
