@@ -1,13 +1,15 @@
+import { useMemo, useState, useRef, useEffect } from "react";
 import { ConnectDragSource } from "react-dnd";
 import { GrayIcon, Icon } from "@/components/common/bulma_derived_components";
 import styled from "@emotion/styled";
-import { Course, DnDCourse, Fulfillment } from "@/types";
+import { Course, DegreePlan, DnDCourse, Fulfillment, Rule } from "@/types";
 import { ReviewPanelTrigger } from "@/components/Infobox/ReviewPanel";
 import { Draggable } from "@/components/common/DnD";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
 import { Tooltip } from "react-tooltip";
+import useSWR from "swr";
 
 const DOUBLE_COUNT_ERROR_MESSAGE =
   "This course is being illegally double counted in your plan!";
@@ -106,18 +108,75 @@ const CourseBadge = styled.div`
   gap: 0.25rem;
 `;
 
-const IconBadge = styled.div`
+const InfoIconButton = styled.button`
+  background: none;
+  border: none;
+  cursor: pointer;
   padding: 0.2rem;
-  border-radius: 5px;
   display: flex;
-  flex-direction: row;
   align-items: center;
-  gap: 0.07rem;
-  background-color: #ebebeb;
+  color: #aaa;
+  font-size: 0.85rem;
+  margin-left: 0.25rem;
 
-  p {
-    font-size: 14px;
-    font-weight: bold;
+  &:hover {
+    color: #555;
+  }
+`;
+
+const InfoPopoverWrapper = styled.div`
+  position: relative;
+  display: flex;
+  align-items: center;
+`;
+
+const InfoPopover = styled.div`
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  padding: 0.75rem 1rem;
+  z-index: 10000;
+  min-width: 220px;
+  max-width: 350px;
+  width: max-content;
+  text-align: left;
+  font-size: 0.85rem;
+  color: #333;
+  white-space: normal;
+  word-wrap: break-word;
+`;
+
+const PopoverSection = styled.div`
+  overflow: visible;
+
+  &:not(:last-child) {
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #eee;
+  }
+`;
+
+const PopoverLabel = styled.div`
+  font-weight: 600;
+  font-size: 0.7rem;
+  color: #888;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+`;
+
+const RuleList = styled.ul`
+  margin: 0;
+  padding-left: 1rem;
+  list-style-position: outside;
+
+  li {
+    margin-bottom: 0.15rem;
+    padding-left: 0.15rem;
   }
 `;
 
@@ -138,20 +197,29 @@ const ExclamationIcon = ({ color }: { color: string }) => {
   );
 };
 
-const SemesterIcon = ({ semester }: { semester: string | null }) => {
-  if (!semester) return <div></div>;
-  const year =
-    semester === TRANSFER_CREDIT_SEMESTER_KEY ? "AP" : semester.substring(2, 4);
-  const sem = semester.substring(4);
+const formatSemester = (semester: string | null): string => {
+  if (!semester) return "";
+  if (semester === TRANSFER_CREDIT_SEMESTER_KEY) return "AP & Transfer Credit";
+  const year = semester.slice(0, 4);
+  const term = semester.slice(4);
+  return `${term === "A" ? "Spring" : term === "B" ? "Summer" : "Fall"} ${year}`;
+};
 
-  return (
-    <IconBadge>
-      <p>{year}</p>
-      {sem === "A" && <i className="spring-icon"></i>}
-      {sem === "B" && <i className="summer-icon"></i>}
-      {sem === "C" && <i className="fall-icon"></i>}
-    </IconBadge>
-  );
+/** Recursively flattens a rule tree into an id→title map */
+const flattenRules = (rules: Rule[]): Map<number, string> => {
+  const map = new Map<number, string>();
+  const traverse = (ruleList: Rule[]) => {
+    for (const rule of ruleList) {
+      if (rule.title) {
+        map.set(rule.id, rule.title);
+      }
+      if (rule.rules?.length) {
+        traverse(rule.rules);
+      }
+    }
+  };
+  traverse(rules);
+  return map;
 };
 
 const CourseComponent = ({
@@ -166,6 +234,41 @@ const CourseComponent = ({
   isDragging,
   dragRef,
 }: DraggableComponentProps) => {
+  // Look up rule titles for unselected rules (uses SWR cache from ReqPanel)
+  const { data: degreePlanDetail } = useSWR<DegreePlan>(
+    fulfillment?.degree_plan
+      ? `/api/degree/degreeplans/${fulfillment.degree_plan}`
+      : null
+  );
+
+  const unselectedRuleNames = useMemo(() => {
+    if (!fulfillment?.unselected_rules?.length || !degreePlanDetail?.degrees) return [];
+    const ruleMap = new Map<number, string>();
+    for (const degree of degreePlanDetail.degrees) {
+      flattenRules(degree.rules).forEach((title, id) => ruleMap.set(id, title));
+    }
+    return fulfillment.unselected_rules
+      .map(id => ruleMap.get(id))
+      .filter((t): t is string => !!t);
+  }, [fulfillment?.unselected_rules, degreePlanDetail]);
+
+  const [infoOpen, setInfoOpen] = useState(false);
+  const infoRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!infoOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (infoRef.current && !infoRef.current.contains(e.target as Node)) {
+        setInfoOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [infoOpen]);
+
+  const hasSemester = !!fulfillment?.semester && fulfillment.semester !== "";
+  const hasInfoContent = hasSemester || unselectedRuleNames.length > 0;
+
   if (!!fulfillment) {
     return (
       <Draggable isDragging={isDragging} onClick={onClick}>
@@ -194,8 +297,30 @@ const CourseComponent = ({
             )}
             <CourseBadge>
               {course.full_code.replace("-", " ")}
-              {fulfillment.semester !== "" && (
-                <SemesterIcon semester={fulfillment.semester} />
+              {hasInfoContent && (
+                <InfoPopoverWrapper ref={infoRef}>
+                  <InfoIconButton onClick={(e) => { e.stopPropagation(); setInfoOpen(!infoOpen); }}>
+                    <i className="fas fa-info-circle"></i>
+                  </InfoIconButton>
+                  {infoOpen && (
+                    <InfoPopover>
+                      {hasSemester && (
+                        <PopoverSection>
+                          <PopoverLabel>Semester</PopoverLabel>
+                          {formatSemester(fulfillment.semester)}
+                        </PopoverSection>
+                      )}
+                      {unselectedRuleNames.length > 0 && (
+                        <PopoverSection>
+                          <PopoverLabel>Could also count for</PopoverLabel>
+                          <RuleList>
+                            {unselectedRuleNames.map((name, i) => <li key={i}>{name}</li>)}
+                          </RuleList>
+                        </PopoverSection>
+                      )}
+                    </InfoPopover>
+                  )}
+                </InfoPopoverWrapper>
               )}
             </CourseBadge>
             {isUsed && (
