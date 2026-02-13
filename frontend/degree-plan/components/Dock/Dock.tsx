@@ -141,7 +141,7 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
         if (!componentRefs?.current || !dockRef.current) return;
 
         componentRefs.current["dock"] = dockRef.current;
-        dockRef.current.style.zIndex = isDockStep ? "20" : "0";
+        dockRef.current.style.zIndex = isDockStep ? "1002" : "0";
     }, [componentRefs, isDockStep]);
 
     return (

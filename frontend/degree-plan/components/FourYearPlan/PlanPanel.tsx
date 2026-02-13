@@ -82,7 +82,7 @@ const PlanPanel = ({
         const isPlanPanelActive = planPanelKeys.includes(tutorialModalKey || '');
         componentRefs.current["planPanel"] = planPanelRef.current;
         if (planPanelRef.current) {
-            planPanelRef.current.style.zIndex = isPlanPanelActive ? "20" : "";
+            planPanelRef.current.style.zIndex = isPlanPanelActive ? "1002" : "";
         }
 
         componentRefs.current['showStatsButton'] = showStatsRef.current;

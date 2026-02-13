@@ -105,12 +105,12 @@ const ModalBackground = styled.div`
     opacity: 0.75;
     position: fixed;
     inset: 0;
-    z-index: 10;
+    z-index: 1001;
 `;
 
 const ModalContainer = styled.div`
     position: fixed;
-    z-index: 40;
+    z-index: 1003;
     pointer-events: none;
 `;
 
