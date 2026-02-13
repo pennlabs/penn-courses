@@ -309,6 +309,29 @@ class FulfillmentViewsetTest(TestCase):
         self.assertEqual(a.rules.count(), 2)
         self.assertEqual(set(a.rules.all()), {self.rule1, self.rule3})
 
+    def test_switch_rule(self):
+        a = Fulfillment(
+            degree_plan=self.degree_plan,
+            full_code="CIS-1200",
+            semester=TEST_SEMESTER,
+        )
+        a.save()
+        a.rules.add(self.rule1)
+        a.unselected_rules.add(self.rule3)
+
+        response = self.client.post(
+            reverse(
+                "degreeplan-fulfillment-switch-rule",
+                kwargs={"degreeplan_pk": self.degree_plan.id, "full_code": a.full_code},
+            ),
+            {"rule_id": self.rule3.id},
+        )
+
+        self.assertEqual(response.status_code, 200, response.json())
+        a.refresh_from_db()
+        self.assertEqual(set(a.rules.all()), {self.rule3})
+        self.assertEqual(set(a.unselected_rules.all()), {self.rule1})
+
     def test_update_fulfillment_add_violated_rule(self):
         a = Fulfillment(
             degree_plan=self.degree_plan,

@@ -2,7 +2,7 @@ import { useMemo, useState, useRef, useEffect } from "react";
 import { ConnectDragSource } from "react-dnd";
 import { GrayIcon, Icon } from "@/components/common/bulma_derived_components";
 import styled from "@emotion/styled";
-import { Course, DegreePlan, DnDCourse, Fulfillment, Rule } from "@/types";
+import { Course, Degree, DegreePlan, DnDCourse, Fulfillment, Rule } from "@/types";
 import { ReviewPanelTrigger } from "@/components/Infobox/ReviewPanel";
 import { Draggable } from "@/components/common/DnD";
 import Skeleton from "react-loading-skeleton";
@@ -10,6 +10,9 @@ import "react-loading-skeleton/dist/skeleton.css";
 import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
 import { Tooltip } from "react-tooltip";
 import useSWR from "swr";
+import { ItemTypes } from "../Dock/dnd/constants";
+import { postFetcher } from "@/hooks/swrcrud";
+import { useSWRConfig } from "swr";
 
 const DOUBLE_COUNT_ERROR_MESSAGE =
   "This course is being illegally double counted in your plan!";
@@ -19,6 +22,7 @@ export const BaseCourseContainer = styled.div<{
   $isDragging?: boolean;
   $isUsed: boolean;
   $isDisabled: boolean;
+  $highlightVariant?: "selected" | "unselected";
 }>`
   display: flex;
   justify-content: center;
@@ -28,11 +32,16 @@ export const BaseCourseContainer = styled.div<{
   border-radius: ${COURSE_BORDER_RADIUS};
   padding: 0.75rem;
   text-wrap: nowrap;
-  cursor: ${(props) =>
-    props.$isDisabled || props.$isUsed ? "not-allowed" : "grab"};
+  cursor: ${(props) => (props.$isDisabled ? "not-allowed" : "grab")};
   opacity: ${(props) => (props.$isDisabled || props.$isDragging ? 0.7 : 1)};
   background-color: ${(props) =>
-    props.$isDragging ? "#4B9AE7" : "var(--background-grey)"};
+    props.$isDragging
+      ? "#4B9AE7"
+      : props.$highlightVariant === "selected"
+        ? "#E6F4EA"
+        : props.$highlightVariant === "unselected"
+          ? "#FFF7D6"
+          : "var(--background-grey)"};
   box-shadow: rgba(0, 0, 0, 0.01) 0px 6px 5px 0px,
     rgba(0, 0, 0, 0.04) 0px 0px 0px 1px;
 `;
@@ -67,6 +76,7 @@ export const PlannedCourseContainer = styled(BaseCourseContainer)`
 
 const CloseIcon = styled(GrayIcon)<{ $hidden: boolean }>`
   visibility: ${(props) => (props.$hidden ? "hidden" : "visible")};
+  cursor: pointer;
 `;
 
 export const CourseXButton = ({
@@ -90,6 +100,9 @@ interface DraggableComponentProps {
   isDisabled: boolean;
   isDragging: boolean;
   fulfillment?: Fulfillment;
+  isUnselectedRule?: boolean;
+  rule_id?: number;
+  activeDegreePlanId?: number;
   className?: string;
   onClick?: (arg0: React.MouseEvent<HTMLInputElement>) => void;
   dragRef: ConnectDragSource;
@@ -106,6 +119,21 @@ const CourseBadge = styled.div`
   flex-direction: row;
   align-items: center;
   gap: 0.25rem;
+`;
+
+const CourseTermBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.75rem;
+  color: #6f6f6f;
+  border: 1px solid #d8d8d8;
+  border-radius: 9999px;
+  padding: 0.05rem 0.35rem;
+`;
+
+const CourseTermIcon = styled.span`
+  line-height: 1;
 `;
 
 const InfoIconButton = styled.button`
@@ -180,6 +208,22 @@ const RuleList = styled.ul`
   }
 `;
 
+const SwitchRuleButton = styled.button`
+  border: 1px solid #d7cc86;
+  border-radius: 6px;
+  background: #fff7d6;
+  color: #645500;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0.35rem 0.55rem;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: default;
+  }
+`;
+
 const ExclamationIcon = ({ color }: { color: string }) => {
   const Exclamation = styled(Icon)`
     width: 1rem;
@@ -202,16 +246,34 @@ const formatSemester = (semester: string | null): string => {
   if (semester === TRANSFER_CREDIT_SEMESTER_KEY) return "AP & Transfer Credit";
   const year = semester.slice(0, 4);
   const term = semester.slice(4);
-  return `${term === "A" ? "Spring" : term === "B" ? "Summer" : "Fall"} ${year}`;
+  return `${term === "A" ? "S" : term === "B" ? "Summer" : "F"}${year.slice(2)}`;
 };
 
-/** Recursively flattens a rule tree into an id→title map */
-const flattenRules = (rules: Rule[]): Map<number, string> => {
-  const map = new Map<number, string>();
+const getSemesterIcon = (semester: string | null): string => {
+  if (!semester || semester === TRANSFER_CREDIT_SEMESTER_KEY) return "";
+  const term = semester.slice(4);
+  if (term === "A") return "🌸";
+  if (term === "C") return "🍂";
+  return "";
+};
+
+const formatDegreeName = (degree: Degree): string => {
+  if (degree.degree && degree.major) {
+    return `${degree.degree} ${degree.major}${degree.concentration ? ` (${degree.concentration})` : ""}`;
+  }
+  return `${degree.degree} in ${degree.major_name}${degree.concentration ? ` (${degree.concentration_name})` : ""}`;
+};
+
+/** Recursively flattens a rule tree into an id→(title, degree) map */
+const flattenRules = (
+  rules: Rule[],
+  degreeName: string
+): Map<number, { title: string; degreeName: string }> => {
+  const map = new Map<number, { title: string; degreeName: string }>();
   const traverse = (ruleList: Rule[]) => {
     for (const rule of ruleList) {
       if (rule.title) {
-        map.set(rule.id, rule.title);
+        map.set(rule.id, { title: rule.title, degreeName });
       }
       if (rule.rules?.length) {
         traverse(rule.rules);
@@ -226,6 +288,9 @@ const CourseComponent = ({
   courseType,
   course,
   fulfillment,
+  isUnselectedRule = false,
+  rule_id,
+  activeDegreePlanId,
   removeCourse,
   isUsed = false,
   isDisabled = false,
@@ -234,6 +299,7 @@ const CourseComponent = ({
   isDragging,
   dragRef,
 }: DraggableComponentProps) => {
+  const { mutate } = useSWRConfig();
   // Look up rule titles for unselected rules (uses SWR cache from ReqPanel)
   const { data: degreePlanDetail } = useSWR<DegreePlan>(
     fulfillment?.degree_plan
@@ -243,16 +309,34 @@ const CourseComponent = ({
 
   const unselectedRuleNames = useMemo(() => {
     if (!fulfillment?.unselected_rules?.length || !degreePlanDetail?.degrees) return [];
-    const ruleMap = new Map<number, string>();
+    const ruleMap = new Map<number, { title: string; degreeName: string }>();
     for (const degree of degreePlanDetail.degrees) {
-      flattenRules(degree.rules).forEach((title, id) => ruleMap.set(id, title));
+      const degreeName = formatDegreeName(degree);
+      flattenRules(degree.rules, degreeName).forEach((ruleInfo, id) =>
+        ruleMap.set(id, ruleInfo)
+      );
     }
     return fulfillment.unselected_rules
       .map(id => ruleMap.get(id))
-      .filter((t): t is string => !!t);
+      .filter((t): t is { title: string; degreeName: string } => !!t);
   }, [fulfillment?.unselected_rules, degreePlanDetail]);
+  const selectedRuleNames = useMemo(() => {
+    if (!fulfillment?.rules?.length || !degreePlanDetail?.degrees) return [];
+    const ruleMap = new Map<number, { title: string; degreeName: string }>();
+    for (const degree of degreePlanDetail.degrees) {
+      const degreeName = formatDegreeName(degree);
+      flattenRules(degree.rules, degreeName).forEach((ruleInfo, id) =>
+        ruleMap.set(id, ruleInfo)
+      );
+    }
+    return fulfillment.rules
+      .map(id => ruleMap.get(id))
+      .filter((t): t is { title: string; degreeName: string } => !!t);
+  }, [fulfillment?.rules, degreePlanDetail]);
 
   const [infoOpen, setInfoOpen] = useState(false);
+  const [switchingRule, setSwitchingRule] = useState(false);
+  const [switchError, setSwitchError] = useState<string | null>(null);
   const infoRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -267,7 +351,50 @@ const CourseComponent = ({
   }, [infoOpen]);
 
   const hasSemester = !!fulfillment?.semester && fulfillment.semester !== "";
-  const hasInfoContent = hasSemester || unselectedRuleNames.length > 0;
+  const courseSemester =
+    "semester" in course
+      ? (course as DnDCourse & { semester?: string | null }).semester
+      : null;
+  const displaySemester = fulfillment?.semester || courseSemester || null;
+  const showSemesterOnCard =
+    courseType === ItemTypes.COURSE_IN_REQ && !!displaySemester;
+  const semesterText = formatSemester(displaySemester);
+  const semesterIcon = getSemesterIcon(displaySemester);
+  const shouldShowSwitchHint =
+    courseType === ItemTypes.COURSE_IN_REQ && isUnselectedRule;
+  const hasInfoContent =
+    hasSemester ||
+    selectedRuleNames.length > 0 ||
+    unselectedRuleNames.length > 0 ||
+    shouldShowSwitchHint;
+  const highlightVariant =
+    courseType === ItemTypes.COURSE_IN_REQ
+      ? isUsed
+        ? "selected"
+        : isUnselectedRule
+          ? "unselected"
+          : undefined
+      : undefined;
+
+  const handleSwitchRule = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!activeDegreePlanId || !rule_id || switchingRule) return;
+    try {
+      setSwitchingRule(true);
+      setSwitchError(null);
+      const endpoint = `/api/degree/degreeplans/${activeDegreePlanId}/fulfillments/${course.full_code}/switch-rule`;
+      await postFetcher(endpoint, { rule_id });
+      await Promise.all([
+        mutate(`/api/degree/degreeplans/${activeDegreePlanId}/fulfillments`),
+        mutate(`/api/degree/degreeplans/${activeDegreePlanId}`),
+      ]);
+      setInfoOpen(false);
+    } catch {
+      setSwitchError("Could not switch this course right now.");
+    } finally {
+      setSwitchingRule(false);
+    }
+  };
 
   if (!!fulfillment) {
     return (
@@ -277,6 +404,7 @@ const CourseComponent = ({
             $isDragging={isDragging}
             $isUsed={isUsed}
             $isDisabled={isDisabled}
+            $highlightVariant={highlightVariant}
             ref={dragRef}
             className={className}
           >
@@ -297,6 +425,12 @@ const CourseComponent = ({
             )}
             <CourseBadge>
               {course.full_code.replace("-", " ")}
+              {showSemesterOnCard && (
+                <CourseTermBadge>
+                  <span>{semesterText}</span>
+                  {semesterIcon && <CourseTermIcon>{semesterIcon}</CourseTermIcon>}
+                </CourseTermBadge>
+              )}
               {hasInfoContent && (
                 <InfoPopoverWrapper ref={infoRef}>
                   <InfoIconButton onClick={(e) => { e.stopPropagation(); setInfoOpen(!infoOpen); }}>
@@ -310,12 +444,45 @@ const CourseComponent = ({
                           {formatSemester(fulfillment.semester)}
                         </PopoverSection>
                       )}
+                      {selectedRuleNames.length > 0 && (
+                        <PopoverSection>
+                          <PopoverLabel>Currently counts for</PopoverLabel>
+                          <RuleList>
+                            {selectedRuleNames.map((ruleInfo, i) => (
+                              <li key={i}>
+                                [{ruleInfo.degreeName}] {ruleInfo.title}
+                              </li>
+                            ))}
+                          </RuleList>
+                        </PopoverSection>
+                      )}
                       {unselectedRuleNames.length > 0 && (
                         <PopoverSection>
                           <PopoverLabel>Could also count for</PopoverLabel>
                           <RuleList>
-                            {unselectedRuleNames.map((name, i) => <li key={i}>{name}</li>)}
+                            {unselectedRuleNames.map((ruleInfo, i) => (
+                              <li key={i}>
+                                [{ruleInfo.degreeName}] {ruleInfo.title}
+                              </li>
+                            ))}
                           </RuleList>
+                        </PopoverSection>
+                      )}
+                      
+                      {shouldShowSwitchHint && (
+                        <PopoverSection>
+                          <PopoverLabel>Tip</PopoverLabel>
+                          You can switch this course to count for this rule.
+                          <div style={{ marginTop: "0.5rem" }}>
+                            <SwitchRuleButton onClick={handleSwitchRule} disabled={switchingRule}>
+                              {switchingRule ? "Switching..." : "Count this course for this rule"}
+                            </SwitchRuleButton>
+                          </div>
+                          {switchError && (
+                            <div style={{ marginTop: "0.35rem", color: "#a94442" }}>
+                              {switchError}
+                            </div>
+                          )}
                         </PopoverSection>
                       )}
                     </InfoPopover>
@@ -344,10 +511,46 @@ const CourseComponent = ({
           $isDragging={isDragging}
           $isUsed={isUsed}
           $isDisabled={isDisabled}
+          $highlightVariant={highlightVariant}
           ref={dragRef}
           className={className}
         >
-          <CourseBadge>{course.full_code.replace("-", " ")}</CourseBadge>
+          <CourseBadge>
+            {course.full_code.replace("-", " ")}
+            {showSemesterOnCard && (
+              <CourseTermBadge>
+                <span>{semesterText}</span>
+                {semesterIcon && <CourseTermIcon>{semesterIcon}</CourseTermIcon>}
+              </CourseTermBadge>
+            )}
+            {hasInfoContent && (
+              <InfoPopoverWrapper ref={infoRef}>
+                <InfoIconButton onClick={(e) => { e.stopPropagation(); setInfoOpen(!infoOpen); }}>
+                  <i className="fas fa-info-circle"></i>
+                </InfoIconButton>
+                {infoOpen && (
+                  <InfoPopover>
+                    {shouldShowSwitchHint && (
+                      <PopoverSection>
+                        <PopoverLabel>Tip</PopoverLabel>
+                        You can switch this course to count for this rule.
+                        <div style={{ marginTop: "0.5rem" }}>
+                          <SwitchRuleButton onClick={handleSwitchRule} disabled={switchingRule}>
+                            {switchingRule ? "Switching..." : "Count this course for this rule"}
+                          </SwitchRuleButton>
+                        </div>
+                        {switchError && (
+                          <div style={{ marginTop: "0.35rem", color: "#a94442" }}>
+                            {switchError}
+                          </div>
+                        )}
+                      </PopoverSection>
+                    )}
+                  </InfoPopover>
+                )}
+              </InfoPopoverWrapper>
+            )}
+          </CourseBadge>
           {isUsed && (
             <CourseXButton
               onClick={(e) => {
