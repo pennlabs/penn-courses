@@ -89,7 +89,7 @@ class Department(models.Model):
         return self.code
 
 
-def sections_with_reviews(queryset):
+def sections_with_reviews(queryset, prefix=""):
     from review.views import section_filters_pcr
 
     # ^ imported here to avoid circular imports
@@ -109,11 +109,12 @@ def sections_with_reviews(queryset):
             & Q(course__topic=OuterRef("course__topic"))
             & Q(instructors__in=instructors_subquery)
         ),
+        prefix=prefix,
         extra_metrics=False,
     ).order_by("code")
 
 
-def course_reviews(queryset):
+def course_reviews(queryset, prefix=""):
     from review.views import section_filters_pcr
 
     # ^ imported here to avoid circular imports
@@ -122,13 +123,14 @@ def course_reviews(queryset):
         queryset,
         reviewbit_subfilters=(Q(review__section__course__topic=OuterRef("topic"))),
         section_subfilters=(section_filters_pcr & Q(course__topic=OuterRef("topic"))),
+        prefix=prefix,
         extra_metrics=False,
     )
 
 
 class CourseManager(models.Manager):
     def get_queryset(self):
-        return course_reviews(super().get_queryset())
+        return super().get_queryset()
 
 
 class Course(models.Model):
@@ -280,6 +282,14 @@ class Course(models.Model):
             """
         ),
     )
+    course_quality = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True, help_text=dedent(
+        """
+        The average course quality rating for this course, on a scale from 0 to 5 (precomputed for efficiency).
+        """
+    ))
+    instructor_quality = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
+    difficulty = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
+    work_required = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
 
     class Meta:
         unique_together = (
@@ -546,6 +556,8 @@ class NGSSRestriction(models.Model):
         )
     )
 
+
+
     @staticmethod
     def special_approval():
         return NGSSRestriction.objects.filter(restriction_type="Special Approval")
@@ -556,7 +568,7 @@ class NGSSRestriction(models.Model):
 
 class SectionManager(models.Manager):
     def get_queryset(self):
-        return sections_with_reviews(super().get_queryset()).distinct()
+        return super().get_queryset().distinct()
 
 
 class PreNGSSRestriction(models.Model):
@@ -826,6 +838,11 @@ class Section(models.Model):
         default=0,
         help_text="The number of active PCA registrations watching this section.",
     )  # For the set of PCA registrations for this section, use the related field `registrations`.
+
+    course_quality = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
+    instructor_quality = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
+    difficulty = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
+    work_required = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
 
     def __str__(self):
         return "%s %s" % (self.full_code, self.course.semester)
