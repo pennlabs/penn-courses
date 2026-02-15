@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef, useEffect } from "react";
+import { useMemo, useState, useRef, useEffect, useLayoutEffect } from "react";
 import { ConnectDragSource } from "react-dnd";
 import { GrayIcon, Icon } from "@/components/common/bulma_derived_components";
 import styled from "@emotion/styled";
@@ -121,19 +121,20 @@ const CourseBadge = styled.div`
   gap: 0.25rem;
 `;
 
-const CourseTermBadge = styled.span`
-  display: inline-flex;
-  align-items: center;
-  gap: 0.2rem;
-  font-size: 0.75rem;
-  color: #6f6f6f;
+const IconBadge = styled.div`
+  padding: 0.2rem;
+  border-radius: 5px;
   border: 1px solid #d8d8d8;
-  border-radius: 9999px;
-  padding: 0.05rem 0.35rem;
-`;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.07rem;
+  background-color: transparent;
 
-const CourseTermIcon = styled.span`
-  line-height: 1;
+  p {
+    font-size: 14px;
+    font-weight: bold;
+  }
 `;
 
 const InfoIconButton = styled.button`
@@ -161,15 +162,14 @@ const InfoPopoverWrapper = styled.div`
 const InfoPopover = styled.div`
   position: absolute;
   top: calc(100% + 8px);
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
   background: white;
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
   padding: 0.75rem 1rem;
   z-index: 10000;
   min-width: 220px;
-  max-width: 350px;
+  max-width: min(350px, calc(100vw - 16px));
   width: max-content;
   text-align: left;
   font-size: 0.85rem;
@@ -241,20 +241,20 @@ const ExclamationIcon = ({ color }: { color: string }) => {
   );
 };
 
-const formatSemester = (semester: string | null): string => {
-  if (!semester) return "";
-  if (semester === TRANSFER_CREDIT_SEMESTER_KEY) return "AP & Transfer Credit";
-  const year = semester.slice(0, 4);
-  const term = semester.slice(4);
-  return `${term === "A" ? "S" : term === "B" ? "Summer" : "F"}${year.slice(2)}`;
-};
+const SemesterIcon = ({ semester }: { semester: string | null }) => {
+  if (!semester) return <div></div>;
+  const year =
+    semester === TRANSFER_CREDIT_SEMESTER_KEY ? "AP" : semester.substring(2, 4);
+  const sem = semester.substring(4);
 
-const getSemesterIcon = (semester: string | null): string => {
-  if (!semester || semester === TRANSFER_CREDIT_SEMESTER_KEY) return "";
-  const term = semester.slice(4);
-  if (term === "A") return "🌸";
-  if (term === "C") return "🍂";
-  return "";
+  return (
+    <IconBadge>
+      <p>{year}</p>
+      {sem === "A" && <i className="spring-icon"></i>}
+      {sem === "B" && <i className="summer-icon"></i>}
+      {sem === "C" && <i className="fall-icon"></i>}
+    </IconBadge>
+  );
 };
 
 const formatDegreeName = (degree: Degree): string => {
@@ -338,6 +338,7 @@ const CourseComponent = ({
   const [switchingRule, setSwitchingRule] = useState(false);
   const [switchError, setSwitchError] = useState<string | null>(null);
   const infoRef = useRef<HTMLDivElement>(null);
+  const popoverRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!infoOpen) return;
@@ -350,6 +351,26 @@ const CourseComponent = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [infoOpen]);
 
+  // Keep popover within viewport horizontally
+  useLayoutEffect(() => {
+    if (!infoOpen || !popoverRef.current) return;
+    const el = popoverRef.current;
+    // Reset to default so we measure from the baseline position
+    el.style.left = "0px";
+    const rect = el.getBoundingClientRect();
+    const padding = 8;
+    let left = 0;
+    // If overflowing on the right, shift left
+    if (rect.right > window.innerWidth - padding) {
+      left = -(rect.right - (window.innerWidth - padding));
+    }
+    // If now overflowing on the left (or was already), shift right
+    if (rect.left + left < padding) {
+      left = padding - rect.left;
+    }
+    el.style.left = `${left}px`;
+  }, [infoOpen]);
+
   const hasSemester = !!fulfillment?.semester && fulfillment.semester !== "";
   const courseSemester =
     "semester" in course
@@ -358,14 +379,14 @@ const CourseComponent = ({
   const displaySemester = fulfillment?.semester || courseSemester || null;
   const showSemesterOnCard =
     courseType === ItemTypes.COURSE_IN_REQ && !!displaySemester;
-  const semesterText = formatSemester(displaySemester);
-  const semesterIcon = getSemesterIcon(displaySemester);
   const shouldShowSwitchHint =
     courseType === ItemTypes.COURSE_IN_REQ && isUnselectedRule;
+  const shouldShowCouldAlsoCountFor =
+    courseType === ItemTypes.COURSE_IN_REQ && unselectedRuleNames.length > 0;
   const hasInfoContent =
     hasSemester ||
     selectedRuleNames.length > 0 ||
-    unselectedRuleNames.length > 0 ||
+    shouldShowCouldAlsoCountFor ||
     shouldShowSwitchHint;
   const highlightVariant =
     courseType === ItemTypes.COURSE_IN_REQ
@@ -426,10 +447,7 @@ const CourseComponent = ({
             <CourseBadge>
               {course.full_code.replace("-", " ")}
               {showSemesterOnCard && (
-                <CourseTermBadge>
-                  <span>{semesterText}</span>
-                  {semesterIcon && <CourseTermIcon>{semesterIcon}</CourseTermIcon>}
-                </CourseTermBadge>
+                <SemesterIcon semester={displaySemester} />
               )}
               {hasInfoContent && (
                 <InfoPopoverWrapper ref={infoRef}>
@@ -437,13 +455,13 @@ const CourseComponent = ({
                     <i className="fas fa-info-circle"></i>
                   </InfoIconButton>
                   {infoOpen && (
-                    <InfoPopover>
-                      {hasSemester && (
+                    <InfoPopover ref={popoverRef}>
+                      {/* {hasSemester && (
                         <PopoverSection>
                           <PopoverLabel>Semester</PopoverLabel>
                           {formatSemester(fulfillment.semester)}
                         </PopoverSection>
-                      )}
+                      )} */}
                       {selectedRuleNames.length > 0 && (
                         <PopoverSection>
                           <PopoverLabel>Currently counts for</PopoverLabel>
@@ -456,7 +474,7 @@ const CourseComponent = ({
                           </RuleList>
                         </PopoverSection>
                       )}
-                      {unselectedRuleNames.length > 0 && (
+                      {shouldShowCouldAlsoCountFor && (
                         <PopoverSection>
                           <PopoverLabel>Could also count for</PopoverLabel>
                           <RuleList>
@@ -518,10 +536,7 @@ const CourseComponent = ({
           <CourseBadge>
             {course.full_code.replace("-", " ")}
             {showSemesterOnCard && (
-              <CourseTermBadge>
-                <span>{semesterText}</span>
-                {semesterIcon && <CourseTermIcon>{semesterIcon}</CourseTermIcon>}
-              </CourseTermBadge>
+              <SemesterIcon semester={displaySemester} />
             )}
             {hasInfoContent && (
               <InfoPopoverWrapper ref={infoRef}>
@@ -529,7 +544,7 @@ const CourseComponent = ({
                   <i className="fas fa-info-circle"></i>
                 </InfoIconButton>
                 {infoOpen && (
-                  <InfoPopover>
+                  <InfoPopover ref={popoverRef}>
                     {shouldShowSwitchHint && (
                       <PopoverSection>
                         <PopoverLabel>Tip</PopoverLabel>
