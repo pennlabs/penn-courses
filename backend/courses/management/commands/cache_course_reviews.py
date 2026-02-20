@@ -1,6 +1,7 @@
 from tqdm import tqdm
 from django.core.management.base import BaseCommand
 from django.db import transaction
+import django.utils.timezone as timezone
 
 from courses.models import Course, Section
 from courses.models import course_reviews, sections_with_reviews
@@ -29,7 +30,6 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("Finished calculating Section review averages."))
 
     def update_courses(self):
-        print("Starting this lol")
         queryset = course_reviews(
             Course.objects.all(),
             prefix=PREFIX,
@@ -40,6 +40,7 @@ class Command(BaseCommand):
         for course in tqdm(queryset, desc="Updating Courses", file=self.stdout):
             for field in REVIEW_FIELDS:
                 setattr(course, field, getattr(course, PREFIX + field))
+            course.annotation_expiration = timezone.now + timezone.timedelta(days=30) 
             courses_to_update.append(course)
 
         with transaction.atomic():
@@ -60,6 +61,7 @@ class Command(BaseCommand):
         for section in tqdm(queryset, desc="Updating Sections", file=self.stdout):
             for field in REVIEW_FIELDS:
                 setattr(section, field, getattr(section, PREFIX + field))
+            section.annotation_expiration = timezone.now + timezone.timedelta(days=30)
             sections_to_update.append(section)
 
         with transaction.atomic():

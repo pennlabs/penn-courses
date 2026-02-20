@@ -130,6 +130,9 @@ def course_reviews(queryset, prefix=""):
 
 class CourseManager(models.Manager):
     def get_queryset(self):
+        queryset = super().get_queryset()
+        if (queryset.filter(annotation_expiration_lt=timezone.now()).exists()):
+            return course_reviews(queryset).order_by("full_code", "semester")
         return super().get_queryset()
 
 
@@ -279,6 +282,16 @@ class Course(models.Model):
             """
             The number of distinct activities belonging to this course (precomputed for efficiency).
             Maintained by the registrar import / recomputestats script.
+            """
+        ),
+    )
+
+    annotations_expiration = models.DateTimeField(
+        default=timezone.now,
+        help_text=dedent(
+            """
+            The expiration time for the annotations of this course, these fields should be refreshed
+            every month
             """
         ),
     )
@@ -838,7 +851,16 @@ class Section(models.Model):
         default=0,
         help_text="The number of active PCA registrations watching this section.",
     )  # For the set of PCA registrations for this section, use the related field `registrations`.
-
+    
+    annotation_expiration = models.DateTimeField(
+        default=timezone.now,
+        help_text=dedent(
+            """
+            The expiration time for the annotations of this section, these fields should be refreshed
+            every month
+            """
+        ),
+    )
     course_quality = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
     instructor_quality = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
     difficulty = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
