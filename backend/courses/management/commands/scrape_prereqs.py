@@ -1,6 +1,8 @@
 import csv
 import json
+import random
 import re
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -26,7 +28,7 @@ def extract_clssnotes(payload):
                     values.append(value)
                 walk(value)
         elif isinstance(node, list):
-            for item in node:
+            for item in node: 
                 walk(item)
 
     walk(payload)
@@ -190,12 +192,40 @@ class Command(BaseCommand):
             default=20,
             help="HTTP timeout in seconds (default: 20).",
         )
+        parser.add_argument(
+            "--sleep-seconds",
+            type=float,
+            default=0.0,
+            help="Base delay between requests in seconds (default: 0).",
+        )
+        parser.add_argument(
+            "--jitter-seconds",
+            type=float,
+            default=0.0,
+            help="Random extra delay per request in seconds, uniformly sampled from [0, jitter].",
+        )
+        parser.add_argument(
+            "--max-requests",
+            type=int,
+            default=None,
+            help="Optional cap on total requests sent after deduplication.",
+        )
 
     def handle(self, *args, **kwargs):
         pair_args: list[str] = kwargs["pair"]
         input_file = kwargs["input_file"]
         all_course_codes = kwargs["all_course_codes"]
         timeout_seconds = kwargs["timeout_seconds"]
+        sleep_seconds = kwargs["sleep_seconds"]
+        jitter_seconds = kwargs["jitter_seconds"]
+        max_requests = kwargs["max_requests"]
+
+        if sleep_seconds < 0:
+            raise ValueError("--sleep-seconds must be >= 0")
+        if jitter_seconds < 0:
+            raise ValueError("--jitter-seconds must be >= 0")
+        if max_requests is not None and max_requests <= 0:
+            raise ValueError("--max-requests must be > 0")
 
         pairs: list[tuple[str, str]] = []
 
@@ -221,6 +251,9 @@ class Command(BaseCommand):
                 deduped_pairs.append(key)
                 seen.add(key)
 
+        if max_requests is not None:
+            deduped_pairs = deduped_pairs[:max_requests]
+
         if not deduped_pairs:
             raise ValueError(
                 "No pairs provided. Use one or more --pair values and/or --input-file."
@@ -242,12 +275,18 @@ class Command(BaseCommand):
         )
 
         records = []
+        total_requests = len(deduped_pairs)
+        if sleep_seconds > 0 or jitter_seconds > 0:
+            self.stdout.write(
+                f"Throttling enabled: base sleep {sleep_seconds:.3f}s, jitter up to {jitter_seconds:.3f}s"
+            )
+
         for index, (course_code, crn) in enumerate(deduped_pairs, start=1):
             payload = {
                 "group": f"code:{course_code}",
                 "key": f"crn:{crn}",
             }
-            self.stdout.write(f"[{index}/{len(deduped_pairs)}] Fetching {course_code} (CRN {crn})")
+            self.stdout.write(f"[{index}/{total_requests}] Fetching {course_code} (CRN {crn})")
 
             record = {
                 "course_code": course_code,
@@ -270,6 +309,10 @@ class Command(BaseCommand):
                 )
 
             records.append(record)
+
+            if index < total_requests and (sleep_seconds > 0 or jitter_seconds > 0):
+                delay = sleep_seconds + (random.uniform(0.0, jitter_seconds) if jitter_seconds > 0 else 0.0)
+                time.sleep(delay)
 
         output_path.write_text(json.dumps(records, indent=2, sort_keys=True))
 
