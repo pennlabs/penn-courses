@@ -165,10 +165,7 @@ const UserSelector = ({
                         "U"}{" "}
                 </span>
             </NameBubble>
-            <LogoutDropdownMenu
-                $selected={selected}
-                $floattop={dropdownTop}
-            >
+            <LogoutDropdownMenu $selected={selected} $floattop={dropdownTop}>
                 <LogoutDropdownContainer className="dropdown-menu-container">
                     {dropdownTop ? (
                         <>

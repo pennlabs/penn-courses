@@ -94,7 +94,7 @@ WSGI_APPLICATION = "PennCourses.wsgi.application"
 DATABASES = {
     "default": dj_database_url.config(
         # this is overriden by the DATABASE_URL env var
-        default="postgres://penn-courses:postgres@localhost:5432/postgres"
+        default="postgres://penn-courses:postgres@host.docker.internal:5432/postgres"
     )
 }
 

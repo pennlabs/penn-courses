@@ -218,6 +218,14 @@ class Course(models.Model):
         help_text="Text describing the prereqs for a course, e.g. 'CIS 120, 160' for CIS-121.",
     )
 
+    prerequisite_courses = models.ManyToManyField(
+        "self",
+        symmetrical=False,
+        related_name="dependent_courses",
+        blank=True,
+        help_text="Structured prerequisite links. If A requires B, then A.prerequisite_courses includes B.",
+    )
+
     topic = models.ForeignKey(
         "Topic",
         related_name="courses",
