@@ -6,6 +6,10 @@ from pathlib import Path
 
 import requests
 from django.core.management.base import BaseCommand
+from django.db.models import Min, Q
+
+from courses.models import Course
+from courses.util import get_semesters
 
 
 API_URL = "https://courses.upenn.edu/api/?page=fose&route=details"
@@ -123,6 +127,23 @@ def load_pairs_from_file(file_path: Path) -> list[tuple[str, str]]:
     raise ValueError("Unsupported --input-file type. Use .json or .csv")
 
 
+def load_pairs_from_courses(semesters: list[str]) -> list[tuple[str, str]]:
+    queryset = (
+        Course.objects.filter(semester__in=semesters)
+        .annotate(
+            sample_crn=Min(
+                "sections__crn",
+                filter=Q(sections__crn__isnull=False) & ~Q(sections__crn=""),
+            )
+        )
+        .exclude(sample_crn__isnull=True)
+        .values_list("department__code", "code", "sample_crn")
+        .order_by("department__code", "code")
+    )
+
+    return [(normalize_course_code(f"{dept} {code}"), str(crn)) for dept, code, crn in queryset]
+
+
 class Command(BaseCommand):
     help = "Scrape clssnotes from courses.upenn.edu and save compact JSON output."
 
@@ -143,6 +164,21 @@ class Command(BaseCommand):
             help="Path to .json or .csv containing course code + CRN pairs.",
         )
         parser.add_argument(
+            "--all-course-codes",
+            action="store_true",
+            default=False,
+            help="Scrape one CRN per course code from DB instead of manually provided pairs.",
+        )
+        parser.add_argument(
+            "--semesters",
+            type=str,
+            default=None,
+            help=(
+                "Semester scope for --all-course-codes. "
+                "Comma-separated (e.g. 2025C,2026A), 'all', or omitted for current semester."
+            ),
+        )
+        parser.add_argument(
             "--output-file",
             type=str,
             default=None,
@@ -158,6 +194,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         pair_args: list[str] = kwargs["pair"]
         input_file = kwargs["input_file"]
+        all_course_codes = kwargs["all_course_codes"]
         timeout_seconds = kwargs["timeout_seconds"]
 
         pairs: list[tuple[str, str]] = []
@@ -167,6 +204,14 @@ class Command(BaseCommand):
 
         if input_file:
             pairs.extend(load_pairs_from_file(Path(input_file)))
+
+        if all_course_codes:
+            semesters = get_semesters(kwargs.get("semesters"))
+            db_pairs = load_pairs_from_courses(semesters)
+            self.stdout.write(
+                f"Loaded {len(db_pairs)} course/CRN pairs from DB for semesters: {', '.join(semesters)}"
+            )
+            pairs.extend(db_pairs)
 
         deduped_pairs = []
         seen = set()
