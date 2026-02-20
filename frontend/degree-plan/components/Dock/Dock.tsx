@@ -93,10 +93,10 @@ const Logo = styled.img`
 const AnimatedDockedCourseItem = styled(CourseInDock)`
     z-index: 1000;
     background: var(--background-grey);
-    animation-name: jump;
-      animation-duration: 1.5s;
-      animation-iteration-count: 1;
-      animation-timing-function: linear;
+    // animation-name: jump;
+    //   animation-duration: 1.5s;
+    //   animation-iteration-count: 1;
+    //   animation-timing-function: linear;
 ` 
 
 interface DockProps {

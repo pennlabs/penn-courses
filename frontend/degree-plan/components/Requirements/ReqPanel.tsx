@@ -217,6 +217,9 @@ interface RuleTreeInternalNode extends RuleTreeBaseNode {
     children: RuleTree[];
 }
 export type RuleTree = RuleTreeLeaf | RuleTreeInternalNode;
+export interface FaultyRuleTree extends RuleTreeLeaf {
+  children: RuleTree[];
+}
 
 // TODO: factor out activeDegreePlanId so it's not in entire tree
 interface RuleProps {

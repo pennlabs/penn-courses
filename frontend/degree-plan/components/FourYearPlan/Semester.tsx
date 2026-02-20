@@ -148,40 +148,45 @@ const FlexSemester = React.forwardRef<HTMLDivElement, SemesterProps>(({
 
     const [{ isOver, canDrop }, drop] = useDrop<DnDCourse, never, { isOver: boolean, canDrop: boolean }>(() => ({
         accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_DOCK, ItemTypes.COURSE_IN_REQ, ItemTypes.COURSE_IN_SEARCH],
-        drop: (course: DnDCourse) => {
-            if (course.rule_id === undefined || course.rule_id == null) { // moved from plan or dock
+        drop: (course: DnDCourse, monitor) => {
+            const itemType = monitor.getItemType();
+            if (itemType === ItemTypes.COURSE_IN_PLAN) { // moved from plan or dock
                 createOrUpdate({ semester }, course.full_code);
-            } else { // moved from req panel
-                fetch(`/api/degree/satisfied-rule-list/${activeDegreeplanId}/${course.full_code}/${course.rule_id}`).then((r) => {
-                    r.json().then((data) => {
-                        const selectedRules = data["selected_rules"].reduce((res: any, obj: any) => {
-                            res.push(obj.id);
-                            return res;
-                        }, []);
-                        const unselectedRules = data["unselected_rules"].reduce((res: any, obj: any) => {
-                            res.push(obj.id);
-                            return res;
-                        }, []);
-                        
-                        createOrUpdate({
-                            rules: selectedRules,
-                            unselected_rules: unselectedRules,
-                            legal: data.legal,
-                            semester
-                        }, course.full_code);
-
-                        // Toast only if course has been directly dragged from search (not reqpanel!)
-                        // TODO: This doesn't work for explicitly listed courses.
-
-                        for (let obj of data["new_selected_rules"]) {
-                            if (obj.id != course.rule_id) {
-                                showToast(`${course.full_code} also fulfilled ${obj.title}!`, false);
-                            }
-                        }
-                    })
-                })
+                return;
             }
+            if (itemType === ItemTypes.COURSE_IN_DOCK) {
+                course.rule_id = -1;
+            }
+            fetch(`/api/degree/satisfied-rule-list/${activeDegreeplanId}/${course.full_code}/${course.rule_id}`).then((r) => {
+                r.json().then((data) => {
+                    const selectedRules = data["selected_rules"].reduce((res: any, obj: any) => {
+                        res.push(obj.id);
+                        return res;
+                    }, []);
+                    const unselectedRules = data["unselected_rules"].reduce((res: any, obj: any) => {
+                        res.push(obj.id);
+                        return res;
+                    }, []);
+                    
+                    createOrUpdate({
+                        rules: selectedRules,
+                        unselected_rules: unselectedRules,
+                        legal: data.legal,
+                        semester
+                    }, course.full_code);
 
+                    // Toast only if course has been directly dragged from search (not reqpanel!)
+                    // TODO: This doesn't work for explicitly listed courses.
+
+                    for (let obj of data["new_selected_rules"]) {
+                        if (course.rule_id === -1) {
+                            showToast(`${course.full_code} fulfilled ${obj.title}!`, false);
+                        } else if (obj.id != course.rule_id) {
+                            showToast(`${course.full_code} also fulfilled ${obj.title}!`, false);
+                        }
+                    }
+                })
+            })
             return undefined;
         },
         collect: monitor => ({
