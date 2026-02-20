@@ -118,12 +118,15 @@ class FulfillmentViewsetTest(TestCase):
             credits=0.5,
             num=1,
         )
+        self.rule3_parent = Rule.objects.create()
         self.rule3 = Rule.objects.create(  # 2 CIS classes
-            parent=None,
+            parent=self.rule3_parent,
             q=repr(Q(full_code__startswith="CIS")),
             num=2,
         )
-        self.degree.rules.add(self.parent_rule, self.rule1, self.rule2, self.rule3)
+        self.degree.rules.add(
+            self.parent_rule, self.rule1, self.rule2, self.rule3_parent, self.rule3
+        )
         self.double_count_restriction = DoubleCountRestriction.objects.create(
             rule=self.rule2,  # CIS-19XX
             other_rule=self.rule3,  # CIS-XXXX
