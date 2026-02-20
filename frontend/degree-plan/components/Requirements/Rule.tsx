@@ -368,7 +368,7 @@ const RuleComponent = (
     }
 
     return (
-        <>
+        <div>
             <RuleTitleWrapper
                 $headerHeight={headerHeight}
                 $zIndex={zIndex}
@@ -417,7 +417,7 @@ const RuleComponent = (
                     </Column>
                 </Indented>
             )}
-        </>
+        </div>
     );
 };
 
