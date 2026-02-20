@@ -89,13 +89,9 @@ const Logo = styled.img`
     flex-shrink: 0;
 `
 
-const AnimatedDockedCourseItem = styled(CourseInDock)`
+const DockedCourseItem = styled(CourseInDock)`
     z-index: 1000;
     background: var(--background-grey);
-    // animation-name: jump;
-    //   animation-duration: 1.5s;
-    //   animation-iteration-count: 1;
-    //   animation-timing-function: linear;
 ` 
 
 interface DockProps {
@@ -164,20 +160,9 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
                     </CenteringCourseDock> 
                     :
                     !dockedCourses.length ? <CenteringCourseDock>Drop courses in the dock for later.</CenteringCourseDock> :
-                        // courseAdded ?
-                        // <DockedCourses>
-                        //     {dockedCourses.map((course, i) => {
-                        //         if (i == dockedCourses.length - 1) {
-                        //             return <AnimatedDockedCourseItem course={course} isUsed isDisabled={false} />
-                        //         }
-                        //         return <DockedCourseItem course={course} isUsed isDisabled={false} />
-                        //     }
-                        //     )}
-                        // </DockedCourses>
-                        // :
                         <DockedCourses>
                             {dockedCourses.map((course) => 
-                                <AnimatedDockedCourseItem course={course} isDisabled={false} />
+                                <DockedCourseItem course={course} isDisabled={false} />
                             )}
                         </DockedCourses>}
                 </DockedCoursesWrapper>
