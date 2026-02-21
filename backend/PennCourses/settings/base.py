@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "plan",
     "review",
     "degree",
+    "django_pgviews",
 ]
 
 MIDDLEWARE = [
