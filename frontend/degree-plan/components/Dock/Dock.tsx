@@ -1,4 +1,3 @@
-
 import styled from '@emotion/styled';
 import { DarkBlueIcon } from '../Requirements/QObject';
 import React, { useContext, useEffect, useRef } from "react";
@@ -90,13 +89,9 @@ const Logo = styled.img`
     flex-shrink: 0;
 `
 
-const AnimatedDockedCourseItem = styled(CourseInDock)`
+const DockedCourseItem = styled(CourseInDock)`
     z-index: 1000;
     background: var(--background-grey);
-    // animation-name: jump;
-    //   animation-duration: 1.5s;
-    //   animation-iteration-count: 1;
-    //   animation-timing-function: linear;
 ` 
 
 interface DockProps {
@@ -110,15 +105,6 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
     const { searchPanelOpen, setSearchPanelOpen, setSearchRuleQuery, setSearchRuleId } = useContext(SearchPanelContext)
     const { createOrUpdate } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
     const { data: dockedCourses = [], isLoading } = useSWR<DockedCourse[]>(user ? `/api/degree/docked` : null);
-
-    // Returns a boolean that indiates whether this is the first render
-    const useIsMount = () => {
-        const isMountRef = React.useRef(true);
-        useEffect(() => {
-          isMountRef.current = false;
-        }, []);
-        return isMountRef.current;
-      };
     
     const [{ isOver, canDrop }, drop] = useDrop(() => ({
         accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_REQ, ItemTypes.COURSE_IN_SEARCH],
@@ -179,7 +165,7 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
                         !dockedCourses.length ? <CenteringCourseDock>Drop courses in the dock for later.</CenteringCourseDock> :
                             <DockedCourses>
                                 {dockedCourses.map((course) => 
-                                    <AnimatedDockedCourseItem course={course} isDisabled={false} />
+                                    <DockedCourseItem course={course} isDisabled={false} />
                                 )}
                             </DockedCourses>}
                     </DockedCoursesWrapper>

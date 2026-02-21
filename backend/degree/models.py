@@ -32,7 +32,7 @@ class Degree(models.Model):
     """
 
     program = models.CharField(
-        max_length=10,
+        max_length=16,
         choices=program_choices,
         help_text=dedent(
             """
