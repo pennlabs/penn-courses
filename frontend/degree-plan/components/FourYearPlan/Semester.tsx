@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useDrag, useDrop } from "react-dnd";
 import { ItemTypes } from "../Dock/dnd/constants";
 import CoursesPlanned, { SkeletonCoursesPlanned } from "./CoursesPlanned";
@@ -118,7 +118,7 @@ interface SemesterProps {
     isLoading?: boolean
 }
 
-const FlexSemester = ({
+const FlexSemester = React.forwardRef<HTMLDivElement, SemesterProps>(({
     showStats,
     semester,
     fulfillments,
@@ -130,7 +130,7 @@ const FlexSemester = ({
     currentSemester,
     numSemesters,
     isLoading = false
-}: SemesterProps) => {
+}, ref) => {
     const showToast = useContext(ToastContext);
 
     const credits = fulfillments.reduce((acc, curr) => acc + (curr.course?.credits || 1), 0)
@@ -213,11 +213,20 @@ const FlexSemester = ({
         setModalObject({ helper: removeSemesterHelper });
     }
 
+    const dropRef = useCallback((node: HTMLDivElement | null) => {
+        drop(node);
+        if (typeof ref === "function") {
+            ref(node);
+        } else if (ref) {
+            ref.current = node;
+        }
+    }, [drop, ref]);
+
     return (
         <SemesterCard
             $isDroppable={canDrop}
             $isOver={isOver}
-            ref={drop}
+            ref={dropRef}
             $semesterComparison={currentSemester ? semester.localeCompare(currentSemester) : 1}
         >
             <SemesterHeader>
@@ -256,6 +265,6 @@ const FlexSemester = ({
             </CreditsLabel>
         </SemesterCard>
     )
-}
+});
 
 export default FlexSemester;

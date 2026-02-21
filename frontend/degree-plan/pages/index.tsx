@@ -13,17 +13,20 @@ import ToastContext from "@/components/Toast/Toast";
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showTutorialModal, setShowTutorialModal] = useState(false);
 
   const updateUser = (newUserVal: User | null) => {
     if (!newUserVal) {
-      // the user has logged out; show the login modal
-      setShowLoginModal(true);
+        // the user has logged out; show the login modal
+        setShowLoginModal(true);
+        setShowTutorialModal(false);
     } else {
-      // the user has logged in; hide the login modal
-      setShowLoginModal(false);
+        // the user has logged in; hide the login modal
+        setShowLoginModal(false);
+        setShowTutorialModal(!newUserVal.profile?.has_been_onboarded);
     }
     setUser(newUserVal);
-  };
+};
 
   function showToast(text: string, error: boolean) {
     if (error) {
@@ -55,7 +58,7 @@ export default function Home() {
                 siteName="Penn Degree Plan"
               />
             )}
-            <FourYearPlanPage user={user} updateUser={updateUser} />
+            <FourYearPlanPage user={user} updateUser={updateUser} showTutorialModal={showTutorialModal} />
           </SWRConfig>
         </ToastContext.Provider>
       </DndProvider>
