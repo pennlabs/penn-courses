@@ -69,7 +69,6 @@ export interface DegreePlan extends DBObject {
 export interface Profile {
     email: string | null;
     phone: string | null;
-    has_been_onboarded: boolean;
 }
 
 export interface User {
