@@ -118,12 +118,15 @@ class FulfillmentViewsetTest(TestCase):
             credits=0.5,
             num=1,
         )
+        self.rule3_parent = Rule.objects.create()
         self.rule3 = Rule.objects.create(  # 2 CIS classes
-            parent=None,
+            parent=self.rule3_parent,
             q=repr(Q(full_code__startswith="CIS")),
             num=2,
         )
-        self.degree.rules.add(self.parent_rule, self.rule1, self.rule2, self.rule3)
+        self.degree.rules.add(
+            self.parent_rule, self.rule1, self.rule2, self.rule3_parent, self.rule3
+        )
         self.double_count_restriction = DoubleCountRestriction.objects.create(
             rule=self.rule2,  # CIS-19XX
             other_rule=self.rule3,  # CIS-XXXX
@@ -308,6 +311,29 @@ class FulfillmentViewsetTest(TestCase):
         self.assertSerializedFulfillmentEquals(response.data, a)
         self.assertEqual(a.rules.count(), 2)
         self.assertEqual(set(a.rules.all()), {self.rule1, self.rule3})
+
+    def test_switch_rule(self):
+        a = Fulfillment(
+            degree_plan=self.degree_plan,
+            full_code="CIS-1200",
+            semester=TEST_SEMESTER,
+        )
+        a.save()
+        a.rules.add(self.rule1)
+        a.unselected_rules.add(self.rule3)
+
+        response = self.client.post(
+            reverse(
+                "degreeplan-fulfillment-switch-rule",
+                kwargs={"degreeplan_pk": self.degree_plan.id, "full_code": a.full_code},
+            ),
+            {"rule_id": self.rule3.id},
+        )
+
+        self.assertEqual(response.status_code, 200, response.json())
+        a.refresh_from_db()
+        self.assertEqual(set(a.rules.all()), {self.rule3})
+        self.assertEqual(set(a.unselected_rules.all()), {self.rule1})
 
     def test_update_fulfillment_add_violated_rule(self):
         a = Fulfillment(

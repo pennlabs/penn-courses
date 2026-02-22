@@ -14,6 +14,7 @@ import { ExpandedCoursesPanelContext } from "@/components/ExpandedBox/ExpandedCo
 interface CourseInReqProps {
     course: DnDCourse;
     isUsed: boolean;
+    isUnselectedRule?: boolean;
     isDisabled: boolean;
     rule_id: number;
     fulfillment?: Fulfillment;
@@ -23,7 +24,7 @@ interface CourseInReqProps {
     onClick?: () => void;
 }
 
-const CourseInReq = ({ course, isUsed, isDisabled, rule_id, fulfillment, activeDegreePlanId, isOpenEnded } : CourseInReqProps) => {
+const CourseInReq = ({ course, isUsed, isUnselectedRule = false, isDisabled, rule_id, fulfillment, activeDegreePlanId, isOpenEnded } : CourseInReqProps) => {
 
     const { courses, setCourses } = useContext(ExpandedCoursesPanelContext);
 
@@ -76,6 +77,9 @@ const CourseInReq = ({ course, isUsed, isDisabled, rule_id, fulfillment, activeD
           isDragging={isDragging} 
           isDisabled={isDisabled}
           isUsed={isUsed}
+          isUnselectedRule={isUnselectedRule}
+          rule_id={rule_id}
+          activeDegreePlanId={activeDegreePlanId}
           course={course}
           fulfillment={fulfillment}
         />
