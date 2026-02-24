@@ -53,6 +53,7 @@ dependencies = [
     "google-api-python-client==2.151.0",
     "asyncio==3.4.3",
     "aiohttp==3.10.10",
+    "cryptography>=46.0.1",
 ]
 
 [tool.black]

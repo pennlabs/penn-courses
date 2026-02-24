@@ -8,6 +8,7 @@ from review.views import (
     department_reviews,
     instructor_for_course_reviews,
     instructor_reviews,
+    test_jwt,
 )
 
 
@@ -46,4 +47,5 @@ urlpatterns = [
         cache_page(MONTH_IN_SECONDS)(autocomplete),
         name="review-autocomplete",
     ),
+    path("testjwt", test_jwt, name="test-jwt"),
 ]
