@@ -131,9 +131,9 @@ def course_reviews(queryset, prefix=""):
 class CourseManager(models.Manager):
     def get_queryset(self):
         queryset = super().get_queryset()
-        if (queryset.filter(annotation_expiration_lt=timezone.now()).exists()):
+        if queryset.filter(annotation_expiration__lt=timezone.now()).exists():
             return course_reviews(queryset).order_by("full_code", "semester")
-        return super().get_queryset()
+        return queryset
 
 
 class Course(models.Model):
@@ -286,7 +286,7 @@ class Course(models.Model):
         ),
     )
 
-    annotations_expiration = models.DateTimeField(
+    annotation_expiration = models.DateTimeField(
         default=timezone.now,
         help_text=dedent(
             """
@@ -295,11 +295,18 @@ class Course(models.Model):
             """
         ),
     )
-    course_quality = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True, help_text=dedent(
-        """
-        The average course quality rating for this course, on a scale from 0 to 5 (precomputed for efficiency).
-        """
-    ))
+    course_quality = models.DecimalField(
+        max_digits=4,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        help_text=dedent(
+            """
+            The average course quality rating for this course,
+            on a scale from 0 to 5 (precomputed for efficiency).
+            """
+        ),
+    )
     instructor_quality = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
     difficulty = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
     work_required = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
@@ -569,8 +576,6 @@ class NGSSRestriction(models.Model):
         )
     )
 
-
-
     @staticmethod
     def special_approval():
         return NGSSRestriction.objects.filter(restriction_type="Special Approval")
@@ -581,7 +586,10 @@ class NGSSRestriction(models.Model):
 
 class SectionManager(models.Manager):
     def get_queryset(self):
-        return super().get_queryset().distinct()
+        queryset = super().get_queryset()
+        if queryset.filter(annotation_expiration__lt=timezone.now()).exists():
+            return sections_with_reviews(queryset).order_by("full_code", "semester", "code")
+        return queryset
 
 
 class PreNGSSRestriction(models.Model):
@@ -851,13 +859,13 @@ class Section(models.Model):
         default=0,
         help_text="The number of active PCA registrations watching this section.",
     )  # For the set of PCA registrations for this section, use the related field `registrations`.
-    
+
     annotation_expiration = models.DateTimeField(
         default=timezone.now,
         help_text=dedent(
             """
-            The expiration time for the annotations of this section, these fields should be refreshed
-            every month
+            The expiration time for the annotations of this section, these fields should
+            be refreshed every month
             """
         ),
     )

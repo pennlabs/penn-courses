@@ -1,10 +1,9 @@
-from tqdm import tqdm
+import django.utils.timezone as timezone
 from django.core.management.base import BaseCommand
 from django.db import transaction
-import django.utils.timezone as timezone
+from tqdm import tqdm
 
-from courses.models import Course, Section
-from courses.models import course_reviews, sections_with_reviews
+from courses.models import Course, Section, course_reviews, sections_with_reviews
 
 
 REVIEW_FIELDS = [
@@ -40,7 +39,7 @@ class Command(BaseCommand):
         for course in tqdm(queryset, desc="Updating Courses", file=self.stdout):
             for field in REVIEW_FIELDS:
                 setattr(course, field, getattr(course, PREFIX + field))
-            course.annotation_expiration = timezone.now + timezone.timedelta(days=30) 
+            course.annotation_expiration = timezone.now + timezone.timedelta(days=30)
             courses_to_update.append(course)
 
         with transaction.atomic():
