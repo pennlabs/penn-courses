@@ -13,7 +13,9 @@ REVIEW_FIELDS = [
     "work_required",
 ]
 
-PREFIX = "calc_"
+PREFIX = "precompute_"
+
+fields_to_update = [f"{PREFIX}{field}" for field in REVIEW_FIELDS] + ["annotation_expiration"]
 
 
 class Command(BaseCommand):
@@ -31,41 +33,39 @@ class Command(BaseCommand):
     def update_courses(self):
         queryset = course_reviews(
             Course.objects.all(),
-            prefix=PREFIX,
         )
 
         courses_to_update = []
 
         for course in tqdm(queryset, desc="Updating Courses", file=self.stdout):
             for field in REVIEW_FIELDS:
-                setattr(course, field, getattr(course, PREFIX + field))
-            course.annotation_expiration = timezone.now + timezone.timedelta(days=30)
+                setattr(course, f"{PREFIX}{field}", getattr(course, field))
+            course.annotation_expiration = timezone.now() + timezone.timedelta(days=30)
             courses_to_update.append(course)
 
         with transaction.atomic():
             Course.objects.bulk_update(
                 courses_to_update,
-                REVIEW_FIELDS,
+                fields_to_update,
                 batch_size=500,
             )
 
     def update_sections(self):
         queryset = sections_with_reviews(
             Section.objects.all(),
-            prefix=PREFIX,
         )
 
         sections_to_update = []
 
         for section in tqdm(queryset, desc="Updating Sections", file=self.stdout):
             for field in REVIEW_FIELDS:
-                setattr(section, field, getattr(section, PREFIX + field))
-            section.annotation_expiration = timezone.now + timezone.timedelta(days=30)
+                setattr(section, f"{PREFIX}{field}", getattr(section, field))
+            section.annotation_expiration = timezone.now() + timezone.timedelta(days=30)
             sections_to_update.append(section)
 
         with transaction.atomic():
             Section.objects.bulk_update(
                 sections_to_update,
-                REVIEW_FIELDS,
+                fields_to_update,
                 batch_size=500,
             )

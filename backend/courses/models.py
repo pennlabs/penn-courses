@@ -7,7 +7,7 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
-from django.db.models import OuterRef, Q, Subquery, UniqueConstraint
+from django.db.models import F, OuterRef, Q, Subquery, UniqueConstraint
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -128,12 +128,27 @@ def course_reviews(queryset, prefix=""):
     )
 
 
+def cache_or_compute_course_reviews(queryset):
+    """
+    A helper function which takes a Course queryset and annotates it with review averages, either by
+    using cached precompute fields if the annotations have expired or by computing the averages
+    from the reviews if they haven't.
+    """
+    if queryset.filter(annotation_expiration__lt=timezone.now()).exists():
+        return course_reviews(queryset).order_by("full_code", "semester")
+
+    return queryset.annotate(
+        course_quality=F("precompute_course_quality"),
+        instructor_quality=F("precompute_instructor_quality"),
+        difficulty=F("precompute_difficulty"),
+        work_required=F("precompute_work_required"),
+    ).order_by("full_code", "semester")
+
+
 class CourseManager(models.Manager):
     def get_queryset(self):
         queryset = super().get_queryset()
-        if queryset.filter(annotation_expiration__lt=timezone.now()).exists():
-            return course_reviews(queryset).order_by("full_code", "semester")
-        return queryset
+        return cache_or_compute_course_reviews(queryset)
 
 
 class Course(models.Model):
@@ -295,21 +310,21 @@ class Course(models.Model):
             """
         ),
     )
-    course_quality = models.DecimalField(
+    precompute_course_quality = models.DecimalField(
         max_digits=4,
         decimal_places=3,
         null=True,
         blank=True,
-        help_text=dedent(
-            """
-            The average course quality rating for this course,
-            on a scale from 0 to 5 (precomputed for efficiency).
-            """
-        ),
     )
-    instructor_quality = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
-    difficulty = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
-    work_required = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
+    precompute_instructor_quality = models.DecimalField(
+        max_digits=4, decimal_places=3, null=True, blank=True
+    )
+    precompute_difficulty = models.DecimalField(
+        max_digits=4, decimal_places=3, null=True, blank=True
+    )
+    precompute_work_required = models.DecimalField(
+        max_digits=4, decimal_places=3, null=True, blank=True
+    )
 
     class Meta:
         unique_together = (
@@ -584,12 +599,26 @@ class NGSSRestriction(models.Model):
         return f"{self.code} - {self.restriction_type} - {self.description}"
 
 
+def cache_or_compute_section_reviews(queryset):
+    """
+    A helper function which takes a Section queryset and annotates it with review averages, either
+    by using cached precompute fields if the annotations have expired or by computing the averages
+    """
+    if queryset.filter(annotation_expiration__lt=timezone.now()).exists():
+        return sections_with_reviews(queryset).order_by("full_code")
+
+    return queryset.annotate(
+        course_quality=F("precompute_course_quality"),
+        instructor_quality=F("precompute_instructor_quality"),
+        difficulty=F("precompute_difficulty"),
+        work_required=F("precompute_work_required"),
+    ).order_by("full_code")
+
+
 class SectionManager(models.Manager):
     def get_queryset(self):
         queryset = super().get_queryset()
-        if queryset.filter(annotation_expiration__lt=timezone.now()).exists():
-            return sections_with_reviews(queryset).order_by("full_code", "semester", "code")
-        return queryset
+        return cache_or_compute_section_reviews(queryset)
 
 
 class PreNGSSRestriction(models.Model):
@@ -869,10 +898,18 @@ class Section(models.Model):
             """
         ),
     )
-    course_quality = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
-    instructor_quality = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
-    difficulty = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
-    work_required = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
+    precompute_course_quality = models.DecimalField(
+        max_digits=4, decimal_places=3, null=True, blank=True
+    )
+    precompute_instructor_quality = models.DecimalField(
+        max_digits=4, decimal_places=3, null=True, blank=True
+    )
+    precompute_difficulty = models.DecimalField(
+        max_digits=4, decimal_places=3, null=True, blank=True
+    )
+    precompute_work_required = models.DecimalField(
+        max_digits=4, decimal_places=3, null=True, blank=True
+    )
 
     def __str__(self):
         return "%s %s" % (self.full_code, self.course.semester)
