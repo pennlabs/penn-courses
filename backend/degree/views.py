@@ -91,7 +91,7 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         if DegreePlan.objects.filter(name=name, person=self.request.user).exists():
             return Response(
                 {"warning": f"A degree plan with name {name} already exists."},
-                status=status.HTTP_409_CONFLICT
+                status=status.HTTP_409_CONFLICT,
             )
         new_degree_plan = DegreePlan(name=name, person=self.request.user)
         new_degree_plan.save()
