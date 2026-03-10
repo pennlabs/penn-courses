@@ -364,19 +364,28 @@ const QObject = ({ q, fulfillments, unselectedFulfillments, rule, satisfied, act
                 assert(typeof course.semester === "string")
                 const fulfillment = fulfillmentsMap.get(course.full_code);
                 const isChosen = !!(fulfillment && fulfillment.semester === course.semester);
+                const isUnselectedForRule = !isChosen && unselectedFulfillments.some(
+                    (unselectedFulfillment) =>
+                        unselectedFulfillment.full_code === course.full_code
+                        && unselectedFulfillment.semester === course.semester
+                );
 
                 // we've already used this course, so delete it 
                 if (isChosen) fulfillmentsMap.delete(course.full_code);
-                return <CourseInReq course={{ ...course, rules: fulfillment?.rules }} fulfillment={fulfillment} isDisabled={satisfied && !isChosen} isUsed={isChosen} rule_id={rule.id} activeDegreePlanId={activeDegreePlanId} />;
+                return <CourseInReq course={{ ...course, rules: fulfillment?.rules }} fulfillment={fulfillment} isDisabled={satisfied && !isChosen} isUsed={isChosen} isUnselectedRule={isUnselectedForRule} rule_id={rule.id} activeDegreePlanId={activeDegreePlanId} />;
             });
             const displayCoursesWithoutSemesters = courses.map(course => {
                 assert(typeof course.semester === "undefined")
                 const fulfillment = fulfillmentsMap.get(course.full_code);
                 const isChosen = !!fulfillment;
+                const isUnselectedForRule = !isChosen && unselectedFulfillments.some(
+                    (unselectedFulfillment) =>
+                        unselectedFulfillment.full_code === course.full_code
+                );
 
                 // we've already used this course, so delete it
                 if (isChosen) fulfillmentsMap.delete(course.full_code);
-                return <CourseInReq course={{ ...course, rules: fulfillment?.rules }} fulfillment={fulfillment} isDisabled={satisfied && !isChosen} isUsed={isChosen} rule_id={rule.id} activeDegreePlanId={activeDegreePlanId} />;
+                return <CourseInReq course={{ ...course, rules: fulfillment?.rules }} fulfillment={fulfillment} isDisabled={satisfied && !isChosen} isUsed={isChosen} isUnselectedRule={isUnselectedForRule} rule_id={rule.id} activeDegreePlanId={activeDegreePlanId} />;
             });
 
             // transformations applied to parse tree should guarantee that searchConditions is a singleton
@@ -401,7 +410,12 @@ const QObject = ({ q, fulfillments, unselectedFulfillments, rule, satisfied, act
             );
         case "COURSE":
             const [fulfillment] = fulfillments.filter(fulfillment => fulfillment.full_code == q.full_code && (!q.semester || q.semester === fulfillment.semester))
-            return <CourseInReq course={{ ...q, rules: fulfillment ? fulfillment.rules : [] }} fulfillment={fulfillment} isDisabled={satisfied && !fulfillment} isUsed={!!fulfillment} rule_id={rule.id} activeDegreePlanId={activeDegreePlanId} />;
+            const isUnselectedForRule = !fulfillment && unselectedFulfillments.some(
+                (unselectedFulfillment) =>
+                    unselectedFulfillment.full_code === q.full_code
+                    && (!q.semester || q.semester === unselectedFulfillment.semester)
+            );
+            return <CourseInReq course={{ ...q, rules: fulfillment ? fulfillment.rules : [] }} fulfillment={fulfillment} isDisabled={satisfied && !fulfillment} isUsed={!!fulfillment} isUnselectedRule={isUnselectedForRule} rule_id={rule.id} activeDegreePlanId={activeDegreePlanId} />;
     }
 }
 

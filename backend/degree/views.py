@@ -233,6 +233,63 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
         except Http404:
             return super().create(request, *args, **kwargs)
 
+    @action(detail=True, methods=["post"], url_path="switch-rule")
+    def switch_rule(self, request, *args, **kwargs):
+        """
+        Switch a fulfillment's selected rule to another rule in the same degree.
+
+        This promotes the requested rule from `unselected_rules` to `rules`, and
+        demotes any currently selected rules for that same degree into
+        `unselected_rules`.
+        """
+        rule_id = request.data.get("rule_id")
+        if rule_id is None:
+            raise ValidationError({"rule_id": "This field is required."})
+
+        try:
+            target_rule = Rule.objects.get(id=int(rule_id))
+        except (ValueError, TypeError, Rule.DoesNotExist):
+            raise ValidationError({"rule_id": "Invalid rule_id."})
+
+        fulfillment = self.get_object()
+        degree_plan = fulfillment.degree_plan
+        full_code = fulfillment.full_code
+
+        _, rule_to_degree = map_rules_and_degrees(degree_plan)
+        if target_rule not in rule_to_degree:
+            raise ValidationError({"rule_id": "Rule does not belong to this degree plan."})
+
+        if not target_rule.check_belongs(full_code):
+            raise ValidationError(
+                {"rule_id": f"Course {full_code} does not satisfy rule {target_rule.id}"}
+            )
+
+        selected_rules = set(fulfillment.rules.all())
+        unselected_rules = set(fulfillment.unselected_rules.all())
+        if target_rule not in unselected_rules and target_rule not in selected_rules:
+            raise ValidationError(
+                {"rule_id": "Rule is not available to switch for this fulfillment."}
+            )
+
+        target_degree = rule_to_degree[target_rule]
+        selected_same_degree = {
+            rule for rule in selected_rules if rule_to_degree.get(rule) == target_degree
+        }
+
+        demoted_rules = {rule for rule in selected_same_degree if rule != target_rule}
+        selected_rules.difference_update(demoted_rules)
+        selected_rules.add(target_rule)
+        unselected_rules.update(demoted_rules)
+        unselected_rules.discard(target_rule)
+
+        fulfillment.rules.set(selected_rules)
+        fulfillment.unselected_rules.set(unselected_rules)
+        fulfillment.legal = check_legal(selected_rules, rule_to_degree)
+        fulfillment.save()
+
+        serializer = self.get_serializer(fulfillment)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
 
 class DockedCourseViewset(viewsets.ModelViewSet):
     """
