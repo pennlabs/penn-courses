@@ -65,7 +65,7 @@ export const patchFetcher = baseFetcher({ method: "PATCH" })
 export const putFetcher = baseFetcher({ method: "PUT" })
 export const deleteFetcher = baseFetcher({ method: "DELETE" }, false); // expect no response from delete requests
 
-const normalizeFinalSlash = (resource: string) => {
+export const normalizeFinalSlash = (resource: string) => {
     if (!resource.endsWith("/")) resource += "/";
     return resource
 }
