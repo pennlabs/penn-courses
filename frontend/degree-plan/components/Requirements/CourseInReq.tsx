@@ -16,7 +16,7 @@ interface CourseInReqProps {
     isUsed: boolean;
     isUnselectedRule?: boolean;
     isDisabled: boolean;
-    rule_id: number;
+    ruleId: number;
     fulfillment?: Fulfillment;
     className?: string;
     activeDegreePlanId: number;
@@ -24,7 +24,7 @@ interface CourseInReqProps {
     onClick?: () => void;
 }
 
-const CourseInReq = ({ course, isUsed, isUnselectedRule = false, isDisabled, rule_id, fulfillment, activeDegreePlanId, isOpenEnded } : CourseInReqProps) => {
+const CourseInReq = ({ course, isUsed, isUnselectedRule = false, isDisabled, ruleId, fulfillment, activeDegreePlanId, isOpenEnded } : CourseInReqProps) => {
 
     const { courses, setCourses } = useContext(ExpandedCoursesPanelContext);
 
@@ -36,14 +36,14 @@ const CourseInReq = ({ course, isUsed, isUnselectedRule = false, isDisabled, rul
     const { createOrUpdate } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
 
     const handleRemoveCourse = async (full_code: string) => {
-        const updated_rules = course.rules?.filter(rule => rule != rule_id);
+        const updated_rules = course.rules?.filter(rule => rule != ruleId);
         
         // If removing course from open-ended, add to list of unselected courses.
         if (fulfillment && isOpenEnded) {
           if (courses)
             setCourses([...courses, fulfillment]);
           
-          course.unselected_rules?.push(rule_id);
+          course.unselected_rules?.push(ruleId);
         }
 
 
@@ -63,7 +63,7 @@ const CourseInReq = ({ course, isUsed, isUnselectedRule = false, isDisabled, rul
 
     const [{ isDragging }, drag] = useDrag<DnDCourse, never, { isDragging: boolean }>(() => ({
       type: ItemTypes.COURSE_IN_REQ,
-      item: {...course, rule_id: rule_id, fulfillment: fulfillment},
+      item: {...course, rule_id: ruleId, fulfillment: fulfillment},
       collect: (monitor) => ({
         isDragging: !!monitor.isDragging()
       })
@@ -78,7 +78,7 @@ const CourseInReq = ({ course, isUsed, isUnselectedRule = false, isDisabled, rul
           isDisabled={isDisabled}
           isUsed={isUsed}
           isUnselectedRule={isUnselectedRule}
-          rule_id={rule_id}
+          ruleId={ruleId}
           activeDegreePlanId={activeDegreePlanId}
           course={course}
           fulfillment={fulfillment}

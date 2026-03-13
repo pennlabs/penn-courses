@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.http import Http404
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import status, viewsets
@@ -183,7 +183,7 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated & InPDPBeta]
     serializer_class = FulfillmentSerializer
     http_method_names = ["get", "post", "head", "delete"]
-    queryset = Fulfillment.objects.all()
+    queryset = Fulfillment.objects.prefetch_related("rules", "unselected_rules")
     lookup_field = "full_code"
 
     def get_degree_plan_id(self):
@@ -264,28 +264,29 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
                 {"rule_id": f"Course {full_code} does not satisfy rule {target_rule.id}"}
             )
 
-        selected_rules = set(fulfillment.rules.all())
-        unselected_rules = set(fulfillment.unselected_rules.all())
-        if target_rule not in unselected_rules and target_rule not in selected_rules:
-            raise ValidationError(
-                {"rule_id": "Rule is not available to switch for this fulfillment."}
-            )
+        with transaction.atomic():
+            selected_rules = set(fulfillment.rules.all())
+            unselected_rules = set(fulfillment.unselected_rules.all())
+            if target_rule not in unselected_rules | selected_rules:
+                raise ValidationError(
+                    {"rule_id": "Rule is not available to switch for this fulfillment."}
+                )
 
-        target_degree = rule_to_degree[target_rule]
-        selected_same_degree = {
-            rule for rule in selected_rules if rule_to_degree.get(rule) == target_degree
-        }
+            target_degree = rule_to_degree[target_rule]
+            selected_same_degree = {
+                rule for rule in selected_rules if rule_to_degree.get(rule) == target_degree
+            }
 
-        demoted_rules = {rule for rule in selected_same_degree if rule != target_rule}
-        selected_rules.difference_update(demoted_rules)
-        selected_rules.add(target_rule)
-        unselected_rules.update(demoted_rules)
-        unselected_rules.discard(target_rule)
+            demoted_rules = {rule for rule in selected_same_degree if rule != target_rule}
+            selected_rules.difference_update(demoted_rules)
+            selected_rules.add(target_rule)
+            unselected_rules.update(demoted_rules)
+            unselected_rules.discard(target_rule)
 
-        fulfillment.rules.set(selected_rules)
-        fulfillment.unselected_rules.set(unselected_rules)
-        fulfillment.legal = check_legal(selected_rules, rule_to_degree)
-        fulfillment.save()
+            fulfillment.rules.set(selected_rules)
+            fulfillment.unselected_rules.set(unselected_rules)
+            fulfillment.legal = check_legal(selected_rules, rule_to_degree)
+            fulfillment.save()
 
         serializer = self.get_serializer(fulfillment)
         return Response(serializer.data, status=status.HTTP_200_OK)

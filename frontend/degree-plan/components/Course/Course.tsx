@@ -10,13 +10,17 @@ import "react-loading-skeleton/dist/skeleton.css";
 import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
 import { Tooltip } from "react-tooltip";
 import useSWR from "swr";
-import { ItemTypes } from "../Dock/dnd/constants";
+import { ItemTypes } from "@/components/Dock/dnd/constants";
 import { postFetcher } from "@/hooks/swrcrud";
 import { useSWRConfig } from "swr";
 
 const DOUBLE_COUNT_ERROR_MESSAGE =
   "This course is being illegally double counted in your plan!";
 const COURSE_BORDER_RADIUS = "9px";
+const HIGHLIGHT_VARIANT_COLORS = {
+  selected: "#E6F4EA",
+  unselected: "#FFF7D6",
+} as const;
 
 export const BaseCourseContainer = styled.div<{
   $isDragging?: boolean;
@@ -37,11 +41,9 @@ export const BaseCourseContainer = styled.div<{
   background-color: ${(props) =>
     props.$isDragging
       ? "#4B9AE7"
-      : props.$highlightVariant === "selected"
-        ? "#E6F4EA"
-        : props.$highlightVariant === "unselected"
-          ? "#FFF7D6"
-          : "var(--background-grey)"};
+      : (props.$highlightVariant &&
+          HIGHLIGHT_VARIANT_COLORS[props.$highlightVariant]) ||
+        "var(--background-grey)"};
   box-shadow: rgba(0, 0, 0, 0.01) 0px 6px 5px 0px,
     rgba(0, 0, 0, 0.04) 0px 0px 0px 1px;
 `;
@@ -101,7 +103,7 @@ interface DraggableComponentProps {
   isDragging: boolean;
   fulfillment?: Fulfillment;
   isUnselectedRule?: boolean;
-  rule_id?: number;
+  ruleId?: number;
   activeDegreePlanId?: number;
   className?: string;
   onClick?: (arg0: React.MouseEvent<HTMLInputElement>) => void;
@@ -258,10 +260,18 @@ const SemesterIcon = ({ semester }: { semester: string | null }) => {
 };
 
 const formatDegreeName = (degree: Degree): string => {
-  if (degree.degree && degree.major) {
-    return `${degree.degree} ${degree.major}${degree.concentration ? ` (${degree.concentration})` : ""}`;
+  const {
+    degree: degreeType,
+    major,
+    concentration,
+    major_name: majorName,
+    concentration_name: concentrationName,
+  } = degree;
+
+  if (degreeType && major) {
+    return `${degreeType} ${major}${concentration ? ` (${concentration})` : ""}`;
   }
-  return `${degree.degree} in ${degree.major_name}${degree.concentration ? ` (${degree.concentration_name})` : ""}`;
+  return `${degreeType} in ${majorName}${concentration ? ` (${concentrationName})` : ""}`;
 };
 
 /** Recursively flattens a rule tree into an id→(title, degree) map */
@@ -289,7 +299,7 @@ const CourseComponent = ({
   course,
   fulfillment,
   isUnselectedRule = false,
-  rule_id,
+  ruleId,
   activeDegreePlanId,
   removeCourse,
   isUsed = false,
@@ -399,12 +409,12 @@ const CourseComponent = ({
 
   const handleSwitchRule = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!activeDegreePlanId || !rule_id || switchingRule) return;
+    if (!activeDegreePlanId || !ruleId || switchingRule) return;
     try {
       setSwitchingRule(true);
       setSwitchError(null);
       const endpoint = `/api/degree/degreeplans/${activeDegreePlanId}/fulfillments/${course.full_code}/switch-rule`;
-      await postFetcher(endpoint, { rule_id });
+      await postFetcher(endpoint, { rule_id: ruleId });
       await Promise.all([
         mutate(`/api/degree/degreeplans/${activeDegreePlanId}/fulfillments`),
         mutate(`/api/degree/degreeplans/${activeDegreePlanId}`),
