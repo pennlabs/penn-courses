@@ -106,9 +106,13 @@ class SectionList(generics.ListAPIView, BaseCourseMixin):
     )
 
     serializer_class = MiniSectionSerializer
-    queryset = Section.with_reviews.all().exclude(activity="")
+    queryset = Section.objects.none()  # Default for documentation; overridden in get_queryset
     filter_backends = [TypedSectionSearchBackend]
     search_fields = ["^full_code"]
+
+    def get_queryset(self):
+        queryset = Section.with_reviews.all().exclude(activity="")
+        return self.filter_by_semester(queryset)
 
     @staticmethod
     def get_semester_field():
@@ -132,8 +136,12 @@ class SectionDetail(generics.RetrieveAPIView, BaseCourseMixin):
     )
 
     serializer_class = SectionDetailSerializer
-    queryset = Section.with_reviews.all()
+    queryset = Section.objects.none()  # Default for documentation; overridden in get_queryset
     lookup_field = "full_code"
+
+    def get_queryset(self):
+        queryset = Section.with_reviews.all()
+        return self.filter_by_semester(queryset)
 
     def get_semester_field(self):
         return "course__semester"
@@ -154,7 +162,7 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
     )
 
     serializer_class = CourseListSerializer
-    queryset = Course.with_reviews.filter(sections__isnull=False)  # included redundantly for docs
+    queryset = Course.objects.none()  # included redundantly for docs
 
     def get_queryset(self):
         queryset = Course.with_reviews.filter(sections__isnull=False)
@@ -278,7 +286,7 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
 
     serializer_class = CourseDetailSerializer
     lookup_field = "full_code"
-    queryset = Course.with_reviews.all()  # included redundantly for docs
+    queryset = Course.objects.none()  # included redundantly for docs
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
