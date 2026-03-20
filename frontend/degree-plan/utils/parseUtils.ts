@@ -180,6 +180,7 @@ const detectMajors = (
   possibleDegrees: DegreeOption[] | undefined
 ) => {
   const detectedMajorsOptions = [];
+  const justMajorNames = possibleDegrees ? possibleDegrees.map((el) => el.label) : [];
   for (let i in detectedMajors) {
     let m =
       detectedMajors[i] +
@@ -187,11 +188,6 @@ const detectMajors = (
         ? detectedConcentrations[i]
         : "");
     if (!detectedMajors[i]?.includes("undeclared") && possibleDegrees) {
-      let justMajorNames = possibleDegrees.reduce((acc: any, el: any) => {
-        acc.push(el.label);
-        return acc;
-      }, []);
-
       let closestMajor =
         m == "computer science "
           ? "Computer Science - No Concentration (2024)"
@@ -246,31 +242,23 @@ export const parseTranscript = (
     }
   }
 
-  const separatedCourses = Object.entries(courseToSem).reduce(
-    (acc, [course, sem]) => {
-      const trimmedSem = sem.trim();
-      if (!acc[trimmedSem]) acc[trimmedSem] = [];
-      acc[trimmedSem].push(course);
-      return acc;
-    },
-    {} as { [key: string]: string[] }
+  const formattedSeparatedCourses = Object.values(
+    Object.entries(courseToSem).reduce(
+      (acc, [course, sem]) => {
+        const trimmedSem = sem.trim();
+        if (!acc[trimmedSem]) acc[trimmedSem] = { sem: trimmedSem, courses: [] };
+        acc[trimmedSem].courses.push(course);
+        return acc;
+      },
+      {} as { [key: string]: { sem: string; courses: string[] } }
+    )
   );
 
-  const formattedSeparatedCourses = Object.entries(separatedCourses).map(
-    ([sem, courses]) => ({
-      sem,
-      courses,
-    })
-  );
-
-  // Scrape start year and infer grad year
-  let years = formattedSeparatedCourses.map(
-    (e: { sem: string; courses: string[] }, i: number) => {
-      return parseInt(e.sem.replace(/\D/g, ""));
-    }
-  );
-  years.shift();
-  startYear = Math.min(...years);
+  // Scrape start year and infer grad year (skip _TRAN which yields NaN)
+  const years = formattedSeparatedCourses
+    .map(({ sem }) => parseInt(sem.replace(/\D/g, "")))
+    .filter((y) => !isNaN(y));
+  startYear = years.length ? Math.min(...years) : 0;
 
   let possibleDegrees = getMajorOptions(degrees, tempSchools, startYear);
   let detectedMajorsOptions = detectMajors(
