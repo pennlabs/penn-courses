@@ -4,6 +4,7 @@ import {
   SetStateAction,
   useCallback,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 import {
@@ -89,34 +90,29 @@ export default function CreateWithTranscriptPanel({
   // Will likely change in the future!
   useEffect(() => {
     if (degreeID) {
-      const courses = [];
-      for (let semester of scrapedCourses) {
-        const formattedSemester: { sem: String; courses: String[] } = {
-          sem: "",
-          courses: [],
-        };
-        let rawSem = semester.sem;
+      const courses = scrapedCourses.map((semester: any) => {
+        const rawSem = semester.sem;
+        let sem: string;
         if (rawSem === "_TRAN") {
-          formattedSemester.sem = "_TRAN";
+          sem = "_TRAN";
         } else {
-          let formattedSem = rawSem.match(/(\d+)/)[0];
-
-          if (rawSem.includes("spring")) formattedSem += "A";
-          else if (rawSem.includes("summer")) formattedSem += "B";
-          else formattedSem += "C";
-          formattedSemester.sem = formattedSem;
+          const year = rawSem.match(/(\d+)/)[0];
+          const suffix = rawSem.includes("spring") ? "A" : rawSem.includes("summer") ? "B" : "C";
+          sem = year + suffix;
         }
-        formattedSemester.courses = semester.courses.map((course: String) =>
-          course.replace(" ", "-").toUpperCase()
-        );
-        courses.push(formattedSemester);
-      }
+        return {
+          sem,
+          courses: semester.courses.map((course: string) =>
+            course.replace(" ", "-").toUpperCase()
+          ),
+        };
+      });
 
-      if (courses.length == 0) {
+      if (courses.length === 0) {
         setShowOnboardingModal(false);
       } else {
         postFetcher(`/api/degree/onboard-from-transcript/${degreeID}`, {
-          courses: courses,
+          courses,
         }).then((r) => setShowOnboardingModal(false));
       }
     }
@@ -152,7 +148,7 @@ export default function CreateWithTranscriptPanel({
             JSON.stringify(semesters)
           );
         }
-        postFetcher(`/api/degree/degreeplans/${_new.id}/degrees`, {
+        await postFetcher(`/api/degree/degreeplans/${_new.id}/degrees`, {
           degree_ids: majors.map((m) => m.value.id),
         }); // add degree
         setActiveDegreeplan(_new);
@@ -200,13 +196,12 @@ export default function CreateWithTranscriptPanel({
     };
   }, [options]);
 
-  const startingYearOptions = getYearOptions()?.startYears;
-  const graduationYearOptions = getYearOptions()?.gradYears;
+  const { startYears: startingYearOptions, gradYears: graduationYearOptions } = getYearOptions();
 
-  const majorOptionsCallback = useCallback(() => {
-    const majorOptions = getMajorOptions(degrees, schools, startingYear?.value ?? null);
-    return majorOptions;
-  }, [schools, startingYear]);
+  const majorOptions = useMemo(
+    () => getMajorOptions(degrees, schools, startingYear?.value ?? null),
+    [degrees, schools, startingYear]
+  );
 
   return (
     <CenteredFlexContainer>
@@ -285,7 +280,7 @@ export default function CreateWithTranscriptPanel({
             <FieldWrapper>
               <Label required>Major(s)</Label>
               <Select
-                options={majorOptionsCallback()}
+                options={majorOptions}
                 value={majors}
                 onChange={(selectedOptions) => setMajors([...selectedOptions])}
                 isClearable
