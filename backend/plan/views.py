@@ -925,7 +925,7 @@ class CalendarAPIView(APIView):
                                 tzinfo="America/New_York")
 
             e.end = arrow.get(end_datetime, "YYYY-MM-DD h:mm A",
-                              tzinfo="America/New York")
+                              tzinfo="America/New_York")
 
             location = None
             if hasattr(first_meeting, "room") and first_meeting.room:
@@ -936,8 +936,8 @@ class CalendarAPIView(APIView):
                 e.location = location
 
             end_date = arrow.get(
-                first_meeting.end_date, "YYYY-MM-DD", tzinfo="America/New York"
-            ).format("YYYYMMDDTHHmmss")
+                first_meeting.end_date, "YYYY-MM-DD", tzinfo="America/New_York"
+            ).to("UTC").format("YYYYMMDDTHHmmss")
 
             e.extra.append(
                 ContentLine(
