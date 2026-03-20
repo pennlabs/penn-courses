@@ -13,6 +13,7 @@ import { Location } from "../../types";
 interface MapProps {
     locations: Location[];
     zoom: number;
+    viewKey?: string;
 }
 
 function toRadians(degrees: number): number {
@@ -87,11 +88,12 @@ function separateOverlappingPoints(points: Location[], offset = 0.0001) {
     return adjustedPoints;
 }
 
-function Map({ locations, zoom }: MapProps) {
+function Map({ locations, zoom, viewKey }: MapProps) {
     const mapRef = useRef<MapRef | null>(null);
     const mapboxToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN;
     const mapboxStyleId = process.env.NEXT_PUBLIC_MAPBOX_STYLE_ID || "mapbox/streets-v12";
     const [cursor, setCursor] = useState<string>("");
+    const [autoCenter, setAutoCenter] = useState(true);
     const [selected, setSelected] = useState<{
         longitude: number;
         latitude: number;
@@ -152,14 +154,20 @@ function Map({ locations, zoom }: MapProps) {
         return `${hours12}:${minutes.toString().padStart(2, "0")} ${period}`;
     };
 
+    // When the day/view changes, re-enable auto-centering.
     useEffect(() => {
-        if (!mapRef.current) return;
+        setAutoCenter(true);
+        setSelected(null);
+    }, [viewKey]);
+
+    useEffect(() => {
+        if (!mapRef.current || !autoCenter) return;
         mapRef.current.flyTo({
             center: [center[1], center[0]],
             zoom,
             essential: true,
         });
-    }, [center, zoom]);
+    }, [autoCenter, center, zoom]);
 
     if (!mapboxToken) {
         return (
@@ -200,6 +208,10 @@ function Map({ locations, zoom }: MapProps) {
             maxPitch={70}
             interactiveLayerIds={["pcp-course-markers"]}
             cursor={cursor}
+            onDragStart={() => setAutoCenter(false)}
+            onZoomStart={() => setAutoCenter(false)}
+            onRotateStart={() => setAutoCenter(false)}
+            onPitchStart={() => setAutoCenter(false)}
             onMouseMove={(e) => {
                 const hovering = (e.features?.length || 0) > 0;
                 setCursor(hovering ? "pointer" : "");
@@ -212,6 +224,14 @@ function Map({ locations, zoom }: MapProps) {
                 }
                 const [lng, lat] = f.geometry.coordinates as [number, number];
                 const props = (f.properties || {}) as Record<string, unknown>;
+
+                // Center the map on the clicked marker (keep current zoom).
+                setAutoCenter(false);
+                mapRef.current?.flyTo({
+                    center: [lng, lat],
+                    essential: true,
+                });
+
                 setSelected({
                     longitude: lng,
                     latitude: lat,

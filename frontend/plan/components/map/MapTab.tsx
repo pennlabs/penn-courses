@@ -139,6 +139,7 @@ function MapTab({
                                         locData.lng != null
                                 )}
                             zoom={14}
+                            viewKey={selectedDay}
                         />
                     </MapContainer>
                     <MapCourseItemcontainer>
