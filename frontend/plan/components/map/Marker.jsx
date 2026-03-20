@@ -6,8 +6,8 @@ const Marker = ({ color = "#878ED8", lat, lng }) => {
     const icon = divIcon({
         html: `
                 <svg
-                  width="20"
-                  height="28"
+                  width="14"
+                  height="20"
                   viewBox="0 0 20 28"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
@@ -19,8 +19,8 @@ const Marker = ({ color = "#878ED8", lat, lng }) => {
                 </svg>
               `,
         className: "svg-icon",
-        iconSize: [24, 40],
-        iconAnchor: [12, 40],
+        iconSize: [18, 30],
+        iconAnchor: [9, 30],
     });
 
     return <MarkerLeaflet position={[lat, lng]} icon={icon} />;

@@ -7,7 +7,7 @@ import MapCourseItem from "./MapCourseItem";
 import { scheduleContainsSection } from "../meetUtil";
 import { DAYS_TO_DAYSTRINGS } from "../../constants/constants";
 import { Section, Meeting, Day, Weekdays } from "../../types";
-import "leaflet/dist/leaflet.css";
+import "mapbox-gl/dist/mapbox-gl.css";
 import { ThunkDispatch } from "redux-thunk";
 import { fetchCourseDetails } from "../../actions";
 
@@ -128,6 +128,10 @@ function MapTab({
                                     lat: meeting.latitude,
                                     lng: meeting.longitude,
                                     color: meeting.color,
+                                    id: meeting.id,
+                                    room: meeting.room,
+                                    start: meeting.start,
+                                    end: meeting.end,
                                 }))
                                 .filter(
                                     (locData) =>
@@ -135,6 +139,7 @@ function MapTab({
                                         locData.lng != null
                                 )}
                             zoom={14}
+                            viewKey={selectedDay}
                         />
                     </MapContainer>
                     <MapCourseItemcontainer>

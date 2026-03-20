@@ -1,7 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import Map from "../map/Map";
-import "leaflet/dist/leaflet.css";
+import "mapbox-gl/dist/mapbox-gl.css";
 
 interface MapModalProps {
     lat: number;
