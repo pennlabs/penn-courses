@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef, useEffect, useLayoutEffect } from "react";
+import { useContext, useMemo, useState, useRef, useEffect, useLayoutEffect } from "react";
 import { ConnectDragSource } from "react-dnd";
 import { GrayIcon, Icon } from "@/components/common/bulma_derived_components";
 import styled from "@emotion/styled";
@@ -13,6 +13,7 @@ import useSWR from "swr";
 import { ItemTypes } from "@/components/Dock/dnd/constants";
 import { postFetcher } from "@/hooks/swrcrud";
 import { useSWRConfig } from "swr";
+import ToastContext from "@/components/Toast/Toast";
 
 const DOUBLE_COUNT_ERROR_MESSAGE =
   "This course is being illegally double counted in your plan!";
@@ -162,9 +163,7 @@ const InfoPopoverWrapper = styled.div`
 `;
 
 const InfoPopover = styled.div`
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
+  position: fixed;
   background: white;
   border-radius: 8px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
@@ -224,6 +223,17 @@ const SwitchRuleButton = styled.button`
     opacity: 0.7;
     cursor: default;
   }
+`;
+
+const DisplacedBanner = styled.div`
+  margin-top: 0.4rem;
+  padding: 0.35rem 0.55rem;
+  border-radius: 6px;
+  background: #fff3e0;
+  border: 1px solid #e0c080;
+  color: #7a4f00;
+  font-size: 0.78rem;
+  line-height: 1.35;
 `;
 
 const ExclamationIcon = ({ color }: { color: string }) => {
@@ -310,6 +320,8 @@ const CourseComponent = ({
   dragRef,
 }: DraggableComponentProps) => {
   const { mutate } = useSWRConfig();
+  const showToast = useContext(ToastContext);
+
   // Look up rule titles for unselected rules (uses SWR cache from ReqPanel)
   const { data: degreePlanDetail } = useSWR<DegreePlan>(
     fulfillment?.degree_plan
@@ -347,6 +359,7 @@ const CourseComponent = ({
   const [infoOpen, setInfoOpen] = useState(false);
   const [switchingRule, setSwitchingRule] = useState(false);
   const [switchError, setSwitchError] = useState<string | null>(null);
+  const [displacedMessage, setDisplacedMessage] = useState<string | null>(null);
   const infoRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
 
@@ -361,23 +374,36 @@ const CourseComponent = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [infoOpen]);
 
-  // Keep popover within viewport horizontally
+  // Position the fixed popover below the wrapper, clamped within the viewport
   useLayoutEffect(() => {
-    if (!infoOpen || !popoverRef.current) return;
+    if (!infoOpen || !popoverRef.current || !infoRef.current) return;
     const el = popoverRef.current;
-    // Reset to default so we measure from the baseline position
-    el.style.left = "0px";
-    const rect = el.getBoundingClientRect();
+    const wrapperRect = infoRef.current.getBoundingClientRect();
     const padding = 8;
-    let left = 0;
-    // If overflowing on the right, shift left
-    if (rect.right > window.innerWidth - padding) {
-      left = -(rect.right - (window.innerWidth - padding));
+
+    // Place below the wrapper
+    let top = wrapperRect.bottom + 8;
+    let left = wrapperRect.left;
+
+    // Measure the popover so we can clamp
+    el.style.top = `${top}px`;
+    el.style.left = `${left}px`;
+    const popRect = el.getBoundingClientRect();
+
+    // Clamp right edge
+    if (popRect.right > window.innerWidth - padding) {
+      left -= popRect.right - (window.innerWidth - padding);
     }
-    // If now overflowing on the left (or was already), shift right
-    if (rect.left + left < padding) {
-      left = padding - rect.left;
+    // Clamp left edge
+    if (left < padding) {
+      left = padding;
     }
+    // If it would overflow the bottom, flip above the wrapper
+    if (popRect.bottom > window.innerHeight - padding) {
+      top = wrapperRect.top - popRect.height - 8;
+    }
+
+    el.style.top = `${top}px`;
     el.style.left = `${left}px`;
   }, [infoOpen]);
 
@@ -397,7 +423,8 @@ const CourseComponent = ({
     hasSemester ||
     selectedRuleNames.length > 0 ||
     shouldShowCouldAlsoCountFor ||
-    shouldShowSwitchHint;
+    shouldShowSwitchHint ||
+    !!displacedMessage;
   const highlightVariant =
     courseType === ItemTypes.COURSE_IN_REQ
       ? isUsed
@@ -413,13 +440,33 @@ const CourseComponent = ({
     try {
       setSwitchingRule(true);
       setSwitchError(null);
+      setDisplacedMessage(null);
       const endpoint = `/api/degree/degreeplans/${activeDegreePlanId}/fulfillments/${course.full_code}/switch-rule`;
-      await postFetcher(endpoint, { rule_id: ruleId });
+      const res = await postFetcher(endpoint, { rule_id: ruleId });
       await Promise.all([
         mutate(`/api/degree/degreeplans/${activeDegreePlanId}/fulfillments`),
         mutate(`/api/degree/degreeplans/${activeDegreePlanId}`),
       ]);
-      setInfoOpen(false);
+
+      const displaced: { full_code: string; removed: boolean }[] =
+        res?.displaced ?? [];
+      if (displaced.length > 0) {
+        const msgs = displaced.map((d) => {
+          const code = d.full_code.replace("-", " ");
+          return d.removed
+            ? `${code} was removed (it no longer fulfills any rules).`
+            : `${code} was displaced from this rule.`;
+        });
+        const message = msgs.join(" ");
+        setDisplacedMessage(message);
+        showToast(message, false);
+        setTimeout(() => {
+          setDisplacedMessage(null);
+          setInfoOpen(false);
+        }, 5000);
+      } else {
+        setInfoOpen(false);
+      }
     } catch {
       setSwitchError("Could not switch this course right now.");
     } finally {
@@ -511,6 +558,12 @@ const CourseComponent = ({
                               {switchError}
                             </div>
                           )}
+                        </PopoverSection>
+                      )}
+                      {displacedMessage && (
+                        <PopoverSection>
+                          <PopoverLabel>Displaced</PopoverLabel>
+                          <DisplacedBanner>{displacedMessage}</DisplacedBanner>
                         </PopoverSection>
                       )}
                     </InfoPopover>

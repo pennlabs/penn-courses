@@ -241,6 +241,11 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
         This promotes the requested rule from `unselected_rules` to `rules`, and
         demotes any currently selected rules for that same degree into
         `unselected_rules`.
+
+        If another course was already fulfilling the target rule, that course is
+        displaced: the target rule is moved from its ``rules`` to its
+        ``unselected_rules``.  When the displaced course has no remaining selected
+        rules its fulfillment is deleted entirely.
         """
         rule_id = request.data.get("rule_id")
         if rule_id is None:
@@ -263,6 +268,8 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
             raise ValidationError(
                 {"rule_id": f"Course {full_code} does not satisfy rule {target_rule.id}"}
             )
+
+        displaced = []
 
         with transaction.atomic():
             selected_rules = set(fulfillment.rules.all())
@@ -288,8 +295,39 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
             fulfillment.legal = check_legal(selected_rules, rule_to_degree)
             fulfillment.save()
 
-        serializer = self.get_serializer(fulfillment)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+            other_fulfillments = (
+                Fulfillment.objects.filter(
+                    degree_plan=degree_plan,
+                    rules=target_rule,
+                )
+                .exclude(full_code=full_code)
+                .prefetch_related("rules", "unselected_rules")
+            )
+
+            for other in other_fulfillments:
+                other_selected = set(other.rules.all())
+                other_unselected = set(other.unselected_rules.all())
+
+                other_selected.discard(target_rule)
+                other_unselected.add(target_rule)
+
+                if len(other_selected) == 0:
+                    displaced.append(
+                        {"full_code": other.full_code, "removed": True}
+                    )
+                    other.delete()
+                else:
+                    other.rules.set(other_selected)
+                    other.unselected_rules.set(other_unselected)
+                    other.legal = check_legal(other_selected, rule_to_degree)
+                    other.save()
+                    displaced.append(
+                        {"full_code": other.full_code, "removed": False}
+                    )
+
+        data = self.get_serializer(fulfillment).data
+        data["displaced"] = displaced
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class DockedCourseViewset(viewsets.ModelViewSet):
