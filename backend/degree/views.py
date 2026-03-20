@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.http import Http404
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import status, viewsets
@@ -183,7 +183,7 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated & InPDPBeta]
     serializer_class = FulfillmentSerializer
     http_method_names = ["get", "post", "head", "delete"]
-    queryset = Fulfillment.objects.all()
+    queryset = Fulfillment.objects.prefetch_related("rules", "unselected_rules")
     lookup_field = "full_code"
 
     def get_degree_plan_id(self):
@@ -232,6 +232,102 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
             return self.partial_update(request, *args, **kwargs)
         except Http404:
             return super().create(request, *args, **kwargs)
+
+    @action(detail=True, methods=["post"], url_path="switch-rule")
+    def switch_rule(self, request, *args, **kwargs):
+        """
+        Switch a fulfillment's selected rule to another rule in the same degree.
+
+        This promotes the requested rule from `unselected_rules` to `rules`, and
+        demotes any currently selected rules for that same degree into
+        `unselected_rules`.
+
+        If another course was already fulfilling the target rule, that course is
+        displaced: the target rule is moved from its ``rules`` to its
+        ``unselected_rules``.  When the displaced course has no remaining selected
+        rules its fulfillment is deleted entirely.
+        """
+        rule_id = request.data.get("rule_id")
+        if rule_id is None:
+            raise ValidationError({"rule_id": "This field is required."})
+
+        try:
+            target_rule = Rule.objects.get(id=int(rule_id))
+        except (ValueError, TypeError, Rule.DoesNotExist):
+            raise ValidationError({"rule_id": "Invalid rule_id."})
+
+        fulfillment = self.get_object()
+        degree_plan = fulfillment.degree_plan
+        full_code = fulfillment.full_code
+
+        _, rule_to_degree = map_rules_and_degrees(degree_plan)
+        if target_rule not in rule_to_degree:
+            raise ValidationError({"rule_id": "Rule does not belong to this degree plan."})
+
+        if not target_rule.check_belongs(full_code):
+            raise ValidationError(
+                {"rule_id": f"Course {full_code} does not satisfy rule {target_rule.id}"}
+            )
+
+        displaced = []
+
+        with transaction.atomic():
+            selected_rules = set(fulfillment.rules.all())
+            unselected_rules = set(fulfillment.unselected_rules.all())
+            if target_rule not in unselected_rules | selected_rules:
+                raise ValidationError(
+                    {"rule_id": "Rule is not available to switch for this fulfillment."}
+                )
+
+            target_degree = rule_to_degree[target_rule]
+            selected_same_degree = {
+                rule for rule in selected_rules if rule_to_degree.get(rule) == target_degree
+            }
+
+            demoted_rules = {rule for rule in selected_same_degree if rule != target_rule}
+            selected_rules.difference_update(demoted_rules)
+            selected_rules.add(target_rule)
+            unselected_rules.update(demoted_rules)
+            unselected_rules.discard(target_rule)
+
+            fulfillment.rules.set(selected_rules)
+            fulfillment.unselected_rules.set(unselected_rules)
+            fulfillment.legal = check_legal(selected_rules, rule_to_degree)
+            fulfillment.save()
+
+            other_fulfillments = (
+                Fulfillment.objects.filter(
+                    degree_plan=degree_plan,
+                    rules=target_rule,
+                )
+                .exclude(full_code=full_code)
+                .prefetch_related("rules", "unselected_rules")
+            )
+
+            for other in other_fulfillments:
+                other_selected = set(other.rules.all())
+                other_unselected = set(other.unselected_rules.all())
+
+                other_selected.discard(target_rule)
+                other_unselected.add(target_rule)
+
+                if len(other_selected) == 0:
+                    displaced.append(
+                        {"full_code": other.full_code, "removed": True}
+                    )
+                    other.delete()
+                else:
+                    other.rules.set(other_selected)
+                    other.unselected_rules.set(other_unselected)
+                    other.legal = check_legal(other_selected, rule_to_degree)
+                    other.save()
+                    displaced.append(
+                        {"full_code": other.full_code, "removed": False}
+                    )
+
+        data = self.get_serializer(fulfillment).data
+        data["displaced"] = displaced
+        return Response(data, status=status.HTTP_200_OK)
 
 
 class DockedCourseViewset(viewsets.ModelViewSet):
