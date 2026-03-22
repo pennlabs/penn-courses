@@ -49,9 +49,16 @@ const Box = styled.section<{ $length: number }>`
 
 const MapContainer = styled.div`
     height: 40%;
-    margin-right: 8px;
-    margin-left: 8px;
-    margin-top: 5px;
+    margin: 8px 8px 12px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+
+    .leaflet-control-attribution {
+        font-size: 9px;
+        opacity: 0.6;
+        padding: 1px 4px;
+    }
 `;
 
 const MapCourseItemcontainer = styled.div`

@@ -96,8 +96,9 @@ function InnerMap({ locations, center } :InnerMapProps) {
         <>
             <TileLayer
                 // @ts-ignore
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+                maxZoom={19}
             />
             {separateOverlappingPoints(locations).map(({ lat, lng, color }, i) => (
                 <Marker key={i} lat={lat} lng={lng} color={color}/>
