@@ -74,7 +74,7 @@ def allocate_rules(
             else get_priority_rule(rules.difference(satisfied_rules), full_code)
         )
         addl_selected_rules, addl_unselected_rules = assign_individual_rule(
-            full_code, chosen_rule, rules, satisfied_rules
+            full_code, chosen_rule, rules, satisfied_rules, rule_to_degree
         )
         selected_rules = selected_rules.union(addl_selected_rules)
         unselected_rules = unselected_rules.union(addl_unselected_rules)
@@ -85,7 +85,13 @@ def allocate_rules(
     return selected_rules, unselected_rules, legal
 
 
-def assign_individual_rule(full_code, chosen_rule, rules, satisfied_rules):
+def assign_individual_rule(
+    full_code,
+    chosen_rule,
+    rules,
+    satisfied_rules,
+    rule_to_degree,
+):
     """
     Given a course (full_code), a chosen rule, other rules, and already satisfied rules,
     returns new sets of optimized selected and unselected rules relating to this full_code.
@@ -133,9 +139,15 @@ def assign_individual_rule(full_code, chosen_rule, rules, satisfied_rules):
     # Consider all other rules within degree. If satisfies, add to unselected rules.
     # However, if full_code is listed and rule is currently unsatisfied, add
     # to satisfied rules (Intentionally should cause illegal double count)
+    existing_degrees = [rule_to_degree.get(r) for r in selected_rules]
     for rule in rules:
         if full_code in rule.q and rule not in satisfied_rules:
-            selected_rules.add(rule)
+            # check if this rule's degree is different from all degrees in selected_rules
+            rule_degree = rule_to_degree.get(rule)
+            if rule_degree not in existing_degrees:
+                selected_rules.add(rule)
+            else:
+                unselected_rules.add(rule)
         elif rule.check_belongs(full_code):
             unselected_rules.add(rule)
 
