@@ -100,7 +100,10 @@ interface CartSectionProps {
     end: number;
     room: string;
     hasLocationData: boolean;
+    lat?: number | null;
+    lng?: number | null;
     focusSection: (id: string) => void;
+    focusLocation?: (loc: { lat: number; lng: number }) => void;
 }
 
 function MapCourseItem({
@@ -110,7 +113,10 @@ function MapCourseItem({
     end,
     room,
     hasLocationData,
+    lat,
+    lng,
     focusSection,
+    focusLocation,
 }: CartSectionProps) {
     return (
         <CourseCartItem
@@ -122,6 +128,9 @@ function MapCourseItem({
             onClick={() => {
                 const split = id.split("-");
                 focusSection(`${split[0]}-${split[1]}`);
+                if (focusLocation && lat != null && lng != null) {
+                    focusLocation({ lat, lng });
+                }
             }}
         >
             <Dot $color={color} />

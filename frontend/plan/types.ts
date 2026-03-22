@@ -262,5 +262,9 @@ export type FilterType =
         lat: number;
         lng: number;
         color?: string;
+        id?: string;
+        start?: number;
+        end?: number;
+        room?: string;
     }
 

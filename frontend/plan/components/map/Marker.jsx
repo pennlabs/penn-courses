@@ -1,13 +1,22 @@
 import React from "react";
-import { Marker as MarkerLeaflet } from "react-leaflet";
+import { Marker as MarkerLeaflet, Popup } from "react-leaflet";
 import { divIcon } from "leaflet";
 
-const Marker = ({ color = "#878ED8", lat, lng }) => {
+const formatTime = (t) => {
+    if (t == null) return "";
+    let hour = Math.floor(t % 12);
+    const min = Math.round((t % 1) * 100);
+    if (hour === 0) hour = 12;
+    const minStr = min === 0 ? "00" : min.toString().padStart(2, "0");
+    return `${hour}:${minStr}`;
+};
+
+const Marker = ({ color = "#878ED8", lat, lng, id, start, end, room, onClick }) => {
     const icon = divIcon({
         html: `
                 <svg
-                  width="20"
-                  height="28"
+                  width="14"
+                  height="20"
                   viewBox="0 0 20 28"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
@@ -19,11 +28,40 @@ const Marker = ({ color = "#878ED8", lat, lng }) => {
                 </svg>
               `,
         className: "svg-icon",
-        iconSize: [24, 40],
-        iconAnchor: [12, 40],
+        iconSize: [18, 30],
+        iconAnchor: [9, 30],
     });
 
-    return <MarkerLeaflet position={[lat, lng]} icon={icon} />;
+    return (
+        <MarkerLeaflet
+            position={[lat, lng]}
+            icon={icon}
+            eventHandlers={
+                onClick
+                    ? {
+                          click: onClick,
+                      }
+                    : undefined
+            }
+        >
+            <Popup>
+                <div style={{ fontSize: "0.85rem", lineHeight: 1.25 }}>
+                    {id && (
+                        <div style={{ fontWeight: 700, marginBottom: 4 }}>
+                            {id.replace(/-/g, " ")}
+                        </div>
+                    )}
+                    {(start != null || end != null) && (
+                        <div style={{ marginBottom: 2 }}>
+                            {formatTime(start)}
+                            {end != null ? `-${formatTime(end)}` : ""}
+                        </div>
+                    )}
+                    {room && <div>{room}</div>}
+                </div>
+            </Popup>
+        </MarkerLeaflet>
+    );
 };
 
 export default React.memo(Marker);

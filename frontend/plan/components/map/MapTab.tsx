@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { connect } from "react-redux";
 import dynamic from "next/dynamic";
 import styled from "styled-components";
@@ -113,7 +113,12 @@ function MapTab({
     focusSection,
 }: MabTapProps) {
     const [selectedDay, setSelectedDay] = useState<Day>(Weekdays.M);
+    const [focusedLocation, setFocusedLocation] = useState<{ lat: number; lng: number } | null>(null);
     const meeetingsForDay = meetingsByDay[selectedDay];
+
+    useEffect(() => {
+        setFocusedLocation(null);
+    }, [selectedDay]);
 
     return (
         <Box $length={meeetingsForDay.length} id="cart">
@@ -135,6 +140,10 @@ function MapTab({
                                     lat: meeting.latitude,
                                     lng: meeting.longitude,
                                     color: meeting.color,
+                                    id: meeting.id,
+                                    start: meeting.start,
+                                    end: meeting.end,
+                                    room: meeting.room,
                                 }))
                                 .filter(
                                     (locData) =>
@@ -142,6 +151,8 @@ function MapTab({
                                         locData.lng != null
                                 )}
                             zoom={14}
+                            focusedLocation={focusedLocation}
+                            onMarkerClick={setFocusedLocation}
                         />
                     </MapContainer>
                     <MapCourseItemcontainer>
@@ -170,7 +181,10 @@ function MapTab({
                                             latitude != null &&
                                             longitude != null
                                         }
+                                        lat={latitude}
+                                        lng={longitude}
                                         focusSection={focusSection}
+                                        focusLocation={setFocusedLocation}
                                     />
                                 );
                             }

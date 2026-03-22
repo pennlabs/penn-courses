@@ -6,6 +6,8 @@ import { Location } from "../../types";
 interface MapProps {
     locations: Location[];
     zoom: number;
+    focusedLocation?: { lat: number; lng: number } | null;
+    onMarkerClick?: (loc: { lat: number; lng: number }) => void;
 }
 
 function toRadians(degrees: number): number {
@@ -82,15 +84,21 @@ function separateOverlappingPoints(points: Location[], offset = 0.0001) {
 interface InnerMapProps {
     locations: Location[];
     center: [number, number]
+    focusedLocation?: { lat: number; lng: number } | null;
+    onMarkerClick?: (loc: { lat: number; lng: number }) => void;
 }
 
 // need inner child component to use useMap hook to run on client 
-function InnerMap({ locations, center } :InnerMapProps) {
+function InnerMap({ locations, center, focusedLocation, onMarkerClick } :InnerMapProps) {
     const map = useMap();
 
     useEffect(() => {
-        map.flyTo({ lat: center[0], lng: center[1]})
-    }, [center[0], center[1]])     
+        if (focusedLocation) {
+            map.flyTo({ lat: focusedLocation.lat, lng: focusedLocation.lng });
+        } else {
+            map.flyTo({ lat: center[0], lng: center[1] });
+        }
+    }, [center[0], center[1], focusedLocation?.lat, focusedLocation?.lng]);     
 
     return (
         <>
@@ -100,15 +108,25 @@ function InnerMap({ locations, center } :InnerMapProps) {
                 url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
                 maxZoom={19}
             />
-            {separateOverlappingPoints(locations).map(({ lat, lng, color }, i) => (
-                <Marker key={i} lat={lat} lng={lng} color={color}/>
+            {separateOverlappingPoints(locations).map(({ lat, lng, color, id, start, end, room }, i) => (
+                <Marker
+                    key={i}
+                    lat={lat}
+                    lng={lng}
+                    color={color}
+                    id={id}
+                    start={start}
+                    end={end}
+                    room={room}
+                    onClick={onMarkerClick ? () => onMarkerClick({ lat, lng }) : undefined}
+                />
             ))}    
         </>
     )
 
 }
 
-function Map({ locations, zoom }: MapProps) {
+function Map({ locations, zoom, focusedLocation, onMarkerClick }: MapProps) {
     const center = getGeographicCenter(locations);
     
     return (
@@ -120,7 +138,12 @@ function Map({ locations, zoom }: MapProps) {
             scrollWheelZoom={true}
             style={{ height: "100%", width: "100%" }}
         >
-            <InnerMap locations={locations} center={center}/>
+            <InnerMap
+                locations={locations}
+                center={center}
+                focusedLocation={focusedLocation}
+                onMarkerClick={onMarkerClick}
+            />
         </MapContainer>
     );
 };
