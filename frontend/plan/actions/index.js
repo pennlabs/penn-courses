@@ -204,7 +204,7 @@ export const removeBreakFrontend = (breakId) => ({
 export const checkForDefaultSchedules = (schedulesFromBackend) => (
     dispatch
 ) => {
-    if (!schedulesFromBackend.find((acc, { name }) => acc || name === "cart")) {
+    if (!schedulesFromBackend.find(({ name }) => name === "cart")) {
         dispatch(createScheduleOnBackend("cart"));
     }
     // if the user doesn't have an initial schedule, create it
