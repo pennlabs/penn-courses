@@ -31,19 +31,35 @@ def precompute_pcr_views(verbose=False, is_new_data=False):
             Topic.objects.all().select_related("most_recent").order_by("most_recent__semester"),
             disable=not verbose,
         ):
-            # get topic id
-            course_id_list, course_code_list = zip(*topic.courses.values_list("id", "full_code"))
-            topic_id = ".".join([str(id) for id in sorted(course_id_list)])
-            total_reviews += 1
+            try:
+                # get topic id
+                course_id_list, course_code_list = zip(*topic.courses.values_list("id", "full_code"))
+                topic_id = ".".join([str(id) for id in sorted(course_id_list)])
+                total_reviews += 1
 
-            if topic_id in topic_id_to_response_obj:
-                # current topic id is already cached
-                valid_reviews_in_db += 1
-                response_obj = topic_id_to_response_obj[topic_id]
-                response_obj.expired = False
+                if topic_id in topic_id_to_response_obj:
+                    # current topic id is already cached
+                    valid_reviews_in_db += 1
+                    response_obj = topic_id_to_response_obj[topic_id]
+                    response_obj.expired = False
 
-                if is_new_data:
-                    cache_deletes.add(CACHE_PREFIX + topic_id)
+                    if is_new_data:
+                        cache_deletes.add(CACHE_PREFIX + topic_id)
+                        review_data = manual_course_reviews(
+                            topic.most_recent.full_code, topic.most_recent.semester
+                        )
+                        if not review_data:
+                            logging.info(
+                                f"Invalid review data for ("
+                                f"topic_id={topic_id},"
+                                f"course_code={course_code_list[0]},"
+                                f"semester={topic.most_recent.semester})"
+                            )
+                            continue
+                        response_obj.response = review_data
+                    objs_to_update.append(response_obj)
+                else:
+                    # current topic id is not cached
                     review_data = manual_course_reviews(
                         topic.most_recent.full_code, topic.most_recent.semester
                     )
@@ -55,30 +71,20 @@ def precompute_pcr_views(verbose=False, is_new_data=False):
                             f"semester={topic.most_recent.semester})"
                         )
                         continue
-                    response_obj.response = review_data
-                objs_to_update.append(response_obj)
-            else:
-                # current topic id is not cached
-                review_data = manual_course_reviews(
-                    topic.most_recent.full_code, topic.most_recent.semester
-                )
-                if not review_data:
-                    logging.info(
-                        f"Invalid review data for ("
-                        f"topic_id={topic_id},"
-                        f"course_code={course_code_list[0]},"
-                        f"semester={topic.most_recent.semester})"
-                    )
-                    continue
 
-                objs_to_insert.append(
-                    CachedReviewResponse(topic_id=topic_id, response=review_data, expired=False)
+                    objs_to_insert.append(
+                        CachedReviewResponse(topic_id=topic_id, response=review_data, expired=False)
+                    )
+                    for course_code in course_code_list:
+                        curr_topic_id = cache.get(CACHE_PREFIX + course_code)
+                        if curr_topic_id:
+                            cache_deletes.add(CACHE_PREFIX + curr_topic_id)
+                        cache_deletes.add(CACHE_PREFIX + course_code)
+            except:
+                logging.exception(
+                    f"Error processing topic with id {topic.id} and code {topic.most_recent.full_code}"
                 )
-                for course_code in course_code_list:
-                    curr_topic_id = cache.get(CACHE_PREFIX + course_code)
-                    if curr_topic_id:
-                        cache_deletes.add(CACHE_PREFIX + curr_topic_id)
-                    cache_deletes.add(CACHE_PREFIX + course_code)
+
 
         if verbose:
             print(
