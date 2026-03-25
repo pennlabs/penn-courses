@@ -33,7 +33,9 @@ def precompute_pcr_views(verbose=False, is_new_data=False):
         ):
             try:
                 # get topic id
-                course_id_list, course_code_list = zip(*topic.courses.values_list("id", "full_code"))
+                course_id_list, course_code_list = zip(
+                    *topic.courses.values_list("id", "full_code")
+                )
                 topic_id = ".".join([str(id) for id in sorted(course_id_list)])
                 total_reviews += 1
 
@@ -80,11 +82,11 @@ def precompute_pcr_views(verbose=False, is_new_data=False):
                         if curr_topic_id:
                             cache_deletes.add(CACHE_PREFIX + curr_topic_id)
                         cache_deletes.add(CACHE_PREFIX + course_code)
-            except:
+            except Exception:
                 logging.exception(
-                    f"Error processing topic with id {topic.id} and code {topic.most_recent.full_code}"
+                    f"""Error processing topic with id {topic.id}
+                        and code {topic.most_recent.full_code}"""
                 )
-
 
         if verbose:
             print(
