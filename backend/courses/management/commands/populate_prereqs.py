@@ -14,7 +14,6 @@ SCRAPE_OUTPUT_DIR = Path("courses/data/prereq_scrapes")
 COURSE_TOKEN_RE = re.compile(r"([A-Za-z]{2,4})\s*-?\s*(\d{3,4}[A-Za-z]?)|(\d{3,4}[A-Za-z]?)")
 HTML_TAG_RE = re.compile(r"<[^>]+>")
 
-
 def parse_prereq_pairs(prereq_text: str) -> set[tuple[str, str]]:
 	if not prereq_text:
 		return set()

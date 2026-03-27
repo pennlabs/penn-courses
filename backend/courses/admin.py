@@ -73,8 +73,18 @@ class NGSSRestrictionAdmin(admin.ModelAdmin):
 
 class CourseAdmin(admin.ModelAdmin):
     search_fields = ("full_code", "department__code", "code", "semester", "title")
-    autocomplete_fields = ("department", "primary_listing", "parent_course")
-    readonly_fields = ("topic", "crosslistings", "course_attributes")
+    autocomplete_fields = (
+        "department",
+        "primary_listing",
+        "parent_course",
+        "prerequisite_courses",
+    )
+    readonly_fields = (
+        "topic",
+        "crosslistings",
+        "course_attributes",
+        "dependent_courses_links",
+    )
     exclude = ("attributes",)
     list_filter = ("semester",)
     list_display = ("full_code", "semester", "title")
@@ -120,6 +130,21 @@ class CourseAdmin(admin.ModelAdmin):
                 for a in instance.attributes.all()
             ),
         )
+
+    def dependent_courses_links(self, instance):
+        return format_html_join(
+            "\n",
+            '<li><a href="{}">{}</li>',
+            (
+                (
+                    reverse("admin:courses_course_change", args=[c.id]),
+                    str(c),
+                )
+                for c in instance.dependent_courses.all()
+            ),
+        )
+
+    dependent_courses_links.short_description = "Dependent courses"
 
 
 class TopicAdmin(admin.ModelAdmin):
