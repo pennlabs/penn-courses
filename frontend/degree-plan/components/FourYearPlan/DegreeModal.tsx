@@ -7,11 +7,13 @@ import type {
   SchoolOption,
 } from "@/types";
 import React, { useState, useEffect } from "react";
-import { deleteFetcher, postFetcher, useSWRCrud } from "@/hooks/swrcrud";
+import { deleteFetcher, postFetcher, useSWRCrud, getCsrf, normalizeFinalSlash } from "@/hooks/swrcrud";
 import useSWR, { useSWRConfig } from "swr";
 import ModalContainer from "../common/ModalContainer";
 import Select from "react-select";
 import { schoolOptions } from "@/components/OnboardingPanels/SharedComponents";
+import { ErrorText } from "@/components/OnboardingPanels/SharedComponents";
+import { assertValueType } from "@/types";
 
 export type ModalKey =
   | "plan-create"
@@ -161,7 +163,6 @@ const ModalInterior = ({
 }: ModalInteriorProps) => {
   const {
     create: createDegreeplan,
-    update: updateDegreeplan,
     remove: deleteDegreeplan,
   } = useSWRCrud<DegreePlan>("/api/degree/degreeplans");
 
@@ -233,6 +234,85 @@ const ModalInterior = ({
     await mutate(`/api/degree/degreeplans/${degreeplanId}`); // use updated degree plan returned
   };
 
+
+
+  // Update degree plan handling error case where degree plan of same name already exists.
+  const [sameNameError, setSameNameError] = useState(false);
+
+  const updateDegreeplanWithErrorHandling = async (updatedData: Partial<DegreePlan>, id: number | string | null) => {
+    if (!id) return;
+
+    const key = normalizeFinalSlash(`/api/degree/degreeplans/${id}`);
+    const res = await fetch(key, {
+      credentials: "include",
+      mode: "same-origin",
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRFToken": getCsrf(),
+        "Accept": "application/json",
+      } as HeadersInit,
+      body: JSON.stringify({ name: name }),
+    });
+
+    if (res.ok) {
+      const updated = await res.json();
+
+      // Handle mutation
+      // Code adapted from swrcrud.ts
+      const idKey = "id" as keyof DegreePlan;
+
+      mutate(key, updated, {
+        optimisticData: (data?: DegreePlan) => {
+            const optimistic = {...data, ...updatedData} as DegreePlan;
+            assertValueType(optimistic, idKey, id)
+            optimistic.id = Number(id); // does this work?
+            return ({ id, ...data, ...updatedData} as DegreePlan)
+        },
+        revalidate: false,
+        throwOnError: false
+      })
+
+      const endpoint = "/api/degree/degreeplans";
+      mutate(endpoint, updated, {
+        optimisticData: (list?: Array<DegreePlan>) => {
+            if (!list) return [];
+            const index = list.findIndex((item: DegreePlan) => String(item[idKey]) === id);
+            if (index === -1) {
+                mutate(endpoint) // trigger revalidation
+                return list;
+            }
+            list.splice(index, 1, {...list[index], ...updatedData});
+            return list;
+        },
+        populateCache: (updated: DegreePlan, list?: Array<DegreePlan>) => {
+            if (!list) return [];
+            if (!updated) return list;
+            const index = list.findIndex((item: DegreePlan) => item[idKey] === updated[idKey]);
+            if (index === -1) {
+                console.warn("swrcrud: update: updated element not found in list view");
+                mutate(endpoint); // trigger revalidation
+                return list;
+            }
+            list.splice(index, 1, updated);
+            return list
+        },
+        revalidate: false,
+        throwOnError: false
+      })
+
+      close(); // only close if update is successful
+    } else if (res.status === 409) {
+      setSameNameError(true);
+
+      setTimeout(() => {
+        setSameNameError(false);
+      }, 5000);
+    } else {
+      throw new Error(await res.text());
+    }
+  };
+
   switch (modalKey) {
     case "plan-create":
       return (
@@ -273,18 +353,20 @@ const ModalInterior = ({
                 "id" in modalObject &&
                 "name" in modalObject
               ) {
-                updateDegreeplan({ name }, modalObject.id);
+                updateDegreeplanWithErrorHandling({name: name}, modalObject.id);
                 if (modalObject.id == activeDegreePlan?.id) {
                   let newNameDegPlan = modalObject;
                   newNameDegPlan.name = name;
                   setActiveDegreeplan(newNameDegPlan);
                 }
+              } else {
+                close();
               }
-              close();
             }}
           >
             Rename
           </ModalButton>
+          {sameNameError && <ErrorText style={{ color: "red" }}>A degree plan with this name already exists.</ErrorText>}
         </ModalInteriorWrapper>
       );
     case "plan-remove":
