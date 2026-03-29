@@ -1,4 +1,5 @@
 import logging
+import re
 
 from django.db.models import Q
 
@@ -52,16 +53,22 @@ def parse_coursearray(courseArray) -> Q:
                         sub_q = Q(attributes__code__in=filter["valueList"])
                     case "DWTERM":
                         assert len(filter["valueList"]) == 1
-                        semester, year = filter["valueList"][0].split()
-                        match semester:
-                            case "Spring":
-                                sub_q = Q(semester=f"{year}A")
-                            case "Summer":
-                                sub_q = Q(semester=f"{year}B")
-                            case "Fall":
-                                sub_q = Q(semester=f"{year}C")
-                            case _:
-                                raise LookupError(f"Unknown semester in withArray: {semester}")
+                        contents = filter["valueList"][0].split()
+                        if len(contents) == 2:
+                            semester, year = contents
+                            match semester:
+                                case "Spring":
+                                    sub_q = Q(semester=f"{year}A")
+                                case "Summer":
+                                    sub_q = Q(semester=f"{year}B")
+                                case "Fall":
+                                    sub_q = Q(semester=f"{year}C")
+                                case _:
+                                    raise LookupError(f"Unknown semester in withArray: {semester}")
+                        elif len(contents) == 1 and bool(re.match(r"^\d{4}[ABC]$", contents[0])):
+                            sub_q = Q(semester=contents)
+                        else:
+                            logging.warn(f"Unexpected format of valueList: {filter['valueList']}")
                     case "DWCOLLEGE":
                         assert len(filter["valueList"]) == 1
                         match filter["valueList"][0]:
@@ -232,7 +239,16 @@ def parse_rulearray(
                             f"Unknown boolean evaluation in ifStmt: \
                                 {rule_json['booleanEvaluation']}"
                         )
-                assert evaluation is None or evaluation == degreeworks_eval
+
+                if evaluation is not None and evaluation != degreeworks_eval:
+                    logging.warn(
+                        f"""Evaluation is {evaluation} but degreeworks_eval
+                        is {degreeworks_eval} for `{rule_req}`"""
+                    )
+
+                assert (
+                    evaluation is None or degreeworks_eval is None or evaluation == degreeworks_eval
+                )
 
                 if evaluation is None:
                     logging.warn(f"Evaluation is unknown for `{rule_req}`. " "Defaulting to False.")
@@ -246,12 +262,15 @@ def parse_rulearray(
                         parent=parent,
                     )
                 elif "elsePart" in rule_req:  # assume unknown evaluation goes to else
-                    parse_rulearray(
-                        rule_req["elsePart"]["ruleArray"],
-                        degree,
-                        rules,
-                        parent=parent,
-                    )
+                    if "ruleArray" in rule_req["elsePart"]:
+                        parse_rulearray(
+                            rule_req["elsePart"]["ruleArray"],
+                            degree,
+                            rules,
+                            parent=parent,
+                        )
+                    else:
+                        logging.warn(f"No ruleArray in elsePart: {rule_req}")
             case "Subset":
                 # assert rule_req == {}, rule_req # TODO: figure out why this fails
                 if "ruleArray" in rule_json:
