@@ -2,6 +2,8 @@ import React from "react";
 import { Marker as MarkerLeaflet, Popup } from "react-leaflet";
 import { divIcon } from "leaflet";
 
+const DEFAULT_MARKER_COLOR = "#878ED8";
+
 const formatTime = (t) => {
     if (t == null) return "";
     let hour = Math.floor(t % 12);
@@ -11,7 +13,7 @@ const formatTime = (t) => {
     return `${hour}:${minStr}`;
 };
 
-const Marker = ({ color = "#878ED8", lat, lng, id, start, end, room, onClick }) => {
+const Marker = ({ color = DEFAULT_MARKER_COLOR, lat, lng, id, start, end, room, onClick }) => {
     const icon = divIcon({
         html: `
                 <svg

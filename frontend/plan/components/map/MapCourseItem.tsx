@@ -126,8 +126,8 @@ function MapCourseItem({
             $isMobile={isMobile}
             $hasLocationData={hasLocationData}
             onClick={() => {
-                const split = id.split("-");
-                focusSection(`${split[0]}-${split[1]}`);
+                const [courseDepartment, courseCode] = id.split("-");
+                focusSection(`${courseDepartment}-${courseCode}`);
                 if (focusLocation && lat != null && lng != null) {
                     focusLocation({ lat, lng });
                 }

@@ -93,11 +93,9 @@ function InnerMap({ locations, center, focusedLocation, onMarkerClick } :InnerMa
     const map = useMap();
 
     useEffect(() => {
-        if (focusedLocation) {
-            map.flyTo({ lat: focusedLocation.lat, lng: focusedLocation.lng });
-        } else {
-            map.flyTo({ lat: center[0], lng: center[1] });
-        }
+        if (!map) return;
+        const target = focusedLocation ?? { lat: center[0], lng: center[1] };
+        map.flyTo(target);
     }, [center[0], center[1], focusedLocation?.lat, focusedLocation?.lng]);     
 
     return (
