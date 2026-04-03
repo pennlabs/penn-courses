@@ -335,6 +335,20 @@ def degree_rules_filter(queryset, rule_ids):
     return queryset.filter(query)
 
 
+def department_filter(queryset, departments):
+    """
+    Filters courses by department code(s) with OR logic.
+    :param queryset: Course queryset
+    :param departments: Comma-separated department codes (e.g. "CIS,NETS,ESE")
+    """
+    if not departments:
+        return queryset
+    codes = [code.strip().upper() for code in departments.split(",") if code.strip()]
+    if not codes:
+        return queryset
+    return queryset.filter(department__code__in=codes)
+
+
 class CourseSearchFilterBackend(filters.BaseFilterBackend):
     def filter_queryset(self, request, queryset, view):
         filters = {
@@ -347,6 +361,7 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
             "difficulty": bound_filter("difficulty"),
             "is_open": is_open_filter,
             "rule_ids": degree_rules_filter,
+            "departments": department_filter,
         }
         for field, filter_func in filters.items():
             param = request.query_params.get(field)
@@ -367,7 +382,19 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
         if len(meeting_query) > 0:
             queryset = meeting_filter(queryset, meeting_query)
 
-        return queryset.distinct("full_code")  # TODO: THIS COULD BE A BREAKING CHANGE FOR PCX
+        queryset = queryset.distinct("full_code")  # TODO: THIS COULD BE A BREAKING CHANGE FOR PCX
+
+        # Apply index-based pagination (indices parameter, e.g. "11-20")
+        indices_param = request.query_params.get("indices")
+        if indices_param:
+            parts = indices_param.split("-")
+            if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+                start = int(parts[0])
+                end = int(parts[1])
+                if start >= 0 and end >= start:
+                    queryset = queryset[start:end + 1]
+
+        return queryset
 
     def get_schema_operation_parameters(self, view):
         return [
@@ -526,6 +553,31 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                 ),
                 "schema": {"type": "integer"},
                 "example": "242",
+            },
+            {
+                "name": "departments",
+                "required": False,
+                "in": "query",
+                "description": (
+                    "Filter courses by department code(s). Accepts a comma-separated "
+                    "list of department codes with OR logic (i.e. a course is included "
+                    "if it belongs to any of the specified departments)."
+                ),
+                "schema": {"type": "string"},
+                "example": "CIS,NETS,ESE",
+            },
+            {
+                "name": "indices",
+                "required": False,
+                "in": "query",
+                "description": (
+                    "Return only the courses at the specified index range from the "
+                    "sorted results. The range should be specified as `start-end` "
+                    "(0-indexed, inclusive on both ends). Useful for pagination / "
+                    "chunking large result sets."
+                ),
+                "schema": {"type": "string"},
+                "example": "0-19",
             },
             {
                 "name": "is_open",
