@@ -202,7 +202,6 @@ export const ScoreTable = props => {
         {...props}
         showPagination={false}
         resizable={true}
-        style={{ maxHeight: 400 }}
         getTrProps={getTrProps}
         minRows={0}
         pageSize={data.length}

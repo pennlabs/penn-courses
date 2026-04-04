@@ -8,8 +8,8 @@ import DetailsBox from "../components/DetailsBox";
 import SearchBar from "../components/SearchBar";
 import Footer from "../components/Footer";
 import { ErrorBox } from "../components/common";
-import { apiReviewData, apiLive, queryKeys } from "../utils/api";
-import { queryClient } from "../utils/queryClient";
+import { apiReviewData, apiLive } from "../utils/api";
+import Header from "../components/Header";
 
 /**
  * Represents a course, instructor, or department review page.
@@ -260,7 +260,8 @@ export class ReviewPage extends Component {
 
     return (
       <div>
-        <Navbar />
+        {/* <Navbar /> */}
+        <Header />
         {this.state.data ? (
           <>
             <div id="content" className="row">

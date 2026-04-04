@@ -8,15 +8,6 @@ import { getLogoutUrl } from "../utils/api";
 const Footer = ({ style }) => (
   <div style={style} id="footer">
     <div id="footer-inner">
-      <Link to="/about">About</Link> | <Link to="/faq">FAQs</Link> |{" "}
-      <a
-        target="_blank"
-        rel="noopener noreferrer"
-        href="https://airtable.com/appFRa4NQvNMEbWsA/shrCCsGC2BjUif5Wx"
-      >
-        Feedback
-      </a>{" "}
-      | <a href={getLogoutUrl()}>Logout</a>
       <p id="copyright">
         Made with <i style={{ color: "#F56F71" }} className="fa fa-heart" /> by{" "}
         <a href="https://pennlabs.org">
