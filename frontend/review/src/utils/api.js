@@ -14,7 +14,7 @@ function apiFetch(url) {
 
 export function redirectForAuth() {
   window.location.href = `${API_DOMAIN}/accounts/login/?next=${encodeURIComponent(
-    window.location.pathname
+    window.location.pathname + window.location.search
   )}`;
 }
 
@@ -159,5 +159,88 @@ export function apiFetchPCADemandChartData(course, semester) {
     `${API_DOMAIN}/api/review/course_plots/${encodeURIComponent(
       course
     )}?token=${encodeURIComponent(API_TOKEN)}` + getSemesterQParam(semester)
+  );
+}
+
+//cache attributes data in browser memory
+let uncompressedAttributesData = null;
+
+export function apiAttributes() {
+  // Instant return if fetched already in this session
+  if (uncompressedAttributesData) {
+    return Promise.resolve(uncompressedAttributesData);
+  }
+
+  const key = "meta-pcr-attributes";
+  const cached_attributes_str = localStorage.getItem(key);
+  
+  // Helper function to format the data so we don't repeat code in the frontend
+  const processAttributes = (data) => {
+    return data.map(attr => attr.code).sort((a, b) => a.localeCompare(b));
+  };
+
+  if (cached_attributes_str) {
+    // We have cached data
+    let cached_attributes;
+    try {
+      cached_attributes = JSON.parse(cached_attributes_str);
+    } catch (e) {
+      localStorage.removeItem(key);
+    }
+    if (cached_attributes) {
+      // Use a background fetch to update the cache silently
+      apiFetch(`${API_DOMAIN}/api/base/attributes/`)
+        .then(data => {
+          const processedCodes = processAttributes(data);
+          uncompressedAttributesData = processedCodes; // Update memory
+          try {
+            localStorage.setItem(key, JSON.stringify(processedCodes)); // Update storage
+          } catch (e) {
+            localStorage.removeItem(key);
+          }
+        })
+        .catch(console.error); 
+
+      // Instantly return the old cache
+      uncompressedAttributesData = cached_attributes;
+      return Promise.resolve(cached_attributes);
+    }
+  }
+
+  // We have no cache, so set everything up
+  return new Promise((resolve, reject) => {
+    apiFetch(`${API_DOMAIN}/api/base/attributes/`)
+      .then(data => {
+        const processedCodes = processAttributes(data);
+        uncompressedAttributesData = processedCodes; // Set memory
+        
+        try {
+          localStorage.setItem(key, JSON.stringify(processedCodes)); // Set storage
+        } catch (e) {
+          localStorage.removeItem(key);
+        }
+        
+        resolve(processedCodes);
+      })
+      .catch(reject);
+  });
+}
+
+export function apiCourseSearch(semester, attributes, difficulty, course_quality, instructor_quality, days, time) {
+  console.log(`${API_DOMAIN}/api/base/${encodeURIComponent(semester)}/courses/?` +
+      (attributes ? `attributes=${encodeURIComponent(attributes)}&` : "") +
+      (difficulty ? `difficulty=${encodeURIComponent(difficulty)}&` : "") +
+      (course_quality ? `course_quality=${encodeURIComponent(course_quality)}&` : "") +
+      (instructor_quality ? `instructor_quality=${encodeURIComponent(instructor_quality)}&` : "") +
+      (days ? `days=${encodeURIComponent(days)}&` : "") +
+      (time ? `time=${encodeURIComponent(time)}` : ""))
+  return apiFetch(
+    `${API_DOMAIN}/api/base/${encodeURIComponent(semester)}/courses/?` +
+      (attributes ? `attributes=${encodeURIComponent(attributes)}&` : "") +
+      (difficulty ? `difficulty=${encodeURIComponent(difficulty)}&` : "") +
+      (course_quality ? `course_quality=${encodeURIComponent(course_quality)}&` : "") +
+      (instructor_quality ? `instructor_quality=${encodeURIComponent(instructor_quality)}&` : "") +
+      (days ? `days=${encodeURIComponent(days)}&` : "") +
+      (time ? `time=${encodeURIComponent(time)}` : "")
   );
 }

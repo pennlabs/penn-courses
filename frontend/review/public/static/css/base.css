@@ -943,3 +943,146 @@ hr {
     opacity: 1 !important;
     box-shadow: rgba(10, 10, 10, 0.1) 0px 2px 3px;
 }
+
+/* REDESIGN BROWSE PAGE */
+
+@font-face {
+  font-family: 'SFPro'; 
+  src: url('frontend/review/public/static/fonts/SF-Pro-Display-Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'SFPro-Bold';
+  src: url('frontend/review/public/static/fonts/SF-Pro-Display-Bold.otf') format('opentype');
+  font-weight: bold;
+  font-style: normal;
+}
+
+.new-search-bar {
+    min-width: 0;
+    width: 100%;
+}
+
+.select-box-container:hover {
+    background: #E1E4E8;
+}
+
+.SelectSearchBarContainer {
+  /* Enables scrolling */
+  overflow: auto; 
+  
+  /* Firefox: Sets thumb color to a gray pill, and track color to transparent */
+  scrollbar-width: thin;
+  scrollbar-color: #a0aec0 transparent; 
+}
+
+/* WebKit browsers (Chrome, Safari, Edge) */
+
+/* 1. Define the overall scrollbar size */
+.no-scrollbar::-webkit-scrollbar {
+  width: 8px;  /* For vertical scrollbar */
+  height: 8px; /* For horizontal scrollbar */
+}
+
+/* 2. Make the track completely transparent */
+.no-scrollbar::-webkit-scrollbar-track {
+  background: transparent; 
+}
+
+/* 3. Style the "pill" (the thumb) */
+.no-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #a0aec0; /* Color of your pill */
+  border-radius: 20px;       /* Gives it the rounded "pill" shape */
+}
+
+/* Optional: Make the pill slightly darker when hovered */
+.no-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #718096; 
+}
+
+.course-results-table {
+  border: none !important;
+  font-family: 'SFPro', sans-serif;
+}
+
+.course-results-table .rt-tr .rt-th,
+.course-results-table .rt-tr .rt-td {
+  border-right: none !important;
+  border-bottom: none !important;
+}
+
+/* Target the header cells */
+.course-results-table .rt-thead .rt-th {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    background-color: #F7F9FB;
+    color: #3E3E40;
+    font-weight: 700;
+    padding: 12px 17px !important;
+}
+
+/* Target the data cells */
+.course-results-table .rt-tbody .rt-td {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 12px 16px;
+    color: #3E3E40;
+    background-color: #FFFFFF;
+    font-family: 'SFPro', sans-serif;
+    font-weight: 300;
+    font-size: 15px;
+}
+
+.course-results-table .rt-tr:not(.ignore-select):hover {
+    cursor: default !important;
+}
+
+.course-results-table-container #course-table_info {
+    display: none;
+}
+
+.course-code-cell {
+    display: flex; 
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    color: #1995E7;
+    cursor: pointer;
+}
+
+.course-code-cell:hover {
+    color: #1565a8;
+}
+
+/* selected state */
+.course-results-btn-primary {
+    background-color: #6D6F71; /* Dark gray background */
+    color: white; /* White text */
+    border: 1px solid #6D6F71;
+}
+
+.course-results-btn-primary:hover {
+    background-color: #5c5e61; /* Slightly darker on hover */
+    border-color: #5c5e61;
+}
+
+/* unselected state */
+.course-results-btn-secondary {
+    background-color: white; /* White background */
+    color: #6D6F71; /* Dark gray text */
+    border: 1px solid #6D6F71; /* Dark gray border */
+}
+
+.course-results-btn-secondary:hover {
+    background-color: #f8f9fa; /* Very light gray on hover */
+    color: #5c5e61;
+    border-color: #5c5e61;
+}
+
+.course-results-btn-image {
+    filter: grayscale(100%);
+}
