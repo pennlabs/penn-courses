@@ -20,9 +20,11 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/l
 const OnboardingPage = ({
   setShowOnboardingModal,
   setActiveDegreeplan,
+  canExit = false,
 }: {
   setShowOnboardingModal: (arg0: boolean) => void;
   setActiveDegreeplan: (arg0: DegreePlan) => void;
+  canExit?: boolean;
 }) => {
   const [startingYear, setStartingYear] = useState<{
     label: any;
@@ -100,6 +102,12 @@ const OnboardingPage = ({
     setGraduationYear(null);
   };
 
+  const exitOnboarding = () => {
+    resetParser();
+    setCurrentPage(0);
+    setShowOnboardingModal(false);
+  };
+
   if (currentPage === 0)
     return (
       <WelcomeLayout
@@ -112,6 +120,8 @@ const OnboardingPage = ({
         transcriptDetected={transcriptDetected}
         startingYear={startingYear}
         setCurrentPage={setCurrentPage}
+        canExit={canExit}
+        onExit={exitOnboarding}
       />
     );
 
@@ -125,6 +135,8 @@ const OnboardingPage = ({
       inputtedSchools={schools}
       inputtedMajors={majors}
       setShowOnboardingModal={setShowOnboardingModal}
+      canExit={canExit}
+      onExit={exitOnboarding}
     />
   );
 };
