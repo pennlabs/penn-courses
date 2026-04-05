@@ -27,13 +27,12 @@ const ContentView = styled.div`
     flex-direction: row;
     gap: 30px;
     width: 100%;
-    height: fit-content;
     flex: 1;
+    min-height: 0;
 
     @media (max-width: 900px) {
         flex-direction: column;
         padding: 0 20px;
-        height: auto;
         overflow-y: auto;
     }
 `;
@@ -47,15 +46,14 @@ const SidebarWrapper = styled.div`
 `;
 
 const CourseResultsWrapper = styled.div`
-    flex-grow: 0;
+    flex: 1;
     width: calc(100vw - 330px - 80px - 30px); /* Full width minus sidebar, padding, and flex gap */
-
-    display: flex; 
+    min-height: 0;
+    display: flex;
     flex-direction: column;
-    height: fit-content;
 
     @media (max-width: 900px) {
-        width: 100%; 
+        width: 100%;
     }
 `;
 
