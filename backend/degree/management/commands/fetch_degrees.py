@@ -88,24 +88,28 @@ class Command(BaseCommand):
 
         for year in range(since_year, to_year + 1):
             for program in client.get_programs(year=year):
-                    if program not in program_code_to_name:
-                        continue
-                    for degree in client.degrees_of(program, year=year):
-                        try:
-                            with transaction.atomic():
-                                Degree.objects.filter(
-                                    program=degree.program,
-                                    degree=degree.degree + "_MANT" if "_MANT" in degree.program else degree.degree,
-                                    major=degree.major,
-                                    concentration=degree.concentration,
-                                    year=degree.year,
-                                ).delete()
-                                degree.save()
-                                if kwargs["verbosity"]:
-                                    print(f"Saving degree {degree}...")
-                                parse_and_save_degreeworks(client.audit(degree), degree)
-                        except Exception as e:
-                            print(e)
+                if program not in program_code_to_name:
+                    continue
+                for degree in client.degrees_of(program, year=year):
+                    try:
+                        with transaction.atomic():
+                            Degree.objects.filter(
+                                program=degree.program,
+                                degree=(
+                                    degree.degree + "_MANT"
+                                    if "_MANT" in degree.program
+                                    else degree.degree
+                                ),
+                                major=degree.major,
+                                concentration=degree.concentration,
+                                year=degree.year,
+                            ).delete()
+                            degree.save()
+                            if kwargs["verbosity"]:
+                                print(f"Saving degree {degree}...")
+                            parse_and_save_degreeworks(client.audit(degree), degree)
+                    except Exception as e:
+                        print(e)
 
         if kwargs["deduplicate_rules"]:
             if kwargs["verbosity"]:

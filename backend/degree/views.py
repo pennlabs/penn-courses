@@ -91,7 +91,7 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         if DegreePlan.objects.filter(name=name, person=self.request.user).exists():
             return Response(
                 {"warning": f"A degree plan with name {name} already exists."},
-                status=status.HTTP_409_CONFLICT
+                status=status.HTTP_409_CONFLICT,
             )
         new_degree_plan = DegreePlan(name=name, person=self.request.user)
         new_degree_plan.save()
@@ -312,18 +312,14 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
                 other_unselected.add(target_rule)
 
                 if len(other_selected) == 0:
-                    displaced.append(
-                        {"full_code": other.full_code, "removed": True}
-                    )
+                    displaced.append({"full_code": other.full_code, "removed": True})
                     other.delete()
                 else:
                     other.rules.set(other_selected)
                     other.unselected_rules.set(other_unselected)
                     other.legal = check_legal(other_selected, rule_to_degree)
                     other.save()
-                    displaced.append(
-                        {"full_code": other.full_code, "removed": False}
-                    )
+                    displaced.append({"full_code": other.full_code, "removed": False})
 
         data = self.get_serializer(fulfillment).data
         data["displaced"] = displaced
