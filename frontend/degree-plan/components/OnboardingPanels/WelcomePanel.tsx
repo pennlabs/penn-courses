@@ -1,4 +1,4 @@
-import { ArrowRightIcon, UploadIcon } from "@radix-ui/react-icons";
+import { ArrowLeftIcon, ArrowRightIcon, UploadIcon } from "@radix-ui/react-icons";
 import { Dispatch, MutableRefObject, SetStateAction } from "react";
 import { Document, Page } from "react-pdf";
 import {
@@ -21,6 +21,8 @@ type WelcomeLayoutProps = {
   transcriptDetected: MutableRefObject<boolean | null>;
   startingYear: { label: any; value: number } | null;
   setCurrentPage: Dispatch<SetStateAction<number>>;
+  canExit?: boolean;
+  onExit?: () => void;
 };
 
 export default function WelcomeLayout({
@@ -33,10 +35,25 @@ export default function WelcomeLayout({
   transcriptDetected,
   startingYear,
   setCurrentPage,
+  canExit = false,
+  onExit,
 }: WelcomeLayoutProps) {
   return (
     <CenteredFlexContainer>
       <ChooseContainer $maxWidth="90%" $minWidth="90%">
+        {canExit && onExit && (
+          <TextButton
+            onClick={onExit}
+            style={{
+              position: "absolute",
+              left: "5%",
+              top: "3%",
+            }}
+          >
+            <ArrowLeftIcon />
+            <p>Back</p>
+          </TextButton>
+        )}
         <div style={{ display: "none" }}>
           <Document
             file={PDF}
