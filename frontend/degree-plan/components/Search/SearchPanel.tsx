@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useEffect } from "react";
-import useSWR from "swr";
+import React, { createContext, useContext, useEffect, useCallback } from "react";
+import useSWRInfinite from "swr/infinite";
 import ResultsList from "./ResultsList";
 import styled from "@emotion/styled";
 import { DegreePlan, Rule, Fulfillment } from "@/types";
@@ -153,9 +153,16 @@ export const useDebounce = (value: any, delay: number) => {
   return debouncedValue;
 }
 
-const buildSearchKey = (ruleId: Rule["id"] | null, query: string): string | null => {
-    return query.length >= 3 || ruleId ? `api/base/all/search/courses?search=${query}${ruleId ? `&rule_ids=${ruleId}` : ""}` : null
-}
+const PAGE_SIZE = 50;
+
+const buildSearchKey = (ruleId: Rule["id"] | null, query: string) =>
+    (pageIndex: number, previousPageData: any): string | null => {
+        if (!(query.length >= 3 || ruleId)) return null;
+        // Stop fetching if we got fewer results than a full page
+        if (previousPageData && !previousPageData.next) return null;
+        const page = pageIndex + 1; // DRF pages are 1-indexed
+        return `api/base/all/search/courses?search=${query}${ruleId ? `&rule_ids=${ruleId}` : ""}&page=${page}&page_size=${PAGE_SIZE}`;
+    }
 
 interface SearchResultsProps {
     ruleId: Rule["id"] | null,
@@ -166,16 +173,33 @@ interface SearchResultsProps {
 const SearchResults = ({ ruleId, query, activeDegreeplanId, fulfillments }: SearchResultsProps) => {
     const DISABLE_SEARCH = false
     const debouncedQuery = useDebounce(query, 400)
-    const { data: courses = [], isLoading: isLoadingCourses, error } = useSWR(DISABLE_SEARCH ? null : buildSearchKey(ruleId, debouncedQuery)); 
+    const { data, size, setSize, isLoading: isLoadingCourses, isValidating } = useSWRInfinite(
+        DISABLE_SEARCH ? () => null : buildSearchKey(ruleId, debouncedQuery),
+        { revalidateFirstPage: false }
+    );
+
+    const courses = data ? data.flatMap((page) => page.results ?? []) : [];
+    const isLoadingMore = size > 1 && isValidating && data && typeof data[size - 1] === "undefined";
+    const hasMore = data ? !!data[data.length - 1]?.next : false;
+
+    const loadMore = useCallback(() => {
+        if (!isValidating && hasMore) {
+            setSize((s) => s + 1);
+        }
+    }, [isValidating, hasMore, setSize]);
+
     return (
         <>
             <SearchPanelResult>
                 <ResultsList
-                activeDegreeplanId={activeDegreeplanId} 
-                ruleId={ruleId} 
+                activeDegreeplanId={activeDegreeplanId}
+                ruleId={ruleId}
                 courses={courses}
                 fulfillments={fulfillments}
                 isLoading={isLoadingCourses}
+                isLoadingMore={!!isLoadingMore}
+                hasMore={hasMore}
+                loadMore={loadMore}
                 />
             </SearchPanelResult>
         </>

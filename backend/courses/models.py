@@ -131,8 +131,8 @@ def course_reviews(queryset, prefix=""):
 def cache_or_compute_course_reviews(queryset):
     """
     A helper function which takes a Course queryset and annotates it with review averages, either by
-    using cached precompute fields if the annotations have expired or by computing the averages
-    from the reviews if they haven't.
+    using cached precompute fields if the annotations have not expired or by computing the averages
+    from the reviews if they have expired or are missing.
     """
     if queryset.filter(annotation_expiration__lt=timezone.now()).exists():
         return course_reviews(queryset).order_by("full_code", "semester")
@@ -602,7 +602,8 @@ class NGSSRestriction(models.Model):
 def cache_or_compute_section_reviews(queryset):
     """
     A helper function which takes a Section queryset and annotates it with review averages, either
-    by using cached precompute fields if the annotations have expired or by computing the averages
+    by using cached precompute fields if the annotations have not expired or by computing the
+    averages if they have expired or are missing.
     """
     if queryset.filter(annotation_expiration__lt=timezone.now()).exists():
         return sections_with_reviews(queryset).order_by("full_code")

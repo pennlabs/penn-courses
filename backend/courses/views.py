@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import generics, status
 from rest_framework.exceptions import ValidationError
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -147,6 +148,21 @@ class SectionDetail(generics.RetrieveAPIView, BaseCourseMixin):
         return "course__semester"
 
 
+class OptionalPageNumberPagination(PageNumberPagination):
+    """
+    Pagination that only activates when `page` or `page_size` is present in the request.
+    When neither is provided, the full result set is returned unpaginated.
+    """
+
+    page_size_query_param = "page_size"
+    page_size = 100
+
+    def paginate_queryset(self, queryset, request, view=None):
+        if "page" not in request.query_params and "page_size" not in request.query_params:
+            return None
+        return super().paginate_queryset(queryset, request, view)
+
+
 class CourseList(generics.ListAPIView, BaseCourseMixin):
     """
     Retrieve a list of (all) courses for the provided semester.
@@ -244,6 +260,7 @@ class CourseListSearch(CourseList):
 
     filter_backends = [TypedCourseSearchBackend, CourseSearchFilterBackend]
     search_fields = ("full_code", "title", "sections__instructors__name")
+    pagination_class = OptionalPageNumberPagination
 
 
 class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
