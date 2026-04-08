@@ -21,6 +21,9 @@ program_choices = [
     ("AU_BA", "College BA"),
     ("WU_BS", "Wharton BS"),
     ("NU_BSN", "Nursing BSN"),
+    ("EU_BAS_MANT", "M&T BAS (SEAS)"),
+    ("EU_BSE_MANT", "M&T BSE (SEAS)"),
+    ("WU_BS_MANT", "M&T BS (Wharton)"),
 ]
 
 program_code_to_name = dict(program_choices)
@@ -41,7 +44,7 @@ class Degree(models.Model):
         ),
     )
     degree = models.CharField(
-        max_length=4,
+        max_length=10,
         help_text=dedent(
             """
             The degree code for this degree, e.g., BSE
