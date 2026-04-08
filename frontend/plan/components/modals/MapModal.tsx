@@ -20,6 +20,15 @@ const MapModal = ({ lat, lng, room, title }: MapModalProps) => {
         height: 100%;
         width: 70%;
         margin-right: 10px;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+
+        .leaflet-control-attribution {
+            font-size: 9px;
+            opacity: 0.6;
+            padding: 1px 4px;
+        }
     `;
 
     const MapInfoContainer = styled.ul`
