@@ -264,7 +264,8 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
         if target_rule not in rule_to_degree:
             raise ValidationError({"rule_id": "Rule does not belong to this degree plan."})
 
-        if not target_rule.check_belongs(full_code) and target_rule not in fulfillment.overrides.all():
+        is_overridden = target_rule in fulfillment.overrides.all()
+        if not target_rule.check_belongs(full_code) and not is_overridden:
             raise ValidationError(
                 {"rule_id": f"Course {full_code} does not satisfy rule {target_rule.id}"}
             )
