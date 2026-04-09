@@ -54,10 +54,16 @@ dependencies = [
     "asyncio==3.4.3",
     "aiohttp==3.10.10",
     "openai>=2.6.1",
+    "python-dotenv>=1.1.0",
+    "pgvector>=0.4.2",
 ]
 
 [tool.black]
 line-length = 100
+preview = true
+
+[tool.flake8]
+max-line-length = 100
 
 [dependency-groups]
 dev = [

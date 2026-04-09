@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
+from dotenv import load_dotenv
 
 import boto3
 import dj_database_url
@@ -241,3 +242,5 @@ PATH_REGISTRATION_SCHEDULE_NAME = "Path Registration"
 
 # Manually Set Cache Prefix
 CACHE_PREFIX = "MANUAL_CACHE_"
+
+load_dotenv()

@@ -3,14 +3,15 @@ from django.views.decorators.cache import cache_page
 
 from review.views import (
     autocomplete,
+    chat_active,
+    chat_history,
+    chat_message,
+    chat_start,
     course_plots,
     course_reviews,
     department_reviews,
     instructor_for_course_reviews,
     instructor_reviews,
-    chat_start,
-    chat_message,
-    chat_history,
 )
 
 
@@ -63,5 +64,10 @@ urlpatterns = [
         "chat/<slug:chat_id>/history",
         chat_history,
         name="chat-history",
+    ),
+    path(
+        "chat/active",
+        chat_active,
+        name="chat-active",
     ),
 ]

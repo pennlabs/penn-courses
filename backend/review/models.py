@@ -1,5 +1,6 @@
 from django.db import models
 from django.db.models import Avg, Q
+from pgvector.django import VectorField
 
 
 class Review(models.Model):
@@ -132,3 +133,17 @@ class ReviewBit(models.Model):
 
     def __str__(self):
         return f"#{self.review.pk} - {self.field}: {self.average}"
+
+
+class CourseDocument(models.Model):
+    course_code = models.CharField(max_length=50, db_index=True)
+    text = models.TextField()
+    url = models.CharField(max_length=255, blank=True, null=True)
+
+    embedding = VectorField(dimensions=1536, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "course_documents"

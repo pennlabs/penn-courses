@@ -8,9 +8,7 @@ from courses.models import Section
 
 
 class Break(models.Model):
-    """
-    Holds break objects created by users on PCP.
-    """
+    """Holds break objects created by users on PCP."""
 
     person = models.ForeignKey(
         get_user_model(),
@@ -35,9 +33,7 @@ class Break(models.Model):
     name = models.CharField(
         max_length=255,
         help_text=dedent(
-            """
-        The user's name for the break. No two breaks can match in all of the fields
-        `[name, person]`
+            """The user's name for the break. No two breaks can match in all of the fields `[name, person]`
         """
         ),
     )
