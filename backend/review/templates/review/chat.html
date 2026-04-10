@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Penn Courses Chat</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; height: 100vh; display: flex; background: #f0f0f0; }
+
+  /* Sidebar */
+  #sidebar { width: 260px; background: #1a1a2e; color: #ccc; display: flex; flex-direction: column; flex-shrink: 0; }
+  #sidebar h2 { padding: 20px 16px 12px; font-size: 14px; color: #fff; border-bottom: 1px solid #333; }
+  #new-chat-btn { margin: 12px 16px; padding: 10px; background: #0066cc; color: #fff; border: none; border-radius: 6px;
+                   cursor: pointer; font-size: 14px; }
+  #new-chat-btn:hover { background: #0055aa; }
+  #chat-list { flex: 1; overflow-y: auto; padding: 8px 0; }
+  .chat-item { padding: 10px 16px; cursor: pointer; font-size: 13px; border-bottom: 1px solid #262640;
+               white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .chat-item:hover { background: #262640; }
+  .chat-item.active { background: #0066cc; color: #fff; }
+  .chat-time { font-size: 11px; color: #888; }
+  .chat-item.active .chat-time { color: #cce; }
+
+  /* Main area */
+  #main { flex: 1; display: flex; flex-direction: column; }
+  #header { padding: 16px 24px; background: #fff; border-bottom: 1px solid #ddd; font-size: 15px; color: #333; }
+  #log { flex: 1; overflow-y: auto; padding: 20px 24px; background: #fafafa; }
+
+  /* Messages */
+  .msg { margin-bottom: 16px; max-width: 80%; }
+  .msg.user { margin-left: auto; }
+  .msg.assistant { margin-right: auto; }
+  .bubble { padding: 10px 14px; border-radius: 12px; font-size: 14px; line-height: 1.5; white-space: pre-wrap; }
+  .msg.user .bubble { background: #0066cc; color: #fff; border-bottom-right-radius: 4px; }
+  .msg.assistant .bubble { background: #fff; color: #333; border: 1px solid #ddd; border-bottom-left-radius: 4px; }
+  .msg-label { font-size: 11px; color: #999; margin-bottom: 3px; }
+  .msg.user .msg-label { text-align: right; }
+
+  /* Input */
+  #input-bar { padding: 16px 24px; background: #fff; border-top: 1px solid #ddd; display: flex; gap: 8px; }
+  #input-bar input { flex: 1; padding: 10px 14px; font-size: 14px; border: 1px solid #ccc; border-radius: 8px; outline: none; }
+  #input-bar input:focus { border-color: #0066cc; }
+  #input-bar button { padding: 10px 20px; background: #0066cc; color: #fff; border: none; border-radius: 8px;
+                       cursor: pointer; font-size: 14px; }
+  #input-bar button:disabled { background: #999; cursor: default; }
+  .empty-state { color: #999; text-align: center; margin-top: 80px; font-size: 15px; }
+  .typing { color: #999; font-style: italic; font-size: 13px; padding: 4px 14px; }
+
+  /* Citations */
+  .citations { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .cite-link { display: inline-block; padding: 4px 10px; background: #e8f0fe; color: #0066cc;
+               border-radius: 4px; font-size: 12px; text-decoration: none; border: 1px solid #c5d9f0; }
+  .cite-link:hover { background: #d0e2fc; }
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <h2>Your Chats</h2>
+  <button id="new-chat-btn" onclick="startChat()">+ New Chat</button>
+  <div id="chat-list"></div>
+</div>
+
+<div id="main">
+  <div id="header">
+    Penn Courses Chat &mdash;
+    <a href="/admin/" style="color:#0066cc;font-size:13px;">Login</a>
+  </div>
+  <div id="log">
+    <div class="empty-state">Click "New Chat" or select a previous chat.</div>
+  </div>
+  <div id="input-bar">
+    <input type="text" id="input" placeholder="Ask about courses..." disabled />
+    <button id="sendbtn" onclick="sendMsg()" disabled>Send</button>
+  </div>
+</div>
+
+<script>
+let chatId = null;
+const logEl   = document.getElementById('log');
+const inputEl = document.getElementById('input');
+const sendBtn = document.getElementById('sendbtn');
+const chatListEl = document.getElementById('chat-list');
+const headerEl   = document.getElementById('header');
+
+inputEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
+});
+
+function getCookie(name) {
+  const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+  return v ? v.pop() : '';
+}
+
+const hdrs = () => ({
+  'Content-Type': 'application/json',
+  'X-CSRFToken': getCookie('csrftoken'),
+});
+
+function addBubble(role, text, citations) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'msg ' + role;
+  const label = document.createElement('div');
+  label.className = 'msg-label';
+  label.textContent = role === 'user' ? 'You' : 'Assistant';
+  const bubble = document.createElement('div');
+  bubble.className = 'bubble';
+  bubble.textContent = text;
+  wrapper.appendChild(label);
+  wrapper.appendChild(bubble);
+
+  if (citations && citations.length) {
+    const citeDiv = document.createElement('div');
+    citeDiv.className = 'citations';
+    citations.forEach(c => {
+      const a = document.createElement('a');
+      a.className = 'cite-link';
+      a.href = c.url;
+      a.target = '_blank';
+      a.textContent = '(' + c.number + ') ' + c.course_code;
+      citeDiv.appendChild(a);
+    });
+    wrapper.appendChild(citeDiv);
+  }
+
+  logEl.appendChild(wrapper);
+  logEl.scrollTop = logEl.scrollHeight;
+  return wrapper;
+}
+
+function showTyping() {
+  const el = document.createElement('div');
+  el.className = 'typing';
+  el.id = 'typing-indicator';
+  el.textContent = 'Thinking...';
+  logEl.appendChild(el);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function hideTyping() {
+  const el = document.getElementById('typing-indicator');
+  if (el) el.remove();
+}
+
+function setActiveChat(id) {
+  chatId = id;
+  inputEl.disabled = false;
+  sendBtn.disabled = false;
+  headerEl.innerHTML = 'Chat: <strong>' + id + '</strong>';
+  document.querySelectorAll('.chat-item').forEach(el =>
+    el.classList.toggle('active', el.dataset.id === id)
+  );
+}
+
+async function loadChatList() {
+  try {
+    const r = await fetch('/api/review/chat/active', { credentials: 'include' });
+    const d = await r.json();
+    chatListEl.innerHTML = '';
+    (d.chats || []).forEach(c => {
+      const div = document.createElement('div');
+      div.className = 'chat-item' + (c.chat_id === chatId ? ' active' : '');
+      div.dataset.id = c.chat_id;
+      const date = new Date((c.created_at || 0) * 1000);
+      const timeStr = date.toLocaleDateString() + ' ' +
+                      date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      div.innerHTML = '<div>' + (c.title || 'New chat') + '</div>' +
+                      '<div class="chat-time">' + timeStr + '</div>';
+      div.onclick = () => openChat(c.chat_id);
+      chatListEl.appendChild(div);
+    });
+  } catch (e) { /* ignore */ }
+}
+
+async function openChat(id) {
+  setActiveChat(id);
+  logEl.innerHTML = '';
+  try {
+    const r = await fetch('/api/review/chat/' + id + '/history?limit=50', { credentials: 'include' });
+    const d = await r.json();
+    (d.messages || []).forEach(m => addBubble(m.role, m.content, m.citations));
+    if (!d.messages || !d.messages.length)
+      logEl.innerHTML = '<div class="empty-state">No messages yet. Type below.</div>';
+    inputEl.focus();
+  } catch (e) {
+    logEl.innerHTML = '<div class="empty-state">Could not load chat.</div>';
+  }
+}
+
+async function startChat() {
+  try {
+    const r = await fetch('/api/review/chat/start', {
+      method: 'POST', headers: hdrs(), credentials: 'include',
+    });
+    const d = await r.json();
+    if (r.ok) {
+      setActiveChat(d.chat_id);
+      logEl.innerHTML = '<div class="empty-state">New chat started. Ask anything!</div>';
+      await loadChatList();
+      inputEl.focus();
+    } else {
+      alert(d.error || 'Could not start chat');
+    }
+  } catch (e) { /* ignore */ }
+}
+
+async function sendMsg() {
+  const text = inputEl.value.trim();
+  if (!text || !chatId) return;
+  inputEl.value = '';
+  inputEl.disabled = true;
+  sendBtn.disabled = true;
+
+  const emptyState = logEl.querySelector('.empty-state');
+  if (emptyState) emptyState.remove();
+
+  addBubble('user', text);
+  showTyping();
+
+  try {
+    const r = await fetch('/api/review/chat/' + chatId + '/message', {
+      method: 'POST', headers: hdrs(), credentials: 'include',
+      body: JSON.stringify({ text: text }),
+    });
+    hideTyping();
+    const d = await r.json();
+    if (r.ok) {
+      addBubble('assistant', d.content, d.citations);
+      loadChatList();
+    } else {
+      addBubble('assistant', 'Error: ' + (d.error || 'Unknown error'));
+    }
+  } catch (e) {
+    hideTyping();
+    addBubble('assistant', 'Request failed.');
+  }
+
+  inputEl.disabled = false;
+  sendBtn.disabled = false;
+  inputEl.focus();
+}
+
+loadChatList();
+</script>
+</body>
+</html>

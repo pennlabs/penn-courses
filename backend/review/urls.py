@@ -7,6 +7,7 @@ from review.views import (
     chat_history,
     chat_message,
     chat_start,
+    chat_test_page,
     course_plots,
     course_reviews,
     department_reviews,
@@ -69,5 +70,10 @@ urlpatterns = [
         "chat/active",
         chat_active,
         name="chat-active",
+    ),
+    path(
+        "chat/test",
+        chat_test_page,
+        name="chat-test",
     ),
 ]

@@ -1001,13 +1001,34 @@ def _require_owner_or_404(request, chat_id):
     return meta
 
 
+def _generate_chat_title(user_text: str) -> str:
+    """Ask gpt-4o-mini to produce a 4-6 word topic title for the sidebar."""
+    try:
+        resp = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "Generate a concise 4-6 word title summarizing the user's question. No quotes, no punctuation at the end."},
+                {"role": "user", "content": user_text},
+            ],
+            temperature=0.3,
+            max_tokens=20,
+        )
+        title = (resp.choices[0].message.content or "").strip().strip('"\'')
+        if title:
+            return title
+    except Exception:
+        logger.debug("Title generation failed, falling back to truncation")
+    t = (user_text or "").strip().replace("\n", " ")
+    return (t[:48] + "…") if len(t) > 48 else t
+
+
 def _set_title_if_missing(meta: dict, user_text: str) -> dict:
     if meta.get("title"):
         return meta
-    t = (user_text or "").strip().replace("\n", " ")
+    t = (user_text or "").strip()
     if not t:
         return meta
-    meta["title"] = (t[:48] + "…") if len(t) > 48 else t
+    meta["title"] = _generate_chat_title(t)
     return meta
 
 
@@ -1074,26 +1095,6 @@ def chat_message(request, chat_id):
     expires_at = meta.get("expires_at", now + CHAT_TTL_SECONDS)
 
     meta["last_activity_at"] = now
-    meta = _set_title_if_missing(meta, text)
-
-    umsg = _make_msg("user", text)
-
-    # stub assistant reply
-    reply_text = "Stub reply"
-    amsg = _make_msg("assistant", reply_text, citations=[])
-
-    pipe = r.pipeline()
-    pipe.incr(mquota)
-    pipe.expire(mquota, CHAT_TTL_SECONDS)
-
-    pipe.rpush(_chat_messages_key(chat_id), umsg)
-    pipe.rpush(_chat_messages_key(chat_id), amsg)
-
-    pipe.expire(_chat_messages_key(chat_id), CHAT_TTL_SECONDS)
-    pipe.set(_chat_meta_key(chat_id), json.dumps(meta), ex=CHAT_TTL_SECONDS)
-
-    # ensure user index contains this chat
-    pipe.zadd(_user_chats_key(request.user.id), {chat_id: expires_at})
 
     history_raw = r.lrange(_chat_messages_key(chat_id), -20, -1) or []
     history_msgs = []
@@ -1106,19 +1107,22 @@ def chat_message(request, chat_id):
     umsg = _make_msg("user", text)
     r.rpush(_chat_messages_key(chat_id), umsg)
 
-    # stub assistant reply
-    # reply_text = "Stub reply"
-
     retrieved_docs = retrieve_courses(text, top_k=10)
-
     prompt_messages = build_prompt(history_msgs, retrieved_docs, text)
-    reply_text, reply_citations = call_llm(prompt_messages)
+    reply_text, reply_citations = call_llm(prompt_messages, retrieved_docs)
 
     amsg = _make_msg("assistant", reply_text, citations=reply_citations)
-
-    # amsg = _make_msg("assistant", reply_text, citations=[])
     r.rpush(_chat_messages_key(chat_id), amsg)
-    r.expire(_chat_messages_key(chat_id), CHAT_TTL_SECONDS)
+
+    meta = _set_title_if_missing(meta, text)
+
+    pipe = r.pipeline()
+    pipe.incr(f"quota:{chat_id}:messages")
+    pipe.expire(f"quota:{chat_id}:messages", CHAT_TTL_SECONDS)
+    pipe.expire(_chat_messages_key(chat_id), CHAT_TTL_SECONDS)
+    pipe.set(_chat_meta_key(chat_id), json.dumps(meta), ex=CHAT_TTL_SECONDS)
+    pipe.zadd(_user_chats_key(request.user.id), {chat_id: expires_at})
+    pipe.execute()
 
     return Response(json.loads(amsg))
 
@@ -1187,17 +1191,26 @@ def chat_active(request):
     return Response({"chats": chats})
 
 
-SYSTEM_PROMPT = """You are the Penn Course Review assistant.
-Answer only using the provided 'Context'.
-If information is missing, respond:
-"I'm not sure. Try using Penn Course Review search."
+from django.views.decorators.csrf import ensure_csrf_cookie
 
-Always:
-- Include course codes (e.g., CIS 1200)
-- Cite every factual claim using citations like (1), (2)
-- Be concise: short bullet points or a short paragraph
-- Avoid quoting long student reviews
-- Never invent courses, stats, prerequisites, or opinions
+
+@ensure_csrf_cookie
+def chat_test_page(request):
+    """Serves the chat UI from a separate HTML template."""
+    from django.shortcuts import render
+    return render(request, "review/chat.html")
+
+
+SYSTEM_PROMPT = """You are the Penn Course Review assistant.
+Answer questions using the provided 'Context' about courses.
+
+Guidelines:
+- Use the Context to answer. Describe the courses listed even if the match is partial.
+- Include course codes (e.g., CIS-120, CHEM-001) and cite claims using (1), (2), etc.
+- Be concise: short bullet points or a short paragraph.
+- If the Context contains relevant courses, discuss them — don't refuse to answer.
+- Only say "I'm not sure. Try using Penn Course Review search." if the Context has zero relevant courses.
+- Never invent courses, stats, prerequisites, or opinions not in the Context.
 """
 
 
@@ -1209,7 +1222,7 @@ def build_prompt(history_msgs, retrieved_docs, user_query, max_history_turns=3):
         code = doc.get("course_code", "UNKNOWN")
         text = doc.get("text", "")
         url = doc.get("url", "")
-        context.append(f"({i}) {code}: {text} [cite]({url})")
+        context.append(f"({i}) [{code}]({url}): {text}")
 
     if context:
         prompt_msgs.append({"role": "system",
@@ -1229,15 +1242,44 @@ def build_prompt(history_msgs, retrieved_docs, user_query, max_history_turns=3):
     return prompt_msgs
 
 
-def _extract_citations(text: str):
-    return re.findall(r"\[cite\]\((/course/[^)]+)\)", text)
+def _extract_citations(text: str, retrieved_docs: list[dict] = None):
+    """Pull (1), (2) … references from the LLM reply and map them back to the
+    retrieved docs so we can return structured citation objects."""
+    nums = sorted(set(int(n) for n in re.findall(r"\((\d+)\)", text)))
+    if not nums or not retrieved_docs:
+        return []
+    citations = []
+    seen = set()
+    for n in nums:
+        idx = n - 1
+        if idx < 0 or idx >= len(retrieved_docs):
+            continue
+        doc = retrieved_docs[idx]
+        url = doc.get("url", "")
+        if url in seen:
+            continue
+        seen.add(url)
+        citations.append({
+            "number": n,
+            "course_code": doc.get("course_code", ""),
+            "url": url,
+        })
+    return citations
+
+
+def _extract_course_codes(query: str):
+    """Extract explicit course codes from the query (e.g. 'CIS 121', 'CIS-1210', 'ECON101')."""
+    patterns = re.findall(r"\b([A-Z]{2,5})[\s\-]?(\d{3,4})\b", query.upper())
+    codes = set()
+    for dept, num in patterns:
+        codes.add(f"{dept}-{num}")
+    return codes
 
 
 def retrieve_courses(user_query: str, top_k: int = 10):
     """
-    RAG-retrieves relevant courses from pgvector database:
-    `course_documents(course_code text, text text, url text, embedding vector)`
-    returns a list of dicts: {course_code, text, url, similarity}
+    RAG: Retrieve relevant courses from pgvector using semantic similarity.
+    If the query contains explicit course codes, those are fetched first.
     """
     user_query = (user_query or "").strip()
     if not user_query:
@@ -1249,36 +1291,53 @@ def retrieve_courses(user_query: str, top_k: int = 10):
             input=user_query,
         )
         query_embedding = emb.data[0].embedding
-
         embedding_str = "[" + ",".join(map(str, query_embedding)) + "]"
 
+        exact_rows = []
+        explicit_codes = _extract_course_codes(user_query)
+        if explicit_codes:
+            placeholders = ",".join(["%s"] * len(explicit_codes))
+            with connection.cursor() as cursor:
+                cursor.execute(f"""
+                    SELECT course_code, text, url, 1.0 AS similarity
+                    FROM course_documents
+                    WHERE course_code IN ({placeholders})
+                """, list(explicit_codes))
+                exact_rows = cursor.fetchall()
+
         with connection.cursor() as cursor:
-            cursor.execute(
-                """
-                SELECT
-                    course_code,
-                    text,
-                    url,
-                    1 - (embedding <=> %s::vector) AS similarity
+            cursor.execute("""
+                SELECT course_code, text, url,
+                       1 - (embedding <=> %s::vector) AS similarity
                 FROM course_documents
                 WHERE embedding IS NOT NULL
                 ORDER BY embedding <=> %s::vector
                 LIMIT %s
-                """,
-                [embedding_str, embedding_str, int(top_k)],
-            )
-            rows = cursor.fetchall()
+            """, [embedding_str, embedding_str, top_k])
+            semantic_rows = cursor.fetchall()
 
+        seen = set()
         retrieved_docs = []
-        for course_code, text, url, similarity in rows:
-            retrieved_docs.append(
-                {
-                    "course_code": course_code or "UNKNOWN",
-                    "text": text or "",
-                    "url": url or "",
-                    "similarity": float(similarity) if similarity is not None else 0.0,
-                }
-            )
+
+        def add_row(row):
+            code, text, url, sim = row
+            if code in seen:
+                return
+            seen.add(code)
+            retrieved_docs.append({
+                "course_code": code or "UNKNOWN",
+                "text": text or "",
+                "url": url or "",
+                "similarity": float(sim) if sim is not None else 0.0,
+            })
+
+        for row in exact_rows:
+            add_row(row)
+        for row in semantic_rows:
+            if len(retrieved_docs) >= top_k:
+                break
+            add_row(row)
+
         return retrieved_docs
 
     except Exception:
@@ -1286,7 +1345,7 @@ def retrieve_courses(user_query: str, top_k: int = 10):
         return []
 
 
-def call_llm(prompt_messages: list[dict[str, str]]) -> tuple[str, list[str]]:
+def call_llm(prompt_messages: list[dict[str, str]], retrieved_docs: list[dict] = None) -> tuple[str, list[dict]]:
     try:
         resp = client.chat.completions.create(
             model="gpt-4o",
@@ -1295,7 +1354,7 @@ def call_llm(prompt_messages: list[dict[str, str]]) -> tuple[str, list[str]]:
             max_tokens=800,
         )
         text = (resp.choices[0].message.content or "").strip()
-        citations = _extract_citations(text)
+        citations = _extract_citations(text, retrieved_docs or [])
         return text, citations
 
     except Exception:
