@@ -168,6 +168,7 @@ const SelectBox = ({ options, setOptions, availableItems, fullWidth = false }) =
 
     const wrapperRef = useRef(null);
     const floatingRef = useRef(null);
+    const searchInputRef = useRef(null);
 
     const isInternalUpdate = useRef(false);
 
@@ -181,9 +182,18 @@ const SelectBox = ({ options, setOptions, availableItems, fullWidth = false }) =
             // We caused this update internally. Reset the flag and do nothing.
             isInternalUpdate.current = false;
         } else {
-            setVisualStoredOptions(new Set([...visualStoredOptions, ...options]));
+            setVisualStoredOptions(new Set([...options]));
         }
     }, [options]);
+
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            if (searchInputRef.current && visualStoredOptions.size === 0) {
+                searchInputRef.current.focus();
+            }
+        }, 50);
+        return () => clearTimeout(timeoutId);
+    }, [isSearchFocused]);
 
     useOnClickOutside([wrapperRef, floatingRef], () => {
         if (isSearchFocused) {
@@ -202,51 +212,54 @@ const SelectBox = ({ options, setOptions, availableItems, fullWidth = false }) =
     }, [visualStoredOptions, searchQuery]); 
 
     // Extracted content so we can clone it
-    const searchBarContent = (
-        <>
-            <div 
-                onMouseDown={() => {
-                    setIsSearchFocused(true);
+    const renderSearchBarContent = (isClone = false) => (
+    <>
+        <div 
+            onMouseDown={() => {
+                setIsSearchFocused(true);
+            }}
+            style={{ display: 'flex', gap: '10px', width: '100%' }}>
+            <HiMagnifyingGlass size={20} color="#A1A1A1" />
+            <SelectSearchBar 
+                ref={isClone ? null : searchInputRef} 
+                //Prevent tabbing into the invisible clone
+                tabIndex={isClone ? -1 : 0} 
+                type="text" 
+                placeholder="Search"
+                value={searchQuery}
+                onChange={(e) => {
+                    const newQuery = e.target.value;
+                    const searchBarOnlyOptions = options.filter(option => !visualStoredOptions.has(option));
+                    const newVisualOptions = searchBarOnlyOptions.filter(option => option.toLowerCase().includes(newQuery.toLowerCase()));
+                    setVisualStoredOptions(new Set([...visualStoredOptions, ...newVisualOptions]));
+                    setSearchQuery(newQuery);
                 }}
-                style={{ display: 'flex', gap: '10px', width: '100%' }}>
-                <HiMagnifyingGlass size={20} color="#A1A1A1" />
-                <SelectSearchBar 
-                    type="text" 
-                    placeholder="Search"
-                    value={searchQuery}
-                    onChange={(e) => {
-                        const newQuery = e.target.value;
-                        const searchBarOnlyOptions = options.filter(option => !visualStoredOptions.has(option));
-                        const newVisualOptions = searchBarOnlyOptions.filter(option => option.toLowerCase().includes(newQuery.toLowerCase()));
-                        setVisualStoredOptions(new Set([...visualStoredOptions, ...newVisualOptions]));
-                        setSearchQuery(newQuery);
-                    }}
-                />
-            </div>
-            {isSearchFocused && (
-                <SelectSearchResultsContainer className='no-scrollbar'>
-                    {searchResultOptions.length === 0 ? (
-                        <p style={{ color: '#A1A1A1', fontStyle: 'italic' }}>No options available</p>
-                    ) : (
-                        <>
-                            {searchResultOptions.slice(0, 51).map((option) => (
-                                <OptionBox
-                                    key={`search-${option}`} 
-                                    text={option}
-                                    isActive={options.includes(option)}
-                                    filterOptionsList={options}
-                                    setFilterOptionsList={handleSetOptions}
-                                    visualOptionsList={visualStoredOptions}
-                                    setVisualOptionsList={setVisualStoredOptions}
-                                    fullWidth={fullWidth}
-                                />
-                            ))}
-                        {searchResultOptions.length > 51 && <p style={{ color: '#A1A1A1', fontStyle: 'italic', width: '100%' }}>Showing first 50 results</p>}
-                        </>
-                    )}
-                </SelectSearchResultsContainer>
-            )}
-        </>
+            />
+        </div>
+        {isSearchFocused && (
+            <SelectSearchResultsContainer className='no-scrollbar'>
+                {searchResultOptions.length === 0 ? (
+                    <p style={{ color: '#A1A1A1', fontStyle: 'italic' }}>No options available</p>
+                ) : (
+                    <>
+                        {searchResultOptions.slice(0, 51).map((option) => (
+                            <OptionBox
+                                key={`search-${option}`} 
+                                text={option}
+                                isActive={options.includes(option)}
+                                filterOptionsList={options}
+                                setFilterOptionsList={handleSetOptions}
+                                visualOptionsList={visualStoredOptions}
+                                setVisualOptionsList={setVisualStoredOptions}
+                                fullWidth={fullWidth}
+                            />
+                        ))}
+                    {searchResultOptions.length > 51 && <p style={{ color: '#A1A1A1', fontStyle: 'italic', width: '100%' }}>Showing first 50 results</p>}
+                    </>
+                )}
+            </SelectSearchResultsContainer>
+        )}
+    </>
     );
 
     const closeSearchBar = () => {
@@ -314,7 +327,7 @@ const SelectBox = ({ options, setOptions, availableItems, fullWidth = false }) =
                             style={{ position: 'relative', width: '100%' }}
                         >
                             <SelectSearchBarContainer ref={floatingRef} $isSearchFocused={isSearchFocused}>
-                                {searchBarContent}
+                                {renderSearchBarContent(false)}
                             </SelectSearchBarContainer>
                         </motion.div>
                     )}
@@ -345,7 +358,7 @@ const SelectBox = ({ options, setOptions, availableItems, fullWidth = false }) =
                             maxHeight: '180px', 
                             marginTop: '-52px' 
                         }}>
-                            {searchBarContent}
+                            {renderSearchBarContent(true)}
                         </div>
                     </motion.div> 
                 )}
