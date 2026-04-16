@@ -1013,6 +1013,25 @@ hr {
   border-bottom: none !important;
 }
 
+/* Sticky header: kill overflow on all ancestors so sticky works within the outer scroll container */
+.course-results-table.ReactTable {
+    overflow: visible !important;
+}
+
+.course-results-table .rt-table {
+    overflow: visible !important;
+}
+
+.course-results-table .rt-tbody {
+    overflow: visible !important;
+}
+
+.course-results-table .rt-thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
 /* Target the header cells */
 .course-results-table .rt-thead .rt-th {
     display: flex;

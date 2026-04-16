@@ -8,9 +8,6 @@ import { useHistory } from 'react-router-dom';
 const HeaderContainer = styled.div`
     display: flex;
     align-items: center;
-    position: fixed;
-    top: 0;
-    left: 0;
     width: 100%;
     height: 80px;
     background: white;
@@ -69,7 +66,6 @@ const MobileMenuWrapper = styled(motion.div)`
     overflow: hidden;
     width: 100%;
     background: #F7F9FB;
-    margin-top: 80px; /* Sits right below the fixed header */
 
     @media (min-width: 1201px) {
         visibility: hidden !important; /* Hide mobile menu on desktop */

@@ -226,21 +226,16 @@ export function apiAttributes() {
   });
 }
 
-export function apiCourseSearch(semester, attributes, difficulty, course_quality, instructor_quality, days, time) {
-  console.log(`${API_DOMAIN}/api/base/${encodeURIComponent(semester)}/courses/?` +
+export function apiCourseSearch(semester, attributes, difficulty, course_quality, instructor_quality, days, time, departments, page = 1) {
+  const url = `${API_DOMAIN}/api/base/${encodeURIComponent(semester)}/courses/?` +
       (attributes ? `attributes=${encodeURIComponent(attributes)}&` : "") +
       (difficulty ? `difficulty=${encodeURIComponent(difficulty)}&` : "") +
       (course_quality ? `course_quality=${encodeURIComponent(course_quality)}&` : "") +
       (instructor_quality ? `instructor_quality=${encodeURIComponent(instructor_quality)}&` : "") +
       (days ? `days=${encodeURIComponent(days)}&` : "") +
-      (time ? `time=${encodeURIComponent(time)}` : ""))
-  return apiFetch(
-    `${API_DOMAIN}/api/base/${encodeURIComponent(semester)}/courses/?` +
-      (attributes ? `attributes=${encodeURIComponent(attributes)}&` : "") +
-      (difficulty ? `difficulty=${encodeURIComponent(difficulty)}&` : "") +
-      (course_quality ? `course_quality=${encodeURIComponent(course_quality)}&` : "") +
-      (instructor_quality ? `instructor_quality=${encodeURIComponent(instructor_quality)}&` : "") +
-      (days ? `days=${encodeURIComponent(days)}&` : "") +
-      (time ? `time=${encodeURIComponent(time)}` : "")
-  );
+      (time ? `time=${encodeURIComponent(time)}&` : "") +
+      (departments ? `departments=${encodeURIComponent(departments)}&` : "") +
+      `page=${page}`;
+  console.log(url);
+  return apiFetch(url);
 }

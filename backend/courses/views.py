@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import generics, status
 from rest_framework.exceptions import ValidationError
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -139,6 +140,12 @@ class SectionDetail(generics.RetrieveAPIView, BaseCourseMixin):
         return "course__semester"
 
 
+class CoursePagination(PageNumberPagination):
+    page_size = 100
+    page_size_query_param = "page_size"
+    max_page_size = 500
+
+
 class CourseList(generics.ListAPIView, BaseCourseMixin):
     """
     Retrieve a list of (all) courses for the provided semester.
@@ -154,7 +161,23 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
     )
 
     serializer_class = CourseListSerializer
+    pagination_class = CoursePagination
+    filter_backends = [CourseSearchFilterBackend]
     queryset = Course.with_reviews.filter(sections__isnull=False)  # included redundantly for docs
+
+    # These params filter on schedule/section data that only exists in a specific semester,
+    # so requesting them on the "all" semester path automatically snaps to current semester.
+    _SEMESTER_SPECIFIC_PARAMS = frozenset({"days", "time", "instructor_quality"})
+
+    def get_semester(self):
+        semester = super().get_semester()
+        if semester == "all" and self._SEMESTER_SPECIFIC_PARAMS.intersection(
+            self.request.query_params
+        ):
+            current = get_current_semester(allow_not_found=True)
+            if current:
+                return current
+        return semester
 
     def get_queryset(self):
         queryset = Course.with_reviews.filter(sections__isnull=False)
