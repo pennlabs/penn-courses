@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
 import styled from 'styled-components';
 import { apiAutocomplete, apiReviewData, apiCourseSearch } from '../utils/api';
 import { useHistory } from 'react-router-dom';
@@ -14,13 +14,17 @@ import { AuthContext } from '../pages/TempAuthPage';
 const Container = styled.div`
     display: flex;
     width: 100%;
-    padding: 24px 30px;
+    padding: 12px 30px;
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
     border-radius: 12px;
     background: #FFF;
-    height: fit-content;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    border: 1px solid #ECEEF2;
+
 `;
 
 const BrowsingTitle = styled.span`
@@ -46,7 +50,7 @@ const SubjectCard = styled.div`
     align-self: stretch;
     gap: 24px;
     overflow: ellipsis;
-    margin: 5px 0;
+    margin: 2px 0;
 
     @media (max-width: 700px) {
         width: 100%;
@@ -55,7 +59,7 @@ const SubjectCard = styled.div`
 
 const LinkText = styled.span`
     color: #1995E7;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 500;
     cursor: pointer;
 
@@ -66,7 +70,7 @@ const LinkText = styled.span`
 
 const DescText = styled.span`
     color: #6D6F71;
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 300;
     word-spacing: 5px;
     white-space: nowrap;
@@ -127,6 +131,20 @@ const SpecialPromptContainer = styled.div`
     padding: 40px 0;
 `;
 
+const SemesterBanner = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: #EBF5FF;
+    border: 1px solid #B3D7F5;
+    color: #1A6FAF;
+    font-size: 14px;
+    font-weight: 400;
+`;
+
 const numFiltersChanged = (filters) => {
     let count = 0;
     for(const [key, value] of Object.entries(filters)) {
@@ -144,31 +162,61 @@ const numFiltersChanged = (filters) => {
     return count;
 }
 
+const SEMESTER_SPECIFIC_FILTERS = ['instructor_quality', 'days', 'time'];
+
+const getActiveSemesterFilters = (filters) => {
+    return SEMESTER_SPECIFIC_FILTERS.filter(key => !isDefault(key, filters[key]));
+};
+
+const SEMESTER_FILTER_LABELS = {
+    instructor_quality: 'Instructor Quality',
+    days: 'Days Offered',
+    time: 'Time Offered',
+};
+
+const isDefault = (key, value) => {
+    const def = DEFAULT_FILTERS[key];
+    if (Array.isArray(value)) {
+        return value.length === def.length && value.every(v => def.includes(v));
+    }
+    return value === def;
+};
+
 const formatFiltersForAPI = (filters) => {
     const formatted = {};
     for(const [key, value] of Object.entries(filters)) {
-        if (key === 'difficulty' || key === 'course_quality' || key === 'instructor_quality') {
+        if (key === 'semester') {
+            formatted[key] = value === 'Any' ? "all" : "current";
+        } else if (isDefault(key, value)) {
+            continue;
+        } else if (key === 'difficulty' || key === 'course_quality' || key === 'instructor_quality') {
             formatted[key] = `${value[0]}-${value[1]}`;
         } else if (key === 'days') {
             formatted[key] = value.join('');
         } else if (key === 'time') {
             formatted[key] = value;
-        } else if (key === 'semester') {
-            formatted[key] = value === 'Any' ? "all" : "current";
         } else if (key === 'attributes') {
             formatted[key] = value.join('|');
-        } //ALSO ADD DEPARTMENT WHEN IT BECOMES SUPPORTED
+        } else if (key === 'departments') {
+            formatted[key] = value.join('|');
+        }
     }
     return formatted;
 }
 
 const CourseResults = ({ filters, setFilters }) => {
-    const [subjectSlice, setSubjectSlice] = useState({ start: 0, end: 40 });
+    const [subjectSlice, setSubjectSlice] = useState({ start: 0, end: 100 });
 
     const [departments, setDepartments] = useState([]);
     const [filteredResults, setFilteredResults] = useState(numFiltersChanged(filters) > 0 ? {} : null);
     const [isLoading, setIsLoading] = useState(false);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [isAverage, setIsAverage] = useState(true);
+    const [totalCount, setTotalCount] = useState(0);
+    const [hasMore, setHasMore] = useState(false);
+    const nextPageRef = useRef(2);
+    const sentinelRef = useRef(null);
+    const isLoadingRef = useRef(false);
 
     const [recencyOption, setRecencyOption] = useState('Average Rating');
 
@@ -184,48 +232,75 @@ const CourseResults = ({ filters, setFilters }) => {
             });
     }, []);
 
-    useEffect(() => {
-        let isActivelyFiltering = false;
-        isActivelyFiltering = numFiltersChanged(filters) > 0;
-        console.log('Filters changed:', filters, 'Actively filtering:', isActivelyFiltering);
-        
-        if (isActivelyFiltering) {
-            //TEMPORARY: replace with actual backend route for filtering based on all filters, not just department
+    const fetchCourses = useCallback((filters, page, append = false) => {
+        if (isLoadingRef.current) return;
+        isLoadingRef.current = true;
+        if (append) {
+            setIsLoadingMore(true);
+        } else {
             setIsLoading(true);
-            console.log('loading true')
-            // apiReviewData('department', filters.departments[0], '')
-            //     .then(data => {
-            //         console.log("Fetched review data for filtering:", data);
-            //         setFilteredResults(data);
-            //     })
-            //     .catch(error => {
-            //         console.error("Error fetching review data:", error);
-            //         setFilteredResults({});
-            //     })
-            //     .finally(() => {
-            //         setIsLoading(false);
-            //         console.log('loading false')
-            //     });
-            const ff = formatFiltersForAPI(filters);
-            console.log('Formatted filters for API:', ff);
-            apiCourseSearch(ff.semester, ff.attributes, ff.difficulty, ff.course_quality, ff.days, ff.time)
-                .then(data => {
-                    console.log("Fetched course search data:", data);
-                    setFilteredResults(data);
-                })
-                .catch(error => {
-                    console.error("Error fetching course search data:", error);
+        }
+        const ff = formatFiltersForAPI(filters);
+        apiCourseSearch(ff.semester, ff.attributes, ff.difficulty, ff.course_quality, ff.instructor_quality, ff.days, ff.time, ff.departments, page)
+            .then(data => {
+                const newResults = (data.results || []).reduce((acc, course) => {
+                    acc[course.id] = course;
+                    return acc;
+                }, {});
+                if (append) {
+                    setFilteredResults(prev => ({ ...prev, ...newResults }));
+                } else {
+                    setFilteredResults(newResults);
+                }
+                setTotalCount(data.count || 0);
+                setHasMore(data.next !== null);
+                nextPageRef.current = page + 1;
+            })
+            .catch(error => {
+                console.error("Error fetching course search data:", error);
+                if (!append) {
                     setFilteredResults({});
-                })
-                .finally(() => {
-                    setIsLoading(false);
-                    console.log('loading false')
-                });
+                    setTotalCount(0);
+                }
+                setHasMore(false);
+            })
+            .finally(() => {
+                isLoadingRef.current = false;
+                setIsLoading(false);
+                setIsLoadingMore(false);
+            });
+    }, []);
+
+    useEffect(() => {
+        const isActivelyFiltering = numFiltersChanged(filters) > 0;
+
+        if (isActivelyFiltering) {
+            nextPageRef.current = 2;
+            fetchCourses(filters, 1);
         } else {
             setFilteredResults(null);
+            setTotalCount(0);
+            setHasMore(false);
         }
+    }, [filters, fetchCourses]);
 
-    }, [filters]);
+    // Infinite scroll — sentinel is inside the table's scroll area
+    useEffect(() => {
+        const sentinel = sentinelRef.current;
+        if (!sentinel || !hasMore) return;
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting && !isLoadingRef.current) {
+                    fetchCourses(filters, nextPageRef.current, true);
+                }
+            },
+            { threshold: 0.1 }
+        );
+
+        observer.observe(sentinel);
+        return () => observer.disconnect();
+    }, [hasMore, filters, fetchCourses]);
 
     const history = useHistory();
 
@@ -247,7 +322,7 @@ const CourseResults = ({ filters, setFilters }) => {
                         Object.entries(filteredResults).length > 0 ? (
                             <>
                                 <SearchResultsHeader>
-                                    <span>Showing <b>{Object.entries(filteredResults).length}</b> Search Results ({numFiltersChanged(filters)} filter{numFiltersChanged(filters) !== 1 ? "s" : ""})</span>
+                                    <span>Showing <b>{Object.keys(filteredResults).length}</b> of <b>{totalCount}</b> Search Results ({numFiltersChanged(filters)} filter{numFiltersChanged(filters) !== 1 ? "s" : ""})</span>
                                     <CustomDropdown
                                         style={{width: '180px', selfAlign: 'center'}}
                                         options={['Average Rating', 'Most Recent Rating']}
@@ -258,10 +333,20 @@ const CourseResults = ({ filters, setFilters }) => {
                                         }}
                                     />
                                 </SearchResultsHeader>
-                                <div style={{width: '100%', marginBottom: '16px', height: 'fit-content'}}>
+                                {getActiveSemesterFilters(filters).length > 0 && (
+                                    <SemesterBanner>
+                                        <i className="fa fa-info-circle" />
+                                        <span>
+                                            Filtering by {getActiveSemesterFilters(filters).map(k => SEMESTER_FILTER_LABELS[k]).join(', ')} — results limited to current semester offerings.
+                                        </span>
+                                    </SemesterBanner>
+                                )}
+                                <div style={{width: '100%', height: '100%'}}>
                                     <CourseResultsTable
                                         filteredResults={filteredResults}
                                         isAverage={isAverage}
+                                        sentinelRef={sentinelRef}
+                                        isLoadingMore={isLoadingMore}
                                     />
                                 </div>
                             </>
@@ -299,11 +384,11 @@ const CourseResults = ({ filters, setFilters }) => {
                 </SubjectDisplayWrapper>
                 <PaginationContainer>
                     <ResponsivePagination
-                        current={Math.floor(subjectSlice.start / 40) + 1}
-                        total={Math.ceil(departments.length / 40)}
+                        current={Math.floor(subjectSlice.start / 100) + 1}
+                        total={Math.ceil(departments.length / 100)}
                         onPageChange={(page) => {
-                            const start = (page - 1) * 40;
-                            const end = start + 40;
+                            const start = (page - 1) * 100;
+                            const end = start + 100;
                             setSubjectSlice({ start, end });
                         }}
                     />

@@ -11,6 +11,7 @@ import TimeSelect from './TimeSelect';
 import KeywordSearch from './KeywordSearch';
 import { apiAutocomplete, apiAttributes } from '../utils/api';
 import { DEFAULT_FILTERS } from '../pages/BrowsePage';
+import { RiCollapseDiagonalLine } from "react-icons/ri";
 
 const Container = styled.div`
     display: flex;
@@ -21,6 +22,7 @@ const Container = styled.div`
     align-self: stretch;
     background: #FFFFFF;
     border-radius: 12px;
+    border: 1px solid #ECEEF2;
 `;
 
 const FilterContainer = styled.div`
