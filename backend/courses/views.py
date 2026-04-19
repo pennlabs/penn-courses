@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import generics, status
 from rest_framework.exceptions import ValidationError
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -106,9 +107,13 @@ class SectionList(generics.ListAPIView, BaseCourseMixin):
     )
 
     serializer_class = MiniSectionSerializer
-    queryset = Section.with_reviews.all().exclude(activity="")
+    queryset = Section.objects.none()  # Default for documentation; overridden in get_queryset
     filter_backends = [TypedSectionSearchBackend]
     search_fields = ["^full_code"]
+
+    def get_queryset(self):
+        queryset = Section.with_reviews.all().exclude(activity="")
+        return self.filter_by_semester(queryset)
 
     @staticmethod
     def get_semester_field():
@@ -132,11 +137,30 @@ class SectionDetail(generics.RetrieveAPIView, BaseCourseMixin):
     )
 
     serializer_class = SectionDetailSerializer
-    queryset = Section.with_reviews.all()
+    queryset = Section.objects.none()  # Default for documentation; overridden in get_queryset
     lookup_field = "full_code"
+
+    def get_queryset(self):
+        queryset = Section.with_reviews.all()
+        return self.filter_by_semester(queryset)
 
     def get_semester_field(self):
         return "course__semester"
+
+
+class OptionalPageNumberPagination(PageNumberPagination):
+    """
+    Pagination that only activates when `page` or `page_size` is present in the request.
+    When neither is provided, the full result set is returned unpaginated.
+    """
+
+    page_size_query_param = "page_size"
+    page_size = 100
+
+    def paginate_queryset(self, queryset, request, view=None):
+        if "page" not in request.query_params and "page_size" not in request.query_params:
+            return None
+        return super().paginate_queryset(queryset, request, view)
 
 
 class CourseList(generics.ListAPIView, BaseCourseMixin):
@@ -154,7 +178,7 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
     )
 
     serializer_class = CourseListSerializer
-    queryset = Course.with_reviews.filter(sections__isnull=False)  # included redundantly for docs
+    queryset = Course.objects.none()  # included redundantly for docs
 
     def get_queryset(self):
         queryset = Course.with_reviews.filter(sections__isnull=False)
@@ -236,6 +260,7 @@ class CourseListSearch(CourseList):
 
     filter_backends = [TypedCourseSearchBackend, CourseSearchFilterBackend]
     search_fields = ("full_code", "title", "sections__instructors__name")
+    pagination_class = OptionalPageNumberPagination
 
 
 class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
@@ -278,7 +303,7 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
 
     serializer_class = CourseDetailSerializer
     lookup_field = "full_code"
-    queryset = Course.with_reviews.all()  # included redundantly for docs
+    queryset = Course.objects.none()  # included redundantly for docs
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
