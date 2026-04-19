@@ -260,7 +260,6 @@ export class ReviewPage extends Component {
 
     return (
       <div>
-        {/* <Navbar /> */}
         <Header />
         {this.state.data ? (
           <>

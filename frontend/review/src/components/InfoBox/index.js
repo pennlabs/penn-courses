@@ -150,7 +150,6 @@ const InfoBox = ({
 
       {data.registration_metrics && (
         <StatsToggleContainer>
-          <NewLabel>NEW</NewLabel>
           <div className="btn-group">
             <button
               onClick={() => setIsCourseEval(false)}

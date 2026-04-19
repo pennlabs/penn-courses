@@ -131,33 +131,39 @@ const SpecialPromptContainer = styled.div`
     padding: 40px 0;
 `;
 
-const SemesterBanner = styled.div`
+const InfoBanner = styled.div`
     display: flex;
     align-items: center;
     gap: 8px;
     width: 100%;
     padding: 10px 14px;
     border-radius: 8px;
-    background: #EBF5FF;
-    border: 1px solid #B3D7F5;
-    color: #1A6FAF;
+    background: ${props => props.$isError ? '#ffebeb' : '#EBF5FF'};
+    border: 1px solid ${props => props.$isError ? '#f5b3b3' : '#B3D7F5'};
+    color: ${props => props.$isError ? '#ff6b6e' : '#1A6FAF'};
     font-size: 14px;
     font-weight: 400;
 `;
 
 const numFiltersChanged = (filters) => {
     let count = 0;
+    let onlySemesterChanged = true;
     for(const [key, value] of Object.entries(filters)) {
         if (Array.isArray(value)) {
             const isDifferentArray = value.length !== DEFAULT_FILTERS[key].length || !value.every(v => DEFAULT_FILTERS[key].includes(v));
             if (isDifferentArray) {
                 count++;
+                onlySemesterChanged = false;
             }
         } else {
             if (value !== DEFAULT_FILTERS[key]) {
                 count++;
+                if (key !== 'semester') onlySemesterChanged = false;
             }
         }
+    }
+    if (onlySemesterChanged) {
+        return 0;
     }
     return count;
 }
@@ -204,8 +210,8 @@ const formatFiltersForAPI = (filters) => {
     return formatted;
 }
 
-const CourseResults = ({ filters, setFilters }) => {
-    const [subjectSlice, setSubjectSlice] = useState({ start: 0, end: 100 });
+const CourseResults = ({ filters, setFilters, autocompleteData }) => {
+    const [subjectSlice, setSubjectSlice] = useState({ start: 0, end: 101 });
 
     const [departments, setDepartments] = useState([]);
     const [filteredResults, setFilteredResults] = useState(numFiltersChanged(filters) > 0 ? {} : null);
@@ -223,14 +229,12 @@ const CourseResults = ({ filters, setFilters }) => {
     const isAuth = useContext(AuthContext);
 
     useEffect(() => {
-        apiAutocomplete()
-            .then(data => {
-                setDepartments(data.departments);
-            })
-            .catch(error => {
-                console.error("Error fetching autocomplete data:", error);
-            });
-    }, []);
+        if (autocompleteData) {
+            console.log("Setting departments from autocomplete data:", autocompleteData.departments);
+            setDepartments(autocompleteData.departments);
+            return;
+        }
+    }, [autocompleteData]);
 
     const fetchCourses = useCallback((filters, page, append = false) => {
         if (isLoadingRef.current) return;
@@ -243,6 +247,7 @@ const CourseResults = ({ filters, setFilters }) => {
         const ff = formatFiltersForAPI(filters);
         apiCourseSearch(ff.semester, ff.attributes, ff.difficulty, ff.course_quality, ff.instructor_quality, ff.days, ff.time, ff.departments, page)
             .then(data => {
+                console.log(data.results)
                 const newResults = (data.results || []).reduce((acc, course) => {
                     acc[course.id] = course;
                     return acc;
@@ -334,12 +339,12 @@ const CourseResults = ({ filters, setFilters }) => {
                                     />
                                 </SearchResultsHeader>
                                 {getActiveSemesterFilters(filters).length > 0 && (
-                                    <SemesterBanner>
+                                    <InfoBanner $isError={false}>
                                         <i className="fa fa-info-circle" />
                                         <span>
                                             Filtering by {getActiveSemesterFilters(filters).map(k => SEMESTER_FILTER_LABELS[k]).join(', ')} — results limited to current semester offerings.
                                         </span>
-                                    </SemesterBanner>
+                                    </InfoBanner>
                                 )}
                                 <div style={{width: '100%', height: '100%'}}>
                                     <CourseResultsTable
@@ -351,7 +356,17 @@ const CourseResults = ({ filters, setFilters }) => {
                                 </div>
                             </>
                         ) : (
-                            <p>No results found.</p>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px', justifyContent: 'center', width: '100%' }}>
+                                <InfoBanner $isError={true} style={{ justifyContent: 'center' }}>
+                                    <i className="fa fa-info-circle" />
+                                    <span>
+                                       No results found! Try adjusting your filters.
+                                    </span>
+                                    {filters.semester == "Next Available" && (
+                                        <i>Matching results may exist for previous semesters (Try "All")</i>
+                                    )}
+                                </InfoBanner>
+                            </div>
                         )
                     )}
                     </>
@@ -372,23 +387,27 @@ const CourseResults = ({ filters, setFilters }) => {
                 <BrowsingTitle>Browsing {departments.length} Subjects</BrowsingTitle>
                 <SubjectDisplayWrapper>
                     {departments.slice(subjectSlice.start, subjectSlice.end).map((dept, index) => (
-                        <SubjectCard key={index}>
-                            <div style={{ width: '60px', flexShrink: 0 }}>
-                                <LinkText onClick={() => {
-                                    setFilters({ ...filters, departments: [...filters.departments, dept.title] });
-                                }}>{dept.title}</LinkText>
-                            </div>
-                            <DescText>{dept.desc}</DescText>
-                        </SubjectCard>
+                        <React.Fragment key={index}>
+                        {dept.desc != null && dept.desc != "" ? (
+                            <SubjectCard key={index}>
+                                <div style={{ width: '60px', flexShrink: 0 }}>
+                                    <LinkText onClick={() => {
+                                        setFilters({ ...filters, departments: [...filters.departments, dept.title] });
+                                    }}>{dept.title}</LinkText>
+                                </div>
+                                <DescText>{dept.desc}</DescText>
+                            </SubjectCard>
+                        ) : null}
+                        </React.Fragment>
                     ))}
                 </SubjectDisplayWrapper>
                 <PaginationContainer>
                     <ResponsivePagination
-                        current={Math.floor(subjectSlice.start / 100) + 1}
-                        total={Math.ceil(departments.length / 100)}
+                        current={Math.floor(subjectSlice.start / 101) + 1}
+                        total={Math.ceil(departments.length / 101)}
                         onPageChange={(page) => {
-                            const start = (page - 1) * 100;
-                            const end = start + 100;
+                            const start = (page - 1) * 101;
+                            const end = start + 101;
                             setSubjectSlice({ start, end });
                         }}
                     />

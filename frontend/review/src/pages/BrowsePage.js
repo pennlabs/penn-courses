@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import styled from 'styled-components';
 import { useState } from 'react';
 import { useHistory } from 'react-router-dom';
@@ -9,6 +9,7 @@ import Footer from '../components/Footer';
 import { IoMdOptions } from "react-icons/io";
 import { BiHide } from "react-icons/bi";
 import { AnimatePresence, motion } from 'motion/react';
+import { apiAutocomplete } from '../utils/api';
 
 /*
     The Browse Page is the entry point of the app. The filters are stored in the URL as query parameters, so that they can be shared and persisted across refreshes.
@@ -88,10 +89,10 @@ export const DEFAULT_FILTERS = {
     attributes: [],
     time: "6.00-22.00",
     days: ['M', "T", "W", "R", "F"],
-    semester: "Any",
-    course_quality: [1, 4],
-    instructor_quality: [1, 4],
-    difficulty: [1, 4],
+    semester: "Next Available",
+    course_quality: [0, 4],
+    instructor_quality: [0, 4],
+    difficulty: [0, 4],
 };
 
 const getFilteredURL = (filters) => {
@@ -119,10 +120,10 @@ const loadStateFromURL = () => {
         attributes: [],
         time: "6.00-22.00",
         days: ['M', "T", "W", "R", "F"],
-        semester: "Any",
-        course_quality: [1, 4],
-        instructor_quality: [1, 4],
-        difficulty: [1, 4],
+        semester: "Next Available",
+        course_quality: [0, 4],
+        instructor_quality: [0, 4],
+        difficulty: [0, 4],
     };
 
     for (const key in filters) {
@@ -145,14 +146,27 @@ const BrowsePage = () => {
     const [filters, setFilters] = useState(loadStateFromURL());
     const history = useHistory();
     const [filtersCollapsed, setFiltersCollapsed] = useState(window.innerWidth <= 900);
+    const [autocompleteData, setAutocompleteData] = useState(null);
 
     useEffect(() => {
+        apiAutocomplete()
+            .then(data => setAutocompleteData(data))
+            .catch(error => console.error("Error fetching autocomplete data:", error));
+
         const handleResize = () => {
             if (window.innerWidth > 900) setFiltersCollapsed(false);
         };
+
+        const handlePopState = () => {
+            setFilters(loadStateFromURL());
+        };
         
         window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
+        window.addEventListener('popstate', handlePopState);
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            window.removeEventListener('popstate', handlePopState);
+        };
     }, []);
 
     useEffect(() => {
@@ -161,7 +175,7 @@ const BrowsePage = () => {
 
     return (
     <PageWrapper>
-        <Header/>
+        <Header autocompleteData={autocompleteData} loadDataIndependently={false}/>
         <ContentView>
             <SidebarWrapper>
                 <FilterCollapseBox style={{marginBottom: filtersCollapsed ? "-6px" : "12px"}} onClick={() => setFiltersCollapsed(!filtersCollapsed)}>
@@ -187,13 +201,13 @@ const BrowsePage = () => {
                             transition={{ duration: 0.3, ease: [0.04, 0.62, 0.23, 0.98] }}
                             style={{ overflow: 'hidden' }}
                         >
-                            <FilterBox filters={filters} setFilters={setFilters} />
+                            <FilterBox filters={filters} setFilters={setFilters} autocompleteData={autocompleteData}/>
                         </motion.div>
                     )}
                 </AnimatePresence>
             </SidebarWrapper>
             <CourseResultsWrapper >
-                <CourseResults filters={filters} setFilters={setFilters}/>    
+                <CourseResults filters={filters} setFilters={setFilters} autocompleteData={autocompleteData}/>    
             </CourseResultsWrapper>
         </ContentView>
         <Footer/>

@@ -62,12 +62,12 @@ const RangeMarkers = styled.div`
     margin: 15px 6% 0 6%;
 `;
 
-const SliderSelect = ({ ratingValues, setRatingValues }) => {
+const SliderSelect = ({ ratingValues, setRatingValues, rangeDescription }) => {
     return (
         <div style={{width: '100%', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', maxWidth: '400px'}}>
             <Container>
                 <RangeSlider 
-                    min={1}
+                    min={0}
                     max={4}
                     step={1}
                     value={ratingValues}
@@ -77,14 +77,15 @@ const SliderSelect = ({ ratingValues, setRatingValues }) => {
                 />  
             </Container>
             <RangeMarkers>
+                <div>0</div>
                 <div>1</div>
                 <div>2</div>
                 <div>3</div>
                 <div>4</div>
             </RangeMarkers>
             <RangeMarkers style={{color: '#A1A1A1', marginTop: '5px'}}>
-                <div>Poor</div>
-                <div>Excellent</div>
+                <div>{rangeDescription.min}</div>
+                <div>{rangeDescription.max}</div>
             </RangeMarkers>
         </div>
     )

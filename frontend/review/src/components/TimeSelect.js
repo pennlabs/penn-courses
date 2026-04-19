@@ -38,7 +38,7 @@ const TimeInput = styled.input`
     width: 50px;
 
     &:focus {
-        border: 2px solid ${props => props.$isError ? '#e53935' : '#aeaeb8'};
+        border: 2px solid ${props => props.$isError ? '#e53935' : '#1895E6'};
         background-color: ${props => props.$isError ? '#ffebee' : 'transparent'};
     }
 `;
@@ -152,6 +152,14 @@ const TimeSelect = ({ timeString, setTimeString, diameter }) => {
     const timeRef = useRef(time);
     useEffect(() => { timeRef.current = time; }, [time]);
 
+    useEffect(() => {
+        const { start: newStart, end: newEnd } = stringToMinutes(timeString);
+        if (newStart !== time.start || newEnd !== time.end) {
+            dispatch({ type: "setStart", minutes: newStart });
+            dispatch({ type: "setEnd", minutes: newEnd });
+        }
+    }, [timeString]);
+
     const [drag, setDrag] = useState(null);
 
     const [startText, setStartText] = useState(formatMinutesForDisplay(initialStart).time);
@@ -237,25 +245,31 @@ const TimeSelect = ({ timeString, setTimeString, diameter }) => {
                 <div style={{ display: "flex", alignItems: "center", gap: "4px"}}>
                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center"}}>
                         <span style={{fontSize: '12px'}}>Start</span>
-                        <TimeInput 
-                            type="text" 
-                            value={startText} 
-                            $isError={isStartError}
-                            onChange={(e) => {handleTimeInputChange(e, setStartText)}}
-                            onBlur={(e) => {
-                                const fixedValue = fixTimeInputOnBlur(e.target.value);
-                                setStartText(fixedValue);
-                                if (isValid12HourTime(fixedValue)) {
-                                    dispatch({ type: "setStart", minutes: ampmTimeToMinutes(fixedValue, startAMPM) });
-                                    const newTime = `${formatMinutes(ampmTimeToMinutes(fixedValue, startAMPM))}-${formatMinutes(time.end)}`;
-                                    if (newTime !== timeString) {
-                                        setTimeString(newTime);
-                                    }
-                                } else {
-                                    setStartText(formatMinutesForDisplay(time.start).time);
+                        <form onSubmit={(e) => {
+                            e.preventDefault();
+                            const fixedValue = fixTimeInputOnBlur(startText);
+                            setStartText(fixedValue);
+                            if (isValid12HourTime(fixedValue)) {
+                                dispatch({ type: "setStart", minutes: ampmTimeToMinutes(fixedValue, startAMPM) });
+                                const newTime = `${formatMinutes(ampmTimeToMinutes(fixedValue, startAMPM))}-${formatMinutes(time.end)}`;
+                                if (newTime !== timeString) {
+                                    setTimeString(newTime);
                                 }
-                            }} 
-                        />
+                            } else {
+                                setStartText(formatMinutesForDisplay(time.start).time);
+                            }
+                            e.target.querySelector('input').blur();
+                        }}>
+                            <TimeInput 
+                                type="text" 
+                                value={startText} 
+                                $isError={isStartError}
+                                onChange={(e) => {handleTimeInputChange(e, setStartText)}}
+                                onBlur={(e) => {
+                                    e.target.form.requestSubmit();
+                                }} 
+                            />
+                        </form>
                     </div> 
                     <CustomDropdown
                         style={{width: "60px", marginTop: "18px"}}
@@ -270,26 +284,32 @@ const TimeSelect = ({ timeString, setTimeString, diameter }) => {
                 <div style={{ display: "flex", alignItems: "center", gap: "4px"}}>
                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center"}}>
                         <span style={{fontSize: '12px'}}>End</span>
-                        <TimeInput 
-                            type="text" 
-                            value={endText} 
-                            $isError={isEndError}
-                            onChange={(e) => {handleTimeInputChange(e, setEndText)}}
-                            onBlur={(e) => {
-                                const fixedValue = fixTimeInputOnBlur(e.target.value);
+                        <form onSubmit={(e) => {
+                                e.preventDefault();
+                                const fixedValue = fixTimeInputOnBlur(endText);
                                 setEndText(fixedValue);
                                 if (isValid12HourTime(fixedValue)) {
                                     dispatch({ type: "setEnd", minutes: ampmTimeToMinutes(fixedValue, endAMPM) });
-                                    const newTime = `${formatMinutes(time.start)}-${formatMinutes(ampmTimeToMinutes(fixedValue, endAMPM))}`
+                                    const newTime = `${formatMinutes(time.start)}-${formatMinutes(ampmTimeToMinutes(fixedValue, endAMPM))}`;
                                     if (newTime !== timeString) {
                                         setTimeString(newTime);
                                     }
                                 } else {
                                     setEndText(formatMinutesForDisplay(time.end).time);
                                 }
-                            }} 
-                        />
-                    </div> 
+                                e.target.querySelector('input').blur();
+                        }}>
+                            <TimeInput
+                                type="text"
+                                value={endText}
+                                $isError={isEndError}
+                                onChange={(e) => { handleTimeInputChange(e, setEndText) }}
+                                onBlur={(e) => {
+                                    e.target.form.requestSubmit();
+                                }}
+                            />
+                        </form>
+                    </div>
                     <CustomDropdown
                         style={{width: "60px", marginTop: "18px"}}
                         options={['AM', 'PM']}

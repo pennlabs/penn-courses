@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { HiBars3, HiXMark } from "react-icons/hi2";
-import { motion } from 'motion/react';
+import { motion, transformValue } from 'motion/react';
 import NewSearchBar from './NewSearchBar';
-import { useHistory } from 'react-router-dom';
+import { Link, useHistory } from 'react-router-dom';
+import { apiAutocomplete } from '../utils/api';
 
 const HeaderContainer = styled.div`
     display: flex;
@@ -50,7 +51,7 @@ const SearchBarContainer = styled.div`
 const LinksContainer = styled(motion.div)`
     display: flex;
     margin-left: auto;
-    margin-right: 60px;
+    margin-right: 30px;
     align-items: center;
     gap: 40px;
     font-family: 'SFPro', sans-serif;
@@ -126,8 +127,22 @@ const menuVariants = {
     }
 };
 
-const Header = () => {
+const Header = ({ autocompleteData, loadDataIndependently = true }) => {
     const [isOpen, setIsOpen] = useState(false);
+
+    const getCourseCount = () => Object.keys(localStorage).filter(a => !a.startsWith("meta-")).length;
+    const [courseCount, setCourseCount] = useState(getCourseCount());
+
+    useEffect(() => {
+        const onStorageChange = () => setCourseCount(getCourseCount());
+        window.addEventListener("storage", onStorageChange);
+        window.onCartUpdated = onStorageChange;
+        return () => {
+          window.removeEventListener("storage", onStorageChange);
+          window.onCartUpdated = null;
+        };
+    }, []);
+    
 
     const history = useHistory();
 
@@ -137,17 +152,24 @@ const Header = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '15px', margin: '0 28px' }}>
                 <img
                     src="/static/image/logo.png" alt="Penn Course Review" style={{ height: '35px', cursor: 'pointer' }}
-                    onClick={() => history.push('/')}
+                    onClick={() => {
+                        history.push('/');
+                        window.location.reload();
+                    }} 
                 />
                 <Title>Penn Course Review</Title>
             </div>
             <SearchBarContainer>
-                <NewSearchBar isTitle={true} />
+                <NewSearchBar isTitle={true} autocompleteData={autocompleteData} loadDataIndependently={loadDataIndependently}/>
             </SearchBarContainer>
             <LinksContainer>
                 <StyledLink href='/about'>About</StyledLink>
                 <StyledLink href='/faq'>FAQs</StyledLink>
                 <StyledLink href='https://airtable.com/appFRa4NQvNMEbWsA/shrCCsGC2BjUif5Wx' target="_blank">Feedback</StyledLink>
+                <Link to="/cart" id="cart-icon" title="Course Cart">
+                    <i id="cart" className="fa fa-shopping-cart" />
+                    {courseCount > 0 && <span id="cart-count">{courseCount}</span>}
+                </Link>
             </LinksContainer>
             <Hamburger onClick={() => setIsOpen(!isOpen)}>
                 {isOpen ? <HiXMark /> : <HiBars3 />}
@@ -162,6 +184,7 @@ const Header = () => {
                 <StyledLink href='/about'>About</StyledLink>
                 <StyledLink href='/faq'>FAQs</StyledLink>
                 <StyledLink href='https://airtable.com/appFRa4NQvNMEbWsA/shrCCsGC2BjUif5Wx' target="_blank">Feedback</StyledLink>
+                <StyledLink href="/cart">Course Cart</StyledLink>
             </MobileLinksInner>
         </MobileMenuWrapper>
         </>

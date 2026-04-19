@@ -118,76 +118,89 @@ class SearchBar extends Component {
   }
 
   componentDidMount() {
-    apiAutocomplete()
-      .then((result) => {
-        const courses = result.courses.map((i) => ({
-          ...i,
-          value: i.url,
-          label: i.title,
-          group: i.category,
-          category: "Courses",
-        }));
-        const coursesIndex = [
-          courses.map((i) => ({
-            term: fuzzysort.prepare(expandCombo(i.title)),
+    this.processAutocompleteData();
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.autocompleteData !== this.props.autocompleteData) {
+      this.processAutocompleteData();
+    }
+  }
+
+  async processAutocompleteData() {
+    let result;
+    if (this.props.loadDataIndependently) {
+      result = await apiAutocomplete();
+    } else {
+      result = this.props.autocompleteData;
+    }
+    if (result) {
+      const courses = result.courses.map((i) => ({
+        ...i,
+        value: i.url,
+        label: i.title,
+        group: i.category,
+        category: "Courses",
+      }));
+      const coursesIndex = [
+        courses.map((i) => ({
+          term: fuzzysort.prepare(expandCombo(i.title)),
             id: i.title,
-          })),
-        ];
-        courses.forEach((i) => {
-          coursesIndex.push(
-            i.desc.map((j) => ({ term: fuzzysort.prepare(j), id: i.title }))
-          );
-        });
-
-        const formattedAutocomplete = [
-          {
-            label: "Departments",
-            options: result.departments.map((i) => ({
-              ...i,
-              value: i.url,
-              label: i.title,
-              group: i.category,
-              search_desc: fuzzysort.prepare(i.desc),
-              category: "Departments",
-            })),
-          },
-          {
-            label: "Courses",
-            options: courses.reduce((map, obj) => {
-              map[obj.title] = obj;
-              return map;
-            }, {}),
-            search_index: coursesIndex.flat(),
-          },
-          {
-            label: "Instructors",
-            options: result.instructors.map((i) => ({
-              ...i,
-              value: i.url,
-              label: i.title,
-              group: i.category,
-              search_desc: fuzzysort.prepare(i.desc),
-              category: "Instructors",
-            })),
-          },
-        ];
-
-        this.setState({ autocompleteOptions: formattedAutocomplete }, () => {
-          this._autocompleteCallback.forEach((x) =>
-            x(this.state.autocompleteOptions)
-          );
-          this._autocompleteCallback = [];
-        });
-      })
-      .catch((e) => {
-        window.Raven.captureException(e);
-        this.setState({ autocompleteOptions: [] }, () => {
-          this._autocompleteCallback.forEach((x) =>
-            x(this.state.autocompleteOptions)
-          );
-          this._autocompleteCallback = [];
-        });
+        })),
+      ];
+      courses.forEach((i) => {
+        coursesIndex.push(
+          i.desc.map((j) => ({ term: fuzzysort.prepare(j), id: i.title }))
+        );
       });
+
+      const formattedAutocomplete = [
+        {
+          label: "Departments",
+          options: result.departments.map((i) => ({
+            ...i,
+            value: i.url,
+            label: i.title,
+            group: i.category,
+            search_desc: fuzzysort.prepare(i.desc),
+            category: "Departments",
+          })),
+        },
+        {
+          label: "Courses",
+          options: courses.reduce((map, obj) => {
+            map[obj.title] = obj;
+            return map;
+          }, {}),
+          search_index: coursesIndex.flat(),
+        },
+        {
+          label: "Instructors",
+          options: result.instructors.map((i) => ({
+            ...i,
+            value: i.url,
+            label: i.title,
+            group: i.category,
+            search_desc: fuzzysort.prepare(i.desc),
+            category: "Instructors",
+          })),
+        },
+      ];
+
+      this.setState({ autocompleteOptions: formattedAutocomplete }, () => {
+        this._autocompleteCallback.forEach((x) =>
+          x(this.state.autocompleteOptions)
+        );
+        this._autocompleteCallback = [];
+      });
+    } else {
+      this.setState({ autocompleteOptions: [] }, () => {
+        this._autocompleteCallback.forEach((x) =>
+          x(this.state.autocompleteOptions)
+        );
+        this._autocompleteCallback = [];
+      });
+    }
   }
 
   filterOptionsList(autocompleteOptions, inputValue) {
@@ -273,6 +286,7 @@ class SearchBar extends Component {
     return (
       <div id="search" style={{ minWidth: 0, width: "100%" }}>
         <AsyncSelect
+          key={this.state.autocompleteOptions.length}
           ref={this.selectRef}
           autoFocus={this.props.isTitle}
           onChange={this.handleChange}
