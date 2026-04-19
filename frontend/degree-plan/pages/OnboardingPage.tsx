@@ -45,11 +45,9 @@ const OnboardingPage = ({
   >(`/api/degree/degrees`);
 
   // TRANSCRIPT PARSING
-  const total = useRef<Record<number, ParsedText[]>>({});
+  const total = useRef<Record<number, ParsedText>>({});
   const addText = (items: any[], index: number) => {
-    const parsed = parseItems(items);
-    total.current[index] = total.current[index] ?? [];
-    total.current[index].push(parsed);
+    total.current[index] = parseItems(items);
 
     // If all pages have been read, begin to parse text from transcript
     if (Object.keys(total.current).length === numPages) {
@@ -59,11 +57,9 @@ const OnboardingPage = ({
         .sort((a, b) => a - b);
 
       sortedPageIndexes.forEach((pageIndex) => {
-        const pageEntries = total.current[pageIndex];
-        if (!pageEntries) return;
-        pageEntries.forEach((pageText) => {
-          all = all.concat(flattenParsedText(pageText));
-        });
+        const pageEntry = total.current[pageIndex];
+        if (!pageEntry) return;
+        all = all.concat(flattenParsedText(pageEntry));
       });
 
       const {
@@ -73,7 +69,6 @@ const OnboardingPage = ({
         detectedMajorsOptions,
       } = parseTranscript(all, degrees);
       setScrapedCourses(scrapedCourses);
-      console.log(scrapedCourses);
       setStartingYear({
         value: startYear,
         label: startYear,

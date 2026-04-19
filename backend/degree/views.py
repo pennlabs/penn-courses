@@ -446,13 +446,11 @@ class OnboardFromTranscript(APIView):
                     legal=legal,
                 )
                 if just_created:
-                    f.save()
                     f.rules.set(selected_rules)
                     f.unselected_rules.set(unselected_rules)
                 else:
                     f.rules.add(selected_rules)
                     f.unselected_rules.add(unselected_rules)
-                f.save()
 
                 for rule in selected_rules:
                     satisfied_lookup[rule.id] += 1
