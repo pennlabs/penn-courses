@@ -117,6 +117,7 @@ export interface Fulfillment extends DBObject {
   degree_plan: number; // id
   full_code: string;
   unselected_rules: number[];
+  overrides: number[]; // rule IDs manually overridden to count for
   legal: boolean;
 }
 

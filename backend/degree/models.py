@@ -464,6 +464,18 @@ class Fulfillment(models.Model):
             """
         ),
     )
+    overrides = models.ManyToManyField(
+        Rule,
+        related_name="overridden_fulfillments",
+        blank=True,
+        help_text=dedent(
+            """
+            Rules this course is manually overridden to count for, bypassing the normal Q filter
+            check. Use this to handle edge cases where a course should fulfill a requirement
+            even though it doesn't technically satisfy the rule's conditions.
+            """
+        ),
+    )
 
     class Meta:
         unique_together = ("degree_plan", "full_code")

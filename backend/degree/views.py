@@ -264,7 +264,8 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
         if target_rule not in rule_to_degree:
             raise ValidationError({"rule_id": "Rule does not belong to this degree plan."})
 
-        if not target_rule.check_belongs(full_code):
+        is_overridden = target_rule in fulfillment.overrides.all()
+        if not target_rule.check_belongs(full_code) and not is_overridden:
             raise ValidationError(
                 {"rule_id": f"Course {full_code} does not satisfy rule {target_rule.id}"}
             )
@@ -328,6 +329,56 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
         data = self.get_serializer(fulfillment).data
         data["displaced"] = displaced
         return Response(data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["post"], url_path="override")
+    def add_override(self, request, *args, **kwargs):
+        """
+        Add a manual override that allows a course to count for a rule regardless of whether
+        it satisfies the rule's Q filter. Also adds the rule to the fulfillment's selected
+        rules if not already present.
+
+        POST with `{"rule_id": <id>}`.
+        """
+        rule_id = request.data.get("rule_id")
+        if rule_id is None:
+            raise ValidationError({"rule_id": "This field is required."})
+
+        try:
+            rule = Rule.objects.get(id=int(rule_id))
+        except (ValueError, TypeError, Rule.DoesNotExist):
+            raise ValidationError({"rule_id": "Invalid rule_id."})
+
+        fulfillment = self.get_object()
+
+        _, rule_to_degree = map_rules_and_degrees(fulfillment.degree_plan)
+        if rule not in rule_to_degree:
+            raise ValidationError({"rule_id": "Rule does not belong to this degree plan."})
+
+        fulfillment.overrides.add(rule)
+        if rule not in fulfillment.rules.all():
+            fulfillment.rules.add(rule)
+
+        return Response(self.get_serializer(fulfillment).data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["delete"], url_path="override/(?P<rule_id>[^/.]+)")
+    def remove_override(self, request, rule_id=None, *args, **kwargs):
+        """
+        Remove a manual override, and remove the rule from the fulfillment's selected
+        and unselected rules.
+
+        DELETE to `override/<rule_id>/`.
+        """
+        try:
+            rule = Rule.objects.get(id=int(rule_id))
+        except (ValueError, TypeError, Rule.DoesNotExist):
+            raise ValidationError({"rule_id": "Invalid rule_id."})
+
+        fulfillment = self.get_object()
+        fulfillment.overrides.remove(rule)
+        fulfillment.rules.remove(rule)
+        fulfillment.unselected_rules.remove(rule)
+
+        return Response(self.get_serializer(fulfillment).data, status=status.HTTP_200_OK)
 
 
 class DockedCourseViewset(viewsets.ModelViewSet):

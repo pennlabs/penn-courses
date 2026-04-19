@@ -120,6 +120,7 @@ class FulfillmentSerializer(serializers.ModelSerializer):
     rules = serializers.PrimaryKeyRelatedField(
         many=True, queryset=Rule.objects.all(), required=False
     )
+    overrides = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
 
     def to_internal_value(self, data):
         """
@@ -140,6 +141,7 @@ class FulfillmentSerializer(serializers.ModelSerializer):
             "rules",
             "unselected_rules",
             "legal",
+            "overrides",
         ]
 
     def validate(self, data):
@@ -168,8 +170,12 @@ class FulfillmentSerializer(serializers.ModelSerializer):
 
         data["rules"] = rules
 
+        overridden_rules = set(self.instance.overrides.all()) if self.instance else set()
+
         # TODO: check that rules belong to this degree plan
         for rule in rules:
+            if rule in overridden_rules:
+                continue
             # NOTE: we don't do any validation if the course doesn't exist in DB. In future,
             # it may be better to prompt user for manual override
             if (
