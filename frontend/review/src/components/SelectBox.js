@@ -5,7 +5,6 @@ import { HiMagnifyingGlass, HiXMark } from "react-icons/hi2";
 import { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { use } from 'react';
-import { apiAutocomplete } from '../utils/api';
 
 const SelectBoxContainer = styled.div`
     display: flex;
@@ -202,7 +201,6 @@ const SelectBox = ({ options, setOptions, availableItems, fullWidth = false }) =
     });
 
     useEffect(() => {
-        console.log('Available items:', availableItems);
         const filteredOptions = availableItems.filter(option => {
             const isNotSelected = !visualStoredOptions.has(option);
             const matchesSearch = option.toLowerCase().includes(searchQuery.toLowerCase());
