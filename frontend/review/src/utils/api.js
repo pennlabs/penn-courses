@@ -45,7 +45,10 @@ export function apiAutocomplete() {
   if (cached_autocomplete) {
     // If a cached version exists, replace it in the cache asynchronously and return the old cache.
     apiFetch(`${API_DOMAIN}/api/review/autocomplete`)
-      .then(compressAutocomplete)
+      .then(data => {
+        uncompressedAutocompleteData = data; // Update memory
+        return compressAutocomplete(data);
+      })
       .then(compressed => {
         try {
           localStorage.setItem(key, compressed);
@@ -53,14 +56,23 @@ export function apiAutocomplete() {
           localStorage.removeItem(key);
         }
       });
-    return isCompressedAutocomplete(cached_autocomplete)
-      ? decompressAutocomplete(cached_autocomplete)
-      : Promise.resolve(cached_autocomplete);
+      const staleDataPromise = isCompressedAutocomplete(cached_autocomplete)
+        ? decompressAutocomplete(cached_autocomplete)
+        : Promise.resolve(cached_autocomplete);
+
+      return staleDataPromise.then(decompressedData => {
+        // Only set this if the background fetch hasn't already beaten us to it
+        if (!uncompressedAutocompleteData) {
+          uncompressedAutocompleteData = decompressedData;
+        }
+        return decompressedData;
+      });
   } else {
     // If no cached data exists, fetch, set the cache and return in the same promise.
     return new Promise((resolve, reject) => {
       apiFetch(`${API_DOMAIN}/api/review/autocomplete`)
         .then(data => {
+          uncompressedAutocompleteData = data;
           resolve(data);
           return compressAutocomplete(data);
         })
@@ -70,7 +82,8 @@ export function apiAutocomplete() {
           } catch (e) {
             localStorage.removeItem(key);
           }
-        });
+        })
+        .catch(reject);
     });
   }
 }

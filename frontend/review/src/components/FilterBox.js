@@ -83,16 +83,23 @@ const ResetButton = styled.button`
     }
 `;
 
-const FilterDropdown = ({ title, renderContent }) => {
+const FilterDropdown = ({ title, renderContent, active }) => {
     const [isOpen, setIsOpen] = useState(false);
 
     return (
         <DropdownWrapper $isOpen={isOpen} id={`dropdown-${title}`}>
             <FilterDropdownContainer onMouseDown={() => setIsOpen(!isOpen)}>
                 <p>{title}</p>
-                <motion.div animate={{ rotate: isOpen ? 90 : 0, display: 'flex', alignItems: 'center' }}>
-                    <SlArrowRight size={15} color="#6D6F71" />
-                </motion.div>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
+                    {active && (
+                        <div style={{ width: '6px', height: '6px', borderRadius: '3px', backgroundColor: '#6D6F71', display: 'inline-block', marginLeft: '6px' }} />
+                    )} 
+                    <motion.div animate={{ rotate: isOpen ? 90 : 0, display: 'flex', alignItems: 'center' }}>
+                        <SlArrowRight size={15} color="#6D6F71" />
+                    </motion.div>
+                </div>
+                
             </FilterDropdownContainer>
 
             <AnimatePresence initial={false}>
@@ -115,64 +122,75 @@ const FilterDropdown = ({ title, renderContent }) => {
     );
 }
 
-const FilterBox = ({ filters, setFilters }) => {
+const FilterBox = ({ filters, setFilters, autocompleteData }) => {
     const [departments, setDepartments] = useState([]);
     const [attributes, setAttributes] = useState([]);
 
     useEffect(() => {
-        const fetchFilterData = async () => {
-            try {
-                const [attributesData, autocompleteData] = await Promise.all([
-                    apiAttributes(),
-                    apiAutocomplete()
-                ]);
-                
-                setAttributes(attributesData);
-                setDepartments(autocompleteData.departments.map(dept => dept.title));
-
-            } catch (error) {
-                console.error("Error fetching filter data:", error);
-            }
-        };
-
-        fetchFilterData();
+        apiAttributes()
+            .then(data => setAttributes(data))
+            .catch(error => console.error("Error fetching attributes data:", error));
     }, []);
+
+    useEffect(() => {
+        if (autocompleteData) {
+            setDepartments(autocompleteData.departments.map(dept => dept.title));
+        }
+    }, [autocompleteData]);
+
+    const filterHasChanged = (filterName) => {
+        const currFilter = filters[filterName];
+        if (Array.isArray(currFilter)) {
+            return currFilter.length !== DEFAULT_FILTERS[filterName].length || !currFilter.every(v => DEFAULT_FILTERS[filterName].includes(v));
+        } else {
+            return currFilter !== DEFAULT_FILTERS[filterName]
+        }
+    }
 
     return (
         <>
             <Container>
                 <FilterContainer>
-                    <FilterDropdown title="Department" renderContent={() => (
+                    <FilterDropdown title="Semester Offered" active={filterHasChanged("semester")} renderContent={() => (
+                        <SemesterSelect semesterList={filters.semester} setSemesterList={(semester) => setFilters({ ...filters, semester })} />
+                    )} />
+                    <FilterDropdown title="Department" active={filterHasChanged("departments")} renderContent={() => (
                         <SelectBox 
                             options={filters.departments} 
                             setOptions={(departments) => setFilters({ ...filters, departments })} 
                             availableItems={departments} 
                         />
                     )} />
-                    <FilterDropdown title="Attributes" renderContent={() => (
+                    <FilterDropdown title="Attributes" active={filterHasChanged("attributes")} renderContent={() => (
                         <SelectBox 
                             options={filters.attributes} 
                             setOptions={(attributes) => setFilters({ ...filters, attributes })} 
                             availableItems={attributes} 
                         />
                     )} />
-                    <FilterDropdown title="Time Offered" renderContent={() => (
+                    <FilterDropdown title="Time Offered" active={filterHasChanged("time")} renderContent={() => (
                         <TimeSelect timeString={filters.time} setTimeString={(time) => setFilters({ ...filters, time })} diameter={200} />
                     )} />
-                    <FilterDropdown title="Days Offered" renderContent={() => (
+                    <FilterDropdown title="Days Offered" active={filterHasChanged("days")} renderContent={() => (
                         <DaySelect daysOfferedList={filters.days} setDaysOfferedList={(days) => setFilters({ ...filters, days })} />
                     )} />
-                    <FilterDropdown title="Semester Offered" renderContent={() => (
-                        <SemesterSelect semesterList={filters.semester} setSemesterList={(semester) => setFilters({ ...filters, semester })} />
+                    <FilterDropdown title="Course Quality" active={filterHasChanged("course_quality")} renderContent={() => (
+                        <SliderSelect 
+                            ratingValues={filters.course_quality} 
+                            setRatingValues={(course_quality) => setFilters({ ...filters, course_quality })} 
+                            rangeDescription={{ min: "Poor", max: "Excellent"}}/>
                     )} />
-                    <FilterDropdown title="Course Quality" renderContent={() => (
-                        <SliderSelect ratingValues={filters.course_quality} setRatingValues={(course_quality) => setFilters({ ...filters, course_quality })} />
+                    <FilterDropdown title="Course Difficulty" active={filterHasChanged("difficulty")} renderContent={() => (
+                        <SliderSelect 
+                            ratingValues={filters.difficulty} 
+                            setRatingValues={(difficulty) => setFilters({ ...filters, difficulty })} 
+                            rangeDescription={{ min: "Easy", max: "Hard"}}/>
                     )} />
-                    <FilterDropdown title="Course Difficulty" renderContent={() => (
-                        <SliderSelect ratingValues={filters.difficulty} setRatingValues={(difficulty) => setFilters({ ...filters, difficulty })} />
-                    )} />
-                    <FilterDropdown title="Instructor Quality" renderContent={() => (
-                        <SliderSelect ratingValues={filters.instructor_quality} setRatingValues={(instructor_quality) => setFilters({ ...filters, instructor_quality })} />
+                    <FilterDropdown title="Instructor Quality" active={filterHasChanged("instructor_quality")} renderContent={() => (
+                        <SliderSelect 
+                            ratingValues={filters.instructor_quality} 
+                            setRatingValues={(instructor_quality) => setFilters({ ...filters, instructor_quality })} 
+                            rangeDescription={{ min: "Poor", max: "Excellent"}}/>
                     )} />
                 </FilterContainer>
                 <ResetButton onClick={() => setFilters(DEFAULT_FILTERS)}>Reset Filters</ResetButton>
