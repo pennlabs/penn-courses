@@ -400,7 +400,7 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
     setRemovingOverride(fullCode);
     try {
       await deleteFetcher(
-        `/api/degree/degreeplans/${activeDegreePlanId}/fulfillments/${fullCode}/override/${rule.id}/`
+        `/api/degree/degreeplans/${activeDegreePlanId}/fulfillments/${fullCode}/override/${rule.id}`
       );
       await mutate(`/api/degree/degreeplans/${activeDegreePlanId}/fulfillments`);
     } finally {
@@ -423,7 +423,7 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
       );
       // Then add the override (which also adds the rule to the fulfillment)
       await postFetcher(
-        `/api/degree/degreeplans/${activeDegreePlanId}/fulfillments/${overrideModal.fullCode}/override/`,
+        `/api/degree/degreeplans/${activeDegreePlanId}/fulfillments/${overrideModal.fullCode}/override`,
         { rule_id: rule.id }
       );
       await mutate(`/api/degree/degreeplans/${activeDegreePlanId}/fulfillments`);
