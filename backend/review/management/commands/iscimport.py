@@ -62,7 +62,10 @@ class Command(BaseCommand):
             "-s",
             "--semester",
             action="append",
-            help="Semester to import in the `<year>[A|B|C]` format. Add as many as you like",
+            help="""
+            Semester to import in the `<year>[A|B|C]` format. 
+            Add as many as you like (e.g., `-s 2022C -s 2022B` will specify both 2022B and 2022C)
+            """,
         )
         semesters.add_argument(
             "-a",
