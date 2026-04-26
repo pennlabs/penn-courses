@@ -52,6 +52,8 @@ type WelcomeLayoutProps = {
   inputtedSchools: SchoolOption[];
   inputtedMajors: MajorOption[];
   setShowOnboardingModal: (arg0: boolean) => void;
+  canExit?: boolean;
+  onExit?: () => void;
 };
 
 export default function CreateWithTranscriptPanel({
@@ -63,6 +65,8 @@ export default function CreateWithTranscriptPanel({
   inputtedSchools,
   inputtedMajors,
   setShowOnboardingModal,
+  canExit = false,
+  onExit,
 }: WelcomeLayoutProps) {
   const [startingYear, setStartingYear] = useState<{
     label: any;
@@ -206,15 +210,31 @@ export default function CreateWithTranscriptPanel({
   return (
     <CenteredFlexContainer>
       <PanelContainer $maxWidth="90%" $minWidth="90%">
-        <TextButton
-          onClick={() => {
-            setCurrentPage(0);
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginLeft: "5%",
+            marginRight: "5%",
+            marginTop: "3%",
           }}
-          style={{ marginLeft: "5%", marginTop: "3%" }}
         >
-          <ArrowLeftIcon />
-          <p>Back</p>
-        </TextButton>
+          <TextButton
+            onClick={() => {
+              setCurrentPage(0);
+            }}
+          >
+            <ArrowLeftIcon />
+            <p>Back</p>
+          </TextButton>
+
+          {canExit && onExit && (
+            <TextButton onClick={onExit}>
+              <p>Back to plan</p>
+            </TextButton>
+          )}
+        </div>
         <ColumnsContainer>
           <Column>
             <h1 style={{ paddingTop: "1.25%" }}>Enter your degree(s):</h1>
