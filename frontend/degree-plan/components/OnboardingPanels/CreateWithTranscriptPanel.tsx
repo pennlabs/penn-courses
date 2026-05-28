@@ -233,12 +233,6 @@ export default function CreateWithTranscriptPanel({
             <ArrowLeftIcon />
             <p>Back</p>
           </TextButton>
-
-          {canExit && onExit && (
-            <TextButton onClick={onExit}>
-              <p>Back to plan</p>
-            </TextButton>
-          )}
         </div>
         <ColumnsContainer>
           <Column>

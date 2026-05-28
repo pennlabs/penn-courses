@@ -1,4 +1,8 @@
-import { ArrowLeftIcon, ArrowRightIcon, UploadIcon } from "@radix-ui/react-icons";
+import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  UploadIcon,
+} from "@radix-ui/react-icons";
 import { Dispatch, MutableRefObject, SetStateAction } from "react";
 import { Document, Page } from "react-pdf";
 import {
@@ -46,7 +50,7 @@ export default function WelcomeLayout({
             onClick={onExit}
             style={{
               position: "absolute",
-              left: "5%",
+              left: "2.5%",
               top: "3%",
             }}
           >
