@@ -1,0 +1,1553 @@
+{
+  "id": "MATH-1400",
+  "title": "Calculus I",
+  "description": "Brief review of High School calculus, applications of integrals, transcendental functions, methods of integration, infinite series, Taylor's theorem, and first order ordinary differential equations. Use of symbolic manipulation and graphics software in calculus.\nNon-LPS students interested in this course should contact the MATH department for permission. LPS students may register via Courses@Penn.",
+  "syllabus_url": null,
+  "semester": "2026C",
+  "prerequisites": "",
+  "course_quality": 1.963,
+  "instructor_quality": 2.349,
+  "difficulty": 3.183,
+  "work_required": 3.038,
+  "credits": 1.0,
+  "crosslistings": [],
+  "pre_ngss_requirements": [],
+  "attributes": [
+    {
+      "code": "WUFG",
+      "school": "WH",
+      "description": "Wharton UG Core Flex GenEd"
+    },
+    {
+      "code": "ACGN",
+      "school": "SAS",
+      "description": "COGS Cognitive Neuroscience"
+    },
+    {
+      "code": "ACGL",
+      "school": "SAS",
+      "description": "COGS Language & Mind"
+    },
+    {
+      "code": "ACGC",
+      "school": "SAS",
+      "description": "COGS Computation and Cognition"
+    },
+    {
+      "code": "QS",
+      "school": "MODE",
+      "description": "Grade Mode: Standard Lettr Grd"
+    },
+    {
+      "code": "QP",
+      "school": "MODE",
+      "description": "Grade Mode: Pass/Fail"
+    },
+    {
+      "code": "APPR",
+      "school": "SAS",
+      "description": "PPE Rigorous Reasoning"
+    },
+    {
+      "code": "ABBN",
+      "school": "SAS",
+      "description": "NRSC Minor Course Elective"
+    },
+    {
+      "code": "ABBM",
+      "school": "SAS",
+      "description": "NRSC Major Elective"
+    },
+    {
+      "code": "AUFR",
+      "school": "SAS",
+      "description": "COL Foundational Appr. - Formal Reason&Analysis"
+    },
+    {
+      "code": "EUMA",
+      "school": "SEAS",
+      "description": "SEAS Mathematics Elective"
+    },
+    {
+      "code": "TLPS",
+      "school": null,
+      "description": "Tuition LPS Course"
+    },
+    {
+      "code": "NURS",
+      "school": "NUR",
+      "description": "NU Sector ReaSys&Relationship"
+    }
+  ],
+  "sections": [
+    {
+      "id": "MATH-1400-001",
+      "status": "O",
+      "activity": "LEC",
+      "credits": 0.0,
+      "capacity": 94,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "R",
+          "start": 8.3,
+          "end": 9.59,
+          "room": "DRLB A2"
+        },
+        {
+          "day": "T",
+          "start": 8.3,
+          "end": 9.59,
+          "room": "DRLB A2"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "MATH-1400-201",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-202",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-203",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-204",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-205",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-206",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-207",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-208",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-209",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-211",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-212",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-213",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-214",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-215",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-216",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-210",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-217",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-218",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-219",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-220",
+          "activity": "REC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "MATH-1400-002",
+      "status": "O",
+      "activity": "LEC",
+      "credits": 0.0,
+      "capacity": 160,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "R",
+          "start": 10.15,
+          "end": 11.44,
+          "room": "DRLB A1"
+        },
+        {
+          "day": "T",
+          "start": 10.15,
+          "end": 11.44,
+          "room": "DRLB A1"
+        }
+      ],
+      "instructors": [
+        {
+          "id": 369,
+          "name": "Nakia Rimmer"
+        }
+      ],
+      "course_quality": 2.433,
+      "instructor_quality": 3.188,
+      "difficulty": 3.229,
+      "work_required": 3.127,
+      "associated_sections": [
+        {
+          "id": "MATH-1400-201",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-202",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-203",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-204",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-205",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-206",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-207",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-208",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-209",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-211",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-212",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-213",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-214",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-215",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-216",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-210",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-217",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-218",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-219",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-220",
+          "activity": "REC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "MATH-1400-003",
+      "status": "O",
+      "activity": "LEC",
+      "credits": 0.0,
+      "capacity": 160,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "R",
+          "start": 12.0,
+          "end": 13.29,
+          "room": "DRLB A1"
+        },
+        {
+          "day": "T",
+          "start": 12.0,
+          "end": 13.29,
+          "room": "DRLB A1"
+        }
+      ],
+      "instructors": [
+        {
+          "id": 369,
+          "name": "Nakia Rimmer"
+        }
+      ],
+      "course_quality": 2.433,
+      "instructor_quality": 3.188,
+      "difficulty": 3.229,
+      "work_required": 3.127,
+      "associated_sections": [
+        {
+          "id": "MATH-1400-201",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-202",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-203",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-204",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-205",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-206",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-207",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-208",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-209",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-211",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-212",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-213",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-214",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-215",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-216",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-210",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-217",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-218",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-219",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-220",
+          "activity": "REC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "MATH-1400-004",
+      "status": "O",
+      "activity": "LEC",
+      "credits": 0.0,
+      "capacity": 160,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "R",
+          "start": 13.45,
+          "end": 15.14,
+          "room": "DRLB A1"
+        },
+        {
+          "day": "T",
+          "start": 13.45,
+          "end": 15.14,
+          "room": "DRLB A1"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "MATH-1400-201",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-202",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-203",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-204",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-205",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-206",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-207",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-208",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-209",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-211",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-212",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-213",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-214",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-215",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-216",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-210",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-217",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-218",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-219",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-220",
+          "activity": "REC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "MATH-1400-005",
+      "status": "O",
+      "activity": "LEC",
+      "credits": 0.0,
+      "capacity": 94,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "R",
+          "start": 15.3,
+          "end": 16.59,
+          "room": "DRLB A4"
+        },
+        {
+          "day": "T",
+          "start": 15.3,
+          "end": 16.59,
+          "room": "DRLB A4"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "MATH-1400-201",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-202",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-203",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-204",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-205",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-206",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-207",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-208",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-209",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-211",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-212",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-213",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-214",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-215",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-216",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-210",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-217",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-218",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-219",
+          "activity": "REC"
+        },
+        {
+          "id": "MATH-1400-220",
+          "activity": "REC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "MATH-1400-201",
+      "status": "O",
+      "activity": "REC",
+      "credits": 1.0,
+      "capacity": 33,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "F",
+          "start": 8.3,
+          "end": 9.59,
+          "room": "DRLB 4C6"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "MATH-1400-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-002",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-003",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-004",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-005",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "MATH-1400-202",
+      "status": "O",
+      "activity": "REC",
+      "credits": 1.0,
+      "capacity": 33,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "F",
+          "start": 10.15,
+          "end": 11.44,
+          "room": "DRLB A4"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "MATH-1400-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-002",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-003",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-004",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-005",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "MATH-1400-203",
+      "status": "O",
+      "activity": "REC",
+      "credits": 1.0,
+      "capacity": 33,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "F",
+          "start": 13.45,
+          "end": 15.14,
+          "room": "DRLB 2C8"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "MATH-1400-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-002",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-003",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-004",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-005",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "MATH-1400-204",
+      "status": "O",
+      "activity": "REC",
+      "credits": 1.0,
+      "capacity": 33,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "F",
+          "start": 15.3,
+          "end": 16.59,
+          "room": "DRLB 2C8"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "MATH-1400-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-002",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-003",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-004",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-005",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "MATH-1400-205",
+      "status": "O",
+      "activity": "REC",
+      "credits": 1.0,
+      "capacity": 33,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "F",
+          "start": 8.3,
+          "end": 9.59,
+          "room": "DRLB 2C8"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "MATH-1400-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-002",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-003",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-004",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-005",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "MATH-1400-206",
+      "status": "O",
+      "activity": "REC",
+      "credits": 1.0,
+      "capacity": 33,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "F",
+          "start": 10.15,
+          "end": 11.44,
+          "room": "DRLB 2C6"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "MATH-1400-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-002",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-003",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-004",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-005",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "MATH-1400-207",
+      "status": "O",
+      "activity": "REC",
+      "credits": 1.0,
+      "capacity": 33,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "F",
+          "start": 13.45,
+          "end": 15.14,
+          "room": "DRLB 3W2"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "MATH-1400-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-002",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-003",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-004",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-005",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "MATH-1400-208",
+      "status": "O",
+      "activity": "REC",
+      "credits": 1.0,
+      "capacity": 33,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "F",
+          "start": 15.3,
+          "end": 16.59,
+          "room": "DRLB 4C4"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "MATH-1400-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-002",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-003",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-004",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-005",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "MATH-1400-209",
+      "status": "O",
+      "activity": "REC",
+      "credits": 1.0,
+      "capacity": 33,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "F",
+          "start": 8.3,
+          "end": 9.59,
+          "room": "DRLB 4C4"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "MATH-1400-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-002",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-003",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-004",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-005",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "MATH-1400-210",
+      "status": "O",
+      "activity": "REC",
+      "credits": 1.0,
+      "capacity": 33,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "F",
+          "start": 10.15,
+          "end": 11.44,
+          "room": "DRLB 4C6"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "MATH-1400-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-002",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-003",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-004",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-005",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "MATH-1400-211",
+      "status": "O",
+      "activity": "REC",
+      "credits": 1.0,
+      "capacity": 33,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "F",
+          "start": 13.45,
+          "end": 15.14,
+          "room": "DRLB 3C6"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "MATH-1400-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-002",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-003",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-004",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-005",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "MATH-1400-212",
+      "status": "O",
+      "activity": "REC",
+      "credits": 1.0,
+      "capacity": 33,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "F",
+          "start": 15.3,
+          "end": 16.59,
+          "room": "DRLB 2C4"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "MATH-1400-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-002",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-003",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-004",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-005",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "MATH-1400-213",
+      "status": "O",
+      "activity": "REC",
+      "credits": 1.0,
+      "capacity": 34,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "F",
+          "start": 8.3,
+          "end": 9.59,
+          "room": "DRLB 4C2"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "MATH-1400-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-002",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-003",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-004",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-005",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "MATH-1400-214",
+      "status": "O",
+      "activity": "REC",
+      "credits": 1.0,
+      "capacity": 34,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "F",
+          "start": 10.15,
+          "end": 11.44,
+          "room": "DRLB 2C8"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "MATH-1400-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-002",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-003",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-004",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-005",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "MATH-1400-215",
+      "status": "O",
+      "activity": "REC",
+      "credits": 1.0,
+      "capacity": 34,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "F",
+          "start": 13.45,
+          "end": 15.14,
+          "room": "DRLB 3C4"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "MATH-1400-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-002",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-003",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-004",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-005",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "MATH-1400-216",
+      "status": "O",
+      "activity": "REC",
+      "credits": 1.0,
+      "capacity": 34,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "F",
+          "start": 15.3,
+          "end": 16.59,
+          "room": "DRLB 4C2"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "MATH-1400-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-002",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-003",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-004",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-005",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "MATH-1400-217",
+      "status": "O",
+      "activity": "REC",
+      "credits": 1.0,
+      "capacity": 34,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "F",
+          "start": 8.3,
+          "end": 9.59,
+          "room": "DRLB 3W2"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "MATH-1400-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-002",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-003",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-004",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-005",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "MATH-1400-218",
+      "status": "O",
+      "activity": "REC",
+      "credits": 1.0,
+      "capacity": 34,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "F",
+          "start": 10.15,
+          "end": 11.44,
+          "room": "DRLB 4C4"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "MATH-1400-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-002",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-003",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-004",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-005",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "MATH-1400-219",
+      "status": "O",
+      "activity": "REC",
+      "credits": 1.0,
+      "capacity": 34,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "F",
+          "start": 13.45,
+          "end": 15.14,
+          "room": "DRLB 3C2"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "MATH-1400-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-002",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-003",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-004",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-005",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "MATH-1400-220",
+      "status": "O",
+      "activity": "REC",
+      "credits": 1.0,
+      "capacity": 34,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "F",
+          "start": 15.3,
+          "end": 16.59,
+          "room": "DRLB 3W2"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "MATH-1400-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-002",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-003",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-004",
+          "activity": "LEC"
+        },
+        {
+          "id": "MATH-1400-005",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "MATH-1400-601",
+      "status": "O",
+      "activity": "LEC",
+      "credits": 1.0,
+      "capacity": 30,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "M",
+          "start": 19.0,
+          "end": 20.59,
+          "room": "DRLB 3C6"
+        },
+        {
+          "day": "W",
+          "start": 19.0,
+          "end": 20.59,
+          "room": "DRLB 3C6"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [],
+      "registration_volume": 0
+    }
+  ]
+}
