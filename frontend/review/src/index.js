@@ -10,7 +10,8 @@ import {
   CartPage,
   ErrorPage,
   FAQPage,
-  ReviewPage
+  ReviewPage,
+  HealthPage
 } from "./pages";
 import { GoogleAnalytics } from "./components/common";
 
@@ -29,6 +30,7 @@ root.render(
       <Route exact path="/about" component={AboutPage} />
       <Route exact path="/faq" component={FAQPage} />
       <Route exact path="/cart" component={CartPage} />
+      <Route exact path="/health" component={HealthPage} />
       <Route
         path="/:type(course|department|instructor)/:code/:semester?"
         component={AuthPage}
