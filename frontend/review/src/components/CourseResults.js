@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useContext, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useContext, useRef, useMemo } from 'react';
 import styled from 'styled-components';
-import { apiAutocomplete, apiReviewData, apiCourseSearch } from '../utils/api';
-import { useHistory } from 'react-router-dom';
+import { useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
+import { apiCourseSearch, queryKeys } from '../utils/api';
 import ResponsivePagination from 'react-responsive-pagination';
 import 'react-responsive-pagination/themes/classic.css';
 import { FaLock } from "react-icons/fa";
@@ -213,91 +213,63 @@ const formatFiltersForAPI = (filters) => {
 const CourseResults = ({ filters, setFilters, autocompleteData }) => {
     const [subjectSlice, setSubjectSlice] = useState({ start: 0, end: 101 });
 
-    const [departments, setDepartments] = useState([]);
-    const [filteredResults, setFilteredResults] = useState(numFiltersChanged(filters) > 0 ? {} : null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [isLoadingMore, setIsLoadingMore] = useState(false);
+    const departments = autocompleteData?.departments || [];
     const [isAverage, setIsAverage] = useState(true);
-    const [totalCount, setTotalCount] = useState(0);
-    const [hasMore, setHasMore] = useState(false);
-    const nextPageRef = useRef(2);
     const sentinelRef = useRef(null);
-    const isLoadingRef = useRef(false);
 
     const [recencyOption, setRecencyOption] = useState('Average Rating');
 
     const isAuth = useContext(AuthContext);
 
-    useEffect(() => {
-        if (autocompleteData) {
-            console.log("Setting departments from autocomplete data:", autocompleteData.departments);
-            setDepartments(autocompleteData.departments);
-            return;
-        }
-    }, [autocompleteData]);
+    const isActivelyFiltering = numFiltersChanged(filters) > 0;
+    const formattedFilters = useMemo(() => formatFiltersForAPI(filters), [filters]);
 
-    const fetchCourses = useCallback((filters, page, append = false) => {
-        if (isLoadingRef.current) return;
-        isLoadingRef.current = true;
-        if (append) {
-            setIsLoadingMore(true);
-        } else {
-            setIsLoading(true);
-        }
-        const ff = formatFiltersForAPI(filters);
-        apiCourseSearch(ff.semester, ff.attributes, ff.difficulty, ff.course_quality, ff.instructor_quality, ff.days, ff.time, ff.departments, page)
-            .then(data => {
-                console.log(data.results)
-                const newResults = (data.results || []).reduce((acc, course) => {
-                    acc[course.id] = course;
-                    return acc;
-                }, {});
-                if (append) {
-                    setFilteredResults(prev => ({ ...prev, ...newResults }));
-                } else {
-                    setFilteredResults(newResults);
-                }
-                setTotalCount(data.count || 0);
-                setHasMore(data.next !== null);
-                nextPageRef.current = page + 1;
-            })
-            .catch(error => {
-                console.error("Error fetching course search data:", error);
-                if (!append) {
-                    setFilteredResults({});
-                    setTotalCount(0);
-                }
-                setHasMore(false);
-            })
-            .finally(() => {
-                isLoadingRef.current = false;
-                setIsLoading(false);
-                setIsLoadingMore(false);
+    const {
+        data: searchData,
+        isLoading,
+        isPlaceholderData,
+        isFetchingNextPage: isLoadingMore,
+        fetchNextPage,
+        hasNextPage: hasMore,
+    } = useInfiniteQuery({
+        queryKey: queryKeys.courseSearch(formattedFilters),
+        queryFn: ({ pageParam }) => apiCourseSearch(formattedFilters, pageParam),
+        initialPageParam: 1,
+        getNextPageParam: (lastPage, allPages) => (lastPage.next ? allPages.length + 1 : undefined),
+        enabled: isActivelyFiltering,
+        // Lets an already-cached filter combo render instantly (no key change means
+        // no placeholder involved at all). For an uncached combo, isPlaceholderData
+        // below is what tells us the current data still belongs to the old filters,
+        // so we can show the loading state instead of stale results.
+        placeholderData: keepPreviousData,
+    });
+
+    const isShowingStaleResults = isLoading || isPlaceholderData;
+
+    const filteredResults = useMemo(() => {
+        if (!isActivelyFiltering) return null;
+        if (!searchData) return {};
+        return searchData.pages.reduce((acc, page) => {
+            (page.results || []).forEach(course => {
+                acc[course.id] = course;
             });
-    }, []);
+            return acc;
+        }, {});
+    }, [isActivelyFiltering, searchData]);
 
-    useEffect(() => {
-        const isActivelyFiltering = numFiltersChanged(filters) > 0;
-
-        if (isActivelyFiltering) {
-            nextPageRef.current = 2;
-            fetchCourses(filters, 1);
-        } else {
-            setFilteredResults(null);
-            setTotalCount(0);
-            setHasMore(false);
-        }
-    }, [filters, fetchCourses]);
+    const totalCount = searchData?.pages[0]?.count || 0;
 
     // Infinite scroll — sentinel is inside the table's scroll area
     useEffect(() => {
         const sentinel = sentinelRef.current;
-        if (!sentinel || !hasMore) return;
+        // Skip while isPlaceholderData is true: hasMore/fetchNextPage would still be
+        // reflecting the previous filters' pagination state, not the new query's.
+        if (!sentinel || !hasMore || isPlaceholderData) return;
 
         const observer = new IntersectionObserver(
             (entries) => {
-                if (entries[0].isIntersecting && !isLoadingRef.current) {
-                    fetchCourses(filters, nextPageRef.current, true);
+                if (entries[0].isIntersecting && !isLoadingMore) {
+                    fetchNextPage();
                 }
             },
             { threshold: 0.1 }
@@ -305,9 +277,7 @@ const CourseResults = ({ filters, setFilters, autocompleteData }) => {
 
         observer.observe(sentinel);
         return () => observer.disconnect();
-    }, [hasMore, filters, fetchCourses]);
-
-    const history = useHistory();
+    }, [hasMore, isLoadingMore, fetchNextPage, isPlaceholderData]);
 
     return (
         <Container>
@@ -315,7 +285,7 @@ const CourseResults = ({ filters, setFilters, autocompleteData }) => {
             <>
                 {isAuth ? (
                     <>
-                    {isLoading ? (
+                    {isShowingStaleResults ? (
                         <SpecialPromptContainer>
                             <i
                                 className="fa fa-spin fa-cog fa-fw"
@@ -362,7 +332,7 @@ const CourseResults = ({ filters, setFilters, autocompleteData }) => {
                                     <span>
                                        No results found! Try adjusting your filters.
                                     </span>
-                                    {filters.semester == "Next Available" && (
+                                    {filters.semester === "Next Available" && (
                                         <i>Matching results may exist for previous semesters (Try "All")</i>
                                     )}
                                 </InfoBanner>
@@ -382,13 +352,21 @@ const CourseResults = ({ filters, setFilters, autocompleteData }) => {
                     </SpecialPromptContainer>
                 )}
             </>
+        ) : !autocompleteData ? (
+            <SpecialPromptContainer>
+                <i
+                    className="fa fa-spin fa-cog fa-fw"
+                    style={{ fontSize: "100px", color: "#aaa" }}
+                />
+                <DescText>Loading course catalog...</DescText>
+            </SpecialPromptContainer>
         ) : (
             <>
                 <BrowsingTitle>Browsing {departments.length} Subjects</BrowsingTitle>
                 <SubjectDisplayWrapper>
                     {departments.slice(subjectSlice.start, subjectSlice.end).map((dept, index) => (
                         <React.Fragment key={index}>
-                        {dept.desc != null && dept.desc != "" ? (
+                        {dept.desc !== null && dept.desc !== "" ? (
                             <SubjectCard key={index}>
                                 <div style={{ width: '60px', flexShrink: 0 }}>
                                     <LinkText onClick={() => {

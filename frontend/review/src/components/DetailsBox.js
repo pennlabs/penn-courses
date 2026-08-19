@@ -166,7 +166,7 @@ export const DetailsBox = forwardRef(
           : semesters[0];
       });
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [data, isCourseEval]);
+    }, [data]);
 
     const hasData = Boolean(data && Object.keys(data).length);
     const isCourse = type === "course";

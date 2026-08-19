@@ -6,19 +6,18 @@ import "./styles/tokens.css";
 
 import { createRoot } from "react-dom/client";
 import { Route, Switch, BrowserRouter as Router } from "react-router-dom";
-import { ThemeProvider } from "styled-components";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import {
   AboutPage,
   AuthPage,
   CartPage,
   ErrorPage,
   FAQPage,
-  ReviewPage,
 } from "./pages";
 import { GoogleAnalytics } from "./components/common";
-import BrowsePage from "./pages/BrowsePage";
 import TempAuthPage from "./pages/TempAuthPage";
+import { queryClient, persistOptions } from "./utils/queryClient";
 
 if (window.location.hostname !== "localhost") {
   window.Raven.config(
@@ -29,18 +28,21 @@ if (window.location.hostname !== "localhost") {
 const container = document.getElementById("root");
 const root = createRoot(container);
 root.render(
-  <Router>
-    <Switch>
-      <Route exact path="/" component={TempAuthPage} />
-      <Route exact path="/about" component={AboutPage} />
-      <Route exact path="/faq" component={FAQPage} />
-      <Route exact path="/cart" component={CartPage} />
-      <Route //delete route when done development?
-        path="/:type(course|department|instructor)/:code/:semester?"
-        component={AuthPage}
-      />
-      <Route component={ErrorPage} />
-    </Switch>
-    <GoogleAnalytics />
-  </Router>
+  <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
+    <Router>
+      <Switch>
+        <Route exact path="/" component={TempAuthPage} />
+        <Route exact path="/about" component={AboutPage} />
+        <Route exact path="/faq" component={FAQPage} />
+        <Route exact path="/cart" component={CartPage} />
+        <Route //delete route when done development?
+          path="/:type(course|department|instructor)/:code/:semester?"
+          component={AuthPage}
+        />
+        <Route component={ErrorPage} />
+      </Switch>
+      <GoogleAnalytics />
+    </Router>
+    <ReactQueryDevtools initialIsOpen={false} />
+  </PersistQueryClientProvider>
 );

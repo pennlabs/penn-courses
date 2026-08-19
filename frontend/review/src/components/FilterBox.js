@@ -8,10 +8,9 @@ import DaySelect from './DaySelect';
 import SemesterSelect from './SemesterSelect';
 import SliderSelect from './SliderSelect';
 import TimeSelect from './TimeSelect';
-import KeywordSearch from './KeywordSearch';
-import { apiAutocomplete, apiAttributes } from '../utils/api';
+import { useQuery } from '@tanstack/react-query';
+import { apiAttributes, queryKeys } from '../utils/api';
 import { DEFAULT_FILTERS } from '../pages/BrowsePage';
-import { RiCollapseDiagonalLine } from "react-icons/ri";
 
 const Container = styled.div`
     display: flex;
@@ -124,13 +123,10 @@ const FilterDropdown = ({ title, renderContent, active }) => {
 
 const FilterBox = ({ filters, setFilters, autocompleteData }) => {
     const [departments, setDepartments] = useState([]);
-    const [attributes, setAttributes] = useState([]);
-
-    useEffect(() => {
-        apiAttributes()
-            .then(data => setAttributes(data))
-            .catch(error => console.error("Error fetching attributes data:", error));
-    }, []);
+    const { data: attributes = [] } = useQuery({
+        queryKey: queryKeys.attributes,
+        queryFn: apiAttributes,
+    });
 
     useEffect(() => {
         if (autocompleteData) {

@@ -8,7 +8,8 @@ import DetailsBox from "../components/DetailsBox";
 import SearchBar from "../components/SearchBar";
 import Footer from "../components/Footer";
 import { ErrorBox } from "../components/common";
-import { apiReviewData, apiLive } from "../utils/api";
+import { apiReviewData, apiLive, queryKeys } from "../utils/api";
+import { queryClient } from "../utils/queryClient";
 import Header from "../components/Header";
 
 /**

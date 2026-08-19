@@ -7,40 +7,36 @@ const autocompleteWorkerInstance = autocompleteWorker();
 const compressAutocomplete = autocompleteWorkerInstance.compress;
 const decompressAutocomplete = autocompleteWorkerInstance.decompress;
 
+// Prefixed "meta-" so the course cart's `getCartCourses()` (which treats
+// every non-"meta-" localStorage key as a cart item) ignores this entry.
 const PERSIST_STORAGE_KEY = "meta-pcr-query-cache";
 
-// The autocomplete/attributes dumps are large, rarely change
+// The autocomplete/attributes dumps are large, rarely change, and are
+// already served warm by the persister below, so there's no reason for a
+// mounted component to treat them as stale and refetch mid-session.
 const STATIC_QUERY_OPTIONS = {
   staleTime: 1000 * 60 * 60, // 1 hour
   gcTime: 1000 * 60 * 60 * 24 // 24 hours
 };
 
-// Every search runs an expensive query on the backend, and an infinite query refetches
-// every loaded page, so reuse results for a while and don't retry into a struggling DB
-const SEARCH_QUERY_OPTIONS = {
-  staleTime: 1000 * 60 * 5, // 5 minutes
-  gcTime: 1000 * 60 * 30, // 30 minutes
-  retry: false
-};
-
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1,
-      networkMode: "always",
-      refetchOnWindowFocus: false
+      retry: 1
     }
   }
 });
 
+// Applied via queryClient so both hook (`useQuery`) and imperative
+// (`queryClient.fetchQuery`, used by the remaining class components) call
+// sites share the same staleTime/gcTime without repeating the constants.
 queryClient.setQueryDefaults(queryKeys.autocomplete, STATIC_QUERY_OPTIONS);
 queryClient.setQueryDefaults(queryKeys.attributes, STATIC_QUERY_OPTIONS);
-queryClient.setQueryDefaults(["reviewData"], STATIC_QUERY_OPTIONS);
-queryClient.setQueryDefaults(["courseSearch"], SEARCH_QUERY_OPTIONS);
 
 export const asyncStoragePersister = createAsyncStoragePersister({
   key: PERSIST_STORAGE_KEY,
-
+  // compress/decompress already JSON.stringify/parse internally, so the
+  // persister's own serialize/deserialize step is bypassed here.
   serialize: data => data,
   deserialize: data => data,
   storage: {
@@ -71,7 +67,8 @@ export const persistOptions = {
   maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
   dehydrateOptions: {
     // Only autocomplete/attributes are large + slow-changing enough to be
-    // worth persisting to localStorage
+    // worth persisting to localStorage; every other query (course search
+    // results, review data, etc.) stays strictly in-memory.
     shouldDehydrateQuery: query => {
       const [rootKey] = query.queryKey;
       return (

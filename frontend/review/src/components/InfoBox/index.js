@@ -9,20 +9,6 @@ import { apiContact, queryKeys } from "../../utils/api";
 
 import styled from "styled-components";
 
-const NewLabel = styled.div`
-  background: #ea5a48;
-  color: #fff;
-  border-radius: 0.875rem;
-  font-size: 0.5625rem;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-  padding: 0.1875rem 0.375rem;
-  text-align: center;
-  align-self: center;
-  margin-right: 10px;
-  justify-self: start;
-`;
-
 const StatsToggleContainer = styled.div`
   display: flex;
   justify-content: start;
@@ -84,7 +70,7 @@ const InfoBox = ({
   const { data: contact = null } = useQuery({
     queryKey: queryKeys.contact(name),
     queryFn: () => apiContact(name),
-    enabled: isInstructor && Boolean(name)
+    enabled: isInstructor && Boolean(name),
   });
 
   const handleCartAdd = key => {

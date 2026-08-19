@@ -48,10 +48,7 @@ class SearchBar extends Component {
 
   componentDidMount() {
     queryClient
-      .fetchQuery({
-        queryKey: queryKeys.autocomplete,
-        queryFn: apiAutocomplete
-      })
+      .fetchQuery({ queryKey: queryKeys.autocomplete, queryFn: apiAutocomplete })
       .then(result => {
         const courses = result.courses.map(i => ({
           ...i,

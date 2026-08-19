@@ -5,7 +5,8 @@ import { withRouter } from "react-router-dom";
 import styled from "styled-components";
 import fuzzysort from "fuzzysort";
 import { HiMagnifyingGlass } from "react-icons/hi2";
-import { apiAutocomplete } from "../utils/api";
+import { apiAutocomplete, queryKeys } from "../utils/api";
+import { queryClient } from "../utils/queryClient";
 
 const SearchBarWrapper = styled.div`
   display: flex;
@@ -130,7 +131,10 @@ class SearchBar extends Component {
   async processAutocompleteData() {
     let result;
     if (this.props.loadDataIndependently) {
-      result = await apiAutocomplete();
+      result = await queryClient.fetchQuery({
+        queryKey: queryKeys.autocomplete,
+        queryFn: apiAutocomplete,
+      });
     } else {
       result = this.props.autocompleteData;
     }

@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { HiBars3, HiXMark } from "react-icons/hi2";
-import { motion, transformValue } from 'motion/react';
+import { motion } from 'motion/react';
 import NewSearchBar from './NewSearchBar';
 import { Link, useHistory } from 'react-router-dom';
-import { apiAutocomplete } from '../utils/api';
 
 const HeaderContainer = styled.div`
     display: flex;
@@ -153,9 +152,20 @@ const Header = ({ autocompleteData, loadDataIndependently = true }) => {
                 <img
                     src="/static/image/logo.png" alt="Penn Course Review" style={{ height: '35px', cursor: 'pointer' }}
                     onClick={() => {
-                        history.push('/');
-                        window.location.reload();
-                    }} 
+                        if (window.location.pathname === '/') {
+                            // Already on the browse page: BrowsePage only re-derives its
+                            // filters from the URL on mount/popstate, so a same-route
+                            // push here wouldn't reset them. A full reload is the simplest
+                            // way to force that reset in this one case.
+                            window.location.href = '/';
+                        } else {
+                            // Navigating in from another page (cart, about, course detail...)
+                            // already remounts BrowsePage fresh via the route change, so a
+                            // plain SPA push is enough - no reload needed, which also avoids
+                            // throwing away the in-memory query cache (see queryClient.js).
+                            history.push('/');
+                        }
+                    }}
                 />
                 <Title>Penn Course Review</Title>
             </div>
