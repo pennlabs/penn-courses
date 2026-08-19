@@ -1,5 +1,6 @@
 import React, { forwardRef, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
 import { ColumnSelector, ScoreTable } from "./common";
 import {
@@ -8,7 +9,7 @@ import {
   orderColumns,
   toNormalizedSemester
 } from "../utils/helpers";
-import { apiHistory } from "../utils/api";
+import { apiHistory, queryKeys } from "../utils/api";
 import { PROF_IMAGE_URL } from "../constants/routes";
 import { REGISTRATION_METRICS_COLUMNS } from "../constants";
 
@@ -83,7 +84,6 @@ const formsCol = {
  */
 export const DetailsBox = forwardRef(
   ({ course, instructor, url_semester, type, isCourseEval }, ref) => {
-    const [data, setData] = useState({});
     const [viewingRatings, setViewingRatings] = useState(true);
     const [selectedSemester, setSelectedSemester] = useState(null);
     const [semesterList, setSemesterList] = useState([]);
@@ -91,7 +91,15 @@ export const DetailsBox = forwardRef(
     const [filtered, setFiltered] = useState([]);
     const [filterAll, setFilterAll] = useState("");
     const [emptyStateImg, setEmptyStateImg] = useState("");
-    const [isLoading, setIsLoading] = useState(false);
+
+    const hasSelection =
+      (type === "course" && instructor) || (type === "instructor" && course);
+
+    const { data, isLoading } = useQuery({
+      queryKey: queryKeys.history(course, instructor, url_semester),
+      queryFn: () => apiHistory(course, instructor, url_semester),
+      enabled: Boolean(hasSelection)
+    });
 
     const showCol = info =>
       REGISTRATION_METRICS_COLUMNS.includes(info) === isCourseEval;
@@ -125,52 +133,42 @@ export const DetailsBox = forwardRef(
       setEmptyStateImg(PROF_IMAGE_URL(num));
     }, []);
     useEffect(() => {
-      setIsLoading(true);
-      if (instructor !== null && course !== null) {
-        apiHistory(course, instructor, url_semester)
-          .then(res => {
-            const sections = Object.values(res.sections);
-            const fields = [
-              ...new Set(
-                sections.reduce((r, s) => [...r, ...Object.keys(s.ratings)], [])
-              )
-            ]; // union of all keys of objects in sections
-            const ratingCols = orderColumns(fields)
-              .map(generateCol)
-              .filter(col => col);
-            const semesterSet = new Set(
-              sections
-                .filter(a => a.comments)
-                .map(a => a.semester)
-                .sort(compareSemesters)
-            );
-            const semesters = [...semesterSet];
-            setData(res);
-            setColumns([
-              semesterCol,
-              nameCol,
-              codeCol,
-              activityCol,
-              formsCol,
-              ...ratingCols
-            ]);
-            setSemesterList(semesters);
-            setSelectedSemester(() => {
-              if (!semesters.length) return null;
-              return semesterSet.has(selectedSemester)
-                ? selectedSemester
-                : semesters[0];
-            });
-          })
-          .finally(() => {
-            setIsLoading(false);
-          });
-      }
-    }, [course, instructor, selectedSemester]);
+      if (!data) return;
+      const sections = Object.values(data.sections);
+      const fields = [
+        ...new Set(
+          sections.reduce((r, s) => [...r, ...Object.keys(s.ratings)], [])
+        )
+      ]; // union of all keys of objects in sections
+      const ratingCols = orderColumns(fields)
+        .map(generateCol)
+        .filter(col => col);
+      const semesterSet = new Set(
+        sections
+          .filter(a => a.comments)
+          .map(a => a.semester)
+          .sort(compareSemesters)
+      );
+      const semesters = [...semesterSet];
+      setColumns([
+        semesterCol,
+        nameCol,
+        codeCol,
+        activityCol,
+        formsCol,
+        ...ratingCols
+      ]);
+      setSemesterList(semesters);
+      setSelectedSemester(prevSelectedSemester => {
+        if (!semesters.length) return null;
+        return semesterSet.has(prevSelectedSemester)
+          ? prevSelectedSemester
+          : semesters[0];
+      });
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [data]);
 
-    const hasData = Boolean(Object.keys(data).length);
-    const hasSelection =
-      (type === "course" && instructor) || (type === "instructor" && course);
+    const hasData = Boolean(data && Object.keys(data).length);
     const isCourse = type === "course";
 
     // Return loading component. TODO: Add spinner/ghost loader.

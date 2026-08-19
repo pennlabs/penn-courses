@@ -47,7 +47,7 @@ const KeywordSearch = ({ keyword, setKeyword }) => {
     }, [keyword]);
 
     const handleSearch = () => {
-        if (text != keyword) {
+        if (text !== keyword) {
             setKeyword(text);
         }
     };

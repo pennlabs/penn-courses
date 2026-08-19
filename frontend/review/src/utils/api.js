@@ -1,15 +1,30 @@
-import autocompleteWorker from "workerize-loader!../workers/autocomplete.worker"; // eslint-disable-line import/no-webpack-loader-syntax
-
-const autocompleteWorkerInstance = autocompleteWorker();
-const compressAutocomplete = autocompleteWorkerInstance.compress;
-const decompressAutocomplete = autocompleteWorkerInstance.decompress;
-
 const API_DOMAIN = `${window.location.protocol}//${window.location.host}`;
-const PUBLIC_API_TOKEN = "public";
 const API_TOKEN = "platform";
 
-function apiFetch(url) {
-  return fetch(url).then(res => res.json());
+// Centralized query key factory — every resource fetched below has a
+// corresponding key here so components/queryClient.js never hand-roll keys.
+export const queryKeys = {
+  autocomplete: ["autocomplete"],
+  attributes: ["attributes"],
+  courseSearch: params => ["courseSearch", params],
+  reviewData: (type, code, semester) => ["reviewData", type, code, semester],
+  live: (code, checkOfferedIn) => ["live", code, checkOfferedIn],
+  history: (course, instructor, semester) => [
+    "history",
+    course,
+    instructor,
+    semester
+  ],
+  pcaChartData: (course, semester) => ["pcaChartData", course, semester],
+  contact: name => ["contact", name]
+};
+
+async function apiFetch(url) {
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Request to ${url} failed with status ${res.status}`);
+  }
+  return res.json();
 }
 
 export function redirectForAuth() {
@@ -24,68 +39,8 @@ export function getLogoutUrl() {
   )}`;
 }
 
-// Necessary for backwards compatibility (we used to just store uncompressed
-// JSON stringified autocomplete data)
-const isCompressedAutocomplete = data => {
-  return data.startsWith("compressed:");
-};
-
-// Cache the decompressed autocomplete dump as a global variable
-var uncompressedAutocompleteData = null;
-
 export function apiAutocomplete() {
-  // If we have decompressed autocomplete data since last page refresh, return previous data.
-  if (uncompressedAutocompleteData) {
-    return Promise.resolve(uncompressedAutocompleteData);
-  }
-  // Cache the autocomplete JSON in local storage using the stale-while-revalidate
-  // strategy.
-  const key = "meta-pcr-autocomplete";
-  const cached_autocomplete = localStorage.getItem(key);
-  if (cached_autocomplete) {
-    // If a cached version exists, replace it in the cache asynchronously and return the old cache.
-    apiFetch(`${API_DOMAIN}/api/review/autocomplete`)
-      .then(data => {
-        uncompressedAutocompleteData = data; // Update memory
-        return compressAutocomplete(data);
-      })
-      .then(compressed => {
-        try {
-          localStorage.setItem(key, compressed);
-        } catch (e) {
-          localStorage.removeItem(key);
-        }
-      });
-      const staleDataPromise = isCompressedAutocomplete(cached_autocomplete)
-        ? decompressAutocomplete(cached_autocomplete)
-        : Promise.resolve(cached_autocomplete);
-
-      return staleDataPromise.then(decompressedData => {
-        // Only set this if the background fetch hasn't already beaten us to it
-        if (!uncompressedAutocompleteData) {
-          uncompressedAutocompleteData = decompressedData;
-        }
-        return decompressedData;
-      });
-  } else {
-    // If no cached data exists, fetch, set the cache and return in the same promise.
-    return new Promise((resolve, reject) => {
-      apiFetch(`${API_DOMAIN}/api/review/autocomplete`)
-        .then(data => {
-          uncompressedAutocompleteData = data;
-          resolve(data);
-          return compressAutocomplete(data);
-        })
-        .then(compressed => {
-          try {
-            localStorage.setItem(key, compressed);
-          } catch (e) {
-            localStorage.removeItem(key);
-          }
-        })
-        .catch(reject);
-    });
-  }
+  return apiFetch(`${API_DOMAIN}/api/review/autocomplete`);
 }
 
 export async function apiCheckAuth() {
@@ -95,21 +50,6 @@ export async function apiCheckAuth() {
   } else {
     return false;
   }
-}
-
-export function apiIsAuthenticated(func) {
-  apiFetch(
-    `${API_DOMAIN}/api/review/auth?token=${encodeURIComponent(
-      PUBLIC_API_TOKEN
-    )}`
-  ).then(data => {
-    if (data.authed == null) {
-      window.Raven.captureMessage(`Auth check error: ${JSON.stringify(data)}`, {
-        level: "error"
-      });
-    }
-    func(data.authed);
-  });
 }
 
 // To check that the course was offered as a certain code@semester,
@@ -175,80 +115,39 @@ export function apiFetchPCADemandChartData(course, semester) {
   );
 }
 
-//cache attributes data in browser memory
-let uncompressedAttributesData = null;
-
 export function apiAttributes() {
-  // Instant return if fetched already in this session
-  if (uncompressedAttributesData) {
-    return Promise.resolve(uncompressedAttributesData);
-  }
-
-  const key = "meta-pcr-attributes";
-  const cached_attributes_str = localStorage.getItem(key);
-  
-  // Helper function to format the data so we don't repeat code in the frontend
-  const processAttributes = (data) => {
-    return data.map(attr => attr.code).sort((a, b) => a.localeCompare(b));
-  };
-
-  if (cached_attributes_str) {
-    // We have cached data
-    let cached_attributes;
-    try {
-      cached_attributes = JSON.parse(cached_attributes_str);
-    } catch (e) {
-      localStorage.removeItem(key);
-    }
-    if (cached_attributes) {
-      // Use a background fetch to update the cache silently
-      apiFetch(`${API_DOMAIN}/api/base/attributes/`)
-        .then(data => {
-          const processedCodes = processAttributes(data);
-          uncompressedAttributesData = processedCodes; // Update memory
-          try {
-            localStorage.setItem(key, JSON.stringify(processedCodes)); // Update storage
-          } catch (e) {
-            localStorage.removeItem(key);
-          }
-        })
-        .catch(console.error); 
-
-      // Instantly return the old cache
-      uncompressedAttributesData = cached_attributes;
-      return Promise.resolve(cached_attributes);
-    }
-  }
-
-  // We have no cache, so set everything up
-  return new Promise((resolve, reject) => {
-    apiFetch(`${API_DOMAIN}/api/base/attributes/`)
-      .then(data => {
-        const processedCodes = processAttributes(data);
-        uncompressedAttributesData = processedCodes; // Set memory
-        
-        try {
-          localStorage.setItem(key, JSON.stringify(processedCodes)); // Set storage
-        } catch (e) {
-          localStorage.removeItem(key);
-        }
-        
-        resolve(processedCodes);
-      })
-      .catch(reject);
-  });
+  return apiFetch(`${API_DOMAIN}/api/base/attributes/`).then(data =>
+    data.map(attr => attr.code).sort((a, b) => a.localeCompare(b))
+  );
 }
 
-export function apiCourseSearch(semester, attributes, difficulty, course_quality, instructor_quality, days, time, departments, page = 1) {
-  const url = `${API_DOMAIN}/api/base/${encodeURIComponent(semester)}/courses/?` +
-      (attributes ? `attributes=${encodeURIComponent(attributes)}&` : "") +
-      (difficulty ? `difficulty=${encodeURIComponent(difficulty)}&` : "") +
-      (course_quality ? `course_quality=${encodeURIComponent(course_quality)}&` : "") +
-      (instructor_quality ? `instructor_quality=${encodeURIComponent(instructor_quality)}&` : "") +
-      (days ? `days=${encodeURIComponent(days)}&` : "") +
-      (time ? `time=${encodeURIComponent(time)}&` : "") +
-      (departments ? `departments=${encodeURIComponent(departments)}&` : "") +
-      `page=${page}`;
-  console.log(url);
+// `params` is the already-formatted filter object (see formatFiltersForAPI
+// in CourseResults.js) — kept as a single object rather than 9 positional
+// arguments so it can double as the useInfiniteQuery key.
+export function apiCourseSearch(params, page = 1) {
+  const {
+    semester,
+    attributes,
+    difficulty,
+    course_quality,
+    instructor_quality,
+    days,
+    time,
+    departments
+  } = params;
+  const url =
+    `${API_DOMAIN}/api/base/${encodeURIComponent(semester)}/courses/?` +
+    (attributes ? `attributes=${encodeURIComponent(attributes)}&` : "") +
+    (difficulty ? `difficulty=${encodeURIComponent(difficulty)}&` : "") +
+    (course_quality
+      ? `course_quality=${encodeURIComponent(course_quality)}&`
+      : "") +
+    (instructor_quality
+      ? `instructor_quality=${encodeURIComponent(instructor_quality)}&`
+      : "") +
+    (days ? `days=${encodeURIComponent(days)}&` : "") +
+    (time ? `time=${encodeURIComponent(time)}&` : "") +
+    (departments ? `departments=${encodeURIComponent(departments)}&` : "") +
+    `page=${page}`;
   return apiFetch(url);
 }

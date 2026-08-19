@@ -43,20 +43,6 @@ const TimeInput = styled.input`
     }
 `;
 
-const AMPMSelect = styled.select`
-    all: unset;
-    font-size: 14px;
-    font-family: 'SFPro', sans-serif;
-    padding: 2px;
-    border-radius: 8px;
-    background-color: #EFF1F5;
-    width: 60px;
-
-    &:hover {
-        background-color: #E1E4E8;
-    }
-`;
-
 const stringToMinutes = (timeString) => {
     const [start, end] = timeString.split('-');
     const [startHours, startMinutes] = start.split(".").map(Number);
@@ -229,7 +215,7 @@ const TimeSelect = ({ timeString, setTimeString, diameter }) => {
             window.removeEventListener("touchmove", handleMove);
             window.removeEventListener("touchend", onUp);
         };
-    }, [drag, C]);
+    }, [drag, C, setTimeString]);
 
     const startAngle = minutesToRadians(time.start);
     const endAngle = minutesToRadians(time.end);

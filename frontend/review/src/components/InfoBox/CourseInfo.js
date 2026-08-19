@@ -17,7 +17,7 @@ const activityMap = {
 
 const TagsNotOffered = ({ data }) => {
   let {
-    instructors: instructorData = {},
+    instructors: instructorData,
     latest_semester: mostRecent,
     code = ""
   } = data;
@@ -80,9 +80,9 @@ const TagsWhenOffered = ({
     });
 
   const syllabi = [];
-  const courses = [];
+  // const courses = []; unused
   const prereqs = [];
-  const links = [];
+  // const links = []; unused
 
   return (
     <div>

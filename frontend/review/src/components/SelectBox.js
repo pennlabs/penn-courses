@@ -1,10 +1,9 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import styled from 'styled-components';
 import { PiPlus, PiPlusThin } from "react-icons/pi";
 import { HiMagnifyingGlass, HiXMark } from "react-icons/hi2";
 import { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { use } from 'react';
 
 const SelectBoxContainer = styled.div`
     display: flex;
@@ -84,9 +83,6 @@ const OptionContainer = styled.div`
     `}
 `;
 
-const placeholderOptions = ['AMHR', 'ANAT', 'AAFD', 'ACFS', 'ANTH', 'ARTH'];
-// Placeholder options for select box, get from backend later
-
 export const useOnClickOutside = (refList, handler) => {
     useEffect(() => {
         const listener = (event) => {
@@ -112,12 +108,15 @@ export const useOnClickOutside = (refList, handler) => {
 const OptionBox = ({ text, isActive, filterOptionsList, setFilterOptionsList, visualOptionsList, setVisualOptionsList, fullWidth }) => {
     const [isSelected, setIsSelected] = useState(isActive);
 
+    // Deliberately depends on isSelected only. filterOptionsList/setFilterOptionsList/text
+    // are read fresh from the closure but must NOT be dependencies.
     useEffect(() => {
         if (filterOptionsList.includes(text) && !isSelected) {
             setFilterOptionsList(filterOptionsList.filter(option => option !== text));
         } else if (!filterOptionsList.includes(text) && isSelected) {
             setFilterOptionsList([...filterOptionsList, text]);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isSelected]);
 
     return (

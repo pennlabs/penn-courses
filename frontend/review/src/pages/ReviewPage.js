@@ -8,7 +8,8 @@ import DetailsBox from "../components/DetailsBox";
 import SearchBar from "../components/SearchBar";
 import Footer from "../components/Footer";
 import { ErrorBox } from "../components/common";
-import { apiReviewData, apiLive } from "../utils/api";
+import { apiReviewData, apiLive, queryKeys } from "../utils/api";
+import { queryClient } from "../utils/queryClient";
 import Header from "../components/Header";
 
 /**
@@ -113,7 +114,11 @@ export class ReviewPage extends Component {
   getReviewData() {
     const { type, code, url_code, url_semester } = this.state;
     if (type && code) {
-      apiReviewData(type, code, url_semester)
+      queryClient
+        .fetchQuery({
+          queryKey: queryKeys.reviewData(type, code, url_semester),
+          queryFn: () => apiReviewData(type, code, url_semester)
+        })
         .then(data => {
           const { error, detail } = data;
           if (error) {
@@ -124,7 +129,13 @@ export class ReviewPage extends Component {
           } else {
             this.setState({ data });
             if (type === "course") {
-              apiLive(data.code, url_semester && `${url_code}@${url_semester}`)
+              const checkOfferedIn =
+                url_semester && `${url_code}@${url_semester}`;
+              queryClient
+                .fetchQuery({
+                  queryKey: queryKeys.live(data.code, checkOfferedIn),
+                  queryFn: () => apiLive(data.code, checkOfferedIn)
+                })
                 .then(result => this.setState({ liveData: result }))
                 .catch(() => undefined);
             }
