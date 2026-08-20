@@ -16,7 +16,7 @@ def aggregate_rule_leaves(rules, f):
     bfs_queue.extend(rules)
     while bfs_queue:
         for child in bfs_queue.pop().children.all():
-            if child.q: 
+            if child.q:
                 f(child)
             else:
                 bfs_queue.append(child)
@@ -49,7 +49,7 @@ def prewarm_belongs_cache(rules, full_codes):
     belongs_cache = {}
 
     for rule in rules:
-        if not rule.q: 
+        if not rule.q:
             continue
         matched = set(
             Course.objects.filter(rule.get_q_object() or Q(), full_code__in=full_codes).values_list(

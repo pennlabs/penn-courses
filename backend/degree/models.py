@@ -206,7 +206,7 @@ class Rule(models.Model):
         """
         Check if this rule is fulfilled by the provided courses.
         """
-        if self.q: 
+        if self.q:
             # Sums all courses (and corresponding credits), from full_codes,
             # that satisfy this rule's q object.
             total_courses, total_credits = (
@@ -246,7 +246,7 @@ class Rule(models.Model):
         """
         Given a course, check if it can count towards this rule.
         """
-        if self.q: 
+        if self.q:
             assert self.num is not None or self.credits is not None
             return Course.objects.filter(self.get_q_object() or Q(), full_code=full_code).exists()
         else:
