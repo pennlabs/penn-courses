@@ -206,7 +206,7 @@ class Rule(models.Model):
         """
         Check if this rule is fulfilled by the provided courses.
         """
-        if self.q:  # i.e., if this rule is a leaf (a leaf rule has no children)
+        if self.q: 
             # Sums all courses (and corresponding credits), from full_codes,
             # that satisfy this rule's q object.
             total_courses, total_credits = (
@@ -231,7 +231,6 @@ class Rule(models.Model):
 
             return True
         else:
-            # assert self.children.all().exists()
             count = 0
             for child in self.children.all():
                 if not child.evaluate(full_codes):
@@ -247,7 +246,7 @@ class Rule(models.Model):
         """
         Given a course, check if it can count towards this rule.
         """
-        if self.q:  # i.e., if this rule is a leaf (a leaf rule has no children)
+        if self.q: 
             assert self.num is not None or self.credits is not None
             return Course.objects.filter(self.get_q_object() or Q(), full_code=full_code).exists()
         else:
