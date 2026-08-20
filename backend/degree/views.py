@@ -2,6 +2,7 @@ from collections import defaultdict
 
 from django.db import IntegrityError, transaction
 from django.http import Http404
+from django.shortcuts import get_object_or_404
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -22,7 +23,12 @@ from degree.serializers import (
     Rule,
     RuleSerializer,
 )
-from degree.utils.degree_logic import allocate_rules, check_legal, map_rules_and_degrees
+from degree.utils.degree_logic import (
+    allocate_rules,
+    check_legal,
+    map_rules_and_degrees,
+    prewarm_belongs_cache,
+)
 from PennCourses.docs_settings import PcxAutoSchema
 
 
@@ -136,7 +142,7 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
         # Handle updating fulfillments when a new degree is added to the degree plan.
         def update_fulfillments():
-            rules_per_degree, rule_to_degree = map_rules_and_degrees(degree_plan)
+            rules_per_degree, rule_to_degree, double_counts = map_rules_and_degrees(degree_plan)
             # Helper to track satisfaction
             satisfied_lookup = defaultdict(int)
             satisfied_rules = set()
@@ -145,8 +151,15 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 f = satisfied_lookup[rule.id]
                 return (rule.num and f >= rule.num) or (rule.credits and f >= rule.credits)
 
-            fulfillments = Fulfillment.objects.filter(degree_plan=degree_plan).order_by(
-                "semester", "full_code"
+            fulfillments = list(
+                Fulfillment.objects.filter(degree_plan=degree_plan).order_by(
+                    "semester", "full_code"
+                )
+            )
+            # Every course is known up front, so check them against the rules in bulk
+            belongs_cache = prewarm_belongs_cache(
+                {rule for rules in rules_per_degree.values() for rule in rules},
+                [fulfillment.full_code for fulfillment in fulfillments],
             )
 
             for fulfillment in fulfillments:
@@ -154,8 +167,10 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     fulfillment.full_code,
                     rules_per_degree,
                     rule_to_degree,
+                    double_counts,
                     degree_plan=degree_plan,
                     satisfied_rules=satisfied_rules,
+                    belongs_cache=belongs_cache,
                 )
 
                 fulfillment.rules.set(selected_rules)
@@ -212,16 +227,12 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
         legal = True
         request_rules = request.data.get("rules")
         if request_rules:
-            rules = Rule.objects.all().filter(id__in=request_rules)
-
-            rule_to_degree = {}
-            for rule in rules:
-                curr_rule = rule
-                while curr_rule.parent is not None:
-                    curr_rule = curr_rule.parent
-                rule_to_degree[rule] = curr_rule.degrees.first()
-
-            legal = legal and check_legal(rules, rule_to_degree)
+            rules = list(Rule.objects.filter(id__in=request_rules))
+            degree_plan = get_object_or_404(
+                DegreePlan, id=self.get_degree_plan_id(), person=request.user
+            )
+            _, rule_to_degree, double_counts = map_rules_and_degrees(degree_plan)
+            legal = check_legal(rules, rule_to_degree, double_counts)
 
             # Make request.data mutable before modifying it
             if hasattr(request.data, "_mutable"):
@@ -260,7 +271,7 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
         degree_plan = fulfillment.degree_plan
         full_code = fulfillment.full_code
 
-        _, rule_to_degree = map_rules_and_degrees(degree_plan)
+        _, rule_to_degree, double_counts = map_rules_and_degrees(degree_plan)
         if target_rule not in rule_to_degree:
             raise ValidationError({"rule_id": "Rule does not belong to this degree plan."})
 
@@ -293,7 +304,7 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
 
             fulfillment.rules.set(selected_rules)
             fulfillment.unselected_rules.set(unselected_rules)
-            fulfillment.legal = check_legal(selected_rules, rule_to_degree)
+            fulfillment.legal = check_legal(selected_rules, rule_to_degree, double_counts)
             fulfillment.save()
 
             other_fulfillments = (
@@ -313,18 +324,14 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
                 other_unselected.add(target_rule)
 
                 if len(other_selected) == 0:
-                    displaced.append(
-                        {"full_code": other.full_code, "removed": True}
-                    )
+                    displaced.append({"full_code": other.full_code, "removed": True})
                     other.delete()
                 else:
                     other.rules.set(other_selected)
                     other.unselected_rules.set(other_unselected)
-                    other.legal = check_legal(other_selected, rule_to_degree)
+                    other.legal = check_legal(other_selected, rule_to_degree, double_counts)
                     other.save()
-                    displaced.append(
-                        {"full_code": other.full_code, "removed": False}
-                    )
+                    displaced.append({"full_code": other.full_code, "removed": False})
 
         data = self.get_serializer(fulfillment).data
         data["displaced"] = displaced
@@ -350,7 +357,7 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
 
         fulfillment = self.get_object()
 
-        _, rule_to_degree = map_rules_and_degrees(fulfillment.degree_plan)
+        _, rule_to_degree, _ = map_rules_and_degrees(fulfillment.degree_plan)
         if rule not in rule_to_degree:
             raise ValidationError({"rule_id": "Rule does not belong to this degree plan."})
 
@@ -426,8 +433,15 @@ class OnboardFromTranscript(APIView):
 
         satisfied_lookup = defaultdict(int)
 
-        rules_per_degree, rule_to_degree = map_rules_and_degrees(degree_plan)
+        rules_per_degree, rule_to_degree, double_counts = map_rules_and_degrees(degree_plan)
         satisfied_rules = set()
+
+        # Every course is known up front, so check them against the rules in bulk
+        belongs_cache = prewarm_belongs_cache(
+            {rule for rules in rules_per_degree.values() for rule in rules},
+            [full_code for semester in course_data for full_code in semester["courses"]],
+        )
+
         for semester in course_data:
             for full_code in semester["courses"]:
                 semester_code = semester["sem"]
@@ -435,8 +449,10 @@ class OnboardFromTranscript(APIView):
                     full_code,
                     rules_per_degree,
                     rule_to_degree,
+                    double_counts,
                     degree_plan=degree_plan,
                     satisfied_rules=satisfied_rules,
+                    belongs_cache=belongs_cache,
                 )
 
                 f, just_created = Fulfillment.objects.get_or_create(
@@ -509,16 +525,21 @@ class SatisfiedRuleList(APIView):
                 f"{degree_plan_id}, {full_code}, {rule_selected}"
             )
 
-        rules_per_degree, rule_to_degree = map_rules_and_degrees(degree_plan)
+        rules_per_degree, rule_to_degree, double_counts = map_rules_and_degrees(degree_plan)
         selected_rules, unselected_rules, legal = allocate_rules(
-            full_code, rules_per_degree, rule_to_degree, rule_selected, degree_plan=degree_plan
+            full_code,
+            rules_per_degree,
+            rule_to_degree,
+            double_counts,
+            rule_selected,
+            degree_plan=degree_plan,
         )
 
         if fulfillment:
             selected_rules = selected_rules.union(fulfillment.rules.all())
 
         # Check for illegal double counting
-        legal = check_legal(selected_rules, rule_to_degree)
+        legal = check_legal(selected_rules, rule_to_degree, double_counts)
 
         selected_rules_to_return = RuleSerializer(
             Rule.objects.filter(id__in=[rule.id for rule in selected_rules]), many=True

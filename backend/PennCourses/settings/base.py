@@ -94,7 +94,7 @@ WSGI_APPLICATION = "PennCourses.wsgi.application"
 DATABASES = {
     "default": dj_database_url.config(
         # this is overriden by the DATABASE_URL env var
-        default="postgres://penn-courses:postgres@localhost:5432/postgres"
+        default="postgres://penn-courses:postgres@host.docker.internal:5432/postgres"
     )
 }
 
@@ -186,7 +186,7 @@ TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_TOKEN", "")
 TWILIO_NUMBER = os.environ.get("TWILIO_NUMBER", "+12153984277")
 
 # Redis
-REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/1")
+REDIS_URL = os.environ.get("REDIS_URL", "redis://host.docker.internal:6379/1")
 
 # Celery
 MESSAGE_BROKER_URL = REDIS_URL

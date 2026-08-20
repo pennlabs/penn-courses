@@ -190,20 +190,6 @@ class Rule(models.Model):
         related_name="children",
     )
 
-    can_double_count_with = models.ManyToManyField(
-        "self",
-        symmetrical=True,
-        blank=True,
-        help_text=dedent(
-            """
-            Parent rules that can double count with this rule.
-            (i.e. if this rule is Quantitative Data Analysis (a College Foundations req),
-            then this field would contain the General Educations: Sector rule as well as
-            the Major in ___ rule.)
-            """
-        ),
-    )
-
     def __str__(self) -> str:
         rules_str = ", ".join([str(rule) for rule in self.children.all()])
         return (
@@ -220,8 +206,7 @@ class Rule(models.Model):
         """
         Check if this rule is fulfilled by the provided courses.
         """
-        if self.q:
-            assert not self.children.all().exists()
+        if self.q:  # i.e., if this rule is a leaf (a leaf rule has no children)
             # Sums all courses (and corresponding credits), from full_codes,
             # that satisfy this rule's q object.
             total_courses, total_credits = (
@@ -262,14 +247,9 @@ class Rule(models.Model):
         """
         Given a course, check if it can count towards this rule.
         """
-        if self.q:
-            assert not self.children.all().exists()
-            check_course = Course.objects.filter(self.get_q_object() or Q(), full_code=full_code)
+        if self.q:  # i.e., if this rule is a leaf (a leaf rule has no children)
             assert self.num is not None or self.credits is not None
-
-            if check_course.count():
-                return True
-            return False
+            return Course.objects.filter(self.get_q_object() or Q(), full_code=full_code).exists()
         else:
             count = 0
             for child in self.children.all():
