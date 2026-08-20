@@ -18,6 +18,12 @@ from PennCourses.settings.base import S3_client, S3_resource
 from plan.models import Schedule
 
 
+# Fixed seed for the estimators below, which would otherwise pick their initial state
+# at random. Without it the clusters (and so the recommendations) differ from run to run,
+# which makes the recommendation tests flaky.
+RANDOM_SEED = 0
+
+
 def lookup_course(course):
     try:
         return Course.objects.filter(full_code=course).latest("semester")
@@ -79,7 +85,7 @@ def vectorize_courses_by_description(descriptions):
         vectors = np.array([[0] for _ in descriptions])
     _, dim = vectors.shape
     if dim >= 500:
-        dim_reducer = TruncatedSVD(n_components=500)
+        dim_reducer = TruncatedSVD(n_components=500, random_state=RANDOM_SEED)
         vectors = dim_reducer.fit_transform(vectors)
     # divide the vectors by their norms
     return normalize(vectors)
@@ -201,7 +207,7 @@ def vectorize_courses_by_schedule_presence(courses_by_user: List[Dict[str, int]]
     _, dims = vectors.shape
     dim_reduced_components = round(math.log2(num_users + 2))
     if min(dims, dim_reduced_components) > 5:
-        dim_reducer = PCA(n_components=dim_reduced_components)
+        dim_reducer = PCA(n_components=dim_reduced_components, random_state=RANDOM_SEED)
         dim_reduced = dim_reducer.fit_transform(vectors)
     else:
         dim_reduced = np.array(vectors)
@@ -264,9 +270,9 @@ def generate_course_vectors_dict(courses_data, use_descriptions=True, preloaded_
     _, dims = copresence_vectors_past.shape
     dim_reduced_components = round(30 * math.log2(len(courses)))
     if min(dims, dim_reduced_components) > 5:
-        dim_reduce = TruncatedSVD(n_components=dim_reduced_components)
+        dim_reduce = TruncatedSVD(n_components=dim_reduced_components, random_state=RANDOM_SEED)
         copresence_vectors = dim_reduce.fit_transform(copresence_vectors)
-        dim_reduce = TruncatedSVD(n_components=dim_reduced_components)
+        dim_reduce = TruncatedSVD(n_components=dim_reduced_components, random_state=RANDOM_SEED)
         copresence_vectors_past = dim_reduce.fit_transform(copresence_vectors_past)
     for (
         course,
@@ -319,7 +325,7 @@ def generate_course_clusters(courses_data, n_per_cluster=100, preloaded_descript
     _courses, _course_vectors = zip(*course_vectors_dict_curr.items())
     courses, course_vectors = list(_courses), np.array(list(_course_vectors))
     num_clusters = round(len(courses) / n_per_cluster)
-    model = KMeans(n_clusters=num_clusters)
+    model = KMeans(n_clusters=num_clusters, random_state=RANDOM_SEED)
     raw_cluster_result = model.fit_predict(course_vectors)
     clusters = [[] for _ in range(num_clusters)]
     for course_index, cluster_index in enumerate(raw_cluster_result):
