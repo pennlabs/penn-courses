@@ -8,7 +8,7 @@ from celery import shared_task
 from django.conf import settings
 from django.core.cache import cache
 from django.db import models, transaction
-from django.db.models import Case, Q, When
+from django.db.models import Case, Max, Min, Q, When
 from django.db.models.functions import Cast
 
 from alert.models import PcaDemandDistributionEstimate, Registration
@@ -104,32 +104,39 @@ def section_demand_change(section_id, updated_at):
         ):
             create_new_distribution_estimate = True
 
-        sections_qs = (
-            Section.objects.filter(extra_metrics_section_filters, course__semester=semester)
-            .select_for_update()
-            .annotate(
-                raw_demand=Case(
-                    When(
-                        Q(capacity__gt=0),
-                        then=(
-                            Cast(
-                                "registration_volume",
-                                models.FloatField(),
-                            )
-                            / Cast("capacity", models.FloatField())
-                        ),
+        sections_qs = Section.objects.filter(
+            extra_metrics_section_filters, course__semester=semester
+        ).annotate(
+            raw_demand=Case(
+                When(
+                    Q(capacity__gt=0),
+                    then=(
+                        Cast(
+                            "registration_volume",
+                            models.FloatField(),
+                        )
+                        / Cast("capacity", models.FloatField())
                     ),
-                    default=None,
-                    output_field=models.FloatField(),
                 ),
-            )
+                default=None,
+                output_field=models.FloatField(),
+            ),
         )
 
-        try:
-            lowest_demand_section = sections_qs.order_by("raw_demand")[:1].get()
-            highest_demand_section = sections_qs.order_by("-raw_demand")[:1].get()
-        except Section.DoesNotExist:
+        demand_bounds = sections_qs.aggregate(
+            min_demand=Min("raw_demand"), max_demand=Max("raw_demand")
+        )
+        if demand_bounds["min_demand"] is None:
             return  # Don't add a PcaDemandDistributionEstimate -- there are no valid sections yet
+
+        lowest_demand_section = (
+            sections_qs.filter(raw_demand=demand_bounds["min_demand"]).order_by("id").first()
+        )
+        highest_demand_section = (
+            sections_qs.filter(raw_demand=demand_bounds["max_demand"]).order_by("id").first()
+        )
+        if lowest_demand_section is None or highest_demand_section is None:
+            return
 
         if (
             create_new_distribution_estimate
