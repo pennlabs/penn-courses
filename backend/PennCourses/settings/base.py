@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "plan",
     "review",
     "degree",
+    "chat",
 ]
 
 MIDDLEWARE = [
@@ -94,7 +95,7 @@ WSGI_APPLICATION = "PennCourses.wsgi.application"
 DATABASES = {
     "default": dj_database_url.config(
         # this is overriden by the DATABASE_URL env var
-        default="postgres://penn-courses:postgres@localhost:5432/postgres"
+        default="postgres://penn-courses:postgres@host.docker.internal:5432/postgres"
     )
 }
 
@@ -186,7 +187,7 @@ TWILIO_AUTH_TOKEN = os.environ.get("TWILIO_TOKEN", "")
 TWILIO_NUMBER = os.environ.get("TWILIO_NUMBER", "+12153984277")
 
 # Redis
-REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379/1")
+REDIS_URL = os.environ.get("REDIS_URL", "redis://host.docker.internal:6379/1")
 
 # Celery
 MESSAGE_BROKER_URL = REDIS_URL
@@ -200,7 +201,28 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.BasicAuthentication",
         "accounts.authentication.PlatformAuthentication",
     ],
+    # Applied per-view via `throttle_scope`; no default throttle classes are set, so
+    # this affects only views that opt in (currently the chat assistant).
+    "DEFAULT_THROTTLE_RATES": {
+        "chat": os.environ.get("CHAT_RATE_LIMIT", "30/hour"),
+    },
 }
+
+# Penn Course Chat
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+CHAT_MODEL = os.environ.get("CHAT_MODEL", "claude-sonnet-5")
+# Effort trades answer quality against latency; a course-search chat is interactive, so
+# it runs below the API default of "high".
+CHAT_EFFORT = os.environ.get("CHAT_EFFORT", "medium")
+CHAT_MAX_TOKENS = int(os.environ.get("CHAT_MAX_TOKENS", 4096))
+# Ceiling on round trips to the model within a single turn. Each round trip is one
+# batch of tool calls — often several tools at once — so this bounds both latency and
+# spend per message. Degree-plan questions are the hungriest: read the plan, read the
+# schedule, then a search per unmet requirement and a lookup per candidate course.
+CHAT_MAX_TOOL_TURNS = int(os.environ.get("CHAT_MAX_TOOL_TURNS", 16))
+# Caps on what a client may send as conversation history.
+CHAT_MAX_MESSAGES = int(os.environ.get("CHAT_MAX_MESSAGES", 40))
+CHAT_MAX_MESSAGE_CHARS = int(os.environ.get("CHAT_MAX_MESSAGE_CHARS", 4000))
 
 STATS_WEBHOOK = os.environ.get("STATS_WEBHOOK", None)
 

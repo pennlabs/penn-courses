@@ -5,7 +5,8 @@
     "alert",
     "plan",
     "review",
-    "degree-plan"
+    "degree-plan",
+    "chat"
   ],
   "private": true,
   "scripts": {
@@ -22,8 +23,7 @@
       "pre-commit": "lerna run --concurrency 1 precommit"
     }
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "resolutions": {
     "**/@types/react": "^18.2.0",
     "**/@types/react-dom": "^18.2.0"

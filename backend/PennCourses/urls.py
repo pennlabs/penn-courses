@@ -15,6 +15,7 @@ api_urlpatterns = [
     path("alert/", include("alert.urls")),
     path("degree/", include("degree.urls")),
     path("base/", include("courses.urls")),
+    path("chat/", include("chat.urls")),
     path("options/", include("options.urls", namespace="options")),
     path(
         "openapi/",

@@ -357,6 +357,7 @@ subpath_abbreviations = {
     "base": "PCx",
     "accounts": "Accounts",
     "degree": "PDP",
+    "chat": "PCC",
 }
 assert all(
     [isinstance(key, str) and isinstance(val, str) for key, val in subpath_abbreviations.items()]
@@ -370,6 +371,7 @@ tag_group_abbreviations = {
     "PCA": "Penn Course Alert",
     "PCR": "Penn Course Review",
     "PCx": "Penn Courses (Base)",
+    "PCC": "Penn Course Chat",
     "Accounts": "Penn Labs Accounts",
     "": "Other",  # Catches all other tags (this should normally be an empty tag group and if so
     # it will not show up in the documentation, but is left as a debugging safeguard).
@@ -422,6 +424,7 @@ custom_operation_id = {  # keys are (path, method) tuples, values are custom nam
     ("section-search", "GET"): "Section Search",
     ("review-autocomplete", "GET"): "Retrieve Autocomplete Dump",
     ("calendar-view", "GET"): "Get Calendar",
+    ("chat", "POST"): "Send Chat Message",
 }
 assert all(
     [

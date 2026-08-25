@@ -45,6 +45,65 @@ If you don't want to develop in Dev Container, see the [Running the Backend Nati
 
 If you are in Penn Labs, reach out to a Penn Courses team lead for a .env file to put in your `backend` directory. This will contain some sensitive credentials (which is why the file contents are not pasted in this public README). If you are not in Penn Labs, see the "Loading Course Data on Demand" section below for instructions on how to get your own credentials.
 
+### Penn Course Chat
+
+Penn Course Chat (`POST /api/chat/`, plus `POST /api/chat/stream/` which delivers the
+same turn as Server-Sent Events; both served by the `chat` app) calls the Anthropic API and is disabled
+unless `ANTHROPIC_API_KEY` is set — without it the route returns a 503 explaining that it
+is unconfigured, and the rest of the backend is unaffected. Get a key from
+[console.anthropic.com](https://console.anthropic.com/) and add it to your `.env`.
+
+Note that nothing in this project reads `.env` automatically, so adding the key to the
+file is not enough on its own — you have to get it into the server's environment:
+
+```bash
+uv run --env-file .env manage.py runserver
+# or, for the whole shell session:
+set -a; source .env; set +a
+```
+
+These optional variables tune it (defaults in parentheses):
+
+| Variable | Purpose |
+| --- | --- |
+| `CHAT_MODEL` (`claude-sonnet-5`) | Which model to call. |
+| `CHAT_EFFORT` (`medium`) | Reasoning effort: `low`, `medium`, `high`, `xhigh`, `max`. Higher is slower and costs more. |
+| `CHAT_MAX_TOKENS` (`4096`) | Output token cap per reply. |
+| `CHAT_MAX_TOOL_TURNS` (`16`) | Round trips to the model within one message. Each carries a batch of tool calls, so this is well above 16 lookups. Bounds latency and spend per message; hitting it abandons the turn rather than returning a partial answer. |
+| `CHAT_RATE_LIMIT` (`30/hour`) | Per-user rate limit on the chat route. |
+| `CHAT_MAX_MESSAGES` (`40`) | Longest conversation history a client may submit. |
+| `CHAT_MAX_MESSAGE_CHARS` (`4000`) | Longest single message a client may submit. |
+
+The assistant can read and modify the requesting user's own PCP cart and schedules
+(`chat/plan_tools.py`) and read their Penn Degree Plan (`chat/degree_tools.py`). Those
+tools are the only ones handed a user, and they take it from `request.user` — no tool
+schema accepts an identity, so the model cannot name one.
+
+Search results are marked `already_taken` / `already_planned` against the student's
+degree plan, cart and schedules, so the assistant does not recommend courses back to
+them. Those comparisons run over crosslisting groups (`chat/student.py`): Penn lists one
+class under several codes — most often an undergraduate and a graduate number, like
+CIS-4480 and CIS-5480 — and PCX models that with `Course.primary_listing`, so a student
+who took one has taken the other. The alternate codes also come back as
+`also_listed_as` from `get_course` and from the degree plan.
+
+A degree's rule tree is far too large to hand over whole, so `get_my_degree_plan`
+collapses satisfied branches to one line and expands only what is outstanding. Each
+unmet leaf carries its rule id, which `search_courses` accepts as `rule_ids` — that is
+what turns "what do I still need" into "here is what to take for it", using the same
+`degree_rules_filter` Penn Degree Plan search uses.
+Writes read the schedule back from the database afterwards and report what is
+verifiably there (`confirmed_in_schedule`) alongside anything that did not land
+(`failed_to_add` / `failed_to_remove`), so the assistant describes the result of a
+change rather than the request it made.
+
+Writes are additive: they never delete a schedule, they refuse the reserved
+`Path Registration` schedule as PCP's own API does, and they cap how many sections one
+call may touch. They also refuse a section with no published meeting times unless
+explicitly told otherwise — such a section cannot be checked for conflicts and does not
+draw on PCP's calendar, so adding one has to be the student's decision rather than a
+side effect.
+
 ## Linting
 
 We use `black`, `flake8`, and 'isort' to lint our code. Once you are in the `backend` directory, you can run the following commands to lint:
