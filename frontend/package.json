@@ -15,7 +15,8 @@
   },
   "devDependencies": {
     "husky": "^4.2.5",
-    "lerna": "^3.21.0"
+    "lerna": "^3.21.0",
+    "@types/node": "^18.19.0"
   },
   "husky": {
     "hooks": {
