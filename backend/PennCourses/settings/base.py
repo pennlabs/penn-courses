@@ -234,6 +234,9 @@ PRE_NGSS_PERMIT_REQ_RESTRICTION_CODES = [
 ROUGH_MINIMUM_DEMAND_DISTRIBUTION_ESTIMATES = (
     200  # Aim for at least 200 demand distribution estimates over the course of a semester
 )
+DEMAND_RECOMPUTE_DEBOUNCE_SECONDS = (
+    30  # How long to coalesce demand changes before recomputing the distribution estimate
+)
 
 # The name of the schedule that is created/verified by Penn Mobile,
 # containing the user's active course registrations from Path.

@@ -1074,7 +1074,7 @@ class StatusUpdate(models.Model):
         it sets the percent_through_add_drop_period field.
         """
         from alert.models import validate_add_drop_semester
-        from alert.tasks import section_demand_change
+        from alert.tasks import schedule_demand_recompute
         from courses.util import get_or_create_add_drop_period
 
         # ^ imported here to avoid circular imports
@@ -1112,7 +1112,7 @@ class StatusUpdate(models.Model):
         self.section.has_status_updates = True
         self.section.save()
 
-        section_demand_change.delay(self.section.id, self.created_at)
+        schedule_demand_recompute(self.section, self.created_at)
 
 
 """

@@ -490,7 +490,7 @@ class Registration(models.Model):
         and `current_demand_distribution_estimate` cache are asynchronously updated
         (via a celery task) to reflect the resulting section demand change.
         """
-        from alert.tasks import section_demand_change
+        from alert.tasks import schedule_demand_recompute
         from courses.util import get_set_id, is_fk_set
 
         # ^ imported here to avoid circular imports
@@ -542,7 +542,7 @@ class Registration(models.Model):
                 if volume_change > 0 or section.registration_volume >= 1:
                     section.registration_volume += volume_change
                     section.save()
-                section_demand_change.delay(section.id, self.updated_at)
+                schedule_demand_recompute(section, self.updated_at)
 
     def alert(self, forced=False, sent_by="", close_notification=False):
         """
