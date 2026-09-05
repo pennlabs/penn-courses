@@ -177,6 +177,43 @@ class Rule(models.Model):
         ),
     )
 
+    block_type = models.CharField(
+        max_length=16,
+        blank=True,
+        help_text=dedent(
+            """
+            The type of the audit block this rule came from, e.g. MAJOR or OTHER. Blank for
+            rules that did not come from a Path@Penn audit. Together with `block_value` this
+            identifies the block, which is what `share_targets` is expressed in terms of.
+            """
+        ),
+    )
+
+    block_value = models.CharField(
+        max_length=32,
+        blank=True,
+        help_text=dedent(
+            """
+            The code of the audit block this rule came from, e.g. CMPE for a major block or
+            U-SEAS-SSH for a named other block. Blank for rules not from a Path@Penn audit.
+            """
+        ),
+    )
+
+    share_targets = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=dedent(
+            """
+            What this rule is allowed to double count with, as a list of
+            {"kind": ..., "value": ...} objects taken from the audit's ShareWith
+            (NONEXCLUSIVE) qualifiers. `kind` is a block type or the literal THISBLOCK, and
+            `value` names a specific block when the qualifier does. An empty list means this
+            rule may not double count with anything.
+            """
+        ),
+    )
+
     parent = models.ForeignKey(
         "self",
         null=True,
