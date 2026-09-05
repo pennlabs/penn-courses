@@ -1,0 +1,847 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+
+  <Report>
+    <Audit>
+      <AuditHeader AuditDescription="" AuditType="AA" Audit_id="W0001d6h" DWGPA="*" DateDay="18" DateMonth="05" DateYear="2023" ExamApp="0" ExamOTL="0" FreezeDate="" FreezeType="" FreezeTypeDescription="" FreezeUserName="" In_progress="N" Per_complete="0" ResApp="0" ResAppInProg="0" ResOTL="0" ResOTLInProg="0" SSGPA="*" Stu_email="" Stu_id="*" Stu_name="*Test" TimeHour="10" TimeMinute="08" Version="$Id$ OS_TYPE=Linux; Release=5.0.7.2" What_if="Y" XferApp="0" XferOTL="0"/>
+      <Block Cat_yr="9999" Cat_yrLit="End of Time" Cat_yr_start="2021" Cat_yr_stop="9999" Classes_applied="0" Credits_applied="0" Degree="BSE" GPA="*" Gpa_credits="0" Gpa_grade_pts="*" Per_complete="0" Req_id="RA000827" Req_type="DEGREE" Req_value="BSE" Title="Degree in Bachelor of Science in Engineering">
+        <Header>
+          <Qualifier Applied="0" ClassesApplied="0" Credits="37" CreditsApplied="0" Label="Minimum Total Credits Required" LabelTag="CREH3" Name="CLASSESCREDITS" Needed="37" Node_id="49" Node_type="4121" Satisfied="No">
+            <Text>37 Credits</Text>
+          </Qualifier>
+          <Qualifier Applied="0" Credits="18.5" Label="Minimum Credits Earned from University of Pennsylvania" LabelTag="MNRSH3" Name="MINRES" Needed="18.5" Node_id="54" Node_type="4119" Satisfied="No">
+            <Text>MINRES 18.5 Credits</Text>
+          </Qualifier>
+          <Qualifier Classes="0" ClassesApplied="0" CreditsApplied="0" Name="MAXCLASS" Node_id="57" Node_type="4101" Tag="MXCLHDW">
+            <SubText>@ @ (With </SubText>
+            <SubText>DWAGE &gt; 8 </SubText>
+            <SubText>)</SubText>
+            <Text>MaxClasses 0 in </Text>
+          </Qualifier>
+          <Qualifier Classes="0" ClassesApplied="0" CreditsApplied="0" Name="MAXCLASS" Node_id="61" Node_type="4101" Tag="MXCLHCOLL">
+            <SubText>COLL 0@</SubText>
+            <Text>MaxClasses 0 in </Text>
+          </Qualifier>
+          <Qualifier Classes="0" ClassesApplied="0" CreditsApplied="0" Name="MAXCLASS" Node_id="63" Node_type="4101" Tag="MXCLHMSCI">
+            <SubText>MSCI @</SubText>
+            <Text>MaxClasses 0 in </Text>
+          </Qualifier>
+          <Qualifier Classes="0" ClassesApplied="0" CreditsApplied="0" Name="MAXCLASS" Node_id="65" Node_type="4101" Tag="MXCLHNSCI">
+            <SubText>NSCI @</SubText>
+            <Text>MaxClasses 0 in </Text>
+          </Qualifier>
+          <Qualifier ClassesApplied="0" Credits="0" CreditsApplied="0" Name="MAXCREDIT" Node_id="67" Node_type="4103" Tag="MXPFCOVID">
+            <SubText>@ @ (With </SubText>
+            <SubText>DWPASSFAIL = Y AND</SubText>
+            <SubText>DWTERM &lt;&gt; 202010, 202020, 202030, 202110 AND</SubText>
+            <SubText>)</SubText>
+            <Text>MaxCredits 0 in </Text>
+          </Qualifier>
+          <Qualifier Applied="" JustAdded="TRUE" Name="CHECKELECTIVES" Node_id="" Node_type="4140">
+            <ECA-Overall Credits="37" Text="Credits required by degree block"/>
+            <ECA-BlocksRequired Text="RA000837 RA000829 RA000535 "/>
+            <ECA-BlocksNotRequired Text=""/>
+            <ECA-BlocksRequiredIncluded Text=""/>
+            <ECA-Blocksum Credits="38" Text="Sum of credits required in all *required* blocks; excludes credits in blocks included in other required blocks"/>
+            <ECA-Shared Credits="0" Text="Credits shared between required blocks"/>
+            <ECA-ECA Credits="0" Text="Credits allowed/needed in fall-through and non-required blocks"/>
+            <ECA-RequiredCreditsApplied Credits="0" Text="Credits applied to required blocks"/>
+            <ECA-NonrequiredCreditsApplied Credits="0" Text="Credits applied to non-required blocks"/>
+            <ECA-Overflow Credits="0" Text="Excess fall-through credits"/>
+            <CREDITSAPPLIEDTOWARDSDEGREE Credits="0" Text="Credits applied minus overflow "/>
+            <Text>CHECK-ELECTIVE-CREDITS-ALLOWED</Text>
+          </Qualifier>
+          <Advice>
+            <Text Node_id="49">
+              <Line>You currently have 0 credits including both</Line>
+              <Line>earned and in-progress courses. To graduate, you need</Line>
+              <Line>to successfully complete a minimum of 37 additional </Line>
+              <Line>credits and all graduation requirements.</Line>
+            </Text>
+            <Text Node_id="54">
+              <Line>You currently have 0 credits.</Line>
+              <Line>You still need a minimum of 18.5 additional credits.</Line>
+            </Text>
+          </Advice>
+        </Header>
+        <Rule IndentLevel="1" Label="IF Statement" Node_id="76" Node_type="4300" Per_complete="0" RuleType="IfStmt" Rule_id="1">
+          <BooleanEvaluation>False</BooleanEvaluation>
+          <Requirement>
+            <LeftCondition Connector="OR">
+              <LeftCondition>
+                <Rop Evaluation="0" Left="BANNERGPA" Operator="&gt;=" Right="2.0"/>
+              </LeftCondition>
+            </LeftCondition>
+            <IfPart>
+              <Rule IndentLevel="1" Label="Minimum 2.0 Overall GPA met" LabelTag="MNGPH1" Node_id="80" Node_type="4900" Per_complete="Not Used" RuleType="Complete" Rule_id="1-0">
+                <IfElsePart>IfPart</IfElsePart>
+                <Requirement/>
+              </Rule>
+            </IfPart>
+            <ElsePart>
+              <Rule IndentLevel="1" Label="IF Statement" Node_id="82" Node_type="4300" Per_complete="0" RuleType="IfStmt" Rule_id="1-1">
+                <IfElsePart>ElsePart</IfElsePart>
+                <BooleanEvaluation>True</BooleanEvaluation>
+                <Requirement>
+                  <LeftCondition Connector="OR">
+                    <LeftCondition>
+                      <Rop Evaluation="1" Left="BANNERGPA" Operator="=" Right="NODATA"/>
+                    </LeftCondition>
+                  </LeftCondition>
+                  <IfPart>
+                    <Rule IndentLevel="1" Label="Cumulative GPA Requirement " LabelTag="MNGPHREQ" Node_id="86" Node_type="4971" Per_complete="0" ProxyAdvice="Yes" RuleType="Incomplete" Rule_id="1-1-0">
+                      <IfElsePart>IfPart</IfElsePart>
+                      <Requirement/>
+                      <ProxyAdvice>
+                        <Text>When your first term is graded, your cumulative GPA</Text>
+                        <Text>will be calculated. If your cumulative GPA falls below</Text>
+                        <Text>2.0 it is important to see an advisor to make plans</Text>
+                        <Text>for raising your GPA.</Text>
+                      </ProxyAdvice>
+                    </Rule>
+                  </IfPart>
+                  <ElsePart>
+                    <Rule IndentLevel="1" Label="Your cumulative GPA is below 2.0 - please see an advisor" LabelTag="MNGPHREQ2" Node_id="92" Node_type="4971" Per_complete="Not Used" RuleType="Incomplete" Rule_id="1-1-1">
+                      <IfElsePart>ElsePart</IfElsePart>
+                      <Requirement/>
+                    </Rule>
+                  </ElsePart>
+                </Requirement>
+              </Rule>
+            </ElsePart>
+          </Requirement>
+        </Rule>
+        <Rule IndentLevel="1" Label="Major Requirements" LabelTag="MAJORBLOCK" Node_id="95" Node_type="4500" Per_complete="0" RuleType="Blocktype" Rule_id="2">
+          <Requirement>
+            <NumBlocktypes>1</NumBlocktypes>
+            <Type>MAJOR</Type>
+          </Requirement>
+          <Advice>
+            <Title>Major in Computer Engineering</Title>
+          </Advice>
+        </Rule>
+        <Rule IndentLevel="1" Label="Concentration Requirements" LabelTag="CONCBLOCK" Node_id="97" Node_type="4500" Per_complete="0" RuleType="Blocktype" Rule_id="3">
+          <Requirement>
+            <NumBlocktypes>1</NumBlocktypes>
+            <Type>CONC</Type>
+          </Requirement>
+          <Advice>
+            <Type>CONC</Type>
+          </Advice>
+        </Rule>
+        <Rule IndentLevel="1" Label="General Electives" LabelTag="SSHBLOCK" Node_id="106" Node_type="4400" Per_complete="0" RuleType="Block" Rule_id="5">
+          <Requirement>
+            <NumBlocks>1</NumBlocks>
+            <Type>OTHER</Type>
+            <Value>U-SEAS-SSH</Value>
+          </Requirement>
+          <Advice>
+            <BlockID>RA000829</BlockID>
+          </Advice>
+        </Rule>
+        <Rule IndentLevel="1" Label="SEAS Writing Requirement" LabelTag="WREEBLOCK" Node_id="108" Node_type="4400" Per_complete="0" RuleType="Block" Rule_id="6">
+          <Requirement>
+            <NumBlocks>1</NumBlocks>
+            <Type>OTHER</Type>
+            <Value>U-SEAS-WREE</Value>
+          </Requirement>
+          <Advice>
+            <BlockID>RA000535</BlockID>
+          </Advice>
+        </Rule>
+      </Block>
+      <Block Cat_yr="9999" Cat_yrLit="End of Time" Cat_yr_start="2021" Cat_yr_stop="9999" Classes_applied="0" Credits_applied="0" GPA="*" Gpa_credits="0" Gpa_grade_pts="*" Major1="CMPE" Per_complete="0" Req_id="RA000837" Req_type="MAJOR" Req_value="CMPE" Title="Major in Computer Engineering">
+        <Header>
+          <Qualifier Applied="0" ClassesApplied="0" Credits="30" CreditsApplied="0" Name="CLASSESCREDITS" Node_id="1" Node_type="4121" Pseudo="Yes" Satisfied="Yes" Tag="CREH">
+            <Text>30 Credits Pseudo</Text>
+          </Qualifier>
+          <Qualifier Applied="0.00" Label="Minimum Major GPA of 2.0 Required" LabelTag="MNGPH" MinGPA="2" Name="MINGPA" Needed="2" Node_id="2" Node_type="4116" Satisfied="No">
+            <Text>MINGPA 2</Text>
+          </Qualifier>
+          <Qualifier Applied="0" Credits="15" Label="Minimum Credits Earned from University of Pennsylvania" LabelTag="MNRSH" Name="MINRES" Needed="15" Node_id="4" Node_type="4119" Satisfied="No">
+            <Text>MINRES 15 Credits</Text>
+          </Qualifier>
+          <Qualifier ClassesApplied="0" Credits="0" CreditsApplied="0" Name="MAXCREDIT" Node_id="7" Node_type="4103" Tag="MXPFCOVID">
+            <SubText>@ @ (With </SubText>
+            <SubText>DWPASSFAIL = Y AND</SubText>
+            <SubText>DWTERM &lt;&gt; 202010, 202020, 202030, 202110 AND</SubText>
+            <SubText>)</SubText>
+            <Text>MaxCredits 0 in </Text>
+          </Qualifier>
+          <Qualifier ClassesApplied="0" CreditsApplied="0" Name="NONEXCLUSIVE" Node_id="16" Node_type="4111" Tag="SWHMIN">
+            <SubText>(MINOR)</SubText>
+            <Text>ShareWith </Text>
+          </Qualifier>
+          <Qualifier ClassesApplied="0" CreditsApplied="0" Name="NONEXCLUSIVE" Node_id="18" Node_type="4111" Tag="SWHCONC">
+            <SubText>(CONC)</SubText>
+            <Text>ShareWith </Text>
+          </Qualifier>
+          <Advice>
+            <Text Node_id="2">
+              <Line>Your major GPA is 0.00</Line>
+            </Text>
+            <Text Node_id="4">
+              <Line>You currently have 0 credits.</Line>
+              <Line>You still need a minimum of 15 additional credits.</Line>
+            </Text>
+          </Advice>
+        </Header>
+        <Rule IndentLevel="1" Label="MATH AND NATURAL SCIENCE (minimum 10 CU)" LabelTag="MATHNATSCIREQ" Node_id="20" Node_type="4700" Per_complete="0" RuleType="Subset" Rule_id="1">
+          <Requirement/>
+          <Rule IndentLevel="2" Label="Calculus I" LabelTag="MAJCALC1" Node_id="21" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="1-0">
+            <Classes_applied>0</Classes_applied>
+            <Credits_applied>0</Credits_applied>
+            <ClassesApplied/>
+            <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+              <Course Disc="MATH" NewDiscipline="Yes" Node_id="22" Num="1400"/>
+            </Requirement>
+            <Advice Classes="1" Connector=", ">
+              <Course Credits="0" Disc="MATH" NewDiscipline="Yes" Num="1400" Title="Calculus I" creditsHigh="1" creditsIndicator="OR"/>
+            </Advice>
+          </Rule>
+          <Rule IndentLevel="2" Label="Calculus II" LabelTag="MAJCALC2" Node_id="23" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="1-1">
+            <Classes_applied>0</Classes_applied>
+            <Credits_applied>0</Credits_applied>
+            <ClassesApplied/>
+            <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+              <Course Disc="MATH" NewDiscipline="Yes" Node_id="24" Num="1410"/>
+              <Course Disc="MATH" Node_id="25" Num="1610"/>
+            </Requirement>
+            <Advice Classes="1" Connector=", ">
+              <Course Credits="0" Disc="MATH" NewDiscipline="Yes" Num="1410" Title="Calculus II" creditsHigh="1" creditsIndicator="OR"/>
+              <Course Credits="0" Disc="MATH" Num="1610" Title="Honors Calculus" creditsHigh="1" creditsIndicator="OR"/>
+            </Advice>
+          </Rule>
+          <Rule IndentLevel="2" Label="Calculus III" LabelTag="MAJCALC3" Node_id="26" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="1-2">
+            <Classes_applied>0</Classes_applied>
+            <Credits_applied>0</Credits_applied>
+            <ClassesApplied/>
+            <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+              <Course Disc="MATH" NewDiscipline="Yes" Node_id="27" Num="2400"/>
+              <Course Disc="MATH" Node_id="28" Num="2600"/>
+            </Requirement>
+            <Advice Classes="1" Connector=", ">
+              <Course Credits="0" Disc="MATH" NewDiscipline="Yes" Num="2400" Title="Calculus III" creditsHigh="1" creditsIndicator="OR"/>
+              <Course Credits="0" Disc="MATH" Num="2600" Title="Honors Calculus (Cont.)" creditsHigh="1" creditsIndicator="OR"/>
+            </Advice>
+          </Rule>
+          <Rule IndentLevel="2" Label="Math Found Comp Sci" LabelTag="MAJDISCPROB" Node_id="29" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="1-3">
+            <Classes_applied>0</Classes_applied>
+            <Credits_applied>0</Credits_applied>
+            <ClassesApplied/>
+            <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+              <Course Disc="CIS" NewDiscipline="Yes" Node_id="30" Num="1600"/>
+            </Requirement>
+            <Advice Classes="1" Connector=", ">
+              <Course Credits="0" Disc="CIS" NewDiscipline="Yes" Num="1600" Title="Math Found Comp Sci" creditsHigh="1" creditsIndicator="OR"/>
+            </Advice>
+          </Rule>
+          <Rule IndentLevel="2" Label="Probability/Statistics Course" LabelTag="MAJPROBORSTATS" Node_id="31" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="1-4">
+            <Classes_applied>0</Classes_applied>
+            <Credits_applied>0</Credits_applied>
+            <ClassesApplied/>
+            <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+              <Course Disc="CIS" NewDiscipline="Yes" Node_id="32" Num="2610"/>
+              <Course Disc="ENM" NewDiscipline="Yes" Node_id="33" Num="3210"/>
+              <Course Disc="ESE" NewDiscipline="Yes" Node_id="34" Num="3010"/>
+              <Course Disc="STAT" NewDiscipline="Yes" Node_id="35" Num="4300"/>
+            </Requirement>
+            <Advice Classes="1" Connector=", ">
+              <Course Credits="0" Disc="CIS" NewDiscipline="Yes" Num="2610" Title="Discrete Prob &amp; Stat Inf" creditsHigh="1" creditsIndicator="OR"/>
+              <Course Credits="1" Disc="ENM" NewDiscipline="Yes" Num="3210" Title="Engineering Statistics"/>
+              <Course Credits="0" Disc="ESE" NewDiscipline="Yes" Num="3010" Title="Engineering Probability" creditsHigh="1" creditsIndicator="OR"/>
+              <Course Credits="1" Disc="STAT" NewDiscipline="Yes" Num="4300" Title="Probability"/>
+            </Advice>
+          </Rule>
+          <Rule IndentLevel="2" Label="Principles of Physics I or Introduction to Mechanical Design" LabelTag="MAJPHYSORMECH" Node_id="36" Node_type="4600" Per_complete="0" RuleType="Group" Rule_id="1-5">
+            <Requirement NumGroups="1" NumRules="2"/>
+            <Advice NumGroupsNeeded="1"/>
+            <Rule IndentLevel="3" Label="MEAM 1100 &amp; 1470" LabelTag="MEAMPHYS" Node_id="37" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="1-5-0">
+              <Classes_applied>0</Classes_applied>
+              <Credits_applied>0</Credits_applied>
+              <ClassesApplied/>
+              <Requirement Class_cred_op="OR" Classes_begin="2" Connector=",">
+                <Course Disc="MEAM" NewDiscipline="Yes" Node_id="38" Num="1100"/>
+                <Course Disc="MEAM" Node_id="39" Num="1470"/>
+              </Requirement>
+              <Advice Classes="2" Connector=", ">
+                <Course Credits="0" Disc="MEAM" NewDiscipline="Yes" Num="1100" Title="Intro To Mechanics" creditsHigh="1" creditsIndicator="OR"/>
+                <Course Credits="0.5" Disc="MEAM" Num="1470" Title="Intro To Mechanics Lab"/>
+              </Advice>
+            </Rule>
+            <Rule IndentLevel="3" Label="Principles of Physics I" LabelTag="PHYS1" LastRuleInGroup="Yes" Node_id="40" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="1-5-1">
+              <Classes_applied>0</Classes_applied>
+              <Credits_applied>0</Credits_applied>
+              <ClassesApplied/>
+              <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+                <Course Disc="PHYS" NewDiscipline="Yes" Node_id="41" Num="0140"/>
+                <Course Disc="PHYS" Node_id="42" Num="0150"/>
+                <Course Disc="PHYS" Node_id="43" Num="0170"/>
+              </Requirement>
+              <Advice Classes="1" Connector=", ">
+                <Course Credits="1" Disc="PHYS" NewDiscipline="Yes" Num="0140" Title="Principles I without Lab"/>
+                <Course Credits="0" Disc="PHYS" Num="0150" Title="Principles I" creditsHigh="1.5" creditsIndicator="OR"/>
+                <Course Credits="0" Disc="PHYS" Num="0170" Title="Honors Physics I" creditsHigh="1.5" creditsIndicator="OR"/>
+              </Advice>
+            </Rule>
+          </Rule>
+          <Rule IndentLevel="2" Label="Engineering Electromagnetics or Physics II" LabelTag="SCFLLP" Node_id="44" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="1-6">
+            <Classes_applied>0</Classes_applied>
+            <Credits_applied>0</Credits_applied>
+            <ClassesApplied/>
+            <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+              <Course Disc="ESE" NewDiscipline="Yes" Node_id="45" Num="1120"/>
+              <Course Disc="PHYS" NewDiscipline="Yes" Node_id="46" Num="0151"/>
+              <Course Disc="PHYS" Node_id="47" Num="0171"/>
+            </Requirement>
+            <Advice Classes="1" Connector=", ">
+              <Course Credits="0" Disc="ESE" NewDiscipline="Yes" Num="1120" Title="Eng Electromagnetics" creditsHigh="1.5" creditsIndicator="OR"/>
+              <Course Credits="0" Disc="PHYS" NewDiscipline="Yes" Num="0151" Title="Principles II" creditsHigh="1.5" creditsIndicator="OR"/>
+              <Course Credits="0" Disc="PHYS" Num="0171" Title="Honors Physics II" creditsHigh="1.5" creditsIndicator="OR"/>
+            </Advice>
+          </Rule>
+          <Rule IndentLevel="2" Label="Chemistry or Biology Course" LabelTag="BJNFDD" Node_id="48" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="1-7">
+            <Classes_applied>0</Classes_applied>
+            <Credits_applied>0</Credits_applied>
+            <ClassesApplied/>
+            <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+              <Course Disc="BIOL" NewDiscipline="Yes" Node_id="49" Num="1101"/>
+              <Course Disc="BIOL" Node_id="50" Num="1121"/>
+              <Course Disc="CHEM" NewDiscipline="Yes" Node_id="51" Num="1012"/>
+              <Course Disc="EAS" NewDiscipline="Yes" Node_id="52" Num="0091"/>
+              <Course Disc="PHYS" NewDiscipline="Yes" Node_id="53" Num="1240"/>
+            </Requirement>
+            <Advice Classes="1" Connector=", ">
+              <Course Credits="0" Disc="BIOL" NewDiscipline="Yes" Num="1101" Title="Intro Biology A" creditsHigh="1.5" creditsIndicator="OR"/>
+              <Course Credits="0" Disc="BIOL" Num="1121" Title="Intro Bio-Molec Bio Life" creditsHigh="1" creditsIndicator="OR"/>
+              <Course Credits="0" Disc="CHEM" NewDiscipline="Yes" Num="1012" Title="General Chemistry I" creditsHigh="1" creditsIndicator="OR"/>
+              <Course Credits="1" Disc="EAS" NewDiscipline="Yes" Num="0091" Title="Ap Credit Eas Chem"/>
+              <Course Credits="1" Disc="PHYS" NewDiscipline="Yes" Num="1240" Title="Principles IV: Mod Phys"/>
+            </Advice>
+          </Rule>
+          <Rule IndentLevel="2" Label="Math or Natural Science Elective" LabelTag="MAJMATHORNATSCI" Node_id="54" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="1-8">
+            <Classes_applied>0</Classes_applied>
+            <Credits_applied>0</Credits_applied>
+            <ClassesApplied/>
+            <Requirement Class_cred_op="OR" Connector="," Credits_begin="1">
+              <Course Disc="@" NewDiscipline="Yes" Node_id="55" Num="@">
+                <With Code="ATTRIBUTE" Connector="" Operator="=">
+                  <Value>EUMA</Value>
+                  <Value>EUNS</Value>
+                </With>
+              </Course>
+            </Requirement>
+            <Advice Connector=", " Credits="1">
+              <Course Disc="@" NewDiscipline="Yes" Num="@" With_advice="ATTRIBUTE = EUMA, EUNS">
+                <With Code="ATTRIBUTE" Connector="" Operator="=">
+                  <Value>EUMA</Value>
+                  <Value>EUNS</Value>
+                </With>
+              </Course>
+            </Advice>
+          </Rule>
+          <Rule IndentLevel="2" Label="IF Statement" Node_id="59" Node_type="4300" Per_complete="0" RuleType="IfStmt" Rule_id="1-9">
+            <BooleanEvaluation>False</BooleanEvaluation>
+            <Requirement>
+              <LeftCondition Connector="OR">
+                <LeftCondition Connector="AND">
+                  <LeftCondition>
+                    <Rop Evaluation="0" Left="-COURSE-" Operator="IS" Right="PASSED">
+                      <Course Disc="MEAM" NewDiscipline="Yes" Node_id="63" Num="1100"/>
+                    </Rop>
+                  </LeftCondition>
+                  <RightCondition>
+                    <Rop Evaluation="" Left="-COURSE-" Operator="IS" Right="PASSED">
+                      <Course Disc="MEAM" NewDiscipline="Yes" Node_id="65" Num="1470"/>
+                    </Rop>
+                  </RightCondition>
+                </LeftCondition>
+                <RightCondition Connector="OR">
+                  <LeftCondition Connector="OR">
+                    <LeftCondition>
+                      <Rop Evaluation="" Left="-COURSE-" Operator="IS" Right="PASSED">
+                        <Course Disc="PHYS" NewDiscipline="Yes" Node_id="69" Num="0150"/>
+                      </Rop>
+                    </LeftCondition>
+                    <RightCondition>
+                      <Rop Evaluation="" Left="-COURSE-" Operator="IS" Right="PASSED">
+                        <Course Disc="PHYS" NewDiscipline="Yes" Node_id="71" Num="0170"/>
+                      </Rop>
+                    </RightCondition>
+                  </LeftCondition>
+                  <RightCondition>
+                    <Rop Evaluation="" Left="-COURSE-" Operator="IS" Right="PASSED">
+                      <Course Disc="BIOL" NewDiscipline="Yes" Node_id="73" Num="1101"/>
+                    </Rop>
+                  </RightCondition>
+                </RightCondition>
+              </LeftCondition>
+              <IfPart>
+                <Rule IndentLevel="2" Label="Natural Science Lab Complete" LabelTag="ARBSVV" Node_id="75" Node_type="4900" Per_complete="Not Used" RuleType="Complete" Rule_id="1-9-0">
+                  <IfElsePart>IfPart</IfElsePart>
+                  <Requirement/>
+                </Rule>
+              </IfPart>
+              <ElsePart>
+                <Rule IndentLevel="2" Label="Natural Science Lab" LabelTag="MAJSCILAB" Node_id="77" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="1-9-1">
+                  <IfElsePart>ElsePart</IfElsePart>
+                  <Classes_applied>0</Classes_applied>
+                  <Credits_applied>0</Credits_applied>
+                  <ClassesApplied/>
+                  <Requirement Class_cred_op="OR" Connector="," Credits_begin="0.5">
+                    <Course Disc="BIOL" NewDiscipline="Yes" Node_id="78" Num="1124"/>
+                    <Course Disc="CHEM" NewDiscipline="Yes" Node_id="79" Num="1101"/>
+                    <Course Disc="MEAM" NewDiscipline="Yes" Node_id="80" Num="1470"/>
+                    <Course Disc="PHYS" NewDiscipline="Yes" Node_id="81" Num="0050"/>
+                  </Requirement>
+                  <Advice Connector=", " Credits="0.5">
+                    <Course Credits="0" Disc="BIOL" NewDiscipline="Yes" Num="1124" Title="Intro Organism Biol. Lab" creditsHigh="0.5" creditsIndicator="OR"/>
+                    <Course Credits="0" Disc="CHEM" NewDiscipline="Yes" Num="1101" Title="Gen Chem Lab I" creditsHigh="0.5" creditsIndicator="OR"/>
+                    <Course Credits="0.5" Disc="MEAM" NewDiscipline="Yes" Num="1470" Title="Intro To Mechanics Lab"/>
+                    <Course Credits="0.5" Disc="PHYS" NewDiscipline="Yes" Num="0050" Title="Physics Laboratory I"/>
+                  </Advice>
+                </Rule>
+              </ElsePart>
+            </Requirement>
+          </Rule>
+        </Rule>
+        <Rule IndentLevel="1" Label="ENGINEERING (minimum 16 CU)" LabelTag="MAJENGREQ" Node_id="82" Node_type="4700" Per_complete="0" RuleType="Subset" Rule_id="2">
+          <Requirement/>
+          <Rule IndentLevel="2" Label="Prog Lang &amp; Tech I" LabelTag="MAJPROGLANG1" Node_id="83" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="2-0">
+            <Classes_applied>0</Classes_applied>
+            <Credits_applied>0</Credits_applied>
+            <ClassesApplied/>
+            <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+              <Course Disc="CIS" NewDiscipline="Yes" Node_id="84" Num="1200"/>
+            </Requirement>
+            <Advice Classes="1" Connector=", ">
+              <Course Credits="0" Disc="CIS" NewDiscipline="Yes" Num="1200" Title="Prog Lang &amp; Tech I" creditsHigh="1" creditsIndicator="OR"/>
+            </Advice>
+          </Rule>
+          <Rule IndentLevel="2" Label="Prog Lang and Tech II" LabelTag="MAJPROGLANG2" Node_id="85" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="2-1">
+            <Classes_applied>0</Classes_applied>
+            <Credits_applied>0</Credits_applied>
+            <ClassesApplied/>
+            <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+              <Course Disc="CIS" NewDiscipline="Yes" Node_id="86" Num="1210"/>
+            </Requirement>
+            <Advice Classes="1" Connector=", ">
+              <Course Credits="0" Disc="CIS" NewDiscipline="Yes" Num="1210" Title="Prog Lang and Tech II" creditsHigh="1" creditsIndicator="OR"/>
+            </Advice>
+          </Rule>
+          <Rule IndentLevel="2" Label="Digital Audio Basics" LabelTag="MAJDIGAUDIO" Node_id="87" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="2-2">
+            <Classes_applied>0</Classes_applied>
+            <Credits_applied>0</Credits_applied>
+            <ClassesApplied/>
+            <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+              <Course Disc="ESE" NewDiscipline="Yes" Node_id="88" Num="1500"/>
+            </Requirement>
+            <Advice Classes="1" Connector=", ">
+              <Course Credits="0" Disc="ESE" NewDiscipline="Yes" Num="1500" Title="Digital Audio Basics" creditsHigh="1" creditsIndicator="OR"/>
+            </Advice>
+          </Rule>
+          <Rule IndentLevel="2" Label="Elec Circuits &amp; Sys" LabelTag="MAJELECTCIRCUITS" Node_id="89" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="2-3">
+            <Classes_applied>0</Classes_applied>
+            <Credits_applied>0</Credits_applied>
+            <ClassesApplied/>
+            <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+              <Course Disc="ESE" NewDiscipline="Yes" Node_id="90" Num="2150"/>
+            </Requirement>
+            <Advice Classes="1" Connector=", ">
+              <Course Credits="0" Disc="ESE" NewDiscipline="Yes" Num="2150" Title="Elec Circuits &amp; Sys" creditsHigh="1.5" creditsIndicator="OR"/>
+            </Advice>
+          </Rule>
+          <Rule IndentLevel="2" Label="Intro To Comp Systems" LabelTag="MAJINTROCOMPSYST" Node_id="91" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="2-4">
+            <Classes_applied>0</Classes_applied>
+            <Credits_applied>0</Credits_applied>
+            <ClassesApplied/>
+            <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+              <Course Disc="CIS" NewDiscipline="Yes" Node_id="92" Num="2400"/>
+            </Requirement>
+            <Advice Classes="1" Connector=", ">
+              <Course Credits="1" Disc="CIS" NewDiscipline="Yes" Num="2400" Title="Intro To Comp Systems"/>
+            </Advice>
+          </Rule>
+          <Rule IndentLevel="2" Label="Embed Sys/Microcont Lab" LabelTag="MAJEMBEDSYST" Node_id="93" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="2-5">
+            <Classes_applied>0</Classes_applied>
+            <Credits_applied>0</Credits_applied>
+            <ClassesApplied/>
+            <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+              <Course Disc="ESE" NewDiscipline="Yes" Node_id="94" Num="3500"/>
+            </Requirement>
+            <Advice Classes="1" Connector=", ">
+              <Course Credits="0" Disc="ESE" NewDiscipline="Yes" Num="3500" Title="Embed Sys/Microcont Lab" creditsHigh="1.5" creditsIndicator="OR"/>
+            </Advice>
+          </Rule>
+          <Rule IndentLevel="2" Label="Software Design/Engineer" LabelTag="MAJSOFTDES" Node_id="95" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="2-6">
+            <Classes_applied>0</Classes_applied>
+            <Credits_applied>0</Credits_applied>
+            <ClassesApplied/>
+            <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+              <Course Disc="CIS" NewDiscipline="Yes" Node_id="96" Num="3500"/>
+              <Course Disc="CIS" Node_id="97" Num="4600"/>
+              <Course Disc="CIS" Node_id="98" Num="5600"/>
+            </Requirement>
+            <Advice Classes="1" Connector=", ">
+              <Course Credits="0" Disc="CIS" NewDiscipline="Yes" Num="3500" Title="Software Design/Engineer" creditsHigh="1" creditsIndicator="OR"/>
+              <Course Credits="0" Disc="CIS" Num="4600" Title="Interactve Comp Graphics" creditsHigh="1" creditsIndicator="OR"/>
+              <Course Credits="0" Disc="CIS" Num="5600" Title="Interactve Comp Graphics" creditsHigh="1" creditsIndicator="OR"/>
+            </Advice>
+          </Rule>
+          <Rule IndentLevel="2" Label="Circuit-Level Modeling" LabelTag="MAJCIRCUITLEV" Node_id="99" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="2-7">
+            <Classes_applied>0</Classes_applied>
+            <Credits_applied>0</Credits_applied>
+            <ClassesApplied/>
+            <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+              <Course Disc="ESE" NewDiscipline="Yes" Node_id="100" Num="3700"/>
+            </Requirement>
+            <Advice Classes="1" Connector=", ">
+              <Course Credits="1" Disc="ESE" NewDiscipline="Yes" Num="3700" Title="Circuit-Level Modeling"/>
+            </Advice>
+          </Rule>
+          <Rule IndentLevel="2" Label="Computer Oper System" LabelTag="MAJCOMPOPSYST" Node_id="101" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="2-8">
+            <Classes_applied>0</Classes_applied>
+            <Credits_applied>0</Credits_applied>
+            <ClassesApplied/>
+            <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+              <Course Disc="CIS" NewDiscipline="Yes" Node_id="102" Num="3800"/>
+            </Requirement>
+            <Advice Classes="1" Connector=", ">
+              <Course Credits="1" Disc="CIS" NewDiscipline="Yes" Num="3800" Title="Computer Oper System"/>
+            </Advice>
+          </Rule>
+          <Rule IndentLevel="2" Label="Embedded Software" LabelTag="MAJEMBEDSOFT" Node_id="103" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="2-9">
+            <Classes_applied>0</Classes_applied>
+            <Credits_applied>0</Credits_applied>
+            <ClassesApplied/>
+            <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+              <Course Disc="CIS" NewDiscipline="Yes" Node_id="104" Num="4410"/>
+              <Course Disc="CIS" Node_id="105" Num="5410"/>
+              <Course Disc="CIS" Node_id="106" Num="5470"/>
+            </Requirement>
+            <Advice Classes="1" Connector=", ">
+              <Course Credits="1" Disc="CIS" NewDiscipline="Yes" Num="4410" Title="Embedded Software"/>
+              <Course Credits="1" Disc="CIS" Num="5410" Title="Embedded Software"/>
+              <Course Credits="1" Disc="CIS" Num="5470" Title="Software Analysis"/>
+            </Advice>
+          </Rule>
+          <Rule IndentLevel="2" Label="Comp Org and Design" LabelTag="CIS4710" Node_id="107" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="2-10">
+            <Classes_applied>0</Classes_applied>
+            <Credits_applied>0</Credits_applied>
+            <ClassesApplied/>
+            <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+              <Course Disc="CIS" NewDiscipline="Yes" Node_id="108" Num="4710"/>
+              <Course Disc="CIS" Node_id="109" Num="5710"/>
+            </Requirement>
+            <Advice Classes="1" Connector=", ">
+              <Course Credits="1" Disc="CIS" NewDiscipline="Yes" Num="4710" Title="Comp Org and Design"/>
+              <Course Credits="1" Disc="CIS" Num="5710" Title="Comp Org and Design"/>
+            </Advice>
+          </Rule>
+          <Rule IndentLevel="2" Label="Networking" LabelTag="MAJNETWORKING" Node_id="110" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="2-11">
+            <Classes_applied>0</Classes_applied>
+            <Credits_applied>0</Credits_applied>
+            <ClassesApplied/>
+            <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+              <Course Disc="CIS" NewDiscipline="Yes" Node_id="111" Num="5530"/>
+              <Course Disc="ESE" NewDiscipline="Yes" Node_id="112" Num="4070"/>
+              <Course Disc="ESE" Node_id="113" Num="5070"/>
+            </Requirement>
+            <Advice Classes="1" Connector=", ">
+              <Course Credits="1" Disc="CIS" NewDiscipline="Yes" Num="5530" Title="Networked Systems"/>
+              <Course Credits="1" Disc="ESE" NewDiscipline="Yes" Num="4070" Title="Intr Netwrks &amp; Protocols"/>
+              <Course Credits="1" Disc="ESE" Num="5070" Title="Intr Netwrks &amp; Protocols"/>
+            </Advice>
+          </Rule>
+          <Rule IndentLevel="2" Label="Concurrency Lab" LabelTag="MAJCONCURRLAB" Node_id="114" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="2-12">
+            <Classes_applied>0</Classes_applied>
+            <Credits_applied>0</Credits_applied>
+            <ClassesApplied/>
+            <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+              <Course Disc="CIS" NewDiscipline="Yes" Node_id="115" Num="4550"/>
+              <Course Disc="CIS" Node_id="116" Num="5050"/>
+              <Course Disc="CIS" Node_id="117" Num="5550"/>
+              <Course Disc="CIS" Node_id="118" Num="5650"/>
+              <Course Disc="ESE" NewDiscipline="Yes" Node_id="119" Num="5320"/>
+            </Requirement>
+            <Advice Classes="1" Connector=", ">
+              <Course Credits="1" Disc="CIS" NewDiscipline="Yes" Num="4550" Title="Internet &amp; Web Systems"/>
+              <Course Credits="1" Disc="CIS" Num="5050" Title="Software Systems"/>
+              <Course Credits="1" Disc="CIS" Num="5550" Title="Internet &amp; Web Systems"/>
+              <Course Credits="0" Disc="CIS" Num="5650" Title="Gpu Programming&amp;Arch" creditsHigh="1" creditsIndicator="OR"/>
+              <Course Credits="1" Disc="ESE" NewDiscipline="Yes" Num="5320" Title="System-On-A-Chip Arch"/>
+            </Advice>
+          </Rule>
+          <Rule IndentLevel="2" Label="Senior Project/Senior Design Project I" LabelTag="MAJSENPROJ1" Node_id="120" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="2-13">
+            <Classes_applied>0</Classes_applied>
+            <Credits_applied>0</Credits_applied>
+            <ClassesApplied/>
+            <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+              <Course Disc="CIS" NewDiscipline="Yes" Node_id="121" Num="4000"/>
+              <Course Disc="ESE" NewDiscipline="Yes" Node_id="122" Num="4500"/>
+            </Requirement>
+            <Advice Classes="1" Connector=", ">
+              <Course Credits="1" Disc="CIS" NewDiscipline="Yes" Num="4000" Title="Senior Project"/>
+              <Course Credits="1" Disc="ESE" NewDiscipline="Yes" Num="4500" Title="Sr Design Proj I-Ee/Sse"/>
+            </Advice>
+          </Rule>
+          <Rule IndentLevel="2" Label="Senior Project/Senior Design Project II" LabelTag="MAJSENPROJ2" Node_id="123" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="2-14">
+            <Classes_applied>0</Classes_applied>
+            <Credits_applied>0</Credits_applied>
+            <ClassesApplied/>
+            <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+              <Course Disc="CIS" NewDiscipline="Yes" Node_id="124" Num="4010"/>
+              <Course Disc="ESE" NewDiscipline="Yes" Node_id="125" Num="4510"/>
+            </Requirement>
+            <Advice Classes="1" Connector=", ">
+              <Course Credits="1" Disc="CIS" NewDiscipline="Yes" Num="4010" Title="Senior Project"/>
+              <Course Credits="1" Disc="ESE" NewDiscipline="Yes" Num="4510" Title="Sr Design Proj II-Ee/Sse"/>
+            </Advice>
+          </Rule>
+        </Rule>
+        <Rule IndentLevel="1" Label="PROFESSIONAL ELECTIVES (4 CU)" LabelTag="MAJTECHELECTREQ" Node_id="126" Node_type="4700" Per_complete="0" RuleType="Subset" Rule_id="3">
+          <Requirement/>
+          <Rule IndentLevel="2" Label="Math, Science, or Engineering Electives" LabelTag="MAJMATHSCIENGELECT" Node_id="127" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="3-0">
+            <Classes_applied>0</Classes_applied>
+            <Credits_applied>0</Credits_applied>
+            <ClassesApplied/>
+            <Requirement Class_cred_op="OR" Connector="," Credits_begin="3">
+              <Course Disc="@" NewDiscipline="Yes" Node_id="128" Num="@">
+                <With Code="ATTRIBUTE" Connector="" Operator="=">
+                  <Value>EUMS</Value>
+                </With>
+              </Course>
+            </Requirement>
+            <Advice Connector=", " Credits="3">
+              <Course Disc="@" NewDiscipline="Yes" Num="@" With_advice="ATTRIBUTE = EUMS">
+                <With Code="ATTRIBUTE" Connector="" Operator="=">
+                  <Value>EUMS</Value>
+                </With>
+              </Course>
+            </Advice>
+          </Rule>
+          <Rule IndentLevel="2" Label="Professional Elective Course" LabelTag="MAJTECHELECT" Node_id="131" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="3-1">
+            <Classes_applied>0</Classes_applied>
+            <Credits_applied>0</Credits_applied>
+            <ClassesApplied/>
+            <Requirement Class_cred_op="OR" Connector="," Credits_begin="1">
+              <Course CrossListed="Parent" Disc="EAS" NewDiscipline="Yes" Node_id="132" Num="5450">
+                <CrossListedCourse CrossListed="Child" Disc="IPD" NewDiscipline="Yes" Node_id="133" Num="5450"/>
+              </Course>
+              <Course Disc="EAS" Node_id="134" Num="5950"/>
+              <Course Disc="ESE" NewDiscipline="Yes" Node_id="135" Num="4000"/>
+              <Course Disc="MGMT" NewDiscipline="Yes" Node_id="136" Num="2370"/>
+              <Course Disc="OIDD" NewDiscipline="Yes" Node_id="137" Num="2360"/>
+              <Course Disc="@" NewDiscipline="Yes" Node_id="138" Num="@">
+                <With Code="ATTRIBUTE" Connector="" Operator="=">
+                  <Value>EUMS</Value>
+                </With>
+              </Course>
+            </Requirement>
+            <Advice Connector=", " Credits="1">
+              <Course Credits="1" CrossListed="Parent" Disc="EAS" NewDiscipline="Yes" Num="5450" Title="Eng Entrepreneurship I">
+                <CrossListedCourse Credits="1" CrossListed="Child" Disc="IPD" NewDiscipline="Yes" Num="5450" Title="Eng Entrepreneurship I"/>
+              </Course>
+              <Course Credits="1" Disc="EAS" Num="5950" Title="Foundations of Leadershp"/>
+              <Course Credits="1" Disc="ESE" NewDiscipline="Yes" Num="4000" Title="Engineering Economics"/>
+              <Course Credits="1" Disc="MGMT" NewDiscipline="Yes" Num="2370" Title="Management of Technology"/>
+              <Course Credits="1" Disc="OIDD" NewDiscipline="Yes" Num="2360" Title="Scal Ops in Tech Venture"/>
+              <Course Disc="@" NewDiscipline="Yes" Num="@" With_advice="ATTRIBUTE = EUMS">
+                <With Code="ATTRIBUTE" Connector="" Operator="=">
+                  <Value>EUMS</Value>
+                </With>
+              </Course>
+            </Advice>
+          </Rule>
+        </Rule>
+      </Block>
+      <Block Cat_yr="9999" Cat_yrLit="End of Time" Cat_yr_start="2021" Cat_yr_stop="9999" Classes_applied="0" Credits_applied="0" GPA="*" Gpa_credits="0" Gpa_grade_pts="*" Per_complete="0" Req_id="RA000829" Req_type="OTHER" Req_value="U-SEAS-SSH" Title="General Electives">
+        <Header>
+          <Qualifier Applied="0" ClassesApplied="0" Credits="7" CreditsApplied="0" Label="Minimum Credits Requirement" LabelTag="HSJEUL" Name="CLASSESCREDITS" Needed="7" Node_id="1" Node_type="4121" Satisfied="No">
+            <Text>7 Credits</Text>
+          </Qualifier>
+          <Qualifier ClassesApplied="0" CreditsApplied="0" Name="NONEXCLUSIVE" Node_id="13" Node_type="4111">
+            <SubText>(OTHER = U-SEAS-WREE)</SubText>
+            <Text>ShareWith </Text>
+          </Qualifier>
+          <Qualifier ClassesApplied="0" CreditsApplied="0" Name="NONEXCLUSIVE" Node_id="15" Node_type="4111" Tag="AFLBLX">
+            <SubText>(MAJOR = AFRC, MAJOR = ANCH, MAJOR = ANTH, MAJOR = ARCH, </SubText>
+            <SubText> MAJOR = ARTH, MAJOR = BCHE, MAJOR = BIOL, MAJOR = BIOP, </SubText>
+            <SubText> MAJOR = BSCI, MAJOR = CBSC, MAJOR = CHEM, MAJOR = CIMS, </SubText>
+            <SubText> MAJOR = CLST, MAJOR = CMPL, MAJOR = COGS, MAJOR = COMM, </SubText>
+            <SubText> MAJOR = CRIM, MAJOR = DSGN, MAJOR = EALC, MAJOR = EASC, </SubText>
+            <SubText> MAJOR = ECOQ, MAJOR = ENGL, MAJOR = ENVS, MAJOR = ESCI, </SubText>
+            <SubText> MAJOR = FNAR, MAJOR = FRFS, MAJOR = GRMN, MAJOR = GSWS, </SubText>
+            <SubText> MAJOR = HIST, MAJOR = HSOC, MAJOR = HSPN, MAJOR = INDM, </SubText>
+            <SubText> MAJOR = INTR, MAJOR = ITST, MAJOR = JWST, MAJOR = LALX, </SubText>
+            <SubText> MAJOR = LING, MAJOR = LOGC, MAJOR = MAEC, MAJOR = MATH, </SubText>
+            <SubText> MAJOR = MESC, MAJOR = MMES, MAJOR = MSCI, MAJOR = MUSC, </SubText>
+            <SubText> MAJOR = NELC, MAJOR = NRSC, MAJOR = NTSC, MAJOR = PHIL, </SubText>
+            <SubText> MAJOR = PHYS, MAJOR = PPE, MAJOR = PSCI, MAJOR = PSYC, </SubText>
+            <SubText> MAJOR = REES, MAJOR = RELS, MAJOR = ROML, MAJOR = SAST, </SubText>
+            <SubText> MAJOR = SOCI, MAJOR = STSC, MAJOR = SYSC, MAJOR = THAR, </SubText>
+            <SubText> MAJOR = URBS, MAJOR = VLST)</SubText>
+            <Text>ShareWith </Text>
+          </Qualifier>
+          <Qualifier ClassesApplied="0" CreditsApplied="0" Name="NONEXCLUSIVE" Node_id="78" Node_type="4111" Tag="ANGLBS">
+            <SubText>(CONC)</SubText>
+            <Text>ShareWith </Text>
+          </Qualifier>
+          <Advice>
+            <Text Node_id="1">
+              <Line>7 credits are required. You currently have 0</Line>
+              <Line>You still need 7 more.</Line>
+            </Text>
+          </Advice>
+        </Header>
+        <Rule IndentLevel="1" Label="GENERAL ELECTIVES (7 CU)" LabelTag="SEAS_SSH_REQ" Node_id="80" Node_type="4700" Per_complete="0" RuleType="Subset" Rule_id="1">
+          <Requirement/>
+          <Rule IndentLevel="2" Label="IF Statement" Node_id="230" Node_type="4300" Per_complete="0" RuleType="IfStmt" Rule_id="1-6">
+            <BooleanEvaluation>True</BooleanEvaluation>
+            <Requirement>
+              <LeftCondition Connector="OR">
+                <LeftCondition>
+                  <Rop Evaluation="1" Left="MAJOR" Operator="=" Right="CMPE"/>
+                </LeftCondition>
+              </LeftCondition>
+              <IfPart>
+                <Rule IndentLevel="2" Label="Engineering Ethics" LabelTag="SVNPDP" Node_id="234" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="1-6-0">
+                  <IfElsePart>IfPart</IfElsePart>
+                  <Classes_applied>0</Classes_applied>
+                  <Credits_applied>0</Credits_applied>
+                  <ClassesApplied/>
+                  <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+                    <Course Disc="CIS" NewDiscipline="Yes" Node_id="235" Num="4230"/>
+                    <Course Disc="CIS" Node_id="236" Num="5230"/>
+                    <Course Disc="EAS" NewDiscipline="Yes" Node_id="237" Num="2030"/>
+                    <Course Disc="LAWM" NewDiscipline="Yes" Node_id="238" Num="5060"/>
+                    <Qualifier Applied="" Name="HIGHPRIORITY" Node_id="239" Node_type="4135">
+                      <Text>HighPriority</Text>
+                    </Qualifier>
+                  </Requirement>
+                  <Advice Classes="1" Connector=", ">
+                    <Course Credits="1" Disc="CIS" NewDiscipline="Yes" Num="4230" Title="Ethical Algorithm Design"/>
+                    <Course Credits="1" Disc="CIS" Num="5230" Title="Ethical Algorithm Design"/>
+                    <Course Credits="1" Disc="EAS" NewDiscipline="Yes" Num="2030" Title="Engineering Ethics"/>
+                    <Course Credits="1" Disc="LAWM" NewDiscipline="Yes" Num="5060" Title="ML: Tech Law"/>
+                  </Advice>
+                </Rule>
+                <Rule IndentLevel="2" Label="Humanities or Social Science" LabelTag="KNPNZZ" Node_id="240" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="1-6-1">
+                  <IfElsePart>IfPart</IfElsePart>
+                  <Classes_applied>0</Classes_applied>
+                  <Credits_applied>0</Credits_applied>
+                  <ClassesApplied/>
+                  <Requirement Class_cred_op="OR" Connector="," Credits_begin="4">
+                    <Course Disc="@" NewDiscipline="Yes" Node_id="241" Num="@">
+                      <With Code="ATTRIBUTE" Connector="" Operator="=">
+                        <Value>EUHS</Value>
+                        <Value>EUSS</Value>
+                      </With>
+                    </Course>
+                  </Requirement>
+                  <Advice Connector=", " Credits="4">
+                    <Course Disc="@" NewDiscipline="Yes" Num="@" With_advice="ATTRIBUTE = EUHS, EUSS">
+                      <With Code="ATTRIBUTE" Connector="" Operator="=">
+                        <Value>EUHS</Value>
+                        <Value>EUSS</Value>
+                      </With>
+                    </Course>
+                  </Advice>
+                </Rule>
+                <Rule IndentLevel="2" Label="Humanities, Social Science, or Technology in Business and Society" LabelTag="DGLPSV" Node_id="245" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="1-6-2">
+                  <IfElsePart>IfPart</IfElsePart>
+                  <Classes_applied>0</Classes_applied>
+                  <Credits_applied>0</Credits_applied>
+                  <ClassesApplied/>
+                  <Requirement Class_cred_op="OR" Connector="," Credits_begin="2">
+                    <Course Disc="@" NewDiscipline="Yes" Node_id="246" Num="@">
+                      <With Code="ATTRIBUTE" Connector="" Operator="=">
+                        <Value>EUHS</Value>
+                        <Value>EUSS</Value>
+                        <Value>EUTB</Value>
+                      </With>
+                    </Course>
+                  </Requirement>
+                  <Advice Connector=", " Credits="2">
+                    <Course Disc="@" NewDiscipline="Yes" Num="@" With_advice="ATTRIBUTE = EUHS, EUSS, EUTB">
+                      <With Code="ATTRIBUTE" Connector="" Operator="=">
+                        <Value>EUHS</Value>
+                        <Value>EUSS</Value>
+                        <Value>EUTB</Value>
+                      </With>
+                    </Course>
+                  </Advice>
+                </Rule>
+              </IfPart>
+            </Requirement>
+          </Rule>
+        </Rule>
+      </Block>
+      <Block Cat_yr="9999" Cat_yrLit="End of Time" Cat_yr_start="0000" Cat_yr_stop="9999" Classes_applied="0" Credits_applied="0" GPA="*" Gpa_credits="0" Gpa_grade_pts="*" Per_complete="0" Req_id="RA000535" Req_type="OTHER" Req_value="U-SEAS-WREE" Title="SEAS Writing Requirement">
+        <Header>
+          <Qualifier Applied="0" ClassesApplied="0" Credits="1" CreditsApplied="0" Name="CLASSESCREDITS" Node_id="1" Node_type="4121" Pseudo="Yes" Satisfied="Yes" Tag="CREH">
+            <Text>1 Credits Pseudo</Text>
+          </Qualifier>
+          <Qualifier ClassesApplied="0" Credits="0" CreditsApplied="0" Name="MAXCREDIT" Node_id="2" Node_type="4103" Tag="MXPFCOVID">
+            <SubText>@ @ (With </SubText>
+            <SubText>DWPASSFAIL = Y AND</SubText>
+            <SubText>DWTERM &lt;&gt; 202010, 202020, 202030, 202110 AND</SubText>
+            <SubText>)</SubText>
+            <Text>MaxCredits 0 in </Text>
+          </Qualifier>
+          <Qualifier ClassesApplied="0" CreditsApplied="0" Name="NONEXCLUSIVE" Node_id="11" Node_type="4111">
+            <SubText>(OTHER = U-SEAS-SSH)</SubText>
+            <Text>ShareWith </Text>
+          </Qualifier>
+          <Remark>
+            <Text>Students may select a course that will fulfill both the writing requirement</Text>
+            <Text>here and a Social Science, Humanities, or Technology, Business, and Society (TBS)</Text>
+            <Text>course from the General Electives/SSH block.  A course that counts toward both areas</Text>
+            <Text>should automatically reflect in the audit.  See advisor for questions and planning.</Text>
+          </Remark>
+        </Header>
+        <Rule IndentLevel="1" Label="Writing" LabelTag="OTHERSEASWRIT2" Node_id="13" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="1">
+          <Classes_applied>0</Classes_applied>
+          <Credits_applied>0</Credits_applied>
+          <ClassesApplied/>
+          <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+            <Course Disc="@" NewDiscipline="Yes" Node_id="14" Num="@">
+              <With Code="ATTRIBUTE" Connector="" Operator="=">
+                <Value>AUWR</Value>
+              </With>
+            </Course>
+            <Course Disc="WRIT" NewDiscipline="Yes" Node_id="17" Num="0000" Num_end="0991"/>
+          </Requirement>
+          <Advice Classes="1" Connector=", ">
+            <Course Disc="@" NewDiscipline="Yes" Num="@" With_advice="ATTRIBUTE = AUWR">
+              <With Code="ATTRIBUTE" Connector="" Operator="=">
+                <Value>AUWR</Value>
+              </With>
+            </Course>
+            <Course Disc="WRIT" NewDiscipline="Yes" Num="0000" Num_end="0991"/>
+          </Advice>
+        </Rule>
+      </Block>
+      <Clsinfo/>
+      <Fallthrough Classes="0" Credits="0" Noncourses="0"/>
+      <OTL Classes="0" Credits="0"/>
+      <Insufficient Classes="0" Credits="0"/>
+      <In_progress Classes="0" Credits="0"/>
+      <FitList/>
+      <SplitCredits Classes="0" Credits="0"/>
+      <Deginfo>
+        <DegreeData Actv_term="" Actv_termLit="" Cat_yr="9999        " Cat_yrLit="End of Time" Degree="BSE         " DegreeLit="Bachelor of Sci in Engineering" DegreeSource="  " Degree_term="" SS_cum_cr_earn="        " SS_cum_gpa="        " SS_cum_gr_att="        " SS_cum_gr_pts="        " SS_cum_tot_earn="        " School="UG          " SchoolLit="Undergraduate" Stu_level="  " Stu_levelLit="  "/>
+        <Goal Cat_yr="9999" Code="PROGRAM" Value="EU_BSE" ValueLit="SEAS - BSE"/>
+        <Goal Cat_yr="9999" Code="COLLEGE" Value="EU" ValueLit="SEAS Undergraduate"/>
+        <Goal Cat_yr="9999" Code="MAJOR" Value="CMPE" ValueLit="Computer Engineering"/>
+      </Deginfo>
+      <ExceptionList/>
+      <Notes/>
+      <Placeholders/>
+      <Flags>
+        <CFG020DAP14>Y Y 05NNYNYY            NYNNY                             YNNN2YYNYYY05NYYYNYYN                     </CFG020DAP14>
+        <CFG020TIEBREAK>01H02H03H04H05N06N07N08N09N                                                                         </CFG020TIEBREAK>
+      </Flags>
+    </Audit>
+  </Report>
+

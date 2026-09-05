@@ -20,6 +20,13 @@ import re
 from collections import defaultdict
 
 
+# The kinds of block a rule's share targets can name. THISBLOCK is DegreeWorks'
+# own word; ANYBLOCK is ours, for a block marked STANDALONEBLOCK and so evaluated
+# outside the degree's shared pool of courses.
+THIS_BLOCK = "THISBLOCK"
+ANY_BLOCK = "ANYBLOCK"
+
+
 DOUBLE_COUNT_ENTRIES = [
     # ===College===
     {
