@@ -1,5 +1,7 @@
+from collections import defaultdict
 from textwrap import dedent
 
+from django.db import models
 from django.db.models import Q
 from rest_framework import serializers
 
@@ -21,16 +23,33 @@ class DegreeListSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+def attribute_codes_by_full_code(full_codes):
+    """
+    Map each of the given course codes to its sorted attribute codes, in a single query.
+    Attributes are not semester-scoped, so they are collected across every semester of a course.
+    """
+    codes = defaultdict(set)
+    rows = Course.objects.filter(full_code__in=full_codes).values_list(
+        "full_code", "attributes__code"
+    )
+    for full_code, code in rows:
+        if code is not None:
+            codes[full_code].add(code)
+    return {full_code: sorted(course_codes) for full_code, course_codes in codes.items()}
+
+
 class SimpleCourseSerializer(serializers.ModelSerializer):
     attribute_codes = serializers.SerializerMethodField()
 
     def get_attribute_codes(self, obj):
-        courses = Course.objects.all().filter(title=obj.title).exclude(attributes__isnull=True)
-        if len(courses) == 0:
-            return []
-
-        attributes = courses[0].attributes.all()
-        return [attr.code for attr in attributes]
+        """
+        When serializing many courses at once, the caller can prime
+        `attribute_codes_by_full_code` in the serializer context to avoid a query per course.
+        """
+        batched = self.context.get("attribute_codes_by_full_code")
+        if batched is None:
+            batched = attribute_codes_by_full_code([obj.full_code])
+        return batched.get(obj.full_code, [])
 
     id = serializers.ReadOnlyField(
         source="full_code",
@@ -102,20 +121,47 @@ class DegreeDetailSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class FulfillmentListSerializer(serializers.ListSerializer):
+    """
+    Resolves the courses for a whole list of fulfillments up front, so that serializing
+    N fulfillments takes a fixed number of course queries rather than a set per fulfillment.
+    """
+
+    def to_representation(self, data):
+        iterable = list(data.all() if isinstance(data, models.Manager) else data)
+        self.child.prime_course_cache(iterable)
+        return [self.child.to_representation(item) for item in iterable]
+
+
 class FulfillmentSerializer(serializers.ModelSerializer):
     course = serializers.SerializerMethodField()
 
+    _course_cache = None
+    _attribute_codes = None
+
+    def prime_course_cache(self, fulfillments):
+        """
+        Look up the most recent course (at or before the current semester) for each of
+        `fulfillments`, along with those courses' attribute codes, in two queries total.
+        """
+        full_codes = {fulfillment.full_code for fulfillment in fulfillments}
+        courses = Course.with_reviews.filter(
+            full_code__in=full_codes, semester__lte=get_current_semester()
+        ).order_by("full_code", "semester")
+        # ascending by semester, so the last course seen for a code is the most recent one
+        self._course_cache = {course.full_code: course for course in courses}
+        self._attribute_codes = attribute_codes_by_full_code(full_codes)
+
     def get_course(self, obj):
-        course = (
-            Course.with_reviews.filter(
-                full_code=obj.full_code, semester__lte=get_current_semester()
-            )
-            .order_by("-semester")
-            .first()
-        )
-        if course is not None:
-            return SimpleCourseSerializer(course).data
-        return None
+        if self._course_cache is None:
+            self.prime_course_cache([obj])
+        course = self._course_cache.get(obj.full_code)
+        if course is None:
+            return None
+        return SimpleCourseSerializer(
+            course,
+            context={**self.context, "attribute_codes_by_full_code": self._attribute_codes},
+        ).data
 
     rules = serializers.PrimaryKeyRelatedField(
         many=True, queryset=Rule.objects.all(), required=False
@@ -132,6 +178,7 @@ class FulfillmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Fulfillment
+        list_serializer_class = FulfillmentListSerializer
         fields = [
             "id",
             "degree_plan",
