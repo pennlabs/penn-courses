@@ -197,7 +197,7 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
         queryset = Fulfillment.objects.filter(
             degree_plan__person=self.request.user,
             degree_plan_id=self.get_degree_plan_id(),
-        )
+        ).prefetch_related("rules", "unselected_rules")
         return queryset
 
     def create(self, request, *args, **kwargs):
