@@ -702,3 +702,36 @@ def save_parsed_audit(parsed: ParsedAudit, degree: Degree) -> None:
     degree.credits = parsed.degree_credits
     degree.save()
     save_rules(parsed.rules, degree)
+
+
+def block_rules(parsed: ParsedAudit, block: ParsedBlock) -> list[Rule]:
+    """
+    The rules of one block. A block's root rule has no parent, so the result is a
+    self-contained tree.
+    """
+    return [
+        rule
+        for rule in parsed.rules
+        if (rule.block_type, rule.block_value) == (block.req_type, block.req_value)
+    ]
+
+
+def find_block(parsed: ParsedAudit, req_type: str) -> ParsedBlock | None:
+    """
+    The audit's block of the given type. Audits carry at most one MAJOR and one MINOR block:
+    the rest of what a program's audit describes is the degree it sits under.
+    """
+    blocks = [block for block in parsed.blocks if block.req_type == req_type]
+    if len(blocks) > 1:
+        logger.warning(f"Expected one {req_type} block, found {len(blocks)}; using the first")
+    return blocks[0] if blocks else None
+
+
+def save_component(component, parsed: ParsedAudit, block: ParsedBlock) -> None:
+    """
+    Saves a Major or Minor and only the rules of its own block. The rest of the audit is the
+    degree that program sits under, which the student is not necessarily pursuing.
+    """
+    component.credits = block.credits
+    component.save()
+    save_rules(block_rules(parsed, block), component)

@@ -6,8 +6,8 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from degree.management.commands.deduplicate_rules import deduplicate_rules
-from degree.models import Degree, program_code_to_name
-from degree.utils.parse_path_audit import parse_audit, save_parsed_audit
+from degree.models import Degree, Major, Minor, program_code_to_name
+from degree.utils.parse_path_audit import find_block, parse_audit, save_component, save_parsed_audit
 from degree.utils.path_client import PathClient, split_program_code, split_program_title
 
 
@@ -25,6 +25,8 @@ class Tally:
     saved: int = 0
     skipped: int = 0
     outdated: int = 0
+    majors: int = 0
+    minors: int = 0
     failures: list[tuple[str, str]] = field(default_factory=list)
 
     def skip(self, code, reason, *, announce=True):
@@ -41,6 +43,7 @@ class Tally:
         print(f"Saved {self.saved} degrees, skipped {self.skipped}")
         if self.outdated:
             print(f"  of those, {self.outdated} predate catalog year {EARLIEST_CATALOG_YEAR}")
+        print(f"Saved {self.majors} majors and {self.minors} minors")
 
         if not self.failures:
             return
@@ -108,6 +111,16 @@ class Command(BaseCommand):
             action="store_true",
             help="Fetch and parse, but do not write anything to the database.",
         )
+        parser.add_argument(
+            "--skip-minors",
+            action="store_true",
+            help=dedent(
+                """
+                Do not fetch minors. Minors are about 118 more programs per term, so this
+                cuts roughly a third off a full run.
+                """
+            ),
+        )
         parser.add_argument("--deduplicate-rules", action="store_true")
 
     def handle(self, *args, **options):
@@ -120,6 +133,8 @@ class Command(BaseCommand):
 
         for srcdb in options["srcdb"]:
             self.fetch_degrees(client, srcdb, tally)
+            if not options["skip_minors"] and not options["program"]:
+                self.fetch_minors(client, srcdb, tally)
 
         tally.report()
 
@@ -143,6 +158,9 @@ class Command(BaseCommand):
 
     def fetch_degree(self, client, srcdb, program, tally):
         """
+        Loads one program as a Degree, and its major as a Major for students who add it on top
+        of a different degree.
+
         Both the fetch and the parse are guarded: a single unparseable audit aborting a
         279-program run is the worst failure mode here.
         """
@@ -209,9 +227,87 @@ class Command(BaseCommand):
                     year=degree.year,
                 ).delete()
                 save_parsed_audit(parsed, degree)
+                tally.majors += self.save_major(code, degree, parsed, concentration_name)
         except Exception as error:
             tally.fail(code, error)
             return
 
         tally.saved += 1
         self.announce(f"Saved {degree} ({len(parsed.rules)} rules, {degree.credits} CU)")
+
+    def save_major(self, code, degree, parsed, concentration_name) -> int:
+        """The same audit's MAJOR block, stored on its own. Returns how many were saved."""
+        block = find_block(parsed, "MAJOR")
+        if block is None:
+            return 0
+
+        Major.objects.filter(program_code=code, year=degree.year).delete()
+        save_component(
+            Major(
+                program_code=code,
+                code=block.req_value,
+                name=degree.major_name,
+                concentration=degree.concentration,
+                concentration_name=concentration_name,
+                year=degree.year,
+            ),
+            parsed,
+            block,
+        )
+        return 1
+
+    def fetch_minors(self, client, srcdb, tally):
+        programs = client.minor_programs(srcdb)
+        self.announce(f"srcdb {srcdb}: {len(programs)} minors")
+        for program in programs:
+            tally.minors += self.fetch_minor(client, srcdb, program, tally)
+
+    def fetch_minor(self, client, srcdb, program, tally) -> int:
+        """
+        Loads one minor. Its audit wraps the MINOR block in a full BA degree, which is
+        discarded: a minor contributes only its own block, and that block is marked
+        STANDALONEBLOCK so its rules double count freely with the rest of a plan.
+        """
+        code = program["code"]
+        try:
+            info = client.program_info(code, srcdb)
+            # A minor has no sis_prog_code, and carries its code in majr_code.
+            placeholder = Degree(
+                program="AU_BA", degree="BA", major=info.get("majr_code") or "", year=0
+            )
+            parsed = parse_audit(info["audit_xml"], placeholder)
+        except Exception as error:
+            tally.fail(code, error)
+            return 0
+
+        block = find_block(parsed, "MINOR") if parsed else None
+        if block is None or parsed.catalog_year is None:
+            tally.skip(code, "no MINOR block or no catalog year")
+            return 0
+        if parsed.catalog_year < EARLIEST_CATALOG_YEAR:
+            return 0
+
+        name, _ = split_program_title(program["title"] or "", "MINOR")
+        if self.dry_run:
+            self.announce(f"Would save minor {code} ({block.credits} CU)")
+            return 1
+
+        try:
+            with transaction.atomic():
+                Minor.objects.filter(program_code=code, year=parsed.catalog_year).delete()
+                save_component(
+                    Minor(
+                        program_code=code,
+                        code=block.req_value,
+                        name=name or None,
+                        year=parsed.catalog_year,
+                    ),
+                    parsed,
+                    block,
+                )
+        except Exception as error:
+            tally.fail(code, error)
+            return 0
+
+        self.announce(f"Saved minor {code} ({block.credits} CU)")
+        return 1

@@ -309,6 +309,95 @@ class Rule(models.Model):
         return json_parser.parse(self.q)
 
 
+class ProgramComponent(models.Model):
+    """
+    Something a student adds on top of a degree: a second major, or a minor.
+
+    A Degree is the whole audit for the program a student is enrolled in -- its DEGREE block,
+    its general education blocks and its own major. What an *additional* major or minor
+    contributes is only its own block, because the rest of that program's audit describes a
+    degree the student is not pursuing. A Math BA audit carries the College's general
+    education requirements; a Mechanical Engineering student who adds Math as a second major
+    does not inherit them.
+    """
+
+    program_code = models.CharField(
+        max_length=32,
+        help_text=dedent(
+            """
+            The Path@Penn program this came from, e.g. MATH-BA-GEN or MATH-MINOR. Kept because
+            the same major code can have different requirements depending on the degree it sits
+            under: CSCI as a College second major is not CSCI as an Engineering major.
+            """
+        ),
+    )
+
+    code = models.CharField(
+        max_length=4,
+        help_text="The major or minor code, e.g. MATH.",
+    )
+
+    name = models.CharField(
+        max_length=128,
+        null=True,
+        help_text="The name, e.g. Mathematics.",
+    )
+
+    year = models.IntegerField(help_text="The catalog year this came from, e.g. 2027.")
+
+    credits = models.DecimalField(
+        decimal_places=2,
+        max_digits=4,
+        null=True,
+        help_text="The minimum number of CUs required, if the block states one.",
+    )
+
+    rules = models.ManyToManyField(
+        "Rule",
+        blank=True,
+        help_text="The rules of this component's own block.",
+    )
+
+    class Meta:
+        abstract = True
+
+    def __str__(self) -> str:
+        return f"{self.program_code} ({self.year})"
+
+
+class Major(ProgramComponent):
+    """
+    A major a student adds to a degree beyond the one their program already includes.
+    """
+
+    concentration = models.CharField(max_length=4, null=True)
+    concentration_name = models.CharField(max_length=128, null=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["program_code", "year"],
+                name="unique major",
+            )
+        ]
+
+
+class Minor(ProgramComponent):
+    """
+    A minor. Minor blocks are marked STANDALONEBLOCK in the audit, meaning DegreeWorks
+    evaluates them outside the degree's shared pool of courses, so their rules double count
+    freely with the rest of a plan.
+    """
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["program_code", "year"],
+                name="unique minor",
+            )
+        ]
+
+
 class DegreePlan(models.Model):  #
     """
     Stores a users plan for an associated degree.
@@ -320,6 +409,25 @@ class DegreePlan(models.Model):  #
         Degree,
         blank=True,
         help_text="The degrees this degree plan is associated with.",
+    )
+
+    majors = models.ManyToManyField(
+        Major,
+        blank=True,
+        related_name="degree_plans",
+        help_text=dedent(
+            """
+            Majors beyond the one the plan's degree already includes. Each contributes only
+            its own block, not the whole audit it was read from.
+            """
+        ),
+    )
+
+    minors = models.ManyToManyField(
+        Minor,
+        blank=True,
+        related_name="degree_plans",
+        help_text="The minors this degree plan is associated with.",
     )
 
     person = models.ForeignKey(

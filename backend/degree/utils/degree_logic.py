@@ -233,6 +233,19 @@ def check_legal(selected_rules, rule_to_degree, double_counts):
     return True
 
 
+def plan_components(degree_plan):
+    """
+    Everything in a plan that contributes rules: its degrees, plus any additional majors and
+    minors. Each is a separate unit for double counting, which is what lets a course satisfy
+    a rule in the major and one in a minor while still being exclusive within either.
+    """
+    return [
+        *degree_plan.degrees.all(),
+        *degree_plan.majors.all(),
+        *degree_plan.minors.all(),
+    ]
+
+
 def map_rules_and_degrees(degree_plan):
     """
     Given a degree plan, produces mappings of rules to the component they belong to, and of
@@ -241,7 +254,7 @@ def map_rules_and_degrees(degree_plan):
     The "degree" in the returned mappings is whatever contributed the rule -- a Degree, a
     Major or a Minor. The names are kept for the callers that already use them.
     """
-    degree_trees = get_degree_trees(degree_plan.degrees.all())
+    degree_trees = get_degree_trees(plan_components(degree_plan))
 
     rules_per_degree = defaultdict(set)
     rule_to_degree = {}
