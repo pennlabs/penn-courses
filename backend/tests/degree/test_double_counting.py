@@ -245,19 +245,17 @@ class CrossDegreeDoubleCountingTest(TestCase):
         self.assertIn(self.math_rule, double_counts[self.cis_rule])
         self.assertTrue(check_legal({self.cis_rule, self.math_rule}, rule_to_degree, double_counts))
 
-    def test_majors_that_do_not_permit_sharing_are_illegal_together(self):
-        # Removing the (MAJOR) target from both majors means neither permits the other. This
-        # is now caught: it used to be legal simply because the two rules belong to different
-        # degrees.
+    def test_majors_share_even_when_neither_names_the_other(self):
+        # Double counting between undergraduate degrees, majors and minors is generally legal,
+        # so it does not depend on either side saying so. Five of the eight major blocks we
+        # have omit a cross-program target they plainly should carry.
         for rule in [self.cis_rule, self.math_rule]:
             rule.share_targets = []
             rule.save()
 
         _, rule_to_degree, double_counts = map_rules_and_degrees(self.degree_plan)
-        self.assertNotIn(self.cis_rule, double_counts)
-        self.assertFalse(
-            check_legal({self.cis_rule, self.math_rule}, rule_to_degree, double_counts)
-        )
+        self.assertIn(self.math_rule, double_counts[self.cis_rule])
+        self.assertTrue(check_legal({self.cis_rule, self.math_rule}, rule_to_degree, double_counts))
 
     def test_sharing_is_symmetric(self):
         # Only one side names the other, which is enough.
@@ -269,17 +267,14 @@ class CrossDegreeDoubleCountingTest(TestCase):
         self.assertIn(self.cis_rule, double_counts[self.math_rule])
         self.assertTrue(check_legal({self.cis_rule, self.math_rule}, rule_to_degree, double_counts))
 
-    def test_a_target_naming_a_specific_major(self):
-        self.cis_rule.share_targets = [{"kind": "MAJOR", "value": "MATH"}]
+    def test_a_stale_target_list_does_not_deny_sharing(self):
+        # The SEAS General Electives block enumerates 65 College majors, 11 of which Penn has
+        # merged away and 5 of which it never gained. A rule naming a major that no longer
+        # exists must not stop the majors it does not name from sharing.
+        self.cis_rule.share_targets = [{"kind": "MAJOR", "value": "PHYS"}]
         self.cis_rule.save()
         self.math_rule.share_targets = []
         self.math_rule.save()
 
         _, _, double_counts = map_rules_and_degrees(self.degree_plan)
         self.assertIn(self.math_rule, double_counts[self.cis_rule])
-
-        self.cis_rule.share_targets = [{"kind": "MAJOR", "value": "PHYS"}]
-        self.cis_rule.save()
-
-        _, _, double_counts = map_rules_and_degrees(self.degree_plan)
-        self.assertNotIn(self.cis_rule, double_counts)

@@ -20,14 +20,23 @@ A rule's `share_targets` name blocks, not rules:
     {"kind": "MAJOR", "value": "AFRC"}      that specific major, since a major block's code
                                             is its major code
 
-Rules with no targets may not double count with anything, which is DegreeWorks' default.
+Targets only govern rules of the *same* component. Double counting between an undergraduate
+degree, an additional major and a minor is generally legal at Penn, so rules of different
+components may always share.
+
+The audit does not say that cleanly enough to rely on. Five of the eight major blocks we have
+omit a cross-program target they plainly should carry -- Biology and Math name no (MINOR),
+Finance names no (MAJOR) -- and where a block does enumerate, the list has drifted: the SEAS
+General Electives block names 65 College majors, 11 of which Penn has since merged away, and
+misses 5 that exist now. Read as a whitelist it would deny a Linguistics second major for no
+better reason than a renamed code.
 
 Note that this is symmetrical: if A names a block containing B, then B may share with A too,
 whether or not B names A's block back.
 """
 
 from collections import defaultdict
-from itertools import permutations
+from itertools import combinations, permutations
 
 
 THIS_BLOCK = "THISBLOCK"
@@ -79,26 +88,34 @@ def target_matches(target, home, other) -> bool:
     return value is None or value == other.block_value
 
 
-def leaf_rules(degree_trees) -> list:
+def leaf_rules(rules) -> list:
     """
-    Every leaf rule of the given trees, deduplicated: rules are shared between degrees, so the
-    same rule can appear in more than one tree.
+    The leaf rules of one component, deduplicated: rules are shared between degrees, so the
+    same rule can appear more than once.
     """
-    return list(
-        {rule.id: rule for rules in degree_trees.values() for rule in rules if rule.q}.values()
-    )
+    return list({rule.id: rule for rule in rules if rule.q}.values())
 
 
 def resolve_double_counts(degree_trees):
     """
-    Given the rule trees of some degrees (as returned by get_degree_trees), returns a mapping
-    from each of their leaf rules to the set of leaf rules it is allowed to double count with.
+    Given the rule trees of a plan's components (as returned by get_degree_trees), returns a
+    mapping from each of their leaf rules to the set of leaf rules it may double count with.
     """
     double_counts = defaultdict(set)
 
-    for home, other in permutations(leaf_rules(degree_trees), 2):
-        if any(target_matches(target, home, other) for target in home.share_targets):
-            double_counts[home].add(other)
-            double_counts[other].add(home)
+    def allow(home, other):
+        double_counts[home].add(other)
+        double_counts[other].add(home)
+
+    for rules in degree_trees.values():
+        for home, other in permutations(leaf_rules(rules), 2):
+            if any(target_matches(target, home, other) for target in home.share_targets):
+                allow(home, other)
+
+    for first, second in combinations(degree_trees.values(), 2):
+        for home in leaf_rules(first):
+            for other in leaf_rules(second):
+                if home.id != other.id:
+                    allow(home, other)
 
     return dict(double_counts)
