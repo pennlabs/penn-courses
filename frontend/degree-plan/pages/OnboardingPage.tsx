@@ -4,12 +4,18 @@ import useSWR from "swr";
 import { pdfjs } from "react-pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
-import { DegreeListing, DegreePlan, MajorOption, SchoolOption } from "@/types";
+import { DegreeListing, DegreePlan, Major, MajorOption, SchoolOption } from "@/types";
 import { polyfillPromiseWithResolvers } from "./polyfilsResolver";
 
 import "core-js/full/promise/with-resolvers.js";
 
-import { parseItems, parseTranscript, ParsedText, flattenParsedText } from "../utils/parseUtils";
+import {
+  parseItems,
+  parseTranscript,
+  ParsedText,
+  flattenParsedText,
+  MajorOptionItem,
+} from "../utils/parseUtils";
 import WelcomeLayout from "@/components/OnboardingPanels/WelcomePanel";
 import CreateWithTranscriptPanel from "@/components/OnboardingPanels/CreateWithTranscriptPanel";
 
@@ -36,6 +42,7 @@ const OnboardingPage = ({
   } | null>(null);
   const [schools, setSchools] = useState<SchoolOption[]>([]);
   const [majors, setMajors] = useState<MajorOption[]>([]);
+  const [secondMajors, setSecondMajors] = useState<MajorOptionItem[]>([]);
 
   const [PDF, setPDF] = useState<File | null>(null);
   const [numPages, setNumPages] = useState<number | null>(null);
@@ -45,6 +52,7 @@ const OnboardingPage = ({
   const { data: degrees, isLoading: isLoadingDegrees } = useSWR<
     DegreeListing[]
   >(`/api/degree/degrees`);
+  const { data: standaloneMajors } = useSWR<Major[]>(`/api/degree/majors`);
 
   // TRANSCRIPT PARSING
   const total = useRef<Record<number, ParsedText>>({});
@@ -69,7 +77,8 @@ const OnboardingPage = ({
         startYear,
         scrapedSchools,
         detectedMajorsOptions,
-      } = parseTranscript(all, degrees);
+        detectedSecondMajorOptions,
+      } = parseTranscript(all, degrees, standaloneMajors);
       setScrapedCourses(scrapedCourses);
       setStartingYear({
         value: startYear,
@@ -81,6 +90,7 @@ const OnboardingPage = ({
       });
       setSchools(scrapedSchools);
       setMajors(detectedMajorsOptions);
+      setSecondMajors(detectedSecondMajorOptions);
       transcriptDetected.current = startYear ? true : false;
     }
   };
@@ -129,6 +139,7 @@ const OnboardingPage = ({
       setActiveDegreeplan={setActiveDegreeplan}
       inputtedSchools={schools}
       inputtedMajors={majors}
+      inputtedSecondMajors={secondMajors}
       setShowOnboardingModal={setShowOnboardingModal}
       canExit={canExit}
       onExit={exitOnboarding}

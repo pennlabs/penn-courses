@@ -30,6 +30,7 @@ import { PulseLoader } from "react-spinners";
 import {
   DegreeListing,
   DegreePlan,
+  Major,
   MajorOption,
   Options,
   SchoolOption,
@@ -41,7 +42,11 @@ import {
 } from "@/components/FourYearPlan/Semesters";
 import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
 import { postFetcher, getCsrf } from "@/hooks/swrcrud";
-import { getMajorOptions } from "@/utils/parseUtils";
+import {
+  getMajorOptions,
+  getSecondMajorOptions,
+  MajorOptionItem,
+} from "@/utils/parseUtils";
 
 type WelcomeLayoutProps = {
   inputtedStartingYear: { value: number; label: number } | null;
@@ -52,6 +57,7 @@ type WelcomeLayoutProps = {
   inputtedSchools: SchoolOption[];
   inputtedMajors: MajorOption[];
   setShowOnboardingModal: (arg0: boolean) => void;
+  inputtedSecondMajors: MajorOptionItem[];
   canExit?: boolean;
   onExit?: () => void;
 };
@@ -64,6 +70,7 @@ export default function CreateWithTranscriptPanel({
   setActiveDegreeplan,
   inputtedSchools,
   inputtedMajors,
+  inputtedSecondMajors,
   setShowOnboardingModal,
   canExit = false,
   onExit,
@@ -79,6 +86,8 @@ export default function CreateWithTranscriptPanel({
 
   const [schools, setSchools] = useState<SchoolOption[]>(inputtedSchools);
   const [majors, setMajors] = useState<MajorOption[]>(inputtedMajors);
+  const [secondMajors, setSecondMajors] =
+    useState<MajorOptionItem[]>(inputtedSecondMajors);
   const [degreeID, setDegreeID] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
@@ -89,6 +98,8 @@ export default function CreateWithTranscriptPanel({
   const { data: degrees, isLoading: isLoadingDegrees } = useSWR<
     DegreeListing[]
   >(`/api/degree/degrees`);
+  const { data: standaloneMajors, isLoading: isLoadingMajors } =
+    useSWR<Major[]>(`/api/degree/majors`);
 
   // Workaround solution to only input courses once degree has been created and degreeID exists.
   // Will likely change in the future!
@@ -154,7 +165,12 @@ export default function CreateWithTranscriptPanel({
         }
         await postFetcher(`/api/degree/degreeplans/${_new.id}/degrees`, {
           degree_ids: majors.map((m) => m.value.id),
-        }); // add degree
+        });
+        if (secondMajors.length) {
+          await postFetcher(`/api/degree/degreeplans/${_new.id}/majors`, {
+            major_ids: secondMajors.map((m) => m.value.id),
+          });
+        }
         setActiveDegreeplan(_new);
         setDegreeID(_new.id);
       } else if (res.status === 409) {
@@ -205,6 +221,11 @@ export default function CreateWithTranscriptPanel({
   const majorOptions = useMemo(
     () => getMajorOptions(degrees, schools, startingYear?.value ?? null),
     [degrees, schools, startingYear]
+  );
+
+  const secondMajorOptions = useMemo(
+    () => getSecondMajorOptions(standaloneMajors, startingYear?.value ?? null),
+    [standaloneMajors, startingYear]
   );
 
   return (
@@ -303,6 +324,22 @@ export default function CreateWithTranscriptPanel({
                 placeholder={"Major - Concentration"}
                 styles={customSelectStylesRight}
                 isLoading={isLoadingDegrees}
+              />
+            </FieldWrapper>
+
+            <FieldWrapper>
+              <Label required={false}>Additional Major(s)</Label>
+              <Select
+                options={secondMajorOptions}
+                value={secondMajors}
+                onChange={(selectedOptions) =>
+                  setSecondMajors([...selectedOptions])
+                }
+                isClearable
+                isMulti
+                placeholder="Major pursued alongside your degree"
+                styles={customSelectStylesRight}
+                isLoading={isLoadingMajors}
               />
             </FieldWrapper>
 

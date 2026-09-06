@@ -38,6 +38,24 @@ export interface DegreeListing extends DBObject {
   credits: number;
 }
 
+/** A major or minor added on top of a degree, carrying only its own block's rules. */
+export interface ProgramComponent extends DBObject {
+  id: number;
+  program_code: string;
+  code: string;
+  name: string | null;
+  year: number;
+  credits: number | null;
+  rules: Rule[];
+}
+
+export interface Major extends ProgramComponent {
+  concentration: string | null;
+  concentration_name: string | null;
+}
+
+export interface Minor extends ProgramComponent {}
+
 export interface DockedCourse extends DBObject {
   id: number;
   full_code: string;
