@@ -12,7 +12,7 @@ from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from degree.models import Degree, DegreePlan, DockedCourse, Fulfillment, PDPBetaUser
+from degree.models import Degree, DegreePlan, DockedCourse, Fulfillment, Major, Minor, PDPBetaUser
 from degree.serializers import (
     DegreeDetailSerializer,
     DegreeListSerializer,
@@ -20,6 +20,10 @@ from degree.serializers import (
     DegreePlanListSerializer,
     DockedCourseSerializer,
     FulfillmentSerializer,
+    MajorDetailSerializer,
+    MajorListSerializer,
+    MinorDetailSerializer,
+    MinorListSerializer,
     Rule,
     RuleSerializer,
 )
@@ -55,6 +59,90 @@ class DegreeViewset(viewsets.ReadOnlyModelViewSet):
         if self.action == "list":
             return DegreeListSerializer
         return DegreeDetailSerializer
+
+
+def update_fulfillments(degree_plan):
+    """
+    Reallocates every fulfillment of a plan, which has to happen whenever the plan gains or
+    loses a degree, major or minor: the rules a course can count toward, and what it may
+    double count with, both change.
+    """
+    rules_per_degree, rule_to_degree, double_counts = map_rules_and_degrees(degree_plan)
+    # Helper to track satisfaction
+    satisfied_lookup = defaultdict(int)
+    satisfied_rules = set()
+
+    def is_satisfied(rule):
+        f = satisfied_lookup[rule.id]
+        return (rule.num and f >= rule.num) or (rule.credits and f >= rule.credits)
+
+    fulfillments = list(
+        Fulfillment.objects.filter(degree_plan=degree_plan).order_by("semester", "full_code")
+    )
+    # Every course is known up front, so check them against the rules in bulk
+    belongs_cache = prewarm_belongs_cache(
+        {rule for rules in rules_per_degree.values() for rule in rules},
+        [fulfillment.full_code for fulfillment in fulfillments],
+    )
+
+    for fulfillment in fulfillments:
+        selected_rules, unselected_rules, legal = allocate_rules(
+            fulfillment.full_code,
+            rules_per_degree,
+            rule_to_degree,
+            double_counts,
+            degree_plan=degree_plan,
+            satisfied_rules=satisfied_rules,
+            belongs_cache=belongs_cache,
+        )
+
+        fulfillment.rules.set(selected_rules)
+        fulfillment.unselected_rules.set(unselected_rules)
+        fulfillment.legal = legal
+        fulfillment.save()
+
+        for rule in selected_rules:
+            satisfied_lookup[rule.id] += 1
+            if is_satisfied(rule):
+                satisfied_rules.add(rule)
+
+
+class MajorViewset(viewsets.ReadOnlyModelViewSet):
+    """
+    Retrieve a list of all Major objects.
+
+    These are majors as they can be added on top of a degree, carrying only their own block.
+    They are not filtered by school: an Engineering student may add the major part of a College
+    degree, which is what a second major is.
+    """
+
+    filter_backends = [SearchFilter]
+    search_fields = ["program_code", "code", "name", "year"]
+    filterset_fields = search_fields
+
+    permission_classes = [IsAuthenticated & InPDPBeta]
+
+    queryset = Major.objects.all()
+
+    def get_serializer_class(self):
+        return MajorListSerializer if self.action == "list" else MajorDetailSerializer
+
+
+class MinorViewset(viewsets.ReadOnlyModelViewSet):
+    """
+    Retrieve a list of all Minor objects.
+    """
+
+    filter_backends = [SearchFilter]
+    search_fields = ["program_code", "code", "name", "year"]
+    filterset_fields = search_fields
+
+    permission_classes = [IsAuthenticated & InPDPBeta]
+
+    queryset = Minor.objects.all()
+
+    def get_serializer_class(self):
+        return MinorListSerializer if self.action == "list" else MinorDetailSerializer
 
 
 class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
@@ -121,72 +209,45 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         """
         Add or remove degrees from a degree plan.
         """
-        degree_ids = request.data.get("degree_ids")
-        if not isinstance(degree_ids, list):
-            raise ValidationError({"degree_ids": "This field must be a list."})
-        if degree_ids is None:
-            raise ValidationError({"degree_ids": "This field is required."})
+        return self.update_components(request, "degrees", "degree_ids")
+
+    @action(detail=True, methods=["post", "delete"])
+    def majors(self, request, pk=None):
+        """
+        Add or remove majors from a degree plan. These are majors pursued beyond the one the
+        plan's degree already includes, and contribute only their own block.
+        """
+        return self.update_components(request, "majors", "major_ids")
+
+    @action(detail=True, methods=["post", "delete"])
+    def minors(self, request, pk=None):
+        """
+        Add or remove minors from a degree plan.
+        """
+        return self.update_components(request, "minors", "minor_ids")
+
+    def update_components(self, request, relation, field):
+        ids = request.data.get(field)
+        if not isinstance(ids, list):
+            raise ValidationError({field: "This field must be a list."})
+
         degree_plan = self.get_object()
+        components = getattr(degree_plan, relation)
 
         try:
             if request.method == "POST":
-                degree_plan.degrees.add(*degree_ids)
+                components.add(*ids)
             elif request.method == "DELETE":
-                degree_plan.degrees.remove(*degree_ids)
+                components.remove(*ids)
                 return Response(status=status.HTTP_204_NO_CONTENT)
         except IntegrityError:
             return Response(
-                data={"error": "One or more of the degrees does not exist."},
+                data={"error": f"One or more of the {relation} does not exist."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Handle updating fulfillments when a new degree is added to the degree plan.
-        def update_fulfillments():
-            rules_per_degree, rule_to_degree, double_counts = map_rules_and_degrees(degree_plan)
-            # Helper to track satisfaction
-            satisfied_lookup = defaultdict(int)
-            satisfied_rules = set()
-
-            def is_satisfied(rule):
-                f = satisfied_lookup[rule.id]
-                return (rule.num and f >= rule.num) or (rule.credits and f >= rule.credits)
-
-            fulfillments = list(
-                Fulfillment.objects.filter(degree_plan=degree_plan).order_by(
-                    "semester", "full_code"
-                )
-            )
-            # Every course is known up front, so check them against the rules in bulk
-            belongs_cache = prewarm_belongs_cache(
-                {rule for rules in rules_per_degree.values() for rule in rules},
-                [fulfillment.full_code for fulfillment in fulfillments],
-            )
-
-            for fulfillment in fulfillments:
-                selected_rules, unselected_rules, legal = allocate_rules(
-                    fulfillment.full_code,
-                    rules_per_degree,
-                    rule_to_degree,
-                    double_counts,
-                    degree_plan=degree_plan,
-                    satisfied_rules=satisfied_rules,
-                    belongs_cache=belongs_cache,
-                )
-
-                fulfillment.rules.set(selected_rules)
-                fulfillment.unselected_rules.set(unselected_rules)
-                fulfillment.legal = legal
-                fulfillment.save()
-
-                for rule in selected_rules:
-                    satisfied_lookup[rule.id] += 1
-                    if is_satisfied(rule):
-                        satisfied_rules.add(rule)
-
-        update_fulfillments()
-
-        serializer = self.get_serializer(degree_plan)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        update_fulfillments(degree_plan)
+        return Response(self.get_serializer(degree_plan).data, status=status.HTTP_200_OK)
 
 
 class FulfillmentViewSet(viewsets.ModelViewSet):
