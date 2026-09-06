@@ -3,7 +3,7 @@ from django.db.models import Q
 from django.test import TestCase
 
 from courses.util import get_or_create_course_and_section
-from degree.models import Degree, DegreePlan, Rule
+from degree.models import Degree, DegreePlan, Major, Rule
 from degree.utils.degree_logic import (
     allocate_rules,
     check_legal,
@@ -278,3 +278,79 @@ class CrossDegreeDoubleCountingTest(TestCase):
 
         _, _, double_counts = map_rules_and_degrees(self.degree_plan)
         self.assertIn(self.math_rule, double_counts[self.cis_rule])
+
+
+class ComponentPassIsolationTest(TestCase):
+    """
+    allocate_rules walks each component and unions the results, and every pass reaches into the
+    other components to find what its chosen rule may share with. A pass must speak only for
+    its own component: when two passes reach different conclusions about a third, the union
+    holds a pair of that component's rules that are not allowed to share, and the course is
+    flagged as illegally double counted.
+
+    The degree here has two mutually exclusive electives, and the plan also has a major whose
+    rule the same course fits. Dropping the course explicitly onto the smaller elective makes
+    the two passes disagree: the degree's pass honours the explicit choice, while the major's
+    pass picks the larger elective on its own.
+    """
+
+    def setUp(self):
+        get_or_create_course_and_section("CIS-1200-001", TEST_SEMESTER)
+        matches = repr(Q(full_code__startswith="CIS"))
+
+        self.degree = Degree.objects.create(program="EU_BSE", degree="BSE", major="CIS", year=2026)
+        self.big = Rule.objects.create(
+            title="Unrestricted Technical Electives",
+            q=matches,
+            credits=6,
+            block_type="MAJOR",
+            block_value="CIS",
+            share_targets=ANY_MAJOR,
+        )
+        self.small = Rule.objects.create(
+            title="Restricted or Unrestricted Technical Electives",
+            q=matches,
+            credits=1,
+            block_type="MAJOR",
+            block_value="CIS",
+            share_targets=ANY_MAJOR,
+        )
+        self.degree.rules.add(self.big, self.small)
+
+        self.major = Major.objects.create(
+            program_code="MATH-BA-GEN", code="MATH", name="Mathematics", year=2026
+        )
+        self.math_rule = Rule.objects.create(
+            title="Mathematics Electives",
+            q=matches,
+            credits=3,
+            block_type="MAJOR",
+            block_value="MATH",
+            share_targets=ANY_MAJOR,
+        )
+        self.major.rules.add(self.math_rule)
+
+        person = get_user_model().objects.create_user(username="t", password="top_secret")
+        self.plan = DegreePlan.objects.create(name="degree plus major", person=person)
+        self.plan.degrees.add(self.degree)
+        self.plan.majors.add(self.major)
+
+    def test_the_two_electives_may_not_share(self):
+        _, _, double_counts = map_rules_and_degrees(self.plan)
+        self.assertNotIn(self.small, double_counts.get(self.big, set()))
+
+    def test_a_pass_contributes_only_its_own_component(self):
+        rules_per_degree, rule_to_degree, double_counts = map_rules_and_degrees(self.plan)
+        selected, _, legal = allocate_rules(
+            "CIS-1200",
+            rules_per_degree,
+            rule_to_degree,
+            double_counts,
+            rule_selected=self.small,
+            satisfied_rules=set(),
+        )
+
+        self.assertIn(self.small, selected)
+        self.assertIn(self.math_rule, selected)
+        self.assertNotIn(self.big, selected)
+        self.assertTrue(legal)

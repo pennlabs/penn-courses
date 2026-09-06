@@ -126,8 +126,17 @@ def allocate_rules(
             double_counts,
             belongs_cache,
         )
-        selected_rules = selected_rules.union(addl_selected_rules)
-        unselected_rules = unselected_rules.union(addl_unselected_rules)
+
+        # A pass reaches into the other components to find what its chosen rule may share
+        # with, but only speaks for its own: every component gets a pass of its own, and two
+        # passes reaching different conclusions about a third would union into a pair of that
+        # component's rules that may not share.
+        selected_rules |= {
+            rule for rule in addl_selected_rules if rule_to_degree.get(rule) == degree
+        }
+        unselected_rules |= {
+            rule for rule in addl_unselected_rules if rule_to_degree.get(rule) == degree
+        }
 
     # Check for illegal double counting
     legal = check_legal(selected_rules, rule_to_degree, double_counts)

@@ -1,4 +1,6 @@
+from collections import defaultdict
 from decimal import Decimal
+from itertools import combinations
 from os import path
 
 from django.contrib.auth import get_user_model
@@ -168,6 +170,40 @@ class SecondMajorPlanTest(TestCase):
         selected, _, legal = self.allocate("MATH-2400")
         self.assertEqual({rule.block_value for rule in selected}, {"MEAM"})
         self.assertTrue(legal)
+
+    def test_no_component_contributes_two_rules_that_cannot_share(self):
+        """
+        allocate_rules walks each component and unions the results, and every pass reaches into
+        the other components to find what its chosen rule may share with. A pass must speak
+        only for its own component: two passes reaching different conclusions about a third
+        would union into a pair of that component's rules that are not allowed to share, and
+        the course would be flagged as illegally double counted.
+        """
+        rules_per_degree, rule_to_degree, double_counts = map_rules_and_degrees(self.plan)
+
+        for full_code in ["MATH-1400", "MATH-2400", "MATH-3140", "CIS-1200"]:
+            selected, _, legal = allocate_rules(
+                full_code,
+                rules_per_degree,
+                rule_to_degree,
+                double_counts,
+                satisfied_rules=set(),
+            )
+
+            by_component = defaultdict(list)
+            for rule in selected:
+                by_component[rule_to_degree[rule]].append(rule)
+
+            for component, rules in by_component.items():
+                for first, second in combinations(rules, 2):
+                    self.assertIn(
+                        second,
+                        double_counts.get(first, set()),
+                        f"{full_code}: {component} contributed {first.title!r} and "
+                        f"{second.title!r}, which may not share",
+                    )
+
+            self.assertTrue(legal, f"{full_code} was flagged illegal")
 
     def test_a_minor_course_is_legal_alongside_the_rest(self):
         selected, _, legal = self.allocate("CIS-1200")
