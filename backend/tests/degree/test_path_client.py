@@ -25,7 +25,6 @@ class ProgramCodeTest(TestCase):
         )
 
     def test_split_program_title_with_a_trailing_qualifier(self):
-        # The concentration is not always the last thing in the title.
         self.assertEqual(
             split_program_title(
                 "Biomedical Science BA (Biomedical Devices) - College 2nd Major ONLY", "BA"

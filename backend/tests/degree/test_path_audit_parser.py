@@ -76,8 +76,8 @@ class ParseAuditTest(TestCase):
         self.assertIn(ShareTarget("MAJOR", "AFRC"), electives)
 
     def test_rule_level_targets_reach_every_rule_beneath_them(self):
-        # ShareWith can sit on an individual rule as well as on a block header, and applies to
-        # everything underneath it.
+        """ShareWith can be on an individual rule as well as on a block header, and applies to
+        everything underneath it."""
         parsed = parse_audit(load_audit("CMPE-BSE-2026.xml"), self.cmpe)
         sharing = [
             rule
@@ -92,8 +92,6 @@ class ParseAuditTest(TestCase):
         self.assertIn({"kind": "MAJOR", "value": None}, rule.share_targets)
 
     def test_except_nodes_become_exclusions(self):
-        # "may not be satisfied with CIS 2610, CIS 3333, ..." is real data in the XML that the
-        # JSON audit does not expose, so parse_degreeworks drops it.
         parsed = parse_audit(load_audit("CMPE-BSE-2026.xml"), self.cmpe)
         rule = next(r for r in parsed.rules if r.title == "CIS 1100 or CIS Elective")
         self.assertIn("NOT", rule.q)

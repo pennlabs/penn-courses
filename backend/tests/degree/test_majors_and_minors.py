@@ -123,10 +123,12 @@ class SecondMajorPlanTest(TestCase):
         self.assertTrue(legal)
 
     def test_no_component_contributes_two_rules_that_cannot_share(self):
-        # allocate_rules walks each component and unions the results, and every pass reaches
-        # into the others to find what its chosen rule may share with. A pass that kept those
-        # reached-into rules could union with another pass into a pair of one component's
-        # rules that may not share, flagging the course as illegally double counted.
+        """
+        allocate_rules walks each component and unions the results, and every pass reaches
+        into the others to find what its chosen rule may share with. A pass that kept those
+        reached-into rules could union with another pass into a pair of one component's
+        rules that may not share, flagging the course as illegally double counted.
+        """
         rules_per_degree, rule_to_degree, double_counts = map_rules_and_degrees(self.plan)
 
         for full_code in ["MATH-1400", "MATH-2400"]:

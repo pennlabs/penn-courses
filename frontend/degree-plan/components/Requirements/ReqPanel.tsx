@@ -108,11 +108,6 @@ export const WhiteSpace = styled.div<{ $headerHeight: number, $zIndex: number }>
   top: ${(props) => props.$headerHeight}px;
 `
 
-/**
- * A degree, an additional major or a minor, reduced to what the panel renders. Each is a
- * separate component of the plan with its own rules, and they differ only in how they are
- * titled and which endpoint removes them.
- */
 export interface PlanProgram {
   id: number;
   relation: "degrees" | "majors" | "minors";

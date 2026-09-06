@@ -11,16 +11,13 @@ from degree.utils.parse_path_audit import find_block, parse_audit, save_componen
 from degree.utils.path_client import PathClient, split_program_code, split_program_title
 
 
-# Degrees older than this are not worth storing: no current student is on one, and old
-# catalogs are the likeliest to use constructs the parser has never seen. A term maps to a
-# catalog year only through the audit, so this is applied after parsing rather than used to
-# choose what to request.
+# Students with degrees older than this catalog year are not supported, and their degrees are not stored in the database. 
 EARLIEST_CATALOG_YEAR = 2022
 
 
 @dataclass
 class Tally:
-    """What a run did, and what it could not do."""
+    """Tracks the results of a run."""
 
     saved: int = 0
     skipped: int = 0
@@ -48,8 +45,6 @@ class Tally:
         if not self.failures:
             return
 
-        # Grouped by reason: one unhandled construct usually accounts for many programs at
-        # once, and the count is what says whether something is systematic.
         by_reason = defaultdict(list)
         for code, reason in self.failures:
             by_reason[reason].append(code)
@@ -66,11 +61,6 @@ class Command(BaseCommand):
     help = dedent(
         """
         Fetches, parses and stores degrees from Path@Penn.
-
-        This is the Path@Penn equivalent of `fetch_degrees`, which reads the same degrees from
-        DegreeWorks directly. It needs no credentials, and it reads the audit XML rather than
-        DegreeWorks' rendered JSON, so it also picks up course exclusions and the total credit
-        requirement that `fetch_degrees` cannot see.
 
         Note: this script deletes any existing degrees in the database that overlap with the
         degrees fetched from Path.
@@ -116,8 +106,7 @@ class Command(BaseCommand):
             action="store_true",
             help=dedent(
                 """
-                Do not fetch minors. Minors are about 118 more programs per term, so this
-                cuts roughly a third off a full run.
+                Do not fetch minors. 
                 """
             ),
         )
@@ -160,9 +149,6 @@ class Command(BaseCommand):
         """
         Loads one program as a Degree, and its major as a Major for students who add it on top
         of a different degree.
-
-        Both the fetch and the parse are guarded: a single unparseable audit aborting a
-        279-program run is the worst failure mode here.
         """
         code = program["code"]
         try:
@@ -206,8 +192,6 @@ class Command(BaseCommand):
             self.announce(f"Skipping {code}: catalog year {parsed.catalog_year}", level=2)
             return
 
-        # The year is part of the Degree's unique constraint, so it has to be known before the
-        # rows this fetch replaces can be deleted.
         degree.year = parsed.catalog_year
 
         if self.dry_run:
@@ -264,14 +248,16 @@ class Command(BaseCommand):
 
     def fetch_minor(self, client, srcdb, program, tally) -> int:
         """
-        Loads one minor. Its audit wraps the MINOR block in a full BA degree, which is
+        Loads one minor. The audit data wraps the MINOR block in a full degree, which is
         discarded: a minor contributes only its own block, and that block is marked
         STANDALONEBLOCK so its rules double count freely with the rest of a plan.
         """
         code = program["code"]
         try:
             info = client.program_info(code, srcdb)
-            # A minor has no sis_prog_code, and carries its code in majr_code.
+            if not info:
+                tally.skip(code, "no program info")
+                return 0
             placeholder = Degree(
                 program="AU_BA", degree="BA", major=info.get("majr_code") or "", year=0
             )

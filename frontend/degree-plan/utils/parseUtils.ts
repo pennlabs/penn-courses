@@ -3,10 +3,6 @@ import { DegreeListing, Major, SchoolOption } from "@/types";
 const { distance } = require("fastest-levenshtein");
 
 // How far a transcript's wording may sit from a program's name and still be the same thing.
-// Scaled to the name so long names tolerate more, with a floor so short ones are not matched
-// on a coincidence. Anything further away is left for the student to pick: without a bound,
-// the nearest neighbour is returned however far away it is, which is how "mathematics" used
-// to come back as Digital Media Design.
 const matchTolerance = (name: string) => Math.max(3, Math.floor(name.length / 3));
 
 const normalize = (text: string) => text.toLowerCase().replace(/\s+/g, " ").trim();
@@ -112,7 +108,7 @@ export type MajorOptionItem = {
   label: string;
 };
 
-// Majors that can be added on top of a degree. Deliberately not filtered by school: a student
+// Majors that can be added on top of a degree. Deliberately not filtered by school. e.g. a student
 // in Engineering may add the major part of a College degree, which is what a second major is.
 export const getSecondMajorOptions = (
   majors: Major[] | undefined,
@@ -207,11 +203,7 @@ const getCourseToSem = (truncatedTranscript: string[]) => {
 };
 
 // Returns the option whose program name is closest to the transcript's wording, or undefined
-// if nothing is close enough to be worth guessing at.
-//
-// Matching is on the name alone rather than the display label, which also carries a year and
-// concentration and so is never close to what a transcript says. The concentration only breaks
-// ties between options for the same program.
+// if no option is close enough. 
 const matchOption = <T>(
   major: string,
   concentration: string,
@@ -252,9 +244,6 @@ const matchOption = <T>(
 //
 // A transcript names every major without saying which is which, so each is matched against the
 // degrees of the schools detected first, and against the standalone majors only if that fails.
-// An Engineering student's Math major has no BSE degree to match, and so lands in the second
-// list -- which is the whole point: they take the major part of a College degree, not the
-// degree.
 export const detectMajors = (
   detectedMajors: string[],
   detectedConcentrations: string[],

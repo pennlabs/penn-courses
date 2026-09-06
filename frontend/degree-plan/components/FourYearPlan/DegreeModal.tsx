@@ -132,7 +132,6 @@ export const createMajorLabel = (degree: DegreeListing) => {
 interface RemoveDegreeProps {
   degreeplanId: number;
   degreeId: number;
-  /** Which of a plan's program lists the id belongs to. Defaults to degrees. */
   relation?: "degrees" | "majors" | "minors";
 }
 
