@@ -126,8 +126,13 @@ def allocate_rules(
             double_counts,
             belongs_cache,
         )
-        selected_rules = selected_rules.union(addl_selected_rules)
-        unselected_rules = unselected_rules.union(addl_unselected_rules)
+
+        selected_rules |= {
+            rule for rule in addl_selected_rules if rule_to_degree.get(rule) == degree
+        }
+        unselected_rules |= {
+            rule for rule in addl_unselected_rules if rule_to_degree.get(rule) == degree
+        }
 
     # Check for illegal double counting
     legal = check_legal(selected_rules, rule_to_degree, double_counts)
@@ -214,30 +219,51 @@ def check_legal(selected_rules, rule_to_degree, double_counts):
     Given a list of selected rules, rule to degree mappings, and the double counts allowed
     between rules, returns True if all selected rules can be double counted with each other
     and False otherwise.
+
+    Sharing is policed across the whole plan, not just within a single degree: the audit's
+    ShareWith policy is written in terms of block types, and targets like (MAJOR) and (MINOR)
+    are statements about *other* programs, so restricting the check to one degree at a time
+    would ignore most of what the policy says.
     """
     for rule in selected_rules:
-        degree = rule_to_degree.get(rule)
-        if degree is None:  # not a leaf rule of any degree in the plan (e.g. an override)
+        if rule_to_degree.get(rule) is None:
+            # not a leaf rule of any degree in the plan (e.g. an override)
             continue
         allowed = double_counts.get(rule, set())
         if any(
-            r not in allowed and rule_to_degree.get(r) == degree and r != rule
+            r not in allowed and r != rule and rule_to_degree.get(r) is not None
             for r in selected_rules
         ):
             return False
     return True
 
 
+def plan_components(degree_plan):
+    """
+    Everything in a plan that contributes rules: its degrees, plus any additional majors and
+    minors. Each is a separate unit for double counting, which is what lets a course satisfy
+    a rule in the major and one in a minor while still being exclusive within either.
+    """
+    return [
+        *degree_plan.degrees.all(),
+        *degree_plan.majors.all(),
+        *degree_plan.minors.all(),
+    ]
+
+
 def map_rules_and_degrees(degree_plan):
     """
-    Given a degree plan, produces mappings of rules to degrees, and of each rule to the rules
-    it is allowed to double count with.
+    Given a degree plan, produces mappings of rules to the component they belong to, and of
+    each rule to the rules it is allowed to double count with.
+
+    The "degree" in the returned mappings is whatever contributed the rule -- a Degree, a
+    Major or a Minor. The names are kept for the callers that already use them.
     """
-    degree_trees = get_degree_trees(degree_plan.degrees.all())
+    degree_trees = get_degree_trees(plan_components(degree_plan))
 
     rules_per_degree = defaultdict(set)
     rule_to_degree = {}
-    for degree, (rules, _) in degree_trees.items():
+    for degree, rules in degree_trees.items():
         for rule in rules:
             if rule.q:  # i.e., if this rule is a leaf
                 rules_per_degree[degree].add(rule)

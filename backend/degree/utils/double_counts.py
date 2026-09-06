@@ -1,155 +1,104 @@
 """
-Which rules of a degree are allowed to share (i.e. double count) a course.
+Which rules of a degree plan are allowed to share (i.e. double count) a course.
 
-DegreeWorks doesn't publish this policy, so it is hand-written here as patterns over rule
-titles, and resolved against a degree's actual rules at request time. Resolving at request
-time (rather than storing the resolved rule pairs in the database) means newly scraped
-degrees pick up the policy immediately, with no seeding step to re-run.
+This policy is published by Path@Penn as `NONEXCLUSIVE` / `ShareWith` qualifiers on the
+DegreeWorks audit, and `degree.utils.parse_path_audit` stores it on each rule as
+`block_type`, `block_value` and `share_targets`. It used to be hand-written here as regexes
+over rule titles, because the DegreeWorks JSON audit the old loader reads does not expose it.
 
-Each entry reads: every leaf rule under `home_rule` may double count with every leaf rule
-under each of `allow_double_count` (or with every leaf rule of the degree, for "ALL_RULES").
-`home_rule` and the `allow_double_count` patterns are regexes matched against rule titles
-with `re.match`, and every matching rule is used (a degree can have several, e.g. the
-"Area List - ___" rules). A rule that is itself a leaf counts as its own leaf, so patterns
-can name either a parent rule or the leaves directly.
+Resolution happens at request time rather than being stored as resolved rule pairs, so newly
+scraped degrees pick up their policy immediately with no seeding step to re-run.
 
-Note that this is symmetrical: if A may double count with B, then B may double count with A.
+A rule's `share_targets` name blocks, not rules:
+
+    {"kind": "THISBLOCK"}                   other rules in its own block
+    {"kind": "ANYBLOCK"}                    any other block; ours, standing for a block
+                                            DegreeWorks marks STANDALONEBLOCK and so
+                                            evaluates outside the degree's shared pool
+    {"kind": "MAJOR"}                       any other block of that type
+    {"kind": "OTHER", "value": "U-MT"}      that specific block
+    {"kind": "MAJOR", "value": "AFRC"}      that specific major, since a major block's code
+                                            is its major code
+
+Rules with no targets may not double count with anything, which is DegreeWorks' default.
+
+Note that this is symmetrical: if A names a block containing B, then B may share with A too,
+whether or not B names A's block back.
 """
 
-import re
 from collections import defaultdict
+from itertools import permutations
 
 
-DOUBLE_COUNT_ENTRIES = [
-    # ===College===
-    {
-        "type": "BA",
-        "major_code": "ALL_MAJORS",
-        "home_rule": "General Education, Foundations",
-        "allow_double_count": ["General Education, Sectors", r"^Major in\b"],
-    },
-    # ===Engineering===
-    # CIS BSE: area lists and concentrations double count with anything in the degree.
-    # Degrees before 2026 use the "CSCI" major code and group their area lists under an
-    # "AREA LISTS" rule; newer ones use "CIS" and have "Area List - ___" leaf rules.
-    {
-        "type": "BSE",
-        "major_code": "CSCI",
-        "home_rule": "AREA LISTS",
-        "allow_double_count": ["ALL_RULES"],
-    },
-    {
-        "type": "BSE",
-        "major_code": "CSCI",
-        "home_rule": r"^Concentration in\b",
-        "allow_double_count": ["ALL_RULES"],
-    },
-    {
-        "type": "BSE",
-        "major_code": "CIS",
-        "home_rule": r"^Area List\b",
-        "allow_double_count": ["ALL_RULES"],
-    },
-    {
-        "type": "BSE",
-        "major_code": "CIS",
-        "home_rule": r"^Concentration in\b",
-        "allow_double_count": ["ALL_RULES"],
-    },
-    # ===Wharton===
-]
+THIS_BLOCK = "THISBLOCK"
+ANY_BLOCK = "ANYBLOCK"
 
 
 def get_degree_trees(degrees):
     """
-    Returns a mapping from each of the given degrees to its rule tree, as a tuple of all the
-    degree's rules and a mapping from rule id to child rules. Rules are fetched one level at a
-    time, to avoid a query per rule.
+    Maps each of the given degrees, majors or minors to all of its rules. Rules are fetched
+    one level at a time, to avoid a query per rule.
     """
-    degree_trees = {}
+    trees = {}
 
-    for degree in degrees:
-        # degree.rules.model is Rule; referencing it this way avoids a circular import
-        rule_model = degree.rules.model
-        children = defaultdict(list)
-        rules = list(degree.rules.all())
+    for owner in degrees:
+        # owner.rules.model is Rule; referencing it this way avoids a circular import
+        rule_model = owner.rules.model
+        rules = list(owner.rules.all())
 
-        level = list(rules)
+        level = rules
         while level:
             level = list(rule_model.objects.filter(parent__in=level))
             rules.extend(level)
-            for rule in level:
-                children[rule.parent_id].append(rule)
 
-        degree_trees[degree] = (rules, children)
+        trees[owner] = rules
 
-    return degree_trees
+    return trees
 
 
-def get_leaves(rule, children):
+def same_block(rule, other) -> bool:
+    return (rule.block_type, rule.block_value) == (other.block_type, other.block_value)
+
+
+def target_matches(target, home, other) -> bool:
     """
-    Returns the leaf rules (i.e., the rules with a q object, which are the only rules a course
-    can actually fulfill) belonging to the given rule. A leaf rule belongs to itself.
-    """
-    if rule.q:
-        return {rule}
+    Whether one of `home`'s share targets permits it to double count with `other`.
 
-    leaves = set()
-    stack = [rule]
-    while stack:
-        for child in children[stack.pop().id]:
-            if child.q:
-                leaves.add(child)
-            else:
-                stack.append(child)
-    return leaves
+    Every kind but THISBLOCK names a *different* block: within a block, courses are exclusive
+    unless THISBLOCK says otherwise. That reading is what makes THISBLOCK meaningful, but the
+    audit does not state it, and it is the assumption everything here rests on.
+    """
+    kind, value = target.get("kind"), target.get("value")
+
+    if kind == THIS_BLOCK:
+        return same_block(home, other)
+    if kind == ANY_BLOCK:
+        return not same_block(home, other)
+    if same_block(home, other) or kind != other.block_type:
+        return False
+    return value is None or value == other.block_value
 
 
-def matching_leaves(pattern, rules, children):
+def leaf_rules(degree_trees) -> list:
     """
-    Returns the leaf rules belonging to every rule whose title matches the given pattern.
+    Every leaf rule of the given trees, deduplicated: rules are shared between degrees, so the
+    same rule can appear in more than one tree.
     """
-    return {
-        leaf
-        for rule in rules
-        if re.match(pattern, rule.title)
-        for leaf in get_leaves(rule, children)
-    }
+    return list(
+        {rule.id: rule for rules in degree_trees.values() for rule in rules if rule.q}.values()
+    )
 
 
 def resolve_double_counts(degree_trees):
     """
     Given the rule trees of some degrees (as returned by get_degree_trees), returns a mapping
-    from each of their leaf rules to the set of leaf rules it is allowed to double count with,
-    per DOUBLE_COUNT_ENTRIES.
+    from each of their leaf rules to the set of leaf rules it is allowed to double count with.
     """
     double_counts = defaultdict(set)
 
-    for degree, (rules, children) in degree_trees.items():
-        entries = [
-            entry
-            for entry in DOUBLE_COUNT_ENTRIES
-            if entry["type"] == degree.degree
-            and entry["major_code"] in (degree.major, "ALL_MAJORS")
-        ]
-        if not entries:
-            continue
-
-        all_leaves = {rule for rule in rules if rule.q}
-        for entry in entries:
-            home_leaves = matching_leaves(entry["home_rule"], rules, children)
-            if not home_leaves:
-                continue
-
-            for allow_double_count in entry["allow_double_count"]:
-                if allow_double_count == "ALL_RULES":
-                    target_leaves = all_leaves
-                else:
-                    target_leaves = matching_leaves(allow_double_count, rules, children)
-
-                for home_leaf in home_leaves:
-                    double_counts[home_leaf] |= target_leaves - {home_leaf}
-                for target_leaf in target_leaves:
-                    double_counts[target_leaf] |= home_leaves - {target_leaf}
+    for home, other in permutations(leaf_rules(degree_trees), 2):
+        if any(target_matches(target, home, other) for target in home.share_targets):
+            double_counts[home].add(other)
+            double_counts[other].add(home)
 
     return dict(double_counts)

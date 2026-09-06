@@ -132,6 +132,7 @@ export const createMajorLabel = (degree: DegreeListing) => {
 interface RemoveDegreeProps {
   degreeplanId: number;
   degreeId: number;
+  relation?: "degrees" | "majors" | "minors";
 }
 
 interface RemoveSemesterProps {
@@ -226,10 +227,16 @@ const ModalInterior = ({
     }
   };
 
-  const remove_degree = async (degreeplanId: number, degreeId: number) => {
-    await deleteFetcher(`/api/degree/degreeplans/${degreeplanId}/degrees`, {
-      degree_ids: [degreeId],
-    }); // remove degree
+  const remove_degree = async (
+    degreeplanId: number,
+    degreeId: number,
+    relation: "degrees" | "majors" | "minors" = "degrees"
+  ) => {
+    // degrees -> degree_ids, majors -> major_ids, minors -> minor_ids
+    const idsField = `${relation.slice(0, -1)}_ids`;
+    await deleteFetcher(`/api/degree/degreeplans/${degreeplanId}/${relation}`, {
+      [idsField]: [degreeId],
+    });
     await mutate(`/api/degree/degreeplans/${degreeplanId}`); // use updated degree plan returned
   };
 
@@ -368,7 +375,8 @@ const ModalInterior = ({
             onClick={() => {
               remove_degree(
                 (modalObject as RemoveDegreeProps).degreeplanId,
-                (modalObject as RemoveDegreeProps).degreeId
+                (modalObject as RemoveDegreeProps).degreeId,
+                (modalObject as RemoveDegreeProps).relation
               );
               close();
             }}

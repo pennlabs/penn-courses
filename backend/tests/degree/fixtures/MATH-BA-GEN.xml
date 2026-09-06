@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report>
+  <Audit>
+    <Block Cat_yr="9999" Cat_yrLit="End of Time" Cat_yr_start="2027" Cat_yr_stop="9999" Classes_applied="0" Credits_applied="0" GPA="*" Gpa_credits="0" Gpa_grade_pts="*" Major1="MATH" Per_complete="0" Req_id="RA002238" Req_type="MAJOR" Req_value="MATH" School="UG" Title="Major in Mathematics, BA">
+      <Header>
+        <Qualifier Applied="0" ClassesApplied="0" Credits="13" CreditsApplied="0" Label="Minimum Credits Required" LabelTag="JSKPOS" Name="CLASSESCREDITS" Needed="13" Node_id="8" Node_type="4121" Satisfied="No">
+          <Text>13 Credits</Text>
+        </Qualifier>
+        <Qualifier Applied="0" Credits="7" Label="Minimum Credits Earned from University of Pennsylvania" LabelTag="MINRES2" Name="MINRES" Needed="7" Node_id="9" Node_type="4119" Satisfied="No">
+          <Text>MINRES 7 Credits</Text>
+        </Qualifier>
+        <Qualifier Applied="0.00" Label="Minimum Major GPA of 2.0 Required" LabelTag="MNGPA" MinGPA="2" Name="MINGPA" Needed="2" Node_id="16" Node_type="4116" Satisfied="No">
+          <Text>MINGPA 2</Text>
+        </Qualifier>
+        <Qualifier Classes="1" ClassesApplied="0" CreditsApplied="0" Name="MAXCLASS" Node_id="25" Node_type="4101" Tag="MXCLH2">
+          <SubText>@ @ (With </SubText>
+          <SubText>ATTRIBUTE = AMOR</SubText>
+          <SubText>)</SubText>
+          <Text>MaxClasses 1 in </Text>
+        </Qualifier>
+        <Qualifier ClassesApplied="0" Credits="0" CreditsApplied="0" Name="MAXCREDIT" Node_id="27" Node_type="4103" Tag="MXPFCOVID">
+          <SubText>@ @ (With </SubText>
+          <SubText>DWPASSFAIL = Y AND</SubText>
+          <SubText>DWTERM &lt;&gt; 202010, 202020, 202030, 202110</SubText>
+          <SubText>)</SubText>
+          <Text>MaxCredits 0 in </Text>
+        </Qualifier>
+        <Qualifier ClassesApplied="0" CreditsApplied="0" Name="NONEXCLUSIVE" Node_id="29" Node_type="4111" Tag="SJEWLK">
+          <SubText>(MAJOR)</SubText>
+          <Text>ShareWith </Text>
+        </Qualifier>
+        <Qualifier ClassesApplied="0" CreditsApplied="0" Name="NONEXCLUSIVE" Node_id="31" Node_type="4111" Tag="SLWIEO">
+          <SubText>(CONC)</SubText>
+          <Text>ShareWith </Text>
+        </Qualifier>
+        <Qualifier Applied="" MinGrade="2.0" Name="MINGRADE" Node_id="33" Node_type="4117">
+          <Text>MINGRADE 2.0</Text>
+        </Qualifier>
+      </Header>
+      <Rule IndentLevel="1" Label="Calculus Requirement" LabelTag="NCJDOQ" Node_id="102" Node_type="4600" Per_complete="0" RuleType="Group" Rule_id="2-0">
+        <IfElsePart>IfPart</IfElsePart>
+        <Requirement NumGroups="1" NumRules="2" />
+        <Rule IndentLevel="2" Label="Calculus I and II" LabelTag="SQDXXO" Node_id="103" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="2-0-0">
+          <Requirement Class_cred_op="OR" Classes_begin="2" Connector="+">
+            <Course Disc="MATH" NewDiscipline="Yes" Node_id="104" Num="1400" />
+            <Course Disc="MATH" Node_id="105" Num="1410" />
+          </Requirement>
+        </Rule>
+        <Rule IndentLevel="2" Label="Calculus for Math Sciences" LabelTag="ODJWKP" LastRuleInGroup="Yes" Node_id="106" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="2-0-1">
+          <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+            <Course Disc="MATH" NewDiscipline="Yes" Node_id="107" Num="1610" />
+          </Requirement>
+        </Rule>
+      </Rule>
+      <Rule IndentLevel="1" Label="Complex Analysis" LabelTag="DKWKPX" Node_id="108" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="2-1">
+        <IfElsePart>IfPart</IfElsePart>
+        <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+          <Course Disc="MATH" NewDiscipline="Yes" Node_id="109" Num="4100" />
+        </Requirement>
+      </Rule>
+      <Rule IndentLevel="1" Label="Advanced Linear Algebra Requirement" LabelTag="DKAOQP" Node_id="110" Node_type="4700" Per_complete="0" RuleType="Subset" Rule_id="2-2">
+        <IfElsePart>IfPart</IfElsePart>
+        <Requirement />
+        <Rule IndentLevel="2" Label="Intro to Proofs and Linear Alg" LabelTag="QUYELQ" Node_id="111" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="2-2-0">
+          <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+            <Course Disc="MATH" NewDiscipline="Yes" Node_id="112" Num="3000" />
+          </Requirement>
+        </Rule>
+        <Rule IndentLevel="2" Label="Adv linear algebra" LabelTag="QQKSOP" Node_id="113" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="2-2-1">
+          <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+            <Course Disc="MATH" NewDiscipline="Yes" Node_id="114" Num="3001" />
+          </Requirement>
+        </Rule>
+      </Rule>
+      <Rule IndentLevel="1" Label="Ordinary/Partial Differential Equations" LabelTag="OPPQMS" Node_id="115" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="2-3">
+        <IfElsePart>IfPart</IfElsePart>
+        <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+          <Course Disc="MATH" NewDiscipline="Yes" Node_id="116" Num="2300" />
+          <Course Disc="MATH" Node_id="117" Num="4200" />
+          <Course Disc="MATH" Node_id="118" Num="4250" />
+        </Requirement>
+      </Rule>
+      <Rule IndentLevel="1" Label="Algebra Requirement" LabelTag="NMQOPA" Node_id="119" Node_type="4600" Per_complete="0" RuleType="Group" Rule_id="2-4">
+        <IfElsePart>IfPart</IfElsePart>
+        <Requirement NumGroups="1" NumRules="2" />
+        <Rule IndentLevel="2" Label="Algebra" LabelTag="NQBJSI" Node_id="120" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="2-4-0">
+          <Requirement Class_cred_op="OR" Classes_begin="2" Connector="+">
+            <Course Disc="MATH" NewDiscipline="Yes" Node_id="121" Num="3700" />
+            <Course Disc="MATH" Node_id="122" Num="3710" />
+          </Requirement>
+        </Rule>
+        <Rule IndentLevel="2" Label="Abstract Algebra" LabelTag="SNAJQO" LastRuleInGroup="Yes" Node_id="123" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="2-4-1">
+          <Requirement Class_cred_op="OR" Classes_begin="2" Connector="+">
+            <Course Disc="MATH" NewDiscipline="Yes" Node_id="124" Num="5020" />
+            <Course Disc="MATH" Node_id="125" Num="5030" />
+          </Requirement>
+        </Rule>
+      </Rule>
+      <Rule IndentLevel="1" Label="Analysis Requirement" LabelTag="ENQQKO" Node_id="126" Node_type="4600" Per_complete="0" RuleType="Group" Rule_id="2-5">
+        <IfElsePart>IfPart</IfElsePart>
+        <Requirement NumGroups="1" NumRules="2" />
+        <Rule IndentLevel="2" Label="Real Analysis I/II" LabelTag="RQNSMO" Node_id="127" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="2-5-0">
+          <Requirement Class_cred_op="OR" Classes_begin="2" Connector="+">
+            <Course Disc="MATH" NewDiscipline="Yes" Node_id="128" Num="3600" />
+            <Course Disc="MATH" Node_id="129" Num="3610" />
+          </Requirement>
+        </Rule>
+        <Rule IndentLevel="2" Label="Advanced Analysis I/II" LabelTag="QBSJOE" LastRuleInGroup="Yes" Node_id="130" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="2-5-1">
+          <Requirement Class_cred_op="OR" Classes_begin="2" Connector="+">
+            <Course Disc="MATH" NewDiscipline="Yes" Node_id="131" Num="5080" />
+            <Course Disc="MATH" Node_id="132" Num="5090" />
+          </Requirement>
+        </Rule>
+      </Rule>
+      <Rule IndentLevel="1" Label="Mathematics Electives" LabelTag="REWIUY" Node_id="133" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="2-6">
+        <IfElsePart>IfPart</IfElsePart>
+        <Requirement Class_cred_op="OR" Connector="," Credits_begin="3" Credits_end="4">
+          <Course Disc="MATH" NewDiscipline="Yes" Node_id="134" Num="3000" Num_end="5999" />
+          <Course Disc="@" NewDiscipline="Yes" Node_id="135" Num="@">
+            <With Code="ATTRIBUTE" Connector="" Operator="=">
+              <Value>AMMR</Value>
+            </With>
+          </Course>
+        </Requirement>
+      </Rule>
+    </Block>
+    <In_progress Classes="0" Credits="0" />
+  </Audit>
+</Report>

@@ -13,6 +13,8 @@ from degree.models import (
     DockedCourse,
     DoubleCountRestriction,
     Fulfillment,
+    Major,
+    Minor,
     Rule,
 )
 
@@ -118,6 +120,34 @@ class DegreeDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Degree
+        fields = "__all__"
+
+
+class MajorListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Major
+        fields = "__all__"
+
+
+class MajorDetailSerializer(serializers.ModelSerializer):
+    rules = RuleSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Major
+        fields = "__all__"
+
+
+class MinorListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Minor
+        fields = "__all__"
+
+
+class MinorDetailSerializer(serializers.ModelSerializer):
+    rules = RuleSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Minor
         fields = "__all__"
 
 
@@ -257,12 +287,29 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
     degrees = DegreeDetailSerializer(
         many=True, help_text="The degrees belonging to this degree plan"
     )
+    majors = MajorDetailSerializer(
+        many=True,
+        read_only=True,
+        help_text="Majors pursued beyond the one this plan's degree already includes",
+    )
+    minors = MinorDetailSerializer(
+        many=True, read_only=True, help_text="The minors belonging to this degree plan"
+    )
 
     person = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
         model = DegreePlan
-        fields = ["id", "name", "degrees", "person", "created_at", "updated_at"]
+        fields = [
+            "id",
+            "name",
+            "degrees",
+            "majors",
+            "minors",
+            "person",
+            "created_at",
+            "updated_at",
+        ]
 
 
 class DockedCourseSerializer(serializers.ModelSerializer):

@@ -108,9 +108,45 @@ export const WhiteSpace = styled.div<{ $headerHeight: number, $zIndex: number }>
   top: ${(props) => props.$headerHeight}px;
 `
 
+export interface PlanProgram {
+  id: number;
+  relation: "degrees" | "majors" | "minors";
+  title: string;
+  year: number;
+  rules: Rule[];
+}
+
+const planPrograms = (detail: DegreePlan): PlanProgram[] => [
+  ...(detail.degrees ?? []).map((degree) => ({
+    id: degree.id,
+    relation: "degrees" as const,
+    title: `${degree.degree} in ${degree.major_name}${
+      degree.concentration ? ` (${degree.concentration_name})` : ""
+    }`,
+    year: degree.year,
+    rules: degree.rules,
+  })),
+  ...(detail.majors ?? []).map((major) => ({
+    id: major.id,
+    relation: "majors" as const,
+    title: `Major in ${major.name}${
+      major.concentration_name ? ` (${major.concentration_name})` : ""
+    }`,
+    year: major.year,
+    rules: major.rules,
+  })),
+  ...(detail.minors ?? []).map((minor) => ({
+    id: minor.id,
+    relation: "minors" as const,
+    title: `Minor in ${minor.name}`,
+    year: minor.year,
+    rules: minor.rules,
+  })),
+];
+
 interface DegreeHeaderProps {
-  degree: DegreeType,
-  remove: (degreeId: DegreeType["id"]) => void,
+  program: PlanProgram,
+  remove: (id: number) => void,
   setCollapsed: (status: boolean) => void,
   collapsed: boolean,
   editMode: boolean,
@@ -119,7 +155,7 @@ interface DegreeHeaderProps {
 }
 
 const DegreeHeader = ({ 
-  degree, 
+  program, 
   remove, 
   setCollapsed, 
   collapsed, 
@@ -127,7 +163,7 @@ const DegreeHeader = ({
   skeleton,
   containerRef
 }: DegreeHeaderProps) => {
-  const degreeName = !skeleton ? `${degree.degree} in ${degree.major_name} ${degree.concentration ? `(${degree.concentration_name})` : ''}` : <DarkBlueBackgroundSkeleton width="10em" />;
+  const degreeName = !skeleton ? program.title : <DarkBlueBackgroundSkeleton width="10em" />;
   return (
     <DegreeHeaderContainer ref={containerRef} onClick={() => setCollapsed(!collapsed)}>
       <DegreeTitleWrapper>
@@ -135,12 +171,12 @@ const DegreeHeader = ({
           {degreeName}
         </div>
         <DegreeYear>
-          {!skeleton ? degree.year : <DarkBlueBackgroundSkeleton width="4em" />}
+          {!skeleton ? program.year : <DarkBlueBackgroundSkeleton width="4em" />}
         </DegreeYear>
       </DegreeTitleWrapper>
       <span>
         {!skeleton && editMode ?
-          <LightTrashIcon role="button" onClick={() => remove(degree.id)}>
+          <LightTrashIcon role="button" onClick={() => remove(program.id)}>
             <i className="fa fa-trash fa-md" />
           </LightTrashIcon>
           :
@@ -203,7 +239,7 @@ const computeRuleTree = ({activeDegreePlanId, rule, rulesToFulfillments, rulesTo
 
 const Degree = ({ 
   allRuleLeaves, 
-  degree, 
+  program, 
   rulesToFulfillments, 
   rulesToUnselectedFulfillments, 
   activeDegreeplan, 
@@ -236,7 +272,7 @@ const Degree = ({
     return (
       <div>
         <DegreeHeader
-          degree={degree}
+          program={program}
           remove={() => void {}}
           setCollapsed={setCollapsed}
           skeleton
@@ -270,10 +306,14 @@ const Degree = ({
     <div>
       <DegreeHeader
         containerRef={headerRef}
-        degree={degree}
-        key={degree.id}
+        program={program}
+        key={program.id}
         remove={() => {
-          setModalObject({ degreeplanId: activeDegreeplan.id, degreeId: degree.id });
+          setModalObject({
+            degreeplanId: activeDegreeplan.id,
+            degreeId: program.id,
+            relation: program.relation,
+          });
           setModalKey("degree-remove");
         }}
         setCollapsed={setCollapsed}
@@ -285,15 +325,20 @@ const Degree = ({
       {!collapsed && !editMode &&
         <>
           <DegreeBody>
-            {degree && degree.rules.map((rule: any) => {
-              return (
+            {program.rules.map((rule: any) => (
               <RuleComponent
+                key={rule.id}
                 headerHeight={headerHeight}
                 zIndex={999}
-                {...computeRuleTree({activeDegreePlanId: activeDegreeplan.id, rule, rulesToFulfillments, rulesToUnselectedFulfillments, degree })}
+                {...computeRuleTree({
+                  activeDegreePlanId: activeDegreeplan.id,
+                  rule,
+                  rulesToFulfillments,
+                  rulesToUnselectedFulfillments,
+                  degree: program,
+                })}
               />
-            )}
-            )}
+            ))}
           </DegreeBody>
         </>
       }
@@ -358,12 +403,12 @@ const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: 
           {activeDegreeplanDetail &&
             <ReqPanelBody>
               <ReqContent>
-                {activeDegreeplanDetail.degrees.length == 0 && !editMode && <EmptyPanel />}
-                {activeDegreeplanDetail.degrees.map(degree => (
+                {planPrograms(activeDegreeplanDetail).length == 0 && !editMode && <EmptyPanel />}
+                {planPrograms(activeDegreeplanDetail).map(program => (
                   <Degree
-                    key={degree.id}
+                    key={`${program.relation}-${program.id}`}
                     allRuleLeaves={allRuleLeaves}
-                    degree={degree}
+                    program={program}
                     rulesToFulfillments={rulesToFulfillments}
                     rulesToUnselectedFulfillments={rulesToUnselectedFulfillments}
                     activeDegreeplan={activeDegreeplan}

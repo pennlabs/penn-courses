@@ -3,12 +3,20 @@ from django.db.models import Q
 from django.test import TestCase
 
 from courses.util import get_or_create_course_and_section
-from degree.models import Degree, DegreePlan, Rule
-from degree.utils.degree_logic import allocate_rules, map_rules_and_degrees, prewarm_belongs_cache
+from degree.models import Degree, DegreePlan, Major, Rule
+from degree.utils.degree_logic import (
+    allocate_rules,
+    check_legal,
+    map_rules_and_degrees,
+    prewarm_belongs_cache,
+)
 from degree.utils.double_counts import get_degree_trees, resolve_double_counts
 
 
 TEST_SEMESTER = "2023C"
+
+THISBLOCK = [{"kind": "THISBLOCK", "value": None}]
+ANY_MAJOR = [{"kind": "MAJOR", "value": None}]
 
 
 class DoubleCountingTest(TestCase):
@@ -16,6 +24,10 @@ class DoubleCountingTest(TestCase):
     Tests that a course dropped onto a rule also counts for the rules that rule is allowed to
     double count with. This mirrors the shape of a CIS BSE degree, where the area lists double
     count with each other and with the (mutually exclusive) elective rules.
+
+    The area lists carry a rule-scoped ShareWith (THISBLOCK), which is how an audit says that
+    a rule may share with the rest of its own block; the electives carry nothing, so they are
+    exclusive of each other.
     """
 
     def setUp(self):
@@ -23,34 +35,47 @@ class DoubleCountingTest(TestCase):
             get_or_create_course_and_section(f"{full_code}-001", TEST_SEMESTER)
 
         self.degree = Degree.objects.create(program="EU_BSE", degree="BSE", major="CIS", year=2026)
-        self.major_rule = Rule.objects.create(title="Major in Computer Science")
+        self.major_rule = Rule.objects.create(
+            title="Major in Computer Science", block_type="MAJOR", block_value="CIS"
+        )
         self.degree.rules.add(self.major_rule)
 
-        # Newer CIS degrees have their area lists as leaf rules of the major rule
         self.networking = Rule.objects.create(
             title="Area List - Networking",
             parent=self.major_rule,
             q=repr(Q(full_code__in=["CIS-5550", "CIS-5050"])),
             num=1,
+            block_type="MAJOR",
+            block_value="CIS",
+            share_targets=THISBLOCK,
         )
         self.databases = Rule.objects.create(
             title="Area List - Databases",
             parent=self.major_rule,
             q=repr(Q(full_code__in=["CIS-5550"])),
             num=1,
+            block_type="MAJOR",
+            block_value="CIS",
+            share_targets=THISBLOCK,
         )
-        self.engineering = Rule.objects.create(title="ENGINEERING", parent=self.major_rule)
+        self.engineering = Rule.objects.create(
+            title="ENGINEERING", parent=self.major_rule, block_type="MAJOR", block_value="CIS"
+        )
         self.cis_elective = Rule.objects.create(
             title="CIS Elective",
             parent=self.engineering,
             q=repr(Q(full_code__startswith="CIS")),
             credits=1,
+            block_type="MAJOR",
+            block_value="CIS",
         )
         self.tech_elective = Rule.objects.create(
             title="Unrestricted Technical Electives",
             parent=self.engineering,
             q=repr(Q(full_code__startswith="CIS")),
             credits=6,
+            block_type="MAJOR",
+            block_value="CIS",
         )
         self.area_lists = [self.networking, self.databases]
         self.electives = [self.cis_elective, self.tech_elective]
@@ -85,7 +110,8 @@ class DoubleCountingTest(TestCase):
                 {*self.area_lists, *self.electives} - {area_list}, double_counts[area_list]
             )
 
-        # The electives only double count with the area lists, not with each other
+        # The electives only double count with the area lists, not with each other: sharing is
+        # symmetric, so they inherit it from the area lists without naming anything themselves
         self.assertEqual(set(self.area_lists), double_counts[self.cis_elective])
         self.assertEqual(set(self.area_lists), double_counts[self.tech_elective])
 
@@ -93,12 +119,13 @@ class DoubleCountingTest(TestCase):
         self.assertNotIn(self.major_rule, double_counts)
         self.assertNotIn(self.engineering, double_counts)
 
-    def test_resolve_double_counts_for_parent_rule(self):
-        # Pre-2026 CIS degrees use the CSCI major code and group their area lists under an
-        # "AREA LISTS" rule, so the policy has to resolve through a parent rule
-        self.degree.major = "CSCI"
-        self.degree.save()
-        area_lists_rule = Rule.objects.create(title="AREA LISTS", parent=self.major_rule)
+    def test_policy_does_not_depend_on_rule_nesting(self):
+        # Pre-2026 CIS degrees group their area lists under an "AREA LISTS" rule. Share targets
+        # are flattened onto the leaves when the audit is parsed, so the tree shape a leaf sits
+        # in makes no difference at resolution time.
+        area_lists_rule = Rule.objects.create(
+            title="AREA LISTS", parent=self.major_rule, block_type="MAJOR", block_value="CIS"
+        )
         for area_list in self.area_lists:
             area_list.parent = area_lists_rule
             area_list.save()
@@ -109,9 +136,11 @@ class DoubleCountingTest(TestCase):
                 {*self.area_lists, *self.electives} - {area_list}, double_counts[area_list]
             )
 
-    def test_no_policy_for_degree(self):
-        self.degree.major = "MEAM"
-        self.degree.save()
+    def test_no_share_targets(self):
+        # A rule that names nothing may not double count with anything, which is the default.
+        for area_list in self.area_lists:
+            area_list.share_targets = []
+            area_list.save()
 
         selected, unselected, legal = self.allocate("CIS-5550", self.networking)
         self.assertEqual({self.networking}, selected)
@@ -169,3 +198,164 @@ class DoubleCountingTest(TestCase):
                     belongs_cache=belongs_cache,
                 ),
             )
+
+
+class CrossDegreeDoubleCountingTest(TestCase):
+    """
+    Sharing between two degrees in a plan. ShareWith targets like (MAJOR) are statements about
+    other programs, so they are only meaningful across degrees.
+    """
+
+    def setUp(self):
+        get_or_create_course_and_section("CIS-1200-001", TEST_SEMESTER)
+
+        self.person = get_user_model().objects.create_user(username="test", password="top_secret")
+        self.degree_plan = DegreePlan.objects.create(name="Dual", person=self.person)
+
+        self.cis_degree = Degree.objects.create(
+            program="EU_BSE", degree="BSE", major="CIS", year=2026
+        )
+        self.cis_rule = Rule.objects.create(
+            title="Major in Computer Science",
+            q=repr(Q(full_code__startswith="CIS")),
+            num=1,
+            block_type="MAJOR",
+            block_value="CIS",
+            share_targets=ANY_MAJOR,
+        )
+        self.cis_degree.rules.add(self.cis_rule)
+
+        self.math_degree = Degree.objects.create(
+            program="AU_BA", degree="BA", major="MATH", year=2026
+        )
+        self.math_rule = Rule.objects.create(
+            title="Major in Mathematics",
+            q=repr(Q(full_code__startswith="CIS")),
+            num=1,
+            block_type="MAJOR",
+            block_value="MATH",
+            share_targets=ANY_MAJOR,
+        )
+        self.math_degree.rules.add(self.math_rule)
+
+        self.degree_plan.degrees.add(self.cis_degree, self.math_degree)
+
+    def test_majors_that_permit_sharing_are_legal_together(self):
+        _, rule_to_degree, double_counts = map_rules_and_degrees(self.degree_plan)
+        self.assertIn(self.math_rule, double_counts[self.cis_rule])
+        self.assertTrue(check_legal({self.cis_rule, self.math_rule}, rule_to_degree, double_counts))
+
+    def test_majors_that_do_not_permit_sharing_are_illegal_together(self):
+        # Sharing is not free between programs: with the (MAJOR) target removed from both,
+        # neither permits the other and the pairing is caught.
+        for rule in [self.cis_rule, self.math_rule]:
+            rule.share_targets = []
+            rule.save()
+
+        _, rule_to_degree, double_counts = map_rules_and_degrees(self.degree_plan)
+        self.assertNotIn(self.cis_rule, double_counts)
+        self.assertFalse(
+            check_legal({self.cis_rule, self.math_rule}, rule_to_degree, double_counts)
+        )
+
+    def test_sharing_is_symmetric(self):
+        # Only one side names the other, which is enough.
+        self.math_rule.share_targets = []
+        self.math_rule.save()
+
+        _, rule_to_degree, double_counts = map_rules_and_degrees(self.degree_plan)
+        self.assertIn(self.math_rule, double_counts[self.cis_rule])
+        self.assertIn(self.cis_rule, double_counts[self.math_rule])
+        self.assertTrue(check_legal({self.cis_rule, self.math_rule}, rule_to_degree, double_counts))
+
+    def test_a_target_naming_a_specific_major(self):
+        self.cis_rule.share_targets = [{"kind": "MAJOR", "value": "MATH"}]
+        self.cis_rule.save()
+        self.math_rule.share_targets = []
+        self.math_rule.save()
+
+        _, _, double_counts = map_rules_and_degrees(self.degree_plan)
+        self.assertIn(self.math_rule, double_counts[self.cis_rule])
+
+        # and a target naming a major that is not in the plan matches nothing
+        self.cis_rule.share_targets = [{"kind": "MAJOR", "value": "PHYS"}]
+        self.cis_rule.save()
+
+        _, _, double_counts = map_rules_and_degrees(self.degree_plan)
+        self.assertNotIn(self.cis_rule, double_counts)
+
+
+class ComponentPassIsolationTest(TestCase):
+    """
+    allocate_rules walks each component and unions the results, and every pass reaches into the
+    other components to find what its chosen rule may share with. A pass must speak only for
+    its own component: when two passes reach different conclusions about a third, the union
+    holds a pair of that component's rules that are not allowed to share, and the course is
+    flagged as illegally double counted.
+
+    The degree here has two mutually exclusive electives, and the plan also has a major whose
+    rule the same course fits. Dropping the course explicitly onto the smaller elective makes
+    the two passes disagree: the degree's pass honours the explicit choice, while the major's
+    pass picks the larger elective on its own.
+    """
+
+    def setUp(self):
+        get_or_create_course_and_section("CIS-1200-001", TEST_SEMESTER)
+        matches = repr(Q(full_code__startswith="CIS"))
+
+        self.degree = Degree.objects.create(program="EU_BSE", degree="BSE", major="CIS", year=2026)
+        self.big = Rule.objects.create(
+            title="Unrestricted Technical Electives",
+            q=matches,
+            credits=6,
+            block_type="MAJOR",
+            block_value="CIS",
+            share_targets=ANY_MAJOR,
+        )
+        self.small = Rule.objects.create(
+            title="Restricted or Unrestricted Technical Electives",
+            q=matches,
+            credits=1,
+            block_type="MAJOR",
+            block_value="CIS",
+            share_targets=ANY_MAJOR,
+        )
+        self.degree.rules.add(self.big, self.small)
+
+        self.major = Major.objects.create(
+            program_code="MATH-BA-GEN", code="MATH", name="Mathematics", year=2026
+        )
+        self.math_rule = Rule.objects.create(
+            title="Mathematics Electives",
+            q=matches,
+            credits=3,
+            block_type="MAJOR",
+            block_value="MATH",
+            share_targets=ANY_MAJOR,
+        )
+        self.major.rules.add(self.math_rule)
+
+        person = get_user_model().objects.create_user(username="t", password="top_secret")
+        self.plan = DegreePlan.objects.create(name="degree plus major", person=person)
+        self.plan.degrees.add(self.degree)
+        self.plan.majors.add(self.major)
+
+    def test_the_two_electives_may_not_share(self):
+        _, _, double_counts = map_rules_and_degrees(self.plan)
+        self.assertNotIn(self.small, double_counts.get(self.big, set()))
+
+    def test_a_pass_contributes_only_its_own_component(self):
+        rules_per_degree, rule_to_degree, double_counts = map_rules_and_degrees(self.plan)
+        selected, _, legal = allocate_rules(
+            "CIS-1200",
+            rules_per_degree,
+            rule_to_degree,
+            double_counts,
+            rule_selected=self.small,
+            satisfied_rules=set(),
+        )
+
+        self.assertIn(self.small, selected)
+        self.assertIn(self.math_rule, selected)
+        self.assertNotIn(self.big, selected)
+        self.assertTrue(legal)

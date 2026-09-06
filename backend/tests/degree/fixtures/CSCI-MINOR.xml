@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Report>
+  <Audit>
+    <Block Cat_yr="9999" Cat_yrLit="End of Time" Cat_yr_start="2027" Cat_yr_stop="9999" Classes_applied="0" Credits_applied="0" GPA="*" Gpa_credits="0" Gpa_grade_pts="*" Minor="CSCI" Per_complete="0" Req_id="RA002295" Req_type="MINOR" Req_value="CSCI" Title="Minor in Computer Science">
+      <Header>
+        <Qualifier Applied="0" ClassesApplied="0" Credits="6" CreditsApplied="0" Label="Minimum Credits Requirement" LabelTag="FJSKEL" Name="CLASSESCREDITS" Needed="6" Node_id="1" Node_type="4121" Satisfied="No">
+          <Text>6 Credits</Text>
+        </Qualifier>
+        <Qualifier ClassesApplied="0" Credits="0" CreditsApplied="0" Name="MAXCREDIT" Node_id="2" Node_type="4103" Tag="MXPFCOVID">
+          <SubText>@ @ (With </SubText>
+          <SubText>DWPASSFAIL = Y AND</SubText>
+          <SubText>DWTERM &lt;&gt; 202010, 202020, 202030, 202110</SubText>
+          <SubText>)</SubText>
+          <Text>MaxCredits 0 in </Text>
+        </Qualifier>
+        <Qualifier Applied="" Name="STANDALONEBLOCK" Node_id="4" Node_type="4137">
+          <Text>StandAloneBlock</Text>
+        </Qualifier>
+      </Header>
+      <Rule IndentLevel="1" Label="Introduction to Computer Programming/CIS Elective" LabelTag="MININTRO" Node_id="5" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="1">
+        <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+          <Course Disc="CIS" NewDiscipline="Yes" Node_id="6" Num="1100" />
+          <Course Disc="CIS" Node_id="7" Num="0099" Num_end="5999" />
+          <Course Disc="CIS" HideFromAdvice="Yes" Node_id="8" Num="6000" Num_end="9999" />
+          <Course Disc="NETS" NewDiscipline="Yes" Node_id="9" Num="0000" Num_end="5999" />
+          <Course Disc="NETS" HideFromAdvice="Yes" Node_id="10" Num="6000" Num_end="9999" />
+          <Course Disc="ESE" HideFromAdvice="Yes" NewDiscipline="Yes" Node_id="11" Num="3500">
+            <With Code="DWTERM" Connector="" Operator="&lt;">
+              <Value>Summer 2026</Value>
+            </With>
+          </Course>
+          <Except>
+            <Course Disc="CIS" NewDiscipline="Yes" Node_id="13" Num="1050" />
+            <Course Disc="CIS" Node_id="14" Num="1060" />
+            <Course Disc="CIS" Node_id="15" Num="1070" />
+            <Course Disc="CIS" Node_id="16" Num="1250" />
+            <Course Disc="CIS" Node_id="17" Num="1600" />
+            <Course Disc="CIS" Node_id="18" Num="2610" />
+            <Course Disc="CIS" Node_id="19" Num="3333" />
+            <Course Disc="CIS" Node_id="20" Num="4230" />
+            <Course Disc="CIS" Node_id="21" Num="5230" />
+            <Course Disc="CIS" Node_id="22" Num="7980" />
+            <Course Disc="@" NewDiscipline="Yes" Node_id="23" Num="2960" />
+            <Course Disc="@" Node_id="24" Num="2970" />
+          </Except>
+        </Requirement>
+      </Rule>
+      <Rule IndentLevel="1" Label="Prog Lang &amp; Tech I" LabelTag="MINPROGLANG1" Node_id="25" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="2">
+        <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+          <Course Disc="CIS" NewDiscipline="Yes" Node_id="26" Num="1200" />
+        </Requirement>
+      </Rule>
+      <Rule IndentLevel="1" Label="Prog Lang and Tech II" LabelTag="MINPROGLANG2" Node_id="27" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="3">
+        <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+          <Course Disc="CIS" NewDiscipline="Yes" Node_id="28" Num="1210" />
+        </Requirement>
+      </Rule>
+      <Rule IndentLevel="1" Label="Math Found Comp Sci" LabelTag="MINMATHFOUND" Node_id="29" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="4">
+        <Requirement Class_cred_op="OR" Classes_begin="1" Connector=",">
+          <Course Disc="CIS" NewDiscipline="Yes" Node_id="30" Num="1600" />
+        </Requirement>
+      </Rule>
+      <Rule IndentLevel="1" Label="CIS Elective Course" LabelTag="MINELECT1" Node_id="31" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="5">
+        <Requirement Class_cred_op="OR" Connector="," Credits_begin="1">
+          <Course Disc="CIS" NewDiscipline="Yes" Node_id="32" Num="0099" Num_end="5999" />
+          <Course Disc="CIS" HideFromAdvice="Yes" Node_id="33" Num="6000" Num_end="9999" />
+          <Course Disc="NETS" NewDiscipline="Yes" Node_id="34" Num="0000" Num_end="5999" />
+          <Course Disc="NETS" HideFromAdvice="Yes" Node_id="35" Num="6000" Num_end="9999" />
+          <Course Disc="ESE" HideFromAdvice="Yes" NewDiscipline="Yes" Node_id="36" Num="3500">
+            <With Code="DWTERM" Connector="" Operator="&lt;">
+              <Value>Summer 2026</Value>
+            </With>
+          </Course>
+          <Except>
+            <Course Disc="CIS" NewDiscipline="Yes" Node_id="38" Num="1050" />
+            <Course Disc="CIS" Node_id="39" Num="1060" />
+            <Course Disc="CIS" Node_id="40" Num="1070" />
+            <Course Disc="CIS" Node_id="41" Num="1250" />
+            <Course Disc="CIS" Node_id="42" Num="1600" />
+            <Course Disc="CIS" Node_id="43" Num="2610" />
+            <Course Disc="CIS" Node_id="44" Num="3333" />
+            <Course Disc="CIS" Node_id="45" Num="4230" />
+            <Course Disc="CIS" Node_id="46" Num="5230" />
+            <Course Disc="CIS" Node_id="47" Num="7980" />
+            <Course Disc="@" NewDiscipline="Yes" Node_id="48" Num="2960" />
+            <Course Disc="@" Node_id="49" Num="2970" />
+          </Except>
+        </Requirement>
+      </Rule>
+      <Rule IndentLevel="1" Label="CIS Elective Course" LabelTag="MINELECT2" Node_id="50" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="6">
+        <Requirement Class_cred_op="OR" Connector="," Credits_begin="1">
+          <Course Disc="CIS" NewDiscipline="Yes" Node_id="51" Num="2000" Num_end="5999" />
+          <Course Disc="CIS" HideFromAdvice="Yes" Node_id="52" Num="6000" Num_end="9999" />
+          <Course Disc="NETS" NewDiscipline="Yes" Node_id="53" Num="2000" Num_end="5999" />
+          <Course Disc="NETS" HideFromAdvice="Yes" Node_id="54" Num="6000" Num_end="9999" />
+          <Course Disc="ESE" HideFromAdvice="Yes" NewDiscipline="Yes" Node_id="55" Num="3500">
+            <With Code="DWTERM" Connector="" Operator="&lt;">
+              <Value>Summer 2026</Value>
+            </With>
+          </Course>
+          <Except>
+            <Course Disc="CIS" NewDiscipline="Yes" Node_id="57" Num="2610" />
+            <Course Disc="CIS" Node_id="58" Num="3333" />
+            <Course Disc="CIS" Node_id="59" Num="4230" />
+            <Course Disc="CIS" Node_id="60" Num="5230" />
+            <Course Disc="CIS" Node_id="61" Num="7980" />
+            <Course Disc="@" NewDiscipline="Yes" Node_id="62" Num="2960" />
+            <Course Disc="@" Node_id="63" Num="2970" />
+          </Except>
+        </Requirement>
+      </Rule>
+    </Block>
+    <In_progress Classes="0" Credits="0" />
+  </Audit>
+</Report>
