@@ -341,7 +341,8 @@ def parse_and_save_degreeworks(json: dict, degree: Degree) -> bool:
     rules = parse_degreeworks(json, degree)
     if rules is None:
         return False
-
+    if "_MANT" in degree.program:
+        degree.degree = degree.degree + "_MANT"
     degree.save()
     for rule in rules:
         if rule.q:
