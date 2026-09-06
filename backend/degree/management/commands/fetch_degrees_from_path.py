@@ -11,7 +11,8 @@ from degree.utils.parse_path_audit import find_block, parse_audit, save_componen
 from degree.utils.path_client import PathClient, split_program_code, split_program_title
 
 
-# Students with degrees older than this catalog year are not supported, and their degrees are not stored in the database. 
+# Students with degrees older than this catalog year are not supported, and their
+# degrees are not stored in the database.
 EARLIEST_CATALOG_YEAR = 2022
 
 
@@ -106,7 +107,7 @@ class Command(BaseCommand):
             action="store_true",
             help=dedent(
                 """
-                Do not fetch minors. 
+                Do not fetch minors.
                 """
             ),
         )
