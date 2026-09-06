@@ -516,18 +516,16 @@ class OnboardFromTranscript(APIView):
                     belongs_cache=belongs_cache,
                 )
 
-                f, just_created = Fulfillment.objects.get_or_create(
+                # Keyed on Fulfillment's actual unique constraint. Including semester and
+                # legal in the lookup means a course already stored with either one different
+                # matches nothing and is then created against a row that already exists.
+                fulfillment, _ = Fulfillment.objects.update_or_create(
                     degree_plan=degree_plan,
                     full_code=full_code,
-                    semester=semester_code,
-                    legal=legal,
+                    defaults={"semester": semester_code, "legal": legal},
                 )
-                if just_created:
-                    f.rules.set(selected_rules)
-                    f.unselected_rules.set(unselected_rules)
-                else:
-                    f.rules.add(selected_rules)
-                    f.unselected_rules.add(unselected_rules)
+                fulfillment.rules.set(selected_rules)
+                fulfillment.unselected_rules.set(unselected_rules)
 
                 for rule in selected_rules:
                     satisfied_lookup[rule.id] += 1
