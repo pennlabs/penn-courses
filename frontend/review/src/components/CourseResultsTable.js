@@ -3,6 +3,29 @@ import { useHistory } from "react-router-dom/cjs/react-router-dom.min";
 import { ScoreTable } from "./common/ScoreTable";
 import { ColumnSelector } from "./common/ColumnSelector";
 import { COLUMN_FULLNAMES, ALL_DATA_COLUMNS } from "../constants";
+import styled from "styled-components";
+
+/**
+ * base.css styles this table via the global `.course-results-table` classes,
+ * including `font-family: 'SFPro'` — but that @font-face has a repo-relative
+ * src path, so the font has never loaded and those rules resolve to the generic
+ * sans-serif fallback. Now that the rest of the app renders in Inter, the table
+ * would be the one surface still falling back.
+ *
+ * Re-asserting the family here (0-2-0 and 0-4-0, against base.css's 0-1-0 and
+ * 0-3-0) fixes it without editing the legacy stylesheet.
+ */
+const TableContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+
+  .course-results-table,
+  .course-results-table .rt-tbody .rt-td {
+    font-family: ${({ theme }) => theme.font.family.sans};
+  }
+`;
 
 
 // Map r-prefixed column names to backend field names
@@ -177,7 +200,7 @@ const CourseResultsTable = ({ filteredResults, isAverage, sentinelRef, isLoading
 
 
  return (
-   <div className="course-results-table-container" style={{display: "flex", flexDirection: "column", gap: "12px", height: '100%'}}>
+   <TableContainer className="course-results-table-container">
     {/* Delayed to a future release when the other course attributes (TA quality, Amount Learned, etc.) are added to the aggregate API*/}
      {/* <div className="clearfix">
        <ColumnSelector
@@ -200,11 +223,11 @@ const CourseResultsTable = ({ filteredResults, isAverage, sentinelRef, isLoading
        {sentinelRef && <div ref={sentinelRef} style={{ height: 1 }} />}
        {isLoadingMore && (
          <div style={{ display: 'flex', justifyContent: 'center', padding: '20px 0' }}>
-           <i className="fa fa-spin fa-cog fa-fw" style={{ fontSize: "40px", color: "#aaa" }} />
+           <i className="fa fa-spin fa-cog fa-fw" style={{ fontSize: "40px", color: "var(--pcr-color-text-muted)" }} />
          </div>
        )}
      </div>
-   </div>
+   </TableContainer>
  );
 };
 

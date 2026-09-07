@@ -1,5 +1,5 @@
 import React from 'react';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 import { PiPlus, PiPlusThin } from "react-icons/pi";
 import { HiMagnifyingGlass, HiXMark } from "react-icons/hi2";
 import { useState, useEffect, useRef } from 'react';
@@ -15,14 +15,14 @@ const SelectBoxContainer = styled.div`
     align-self: stretch;
     margin-bottom: 12px;
     border-radius: 10px;
-    background: #EFF1F5;
-    color: #545454;
-    font-family: 'SFPro', sans-serif;
+    background: ${({ theme }) => theme.color.surface.muted};
+    color: ${({ theme }) => theme.color.text.primary};
+    font-family: ${({ theme }) => theme.font.family.sans};
     font-size: 14px;
     font-style: normal;
-    font-weight: 400;
+    font-weight: ${({ theme }) => theme.font.weight.regular};
     cursor: pointer;
-    max-width: 400px;
+    max-width: ${({ theme }) => theme.size.filterWidgetMax};
 `;
 
 const SelectSearchBarContainer = styled.div`
@@ -36,13 +36,13 @@ const SelectSearchBarContainer = styled.div`
     left: 0;
     top: 0;
     border-radius: 10px;
-    background: #FFFFFF;
+    background: ${({ theme }) => theme.color.surface.page};
     z-index: 50; 
     max-height: 180px;
     cursor: pointer;
 
-    ${props => props.$isSearchFocused && `
-        border: 1px solid #EBEEF2;
+    ${props => props.$isSearchFocused && css`
+        border: 1px solid ${({ theme }) => theme.color.border.default};
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
     `}
 `;
@@ -53,9 +53,9 @@ const SelectSearchBar = styled.input`
     outline: none;
     background: transparent;
     font-size: 14px;
-    font-family: 'SFPro', sans-serif;
-    font-weight: 400;
-    color: #545454;
+    font-family: ${({ theme }) => theme.font.family.sans};
+    font-weight: ${({ theme }) => theme.font.weight.regular};
+    color: ${({ theme }) => theme.color.text.primary};
 `;
 
 const SelectSearchResultsContainer = styled.div`
@@ -75,9 +75,10 @@ const OptionContainer = styled.div`
     align-items: center;
     gap: 1px;
     border-radius: 10px;
+    border: 2px solid ${({ theme }) => theme.color.border.strong};
     cursor: pointer;
 
-    ${props => props.$fullWidth && `
+    ${props => props.$fullWidth && css`
         width: fit-content;
         max-width: none;
     `}
@@ -123,19 +124,19 @@ const OptionBox = ({ text, isActive, filterOptionsList, setFilterOptionsList, vi
         <>
             <OptionContainer $fullWidth={fullWidth}onClick={() => setIsSelected(!isSelected)}
                 style={{ 
-                    background: isSelected ? '#3E3E40' :'#FFFFFF', 
-                    border: isSelected ? 'none' : '2px solid #D9D9D9', 
-                    color: isSelected ? '#FFF' : '#545454' 
+                    background: isSelected ? 'var(--pcr-color-surface-selected)' :'var(--pcr-color-surface-page)', 
+                    border: isSelected ? 'none' : '2px solid ${({ theme }) => theme.color.border.strong}', 
+                    color: isSelected ? 'var(--pcr-color-text-inverse)' : 'var(--pcr-color-text-primary)' 
                 }}>
                 <div style={{ fontSize: '12px', overflow: fullWidth ? 'none' : 'hidden', whiteSpace: 'nowrap', minWidth: '38px' }}>
                     {text}
                 </div>
                 {isSelected ? (
-                    <HiXMark size={15} color="#FFFFFF" />
+                    <HiXMark size={15} color="var(--pcr-color-text-inverse)" />
                 ) : (
                     <>
                         {visualOptionsList.has(text) ? (
-                            <HiXMark size={15} color="#3E3E40" onClick={() => {
+                            <HiXMark size={15} color="var(--pcr-color-text-strong)" onClick={() => {
                                 setVisualOptionsList(prev => {
                                     const newSet = new Set(prev);
                                     newSet.delete(text);
@@ -143,7 +144,7 @@ const OptionBox = ({ text, isActive, filterOptionsList, setFilterOptionsList, vi
                                 });
                             }}/>
                         ) : (
-                            <PiPlus size={15} color="#3E3E40" />
+                            <PiPlus size={15} color="var(--pcr-color-text-strong)" />
                         )}
                     </>
                 )}
@@ -216,7 +217,7 @@ const SelectBox = ({ options, setOptions, availableItems, fullWidth = false }) =
                 setIsSearchFocused(true);
             }}
             style={{ display: 'flex', gap: '10px', width: '100%' }}>
-            <HiMagnifyingGlass size={20} color="#A1A1A1" />
+            <HiMagnifyingGlass size={20} color="var(--pcr-color-text-muted)" />
             <SelectSearchBar 
                 ref={isClone ? null : searchInputRef} 
                 //Prevent tabbing into the invisible clone
@@ -236,7 +237,7 @@ const SelectBox = ({ options, setOptions, availableItems, fullWidth = false }) =
         {isSearchFocused && (
             <SelectSearchResultsContainer className='no-scrollbar'>
                 {searchResultOptions.length === 0 ? (
-                    <p style={{ color: '#A1A1A1', fontStyle: 'italic' }}>No options available</p>
+                    <p style={{ color: 'var(--pcr-color-text-muted)', fontStyle: 'italic' }}>No options available</p>
                 ) : (
                     <>
                         {searchResultOptions.slice(0, 51).map((option) => (
@@ -251,7 +252,7 @@ const SelectBox = ({ options, setOptions, availableItems, fullWidth = false }) =
                                 fullWidth={fullWidth}
                             />
                         ))}
-                    {searchResultOptions.length > 51 && <p style={{ color: '#A1A1A1', fontStyle: 'italic', width: '100%' }}>Showing first 50 results</p>}
+                    {searchResultOptions.length > 51 && <p style={{ color: 'var(--pcr-color-text-muted)', fontStyle: 'italic', width: '100%' }}>Showing first 50 results</p>}
                     </>
                 )}
             </SelectSearchResultsContainer>
@@ -293,7 +294,7 @@ const SelectBox = ({ options, setOptions, availableItems, fullWidth = false }) =
                         ): (
                             <>
                                 <p>None selected</p>
-                                <PiPlusThin size={20} color="#A1A1A1" />
+                                <PiPlusThin size={20} color="var(--pcr-color-text-muted)" />
                             </>
                         )}
                     </div>

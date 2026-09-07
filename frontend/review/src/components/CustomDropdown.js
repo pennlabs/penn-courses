@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 import { SlArrowDown } from "react-icons/sl";
 import { useOnClickOutside } from './SelectBox';
 
@@ -19,22 +19,22 @@ const SearchSortDropdown = styled.div`
     align-items: flex-start;
     border-radius: 10px;
     cursor: pointer;
-    background: #EFF1F5;
+    background: ${({ theme }) => theme.color.surface.muted};
     width: 100%;
     font-size: 12px;
-    font-family: 'SFPro', sans-serif;
-    font-weight: 300;
+    font-family: ${({ theme }) => theme.font.family.sans};
+    font-weight: ${({ theme }) => theme.font.weight.light};
 
     &:hover {
-        background: #E1E4E8;
+        background: ${({ theme }) => theme.color.surface.hover};
     }
 
     &:has(.item:hover) {
-        background: #FFFFFF; 
+        background: ${({ theme }) => theme.color.surface.page}; 
     }
 
-    ${props => (props.$isOpen) && `
-        background: #FFFFFF;
+    ${props => (props.$isOpen) && css`
+        background: ${({ theme }) => theme.color.surface.page};
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
     `}
 `;
@@ -50,8 +50,8 @@ const DropdownItem = styled.div`
     padding: 6px 12px;
     cursor: pointer;
     font-size: 12px;
-    font-family: 'SFPro', sans-serif;
-    font-weight: 400;
+    font-family: ${({ theme }) => theme.font.family.sans};
+    font-weight: ${({ theme }) => theme.font.weight.regular};
 `;
 
 const CustomDropdown = ({ options, value, onChange, style }) => {
@@ -65,7 +65,7 @@ const CustomDropdown = ({ options, value, onChange, style }) => {
         <DropdownWrapper ref={wrapperRef} style={style}>
             {isOpen ? (
                 <SearchSortDropdown $isOpen={isOpen}>
-                    <DropdownItem onClick={() => setIsOpen(!isOpen)} style={{background: '#EFF1F5'}} className='item'>
+                    <DropdownItem onClick={() => setIsOpen(!isOpen)} style={{background: 'var(--pcr-color-surface-muted)'}} className='item'>
                         <span>{value}</span>
                         <SlArrowDown/>
                     </DropdownItem>

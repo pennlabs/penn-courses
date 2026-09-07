@@ -57,7 +57,6 @@ export const theme = {
       sans: "var(--pcr-font-family-sans)",
     },
     size: {
-      "2xs": "var(--pcr-font-size-2xs)",
       xs: "var(--pcr-font-size-xs)",
       sm: "var(--pcr-font-size-sm)",
       md: "var(--pcr-font-size-md)",
@@ -96,21 +95,8 @@ export const theme = {
 
   size: {
     sidebarWidth: "var(--pcr-size-sidebar-width)",
-    headerHeight: "var(--pcr-size-header-height)",
     filterWidgetMax: "var(--pcr-size-filter-widget-max)",
     controlHeight: "var(--pcr-size-control-height)",
-  },
-
-  motion: {
-    duration: {
-      fast: "var(--pcr-motion-duration-fast)",
-      md: "var(--pcr-motion-duration-md)",
-      slow: "var(--pcr-motion-duration-slow)",
-    },
-    ease: {
-      standard: "var(--pcr-motion-ease-standard)",
-      emphasized: "var(--pcr-motion-ease-emphasized)",
-    },
   },
 };
 

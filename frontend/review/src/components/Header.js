@@ -5,6 +5,8 @@ import { motion } from "motion/react";
 import SearchBar from "./SearchBar";
 import { Link, useHistory } from "react-router-dom";
 import { useFilterDispatch } from "../utils/FilterContext";
+import { maxWidth, minWidth } from "../styles/media";
+import { linkStyles } from "../styles/mixins";
 
 const HeaderContainer = styled.div`
   display: flex;
@@ -12,22 +14,22 @@ const HeaderContainer = styled.div`
   width: 100%;
   height: 80px;
   background: white;
-  border: 1px #ebeef2 solid;
+  border: 1px ${({ theme }) => theme.color.border.default} solid;
   z-index: 1000;
 `;
 
 const Title = styled.div`
-  color: #545454;
+  color: ${({ theme }) => theme.color.text.primary};
   font-size: 1.375rem;
-  font-family: "SFPro", sans-serif;
-  font-weight: 410;
+  font-family: ${({ theme }) => theme.font.family.sans};
+  font-weight: ${({ theme }) => theme.font.weight.regular};
   white-space: nowrap;
 
-  @media (max-width: 800px) {
+  ${maxWidth("md")} {
     font-size: 1.125rem;
   }
 
-  @media (max-width: 700px) {
+  ${maxWidth("sm")} {
     display: none;
   }
 `;
@@ -38,11 +40,11 @@ const SearchBarContainer = styled.div`
   width: 100%;
   max-width: 45vw;
 
-  @media (max-width: 700px) {
+  ${maxWidth("sm")} {
     max-width: 60vw;
   }
 
-  @media (max-width: 300px) {
+  ${maxWidth("xs")} {
     max-width: 30vw;
     min-width: 0;
   }
@@ -54,9 +56,9 @@ const LinksContainer = styled(motion.div)`
   margin-right: 30px;
   align-items: center;
   gap: 40px;
-  font-family: "SFPro", sans-serif;
+  font-family: ${({ theme }) => theme.font.family.sans};
 
-  @media (max-width: 1200px) {
+  ${maxWidth("xl")} {
     display: none !important;
   }
 `;
@@ -64,9 +66,9 @@ const LinksContainer = styled(motion.div)`
 const MobileMenuWrapper = styled(motion.div)`
   overflow: hidden;
   width: 100%;
-  background: #f7f9fb;
+  background: ${({ theme }) => theme.color.surface.subtle};
 
-  @media (min-width: 1201px) {
+  ${minWidth("xl")} {
     visibility: hidden !important; /* Hide mobile menu on desktop */
     height: 0 !important;
   }
@@ -79,30 +81,18 @@ const MobileLinksInner = styled(motion.div)`
   gap: 20px;
   padding: 20px;
   font-size: 36px;
-  font-weight: 410;
+  font-weight: ${({ theme }) => theme.font.weight.regular};
   min-height: max-content;
 `;
 
+// Same body, two elements: a plain anchor for external links and a router Link
+// for internal ones. Previously duplicated verbatim.
 const StyledLink = styled.a`
-  text-decoration: none;
-  color: #545454;
-  font-size: 16px;
-
-  &:hover {
-    color: #000000;
-    text-decoration: none;
-  }
+  ${linkStyles}
 `;
 
 const StyledNavLink = styled(Link)`
-  text-decoration: none;
-  color: #545454;
-  font-size: 16px;
-
-  &:hover {
-    color: #000000;
-    text-decoration: none;
-  }
+  ${linkStyles}
 `;
 
 const Hamburger = styled.div`
@@ -112,9 +102,9 @@ const Hamburger = styled.div`
   padding-left: 12px;
   margin-left: auto;
   margin-right: 28px;
-  color: #545454;
+  color: ${({ theme }) => theme.color.text.primary};
 
-  @media (max-width: 1200px) {
+  ${maxWidth("xl")} {
     display: flex;
     align-items: center;
   }

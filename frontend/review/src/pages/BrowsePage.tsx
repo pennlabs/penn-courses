@@ -11,6 +11,7 @@ import { BiHide } from "react-icons/bi";
 import { AnimatePresence, motion } from "motion/react";
 import { useFilterState, useFilterDispatch } from "../utils/FilterContext";
 import { getFilteredURL, loadStateFromURL } from "../utils/filters";
+import { maxWidth, isBelow } from "../styles/media";
 
 /*
    The Browse Page is the entry point of the app. The filters live in FilterContext
@@ -38,7 +39,7 @@ const ContentView = styled.div`
   flex: 1;
   min-height: 0;
 
-  @media (max-width: 900px) {
+  ${maxWidth("lg")} {
     flex-direction: column;
     padding: 0 20px;
     overflow-y: auto;
@@ -47,22 +48,23 @@ const ContentView = styled.div`
 
 const SidebarWrapper = styled.div`
   flex-shrink: 0;
-  width: 330px;
-  @media (max-width: 900px) {
+  width: ${({ theme }) => theme.size.sidebarWidth};
+  ${maxWidth("lg")} {
     width: 100%;
   }
 `;
 
 const CourseResultsWrapper = styled.div`
   flex: 1;
+  // Full width minus sidebar, page padding and the flex gap.
   width: calc(
-    100vw - 330px - 80px - 30px
-  ); /* Full width minus sidebar, padding, and flex gap */
+    100vw - ${({ theme }) => theme.size.sidebarWidth} - 80px - 30px
+  );
   min-height: 0;
   display: flex;
   flex-direction: column;
 
-  @media (max-width: 900px) {
+  ${maxWidth("lg")} {
     width: 100%;
   }
 `;
@@ -74,17 +76,17 @@ const FilterCollapseBox = styled.div`
   gap: 8px;
   cursor: pointer;
   justify-content: center;
-  border: 1px solid #ebeef2;
+  border: 1px solid ${({ theme }) => theme.color.border.default};
   border-radius: 8px;
   padding: 6px;
-  background: #ffffff;
+  background: ${({ theme }) => theme.color.surface.page};
   margin-bottom: 12px;
 
   &:hover {
-    background: #f7f9fb;
+    background: ${({ theme }) => theme.color.surface.subtle};
   }
 
-  @media (max-width: 899px) {
+  ${maxWidth("lg")} {
     display: flex;
   }
 `;
@@ -93,13 +95,13 @@ const BrowsePage = () => {
   const filters = useFilterState();
   const dispatch = useFilterDispatch();
   const history = useHistory();
-  const [filtersCollapsed, setFiltersCollapsed] = useState(
-    window.innerWidth <= 900
-  );
+  // Reads the same breakpoint the stylesheet does. These previously disagreed:
+  // the CSS collapsed at 900px, one rule at 899px, and this check at <= 900.
+  const [filtersCollapsed, setFiltersCollapsed] = useState(isBelow("lg"));
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth > 900) setFiltersCollapsed(false);
+      if (!isBelow("lg")) setFiltersCollapsed(false);
     };
 
     const handlePopState = () => {
@@ -137,12 +139,12 @@ const BrowsePage = () => {
             {filtersCollapsed ? (
               <>
                 <span>Show Filters</span>
-                <IoMdOptions size={18} color="#6D6F71" />
+                <IoMdOptions size={18} color="var(--pcr-color-text-secondary)" />
               </>
             ) : (
               <>
                 <span>Hide Filters</span>
-                <BiHide size={18} color="#6D6F71" />
+                <BiHide size={18} color="var(--pcr-color-text-secondary)" />
               </>
             )}
           </FilterCollapseBox>

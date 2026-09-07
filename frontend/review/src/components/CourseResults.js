@@ -16,6 +16,7 @@ import {
     SEMESTER_FILTER_LABELS,
 } from '../utils/filters';
 import { AuthContext } from '../pages/AuthPage';
+import { maxWidth } from "../styles/media";
 
 const Container = styled.div`
     display: flex;
@@ -25,19 +26,19 @@ const Container = styled.div`
     align-items: flex-start;
     gap: 12px;
     border-radius: 12px;
-    background: #FFF;
+    background: ${({ theme }) => theme.color.surface.page};
     flex: 1;
     min-height: 0;
     overflow: hidden;
-    border: 1px solid #ECEEF2;
+    border: 1px solid ${({ theme }) => theme.color.border.default};
 
 `;
 
 const BrowsingTitle = styled.span`
-    color: #6D6F71;
+    color: ${({ theme }) => theme.color.text.secondary};
     font-size: 20px;
     font-style: normal;
-    font-weight: 700;
+    font-weight: ${({ theme }) => theme.font.weight.bold};
     line-height: normal;
 `;
 
@@ -58,26 +59,26 @@ const SubjectCard = styled.div`
     overflow: ellipsis;
     margin: 2px 0;
 
-    @media (max-width: 700px) {
+    ${maxWidth("sm")} {
         width: 100%;
     }
 `;
 
 const LinkText = styled.span`
-    color: #1995E7;
+    color: ${({ theme }) => theme.color.text.link};
     font-size: 16px;
-    font-weight: 500;
+    font-weight: ${({ theme }) => theme.font.weight.medium};
     cursor: pointer;
 
     &:hover {
-        color: #0F75B9;
+        color: ${({ theme }) => theme.color.text.linkHover};
     }
 `;
 
 const DescText = styled.span`
-    color: #6D6F71;
+    color: ${({ theme }) => theme.color.text.secondary};
     font-size: 16px;
-    font-weight: 300;
+    font-weight: ${({ theme }) => theme.font.weight.light};
     word-spacing: 5px;
     white-space: nowrap;
     overflow: hidden;
@@ -99,22 +100,22 @@ const PaginationContainer = styled.div`
         min-width: 40px;
         border-radius: 20px;
         text-align: center;
-        color: #1895E6;
+        color: ${({ theme }) => theme.color.text.link};
         text-decoration: none;
     }
 
     .page-item .page-link:hover {
-        background-color: #cccccc;
+        background-color: ${({ theme }) => theme.color.surface.disabled};
     }
 
     .page-item.active .page-link {
-        font-weight: 700;
-        color: #ffffff;
-        background-color: #1895E6;
+        font-weight: ${({ theme }) => theme.font.weight.bold};
+        color: ${({ theme }) => theme.color.text.inverse};
+        background-color: ${({ theme }) => theme.color.accent.default};
     }
 
     .page-item.disabled .page-link {
-        color: #6c757d;
+        color: ${({ theme }) => theme.color.text.secondary};
         pointer-events: none;
         cursor: auto;
     }
@@ -144,13 +145,13 @@ const InfoBanner = styled.div`
     width: 100%;
     padding: 10px 14px;
     border-radius: 8px;
-    background: ${props => props.$isError ? '#ffebeb' : '#EBF5FF'};
-    border: 1px solid ${props => props.$isError ? '#f5b3b3' : '#B3D7F5'};
-    color: ${props => props.$isError ? '#ff6b6e' : '#1A6FAF'};
+    background: ${props => props.$isError ? 'var(--pcr-color-feedback-error-bg)' : 'var(--pcr-color-accent-subtle)'};
+    border: 1px solid ${props => props.$isError ? 'var(--pcr-color-feedback-error-border)' : 'var(--pcr-color-accent-subtle-border)'};
+    color: ${props => props.$isError ? 'var(--pcr-color-feedback-error-accent)' : 'var(--pcr-color-accent-hover)'};
     font-size: 14px;
-    font-weight: 400;
+    font-weight: ${({ theme }) => theme.font.weight.regular};
 
-    @media (max-width: 1400px) {
+    ${maxWidth("xxl")} {
         flex-direction: column;
     }
 `;
@@ -242,7 +243,7 @@ const CourseResults = () => {
                         <SpecialPromptContainer>
                             <i
                                 className="fa fa-spin fa-cog fa-fw"
-                                style={{ fontSize: "100px", color: "#aaa" }}
+                                style={{ fontSize: "100px", color: "var(--pcr-color-text-muted)" }}
                             />
                             <DescText>Loading search results...</DescText>
                         </SpecialPromptContainer>
@@ -306,7 +307,7 @@ const CourseResults = () => {
                     </>
                 ) : (
                     <SpecialPromptContainer>
-                        <FaLock size={48} color="#1995E7"/>
+                        <FaLock size={48} color="var(--pcr-color-text-link)"/>
                         <LinkText 
                             onClick={redirectForAuth}
                             style={{ fontSize: '16px', fontWeight: 400 }}
@@ -320,7 +321,7 @@ const CourseResults = () => {
             <SpecialPromptContainer>
                 <i
                     className="fa fa-spin fa-cog fa-fw"
-                    style={{ fontSize: "100px", color: "#aaa" }}
+                    style={{ fontSize: "100px", color: "var(--pcr-color-text-muted)" }}
                 />
                 <DescText>Loading course catalog...</DescText>
             </SpecialPromptContainer>
@@ -328,7 +329,7 @@ const CourseResults = () => {
             <SpecialPromptContainer>
                 <i
                     className="fa fa-exclamation-circle"
-                    style={{ fontSize: "100px", color: "#aaa" }}
+                    style={{ fontSize: "100px", color: "var(--pcr-color-text-muted)" }}
                 />
                 <DescText>
                     Couldn't load the course catalog. Check your connection and{" "}
