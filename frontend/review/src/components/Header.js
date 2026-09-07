@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { HiBars3, HiXMark } from "react-icons/hi2";
 import { motion } from "motion/react";
-import NewSearchBar from "./NewSearchBar";
+import SearchBar from "./SearchBar";
 import { Link, useHistory } from "react-router-dom";
 import { useFilterDispatch } from "../utils/FilterContext";
 
@@ -94,6 +94,17 @@ const StyledLink = styled.a`
   }
 `;
 
+const StyledNavLink = styled(Link)`
+  text-decoration: none;
+  color: #545454;
+  font-size: 16px;
+
+  &:hover {
+    color: #000000;
+    text-decoration: none;
+  }
+`;
+
 const Hamburger = styled.div`
   display: none;
   cursor: pointer;
@@ -159,7 +170,7 @@ const Header = () => {
           }}
           onClick={() => {
             if (window.location.pathname === "/") {
-              // Already home so clicking the logo clears filters rather than navigating nowhere
+              // Already home so clicking the logo clears filters
               dispatch({ type: "RESET" });
             } else {
               history.push("/");
@@ -174,11 +185,11 @@ const Header = () => {
           <Title>Penn Course Review</Title>
         </div>
         <SearchBarContainer>
-          <NewSearchBar isTitle={true} />
+          <SearchBar isTitle={true} />
         </SearchBarContainer>
         <LinksContainer>
-          <StyledLink href="/about">About</StyledLink>
-          <StyledLink href="/faq">FAQs</StyledLink>
+          <StyledNavLink to="/about">About</StyledNavLink>
+          <StyledNavLink to="/faq">FAQs</StyledNavLink>
           <StyledLink
             href="https://airtable.com/appFRa4NQvNMEbWsA/shrCCsGC2BjUif5Wx"
             target="_blank"
@@ -200,15 +211,15 @@ const Header = () => {
         variants={menuVariants}
       >
         <MobileLinksInner>
-          <StyledLink href="/about">About</StyledLink>
-          <StyledLink href="/faq">FAQs</StyledLink>
+          <StyledNavLink to="/about">About</StyledNavLink>
+          <StyledNavLink to="/faq">FAQs</StyledNavLink>
           <StyledLink
             href="https://airtable.com/appFRa4NQvNMEbWsA/shrCCsGC2BjUif5Wx"
             target="_blank"
           >
             Feedback
           </StyledLink>
-          <StyledLink href="/cart">Course Cart</StyledLink>
+          <StyledNavLink to="/cart">Course Cart</StyledNavLink>
         </MobileLinksInner>
       </MobileMenuWrapper>
     </>

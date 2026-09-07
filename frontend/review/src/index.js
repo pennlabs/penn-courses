@@ -8,15 +8,17 @@ import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import {
   AboutPage,
-  AuthPage,
   CartPage,
   ErrorPage,
   FAQPage,
+  ReviewPage,
 } from "./pages";
 import { GoogleAnalytics } from "./components/common";
-import TempAuthPage from "./pages/TempAuthPage";
+import TempAuthPage from "./pages/AuthPage";
 import { queryClient, persistOptions } from "./utils/queryClient";
 import { FilterProvider } from "./utils/FilterContext";
+import Header from "./components/Header";
+import BrowsePage from "./pages/BrowsePage";
 
 if (window.location.hostname !== "localhost") {
   window.Raven.config(
@@ -30,14 +32,27 @@ root.render(
   <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
     <FilterProvider>
       <Router>
+        <Header />
         <Switch>
-          <Route exact path="/" component={TempAuthPage} />
+          <Route exact path="/" component={
+            () => (
+              <TempAuthPage>
+                <BrowsePage />
+              </TempAuthPage>
+            )
+          } />
           <Route exact path="/about" component={AboutPage} />
           <Route exact path="/faq" component={FAQPage} />
           <Route exact path="/cart" component={CartPage} />
           <Route
             path="/:type(course|department|instructor)/:code/:semester?"
-            component={AuthPage}
+            component={
+              routeProps => (
+                <TempAuthPage forceRedirect={true}>
+                  <ReviewPage {...routeProps} />
+                </TempAuthPage>
+              )
+            }
           />
           <Route component={ErrorPage} />
         </Switch>

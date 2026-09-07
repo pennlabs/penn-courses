@@ -20,7 +20,8 @@ const STATIC_QUERY_OPTIONS = {
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1
+      retry: 1,
+      networkMode: "always"
     }
   }
 });

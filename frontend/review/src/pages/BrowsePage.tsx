@@ -128,7 +128,6 @@ const BrowsePage = () => {
 
   return (
     <PageWrapper>
-      <Header />
       <ContentView>
         <SidebarWrapper>
           <FilterCollapseBox

@@ -178,7 +178,8 @@ const CourseResultsTable = ({ filteredResults, isAverage, sentinelRef, isLoading
 
  return (
    <div className="course-results-table-container" style={{display: "flex", flexDirection: "column", gap: "12px", height: '100%'}}>
-     <div className="clearfix">
+    {/* Delayed to a future release when the other course attributes (TA quality, Amount Learned, etc.) are added to the aggregate API*/}
+     {/* <div className="clearfix">
        <ColumnSelector
          className="course-results-column-selector"
          buttonStyle="course-results-btn"
@@ -186,7 +187,7 @@ const CourseResultsTable = ({ filteredResults, isAverage, sentinelRef, isLoading
          columns={columns}
          onSelect={handleColumnSelect}
        />
-     </div>
+     </div> */}
      <div style={{ maxHeight: '100%', overflowY: "auto" }}>
        <ScoreTable
          className="course-results-table"

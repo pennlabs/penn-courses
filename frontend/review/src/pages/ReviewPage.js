@@ -3,14 +3,11 @@ import Cookies from "universal-cookie";
 import InfoBox from "../components/InfoBox";
 import ScoreBox from "../components/ScoreBox";
 import GraphBox from "../components/GraphBox";
-import Navbar from "../components/Navbar";
 import DetailsBox from "../components/DetailsBox";
-import SearchBar from "../components/SearchBar";
 import Footer from "../components/Footer";
 import { ErrorBox } from "../components/common";
 import { apiReviewData, apiLive, queryKeys } from "../utils/api";
 import { queryClient } from "../utils/queryClient";
-import Header from "../components/Header";
 
 /**
  * Represents a course, instructor, or department review page.
@@ -185,58 +182,10 @@ export class ReviewPage extends Component {
     if (this.state.error) {
       return (
         <div>
-          <Navbar />
           <ErrorBox detail={this.state.error_detail}>
             {this.state.error}
           </ErrorBox>
           <Footer />
-        </div>
-      );
-    }
-
-    if (!this.state.code) {
-      return (
-        <div id="content" className="row">
-          {this.state.showBanner && (
-            <div id="banner">
-              <span role="img" aria-label="Party Popper Emoji">
-                🎉
-              </span>{" "}
-              <b>Want to build impactful products like Penn Course Review?</b>{" "}
-              Join Penn Labs this spring! Apply{" "}
-              <a
-                href="https://pennlabs.org/apply"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                here
-              </a>
-              !{" "}
-              <span role="img" aria-label="Party Popper Emoji">
-                🎉
-              </span>
-              <span
-                className="close"
-                onClick={e => {
-                  this.setState({ showBanner: false });
-                  this.cookies.set("hide_pcr_banner", true, {
-                    expires: new Date(Date.now() + 12096e5)
-                  });
-                  e.preventDefault();
-                }}
-              >
-                <i className="fa fa-times" />
-              </span>
-            </div>
-          )}
-          <div className="col-md-12">
-            <div id="title">
-              <img src="/static/image/logo.png" alt="Penn Course Review" />{" "}
-              <span className="title-text">Penn Course Review</span>
-            </div>
-          </div>
-          <SearchBar isTitle />
-          <Footer style={{ marginTop: 150 }} />
         </div>
       );
     }
@@ -261,7 +210,6 @@ export class ReviewPage extends Component {
 
     return (
       <div>
-        <Header />
         {this.state.data ? (
           <>
             <div id="content" className="row">
