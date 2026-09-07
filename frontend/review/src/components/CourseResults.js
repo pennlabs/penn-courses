@@ -15,7 +15,7 @@ import {
     getActiveSemesterFilters,
     SEMESTER_FILTER_LABELS,
 } from '../utils/filters';
-import { AuthContext } from '../pages/TempAuthPage';
+import { AuthContext } from '../pages/AuthPage';
 
 const Container = styled.div`
     display: flex;
@@ -149,6 +149,10 @@ const InfoBanner = styled.div`
     color: ${props => props.$isError ? '#ff6b6e' : '#1A6FAF'};
     font-size: 14px;
     font-weight: 400;
+
+    @media (max-width: 1400px) {
+        flex-direction: column;
+    }
 `;
 
 const CourseResults = () => {
@@ -161,6 +165,7 @@ const CourseResults = () => {
         data: departments = [],
         isPending: isCatalogPending,
         isError: isCatalogError,
+        refetch: refetchCatalog,
     } = useQuery({
         queryKey: queryKeys.autocomplete,
         queryFn: apiAutocomplete,
@@ -185,6 +190,8 @@ const CourseResults = () => {
         isFetchingNextPage: isLoadingMore,
         fetchNextPage,
         hasNextPage: hasMore,
+        isError: isSearchError,
+        refetch: refetchSearch,
     } = useInfiniteQuery({
         queryKey: queryKeys.courseSearch(formattedFilters),
         queryFn: ({ pageParam }) => apiCourseSearch(formattedFilters, pageParam),
@@ -239,12 +246,23 @@ const CourseResults = () => {
                             />
                             <DescText>Loading search results...</DescText>
                         </SpecialPromptContainer>
+                    ) : isSearchError ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px', justifyContent: 'center', width: '100%' }}>
+                            <InfoBanner $isError={true} style={{ justifyContent: 'center' }}>
+                                <i className="fa fa-exclamation-circle" />
+                                <span>
+                                    Something went wrong while searching. Check your connection and{" "}
+                                    <LinkText onClick={() => refetchSearch()}>try again</LinkText>.
+                                </span>
+                            </InfoBanner>
+                        </div>
                     ) : (
                         Object.entries(filteredResults).length > 0 ? (
                             <>
                                 <SearchResultsHeader>
                                     <span>Showing <b>{Object.keys(filteredResults).length}</b> of <b>{totalCount}</b> Search Results ({activeFilterCount} filter{activeFilterCount !== 1 ? "s" : ""})</span>
-                                    <CustomDropdown
+                                    {/* Delayed to a later release when backend API is updated to show recent ratings in aggregate form */}
+                                    {/* <CustomDropdown
                                         style={{width: '180px', selfAlign: 'center'}}
                                         options={['Average Rating', 'Most Recent Rating']}
                                         value={recencyOption}
@@ -252,7 +270,7 @@ const CourseResults = () => {
                                             setRecencyOption(option);
                                             setIsAverage(option === 'Average Rating');
                                         }}
-                                    />
+                                    /> */}
                                 </SearchResultsHeader>
                                 {activeSemesterFilters.length > 0 && (
                                     <InfoBanner $isError={false}>
@@ -273,7 +291,7 @@ const CourseResults = () => {
                             </>
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '20px', justifyContent: 'center', width: '100%' }}>
-                                <InfoBanner $isError={true} style={{ justifyContent: 'center' }}>
+                                <InfoBanner $isError={false} style={{ justifyContent: 'center' }}>
                                     <i className="fa fa-info-circle" />
                                     <span>
                                        No results found! Try adjusting your filters.
@@ -298,13 +316,24 @@ const CourseResults = () => {
                     </SpecialPromptContainer>
                 )}
             </>
-        ) : (isCatalogPending || isCatalogError) ? (
+        ) : isCatalogPending ? (
             <SpecialPromptContainer>
                 <i
                     className="fa fa-spin fa-cog fa-fw"
                     style={{ fontSize: "100px", color: "#aaa" }}
                 />
                 <DescText>Loading course catalog...</DescText>
+            </SpecialPromptContainer>
+        ) : isCatalogError ? (
+            <SpecialPromptContainer>
+                <i
+                    className="fa fa-exclamation-circle"
+                    style={{ fontSize: "100px", color: "#aaa" }}
+                />
+                <DescText>
+                    Couldn't load the course catalog. Check your connection and{" "}
+                    <LinkText onClick={() => refetchCatalog()}>try again</LinkText>.
+                </DescText>
             </SpecialPromptContainer>
         ) : (
             <>

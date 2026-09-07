@@ -2,6 +2,7 @@ const API_DOMAIN = `${window.location.protocol}//${window.location.host}`;
 const API_TOKEN = "platform";
 
 export const queryKeys = {
+  checkAuth: ["checkAuth"],
   autocomplete: ["autocomplete"],
   attributes: ["attributes"],
   courseSearch: params => ["courseSearch", params],

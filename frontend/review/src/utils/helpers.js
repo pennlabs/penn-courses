@@ -58,8 +58,14 @@ export const getCartCourses = () =>
   Object.keys(localStorage)
     .filter(k => !k.startsWith("meta-"))
     .map(k => {
-      const out = JSON.parse(localStorage.getItem(k));
-      if (typeof out !== "object") {
+      let out;
+      try {
+        out = JSON.parse(localStorage.getItem(k));
+      } catch (e) {
+        // Not a cart entry (could be a key written by a browser extension), so ignore it.
+        return null;
+      }
+      if (typeof out !== "object" || out === null) {
         return null;
       }
       const typeDict = {};
