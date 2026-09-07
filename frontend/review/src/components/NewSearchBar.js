@@ -122,22 +122,17 @@ class SearchBar extends Component {
     this.processAutocompleteData();
   }
 
-  componentDidUpdate(prevProps) {
-    if (prevProps.autocompleteData !== this.props.autocompleteData) {
-      this.processAutocompleteData();
-    }
-  }
-
   async processAutocompleteData() {
-    let result;
-    if (this.props.loadDataIndependently) {
+    let result = null;
+    try {
       result = await queryClient.fetchQuery({
         queryKey: queryKeys.autocomplete,
         queryFn: apiAutocomplete,
       });
-    } else {
-      result = this.props.autocompleteData;
+    } catch (e) {
+      console.error("Failed to fetch autocomplete data:", e);
     }
+    
     if (result) {
       const courses = result.courses.map((i) => ({
         ...i,

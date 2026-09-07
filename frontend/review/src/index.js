@@ -16,6 +16,7 @@ import {
 import { GoogleAnalytics } from "./components/common";
 import TempAuthPage from "./pages/TempAuthPage";
 import { queryClient, persistOptions } from "./utils/queryClient";
+import { FilterProvider } from "./utils/FilterContext";
 
 if (window.location.hostname !== "localhost") {
   window.Raven.config(
@@ -27,20 +28,22 @@ const container = document.getElementById("root");
 const root = createRoot(container);
 root.render(
   <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
-    <Router>
-      <Switch>
-        <Route exact path="/" component={TempAuthPage} />
-        <Route exact path="/about" component={AboutPage} />
-        <Route exact path="/faq" component={FAQPage} />
-        <Route exact path="/cart" component={CartPage} />
-        <Route //delete route when done development?
-          path="/:type(course|department|instructor)/:code/:semester?"
-          component={AuthPage}
-        />
-        <Route component={ErrorPage} />
-      </Switch>
-      <GoogleAnalytics />
-    </Router>
-    <ReactQueryDevtools initialIsOpen={false} />
+    <FilterProvider>
+      <Router>
+        <Switch>
+          <Route exact path="/" component={TempAuthPage} />
+          <Route exact path="/about" component={AboutPage} />
+          <Route exact path="/faq" component={FAQPage} />
+          <Route exact path="/cart" component={CartPage} />
+          <Route
+            path="/:type(course|department|instructor)/:code/:semester?"
+            component={AuthPage}
+          />
+          <Route component={ErrorPage} />
+        </Switch>
+        <GoogleAnalytics />
+      </Router>
+    </FilterProvider>
+    <ReactQueryDevtools initialIsOpen={false} /> {/* Remove this line before prod*/}
   </PersistQueryClientProvider>
 );

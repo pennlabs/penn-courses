@@ -1,14 +1,20 @@
 import React, { useState, useEffect, useContext, useRef, useMemo } from 'react';
 import styled from 'styled-components';
-import { useInfiniteQuery, keepPreviousData } from '@tanstack/react-query';
-import { apiCourseSearch, queryKeys } from '../utils/api';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
+import { apiAutocomplete, apiCourseSearch, queryKeys } from '../utils/api';
 import ResponsivePagination from 'react-responsive-pagination';
 import 'react-responsive-pagination/themes/classic.css';
 import { FaLock } from "react-icons/fa";
 import { redirectForAuth } from '../utils/api';
 import CourseResultsTable from './CourseResultsTable';
 import CustomDropdown from './CustomDropdown';
-import { DEFAULT_FILTERS } from '../pages/BrowsePage';
+import { useFilterState, useFilterDispatch } from '../utils/FilterContext';
+import {
+    countActiveFilters,
+    formatFiltersForAPI,
+    getActiveSemesterFilters,
+    SEMESTER_FILTER_LABELS,
+} from '../utils/filters';
 import { AuthContext } from '../pages/TempAuthPage';
 
 const Container = styled.div`
@@ -145,75 +151,22 @@ const InfoBanner = styled.div`
     font-weight: 400;
 `;
 
-const numFiltersChanged = (filters) => {
-    let count = 0;
-    let onlySemesterChanged = true;
-    for(const [key, value] of Object.entries(filters)) {
-        if (Array.isArray(value)) {
-            const isDifferentArray = value.length !== DEFAULT_FILTERS[key].length || !value.every(v => DEFAULT_FILTERS[key].includes(v));
-            if (isDifferentArray) {
-                count++;
-                onlySemesterChanged = false;
-            }
-        } else {
-            if (value !== DEFAULT_FILTERS[key]) {
-                count++;
-                if (key !== 'semester') onlySemesterChanged = false;
-            }
-        }
-    }
-    if (onlySemesterChanged) {
-        return 0;
-    }
-    return count;
-}
-
-const SEMESTER_SPECIFIC_FILTERS = ['instructor_quality', 'days', 'time'];
-
-const getActiveSemesterFilters = (filters) => {
-    return SEMESTER_SPECIFIC_FILTERS.filter(key => !isDefault(key, filters[key]));
-};
-
-const SEMESTER_FILTER_LABELS = {
-    instructor_quality: 'Instructor Quality',
-    days: 'Days Offered',
-    time: 'Time Offered',
-};
-
-const isDefault = (key, value) => {
-    const def = DEFAULT_FILTERS[key];
-    if (Array.isArray(value)) {
-        return value.length === def.length && value.every(v => def.includes(v));
-    }
-    return value === def;
-};
-
-const formatFiltersForAPI = (filters) => {
-    const formatted = {};
-    for(const [key, value] of Object.entries(filters)) {
-        if (key === 'semester') {
-            formatted[key] = value === 'Any' ? "all" : "current";
-        } else if (isDefault(key, value)) {
-            continue;
-        } else if (key === 'difficulty' || key === 'course_quality' || key === 'instructor_quality') {
-            formatted[key] = `${value[0]}-${value[1]}`;
-        } else if (key === 'days') {
-            formatted[key] = value.join('');
-        } else if (key === 'time') {
-            formatted[key] = value;
-        } else if (key === 'attributes') {
-            formatted[key] = value.join('|');
-        } else if (key === 'departments') {
-            formatted[key] = value.join('|');
-        }
-    }
-    return formatted;
-}
-
-const CourseResults = ({ filters, setFilters, autocompleteData }) => {
+const CourseResults = () => {
     const [subjectSlice, setSubjectSlice] = useState({ start: 0, end: 101 });
 
-    const departments = autocompleteData?.departments || [];
+    const filters = useFilterState();
+    const dispatch = useFilterDispatch();
+
+    const {
+        data: departments = [],
+        isPending: isCatalogPending,
+        isError: isCatalogError,
+    } = useQuery({
+        queryKey: queryKeys.autocomplete,
+        queryFn: apiAutocomplete,
+        select: data => data.departments,
+    });
+
     const [isAverage, setIsAverage] = useState(true);
     const sentinelRef = useRef(null);
 
@@ -221,13 +174,14 @@ const CourseResults = ({ filters, setFilters, autocompleteData }) => {
 
     const isAuth = useContext(AuthContext);
 
-    const isActivelyFiltering = numFiltersChanged(filters) > 0;
+    const activeFilterCount = useMemo(() => countActiveFilters(filters), [filters]);
+    const activeSemesterFilters = useMemo(() => getActiveSemesterFilters(filters), [filters]);
+    const isActivelyFiltering = activeFilterCount > 0;
     const formattedFilters = useMemo(() => formatFiltersForAPI(filters), [filters]);
 
     const {
         data: searchData,
         isLoading,
-        isPlaceholderData,
         isFetchingNextPage: isLoadingMore,
         fetchNextPage,
         hasNextPage: hasMore,
@@ -237,14 +191,8 @@ const CourseResults = ({ filters, setFilters, autocompleteData }) => {
         initialPageParam: 1,
         getNextPageParam: (lastPage, allPages) => (lastPage.next ? allPages.length + 1 : undefined),
         enabled: isActivelyFiltering,
-        // Lets an already-cached filter combo render instantly (no key change means
-        // no placeholder involved at all). For an uncached combo, isPlaceholderData
-        // below is what tells us the current data still belongs to the old filters,
-        // so we can show the loading state instead of stale results.
-        placeholderData: keepPreviousData,
     });
 
-    const isShowingStaleResults = isLoading || isPlaceholderData;
 
     const filteredResults = useMemo(() => {
         if (!isActivelyFiltering) return null;
@@ -262,9 +210,7 @@ const CourseResults = ({ filters, setFilters, autocompleteData }) => {
     // Infinite scroll — sentinel is inside the table's scroll area
     useEffect(() => {
         const sentinel = sentinelRef.current;
-        // Skip while isPlaceholderData is true: hasMore/fetchNextPage would still be
-        // reflecting the previous filters' pagination state, not the new query's.
-        if (!sentinel || !hasMore || isPlaceholderData) return;
+        if (!sentinel || !hasMore || isLoading) return;
 
         const observer = new IntersectionObserver(
             (entries) => {
@@ -277,7 +223,7 @@ const CourseResults = ({ filters, setFilters, autocompleteData }) => {
 
         observer.observe(sentinel);
         return () => observer.disconnect();
-    }, [hasMore, isLoadingMore, fetchNextPage, isPlaceholderData]);
+    }, [hasMore, isLoadingMore, fetchNextPage, isLoading]);
 
     return (
         <Container>
@@ -285,7 +231,7 @@ const CourseResults = ({ filters, setFilters, autocompleteData }) => {
             <>
                 {isAuth ? (
                     <>
-                    {isShowingStaleResults ? (
+                    {isLoading ? (
                         <SpecialPromptContainer>
                             <i
                                 className="fa fa-spin fa-cog fa-fw"
@@ -297,7 +243,7 @@ const CourseResults = ({ filters, setFilters, autocompleteData }) => {
                         Object.entries(filteredResults).length > 0 ? (
                             <>
                                 <SearchResultsHeader>
-                                    <span>Showing <b>{Object.keys(filteredResults).length}</b> of <b>{totalCount}</b> Search Results ({numFiltersChanged(filters)} filter{numFiltersChanged(filters) !== 1 ? "s" : ""})</span>
+                                    <span>Showing <b>{Object.keys(filteredResults).length}</b> of <b>{totalCount}</b> Search Results ({activeFilterCount} filter{activeFilterCount !== 1 ? "s" : ""})</span>
                                     <CustomDropdown
                                         style={{width: '180px', selfAlign: 'center'}}
                                         options={['Average Rating', 'Most Recent Rating']}
@@ -308,11 +254,11 @@ const CourseResults = ({ filters, setFilters, autocompleteData }) => {
                                         }}
                                     />
                                 </SearchResultsHeader>
-                                {getActiveSemesterFilters(filters).length > 0 && (
+                                {activeSemesterFilters.length > 0 && (
                                     <InfoBanner $isError={false}>
                                         <i className="fa fa-info-circle" />
                                         <span>
-                                            Filtering by {getActiveSemesterFilters(filters).map(k => SEMESTER_FILTER_LABELS[k]).join(', ')} — results limited to current semester offerings.
+                                            Filtering by {activeSemesterFilters.map(k => SEMESTER_FILTER_LABELS[k]).join(', ')} — results limited to current semester offerings.
                                         </span>
                                     </InfoBanner>
                                 )}
@@ -352,7 +298,7 @@ const CourseResults = ({ filters, setFilters, autocompleteData }) => {
                     </SpecialPromptContainer>
                 )}
             </>
-        ) : !autocompleteData ? (
+        ) : (isCatalogPending || isCatalogError) ? (
             <SpecialPromptContainer>
                 <i
                     className="fa fa-spin fa-cog fa-fw"
@@ -370,7 +316,14 @@ const CourseResults = ({ filters, setFilters, autocompleteData }) => {
                             <SubjectCard key={index}>
                                 <div style={{ width: '60px', flexShrink: 0 }}>
                                     <LinkText onClick={() => {
-                                        setFilters({ ...filters, departments: [...filters.departments, dept.title] });
+                                        dispatch({
+                                            type: 'SET_DEPARTMENTS',
+                                            // Guard against double-adding when the same
+                                            // subject card is clicked twice.
+                                            payload: filters.departments.includes(dept.title)
+                                                ? filters.departments
+                                                : [...filters.departments, dept.title],
+                                        });
                                     }}>{dept.title}</LinkText>
                                 </div>
                                 <DescText>{dept.desc}</DescText>
