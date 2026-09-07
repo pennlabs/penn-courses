@@ -8,6 +8,7 @@ import Footer from "../components/Footer";
 import { ErrorBox } from "../components/common";
 import { apiReviewData, apiLive, queryKeys } from "../utils/api";
 import { queryClient } from "../utils/queryClient";
+import { scrollBehavior } from "../utils/helpers";
 
 /**
  * Represents a course, instructor, or department review page.
@@ -163,7 +164,7 @@ export class ReviewPage extends Component {
     this.setState({ rowCode: nextCode }, () => {
       if (nextCode) {
         window.scrollTo({
-          behavior: "smooth",
+          behavior: scrollBehavior(),
           top: this.tableRef.current.offsetTop
         });
       }

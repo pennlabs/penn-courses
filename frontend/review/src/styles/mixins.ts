@@ -1,6 +1,19 @@
 import { css } from "styled-components";
 
 /* Certain style patterns used to be copy-pasted everywhere. This file consolidates them into reusable blocks */
+
+/* Every interactive surface in the app used to snap between hover states. Properties are
+   listed out rather than using `transition: all`, which would sweep up layout properties
+   and reintroduce the per-frame reflows this refactor removed. */
+export const interactiveTransition = css`
+  transition: background-color ${({ theme }) => theme.motion.duration.fast}
+      ${({ theme }) => theme.motion.ease.standard},
+    color ${({ theme }) => theme.motion.duration.fast}
+      ${({ theme }) => theme.motion.ease.standard},
+    border-color ${({ theme }) => theme.motion.duration.fast}
+      ${({ theme }) => theme.motion.ease.standard};
+`;
+
 export const pill = css<{ $isSelected?: boolean }>`
   display: flex;
   align-items: center;
@@ -10,6 +23,7 @@ export const pill = css<{ $isSelected?: boolean }>`
   font-family: ${({ theme }) => theme.font.family.sans};
   font-size: ${({ theme }) => theme.font.size.md};
   cursor: pointer;
+  ${interactiveTransition}
   background: ${({ theme, $isSelected }) =>
     $isSelected ? theme.color.surface.selected : theme.color.surface.page};
   color: ${({ theme, $isSelected }) =>
@@ -49,6 +63,7 @@ export const linkStyles = css`
   text-decoration: none;
   color: ${({ theme }) => theme.color.text.primary};
   font-size: ${({ theme }) => theme.font.size.xl};
+  ${interactiveTransition}
 
   &:hover {
     color: ${({ theme }) => theme.color.text.black};

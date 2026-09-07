@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import styled, { css } from 'styled-components';
 import { SlArrowDown } from "react-icons/sl";
 import { useOnClickOutside } from './SelectBox';
+import { interactiveTransition } from '../styles/mixins';
 
 const DropdownWrapper = styled.div`
     position: relative;
@@ -24,6 +25,7 @@ const SearchSortDropdown = styled.div`
     font-size: 12px;
     font-family: ${({ theme }) => theme.font.family.sans};
     font-weight: ${({ theme }) => theme.font.weight.light};
+    ${interactiveTransition}
 
     &:hover {
         background: ${({ theme }) => theme.color.surface.hover};

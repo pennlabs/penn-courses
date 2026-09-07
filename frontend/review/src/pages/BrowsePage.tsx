@@ -8,10 +8,11 @@ import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { IoMdOptions } from "react-icons/io";
 import { BiHide } from "react-icons/bi";
-import { AnimatePresence, motion } from "motion/react";
+import Collapse from "../components/common/Collapse";
 import { useFilterState, useFilterDispatch } from "../utils/FilterContext";
 import { getFilteredURL, loadStateFromURL } from "../utils/filters";
 import { maxWidth, isBelow } from "../styles/media";
+import { interactiveTransition } from "../styles/mixins";
 
 /*
    The Browse Page is the entry point of the app. The filters live in FilterContext
@@ -82,6 +83,8 @@ const FilterCollapseBox = styled.div`
   background: ${({ theme }) => theme.color.surface.page};
   margin-bottom: 12px;
 
+  ${interactiveTransition}
+
   &:hover {
     background: ${({ theme }) => theme.color.surface.subtle};
   }
@@ -132,10 +135,7 @@ const BrowsePage = () => {
     <PageWrapper>
       <ContentView>
         <SidebarWrapper>
-          <FilterCollapseBox
-            style={{ marginBottom: filtersCollapsed ? "-6px" : "12px" }}
-            onClick={() => setFiltersCollapsed(!filtersCollapsed)}
-          >
+          <FilterCollapseBox onClick={() => setFiltersCollapsed(!filtersCollapsed)}>
             {filtersCollapsed ? (
               <>
                 <span>Show Filters</span>
@@ -148,20 +148,9 @@ const BrowsePage = () => {
               </>
             )}
           </FilterCollapseBox>
-          <AnimatePresence initial={false}>
-            {!filtersCollapsed && (
-              <motion.div
-                key="filter-box"
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3, ease: [0.04, 0.62, 0.23, 0.98] }}
-                style={{ overflow: "hidden" }}
-              >
-                <FilterBox />
-              </motion.div>
-            )}
-          </AnimatePresence>
+          <Collapse open={!filtersCollapsed}>
+            <FilterBox />
+          </Collapse>
         </SidebarWrapper>
         <CourseResultsWrapper>
           <CourseResults />

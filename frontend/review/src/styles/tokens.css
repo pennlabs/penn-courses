@@ -95,4 +95,46 @@
   --pcr-size-sidebar-width: 330px;
   --pcr-size-filter-widget-max: 400px;
   --pcr-size-control-height: 29px;
+
+  /* Motion
+   * `emphasized` is the curve the redesign already used for every expand/collapse;
+   * it lived as a hand-copied [0.04, 0.62, 0.23, 0.98] array in three files. */
+  --pcr-motion-duration-fast: 120ms;
+  --pcr-motion-duration-md: 240ms;
+  --pcr-motion-duration-slow: 320ms;
+  --pcr-motion-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --pcr-motion-ease-emphasized: cubic-bezier(0.04, 0.62, 0.23, 0.98);
+}
+
+/* Registered so it can be transitioned. SelectBox drives the height of the slot it
+ * reserves for its search bar and the offset of the floating panel from this single
+ * value, which keeps the two in lockstep no matter what the durations are. */
+@property --pcr-select-slot-h {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --pcr-motion-duration-fast: 0.01ms;
+    --pcr-motion-duration-md: 0.01ms;
+    --pcr-motion-duration-slow: 0.01ms;
+  }
+
+  /* Catches vendor CSS we don't author: general.css's Bootstrap transitions,
+   * react-range-slider-input, react-select. `.fa-spin` is deliberately exempt --
+   * the usual blanket `animation-iteration-count: 1` freezes every loading spinner
+   * in the app mid-rotation, which is worse than the motion it removes. */
+  *:not(.fa-spin),
+  *:not(.fa-spin)::before,
+  *:not(.fa-spin)::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  html {
+    scroll-behavior: auto !important;
+  }
 }

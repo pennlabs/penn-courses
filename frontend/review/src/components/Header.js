@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { HiBars3, HiXMark } from "react-icons/hi2";
-import { motion } from "motion/react";
+import Collapse from "./common/Collapse";
 import SearchBar from "./SearchBar";
 import { Link, useHistory } from "react-router-dom";
 import { useFilterDispatch } from "../utils/FilterContext";
@@ -50,7 +50,7 @@ const SearchBarContainer = styled.div`
   }
 `;
 
-const LinksContainer = styled(motion.div)`
+const LinksContainer = styled.div`
   display: flex;
   margin-left: auto;
   margin-right: 30px;
@@ -63,18 +63,16 @@ const LinksContainer = styled(motion.div)`
   }
 `;
 
-const MobileMenuWrapper = styled(motion.div)`
-  overflow: hidden;
+const MobileMenuWrapper = styled(Collapse)`
   width: 100%;
   background: ${({ theme }) => theme.color.surface.subtle};
 
   ${minWidth("xl")} {
-    visibility: hidden !important; /* Hide mobile menu on desktop */
-    height: 0 !important;
+    display: none; /* Hide mobile menu on desktop */
   }
 `;
 
-const MobileLinksInner = styled(motion.div)`
+const MobileLinksInner = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -109,22 +107,6 @@ const Hamburger = styled.div`
     align-items: center;
   }
 `;
-
-const menuVariants = {
-  open: {
-    height: "auto",
-    opacity: 1,
-    transition: { type: "spring", stiffness: 300, damping: 30 },
-  },
-  closed: {
-    height: 0,
-    opacity: 0,
-    transition: {
-      height: { type: "spring", stiffness: 300, damping: 30 },
-      opacity: { duration: 0.2 },
-    },
-  },
-};
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -195,11 +177,7 @@ const Header = () => {
           {isOpen ? <HiXMark /> : <HiBars3 />}
         </Hamburger>
       </HeaderContainer>
-      <MobileMenuWrapper
-        initial={false}
-        animate={isOpen ? "open" : "closed"}
-        variants={menuVariants}
-      >
+      <MobileMenuWrapper open={isOpen}>
         <MobileLinksInner>
           <StyledNavLink to="/about">About</StyledNavLink>
           <StyledNavLink to="/faq">FAQs</StyledNavLink>
