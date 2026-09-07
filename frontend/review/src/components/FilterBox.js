@@ -1,7 +1,8 @@
 import styled, { css } from 'styled-components';
 import { SlArrowRight } from "react-icons/sl";
 import { useState } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
+import Collapse from './common/Collapse';
+import { interactiveTransition } from '../styles/mixins';
 import SelectBox from './SelectBox';
 import DaySelect from './DaySelect';
 import SemesterSelect from './SemesterSelect';
@@ -62,6 +63,20 @@ const FilterDropdownContainer = styled.div`
     color: ${({ theme }) => theme.color.text.secondary}
 `;
 
+// Rotation is a transform, so this is the one animation here the compositor can run
+// without touching layout.
+const Chevron = styled.span`
+    display: flex;
+    align-items: center;
+    transform: rotate(0deg);
+    transition: transform ${({ theme }) => theme.motion.duration.md}
+        ${({ theme }) => theme.motion.ease.emphasized};
+
+    ${props => props.$isOpen && css`
+        transform: rotate(90deg);
+    `}
+`;
+
 const ResetButton = styled.button`
     all: unset;
     display: flex;
@@ -76,6 +91,7 @@ const ResetButton = styled.button`
     font-size: 13px;
     font-weight: ${({ theme }) => theme.font.weight.regular};
     cursor: pointer;
+    ${interactiveTransition}
 
     &:hover {
         background: ${({ theme }) => theme.color.surface.hover};
@@ -94,29 +110,18 @@ const FilterDropdown = ({ title, renderContent, active }) => {
                     {active && (
                         <div style={{ width: '6px', height: '6px', borderRadius: '3px', backgroundColor: 'var(--pcr-color-text-secondary)', display: 'inline-block', marginLeft: '6px' }} />
                     )} 
-                    <motion.div animate={{ rotate: isOpen ? 90 : 0, display: 'flex', alignItems: 'center' }}>
+                    <Chevron $isOpen={isOpen}>
                         <SlArrowRight size={15} color="var(--pcr-color-text-secondary)" />
-                    </motion.div>
+                    </Chevron>
                 </div>
-                
+
             </FilterDropdownContainer>
 
-            <AnimatePresence initial={false}>
-                {isOpen && (
-                    <motion.div
-                        key="content"
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.3, ease: [0.04, 0.62, 0.23, 0.98] }}
-                        style={{ overflow: 'hidden' }}
-                    >
-                        <div style={{ paddingBottom: '12px' }}>
-                            {renderContent()}
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+            <Collapse open={isOpen}>
+                <div style={{ paddingBottom: '12px' }}>
+                    {renderContent()}
+                </div>
+            </Collapse>
         </DropdownWrapper>
     );
 }

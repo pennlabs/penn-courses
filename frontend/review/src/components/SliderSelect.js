@@ -40,13 +40,13 @@ const Container = styled.div`
         border-radius: 50%;
         background: ${({ theme }) => theme.color.surface.page};
         border: 2px solid ${({ theme }) => theme.color.border.strong};
-        transition: transform 0.1s;
-        transform: scale(1);
-        transform: translate(0%, -10%);
+        transition: transform ${({ theme }) => theme.motion.duration.fast}
+            ${({ theme }) => theme.motion.ease.standard};
+        transform: translate(0%, -10%) scale(1);
     }
 
     .range-slider__thumb[data-active]::after {
-        transform: scale(1.2) translate(0%, -10%);
+        transform: translate(0%, -10%) scale(1.2);
     }
 
 `;

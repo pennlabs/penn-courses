@@ -3,6 +3,15 @@ import { DEFAULT_COLUMNS } from "../constants";
 export const capitalize = str =>
   str.replace(/(?:^|\s)\S/g, e => e.toUpperCase());
 
+// `scroll-behavior: auto` in a prefers-reduced-motion media query does NOT override an
+// explicit `behavior: "smooth"` passed to scrollIntoView/scrollTo, so JS call sites have
+// to check the preference themselves.
+export const prefersReducedMotion = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+export const scrollBehavior = () => (prefersReducedMotion() ? "auto" : "smooth");
+
 export function orderColumns(cols) {
   const colSet = new Set(cols);
   const fixedCols = [

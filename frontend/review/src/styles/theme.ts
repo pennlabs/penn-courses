@@ -98,6 +98,18 @@ export const theme = {
     filterWidgetMax: "var(--pcr-size-filter-widget-max)",
     controlHeight: "var(--pcr-size-control-height)",
   },
+
+  motion: {
+    duration: {
+      fast: "var(--pcr-motion-duration-fast)",
+      md: "var(--pcr-motion-duration-md)",
+      slow: "var(--pcr-motion-duration-slow)",
+    },
+    ease: {
+      standard: "var(--pcr-motion-ease-standard)",
+      emphasized: "var(--pcr-motion-ease-emphasized)",
+    },
+  },
 };
 
 export type Theme = typeof theme;

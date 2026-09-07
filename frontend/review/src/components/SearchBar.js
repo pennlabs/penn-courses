@@ -376,7 +376,7 @@ class SearchBar extends Component {
             menu: (base) => ({
               ...base,
               borderRadius: 8,
-              border: "1px solid ${({ theme }) => theme.color.border.default}",
+              border: "1px solid var(--pcr-color-border-default)",
               boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
               marginTop: 4,
               overflow: "hidden",
