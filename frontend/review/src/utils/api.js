@@ -1,8 +1,6 @@
 const API_DOMAIN = `${window.location.protocol}//${window.location.host}`;
 const API_TOKEN = "platform";
 
-// Centralized query key factory — every resource fetched below has a
-// corresponding key here so components/queryClient.js never hand-roll keys.
 export const queryKeys = {
   autocomplete: ["autocomplete"],
   attributes: ["attributes"],

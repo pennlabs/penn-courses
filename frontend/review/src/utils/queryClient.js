@@ -11,9 +11,7 @@ const decompressAutocomplete = autocompleteWorkerInstance.decompress;
 // every non-"meta-" localStorage key as a cart item) ignores this entry.
 const PERSIST_STORAGE_KEY = "meta-pcr-query-cache";
 
-// The autocomplete/attributes dumps are large, rarely change, and are
-// already served warm by the persister below, so there's no reason for a
-// mounted component to treat them as stale and refetch mid-session.
+// The autocomplete/attributes dumps are large, rarely change
 const STATIC_QUERY_OPTIONS = {
   staleTime: 1000 * 60 * 60, // 1 hour
   gcTime: 1000 * 60 * 60 * 24 // 24 hours
@@ -67,8 +65,7 @@ export const persistOptions = {
   maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
   dehydrateOptions: {
     // Only autocomplete/attributes are large + slow-changing enough to be
-    // worth persisting to localStorage; every other query (course search
-    // results, review data, etc.) stays strictly in-memory.
+    // worth persisting to localStorage
     shouldDehydrateQuery: query => {
       const [rootKey] = query.queryKey;
       return (

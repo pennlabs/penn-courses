@@ -1,4 +1,3 @@
-import React, { useEffect } from 'react';
 import styled from 'styled-components';
 import { SlArrowRight } from "react-icons/sl";
 import { useState } from 'react';
@@ -9,8 +8,9 @@ import SemesterSelect from './SemesterSelect';
 import SliderSelect from './SliderSelect';
 import TimeSelect from './TimeSelect';
 import { useQuery } from '@tanstack/react-query';
-import { apiAttributes, queryKeys } from '../utils/api';
-import { DEFAULT_FILTERS } from '../pages/BrowsePage';
+import { apiAttributes, apiAutocomplete, queryKeys } from '../utils/api';
+import { useFilterState, useFilterDispatch } from '../utils/FilterContext';
+import { isFilterDefault } from '../utils/filters';
 
 const Container = styled.div`
     display: flex;
@@ -121,75 +121,70 @@ const FilterDropdown = ({ title, renderContent, active }) => {
     );
 }
 
-const FilterBox = ({ filters, setFilters, autocompleteData }) => {
-    const [departments, setDepartments] = useState([]);
+const FilterBox = () => {
+    const filters = useFilterState();
+    const dispatch = useFilterDispatch();
+
     const { data: attributes = [] } = useQuery({
         queryKey: queryKeys.attributes,
         queryFn: apiAttributes,
     });
 
-    useEffect(() => {
-        if (autocompleteData) {
-            setDepartments(autocompleteData.departments.map(dept => dept.title));
-        }
-    }, [autocompleteData]);
+    const { data: departments = [] } = useQuery({
+        queryKey: queryKeys.autocomplete,
+        queryFn: apiAutocomplete,
+        select: data => data.departments.map(dept => dept.title),
+    });
 
-    const filterHasChanged = (filterName) => {
-        const currFilter = filters[filterName];
-        if (Array.isArray(currFilter)) {
-            return currFilter.length !== DEFAULT_FILTERS[filterName].length || !currFilter.every(v => DEFAULT_FILTERS[filterName].includes(v));
-        } else {
-            return currFilter !== DEFAULT_FILTERS[filterName]
-        }
-    }
+    const filterHasChanged = (filterName) => !isFilterDefault(filterName, filters[filterName]);
 
     return (
         <>
             <Container>
                 <FilterContainer>
                     <FilterDropdown title="Semester Offered" active={filterHasChanged("semester")} renderContent={() => (
-                        <SemesterSelect semesterList={filters.semester} setSemesterList={(semester) => setFilters({ ...filters, semester })} />
+                        <SemesterSelect semesterList={filters.semester} setSemesterList={(payload) => dispatch({ type: 'SET_SEMESTER', payload })} />
                     )} />
                     <FilterDropdown title="Department" active={filterHasChanged("departments")} renderContent={() => (
-                        <SelectBox 
-                            options={filters.departments} 
-                            setOptions={(departments) => setFilters({ ...filters, departments })} 
-                            availableItems={departments} 
+                        <SelectBox
+                            options={filters.departments}
+                            setOptions={(payload) => dispatch({ type: 'SET_DEPARTMENTS', payload })}
+                            availableItems={departments}
                         />
                     )} />
                     <FilterDropdown title="Attributes" active={filterHasChanged("attributes")} renderContent={() => (
-                        <SelectBox 
-                            options={filters.attributes} 
-                            setOptions={(attributes) => setFilters({ ...filters, attributes })} 
-                            availableItems={attributes} 
+                        <SelectBox
+                            options={filters.attributes}
+                            setOptions={(payload) => dispatch({ type: 'SET_ATTRIBUTES', payload })}
+                            availableItems={attributes}
                         />
                     )} />
                     <FilterDropdown title="Time Offered" active={filterHasChanged("time")} renderContent={() => (
-                        <TimeSelect timeString={filters.time} setTimeString={(time) => setFilters({ ...filters, time })} diameter={200} />
+                        <TimeSelect timeString={filters.time} setTimeString={(payload) => dispatch({ type: 'SET_TIME', payload })} diameter={200} />
                     )} />
                     <FilterDropdown title="Days Offered" active={filterHasChanged("days")} renderContent={() => (
-                        <DaySelect daysOfferedList={filters.days} setDaysOfferedList={(days) => setFilters({ ...filters, days })} />
+                        <DaySelect daysOfferedList={filters.days} setDaysOfferedList={(payload) => dispatch({ type: 'SET_DAYS', payload })} />
                     )} />
                     <FilterDropdown title="Course Quality" active={filterHasChanged("course_quality")} renderContent={() => (
-                        <SliderSelect 
-                            ratingValues={filters.course_quality} 
-                            setRatingValues={(course_quality) => setFilters({ ...filters, course_quality })} 
+                        <SliderSelect
+                            ratingValues={filters.course_quality}
+                            setRatingValues={(payload) => dispatch({ type: 'SET_COURSE_QUALITY', payload })}
                             rangeDescription={{ min: "Poor", max: "Excellent"}}/>
                     )} />
                     <FilterDropdown title="Course Difficulty" active={filterHasChanged("difficulty")} renderContent={() => (
-                        <SliderSelect 
-                            ratingValues={filters.difficulty} 
-                            setRatingValues={(difficulty) => setFilters({ ...filters, difficulty })} 
+                        <SliderSelect
+                            ratingValues={filters.difficulty}
+                            setRatingValues={(payload) => dispatch({ type: 'SET_DIFFICULTY', payload })}
                             rangeDescription={{ min: "Easy", max: "Hard"}}/>
                     )} />
                     <FilterDropdown title="Instructor Quality" active={filterHasChanged("instructor_quality")} renderContent={() => (
-                        <SliderSelect 
-                            ratingValues={filters.instructor_quality} 
-                            setRatingValues={(instructor_quality) => setFilters({ ...filters, instructor_quality })} 
+                        <SliderSelect
+                            ratingValues={filters.instructor_quality}
+                            setRatingValues={(payload) => dispatch({ type: 'SET_INSTRUCTOR_QUALITY', payload })}
                             rangeDescription={{ min: "Poor", max: "Excellent"}}/>
                     )} />
                 </FilterContainer>
-                <ResetButton onClick={() => setFilters(DEFAULT_FILTERS)}>Reset Filters</ResetButton>
+                <ResetButton onClick={() => dispatch({ type: 'RESET' })}>Reset Filters</ResetButton>
             </Container>
         </>
     );
