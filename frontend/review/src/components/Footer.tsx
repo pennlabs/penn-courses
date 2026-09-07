@@ -7,7 +7,7 @@ const Footer = ({ style } : { style?: React.CSSProperties }) => (
   <div style={style} id="footer">
     <div id="footer-inner">
       <p id="copyright">
-        Made with <i style={{ color: "#F56F71" }} className="fa fa-heart" /> by{" "}
+        Made with <i style={{ color: "var(--pcr-color-feedback-error-accent)" }} className="fa fa-heart" /> by{" "}
         <a href="https://pennlabs.org">
           <strong>Penn Labs</strong>
         </a>{" "}

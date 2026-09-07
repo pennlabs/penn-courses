@@ -13,12 +13,12 @@ const Container = styled.div`
 const SearchBox = styled.input`
     all: unset;
     width: 80%;
-    max-width: 400px;
+    max-width: ${({ theme }) => theme.size.filterWidgetMax};
     padding: 6px 11px;
     border-radius: 8px;
-    border: 2px solid #aeaeb8;
+    border: 2px solid ${({ theme }) => theme.color.border.input};
     font-size: 14px;
-    color: #000;
+    color: ${({ theme }) => theme.color.text.black};
 `;
 
 const SearchButton = styled.button`
@@ -29,13 +29,13 @@ const SearchButton = styled.button`
     justify-content: center;
     align-items: center;
     border-radius: 10px;
-    background: #3E3E40;
-    color: #FFFFFF;
+    background: ${({ theme }) => theme.color.surface.selected};
+    color: ${({ theme }) => theme.color.text.inverse};
     font-size: 14px;
     cursor: pointer;
 
     &:hover {
-        background: #5E5E60;
+        background: ${({ theme }) => theme.color.surface.selectedHover};
     }
 `;
 

@@ -1,5 +1,5 @@
 import React from "react";
-import styled from "styled-components";
+import styled, { css } from "styled-components";
 
 const Container = styled.div`
     display: flex;
@@ -7,7 +7,7 @@ const Container = styled.div`
     justify-content: space-between;
     align-items: center;
     align-self: stretch;
-    max-width: 400px;
+    max-width: ${({ theme }) => theme.size.filterWidgetMax};
 `;
 
 const DayOption = styled.div`
@@ -19,18 +19,18 @@ const DayOption = styled.div`
     justify-content: center;
     align-items: center;
     border-radius: 100%;
-    border: 2px solid #D9D9D9;
-    background: #FFF;
+    border: 2px solid ${({ theme }) => theme.color.border.strong};
+    background: ${({ theme }) => theme.color.surface.page};
     font-size: 13px;
     cursor: pointer;
 
-    ${props => (props.$isSelected) && `
-        background: #3E3E40;
-        color: #FFF;
+    ${props => (props.$isSelected) && css`
+        background: ${({ theme }) => theme.color.surface.selected};
+        color: ${({ theme }) => theme.color.text.inverse};
     `};
 
     &:hover {
-        border-color: #3E3E40;
+        border-color: ${({ theme }) => theme.color.border.selected};
     }
 `;
 

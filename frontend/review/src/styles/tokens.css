@@ -1,0 +1,98 @@
+/* File containing all standardized design tokens */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("./fonts/Inter-Variable.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  /* Text
+   * `strong` is the dark used for selected states and emphasis; `legacy` is the
+   * body grey the pre-redesign pages use. */
+  --pcr-color-text-primary: #545454;
+  --pcr-color-text-secondary: #6d6f71;
+  --pcr-color-text-muted: #a1a1a1;
+  --pcr-color-text-subtle: #b2b2b2;
+  --pcr-color-text-faint: #c6c6c6;
+  --pcr-color-text-dim: #8c8c8c;
+  --pcr-color-text-strong: #3e3e40;
+  --pcr-color-text-heading: #1a1d21;
+  --pcr-color-text-legacy: #4a4a4a;
+  --pcr-color-text-inverse: #ffffff;
+  --pcr-color-text-black: #000000;
+  --pcr-color-text-link: #1895e6;
+  --pcr-color-text-link-hover: #0f75b9;
+
+  /* Surfaces */
+  --pcr-color-surface-page: #ffffff;
+  --pcr-color-surface-card: #ffffff;
+  --pcr-color-surface-subtle: #f7f9fb;
+  --pcr-color-surface-muted: #eff1f5;
+  --pcr-color-surface-hover: #e1e4e8;
+  --pcr-color-surface-selected: #3e3e40;
+  --pcr-color-surface-selected-hover: #5e5e60;
+  --pcr-color-surface-disabled: #c6c6c6;
+
+  /* Borders */
+  --pcr-color-border-default: #ebeef2;
+  --pcr-color-border-strong: #d9d9d9;
+  --pcr-color-border-divider: #ededed;
+  --pcr-color-border-muted: #e0e0e0;
+  --pcr-color-border-input: #aeaeb8;
+  --pcr-color-border-focus: #1895e6;
+  --pcr-color-border-selected: #3e3e40;
+
+  /* Accent */
+  --pcr-color-accent-default: #1895e6;
+  --pcr-color-accent-hover: #0f75b9;
+  --pcr-color-accent-subtle: #ebf5ff;
+  --pcr-color-accent-subtle-border: #b3d7f5;
+
+  /* Feedback */
+  --pcr-color-feedback-error-fg: #e53935;
+  --pcr-color-feedback-error-bg: #ffebee;
+  --pcr-color-feedback-error-border: #f5b3b3;
+  --pcr-color-feedback-error-accent: #ff6b6e;
+
+  /* Type.
+   * Only 400 and 700 were reachable before, because SF Pro was loaded as two
+   * static faces. Inter is variable, so the whole scale is available. */
+  --pcr-font-family-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, Helvetica, Arial, sans-serif;
+  --pcr-font-size-xs: 12px;
+  --pcr-font-size-sm: 13px;
+  --pcr-font-size-md: 14px;
+  --pcr-font-size-lg: 15px;
+  --pcr-font-size-xl: 16px;
+  --pcr-font-size-2xl: 20px;
+  --pcr-font-size-3xl: 30px;
+  --pcr-font-size-4xl: 36px;
+  --pcr-font-weight-light: 300;
+  --pcr-font-weight-regular: 400;
+  --pcr-font-weight-medium: 500;
+  --pcr-font-weight-semibold: 600;
+  --pcr-font-weight-bold: 700;
+
+  /* Shape */
+  --pcr-radius-sm: 8px;
+  --pcr-radius-md: 10px;
+  --pcr-radius-lg: 12px;
+  --pcr-radius-pill: 999px;
+  --pcr-radius-circle: 50%;
+  --pcr-shadow-dropdown: 0 4px 6px rgba(0, 0, 0, 0.2);
+  --pcr-shadow-card: 0 0 14px 0 rgba(0, 0, 0, 0.07);
+
+  /* Layering */
+  --pcr-z-index-dropdown: 100;
+  --pcr-z-index-header: 1000;
+
+  /* Fixed layout sizes shared between components */
+  --pcr-size-sidebar-width: 330px;
+  --pcr-size-filter-widget-max: 400px;
+  --pcr-size-control-height: 29px;
+}

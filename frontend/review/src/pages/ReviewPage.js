@@ -271,7 +271,10 @@ export class ReviewPage extends Component {
           <div style={{ textAlign: "center", padding: 45 }}>
             <i
               className="fa fa-spin fa-cog fa-fw"
-              style={{ fontSize: "150px", color: "#aaa" }}
+              style={{
+                fontSize: "150px",
+                color: "var(--pcr-color-text-muted)"
+              }}
             />
             <h1 style={{ fontSize: "2em", marginTop: 15 }}>
               Loading {type === "instructor" ? "" : code}...

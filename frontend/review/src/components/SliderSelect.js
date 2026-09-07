@@ -13,14 +13,14 @@ const Container = styled.div`
 
     /* The main background track */
     .range-slider {
-        background: #EFF1F5; 
+        background: ${({ theme }) => theme.color.surface.muted}; 
         height: 6px;
         border-radius: 10px;
     }
 
     /* The filled-in colored part between the thumbs */
     .range-slider__range {
-        background: #3E3E40; 
+        background: ${({ theme }) => theme.color.surface.selected}; 
     }
 
     .range-slider__thumb {
@@ -38,8 +38,8 @@ const Container = styled.div`
         width: 100%;
         height: 100%;
         border-radius: 50%;
-        background: #FFFFFF;
-        border: 2px solid #D9D9D9;
+        background: ${({ theme }) => theme.color.surface.page};
+        border: 2px solid ${({ theme }) => theme.color.border.strong};
         transition: transform 0.1s;
         transform: scale(1);
         transform: translate(0%, -10%);
@@ -57,8 +57,8 @@ const RangeMarkers = styled.div`
     align-items: center;
     align-self: stretch;
     font-size: 12px;
-    font-family: 'SFPro', sans-serif;
-    font-weight: 700;
+    font-family: ${({ theme }) => theme.font.family.sans};
+    font-weight: ${({ theme }) => theme.font.weight.bold};
     margin: 15px 6% 0 6%;
 `;
 
@@ -83,7 +83,7 @@ const SliderSelect = ({ ratingValues, setRatingValues, rangeDescription }) => {
                 <div>3</div>
                 <div>4</div>
             </RangeMarkers>
-            <RangeMarkers style={{color: '#A1A1A1', marginTop: '5px'}}>
+            <RangeMarkers style={{color: 'var(--pcr-color-text-muted)', marginTop: '5px'}}>
                 <div>{rangeDescription.min}</div>
                 <div>{rangeDescription.max}</div>
             </RangeMarkers>

@@ -1,4 +1,4 @@
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 import { SlArrowRight } from "react-icons/sl";
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
@@ -19,9 +19,9 @@ const Container = styled.div`
     align-items: flex-end;
     gap: 30px;
     align-self: stretch;
-    background: #FFFFFF;
+    background: ${({ theme }) => theme.color.surface.page};
     border-radius: 12px;
-    border: 1px solid #ECEEF2;
+    border: 1px solid ${({ theme }) => theme.color.border.default};
 `;
 
 const FilterContainer = styled.div`
@@ -36,9 +36,9 @@ const FilterContainer = styled.div`
 const DropdownWrapper = styled.div`
     width: 100%;
     align-self: stretch;
-    border-bottom: 1px solid #EBEEF2;
+    border-bottom: 1px solid ${({ theme }) => theme.color.border.default};
 
-    ${props => (props.$isOpen) && `
+    ${props => (props.$isOpen) && css`
         border-bottom: none;
     `}
 
@@ -57,9 +57,9 @@ const FilterDropdownContainer = styled.div`
     cursor: pointer;
 
     font-size: 15px;
-    font-family: 'SFPro', sans-serif;
-    font-weight: 550;
-    color: #6D6F71
+    font-family: ${({ theme }) => theme.font.family.sans};
+    font-weight: ${({ theme }) => theme.font.weight.regular};
+    color: ${({ theme }) => theme.color.text.secondary}
 `;
 
 const ResetButton = styled.button`
@@ -71,14 +71,14 @@ const ResetButton = styled.button`
     align-items: center;
     gap: 10px;
     border-radius: 10px;
-    background: #F3F5F7;
-    color: #545454;
+    background: ${({ theme }) => theme.color.surface.subtle};
+    color: ${({ theme }) => theme.color.text.primary};
     font-size: 13px;
-    font-weight: 400;
+    font-weight: ${({ theme }) => theme.font.weight.regular};
     cursor: pointer;
 
     &:hover {
-        background: #E1E4E8;
+        background: ${({ theme }) => theme.color.surface.hover};
     }
 `;
 
@@ -92,10 +92,10 @@ const FilterDropdown = ({ title, renderContent, active }) => {
                 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '30px' }}>
                     {active && (
-                        <div style={{ width: '6px', height: '6px', borderRadius: '3px', backgroundColor: '#6D6F71', display: 'inline-block', marginLeft: '6px' }} />
+                        <div style={{ width: '6px', height: '6px', borderRadius: '3px', backgroundColor: 'var(--pcr-color-text-secondary)', display: 'inline-block', marginLeft: '6px' }} />
                     )} 
                     <motion.div animate={{ rotate: isOpen ? 90 : 0, display: 'flex', alignItems: 'center' }}>
-                        <SlArrowRight size={15} color="#6D6F71" />
+                        <SlArrowRight size={15} color="var(--pcr-color-text-secondary)" />
                     </motion.div>
                 </div>
                 

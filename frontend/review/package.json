@@ -34,12 +34,11 @@
   "scripts": {
     "dev": "react-app-rewired start",
     "start": "react-app-rewired start",
-    "build": "react-scripts build",
+    "build": "react-app-rewired build",
     "test": "exit 0",
     "eject": "react-scripts eject",
     "lint": "prettier --check \"src/**/*.js\" && eslint \"./src/**/*.js\"",
-    "clean": "prettier --write \"./src/**/*.js\" && eslint \"./src/**/*.js\" --fix",
-    "codecov": "exit 0"
+    "clean": "prettier --write \"./src/**/*.js\" && eslint \"./src/**/*.js\" --fix"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -55,6 +54,7 @@
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@types/react-router-dom": "^5.3.3",
+    "babel-plugin-styled-components": "^2.1.4",
     "eslint": "^6.8.0",
     "eslint-config-prettier": "^6.10.0",
     "eslint-config-standard": "^14.1.0",

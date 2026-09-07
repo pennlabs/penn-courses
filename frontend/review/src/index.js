@@ -2,8 +2,13 @@ import React from "react";
 import "react-app-polyfill/ie11";
 import "react-app-polyfill/stable";
 
+// Design tokens. First import so the :root custom properties and the @font-face
+// are in the bundle's stylesheet ahead of anything that reads them.
+import "./styles/tokens.css";
+
 import { createRoot } from "react-dom/client";
 import { Route, Switch, BrowserRouter as Router } from "react-router-dom";
+import { ThemeProvider } from "styled-components";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import {
@@ -19,6 +24,7 @@ import { queryClient, persistOptions } from "./utils/queryClient";
 import { FilterProvider } from "./utils/FilterContext";
 import Header from "./components/Header";
 import BrowsePage from "./pages/BrowsePage";
+import theme from "./styles/theme";
 
 if (window.location.hostname !== "localhost") {
   window.Raven.config(
@@ -30,6 +36,7 @@ const container = document.getElementById("root");
 const root = createRoot(container);
 root.render(
   <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
+    <ThemeProvider theme={theme}>
     <FilterProvider>
       <Router>
         <Header />
@@ -59,6 +66,7 @@ root.render(
         <GoogleAnalytics />
       </Router>
     </FilterProvider>
+    </ThemeProvider>
     <ReactQueryDevtools initialIsOpen={false} /> {/* Remove this line before prod*/}
   </PersistQueryClientProvider>
 );

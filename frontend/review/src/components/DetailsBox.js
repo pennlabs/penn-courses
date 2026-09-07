@@ -72,7 +72,9 @@ const formsCol = {
     ) : (
       <center>
         {value} / {original.forms_produced}{" "}
-        <small style={{ color: "#aaa", fontSize: "0.8em" }}>
+        <small
+          style={{ color: "var(--pcr-color-text-muted)", fontSize: "0.8em" }}
+        >
           ({((value / original.forms_produced) * 100).toFixed(1)}%)
         </small>
       </center>
@@ -182,7 +184,7 @@ export const DetailsBox = forwardRef(
         >
           <i
             className="fa fa-spin fa-cog fa-fw"
-            style={{ fontSize: "150px", color: "#aaa" }}
+            style={{ fontSize: "150px", color: "var(--pcr-color-text-muted)" }}
           />
           <h1 style={{ fontSize: "2em", marginTop: 15 }}>Loading...</h1>
         </div>
@@ -216,7 +218,11 @@ export const DetailsBox = forwardRef(
             </div>
           </div>
           <h3
-            style={{ color: "#b2b2b2", margin: "1.5em", marginBottom: ".5em" }}
+            style={{
+              color: "var(--pcr-color-text-subtle)",
+              margin: "1.5em",
+              marginBottom: ".5em"
+            }}
           >
             {isCourse
               ? "Select an instructor to see individual sections, comments, and more details."
@@ -236,7 +242,10 @@ export const DetailsBox = forwardRef(
         <div id="course-details-wrapper">
           <h3>
             <Link
-              style={{ color: "#b2b2b2", textDecoration: "none" }}
+              style={{
+                color: "var(--pcr-color-text-subtle)",
+                textDecoration: "none"
+              }}
               to={isCourse ? `/instructor/${instructor}` : `/course/${course}`}
             >
               {isCourse ? name : course}

@@ -16,8 +16,8 @@ const SearchBarWrapper = styled.div`
   align-items: center;
   border-radius: 8px;
   align-self: stretch;
-  border: 1px solid #ebeef2;
-  background: #f7f9fb;
+  border: 1px solid ${({ theme }) => theme.color.border.default};
+  background: ${({ theme }) => theme.color.surface.subtle};
 `;
 
 const SearchInputStyled = styled.input`
@@ -28,10 +28,10 @@ const SearchInputStyled = styled.input`
   min-width: 0;
   height: 100%;
   padding: 0px 12px;
-  color: #6d6f71;
-  font-family: "SFPro", sans-serif;
+  color: ${({ theme }) => theme.color.text.secondary};
+  font-family: ${({ theme }) => theme.font.family.sans};
   font-size: 14px;
-  font-weight: 300;
+  font-weight: ${({ theme }) => theme.font.weight.light};
   line-height: 150%;
 
   &:focus {
@@ -64,7 +64,7 @@ const CustomControl = ({ children, innerRef, innerProps }) => (
       style={{
         fontSize: "36px",
         paddingLeft: "12px",
-        color: "#9ba0a5",
+        color: "var(--pcr-color-text-muted)",
         flexShrink: 0,
       }}
     />
@@ -312,20 +312,20 @@ class SearchBar extends Component {
                     gap: 6,
                     padding: "6px 14px",
                     cursor: "pointer",
-                    fontFamily: "'SFPro', sans-serif",
-                    background: isFocused ? "#f0f3f7" : "transparent",
+                    fontFamily: "var(--pcr-font-family-sans)",
+                    background: isFocused ? "var(--pcr-color-surface-subtle)" : "transparent",
                   }}
                 >
                   <b
                     style={{
                       fontSize: 14,
                       fontWeight: 500,
-                      color: "#1a1d21",
+                      color: "var(--pcr-color-text-legacy)",
                     }}
                   >
                     {children}
                   </b>
-                  <span style={{ color: "#aaa", fontSize: 12 }}>
+                  <span style={{ color: "var(--pcr-color-text-muted)", fontSize: 12 }}>
                     {(() => {
                       const { desc } = data;
                       if (Array.isArray(desc)) {
@@ -347,12 +347,12 @@ class SearchBar extends Component {
               <div
                 style={{
                   padding: "8px 14px 4px",
-                  fontFamily: "'SFPro', sans-serif",
+                  fontFamily: "var(--pcr-font-family-sans)",
                   fontSize: 11,
                   fontWeight: 600,
                   textTransform: "uppercase",
                   letterSpacing: "0.04em",
-                  color: "#9ba0a5",
+                  color: "var(--pcr-color-text-muted)",
                 }}
               >
                 {props.children}
@@ -376,7 +376,7 @@ class SearchBar extends Component {
             menu: (base) => ({
               ...base,
               borderRadius: 8,
-              border: "1px solid #ebeef2",
+              border: "1px solid ${({ theme }) => theme.color.border.default}",
               boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
               marginTop: 4,
               overflow: "hidden",

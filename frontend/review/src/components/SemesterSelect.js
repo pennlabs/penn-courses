@@ -31,17 +31,17 @@ const ChooseBox = ({ text, isActive, semesterList, setSemesterList }) => {
                     }
                 }} 
                 style={{ 
-                    background: isActive ? '#3E3E40' :'#FFFFFF', 
-                    border: isActive ? 'none' : '2px solid #D9D9D9', 
-                    color: isActive ? '#FFF' : '#545454' 
+                    background: isActive ? 'var(--pcr-color-surface-selected)' :'var(--pcr-color-surface-page)', 
+                    border: isActive ? 'none' : '2px solid ${({ theme }) => theme.color.border.strong}', 
+                    color: isActive ? 'var(--pcr-color-text-inverse)' : 'var(--pcr-color-text-primary)' 
                 }}>
                     <div style={{ fontSize: '12px', overflow: 'hidden', whiteSpace: 'nowrap'}}>
                         {text}
                     </div>
                     {isActive ? (
-                        <HiCheck size={15} color="#FFFFFF" />
+                        <HiCheck size={15} color="var(--pcr-color-text-inverse)" />
                     ) : (
-                        <PiPlus size={15} color="#3E3E40" />
+                        <PiPlus size={15} color="var(--pcr-color-text-strong)" />
                     )}
             </OptionContainer>
         </>

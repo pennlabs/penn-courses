@@ -30,16 +30,16 @@ const TimeInput = styled.input`
     all: unset;
     text-align: center;
     font-size: 14px;
-    font-family: 'SFPro', sans-serif;
+    font-family: ${({ theme }) => theme.font.family.sans};
     padding: 2px;
-    border: 2px solid ${props => props.$isError ? '#e53935' : '#aeaeb8'};
+    border: 2px solid ${props => props.$isError ? 'var(--pcr-color-feedback-error-fg)' : 'var(--pcr-color-border-input)'};
     border-radius: 8px;
-    background-color: ${props => props.$isError ? '#ffebee' : 'transparent'};
+    background-color: ${props => props.$isError ? 'var(--pcr-color-feedback-error-bg)' : 'transparent'};
     width: 50px;
 
     &:focus {
-        border: 2px solid ${props => props.$isError ? '#e53935' : '#1895E6'};
-        background-color: ${props => props.$isError ? '#ffebee' : 'transparent'};
+        border: 2px solid ${props => props.$isError ? 'var(--pcr-color-feedback-error-fg)' : 'var(--pcr-color-border-focus)'};
+        background-color: ${props => props.$isError ? 'var(--pcr-color-feedback-error-bg)' : 'transparent'};
     }
 `;
 
@@ -314,7 +314,7 @@ const TimeSelect = ({ timeString, setTimeString, diameter }) => {
                 style={{ maxWidth: diameter + viewBoxOffset }}
             >
                 {/* Circle */}
-                <circle cx={C} cy={C} r={R} fill="none" stroke="#e0e0e0" strokeWidth="1.5" />
+                <circle cx={C} cy={C} r={R} fill="none" stroke="var(--pcr-color-border-muted)" strokeWidth="1.5" />
 
                 {/* 12 small ticks */}
                 {Array.from({ length: 12 }, (_, i) => {
@@ -328,7 +328,7 @@ const TimeSelect = ({ timeString, setTimeString, diameter }) => {
                             y1={outer.y}
                             x2={inner.x}
                             y2={inner.y}
-                            stroke={i % 3 === 0 ? "#bdbdbd" : "#e0e0e0"}
+                            stroke={i % 3 === 0 ? "var(--pcr-color-text-subtle)" : "var(--pcr-color-border-muted)"}
                             strokeWidth={i % 3 === 0 ? 1.5 : 1}
                             strokeLinecap="round"
                         />
@@ -344,10 +344,10 @@ const TimeSelect = ({ timeString, setTimeString, diameter }) => {
                             key={label}
                             x={pos.x}
                             y={pos.y}
-                            fill="#8c8c8c"
+                            fill="var(--pcr-color-text-dim)"
                             fontSize="11px"
                             fontWeight="500"
-                            fontFamily="'SFPro', sans-serif"
+                            fontFamily="var(--pcr-font-family-sans)"
                             textAnchor="middle"
                             dominantBaseline="central"
                         >
@@ -360,13 +360,13 @@ const TimeSelect = ({ timeString, setTimeString, diameter }) => {
                 <path d={arcPath(startAngle, endAngle)} fill="rgba(174, 174, 184, 0.2)" />
 
                 {/* Start hand */}
-                <line x1={C} y1={C} x2={startPos.x} y2={startPos.y} stroke="#3E3E40" strokeWidth="2" strokeLinecap="round" />
+                <line x1={C} y1={C} x2={startPos.x} y2={startPos.y} stroke="var(--pcr-color-border-selected)" strokeWidth="2" strokeLinecap="round" />
 
                 {/* End hand */}
-                <line x1={C} y1={C} x2={endPos.x} y2={endPos.y} stroke="#3E3E40" strokeWidth="2" strokeLinecap="round" />
+                <line x1={C} y1={C} x2={endPos.x} y2={endPos.y} stroke="var(--pcr-color-border-selected)" strokeWidth="2" strokeLinecap="round" />
 
                 {/* Center dot */}
-                <circle cx={C} cy={C} r="4" fill="#3E3E40" />
+                <circle cx={C} cy={C} r="4" fill="var(--pcr-color-text-strong)" />
 
                 {/* Start knob */}
                 <g 
@@ -374,14 +374,14 @@ const TimeSelect = ({ timeString, setTimeString, diameter }) => {
                     onPointerUp={() => { console.log("up"); }}
                 >
                     <circle cx={startPos.x} cy={startPos.y} r={KNOB + 10} fill="transparent" />
-                    <circle cx={startPos.x} cy={startPos.y} r={KNOB} fill="#3E3E40" />
+                    <circle cx={startPos.x} cy={startPos.y} r={KNOB} fill="var(--pcr-color-text-strong)" />
                     {drag === "start" && <circle cx={startPos.x} cy={startPos.y} r={KNOB + 8} fill="rgba(174, 174, 184,0.2)" />}
                 </g>
 
                 {/* End knob */}
                 <g onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); setDrag("end"); }} style={{ cursor: "grab" }}>
                     <circle cx={endPos.x} cy={endPos.y} r={KNOB + 10} fill="transparent" />
-                    <circle cx={endPos.x} cy={endPos.y} r={KNOB} fill="#3E3E40" />
+                    <circle cx={endPos.x} cy={endPos.y} r={KNOB} fill="var(--pcr-color-text-strong)" />
                     {drag === "end" && <circle cx={endPos.x} cy={endPos.y} r={KNOB + 8} fill="rgba(174, 174, 184,0.2)" />}
                 </g>
             </ClockFace>
