@@ -1,7 +1,6 @@
-import React, { useState, useCallback, useMemo, useRef } from "react";
-import { useHistory } from "react-router-dom/cjs/react-router-dom.min";
+import React, { useState, useMemo, useRef } from "react";
+import { useHistory } from "react-router-dom";
 import { ScoreTable } from "./common/ScoreTable";
-import { ColumnSelector } from "./common/ColumnSelector";
 import { COLUMN_FULLNAMES, ALL_DATA_COLUMNS } from "../constants";
 import styled from "styled-components";
 
@@ -32,14 +31,14 @@ const COLUMN_TO_BACKEND_FIELD = {
   rStimulateInterest: "stimulate_interest",
   rTAQuality: "ta_quality",
   rRecommendMajor: "recommend_major",
-  rRecommendNonMajor: "recommend_non_major",
+  rRecommendNonMajor: "recommend_non_major"
 };
 
 const REQUIRED_REVIEW_FIELDS = [
   "rCourseQuality",
   "rInstructorQuality",
   "rDifficulty",
-  "rWorkRequired",
+  "rWorkRequired"
 ];
 
 const buildData = (courses, allReviewFields) =>
@@ -52,21 +51,21 @@ const buildData = (courses, allReviewFields) =>
     const row = {
       key,
       code: course.code || course.id,
-      name: course.name || course.title,
+      name: course.name || course.title
     };
 
-    allReviewFields.forEach((field) => {
+    allReviewFields.forEach(field => {
       if (hasNestedReviews) {
         row[field] = {
           average: avg[field] != null ? avg[field].toFixed(2) : null,
-          recent: rec[field] != null ? rec[field].toFixed(2) : null,
+          recent: rec[field] != null ? rec[field].toFixed(2) : null
         };
       } else {
         const backendField = COLUMN_TO_BACKEND_FIELD[field] || field;
         const val = course[backendField];
         row[field] = {
           average: val != null ? Number(val).toFixed(2) : null,
-          recent: null,
+          recent: null
         };
       }
     });
@@ -82,7 +81,7 @@ const buildColumns = (allReviewFields, isAverageRef) => {
       id: "name",
       required: true,
       show: true,
-      minWidth: 200,
+      minWidth: 200
     },
     {
       Header: "Code",
@@ -100,11 +99,11 @@ const buildColumns = (allReviewFields, isAverageRef) => {
             </span>
           </div>
         );
-      },
-    },
+      }
+    }
   ];
 
-  const reviewColumns = allReviewFields.map((field) => {
+  const reviewColumns = allReviewFields.map(field => {
     const label = COLUMN_FULLNAMES[field] || field;
     const isRequired = REQUIRED_REVIEW_FIELDS.includes(field);
 
@@ -134,13 +133,13 @@ const buildColumns = (allReviewFields, isAverageRef) => {
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
-              maxHeight: "100%",
+              maxHeight: "100%"
             }}
           >
             <span className={val === "N/A" ? "empty" : className}>{val}</span>
           </div>
         );
-      },
+      }
     };
   });
 
@@ -151,25 +150,27 @@ const CourseResultsTable = ({
   filteredResults,
   isAverage,
   sentinelRef,
-  isLoadingMore,
+  isLoadingMore
 }) => {
   // Ref lets Cell renderers and sortMethods always read the current value without needing to rebuild columns when the toggle changes.
   const isAverageRef = useRef(isAverage);
   isAverageRef.current = isAverage;
 
-  const [columns, setColumns] = useState(() =>
+  // Held in state purely so the column objects keep a stable identity across
+  // renders. Bring back the setter when the ColumnSelector below is re-enabled.
+  const [columns] = useState(() =>
     buildColumns(ALL_DATA_COLUMNS, isAverageRef)
   );
 
   const data = useMemo(() => buildData(filteredResults, ALL_DATA_COLUMNS), [
-    filteredResults,
+    filteredResults
   ]);
 
   if (data.length === 0) {
     return <p>No results</p>;
   }
 
-  const visibleColumns = columns.filter((col) => col.show);
+  const visibleColumns = columns.filter(col => col.show);
 
   return (
     <TableContainer className="course-results-table-container">
@@ -198,7 +199,7 @@ const CourseResultsTable = ({
             style={{
               display: "flex",
               justifyContent: "center",
-              padding: "20px 0",
+              padding: "20px 0"
             }}
           >
             <i

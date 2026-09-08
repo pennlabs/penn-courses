@@ -32,10 +32,10 @@ queryClient.setQueryDefaults(queryKeys.attributes, STATIC_QUERY_OPTIONS);
 export const asyncStoragePersister = createAsyncStoragePersister({
   key: PERSIST_STORAGE_KEY,
 
-  serialize: (data) => data,
-  deserialize: (data) => data,
+  serialize: data => data,
+  deserialize: data => data,
   storage: {
-    getItem: async (key) => {
+    getItem: async key => {
       const cached = localStorage.getItem(key);
       if (!cached) return null;
       try {

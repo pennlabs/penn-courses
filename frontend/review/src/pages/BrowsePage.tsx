@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useHistory } from "react-router-dom";
 import FilterBox from "../components/FilterBox";
 import CourseResults from "../components/CourseResults";
-import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { IoMdOptions } from "react-icons/io";
 import { BiHide } from "react-icons/bi";

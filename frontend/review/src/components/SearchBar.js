@@ -11,8 +11,8 @@ import { queryClient } from "../utils/queryClient";
 const SearchBarWrapper = styled.div`
   display: flex;
   height: 40px;
-  width: 100%; 
-  min-width: 0; 
+  width: 100%;
+  min-width: 0;
   align-items: center;
   border-radius: 8px;
   align-self: stretch;
@@ -40,7 +40,6 @@ const SearchInputStyled = styled.input`
   }
 `;
 
-
 function expandCombo(course) {
   const a = course.split(" ");
   return `${course} ${a[0]}-${a[1]} ${a[0]}${a[1]}`;
@@ -49,7 +48,7 @@ function expandCombo(course) {
 function removeDuplicates(dups) {
   const used = new Set();
   const clean = [];
-  dups.forEach((i) => {
+  dups.forEach(i => {
     if (!used.has(i.title)) {
       used.add(i.title);
       clean.push(i);
@@ -65,14 +64,14 @@ const CustomControl = ({ children, innerRef, innerProps }) => (
         fontSize: "36px",
         paddingLeft: "12px",
         color: "var(--pcr-color-text-muted)",
-        flexShrink: 0,
+        flexShrink: 0
       }}
     />
     {children}
   </SearchBarWrapper>
 );
 
-const CustomInput = (props) => {
+const CustomInput = props => {
   const { innerRef, isDisabled, isHidden, ...inputProps } = props;
   const {
     cx,
@@ -109,7 +108,7 @@ class SearchBar extends Component {
 
     this.state = {
       autocompleteOptions: [],
-      searchValue: null,
+      searchValue: null
     };
 
     this._autocompleteCallback = [];
@@ -127,43 +126,43 @@ class SearchBar extends Component {
     try {
       result = await queryClient.fetchQuery({
         queryKey: queryKeys.autocomplete,
-        queryFn: apiAutocomplete,
+        queryFn: apiAutocomplete
       });
     } catch (e) {
       console.error("Failed to fetch autocomplete data:", e);
     }
-    
+
     if (result) {
-      const courses = result.courses.map((i) => ({
+      const courses = result.courses.map(i => ({
         ...i,
         value: i.url,
         label: i.title,
         group: i.category,
-        category: "Courses",
+        category: "Courses"
       }));
       const coursesIndex = [
-        courses.map((i) => ({
+        courses.map(i => ({
           term: fuzzysort.prepare(expandCombo(i.title)),
-            id: i.title,
-        })),
+          id: i.title
+        }))
       ];
-      courses.forEach((i) => {
+      courses.forEach(i => {
         coursesIndex.push(
-          i.desc.map((j) => ({ term: fuzzysort.prepare(j), id: i.title }))
+          i.desc.map(j => ({ term: fuzzysort.prepare(j), id: i.title }))
         );
       });
 
       const formattedAutocomplete = [
         {
           label: "Departments",
-          options: result.departments.map((i) => ({
+          options: result.departments.map(i => ({
             ...i,
             value: i.url,
             label: i.title,
             group: i.category,
             search_desc: fuzzysort.prepare(i.desc),
-            category: "Departments",
-          })),
+            category: "Departments"
+          }))
         },
         {
           label: "Courses",
@@ -171,30 +170,30 @@ class SearchBar extends Component {
             map[obj.title] = obj;
             return map;
           }, {}),
-          search_index: coursesIndex.flat(),
+          search_index: coursesIndex.flat()
         },
         {
           label: "Instructors",
-          options: result.instructors.map((i) => ({
+          options: result.instructors.map(i => ({
             ...i,
             value: i.url,
             label: i.title,
             group: i.category,
             search_desc: fuzzysort.prepare(i.desc),
-            category: "Instructors",
-          })),
-        },
+            category: "Instructors"
+          }))
+        }
       ];
 
       this.setState({ autocompleteOptions: formattedAutocomplete }, () => {
-        this._autocompleteCallback.forEach((x) =>
+        this._autocompleteCallback.forEach(x =>
           x(this.state.autocompleteOptions)
         );
         this._autocompleteCallback = [];
       });
     } else {
       this.setState({ autocompleteOptions: [] }, () => {
-        this._autocompleteCallback.forEach((x) =>
+        this._autocompleteCallback.forEach(x =>
           x(this.state.autocompleteOptions)
         );
         this._autocompleteCallback = [];
@@ -207,40 +206,40 @@ class SearchBar extends Component {
       return [
         {
           label: "Departments",
-          options: autocompleteOptions[0].options.slice(0, 10),
+          options: autocompleteOptions[0].options.slice(0, 10)
         },
         {
           label: "Courses",
-          options: Object.values(autocompleteOptions[1].options).slice(0, 25),
+          options: Object.values(autocompleteOptions[1].options).slice(0, 25)
         },
         {
           label: "Instructors",
-          options: autocompleteOptions[2].options.slice(0, 25),
-        },
+          options: autocompleteOptions[2].options.slice(0, 25)
+        }
       ];
     }
     return fuzzysort
       .goAsync(inputValue, autocompleteOptions[1].search_index, {
         key: "term",
         threshold: -2000,
-        limit: 25,
+        limit: 25
       })
-      .then((res) => [
+      .then(res => [
         {
           label: "Departments",
           options: fuzzysort
             .go(inputValue, autocompleteOptions[0].options, {
               keys: ["title", "search_desc"],
               threshold: -200,
-              limit: 10,
+              limit: 10
             })
-            .map(({ obj }) => obj),
+            .map(({ obj }) => obj)
         },
         {
           label: "Courses",
           options: removeDuplicates(
-            res.map((a) => autocompleteOptions[1].options[a.obj.id])
-          ),
+            res.map(a => autocompleteOptions[1].options[a.obj.id])
+          )
         },
         {
           label: "Instructors",
@@ -248,31 +247,31 @@ class SearchBar extends Component {
             .go(inputValue, autocompleteOptions[2].options, {
               keys: ["title", "search_desc"],
               threshold: -200,
-              limit: 25,
+              limit: 25
             })
-            .map(({ obj }) => obj),
-        },
+            .map(({ obj }) => obj)
+        }
       ]);
   }
 
   autocompleteCallback(inputValue) {
     this.setState({ searchValue: inputValue });
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       if (this.state.autocompleteOptions.length) {
         resolve(this.state.autocompleteOptions);
       } else {
         this._autocompleteCallback.push(resolve);
       }
     })
-      .then((res) => this.filterOptionsList(res, inputValue))
-      .then((res) => {
+      .then(res => this.filterOptionsList(res, inputValue))
+      .then(res => {
         this.setFocusedOption();
         return res;
       });
   }
 
   setFocusedOption() {
-    this.selectRef.current.select.select.getNextFocusedOption = (options) =>
+    this.selectRef.current.select.select.getNextFocusedOption = options =>
       options[0];
   }
 
@@ -285,9 +284,8 @@ class SearchBar extends Component {
     return (
       <div id="search" style={{ minWidth: 0, width: "100%" }}>
         <AsyncSelect
-          key={this.state.autocompleteOptions.length}
           ref={this.selectRef}
-          autoFocus={this.props.isTitle}
+          autoFocus={this.props.autoFocus}
           onChange={this.handleChange}
           value={this.state.searchValue}
           placeholder=""
@@ -300,7 +298,7 @@ class SearchBar extends Component {
             IndicatorSeparator: NullComponent,
             Placeholder: NullComponent,
             SingleValue: NullComponent,
-            Option: (props) => {
+            Option: props => {
               const { children, innerRef, innerProps, isFocused, data } = props;
               return (
                 <div
@@ -313,28 +311,35 @@ class SearchBar extends Component {
                     padding: "6px 14px",
                     cursor: "pointer",
                     fontFamily: "var(--pcr-font-family-sans)",
-                    background: isFocused ? "var(--pcr-color-surface-subtle)" : "transparent",
+                    background: isFocused
+                      ? "var(--pcr-color-surface-subtle)"
+                      : "transparent"
                   }}
                 >
                   <b
                     style={{
                       fontSize: 14,
                       fontWeight: 500,
-                      color: "var(--pcr-color-text-legacy)",
+                      color: "var(--pcr-color-text-legacy)"
                     }}
                   >
                     {children}
                   </b>
-                  <span style={{ color: "var(--pcr-color-text-muted)", fontSize: 12 }}>
+                  <span
+                    style={{
+                      color: "var(--pcr-color-text-muted)",
+                      fontSize: 12
+                    }}
+                  >
                     {(() => {
                       const { desc } = data;
                       if (Array.isArray(desc)) {
                         const opt = fuzzysort
                           .go(parent.searchValue, desc, {
                             threshold: -Infinity,
-                            limit: 1,
+                            limit: 1
                           })
-                          .map((a) => a.target);
+                          .map(a => a.target);
                         return opt[0] || desc[0];
                       }
                       return desc;
@@ -343,7 +348,7 @@ class SearchBar extends Component {
                 </div>
               );
             },
-            GroupHeading: (props) => (
+            GroupHeading: props => (
               <div
                 style={{
                   padding: "8px 14px 4px",
@@ -352,48 +357,48 @@ class SearchBar extends Component {
                   fontWeight: 600,
                   textTransform: "uppercase",
                   letterSpacing: "0.04em",
-                  color: "var(--pcr-color-text-muted)",
+                  color: "var(--pcr-color-text-muted)"
                 }}
               >
                 {props.children}
               </div>
-            ),
+            )
           }}
           styles={{
             container: () => ({
-              position: "relative",
+              position: "relative"
             }),
             control: () => ({}),
-            valueContainer: (base) => ({
+            valueContainer: base => ({
               ...base,
               padding: 0,
               flex: 1,
               display: "flex",
               alignItems: "center",
-              minWidth: 0,
+              minWidth: 0
             }),
             input: () => ({}),
-            menu: (base) => ({
+            menu: base => ({
               ...base,
               borderRadius: 8,
               border: "1px solid var(--pcr-color-border-default)",
               boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
               marginTop: 4,
-              overflow: "hidden",
+              overflow: "hidden"
             }),
-            menuList: (base) => ({
+            menuList: base => ({
               ...base,
               padding: 0,
-              maxHeight: 360,
+              maxHeight: 360
             }),
             option: () => ({}),
-            group: (base) => ({
+            group: base => ({
               ...base,
-              padding: 0,
+              padding: 0
             }),
             groupHeading: () => ({}),
             placeholder: () => ({ display: "none" }),
-            indicatorsContainer: () => ({ display: "none" }),
+            indicatorsContainer: () => ({ display: "none" })
           }}
         />
       </div>

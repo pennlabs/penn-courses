@@ -16,19 +16,19 @@ const chartColorMap = {
   rCourseQuality: scoreColors.course,
   rInstructorQuality: scoreColors.instructor,
   rDifficulty: scoreColors.difficulty,
-  rWorkRequired: scoreColors.workload,
+  rWorkRequired: scoreColors.workload
 };
 
 const generateChartData = (courses, isCourseEval) => {
   return {
     labels: Object.values(courses).map(({ original: { code } }) => code),
-    datasets: DEFAULT_COLUMNS.map((column) => ({
+    datasets: DEFAULT_COLUMNS.map(column => ({
       label: getColumnName(column),
       data: Object.values(courses).map(
         ({ original }) => original[column] && original[column].average
       ),
-      backgroundColor: chartColorMap[column],
-    })),
+      backgroundColor: chartColorMap[column]
+    }))
   };
 };
 
@@ -39,11 +39,11 @@ const chartOptions = {
         display: true,
         ticks: {
           min: 0,
-          max: 4,
-        },
-      },
-    ],
-  },
+          max: 4
+        }
+      }
+    ]
+  }
 };
 
 export const DepartmentGraphs = ({ courses, isCourseEval }) => {

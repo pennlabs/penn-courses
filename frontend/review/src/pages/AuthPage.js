@@ -2,7 +2,6 @@ import React, { useEffect, createContext } from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import Footer from "../components/Footer";
-import BrowsePage from "./BrowsePage";
 import { ErrorBox } from "../components/common";
 import { apiCheckAuth, redirectForAuth, queryKeys } from "../utils/api";
 
@@ -12,16 +11,15 @@ import { apiCheckAuth, redirectForAuth, queryKeys } from "../utils/api";
 
 export const AuthContext = createContext();
 
-const TempAuthPage = ( { forceRedirect = false, children} ) => {
-
+const TempAuthPage = ({ forceRedirect = false, children }) => {
   const {
     data: authed = false,
     isSuccess: authChecked,
-    isError: authFailed,
+    isError: authFailed
   } = useQuery({
     queryKey: queryKeys.checkAuth,
     queryFn: apiCheckAuth,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: 1000 * 60 * 5 // 5 minutes
   });
 
   useEffect(() => {
@@ -42,20 +40,16 @@ const TempAuthPage = ( { forceRedirect = false, children} ) => {
       </>
     );
   }
-  
+
   return (
     <>
       {forceRedirect ? (
-        <>
-        {authed ? children : null}
-        </>
+        <>{authed ? children : null}</>
       ) : (
-        <AuthContext.Provider value={authed}>
-          {children}
-        </AuthContext.Provider>
+        <AuthContext.Provider value={authed}>{children}</AuthContext.Provider>
       )}
     </>
-  )
+  );
 };
 
 export default TempAuthPage;

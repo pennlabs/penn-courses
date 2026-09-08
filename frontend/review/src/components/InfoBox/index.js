@@ -70,7 +70,7 @@ const InfoBox = ({
   const { data: contact = null } = useQuery({
     queryKey: queryKeys.contact(name),
     queryFn: () => apiContact(name),
-    enabled: isInstructor && Boolean(name),
+    enabled: isInstructor && Boolean(name)
   });
 
   const handleCartAdd = key => {
