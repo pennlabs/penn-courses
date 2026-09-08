@@ -50,10 +50,6 @@ export const filterReducer = (
   }
 };
 
-// State and dispatch are deliberately separate contexts: components that only
-// write filters (the header's reset, the department shortcut links) subscribe
-// to dispatch alone, whose identity is stable for the life of the provider, so
-// they don't re-render on every keystroke or slider drag.
 const FilterStateContext = createContext<FilterState | undefined>(undefined);
 const FilterDispatchContext = createContext<
   React.Dispatch<FilterAction> | undefined

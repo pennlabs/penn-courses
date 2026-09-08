@@ -7,7 +7,7 @@ const autocompleteWorkerInstance = autocompleteWorker();
 const compressAutocomplete = autocompleteWorkerInstance.compress;
 const decompressAutocomplete = autocompleteWorkerInstance.decompress;
 
-// Prefixed "meta-" so the course cart's `getCartCourses()` (which treats
+// Prefixed "meta-" so the course cart's getCartCourses() (which treats
 // every non-"meta-" localStorage key as a cart item) ignores this entry.
 const PERSIST_STORAGE_KEY = "meta-pcr-query-cache";
 
@@ -26,20 +26,16 @@ export const queryClient = new QueryClient({
   }
 });
 
-// Applied via queryClient so both hook (`useQuery`) and imperative
-// (`queryClient.fetchQuery`, used by the remaining class components) call
-// sites share the same staleTime/gcTime without repeating the constants.
 queryClient.setQueryDefaults(queryKeys.autocomplete, STATIC_QUERY_OPTIONS);
 queryClient.setQueryDefaults(queryKeys.attributes, STATIC_QUERY_OPTIONS);
 
 export const asyncStoragePersister = createAsyncStoragePersister({
   key: PERSIST_STORAGE_KEY,
-  // compress/decompress already JSON.stringify/parse internally, so the
-  // persister's own serialize/deserialize step is bypassed here.
-  serialize: data => data,
-  deserialize: data => data,
+
+  serialize: (data) => data,
+  deserialize: (data) => data,
   storage: {
-    getItem: async key => {
+    getItem: async (key) => {
       const cached = localStorage.getItem(key);
       if (!cached) return null;
       try {

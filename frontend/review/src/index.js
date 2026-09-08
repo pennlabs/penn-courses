@@ -2,8 +2,6 @@ import React from "react";
 import "react-app-polyfill/ie11";
 import "react-app-polyfill/stable";
 
-// Design tokens. First import so the :root custom properties and the @font-face
-// are in the bundle's stylesheet ahead of anything that reads them.
 import "./styles/tokens.css";
 
 import { createRoot } from "react-dom/client";
@@ -67,6 +65,6 @@ root.render(
       </Router>
     </FilterProvider>
     </ThemeProvider>
-    <ReactQueryDevtools initialIsOpen={false} /> {/* Remove this line before prod*/}
+    {/* <ReactQueryDevtools initialIsOpen={false} />  */}
   </PersistQueryClientProvider>
 );

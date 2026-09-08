@@ -11,9 +11,6 @@
 }
 
 :root {
-  /* Text
-   * `strong` is the dark used for selected states and emphasis; `legacy` is the
-   * body grey the pre-redesign pages use. */
   --pcr-color-text-primary: #545454;
   --pcr-color-text-secondary: #6d6f71;
   --pcr-color-text-muted: #a1a1a1;
@@ -59,9 +56,7 @@
   --pcr-color-feedback-error-border: #f5b3b3;
   --pcr-color-feedback-error-accent: #ff6b6e;
 
-  /* Type.
-   * Only 400 and 700 were reachable before, because SF Pro was loaded as two
-   * static faces. Inter is variable, so the whole scale is available. */
+  /* Type. */
   --pcr-font-family-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
     Roboto, Helvetica, Arial, sans-serif;
   --pcr-font-size-xs: 12px;
@@ -96,9 +91,7 @@
   --pcr-size-filter-widget-max: 400px;
   --pcr-size-control-height: 29px;
 
-  /* Motion
-   * `emphasized` is the curve the redesign already used for every expand/collapse;
-   * it lived as a hand-copied [0.04, 0.62, 0.23, 0.98] array in three files. */
+  /* Motion */
   --pcr-motion-duration-fast: 120ms;
   --pcr-motion-duration-md: 240ms;
   --pcr-motion-duration-slow: 320ms;
@@ -106,9 +99,7 @@
   --pcr-motion-ease-emphasized: cubic-bezier(0.04, 0.62, 0.23, 0.98);
 }
 
-/* Registered so it can be transitioned. SelectBox drives the height of the slot it
- * reserves for its search bar and the offset of the floating panel from this single
- * value, which keeps the two in lockstep no matter what the durations are. */
+/* Registered as a property so that it can be animated. This is used by the SelectBox's search list and CustomDropdown. */
 @property --pcr-select-slot-h {
   syntax: "<length>";
   inherits: true;
@@ -121,11 +112,7 @@
     --pcr-motion-duration-md: 0.01ms;
     --pcr-motion-duration-slow: 0.01ms;
   }
-
-  /* Catches vendor CSS we don't author: general.css's Bootstrap transitions,
-   * react-range-slider-input, react-select. `.fa-spin` is deliberately exempt --
-   * the usual blanket `animation-iteration-count: 1` freezes every loading spinner
-   * in the app mid-rotation, which is worse than the motion it removes. */
+  /* Disable all animations and transitions except for fa-spin. */
   *:not(.fa-spin),
   *:not(.fa-spin)::before,
   *:not(.fa-spin)::after {

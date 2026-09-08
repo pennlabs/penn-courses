@@ -83,8 +83,6 @@ const MobileLinksInner = styled.div`
   min-height: max-content;
 `;
 
-// Same body, two elements: a plain anchor for external links and a router Link
-// for internal ones. Previously duplicated verbatim.
 const StyledLink = styled.a`
   ${linkStyles}
 `;

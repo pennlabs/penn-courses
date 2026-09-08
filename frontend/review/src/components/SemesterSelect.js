@@ -32,7 +32,7 @@ const ChooseBox = ({ text, isActive, semesterList, setSemesterList }) => {
                 }} 
                 style={{ 
                     background: isActive ? 'var(--pcr-color-surface-selected)' :'var(--pcr-color-surface-page)', 
-                    border: isActive ? 'none' : '2px solid ${({ theme }) => theme.color.border.strong}', 
+                    border: isActive ? 'none' : '2px solid var(--pcr-color-border-strong)', 
                     color: isActive ? 'var(--pcr-color-text-inverse)' : 'var(--pcr-color-text-primary)' 
                 }}>
                     <div style={{ fontSize: '12px', overflow: 'hidden', whiteSpace: 'nowrap'}}>
