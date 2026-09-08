@@ -1,11 +1,3 @@
-/**
- * The filter domain: shape, defaults, and the pure derivations built on them
- * (default detection, API serialization, URL round-tripping).
- *
- * Kept free of React so it can be imported by both the context and plain
- * modules without a cycle, and unit-tested on its own.
- */
-
 export interface FilterState {
   departments: string[];
   attributes: string[];
@@ -32,17 +24,16 @@ export const DEFAULT_FILTERS: FilterState = {
 
 // Freeze so changing by accident forces an error
 Object.freeze(DEFAULT_FILTERS);
-Object.values(DEFAULT_FILTERS).forEach(v => Object.freeze(v));
+Object.values(DEFAULT_FILTERS).forEach((v) => Object.freeze(v));
 
 export const FILTER_KEYS = Object.keys(DEFAULT_FILTERS) as FilterKey[];
 
-// Ratings are stored as [min, max] pairs and serialized as min-max.
+// Ratings are stored as [min, max] pairs and serialized as "min-max"
 const RANGE_KEYS: FilterKey[] = [
   "course_quality",
   "instructor_quality",
   "difficulty",
 ];
-
 
 export const isFilterDefault = <K extends FilterKey>(
   key: K,
@@ -60,15 +51,15 @@ export const isFilterDefault = <K extends FilterKey>(
 };
 
 export const changedFilterKeys = (filters: FilterState): FilterKey[] =>
-  FILTER_KEYS.filter(key => !isFilterDefault(key, filters[key]));
+  FILTER_KEYS.filter((key) => !isFilterDefault(key, filters[key]));
 
 /**
- * `semester` change alone counts as zero since semester is always sent to the API, so on its own it does not
- * count as "filtering" and should not trigger a search.
+ `semester` change alone counts as zero since semester is always sent to the API, so on its own it does not
+ count as "filtering" and should not trigger a search.
  */
 export const countActiveFilters = (filters: FilterState): number => {
   const changed = changedFilterKeys(filters);
-  return changed.some(key => key !== "semester") ? changed.length : 0;
+  return changed.some((key) => key !== "semester") ? changed.length : 0;
 };
 
 // Filters the backend only accepts for the current semester
@@ -85,15 +76,16 @@ export const SEMESTER_FILTER_LABELS: Partial<Record<FilterKey, string>> = {
 };
 
 export const getActiveSemesterFilters = (filters: FilterState): FilterKey[] =>
-  SEMESTER_SPECIFIC_FILTERS.filter(key => !isFilterDefault(key, filters[key]));
-
+  SEMESTER_SPECIFIC_FILTERS.filter(
+    (key) => !isFilterDefault(key, filters[key])
+  );
 
 export const formatFiltersForAPI = (
   filters: FilterState
 ): Record<string, string> => {
   const formatted: Record<string, string> = {};
 
-  FILTER_KEYS.forEach(key => {
+  FILTER_KEYS.forEach((key) => {
     const value = filters[key];
 
     // Always sent, default or not — the endpoint is semester-scoped.
@@ -118,11 +110,10 @@ export const formatFiltersForAPI = (
   return formatted;
 };
 
-
 export const getFilteredURL = (filters: FilterState): string => {
   const params = new URLSearchParams();
 
-  FILTER_KEYS.forEach(key => {
+  FILTER_KEYS.forEach((key) => {
     if (isFilterDefault(key, filters[key])) return;
     const value = filters[key];
     params.append(key, Array.isArray(value) ? value.join(",") : value);
@@ -147,13 +138,13 @@ export const loadStateFromURL = (
     difficulty: [...DEFAULT_FILTERS.difficulty],
   };
 
-  FILTER_KEYS.forEach(key => {
+  FILTER_KEYS.forEach((key) => {
     const raw = params.get(key);
     if (raw === null) return;
 
     if (RANGE_KEYS.includes(key)) {
       const nums = raw.split(",").map(Number);
-      if (nums.length === 2 && nums.every(n => Number.isFinite(n))) {
+      if (nums.length === 2 && nums.every((n) => Number.isFinite(n))) {
         (filters[key] as number[]) = nums;
       }
     } else if (key === "time" || key === "semester") {

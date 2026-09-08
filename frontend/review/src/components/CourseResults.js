@@ -7,7 +7,6 @@ import 'react-responsive-pagination/themes/classic.css';
 import { FaLock } from "react-icons/fa";
 import { redirectForAuth } from '../utils/api';
 import CourseResultsTable from './CourseResultsTable';
-import CustomDropdown from './CustomDropdown';
 import { useFilterState, useFilterDispatch } from '../utils/FilterContext';
 import {
     countActiveFilters,
@@ -173,10 +172,7 @@ const CourseResults = () => {
         select: data => data.departments,
     });
 
-    const [isAverage, setIsAverage] = useState(true);
     const sentinelRef = useRef(null);
-
-    const [recencyOption, setRecencyOption] = useState('Average Rating');
 
     const isAuth = useContext(AuthContext);
 
@@ -215,7 +211,7 @@ const CourseResults = () => {
 
     const totalCount = searchData?.pages[0]?.count || 0;
 
-    // Infinite scroll — sentinel is inside the table's scroll area
+    // Infinite scroll, sentinel is inside the table's scroll area
     useEffect(() => {
         const sentinel = sentinelRef.current;
         if (!sentinel || !hasMore || isLoading) return;
@@ -284,7 +280,7 @@ const CourseResults = () => {
                                 <div style={{width: '100%', height: '100%'}}>
                                     <CourseResultsTable
                                         filteredResults={filteredResults}
-                                        isAverage={isAverage}
+                                        isAverage={true} // true until later release when backend API is updated to show recent ratings
                                         sentinelRef={sentinelRef}
                                         isLoadingMore={isLoadingMore}
                                     />

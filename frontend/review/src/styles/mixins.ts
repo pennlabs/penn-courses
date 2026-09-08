@@ -2,9 +2,6 @@ import { css } from "styled-components";
 
 /* Certain style patterns used to be copy-pasted everywhere. This file consolidates them into reusable blocks */
 
-/* Every interactive surface in the app used to snap between hover states. Properties are
-   listed out rather than using `transition: all`, which would sweep up layout properties
-   and reintroduce the per-frame reflows this refactor removed. */
 export const interactiveTransition = css`
   transition: background-color ${({ theme }) => theme.motion.duration.fast}
       ${({ theme }) => theme.motion.ease.standard},
@@ -37,7 +34,7 @@ export const pill = css<{ $isSelected?: boolean }>`
   }
 `;
 
-/* Floating panel shared by SelectBox's search list and CustomDropdown */
+// Floating panel shared by SelectBox's search list and CustomDropdown
 export const dropdownSurface = css`
   position: absolute;
   top: 0;
@@ -48,7 +45,7 @@ export const dropdownSurface = css`
   box-shadow: ${({ theme }) => theme.shadow.dropdown};
 `;
 
-/* Bordered white card used by the results panel and the filter sidebar */
+// Bordered white card used by the results panel and the filter sidebar
 export const card = css`
   display: flex;
   flex-direction: column;
@@ -58,7 +55,7 @@ export const card = css`
   border: 1px solid ${({ theme }) => theme.color.border.default};
 `;
 
-/* Shared by Header's plain <a> and its react-router <Link> */
+// Shared by Header's plain <a> and its react-router <Link> 
 export const linkStyles = css`
   text-decoration: none;
   color: ${({ theme }) => theme.color.text.primary};

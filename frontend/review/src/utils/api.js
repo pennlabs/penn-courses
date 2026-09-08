@@ -120,9 +120,6 @@ export function apiAttributes() {
   );
 }
 
-// `params` is the already-formatted filter object (see formatFiltersForAPI
-// in CourseResults.js) — kept as a single object rather than 9 positional
-// arguments so it can double as the useInfiniteQuery key.
 export function apiCourseSearch(params, page = 1) {
   const {
     semester,

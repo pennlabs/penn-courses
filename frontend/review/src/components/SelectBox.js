@@ -12,11 +12,11 @@ const ROW_GAP = 10; // gap between the chips and the search bar
 const ROW_H = 20; // the search icon / input row
 const PANEL_PAD_Y = 9; // SelectSearchBarContainer's vertical padding
 const RESULTS_GAP = 15; // space between the search input and the results
-const PANEL_MAX_H = 180; // the panel's old max-height, which applied to its content box
+const PANEL_MAX_H = 180; // the panel's old max height, which applied to its content box
 
-// Outer height of the collapsed search bar: the row, the panel's padding, and its border.
+// Outer height of the collapsed search bar, contains the row, the panel's padding, and its border
 const BAR_H = ROW_H + PANEL_PAD_Y * 2 + 2;
-// The slot the grey box opens up. PanelLayer pulls itself back up by the same amount.
+// The slot the grey box opens up. PanelLayer pulls itself back up by the same amount
 const SLOT_H = ROW_GAP + BAR_H;
 const RESULTS_MAX_H = PANEL_MAX_H - ROW_H - RESULTS_GAP;
 
@@ -174,8 +174,6 @@ const OptionBox = ({
 }) => {
   const [isSelected, setIsSelected] = useState(isActive);
 
-  // Deliberately depends on isSelected only. filterOptionsList/setFilterOptionsList/text
-  // are read fresh from the closure but must NOT be dependencies.
   useEffect(() => {
     if (filterOptionsList.includes(text) && !isSelected) {
       setFilterOptionsList(
@@ -246,13 +244,13 @@ const SelectBox = ({
   availableItems,
   fullWidth = false,
 }) => {
+  //this is to show the already selected options, but not the ones selected in the search bar
   const [visualStoredOptions, setVisualStoredOptions] = useState(
     new Set(options)
   );
-  //this is to show the already selected options, but not the ones selected in the search bar
 
-  const [searchResultOptions, setSearchResultOptions] = useState([]);
   // This is the list of options shown in the search dropdown, which changes as you search
+  const [searchResultOptions, setSearchResultOptions] = useState([]);
 
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
@@ -285,9 +283,6 @@ const SelectBox = ({
 
   useEffect(() => {
     if (!isSearchFocused || visualStoredOptions.size !== 0) return;
-    // The input is mounted by the time effects run, so this no longer needs to be
-    // deferred behind a timer. preventScroll because the panel is still animating
-    // open inside a clipped container.
     if (searchInputRef.current) {
       searchInputRef.current.focus({ preventScroll: true });
     }
@@ -310,6 +305,7 @@ const SelectBox = ({
       return isNotSelected && matchesSearch;
     });
     setSearchResultOptions(filteredOptions);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visualStoredOptions, searchQuery]);
 
   const closeSearchBar = () => {

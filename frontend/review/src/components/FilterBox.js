@@ -63,9 +63,7 @@ const FilterDropdownContainer = styled.div`
     color: ${({ theme }) => theme.color.text.secondary}
 `;
 
-// Rotation is a transform, so this is the one animation here the compositor can run
-// without touching layout.
-const Chevron = styled.span`
+const DownArrow = styled.span`
     display: flex;
     align-items: center;
     transform: rotate(0deg);
@@ -110,9 +108,9 @@ const FilterDropdown = ({ title, renderContent, active }) => {
                     {active && (
                         <div style={{ width: '6px', height: '6px', borderRadius: '3px', backgroundColor: 'var(--pcr-color-text-secondary)', display: 'inline-block', marginLeft: '6px' }} />
                     )} 
-                    <Chevron $isOpen={isOpen}>
+                    <DownArrow $isOpen={isOpen}>
                         <SlArrowRight size={15} color="var(--pcr-color-text-secondary)" />
-                    </Chevron>
+                    </DownArrow>
                 </div>
 
             </FilterDropdownContainer>

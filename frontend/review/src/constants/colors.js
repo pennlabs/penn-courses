@@ -1,11 +1,5 @@
 import { chartColors } from "../styles/rawColors";
 
-/**
- * Colours for the evaluation graphs.
- *
- * Raw hex on purpose — Chart.js paints to a <canvas>, which cannot resolve the
- * `var(--pcr-*)` tokens the rest of the app uses. See src/styles/rawColors.ts.
- */
 export const EVAL_GRAPH_COLORS = {
   DEMAND_LINE_BORDER_COLOR: chartColors.demandLine,
   DEMAND_FILL_BACKGROUND_COLOR: chartColors.demandFill,

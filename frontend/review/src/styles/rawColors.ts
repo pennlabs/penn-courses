@@ -8,7 +8,7 @@ export const chartColors = {
   tooltipBorder: "rgba(5, 5, 5, 0.5)",
 };
 
-/** Per-column colours for the score bars and department graphs. */
+// Colors for the score bars and department graphs.
 export const scoreColors = {
   course: "#6274f1",
   instructor: "#ffc107",

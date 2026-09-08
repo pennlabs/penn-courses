@@ -9,17 +9,13 @@ import Footer from "../components/Footer";
 import { IoMdOptions } from "react-icons/io";
 import { BiHide } from "react-icons/bi";
 import Collapse from "../components/common/Collapse";
+import ScrollToTop from "../components/common/ScrollToTop";
 import { useFilterState, useFilterDispatch } from "../utils/FilterContext";
 import { getFilteredURL, loadStateFromURL } from "../utils/filters";
 import { maxWidth, isBelow } from "../styles/media";
 import { interactiveTransition } from "../styles/mixins";
 
-/*
-   The Browse Page is the entry point of the app. The filters live in FilterContext
-   (see src/utils/FilterContext.tsx) and are mirrored into the URL as query
-   parameters, so they can be shared and persisted across refreshes. This page
-   owns that mirroring; everything below it reads filters from context directly.
-*/
+// Browse Page is the main entrypoint for the app
 
 const PageWrapper = styled.div`
   display: flex;
@@ -56,6 +52,7 @@ const SidebarWrapper = styled.div`
 `;
 
 const CourseResultsWrapper = styled.div`
+  position: relative;
   flex: 1;
   // Full width minus sidebar, page padding and the flex gap.
   width: calc(
@@ -67,6 +64,21 @@ const CourseResultsWrapper = styled.div`
 
   ${maxWidth("lg")} {
     width: 100%;
+  }
+`;
+
+const BackToTop = styled(ScrollToTop)`
+  position: fixed;
+  right: 60px;
+  bottom: 24px;
+  z-index: ${({ theme }) => theme.zIndex.dropdown};
+
+  // The whole page column scrolls on mobile, so anchor to the viewport instead
+  // of the results panel to keep the button in the same spot while scrolling.
+  ${maxWidth("lg")} {
+    position: fixed;
+    right: 30px;
+    bottom: 24px;
   }
 `;
 
@@ -98,8 +110,7 @@ const BrowsePage = () => {
   const filters = useFilterState();
   const dispatch = useFilterDispatch();
   const history = useHistory();
-  // Reads the same breakpoint the stylesheet does. These previously disagreed:
-  // the CSS collapsed at 900px, one rule at 899px, and this check at <= 900.
+
   const [filtersCollapsed, setFiltersCollapsed] = useState(isBelow("lg"));
 
   useEffect(() => {
@@ -135,6 +146,7 @@ const BrowsePage = () => {
     <PageWrapper>
       <ContentView>
         <SidebarWrapper>
+          {/* FilterCollapseBox is mobile only */}
           <FilterCollapseBox onClick={() => setFiltersCollapsed(!filtersCollapsed)}>
             {filtersCollapsed ? (
               <>
@@ -154,6 +166,7 @@ const BrowsePage = () => {
         </SidebarWrapper>
         <CourseResultsWrapper>
           <CourseResults />
+          <BackToTop />
         </CourseResultsWrapper>
       </ContentView>
       <Footer />
