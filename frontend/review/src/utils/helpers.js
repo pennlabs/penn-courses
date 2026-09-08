@@ -7,7 +7,8 @@ export const prefersReducedMotion = () =>
   typeof window !== "undefined" &&
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-export const scrollBehavior = () => (prefersReducedMotion() ? "auto" : "smooth");
+export const scrollBehavior = () =>
+  prefersReducedMotion() ? "auto" : "smooth";
 
 export function orderColumns(cols) {
   const colSet = new Set(cols);

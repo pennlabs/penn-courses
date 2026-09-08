@@ -1,94 +1,103 @@
-import React from 'react';
-import styled from 'styled-components';
-import RangeSlider from 'react-range-slider-input';
-import 'react-range-slider-input/dist/style.css';
+import React from "react";
+import styled from "styled-components";
+import RangeSlider from "react-range-slider-input";
+import "react-range-slider-input/dist/style.css";
 
 const Container = styled.div`
+  display: flex;
+  padding: 24px 12px 0 12px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  align-self: stretch;
+
+  /* The main background track */
+  .range-slider {
+    background: ${({ theme }) => theme.color.surface.muted};
+    height: 6px;
+    border-radius: 10px;
+  }
+
+  /* The filled-in colored part between the thumbs */
+  .range-slider__range {
+    background: ${({ theme }) => theme.color.surface.selected};
+  }
+
+  .range-slider__thumb {
+    background: transparent;
+    border: none;
+    width: 18px;
+    height: 18px;
+    pointer-events: auto;
+  }
+
+  /* the pseudo-element inside the thumb. */
+  .range-slider__thumb::after {
+    content: "";
     display: flex;
-    padding: 24px 12px 0 12px;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
-    align-self: stretch;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: ${({ theme }) => theme.color.surface.page};
+    border: 2px solid ${({ theme }) => theme.color.border.strong};
+    transition: transform ${({ theme }) => theme.motion.duration.fast}
+      ${({ theme }) => theme.motion.ease.standard};
+    transform: translate(0%, -10%) scale(1);
+  }
 
-    /* The main background track */
-    .range-slider {
-        background: ${({ theme }) => theme.color.surface.muted}; 
-        height: 6px;
-        border-radius: 10px;
-    }
-
-    /* The filled-in colored part between the thumbs */
-    .range-slider__range {
-        background: ${({ theme }) => theme.color.surface.selected}; 
-    }
-
-    .range-slider__thumb {
-        background: transparent;
-        border: none;
-        width: 18px;
-        height: 18px;
-        pointer-events: auto; 
-    }
-
-    /* the pseudo-element inside the thumb. */
-    .range-slider__thumb::after {
-        content: '';
-        display: flex;
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        background: ${({ theme }) => theme.color.surface.page};
-        border: 2px solid ${({ theme }) => theme.color.border.strong};
-        transition: transform ${({ theme }) => theme.motion.duration.fast}
-            ${({ theme }) => theme.motion.ease.standard};
-        transform: translate(0%, -10%) scale(1);
-    }
-
-    .range-slider__thumb[data-active]::after {
-        transform: translate(0%, -10%) scale(1.2);
-    }
-
+  .range-slider__thumb[data-active]::after {
+    transform: translate(0%, -10%) scale(1.2);
+  }
 `;
 
 const RangeMarkers = styled.div`
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    align-self: stretch;
-    font-size: 12px;
-    font-family: ${({ theme }) => theme.font.family.sans};
-    font-weight: ${({ theme }) => theme.font.weight.bold};
-    margin: 15px 6% 0 6%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  align-self: stretch;
+  font-size: 12px;
+  font-family: ${({ theme }) => theme.font.family.sans};
+  font-weight: ${({ theme }) => theme.font.weight.bold};
+  margin: 15px 6% 0 6%;
 `;
 
 const SliderSelect = ({ ratingValues, setRatingValues, rangeDescription }) => {
-    return (
-        <div style={{width: '100%', userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none', maxWidth: '400px'}}>
-            <Container>
-                <RangeSlider 
-                    min={0}
-                    max={4}
-                    step={1}
-                    value={ratingValues}
-                    onInput={(value) => {
-                        setRatingValues(value);
-                    }}
-                />  
-            </Container>
-            <RangeMarkers>
-                <div>0</div>
-                <div>1</div>
-                <div>2</div>
-                <div>3</div>
-                <div>4</div>
-            </RangeMarkers>
-            <RangeMarkers style={{color: 'var(--pcr-color-text-muted)', marginTop: '5px'}}>
-                <div>{rangeDescription.min}</div>
-                <div>{rangeDescription.max}</div>
-            </RangeMarkers>
-        </div>
-    )
-}
+  return (
+    <div
+      style={{
+        width: "100%",
+        userSelect: "none",
+        WebkitUserSelect: "none",
+        MozUserSelect: "none",
+        maxWidth: "400px"
+      }}
+    >
+      <Container>
+        <RangeSlider
+          min={0}
+          max={4}
+          step={1}
+          value={ratingValues}
+          onInput={value => {
+            setRatingValues(value);
+          }}
+        />
+      </Container>
+      <RangeMarkers>
+        <div>0</div>
+        <div>1</div>
+        <div>2</div>
+        <div>3</div>
+        <div>4</div>
+      </RangeMarkers>
+      <RangeMarkers
+        style={{ color: "var(--pcr-color-text-muted)", marginTop: "5px" }}
+      >
+        <div>{rangeDescription.min}</div>
+        <div>{rangeDescription.max}</div>
+      </RangeMarkers>
+    </div>
+  );
+};
 
 export default SliderSelect;

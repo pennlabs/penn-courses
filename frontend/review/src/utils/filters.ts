@@ -35,6 +35,13 @@ const RANGE_KEYS: FilterKey[] = [
   "difficulty",
 ];
 
+export const SEMESTER_OPTIONS = ["Any", "Next Available"];
+
+const TIME_PATTERN = /^([01]?\d|2[0-3])\.[0-5]\d-([01]?\d|2[0-3])\.[0-5]\d$/;
+
+export const isValidTimeString = (value: string): boolean =>
+  TIME_PATTERN.test(value);
+
 export const isFilterDefault = <K extends FilterKey>(
   key: K,
   value: FilterState[K]
@@ -147,8 +154,10 @@ export const loadStateFromURL = (
       if (nums.length === 2 && nums.every((n) => Number.isFinite(n))) {
         (filters[key] as number[]) = nums;
       }
-    } else if (key === "time" || key === "semester") {
-      filters[key] = raw;
+    } else if (key === "time") {
+      if (isValidTimeString(raw)) filters.time = raw;
+    } else if (key === "semester") {
+      if (SEMESTER_OPTIONS.includes(raw)) filters.semester = raw;
     } else {
       (filters[key] as string[]) = raw.split(",").filter(Boolean);
     }
