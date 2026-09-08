@@ -153,6 +153,7 @@ const FilterBox = () => {
                             options={filters.departments}
                             setOptions={(payload) => dispatch({ type: 'SET_DEPARTMENTS', payload })}
                             availableItems={departments}
+                            label="departments"
                         />
                     )} />
                     <FilterDropdown title="Attributes" active={filterHasChanged("attributes")} renderContent={() => (
@@ -160,6 +161,7 @@ const FilterBox = () => {
                             options={filters.attributes}
                             setOptions={(payload) => dispatch({ type: 'SET_ATTRIBUTES', payload })}
                             availableItems={attributes}
+                            label="attributes"
                         />
                     )} />
                     <FilterDropdown title="Time Offered" active={filterHasChanged("time")} renderContent={() => (

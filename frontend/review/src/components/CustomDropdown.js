@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import styled, { css } from 'styled-components';
 import { SlArrowDown } from "react-icons/sl";
-import { useOnClickOutside } from './SelectBox';
+import { useOnClickOutside } from '../utils/hooks';
 import { interactiveTransition } from '../styles/mixins';
 
 const DropdownWrapper = styled.div`
