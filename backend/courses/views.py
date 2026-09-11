@@ -184,17 +184,18 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
     queryset = Course.objects.none()  # included redundantly for docs
 
     # These params filter on schedule/section data that only exists in a specific semester,
-    # so requesting them on the "all" semester path automatically snaps to current semester.
+    # so requesting them on the "all" semester path is an error.
     _SEMESTER_SPECIFIC_PARAMS = frozenset({"days", "time", "instructor_quality"})
 
     def get_semester(self):
         semester = super().get_semester()
-        if semester == "all" and self._SEMESTER_SPECIFIC_PARAMS.intersection(
-            self.request.query_params
-        ):
-            current = get_current_semester(allow_not_found=True)
-            if current:
-                return current
+        if semester == "all":
+            bad_params = sorted(self._SEMESTER_SPECIFIC_PARAMS.intersection(self.request.query_params))
+            if bad_params:
+                raise ValidationError(
+                    f"The query parameter(s) {', '.join(bad_params)} cannot be used with "
+                    "semester='all'; specify a semester (or 'current') instead."
+                )
         return semester
 
     def get_queryset(self):
