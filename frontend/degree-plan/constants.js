@@ -1,11 +1,6 @@
 export const TRANSFER_CREDIT_SEMESTER_KEY = "_TRAN";
 // TODO: this is copied from alert constants, should be moved to a shared location
 
-// Degree codes a submatriculant pursues alongside their bachelors. Mirrors
-// `MASTERS_DEGREE_CODES` in the backend's `degree/utils/path_client.py`. Lives here rather
-// than in parseUtils so the onboarding panels can read it without an import cycle.
-export const MASTERS_DEGREE_CODES = ["MSE"];
-
 export const DESKTOP = "1248px";
 export const SMALLDESKTOP = "1100px";
 export const TABLET = "900px";

@@ -1,6 +1,5 @@
 import styled from "@emotion/styled";
 import { Button } from "@radix-ui/themes";
-import { MASTERS_DEGREE_CODES } from "@/constants";
 
 export const PanelContainer = styled.div<{ $maxWidth: string; $minWidth: string }>`
   border-radius: 10px;
@@ -329,10 +328,3 @@ export const schoolOptions = [
   { value: "BSN", label: "Nursing" },
   { value: "MSE", label: "Engineering MSE" },
 ];
-
-// Onboarding asks which schools a student is enrolled in, and picks up any masters separately
-// in its submatriculation field. Adding a degree to an existing plan has no such field, so
-// that modal offers `schoolOptions` whole.
-export const undergraduateSchoolOptions = schoolOptions.filter(
-  (option) => !MASTERS_DEGREE_CODES.includes(option.value)
-);

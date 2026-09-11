@@ -23,7 +23,7 @@ import {
   PanelContainer,
   TextButton,
   TextInput,
-  undergraduateSchoolOptions,
+  schoolOptions,
 } from "./SharedComponents";
 import Select from "react-select";
 import { PulseLoader } from "react-spinners";
@@ -45,7 +45,6 @@ import { postFetcher, getCsrf } from "@/hooks/swrcrud";
 import {
   getMajorOptions,
   getSecondMajorOptions,
-  getSubmatOptions,
   MajorOptionItem,
 } from "@/utils/parseUtils";
 
@@ -59,7 +58,6 @@ type WelcomeLayoutProps = {
   inputtedMajors: MajorOption[];
   setShowOnboardingModal: (arg0: boolean) => void;
   inputtedSecondMajors: MajorOptionItem[];
-  inputtedSubmats: MajorOption[];
   canExit?: boolean;
   onExit?: () => void;
 };
@@ -73,7 +71,6 @@ export default function CreateWithTranscriptPanel({
   inputtedSchools,
   inputtedMajors,
   inputtedSecondMajors,
-  inputtedSubmats,
   setShowOnboardingModal,
   canExit = false,
   onExit,
@@ -91,7 +88,6 @@ export default function CreateWithTranscriptPanel({
   const [majors, setMajors] = useState<MajorOption[]>(inputtedMajors);
   const [secondMajors, setSecondMajors] =
     useState<MajorOptionItem[]>(inputtedSecondMajors);
-  const [submats, setSubmats] = useState<MajorOption[]>(inputtedSubmats);
   const [degreeID, setDegreeID] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
@@ -167,10 +163,8 @@ export default function CreateWithTranscriptPanel({
             JSON.stringify(semesters)
           );
         }
-        // A submatriculant's masters is a degree on the same plan as their bachelors, which is
-        // what lets a shared course count toward rules in both.
         await postFetcher(`/api/degree/degreeplans/${_new.id}/degrees`, {
-          degree_ids: [...majors, ...submats].map((m) => m.value.id),
+          degree_ids: majors.map((m) => m.value.id),
         });
         if (secondMajors.length) {
           await postFetcher(`/api/degree/degreeplans/${_new.id}/majors`, {
@@ -234,10 +228,6 @@ export default function CreateWithTranscriptPanel({
     [standaloneMajors, startingYear]
   );
 
-  const submatOptions = useMemo(
-    () => getSubmatOptions(degrees, startingYear?.value ?? null),
-    [degrees, startingYear]
-  );
 
   return (
     <CenteredFlexContainer>
@@ -312,7 +302,7 @@ export default function CreateWithTranscriptPanel({
 
               <Label required>School(s) or Program(s)</Label>
               <Select
-                options={undergraduateSchoolOptions}
+                options={schoolOptions}
                 value={schools}
                 onChange={(selectedOptions) => setSchools([...selectedOptions])}
                 isClearable
@@ -354,19 +344,6 @@ export default function CreateWithTranscriptPanel({
               />
             </FieldWrapper>
 
-            <FieldWrapper>
-              <Label required={false}>Submatriculation</Label>
-              <Select
-                options={submatOptions}
-                value={submats}
-                onChange={(selectedOptions) => setSubmats([...selectedOptions])}
-                isClearable
-                isMulti
-                placeholder="Master's pursued alongside your degree"
-                styles={customSelectStylesRight}
-                isLoading={isLoadingDegrees}
-              />
-            </FieldWrapper>
 
             {!scrapedCourses.length && (
               <NextButtonContainer>

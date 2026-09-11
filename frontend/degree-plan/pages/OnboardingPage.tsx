@@ -43,7 +43,6 @@ const OnboardingPage = ({
   const [schools, setSchools] = useState<SchoolOption[]>([]);
   const [majors, setMajors] = useState<MajorOption[]>([]);
   const [secondMajors, setSecondMajors] = useState<MajorOptionItem[]>([]);
-  const [submats, setSubmats] = useState<MajorOption[]>([]);
 
   const [PDF, setPDF] = useState<File | null>(null);
   const [numPages, setNumPages] = useState<number | null>(null);
@@ -79,7 +78,6 @@ const OnboardingPage = ({
         scrapedSchools,
         detectedMajorsOptions,
         detectedSecondMajorOptions,
-        detectedSubmatOptions,
       } = parseTranscript(all, degrees, standaloneMajors);
       setScrapedCourses(scrapedCourses);
       setStartingYear({
@@ -93,7 +91,6 @@ const OnboardingPage = ({
       setSchools(scrapedSchools);
       setMajors(detectedMajorsOptions);
       setSecondMajors(detectedSecondMajorOptions);
-      setSubmats(detectedSubmatOptions);
       transcriptDetected.current = startYear ? true : false;
     }
   };
@@ -106,7 +103,6 @@ const OnboardingPage = ({
     setSchools([]);
     setMajors([]);
     setSecondMajors([]);
-    setSubmats([]);
     setScrapedCourses([]);
     setStartingYear(null);
     setGraduationYear(null);
@@ -145,7 +141,6 @@ const OnboardingPage = ({
       inputtedSchools={schools}
       inputtedMajors={majors}
       inputtedSecondMajors={secondMajors}
-      inputtedSubmats={submats}
       setShowOnboardingModal={setShowOnboardingModal}
       canExit={canExit}
       onExit={exitOnboarding}

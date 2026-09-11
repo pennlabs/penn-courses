@@ -1,5 +1,4 @@
 import { createMajorLabel } from "@/components/FourYearPlan/DegreeModal";
-import { MASTERS_DEGREE_CODES } from "@/constants";
 import { DegreeListing, Major, SchoolOption } from "@/types";
 const { distance } = require("fastest-levenshtein");
 
@@ -19,10 +18,6 @@ const dedupeBy = <T, K>(items: T[], keyOf: (item: T) => K): T[] => {
     return true;
   });
 };
-
-const mastersDegreeCodes = new Set<string>(MASTERS_DEGREE_CODES);
-
-const isMastersDegree = (degreeCode: string) => mastersDegreeCodes.has(degreeCode);
 
 // What a program calls its own absence of a concentration, for transcripts that name none.
 // Transcripts and the catalog disagree on the wording, so a transcript's "Non Designated" has
@@ -119,9 +114,7 @@ export const getMajorOptions = (
   startingYear: number | null
 ): DegreeOption[] | undefined => {
   const majorOptions = degrees
-    ?.filter(
-      (d) => schools.map((s) => s.value).includes(d.degree) && !isMastersDegree(d.degree)
-    )
+    ?.filter((d) => schools.map((s) => s.value).includes(d.degree))
     .sort((d) => Math.abs((startingYear ? startingYear : d.year) - d.year))
     .map((degree) => ({
       value: degree,
@@ -130,27 +123,6 @@ export const getMajorOptions = (
     .sort((a, b) => a.label.localeCompare(b.label));
   return majorOptions;
 };
-
-// The masters degrees a submatriculant can pursue alongside their bachelors. Deliberately not
-// filtered by school, the same way second majors are not: a submatriculation is its own choice
-// rather than a consequence of the schools a student is enrolled in.
-export const getSubmatOptions = (
-  degrees: DegreeListing[] | undefined,
-  startingYear: number | null
-): DegreeOption[] | undefined =>
-  degrees
-    ?.filter((degree) => isMastersDegree(degree.degree))
-    .slice()
-    .sort(
-      (a, b) =>
-        Math.abs((startingYear || a.year) - a.year) -
-        Math.abs((startingYear || b.year) - b.year)
-    )
-    .map((degree) => ({
-      value: degree,
-      label: createMajorLabel(degree),
-    }))
-    .sort((a, b) => a.label.localeCompare(b.label));
 
 export type MajorOptionItem = {
   value: Major;
@@ -430,11 +402,7 @@ export const parseTranscript = (
   );
 
   parsedRecords.forEach((record) => {
-    // A masters record's program is not a school the student picks in onboarding — the
-    // submatriculation field stands on its own — so it is kept out of the schools list.
-    tempSchools = tempSchools.concat(
-      record.schools.filter((school) => !isMastersDegree(school.value))
-    );
+    tempSchools = tempSchools.concat(record.schools);
     // A submatriculant's shared courses appear on both records. Later records win, so a course
     // keeps the semester its most complete record gives it.
     Object.assign(courseToSem, record.courseToSem);
@@ -458,39 +426,23 @@ export const parseTranscript = (
     .filter((y) => !isNaN(y));
   startYear = years.length ? Math.min(...years) : 0;
 
-  // Match each record's majors against the degrees of that record's own school. Matching every
-  // major against every school's degrees at once would let a masters major match a bachelors
-  // degree, and the other way round, now that a submatriculant puts both in play at once.
+  // Match each record's majors against the degrees of that record's own school. A masters
+  // record names the MSE school, so its major matches a masters degree and an undergraduate
+  // record's matches a bachelors, without either pool needing to know about the other.
   const secondMajorPool = getSecondMajorOptions(majors, startYear);
-  const submatPool = getSubmatOptions(degrees, startYear);
   const degreeOptions: DegreeOption[] = [];
   const majorOptions: MajorOptionItem[] = [];
-  const submatOptions: DegreeOption[] = [];
 
   parsedRecords.forEach((record) => {
     if (!record.majors.length) return;
-    const isMastersRecord = record.schools.some((school) =>
-      isMastersDegree(school.value)
-    );
-
-    // A masters record's major names a masters degree, so it is matched against those rather
-    // than against the bachelors of whichever schools the transcript named. Nor can it fall
-    // back to a second major, which is something a bachelors carries.
     const detected = detectMajors(
       record.majors,
       record.concentrations,
-      isMastersRecord
-        ? submatPool
-        : getMajorOptions(degrees, record.schools, startYear),
-      isMastersRecord ? undefined : secondMajorPool
+      getMajorOptions(degrees, record.schools, startYear),
+      secondMajorPool
     );
-
-    if (isMastersRecord) {
-      submatOptions.push(...detected.degreeOptions);
-    } else {
-      degreeOptions.push(...detected.degreeOptions);
-      majorOptions.push(...detected.majorOptions);
-    }
+    degreeOptions.push(...detected.degreeOptions);
+    majorOptions.push(...detected.majorOptions);
   });
 
   return {
@@ -502,6 +454,5 @@ export const parseTranscript = (
       majorOptions,
       (option) => option.value.id
     ),
-    detectedSubmatOptions: dedupeBy(submatOptions, (option) => option.value.id),
   };
 };
