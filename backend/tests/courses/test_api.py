@@ -85,6 +85,18 @@ class CourseListTestCase(TestCase):
         create_mock_data("MATH-104-001", new_sem)
         self.assertEqual(len(response.data), 2)
 
+    def test_all_semester_with_semester_specific_params_is_error(self):
+        url = reverse("courses-list", kwargs={"semester": "all"})
+        for param in ("days", "time", "instructor_quality"):
+            response = self.client.get(url, {param: "1"})
+            self.assertEqual(response.status_code, 400, response.data)
+            self.assertIn(param, str(response.data))
+        # The same params are fine on a concrete semester.
+        response = self.client.get(
+            reverse("courses-list", kwargs={"semester": TEST_SEMESTER}), {"days": "M"}
+        )
+        self.assertEqual(response.status_code, 200, response.data)
+
     def test_course_with_no_sections_not_in_list(self):
         self.math.sections.all().delete()
         response = self.client.get(reverse("courses-list", kwargs={"semester": "all"}))

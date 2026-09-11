@@ -76,7 +76,8 @@ class BaseCourseMixin(AutoPrefetchViewSetMixin, generics.GenericAPIView):
             queryset = queryset.filter(**{self.get_semester_field(): semester})
         else:  # Only used for Penn Degree Plan (as of 4/10/2024)
             queryset = (
-                queryset.exclude(credits=None)  # heuristic: if the credits are empty, then ignore
+                # heuristic: if the credits are empty, then ignore
+                queryset.exclude(credits=None)
                 .order_by("full_code", "-semester")
                 .distinct("full_code")
             )
@@ -107,7 +108,8 @@ class SectionList(generics.ListAPIView, BaseCourseMixin):
     )
 
     serializer_class = MiniSectionSerializer
-    queryset = Section.objects.none()  # Default for documentation; overridden in get_queryset
+    # Default for documentation; overridden in get_queryset
+    queryset = Section.objects.none()
     filter_backends = [TypedSectionSearchBackend]
     search_fields = ["^full_code"]
 
@@ -137,7 +139,8 @@ class SectionDetail(generics.RetrieveAPIView, BaseCourseMixin):
     )
 
     serializer_class = SectionDetailSerializer
-    queryset = Section.objects.none()  # Default for documentation; overridden in get_queryset
+    # Default for documentation; overridden in get_queryset
+    queryset = Section.objects.none()
     lookup_field = "full_code"
 
     def get_queryset(self):
@@ -156,6 +159,7 @@ class OptionalPageNumberPagination(PageNumberPagination):
 
     page_size_query_param = "page_size"
     page_size = 100
+    max_page_size = 500
 
     def paginate_queryset(self, queryset, request, view=None):
         if "page" not in request.query_params and "page_size" not in request.query_params:
@@ -178,7 +182,26 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
     )
 
     serializer_class = CourseListSerializer
+    pagination_class = OptionalPageNumberPagination
+    filter_backends = [CourseSearchFilterBackend]
     queryset = Course.objects.none()  # included redundantly for docs
+
+    # These params filter on schedule/section data that only exists in a specific semester,
+    # so requesting them on the "all" semester path is an error.
+    _SEMESTER_SPECIFIC_PARAMS = frozenset(
+        {"days", "time", "instructor_quality"})
+
+    def get_semester(self):
+        semester = super().get_semester()
+        if semester == "all":
+            bad_params = sorted(self._SEMESTER_SPECIFIC_PARAMS.intersection(
+                self.request.query_params))
+            if bad_params:
+                raise ValidationError(
+                    f"The query parameter(s) {', '.join(bad_params)} cannot be used with "
+                    "semester='all'; specify a semester (or 'current') instead."
+                )
+        return semester
 
     def get_queryset(self):
         queryset = Course.with_reviews.filter(sections__isnull=False)
@@ -260,7 +283,6 @@ class CourseListSearch(CourseList):
 
     filter_backends = [TypedCourseSearchBackend, CourseSearchFilterBackend]
     search_fields = ("full_code", "title", "sections__instructors__name")
-    pagination_class = OptionalPageNumberPagination
 
 
 class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
@@ -308,15 +330,18 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
     def get_serializer_context(self):
         context = super().get_serializer_context()
         if self.request and hasattr(self.request, "query_params"):
-            include_location_str = self.request.query_params.get("include_location", "False")
-            context.update({"include_location": include_location_str.lower() == "true"})
+            include_location_str = self.request.query_params.get(
+                "include_location", "False")
+            context.update(
+                {"include_location": include_location_str.lower() == "true"})
         else:
             context.update({"include_location": False})
         return context
 
     def get_queryset(self):
         queryset = Course.with_reviews.all()
-        include_location = self.request.query_params.get("include_location", False)
+        include_location = self.request.query_params.get(
+            "include_location", False)
 
         prefetch_list = [
             "course",
@@ -562,7 +587,8 @@ class FriendshipView(generics.ListAPIView):
     def get_queryset(self):
         return Friendship.objects.filter(
             Q(sender=self.request.user) | Q(recipient=self.request.user),
-            Q(status=Friendship.Status.ACCEPTED) | Q(status=Friendship.Status.SENT),
+            Q(status=Friendship.Status.ACCEPTED) | Q(
+                status=Friendship.Status.SENT),
         )
 
     # returns all friendships (regardless of status)
@@ -581,7 +607,8 @@ class FriendshipView(generics.ListAPIView):
         recipient = get_object_or_404(User, username=username.lower())
 
         existing_friendship = (
-            self.get_all_friendships().filter(Q(recipient=recipient) | Q(sender=recipient)).first()
+            self.get_all_friendships().filter(Q(recipient=recipient)
+                                              | Q(sender=recipient)).first()
         )
 
         if not existing_friendship:
@@ -623,7 +650,8 @@ class FriendshipView(generics.ListAPIView):
         recipient = get_object_or_404(User, username=username.lower())
 
         existing_friendship = (
-            self.get_all_friendships().filter(Q(recipient=recipient) | Q(sender=recipient)).first()
+            self.get_all_friendships().filter(Q(recipient=recipient)
+                                              | Q(sender=recipient)).first()
         )
         if not existing_friendship:
             res["message"] = "Friendship doesn't exist."
