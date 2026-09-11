@@ -144,11 +144,11 @@ class Command(BaseCommand):
             self.zfile = zipfile.ZipFile(src)
             for name in tables_to_get:
                 zf = self.zfile.open(name + (".csv" if use_csv else ".sql"))
-                files.append(io.TextIOWrapper(zf, "latin-1"))
+                files.append(io.TextIOWrapper(zf, "utf-8-sig" if use_csv else "latin-1"))
         else:
             for name in tables_to_get:
                 path = os.path.abspath(os.path.join(src, name + (".csv" if use_csv else ".sql")))
-                files.append(open(path, "r", encoding="latin-1"))
+                files.append(open(path, "r", encoding="utf-8-sig" if use_csv else "latin-1"))
         return tuple(files)
 
     def close_files(self, files):
