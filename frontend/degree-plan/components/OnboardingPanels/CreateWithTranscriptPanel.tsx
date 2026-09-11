@@ -21,9 +21,9 @@ import {
   NextButton,
   NextButtonContainer,
   PanelContainer,
-  schoolOptions,
   TextButton,
   TextInput,
+  schoolOptions,
 } from "./SharedComponents";
 import Select from "react-select";
 import { PulseLoader } from "react-spinners";
@@ -228,6 +228,7 @@ export default function CreateWithTranscriptPanel({
     [standaloneMajors, startingYear]
   );
 
+
   return (
     <CenteredFlexContainer>
       <PanelContainer $maxWidth="90%" $minWidth="90%">
@@ -342,6 +343,7 @@ export default function CreateWithTranscriptPanel({
                 isLoading={isLoadingMajors}
               />
             </FieldWrapper>
+
 
             {!scrapedCourses.length && (
               <NextButtonContainer>

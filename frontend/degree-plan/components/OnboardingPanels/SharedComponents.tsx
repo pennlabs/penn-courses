@@ -326,5 +326,5 @@ export const schoolOptions = [
   { value: "BAS", label: "Engineering BAS" },
   { value: "BS", label: "Wharton" },
   { value: "BSN", label: "Nursing" },
-  { value: "MSE", label: "Engineering AM" },
+  { value: "MSE", label: "Engineering MSE" },
 ];

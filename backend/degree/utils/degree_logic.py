@@ -1,10 +1,26 @@
 import re
 from collections import defaultdict, deque
+from decimal import Decimal
 
 from django.db.models import Q
 
 from courses.models import Course
 from degree.utils.double_counts import get_degree_trees, resolve_double_counts
+
+
+# A submatriculant may double count at most this many CUs between their undergraduate and
+# their graduate degree, and only graduate-level coursework is eligible. Path@Penn cannot
+# express this: each audit's ShareWith policy is written about the blocks of that one audit,
+# so two separately scraped audits both saying they share with (MAJOR) would otherwise share
+# without limit. See the SEAS handbook, "Accelerated Master's (4+1) in Engineering".
+MAX_SHARED_GRADUATE_CREDITS = Decimal(3)
+
+# Coursework below this number never counts toward a graduate degree. A 4000-level course
+# scheduled with a 5000+ one is also eligible, but nothing in the audit records which courses
+# those were, so they are not treated as eligible here.
+MIN_GRADUATE_COURSE_NUMBER = 5000
+
+DEFAULT_COURSE_CREDITS = Decimal(1)
 
 
 def aggregate_rule_leaves(rules, f):
@@ -62,6 +78,108 @@ def prewarm_belongs_cache(rules, full_codes):
     return belongs_cache
 
 
+def prewarm_credits_cache(full_codes):
+    """
+    Returns the CU of each of the given courses, for weighing against the sharing allowance.
+    A course PDP does not know is assumed to be worth DEFAULT_COURSE_CREDITS.
+    """
+    return {
+        full_code: credits
+        for full_code, credits in Course.objects.filter(full_code__in=full_codes)
+        .exclude(credits__isnull=True)
+        .values_list("full_code", "credits")
+    }
+
+
+def is_graduate(component) -> bool:
+    """
+    Whether a plan component (a Degree, Major or Minor) awards a graduate degree. Only degrees
+    carry a program code, so majors and minors are never graduate.
+    """
+    # Imported here because degree.models imports this module; sys.modules makes the repeat
+    # lookup cheap.
+    from degree.models import graduate_programs
+
+    return getattr(component, "program", None) in graduate_programs
+
+
+def course_number(full_code: str):
+    """The numeric part of a course code, e.g. 5200 for CIS-5200. None if there is not one."""
+    match = re.search(r"-(\d+)", full_code or "")
+    return int(match.group(1)) if match else None
+
+
+class GraduateSharing:
+    """
+    Tracks how much of a submatriculant's double counting allowance a plan has used.
+
+    One instance spans all of a plan's courses, and courses are allocated in the order they
+    were taken, so the allowance goes to the earliest eligible courses. That is a default
+    rather than an optimum: the student can still move a course by hand afterwards.
+    """
+
+    def __init__(self, limit=MAX_SHARED_GRADUATE_CREDITS):
+        self.limit = limit
+        self.used = Decimal(0)
+
+    def allows(self, credits) -> bool:
+        return self.used + credits <= self.limit
+
+    def take(self, credits) -> None:
+        self.used += credits
+
+
+def split_by_level(selected_rules, rule_to_degree):
+    """
+    Partitions selected rules into those belonging to a graduate degree and those belonging to
+    any other component. Rules of no component in the plan (e.g. an override) are left out.
+    """
+    graduate, undergraduate = set(), set()
+    for rule in selected_rules:
+        component = rule_to_degree.get(rule)
+        if component is None:
+            continue
+        (graduate if is_graduate(component) else undergraduate).add(rule)
+    return graduate, undergraduate
+
+
+def apply_graduate_sharing(
+    full_code, selected_rules, unselected_rules, rule_to_degree, sharing, credits
+):
+    """
+    Applies the submatriculation double counting allowance to one course's selections.
+
+    A course shared between a graduate degree and an undergraduate one spends the allowance. If
+    it is not graduate-level coursework, or the allowance is spent, the course keeps only its
+    undergraduate rules and its graduate ones are offered as unselected instead, so nothing is
+    silently dropped and the student can still choose it by hand.
+    """
+    graduate_rules, undergraduate_rules = split_by_level(selected_rules, rule_to_degree)
+    if not graduate_rules or not undergraduate_rules:
+        # Counts toward only one level, so no allowance is spent.
+        return selected_rules, unselected_rules
+
+    number = course_number(full_code)
+    if number is not None and number >= MIN_GRADUATE_COURSE_NUMBER and sharing.allows(credits):
+        sharing.take(credits)
+        return selected_rules, unselected_rules
+
+    return selected_rules - graduate_rules, unselected_rules | graduate_rules
+
+
+def sharing_from_fulfillments(fulfillments, rule_to_degree, credits_cache=None):
+    """
+    A GraduateSharing already charged for what a plan's stored fulfillments share between its
+    graduate and undergraduate degrees, for weighing one more course against what is left.
+    """
+    sharing = GraduateSharing()
+    for fulfillment in fulfillments:
+        graduate, undergraduate = split_by_level(fulfillment.rules.all(), rule_to_degree)
+        if graduate and undergraduate:
+            sharing.take((credits_cache or {}).get(fulfillment.full_code, DEFAULT_COURSE_CREDITS))
+    return sharing
+
+
 def get_priority_rule(rules, full_code, belongs_cache):
     """
     Primitive method for finding the rule of highest priority given a set of applicable rules.
@@ -93,6 +211,8 @@ def allocate_rules(
     degree_plan=None,
     satisfied_rules=None,
     belongs_cache=None,
+    graduate_sharing=None,
+    credits_cache=None,
 ):
     """
     Given a course (full_code), rule, degree and double count mappings, and optionally a selected
@@ -133,6 +253,18 @@ def allocate_rules(
         unselected_rules |= {
             rule for rule in addl_unselected_rules if rule_to_degree.get(rule) == degree
         }
+
+    # A submatriculant may only share so much between their two degrees, which the audit's own
+    # ShareWith policy has no way of saying.
+    if graduate_sharing is not None:
+        selected_rules, unselected_rules = apply_graduate_sharing(
+            full_code,
+            selected_rules,
+            unselected_rules,
+            rule_to_degree,
+            graduate_sharing,
+            (credits_cache or {}).get(full_code, DEFAULT_COURSE_CREDITS),
+        )
 
     # Check for illegal double counting
     legal = check_legal(selected_rules, rule_to_degree, double_counts)
