@@ -3,6 +3,7 @@ import {
   DEFAULT_FILTERS,
   FilterState,
   loadStateFromURL,
+  normalizeFilters,
 } from "./filters";
 
 export type { FilterState } from "./filters";
@@ -20,7 +21,13 @@ export type FilterAction =
   | { type: "SET_ALL"; payload: FilterState }
   | { type: "RESET" };
 
+// Every transition is normalized so a semester-specific filter can never coexist with "Any".
 export const filterReducer = (
+  state: FilterState,
+  action: FilterAction
+): FilterState => normalizeFilters(applyFilterAction(state, action));
+
+const applyFilterAction = (
   state: FilterState,
   action: FilterAction
 ): FilterState => {
@@ -34,6 +41,17 @@ export const filterReducer = (
     case "SET_DAYS":
       return { ...state, days: action.payload };
     case "SET_SEMESTER":
+      // Choosing "Any" would otherwise be snapped straight back by normalizeFilters, so
+      // honor the choice by dropping the filters that only make sense for one semester.
+      if (action.payload === "Any") {
+        return {
+          ...state,
+          semester: action.payload,
+          time: DEFAULT_FILTERS.time,
+          days: [...DEFAULT_FILTERS.days],
+          instructor_quality: [...DEFAULT_FILTERS.instructor_quality],
+        };
+      }
       return { ...state, semester: action.payload };
     case "SET_COURSE_QUALITY":
       return { ...state, course_quality: action.payload };
