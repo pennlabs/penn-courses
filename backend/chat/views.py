@@ -10,11 +10,35 @@ from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
 
 from chat.agent import ChatUnavailable, run_chat_turn, stream_chat_turn
+from chat.providers import ChatModelUnavailable, ChatNotConfigured, model_catalog, resolve_model
 from chat.serializers import ChatRequestSerializer
 from PennCourses.docs_settings import PcxAutoSchema
 
 
 logger = logging.getLogger(__name__)
+
+
+class ChatModelsView(APIView):
+    """The server-configured models that a signed-in student may select."""
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        del request
+        return Response(model_catalog())
+
+
+def _resolved_model(serializer):
+    """Resolve the optional request model into a key-gated server model."""
+    return resolve_model(serializer.validated_data.get("model"))
+
+
+def _conversation_id(serializer, request):
+    """Get a stable session id without adding server-side chat state."""
+    value = serializer.validated_data.get("conversation_id")
+    if value is not None:
+        return str(value)
+    return request.session.session_key or f"pcx-user-{request.user.pk}"
 
 
 class ChatView(APIView):
@@ -61,6 +85,21 @@ class ChatView(APIView):
                                 "(e.g. 2024C). Defaults to the current semester."
                             ),
                         },
+                        "model": {
+                            "type": "string",
+                            "description": (
+                                "An id returned by GET /api/chat/models/. Defaults to "
+                                "the server's configured chat model."
+                            ),
+                        },
+                        "conversation_id": {
+                            "type": "string",
+                            "format": "uuid",
+                            "description": (
+                                "An opaque browser-generated id that stays stable for "
+                                "one visible conversation."
+                            ),
+                        },
                     },
                 }
             }
@@ -78,6 +117,12 @@ class ChatView(APIView):
                             "semester": {
                                 "type": "string",
                                 "description": "The semester the reply was scoped to.",
+                            },
+                            "model": {
+                                "type": "string",
+                                "description": (
+                                    "The server-validated model that generated the reply."
+                                ),
                             },
                             "tool_calls": {
                                 "type": "array",
@@ -149,17 +194,25 @@ class ChatView(APIView):
         serializer.is_valid(raise_exception=True)
 
         semester = serializer.validated_semester()
+        try:
+            model = _resolved_model(serializer)
+        except ChatModelUnavailable as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except ChatNotConfigured as e:
+            return Response({"detail": str(e)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
         try:
             result = run_chat_turn(
                 serializer.validated_data["messages"],
                 semester=semester,
                 user=request.user,
+                model=model,
+                conversation_id=_conversation_id(serializer, request),
             )
         except ChatUnavailable as e:
             return Response({"detail": str(e)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
-        return Response({"semester": semester, **result})
+        return Response({"semester": semester, "model": model.id, **result})
 
 
 def _sse(event, payload):
@@ -210,12 +263,25 @@ class ChatStreamView(APIView):
         semester = serializer.validated_semester()
         messages = serializer.validated_data["messages"]
         user = request.user
+        try:
+            model = _resolved_model(serializer)
+        except ChatModelUnavailable as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except ChatNotConfigured as e:
+            return Response({"detail": str(e)}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+        conversation_id = _conversation_id(serializer, request)
 
         def events():
             try:
-                for kind, payload in stream_chat_turn(messages, semester=semester, user=user):
+                for kind, payload in stream_chat_turn(
+                    messages,
+                    semester=semester,
+                    user=user,
+                    model=model,
+                    conversation_id=conversation_id,
+                ):
                     if kind == "done":
-                        payload = {"semester": semester, **payload}
+                        payload = {"semester": semester, "model": model.id, **payload}
                     yield _sse(kind, payload)
             except ChatUnavailable as e:
                 yield _sse("error", {"detail": str(e)})

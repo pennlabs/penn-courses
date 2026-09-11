@@ -20,9 +20,10 @@ finishes.
 
 ## Running it
 
-The backend has to be running on port 8000, with an Anthropic API key in its
-environment (see `backend/README.md` — note that nothing loads `.env`
-automatically):
+The backend has to be running on port 8000, with at least one supported provider key
+in its environment: `ANTHROPIC_API_KEY` for Claude or `OPENCODE_GO_API_KEY` for the
+curated DeepSeek V4.1 Flash and GLM-5.3 choices (see `backend/README.md` — note that
+nothing loads `.env` automatically):
 
 ```bash
 cd backend

@@ -124,16 +124,24 @@ export const useChat = () => {
     const [state, dispatch] = useReducer(reducer, initialState);
 
     const send = useCallback(
-        async (raw: string) => {
+        async (raw: string, model: string, conversationId: string) => {
             const content = raw.trim();
-            if (!content || state.pending) return;
+            if (!content || !model || !conversationId || state.pending) return;
 
             dispatch({ type: "sent", content });
             try {
-                const reply = await streamMessage(state.turns, content, {
-                    onText: (fragment) => dispatch({ type: "text", fragment }),
-                    onToolCall: (call) => dispatch({ type: "toolCall", call }),
-                });
+                const reply = await streamMessage(
+                    state.turns,
+                    content,
+                    model,
+                    conversationId,
+                    {
+                        onText: (fragment) =>
+                            dispatch({ type: "text", fragment }),
+                        onToolCall: (call) =>
+                            dispatch({ type: "toolCall", call }),
+                    }
+                );
                 dispatch({
                     type: "replied",
                     content,
