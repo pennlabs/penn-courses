@@ -28,10 +28,13 @@ from degree.serializers import (
     RuleSerializer,
 )
 from degree.utils.degree_logic import (
+    GraduateSharing,
     allocate_rules,
     check_legal,
     map_rules_and_degrees,
     prewarm_belongs_cache,
+    prewarm_credits_cache,
+    sharing_from_fulfillments,
 )
 from PennCourses.docs_settings import PcxAutoSchema
 
@@ -84,6 +87,10 @@ def update_fulfillments(degree_plan):
         {rule for rules in rules_per_degree.values() for rule in rules},
         [fulfillment.full_code for fulfillment in fulfillments],
     )
+    credits_cache = prewarm_credits_cache([fulfillment.full_code for fulfillment in fulfillments])
+    # Fulfillments are ordered by semester above, so the allowance goes to the earliest
+    # courses eligible for it.
+    graduate_sharing = GraduateSharing()
 
     for fulfillment in fulfillments:
         selected_rules, unselected_rules, legal = allocate_rules(
@@ -94,6 +101,8 @@ def update_fulfillments(degree_plan):
             degree_plan=degree_plan,
             satisfied_rules=satisfied_rules,
             belongs_cache=belongs_cache,
+            graduate_sharing=graduate_sharing,
+            credits_cache=credits_cache,
         )
 
         fulfillment.rules.set(selected_rules)
@@ -502,6 +511,12 @@ class OnboardFromTranscript(APIView):
             {rule for rules in rules_per_degree.values() for rule in rules},
             [full_code for semester in course_data for full_code in semester["courses"]],
         )
+        credits_cache = prewarm_credits_cache(
+            [full_code for semester in course_data for full_code in semester["courses"]]
+        )
+        # A transcript arrives in the order its courses were taken, so the allowance goes to
+        # the earliest courses eligible for it.
+        graduate_sharing = GraduateSharing()
 
         for semester in course_data:
             for full_code in semester["courses"]:
@@ -514,6 +529,8 @@ class OnboardFromTranscript(APIView):
                     degree_plan=degree_plan,
                     satisfied_rules=satisfied_rules,
                     belongs_cache=belongs_cache,
+                    graduate_sharing=graduate_sharing,
+                    credits_cache=credits_cache,
                 )
 
                 # Keyed on Fulfillment's actual unique constraint. Including semester and
@@ -585,6 +602,12 @@ class SatisfiedRuleList(APIView):
             )
 
         rules_per_degree, rule_to_degree, double_counts = map_rules_and_degrees(degree_plan)
+        # The preview has to agree with what the plan would actually grant, so the allowance
+        # is charged for what the stored fulfillments already share.
+        stored = Fulfillment.objects.filter(degree_plan=degree_plan).prefetch_related("rules")
+        credits_cache = prewarm_credits_cache(
+            [fulfillment.full_code for fulfillment in stored] + [full_code]
+        )
         selected_rules, unselected_rules, legal = allocate_rules(
             full_code,
             rules_per_degree,
@@ -592,6 +615,10 @@ class SatisfiedRuleList(APIView):
             double_counts,
             rule_selected,
             degree_plan=degree_plan,
+            graduate_sharing=sharing_from_fulfillments(
+                [f for f in stored if f.full_code != full_code], rule_to_degree, credits_cache
+            ),
+            credits_cache=credits_cache,
         )
 
         if fulfillment:
