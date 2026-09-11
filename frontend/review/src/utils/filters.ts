@@ -60,7 +60,7 @@ export const isFilterDefault = <K extends FilterKey>(
 export const changedFilterKeys = (filters: FilterState): FilterKey[] =>
   FILTER_KEYS.filter((key) => !isFilterDefault(key, filters[key]));
 
-/**
+/*
  `semester` change alone counts as zero since semester is always sent to the API, so on its own it does not
  count as "filtering" and should not trigger a search.
  */
@@ -87,10 +87,25 @@ export const getActiveSemesterFilters = (filters: FilterState): FilterKey[] =>
     (key) => !isFilterDefault(key, filters[key])
   );
 
+export const hasActiveSemesterFilters = (filters: FilterState): boolean =>
+  getActiveSemesterFilters(filters).length > 0;
+
+/*
+ The backend rejects semester-specific filters on the "all" semester, so any state with one of
+ them active is forced onto "Next Available". Returns the same object when nothing changes.
+ */
+export const normalizeFilters = (filters: FilterState): FilterState => {
+  if (filters.semester === "Any" && hasActiveSemesterFilters(filters)) {
+    return { ...filters, semester: "Next Available" };
+  }
+  return filters;
+};
+
 export const formatFiltersForAPI = (
   filters: FilterState
 ): Record<string, string> => {
   const formatted: Record<string, string> = {};
+  filters = normalizeFilters(filters);
 
   FILTER_KEYS.forEach((key) => {
     const value = filters[key];
@@ -163,5 +178,5 @@ export const loadStateFromURL = (
     }
   });
 
-  return filters;
+  return normalizeFilters(filters);
 };
