@@ -8,7 +8,9 @@ import DetailsBox from "../components/DetailsBox";
 import SearchBar from "../components/SearchBar";
 import Footer from "../components/Footer";
 import { ErrorBox } from "../components/common";
-import { apiReviewData, apiLive } from "../utils/api";
+import { apiReviewData, apiLive, queryKeys } from "../utils/api";
+import { queryClient } from "../utils/queryClient";
+import { scrollBehavior } from "../utils/helpers";
 
 /**
  * Represents a course, instructor, or department review page.
@@ -112,7 +114,11 @@ export class ReviewPage extends Component {
   getReviewData() {
     const { type, code, url_code, url_semester } = this.state;
     if (type && code) {
-      apiReviewData(type, code, url_semester)
+      queryClient
+        .fetchQuery({
+          queryKey: queryKeys.reviewData(type, code, url_semester),
+          queryFn: () => apiReviewData(type, code, url_semester)
+        })
         .then(data => {
           const { error, detail } = data;
           if (error) {
@@ -123,7 +129,13 @@ export class ReviewPage extends Component {
           } else {
             this.setState({ data });
             if (type === "course") {
-              apiLive(data.code, url_semester && `${url_code}@${url_semester}`)
+              const checkOfferedIn =
+                url_semester && `${url_code}@${url_semester}`;
+              queryClient
+                .fetchQuery({
+                  queryKey: queryKeys.live(data.code, checkOfferedIn),
+                  queryFn: () => apiLive(data.code, checkOfferedIn)
+                })
                 .then(result => this.setState({ liveData: result }))
                 .catch(() => undefined);
             }
@@ -154,7 +166,7 @@ export class ReviewPage extends Component {
     this.setState({ rowCode: nextCode }, () => {
       if (nextCode) {
         window.scrollTo({
-          behavior: "smooth",
+          behavior: scrollBehavior(),
           top: this.tableRef.current.offsetTop
         });
       }
@@ -311,7 +323,10 @@ export class ReviewPage extends Component {
           <div style={{ textAlign: "center", padding: 45 }}>
             <i
               className="fa fa-spin fa-cog fa-fw"
-              style={{ fontSize: "150px", color: "#aaa" }}
+              style={{
+                fontSize: "150px",
+                color: "var(--pcr-color-text-muted)"
+              }}
             />
             <h1 style={{ fontSize: "2em", marginTop: 15 }}>
               Loading {type === "instructor" ? "" : code}...

@@ -3,6 +3,7 @@ import { Bar } from "react-chartjs-2";
 
 import { DEFAULT_COLUMNS } from "../../constants";
 import { getColumnName } from "../../utils/helpers";
+import { scoreColors } from "../../styles/rawColors";
 
 export const DepartmentHeader = ({ name, code }) => (
   <div className="department">
@@ -12,10 +13,10 @@ export const DepartmentHeader = ({ name, code }) => (
 );
 
 const chartColorMap = {
-  rCourseQuality: "#6274f1",
-  rInstructorQuality: "#ffc107",
-  rDifficulty: "#76bf96",
-  rWorkRequired: "#df5d56"
+  rCourseQuality: scoreColors.course,
+  rInstructorQuality: scoreColors.instructor,
+  rDifficulty: scoreColors.difficulty,
+  rWorkRequired: scoreColors.workload
 };
 
 const generateChartData = (courses, isCourseEval) => {
