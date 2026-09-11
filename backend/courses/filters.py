@@ -560,3 +560,4 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
                 "example": "true",
             },
         ]
+    
