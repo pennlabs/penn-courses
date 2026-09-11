@@ -361,6 +361,29 @@ class CourseDetailSerializer(CourseListSerializer):
     sections = SectionDetailSerializer(
         many=True, read_only=True, help_text="A list of the sections of this course."
     )
+    prerequisite_courses = serializers.SlugRelatedField(
+        slug_field="full_code",
+        many=True,
+        read_only=True,
+        help_text=dedent(
+            """
+        The full codes (DEPT-####) of courses that are structured prerequisites of this
+        course, as parsed from Path@Penn class notes. Empty if none are known; see the
+        free-text `prerequisites` field for the registrar's own wording.
+        """
+        ),
+    )
+    dependent_courses = serializers.SlugRelatedField(
+        slug_field="full_code",
+        many=True,
+        read_only=True,
+        help_text=dedent(
+            """
+        The full codes (DEPT-####) of courses that list this course as a structured
+        prerequisite, i.e. the courses this one unlocks.
+        """
+        ),
+    )
     pre_ngss_requirements = PreNGSSRequirementListSerializer(
         many=True,
         read_only=True,
@@ -427,6 +450,8 @@ class CourseDetailSerializer(CourseListSerializer):
             "credits",
         ] + [
             "crosslistings",
+            "prerequisite_courses",
+            "dependent_courses",
             "pre_ngss_requirements",
             "attributes",
             "restrictions",

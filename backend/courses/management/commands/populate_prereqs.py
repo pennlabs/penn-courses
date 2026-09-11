@@ -11,7 +11,14 @@ from courses.util import get_semesters
 
 
 SCRAPE_OUTPUT_DIR = Path("courses/data/prereq_scrapes")
-COURSE_TOKEN_RE = re.compile(r"([A-Za-z]{2,4})\s*-?\s*(\d{3,4}[A-Za-z]?)|(\d{3,4}[A-Za-z]?)")
+# A course token is an upper-case department code followed by a course number ("CIS 1200",
+# "CIS-1200"), or a bare course number ("1600" in "CIS 1200, 1600"). Matching is case
+# sensitive on purpose: class notes write real codes in upper case, so this keeps ordinary
+# words like "in 2024" or "Section 001" from being read as departments.
+COURSE_TOKEN_RE = re.compile(r"\b([A-Z]{2,4})\s*-?\s*(\d{3,4}[A-Za-z]?)\b|\b(\d{3,4}[A-Za-z]?)\b")
+# A bare number only continues the previous department when the text between them is a list
+# separator, so "CIS 1200, 1600 or 1610" links all three but "CIS 1200. Starts in 2026" doesn't.
+LIST_GAP_RE = re.compile(r"[\s,/&]*(?:and|or)?[\s,/&]*", re.IGNORECASE)
 HTML_TAG_RE = re.compile(r"<[^>]+>")
 
 
@@ -19,20 +26,23 @@ def parse_prereq_pairs(prereq_text: str) -> set[tuple[str, str]]:
     if not prereq_text:
         return set()
 
-    clean_text = HTML_TAG_RE.sub(" ", prereq_text).upper()
+    clean_text = HTML_TAG_RE.sub(" ", prereq_text)
     pairs = set()
     last_dept = None
+    last_end = 0
     for match in COURSE_TOKEN_RE.finditer(clean_text):
+        start = match.start()
         dept = match.group(1)
-        code = match.group(2) or match.group(3)
+        code = (match.group(2) or match.group(3)).upper()
 
         if dept:
             last_dept = dept
             pairs.add((dept, code))
-            continue
-
-        if last_dept:
+        elif last_dept and LIST_GAP_RE.fullmatch(clean_text[last_end:start]):
             pairs.add((last_dept, code))
+        else:
+            last_dept = None
+        last_end = match.end()
 
     return pairs
 
