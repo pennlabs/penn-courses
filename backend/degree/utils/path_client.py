@@ -39,6 +39,11 @@ HEADERS = {
 # minors and certificates from the same catalog, which we skip.
 UNDERGRADUATE_DEGREE_CODES = {"BA", "BAS", "BS", "BSE", "BSN"}
 
+# Graduate degree codes we model, for submatriculants pursuing a masters alongside their
+# bachelors. Path lists many more graduate degrees (MBA, PHD, MD, ...) that we do not model;
+# only SEAS's MSE is submat-eligible in a way PDP can currently represent.
+MASTERS_DEGREE_CODES = {"MSE"}
+
 # Minors use this in place of a degree code, e.g. MATH-MINOR.
 MINOR_DEGREE_CODE = "MINOR"
 
@@ -98,10 +103,24 @@ class PathClient:
         """
         Returns the subset of `list_programs` whose degree code is one we model.
         """
+        return self.programs_with_degree_codes(srcdb, UNDERGRADUATE_DEGREE_CODES)
+
+    def masters_programs(self, srcdb: str) -> list[dict]:
+        """
+        Returns the masters programs a submatriculant can pursue, e.g. CIS-MSE-NCON. These
+        share the `sis_prog_code` EM_MSE, and their audits parse the same way a bachelor's
+        does: a DEGREE block plus a MAJOR block, and a CONC block when concentrated.
+        """
+        return self.programs_with_degree_codes(srcdb, MASTERS_DEGREE_CODES)
+
+    def programs_with_degree_codes(self, srcdb: str, degree_codes: set[str]) -> list[dict]:
+        """
+        Returns the subset of `list_programs` whose degree code is in `degree_codes`.
+        """
         return [
             program
             for program in self.list_programs(srcdb)
-            if split_program_code(program["code"])[1] in UNDERGRADUATE_DEGREE_CODES
+            if split_program_code(program["code"])[1] in degree_codes
         ]
 
     def minor_programs(self, srcdb: str) -> list[dict]:
