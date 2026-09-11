@@ -117,6 +117,12 @@ export interface Course {
   difficulty: number;
   credits: number;
   attribute_codes: string[];
+  /** Registrar's free-text prerequisite wording, may be empty. Detail endpoint only. */
+  prerequisites?: string;
+  /** Full codes of structured prerequisites (e.g. "CIS-1200"). Detail endpoint only. */
+  prerequisite_courses?: string[];
+  /** Full codes of courses that list this one as a prerequisite. Detail endpoint only. */
+  dependent_courses?: string[];
 }
 
 // The interface we use with React DND

@@ -3,7 +3,11 @@ import React from "react";
 import styled from "@emotion/styled";
 import { lato } from "../../fonts";
 import Ratings from "./InfoRatings";
-import { CourseDescription, CourseHeader } from "./CourseInfo";
+import {
+  CourseDescription,
+  CourseHeader,
+  CoursePrerequisites,
+} from "./CourseInfo";
 import { ErrorBox } from "./common/ErrorBox";
 
 const InfoBoxCSS = styled.div`
@@ -271,6 +275,9 @@ const InfoBox = ({
     title: name,
     notes,
     num_sections: numSections,
+    prerequisites,
+    prerequisite_courses: prerequisiteCourses,
+    dependent_courses: dependentCourses,
   },
   data,
   close,
@@ -311,6 +318,11 @@ const InfoBox = ({
               />
             </div>
           )}
+          <CoursePrerequisites
+            prerequisites={prerequisites}
+            prerequisiteCourses={prerequisiteCourses}
+            dependentCourses={dependentCourses}
+          />
           <CourseDescription description={description} />
         </div>
       ) : (

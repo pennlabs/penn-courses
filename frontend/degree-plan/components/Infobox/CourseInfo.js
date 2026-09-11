@@ -174,18 +174,73 @@ export const CourseHeader = ({ close, aliases, code, name, notes, data }) => (
   </div>
 );
 
-export const CourseDescription = ({ description }) => {
-  const content = reactStringReplace(
-    description,
-    /([A-Z]{2,4}[ -]\d{3,4})/g,
-    (m, i) => (
-      <a
-        href={`https://penncoursereview.com/course/${m.replace(" ", "-")}`}
-        key={m + i}
-      >
-        {m}
-      </a>
-    )
+const linkCourseCodes = (text) =>
+  reactStringReplace(text, /([A-Z]{2,4}[ -]\d{3,4})/g, (m, i) => (
+    <a
+      href={`https://penncoursereview.com/course/${m.replace(" ", "-")}`}
+      key={m + i}
+    >
+      {m}
+    </a>
+  ));
+
+export const CourseDescription = ({ description }) => (
+  <p className="desc">{linkCourseCodes(description)}</p>
+);
+
+const MAX_LISTED_COURSES = 8;
+
+const CourseCodeList = ({ codes }) => {
+  const shown = codes.slice(0, MAX_LISTED_COURSES);
+  const hidden = codes.length - shown.length;
+  return (
+    <>
+      {shown.map((code, i) => [
+        i > 0 && <div key={`${code}-sep`}>&#44;&nbsp;</div>,
+        <a href={`https://penncoursereview.com/course/${code}`} key={code}>
+          {code}
+        </a>,
+      ])}
+      {hidden > 0 && <div>&nbsp;and {hidden} more</div>}
+    </>
   );
-  return <p className="desc">{content}</p>;
+};
+
+/**
+ * Prerequisite information for a course. Prefers the structured links parsed from
+ * Path@Penn (`prerequisite_courses`) and falls back to the registrar's free text when
+ * no structured links exist, so a course never shows less than the text field already
+ * offered. `dependent_courses` are the courses this one unlocks.
+ */
+export const CoursePrerequisites = ({
+  prerequisites,
+  prerequisiteCourses,
+  dependentCourses,
+}) => {
+  const structured = prerequisiteCourses ?? [];
+  const dependents = dependentCourses ?? [];
+  const text = (prerequisites ?? "").trim();
+  if (!structured.length && !text && !dependents.length) {
+    return null;
+  }
+  return (
+    <div className="prereqs">
+      {(structured.length > 0 || text) && (
+        <CourseCodeQualifier>
+          <strong>Prerequisites:&nbsp;</strong>
+          {structured.length > 0 ? (
+            <CourseCodeList codes={structured} />
+          ) : (
+            <span>{linkCourseCodes(text)}</span>
+          )}
+        </CourseCodeQualifier>
+      )}
+      {dependents.length > 0 && (
+        <CourseCodeQualifier>
+          <strong>Unlocks:&nbsp;</strong>
+          <CourseCodeList codes={dependents} />
+        </CourseCodeQualifier>
+      )}
+    </div>
+  );
 };
