@@ -16,11 +16,7 @@ const activityMap = {
 };
 
 const TagsNotOffered = ({ data }) => {
-  let {
-    instructors: instructorData,
-    latest_semester: mostRecent,
-    code = ""
-  } = data;
+  let { latest_semester: mostRecent, code = "" } = data;
   const courseName = code.replace("-", " ");
   if (!mostRecent) {
     return <div />;

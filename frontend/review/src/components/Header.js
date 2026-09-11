@@ -112,7 +112,7 @@ const Header = () => {
   const dispatch = useFilterDispatch();
 
   const getCourseCount = () =>
-    Object.keys(localStorage).filter((a) => !a.startsWith("meta-")).length;
+    Object.keys(localStorage).filter(a => !a.startsWith("meta-")).length;
   const [courseCount, setCourseCount] = useState(getCourseCount());
 
   useEffect(() => {
@@ -136,7 +136,7 @@ const Header = () => {
             alignItems: "center",
             gap: "15px",
             margin: "0 28px",
-            cursor: "pointer",
+            cursor: "pointer"
           }}
           onClick={() => {
             if (window.location.pathname === "/") {

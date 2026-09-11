@@ -115,12 +115,12 @@ export const ScoreTable = props => {
       col.Header = (
         <>
           Num Openings{" "}
-          <a data-tip data-for="num-openings">
+          <span data-tip data-for="num-openings">
             <i
               className="fa fa-question-circle"
               style={{ color: "var(--pcr-color-text-faint)", fontSize: "13px" }}
             />
-          </a>
+          </span>
           <ReactTooltip
             id="num-openings"
             className="opaque"
@@ -144,12 +144,12 @@ export const ScoreTable = props => {
       col.Header = (
         <>
           Percent Open{" "}
-          <a data-tip data-for="percent-open">
+          <span data-tip data-for="percent-open">
             <i
               className="fa fa-question-circle"
               style={{ color: "var(--pcr-color-text-faint)", fontSize: "13px" }}
             />
-          </a>
+          </span>
           <ReactTooltip
             id="percent-open"
             className="opaque"
@@ -173,12 +173,12 @@ export const ScoreTable = props => {
       col.Header = (
         <>
           Filled in Adv Reg{" "}
-          <a data-tip data-for="filled-in-adv-reg">
+          <span data-tip data-for="filled-in-adv-reg">
             <i
               className="fa fa-question-circle"
               style={{ color: "var(--pcr-color-text-faint)", fontSize: "13px" }}
             />
-          </a>
+          </span>
           <ReactTooltip
             id="filled-in-adv-reg"
             className="opaque"
