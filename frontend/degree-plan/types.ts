@@ -38,6 +38,24 @@ export interface DegreeListing extends DBObject {
   credits: number;
 }
 
+/** A major or minor added on top of a degree, carrying only its own block's rules. */
+export interface ProgramComponent extends DBObject {
+  id: number;
+  program_code: string;
+  code: string;
+  name: string | null;
+  year: number;
+  credits: number | null;
+  rules: Rule[];
+}
+
+export interface Major extends ProgramComponent {
+  concentration: string | null;
+  concentration_name: string | null;
+}
+
+export interface Minor extends ProgramComponent {}
+
 export interface DockedCourse extends DBObject {
   id: number;
   full_code: string;
@@ -60,6 +78,9 @@ export interface Degree extends DBObject {
 export interface DegreePlan extends DBObject {
   id: number;
   degrees: Degree[]
+  /** Majors pursued beyond the one this plan's degree already includes. */
+  majors: Major[]
+  minors: Minor[]
   name: string;
   updated_at: string;
   created_at: string;
@@ -117,6 +138,7 @@ export interface Fulfillment extends DBObject {
   degree_plan: number; // id
   full_code: string;
   unselected_rules: number[];
+  overrides: number[]; // rule IDs manually overridden to count for
   legal: boolean;
 }
 

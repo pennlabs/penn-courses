@@ -104,6 +104,7 @@ interface DraggableComponentProps {
   isDragging: boolean;
   fulfillment?: Fulfillment;
   isUnselectedRule?: boolean;
+  isOverride?: boolean;
   ruleId?: number;
   activeDegreePlanId?: number;
   className?: string;
@@ -209,6 +210,15 @@ const RuleList = styled.ul`
   }
 `;
 
+const OverrideBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.7rem;
+  color: #b8860b;
+  font-weight: 600;
+`;
+
 const SwitchRuleButton = styled.button`
   border: 1px solid #d7cc86;
   border-radius: 6px;
@@ -309,6 +319,7 @@ const CourseComponent = ({
   course,
   fulfillment,
   isUnselectedRule = false,
+  isOverride = false,
   ruleId,
   activeDegreePlanId,
   removeCourse,
@@ -342,6 +353,10 @@ const CourseComponent = ({
       .map(id => ruleMap.get(id))
       .filter((t): t is { title: string; degreeName: string } => !!t);
   }, [fulfillment?.unselected_rules, degreePlanDetail]);
+  const overrideSet = useMemo(
+    () => new Set(fulfillment?.overrides ?? []),
+    [fulfillment?.overrides]
+  );
   const selectedRuleNames = useMemo(() => {
     if (!fulfillment?.rules?.length || !degreePlanDetail?.degrees) return [];
     const ruleMap = new Map<number, { title: string; degreeName: string }>();
@@ -352,9 +367,13 @@ const CourseComponent = ({
       );
     }
     return fulfillment.rules
-      .map(id => ruleMap.get(id))
-      .filter((t): t is { title: string; degreeName: string } => !!t);
-  }, [fulfillment?.rules, degreePlanDetail]);
+      .map(id => {
+        const info = ruleMap.get(id);
+        if (!info) return null;
+        return { ...info, isOverride: overrideSet.has(id) };
+      })
+      .filter((t): t is { title: string; degreeName: string; isOverride: boolean } => !!t);
+  }, [fulfillment?.rules, degreePlanDetail, overrideSet]);
 
   const [infoOpen, setInfoOpen] = useState(false);
   const [switchingRule, setSwitchingRule] = useState(false);
@@ -503,6 +522,21 @@ const CourseComponent = ({
             )}
             <CourseBadge>
               {course.full_code.replace("-", " ")}
+              {isOverride && (
+                <OverrideBadge
+                  data-tooltip-id={`override-${fulfillment.full_code}-${ruleId}`}
+                  data-tooltip-content="Manual override"
+                >
+                  <i className="fas fa-star" />
+                </OverrideBadge>
+              )}
+              {isOverride && (
+                <Tooltip
+                  id={`override-${fulfillment.full_code}-${ruleId}`}
+                  place="top"
+                  style={{ zIndex: 9999 }}
+                />
+              )}
               {showSemesterOnCard && (
                 <SemesterIcon semester={displaySemester} />
               )}
@@ -526,6 +560,11 @@ const CourseComponent = ({
                             {selectedRuleNames.map((ruleInfo, i) => (
                               <li key={i}>
                                 [{ruleInfo.degreeName}] {ruleInfo.title}
+                                {ruleInfo.isOverride && (
+                                  <OverrideBadge style={{ marginLeft: "0.35rem" }}>
+                                    <i className="fas fa-star" /> override
+                                  </OverrideBadge>
+                                )}
                               </li>
                             ))}
                           </RuleList>

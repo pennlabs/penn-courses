@@ -4,12 +4,18 @@ import useSWR from "swr";
 import { pdfjs } from "react-pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
-import { DegreeListing, DegreePlan, MajorOption, SchoolOption } from "@/types";
+import { DegreeListing, DegreePlan, Major, MajorOption, SchoolOption } from "@/types";
 import { polyfillPromiseWithResolvers } from "./polyfilsResolver";
 
 import "core-js/full/promise/with-resolvers.js";
 
-import { parseItems, parseTranscript, ParsedText, flattenParsedText } from "../utils/parseUtils";
+import {
+  parseItems,
+  parseTranscript,
+  ParsedText,
+  flattenParsedText,
+  MajorOptionItem,
+} from "../utils/parseUtils";
 import WelcomeLayout from "@/components/OnboardingPanels/WelcomePanel";
 import CreateWithTranscriptPanel from "@/components/OnboardingPanels/CreateWithTranscriptPanel";
 
@@ -20,9 +26,11 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/l
 const OnboardingPage = ({
   setShowOnboardingModal,
   setActiveDegreeplan,
+  canExit = false,
 }: {
   setShowOnboardingModal: (arg0: boolean) => void;
   setActiveDegreeplan: (arg0: DegreePlan) => void;
+  canExit?: boolean;
 }) => {
   const [startingYear, setStartingYear] = useState<{
     label: any;
@@ -34,6 +42,7 @@ const OnboardingPage = ({
   } | null>(null);
   const [schools, setSchools] = useState<SchoolOption[]>([]);
   const [majors, setMajors] = useState<MajorOption[]>([]);
+  const [secondMajors, setSecondMajors] = useState<MajorOptionItem[]>([]);
 
   const [PDF, setPDF] = useState<File | null>(null);
   const [numPages, setNumPages] = useState<number | null>(null);
@@ -43,13 +52,12 @@ const OnboardingPage = ({
   const { data: degrees, isLoading: isLoadingDegrees } = useSWR<
     DegreeListing[]
   >(`/api/degree/degrees`);
+  const { data: standaloneMajors } = useSWR<Major[]>(`/api/degree/majors`);
 
   // TRANSCRIPT PARSING
-  const total = useRef<Record<number, ParsedText[]>>({});
+  const total = useRef<Record<number, ParsedText>>({});
   const addText = (items: any[], index: number) => {
-    const parsed = parseItems(items);
-    total.current[index] = total.current[index] ?? [];
-    total.current[index].push(parsed);
+    total.current[index] = parseItems(items);
 
     // If all pages have been read, begin to parse text from transcript
     if (Object.keys(total.current).length === numPages) {
@@ -59,11 +67,9 @@ const OnboardingPage = ({
         .sort((a, b) => a - b);
 
       sortedPageIndexes.forEach((pageIndex) => {
-        const pageEntries = total.current[pageIndex];
-        if (!pageEntries) return;
-        pageEntries.forEach((pageText) => {
-          all = all.concat(flattenParsedText(pageText));
-        });
+        const pageEntry = total.current[pageIndex];
+        if (!pageEntry) return;
+        all = all.concat(flattenParsedText(pageEntry));
       });
 
       const {
@@ -71,9 +77,9 @@ const OnboardingPage = ({
         startYear,
         scrapedSchools,
         detectedMajorsOptions,
-      } = parseTranscript(all, degrees);
+        detectedSecondMajorOptions,
+      } = parseTranscript(all, degrees, standaloneMajors);
       setScrapedCourses(scrapedCourses);
-      console.log(scrapedCourses);
       setStartingYear({
         value: startYear,
         label: startYear,
@@ -84,6 +90,7 @@ const OnboardingPage = ({
       });
       setSchools(scrapedSchools);
       setMajors(detectedMajorsOptions);
+      setSecondMajors(detectedSecondMajorOptions);
       transcriptDetected.current = startYear ? true : false;
     }
   };
@@ -100,6 +107,12 @@ const OnboardingPage = ({
     setGraduationYear(null);
   };
 
+  const exitOnboarding = () => {
+    resetParser();
+    setCurrentPage(0);
+    setShowOnboardingModal(false);
+  };
+
   if (currentPage === 0)
     return (
       <WelcomeLayout
@@ -112,6 +125,8 @@ const OnboardingPage = ({
         transcriptDetected={transcriptDetected}
         startingYear={startingYear}
         setCurrentPage={setCurrentPage}
+        canExit={canExit}
+        onExit={exitOnboarding}
       />
     );
 
@@ -124,7 +139,10 @@ const OnboardingPage = ({
       setActiveDegreeplan={setActiveDegreeplan}
       inputtedSchools={schools}
       inputtedMajors={majors}
+      inputtedSecondMajors={secondMajors}
       setShowOnboardingModal={setShowOnboardingModal}
+      canExit={canExit}
+      onExit={exitOnboarding}
     />
   );
 };

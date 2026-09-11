@@ -177,6 +177,43 @@ class Rule(models.Model):
         ),
     )
 
+    block_type = models.CharField(
+        max_length=16,
+        blank=True,
+        help_text=dedent(
+            """
+            The type of the audit block this rule came from, e.g. MAJOR or OTHER. Blank for
+            rules that did not come from a Path@Penn audit. Together with `block_value` this
+            identifies the block, which is what `share_targets` is expressed in terms of.
+            """
+        ),
+    )
+
+    block_value = models.CharField(
+        max_length=32,
+        blank=True,
+        help_text=dedent(
+            """
+            The code of the audit block this rule came from, e.g. CMPE for a major block or
+            U-SEAS-SSH for a named other block. Blank for rules not from a Path@Penn audit.
+            """
+        ),
+    )
+
+    share_targets = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=dedent(
+            """
+            What this rule is allowed to double count with, as a list of
+            {"kind": ..., "value": ...} objects taken from the audit's ShareWith
+            (NONEXCLUSIVE) qualifiers. `kind` is a block type or the literal THISBLOCK, and
+            `value` names a specific block when the qualifier does. An empty list means this
+            rule may not double count with anything.
+            """
+        ),
+    )
+
     parent = models.ForeignKey(
         "self",
         null=True,
@@ -188,20 +225,6 @@ class Rule(models.Model):
             """
         ),
         related_name="children",
-    )
-
-    can_double_count_with = models.ManyToManyField(
-        "self",
-        symmetrical=True,
-        blank=True,
-        help_text=dedent(
-            """
-            Parent rules that can double count with this rule.
-            (i.e. if this rule is Quantitative Data Analysis (a College Foundations req),
-            then this field would contain the General Educations: Sector rule as well as
-            the Major in ___ rule.)
-            """
-        ),
     )
 
     def __str__(self) -> str:
@@ -221,7 +244,6 @@ class Rule(models.Model):
         Check if this rule is fulfilled by the provided courses.
         """
         if self.q:
-            assert not self.children.all().exists()
             # Sums all courses (and corresponding credits), from full_codes,
             # that satisfy this rule's q object.
             total_courses, total_credits = (
@@ -246,7 +268,6 @@ class Rule(models.Model):
 
             return True
         else:
-            # assert self.children.all().exists()
             count = 0
             for child in self.children.all():
                 if not child.evaluate(full_codes):
@@ -263,13 +284,8 @@ class Rule(models.Model):
         Given a course, check if it can count towards this rule.
         """
         if self.q:
-            assert not self.children.all().exists()
-            check_course = Course.objects.filter(self.get_q_object() or Q(), full_code=full_code)
             assert self.num is not None or self.credits is not None
-
-            if check_course.count():
-                return True
-            return False
+            return Course.objects.filter(self.get_q_object() or Q(), full_code=full_code).exists()
         else:
             count = 0
             for child in self.children.all():
@@ -293,6 +309,95 @@ class Rule(models.Model):
         return json_parser.parse(self.q)
 
 
+class ProgramComponent(models.Model):
+    """
+    Something a student adds on top of a degree: a second major, or a minor.
+
+    A Degree is the whole audit for the program a student is enrolled in -- its DEGREE block,
+    its general education blocks and its own major. What an *additional* major or minor
+    contributes is only its own block, because the rest of that program's audit describes a
+    degree the student is not pursuing. A Math BA audit carries the College's general
+    education requirements; a Mechanical Engineering student who adds Math as a second major
+    does not inherit them.
+    """
+
+    program_code = models.CharField(
+        max_length=32,
+        help_text=dedent(
+            """
+            The Path@Penn program this came from, e.g. MATH-BA-GEN or MATH-MINOR. Kept because
+            the same major code can have different requirements depending on the degree it sits
+            under: CSCI as a College second major is not CSCI as an Engineering major.
+            """
+        ),
+    )
+
+    code = models.CharField(
+        max_length=4,
+        help_text="The major or minor code, e.g. MATH.",
+    )
+
+    name = models.CharField(
+        max_length=128,
+        null=True,
+        help_text="The name, e.g. Mathematics.",
+    )
+
+    year = models.IntegerField(help_text="The catalog year this came from, e.g. 2027.")
+
+    credits = models.DecimalField(
+        decimal_places=2,
+        max_digits=4,
+        null=True,
+        help_text="The minimum number of CUs required, if the block states one.",
+    )
+
+    rules = models.ManyToManyField(
+        "Rule",
+        blank=True,
+        help_text="The rules of this component's own block.",
+    )
+
+    class Meta:
+        abstract = True
+
+    def __str__(self) -> str:
+        return f"{self.program_code} ({self.year})"
+
+
+class Major(ProgramComponent):
+    """
+    A major a student adds to a degree beyond the one their program already includes.
+    """
+
+    concentration = models.CharField(max_length=4, null=True)
+    concentration_name = models.CharField(max_length=128, null=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["program_code", "year"],
+                name="unique major",
+            )
+        ]
+
+
+class Minor(ProgramComponent):
+    """
+    A minor. Minor blocks are marked STANDALONEBLOCK in the audit, meaning DegreeWorks
+    evaluates them outside the degree's shared pool of courses, so their rules double count
+    freely with the rest of a plan.
+    """
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["program_code", "year"],
+                name="unique minor",
+            )
+        ]
+
+
 class DegreePlan(models.Model):  #
     """
     Stores a users plan for an associated degree.
@@ -304,6 +409,25 @@ class DegreePlan(models.Model):  #
         Degree,
         blank=True,
         help_text="The degrees this degree plan is associated with.",
+    )
+
+    majors = models.ManyToManyField(
+        Major,
+        blank=True,
+        related_name="degree_plans",
+        help_text=dedent(
+            """
+            Majors beyond the one the plan's degree already includes. Each contributes only
+            its own block, not the whole audit it was read from.
+            """
+        ),
+    )
+
+    minors = models.ManyToManyField(
+        Minor,
+        blank=True,
+        related_name="degree_plans",
+        help_text="The minors this degree plan is associated with.",
     )
 
     person = models.ForeignKey(
@@ -461,6 +585,18 @@ class Fulfillment(models.Model):
             """
             True if course associated with this fulfillment isn't illegally double counted anywhere,
             false otherwise.
+            """
+        ),
+    )
+    overrides = models.ManyToManyField(
+        Rule,
+        related_name="overridden_fulfillments",
+        blank=True,
+        help_text=dedent(
+            """
+            Rules this course is manually overridden to count for, bypassing the normal Q filter
+            check. Use this to handle edge cases where a course should fulfill a requirement
+            even though it doesn't technically satisfy the rule's conditions.
             """
         ),
     )

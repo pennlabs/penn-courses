@@ -107,9 +107,13 @@ class SectionList(generics.ListAPIView, BaseCourseMixin):
     )
 
     serializer_class = MiniSectionSerializer
-    queryset = Section.with_reviews.all().exclude(activity="")
+    queryset = Section.objects.none()  # Default for documentation; overridden in get_queryset
     filter_backends = [TypedSectionSearchBackend]
     search_fields = ["^full_code"]
+
+    def get_queryset(self):
+        queryset = Section.with_reviews.all().exclude(activity="")
+        return self.filter_by_semester(queryset)
 
     @staticmethod
     def get_semester_field():
@@ -133,17 +137,31 @@ class SectionDetail(generics.RetrieveAPIView, BaseCourseMixin):
     )
 
     serializer_class = SectionDetailSerializer
-    queryset = Section.with_reviews.all()
+    queryset = Section.objects.none()  # Default for documentation; overridden in get_queryset
     lookup_field = "full_code"
+
+    def get_queryset(self):
+        queryset = Section.with_reviews.all()
+        return self.filter_by_semester(queryset)
 
     def get_semester_field(self):
         return "course__semester"
 
 
-class CoursePagination(PageNumberPagination):
-    page_size = 100
+class OptionalPageNumberPagination(PageNumberPagination):
+    """
+    Pagination that only activates when `page` or `page_size` is present in the request.
+    When neither is provided, the full result set is returned unpaginated.
+    """
+
     page_size_query_param = "page_size"
+    page_size = 100
     max_page_size = 500
+
+    def paginate_queryset(self, queryset, request, view=None):
+        if "page" not in request.query_params and "page_size" not in request.query_params:
+            return None
+        return super().paginate_queryset(queryset, request, view)
 
 
 class CourseList(generics.ListAPIView, BaseCourseMixin):
@@ -161,9 +179,9 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
     )
 
     serializer_class = CourseListSerializer
-    pagination_class = CoursePagination
+    pagination_class = OptionalPageNumberPagination
     filter_backends = [CourseSearchFilterBackend]
-    queryset = Course.with_reviews.filter(sections__isnull=False)  # included redundantly for docs
+    queryset = Course.objects.none()  # included redundantly for docs
 
     # These params filter on schedule/section data that only exists in a specific semester,
     # so requesting them on the "all" semester path automatically snaps to current semester.
@@ -301,7 +319,7 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
 
     serializer_class = CourseDetailSerializer
     lookup_field = "full_code"
-    queryset = Course.with_reviews.all()  # included redundantly for docs
+    queryset = Course.objects.none()  # included redundantly for docs
 
     def get_serializer_context(self):
         context = super().get_serializer_context()

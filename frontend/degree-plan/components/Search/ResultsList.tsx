@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import styled from '@emotion/styled';
 import Course, { SkeletonCourse } from "./CourseInSearch";
 import { Course as CourseType, DegreePlan, DockedCourse, Fulfillment, Rule } from "../../types";
@@ -53,15 +53,40 @@ export interface ResultListProps {
     fulfillments: Fulfillment[],
     ruleId: Rule["id"] | null;
     isLoading: boolean;
+    isLoadingMore: boolean;
+    hasMore: boolean;
+    loadMore: () => void;
 }
 const ResultsList = ({
     ruleId,
     activeDegreeplanId,
     fulfillments,
     courses,
-    isLoading
+    isLoading,
+    isLoadingMore,
+    hasMore,
+    loadMore,
 }: ResultListProps) => {
     // TODO: what if activeDegreeplan is not defined
+
+    const observerRef = useRef<IntersectionObserver | null>(null);
+    const sentinelRef = useCallback(
+        (node: HTMLLIElement | null) => {
+            if (observerRef.current) {
+                observerRef.current.disconnect();
+                observerRef.current = null;
+            }
+            if (!node) return;
+            observerRef.current = new IntersectionObserver(
+                (entries) => {
+                    if (entries[0].isIntersecting) loadMore();
+                },
+                { threshold: 0.1 }
+            );
+            observerRef.current.observe(node);
+        },
+        [loadMore]
+    );
 
     const { createOrUpdate: createOrUpdateFulfillment } = useSWRCrud<Fulfillment>(
         `/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`,
@@ -80,21 +105,25 @@ const ResultsList = ({
                 <Header width="20%">DIFF</Header>
             </HeaderContainer>
             <CoursesContainer>
-                {!isLoading ? courses.map((course) =>  
-                <Course
-                    ruleId={ruleId}
-                    key={course.id + course.semester}
-                    course={course}
-                    onClick={() => {
-                        if (ruleId) {
-                            const rules = fulfillments.find(fulfillment => fulfillment.full_code == course.id)?.rules || [];
-                            createOrUpdateFulfillment({ rules: [...rules, ruleId] }, course.id);
-                        } else createOrUpdateDockedCourse({}, course.id);
-                    }}
-                    // star means the course is a fulfillment
-                    isStar={!!fulfillments.find((fulfillment) => fulfillment.full_code == course.id)}
-                />) :
-                Array.from(Array(6).keys()).map(() => <SkeletonCourse />)
+                {!isLoading ? <>
+                    {courses.map((course) =>
+                    <Course
+                        ruleId={ruleId}
+                        key={course.id + course.semester}
+                        course={course}
+                        onClick={() => {
+                            if (ruleId) {
+                                const rules = fulfillments.find(fulfillment => fulfillment.full_code == course.id)?.rules || [];
+                                createOrUpdateFulfillment({ rules: [...rules, ruleId] }, course.id);
+                            } else createOrUpdateDockedCourse({}, course.id);
+                        }}
+                        // star means the course is a fulfillment
+                        isStar={!!fulfillments.find((fulfillment) => fulfillment.full_code == course.id)}
+                    />)}
+                    {isLoadingMore && Array.from(Array(3).keys()).map((i) => <SkeletonCourse key={`skeleton-${i}`} />)}
+                    {hasMore && <li ref={sentinelRef} style={{ height: 1 }} />}
+                </> :
+                Array.from(Array(6).keys()).map((i) => <SkeletonCourse key={`skeleton-${i}`} />)
                 }
             </CoursesContainer>
         </CourseListContainer>

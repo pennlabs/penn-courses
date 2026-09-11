@@ -220,6 +220,7 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
                   <OnboardingPage
                     setShowOnboardingModal={setShowOnboardingModal}
                     setActiveDegreeplan={setActiveDegreeplan}
+                    canExit={!!degreeplans?.length}
                   />
                 ) : (
                   <Row>

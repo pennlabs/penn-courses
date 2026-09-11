@@ -69,15 +69,18 @@ const CourseInReq = ({ course, isUsed, isUnselectedRule = false, isDisabled, rul
       })
     }), [course])
   
+    const isOverride = !!fulfillment?.overrides?.includes(ruleId);
+
     return (
-        <CourseComponent 
-          courseType={ItemTypes.COURSE_IN_REQ} 
-          removeCourse={handleRemoveCourse} 
-          dragRef={drag} 
-          isDragging={isDragging} 
+        <CourseComponent
+          courseType={ItemTypes.COURSE_IN_REQ}
+          removeCourse={handleRemoveCourse}
+          dragRef={drag}
+          isDragging={isDragging}
           isDisabled={isDisabled}
           isUsed={isUsed}
           isUnselectedRule={isUnselectedRule}
+          isOverride={isOverride}
           ruleId={ruleId}
           activeDegreePlanId={activeDegreePlanId}
           course={course}

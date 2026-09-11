@@ -2,6 +2,7 @@ from collections import defaultdict
 
 from django.db import IntegrityError, transaction
 from django.http import Http404
+from django.shortcuts import get_object_or_404
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -11,7 +12,7 @@ from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from degree.models import Degree, DegreePlan, DockedCourse, Fulfillment, PDPBetaUser
+from degree.models import Degree, DegreePlan, DockedCourse, Fulfillment, Major, Minor, PDPBetaUser
 from degree.serializers import (
     DegreeDetailSerializer,
     DegreeListSerializer,
@@ -19,10 +20,19 @@ from degree.serializers import (
     DegreePlanListSerializer,
     DockedCourseSerializer,
     FulfillmentSerializer,
+    MajorDetailSerializer,
+    MajorListSerializer,
+    MinorDetailSerializer,
+    MinorListSerializer,
     Rule,
     RuleSerializer,
 )
-from degree.utils.degree_logic import allocate_rules, check_legal, map_rules_and_degrees
+from degree.utils.degree_logic import (
+    allocate_rules,
+    check_legal,
+    map_rules_and_degrees,
+    prewarm_belongs_cache,
+)
 from PennCourses.docs_settings import PcxAutoSchema
 
 
@@ -49,6 +59,90 @@ class DegreeViewset(viewsets.ReadOnlyModelViewSet):
         if self.action == "list":
             return DegreeListSerializer
         return DegreeDetailSerializer
+
+
+def update_fulfillments(degree_plan):
+    """
+    Reallocates every fulfillment of a plan, which has to happen whenever the plan gains or
+    loses a degree, major or minor: the rules a course can count toward, and what it may
+    double count with, both change.
+    """
+    rules_per_degree, rule_to_degree, double_counts = map_rules_and_degrees(degree_plan)
+    # Helper to track satisfaction
+    satisfied_lookup = defaultdict(int)
+    satisfied_rules = set()
+
+    def is_satisfied(rule):
+        f = satisfied_lookup[rule.id]
+        return (rule.num and f >= rule.num) or (rule.credits and f >= rule.credits)
+
+    fulfillments = list(
+        Fulfillment.objects.filter(degree_plan=degree_plan).order_by("semester", "full_code")
+    )
+    # Every course is known up front, so check them against the rules in bulk
+    belongs_cache = prewarm_belongs_cache(
+        {rule for rules in rules_per_degree.values() for rule in rules},
+        [fulfillment.full_code for fulfillment in fulfillments],
+    )
+
+    for fulfillment in fulfillments:
+        selected_rules, unselected_rules, legal = allocate_rules(
+            fulfillment.full_code,
+            rules_per_degree,
+            rule_to_degree,
+            double_counts,
+            degree_plan=degree_plan,
+            satisfied_rules=satisfied_rules,
+            belongs_cache=belongs_cache,
+        )
+
+        fulfillment.rules.set(selected_rules)
+        fulfillment.unselected_rules.set(unselected_rules)
+        fulfillment.legal = legal
+        fulfillment.save()
+
+        for rule in selected_rules:
+            satisfied_lookup[rule.id] += 1
+            if is_satisfied(rule):
+                satisfied_rules.add(rule)
+
+
+class MajorViewset(viewsets.ReadOnlyModelViewSet):
+    """
+    Retrieve a list of all Major objects.
+
+    These are majors as they can be added on top of a degree, carrying only their own block.
+    They are not filtered by school: an Engineering student may add the major part of a College
+    degree, which is what a second major is.
+    """
+
+    filter_backends = [SearchFilter]
+    search_fields = ["program_code", "code", "name", "year"]
+    filterset_fields = search_fields
+
+    permission_classes = [IsAuthenticated & InPDPBeta]
+
+    queryset = Major.objects.all()
+
+    def get_serializer_class(self):
+        return MajorListSerializer if self.action == "list" else MajorDetailSerializer
+
+
+class MinorViewset(viewsets.ReadOnlyModelViewSet):
+    """
+    Retrieve a list of all Minor objects.
+    """
+
+    filter_backends = [SearchFilter]
+    search_fields = ["program_code", "code", "name", "year"]
+    filterset_fields = search_fields
+
+    permission_classes = [IsAuthenticated & InPDPBeta]
+
+    queryset = Minor.objects.all()
+
+    def get_serializer_class(self):
+        return MinorListSerializer if self.action == "list" else MinorDetailSerializer
 
 
 class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
@@ -91,7 +185,7 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         if DegreePlan.objects.filter(name=name, person=self.request.user).exists():
             return Response(
                 {"warning": f"A degree plan with name {name} already exists."},
-                status=status.HTTP_409_CONFLICT
+                status=status.HTTP_409_CONFLICT,
             )
         new_degree_plan = DegreePlan(name=name, person=self.request.user)
         new_degree_plan.save()
@@ -115,63 +209,45 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         """
         Add or remove degrees from a degree plan.
         """
-        degree_ids = request.data.get("degree_ids")
-        if not isinstance(degree_ids, list):
-            raise ValidationError({"degree_ids": "This field must be a list."})
-        if degree_ids is None:
-            raise ValidationError({"degree_ids": "This field is required."})
+        return self.update_components(request, "degrees", "degree_ids")
+
+    @action(detail=True, methods=["post", "delete"])
+    def majors(self, request, pk=None):
+        """
+        Add or remove majors from a degree plan. These are majors pursued beyond the one the
+        plan's degree already includes, and contribute only their own block.
+        """
+        return self.update_components(request, "majors", "major_ids")
+
+    @action(detail=True, methods=["post", "delete"])
+    def minors(self, request, pk=None):
+        """
+        Add or remove minors from a degree plan.
+        """
+        return self.update_components(request, "minors", "minor_ids")
+
+    def update_components(self, request, relation, field):
+        ids = request.data.get(field)
+        if not isinstance(ids, list):
+            raise ValidationError({field: "This field must be a list."})
+
         degree_plan = self.get_object()
+        components = getattr(degree_plan, relation)
 
         try:
             if request.method == "POST":
-                degree_plan.degrees.add(*degree_ids)
+                components.add(*ids)
             elif request.method == "DELETE":
-                degree_plan.degrees.remove(*degree_ids)
+                components.remove(*ids)
                 return Response(status=status.HTTP_204_NO_CONTENT)
         except IntegrityError:
             return Response(
-                data={"error": "One or more of the degrees does not exist."},
+                data={"error": f"One or more of the {relation} does not exist."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Handle updating fulfillments when a new degree is added to the degree plan.
-        def update_fulfillments():
-            rules_per_degree, rule_to_degree = map_rules_and_degrees(degree_plan)
-            # Helper to track satisfaction
-            satisfied_lookup = defaultdict(int)
-            satisfied_rules = set()
-
-            def is_satisfied(rule):
-                f = satisfied_lookup[rule.id]
-                return (rule.num and f >= rule.num) or (rule.credits and f >= rule.credits)
-
-            fulfillments = Fulfillment.objects.filter(degree_plan=degree_plan).order_by(
-                "semester", "full_code"
-            )
-
-            for fulfillment in fulfillments:
-                selected_rules, unselected_rules, legal = allocate_rules(
-                    fulfillment.full_code,
-                    rules_per_degree,
-                    rule_to_degree,
-                    degree_plan=degree_plan,
-                    satisfied_rules=satisfied_rules,
-                )
-
-                fulfillment.rules.set(selected_rules)
-                fulfillment.unselected_rules.set(unselected_rules)
-                fulfillment.legal = legal
-                fulfillment.save()
-
-                for rule in selected_rules:
-                    satisfied_lookup[rule.id] += 1
-                    if is_satisfied(rule):
-                        satisfied_rules.add(rule)
-
-        update_fulfillments()
-
-        serializer = self.get_serializer(degree_plan)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        update_fulfillments(degree_plan)
+        return Response(self.get_serializer(degree_plan).data, status=status.HTTP_200_OK)
 
 
 class FulfillmentViewSet(viewsets.ModelViewSet):
@@ -197,7 +273,7 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
         queryset = Fulfillment.objects.filter(
             degree_plan__person=self.request.user,
             degree_plan_id=self.get_degree_plan_id(),
-        )
+        ).prefetch_related("rules", "unselected_rules")
         return queryset
 
     def create(self, request, *args, **kwargs):
@@ -212,16 +288,12 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
         legal = True
         request_rules = request.data.get("rules")
         if request_rules:
-            rules = Rule.objects.all().filter(id__in=request_rules)
-
-            rule_to_degree = {}
-            for rule in rules:
-                curr_rule = rule
-                while curr_rule.parent is not None:
-                    curr_rule = curr_rule.parent
-                rule_to_degree[rule] = curr_rule.degrees.first()
-
-            legal = legal and check_legal(rules, rule_to_degree)
+            rules = list(Rule.objects.filter(id__in=request_rules))
+            degree_plan = get_object_or_404(
+                DegreePlan, id=self.get_degree_plan_id(), person=request.user
+            )
+            _, rule_to_degree, double_counts = map_rules_and_degrees(degree_plan)
+            legal = check_legal(rules, rule_to_degree, double_counts)
 
             # Make request.data mutable before modifying it
             if hasattr(request.data, "_mutable"):
@@ -260,11 +332,12 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
         degree_plan = fulfillment.degree_plan
         full_code = fulfillment.full_code
 
-        _, rule_to_degree = map_rules_and_degrees(degree_plan)
+        _, rule_to_degree, double_counts = map_rules_and_degrees(degree_plan)
         if target_rule not in rule_to_degree:
             raise ValidationError({"rule_id": "Rule does not belong to this degree plan."})
 
-        if not target_rule.check_belongs(full_code):
+        is_overridden = target_rule in fulfillment.overrides.all()
+        if not target_rule.check_belongs(full_code) and not is_overridden:
             raise ValidationError(
                 {"rule_id": f"Course {full_code} does not satisfy rule {target_rule.id}"}
             )
@@ -292,7 +365,7 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
 
             fulfillment.rules.set(selected_rules)
             fulfillment.unselected_rules.set(unselected_rules)
-            fulfillment.legal = check_legal(selected_rules, rule_to_degree)
+            fulfillment.legal = check_legal(selected_rules, rule_to_degree, double_counts)
             fulfillment.save()
 
             other_fulfillments = (
@@ -312,22 +385,68 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
                 other_unselected.add(target_rule)
 
                 if len(other_selected) == 0:
-                    displaced.append(
-                        {"full_code": other.full_code, "removed": True}
-                    )
+                    displaced.append({"full_code": other.full_code, "removed": True})
                     other.delete()
                 else:
                     other.rules.set(other_selected)
                     other.unselected_rules.set(other_unselected)
-                    other.legal = check_legal(other_selected, rule_to_degree)
+                    other.legal = check_legal(other_selected, rule_to_degree, double_counts)
                     other.save()
-                    displaced.append(
-                        {"full_code": other.full_code, "removed": False}
-                    )
+                    displaced.append({"full_code": other.full_code, "removed": False})
 
         data = self.get_serializer(fulfillment).data
         data["displaced"] = displaced
         return Response(data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["post"], url_path="override")
+    def add_override(self, request, *args, **kwargs):
+        """
+        Add a manual override that allows a course to count for a rule regardless of whether
+        it satisfies the rule's Q filter. Also adds the rule to the fulfillment's selected
+        rules if not already present.
+
+        POST with `{"rule_id": <id>}`.
+        """
+        rule_id = request.data.get("rule_id")
+        if rule_id is None:
+            raise ValidationError({"rule_id": "This field is required."})
+
+        try:
+            rule = Rule.objects.get(id=int(rule_id))
+        except (ValueError, TypeError, Rule.DoesNotExist):
+            raise ValidationError({"rule_id": "Invalid rule_id."})
+
+        fulfillment = self.get_object()
+
+        _, rule_to_degree, _ = map_rules_and_degrees(fulfillment.degree_plan)
+        if rule not in rule_to_degree:
+            raise ValidationError({"rule_id": "Rule does not belong to this degree plan."})
+
+        fulfillment.overrides.add(rule)
+        if rule not in fulfillment.rules.all():
+            fulfillment.rules.add(rule)
+
+        return Response(self.get_serializer(fulfillment).data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["delete"], url_path="override/(?P<rule_id>[^/.]+)")
+    def remove_override(self, request, rule_id=None, *args, **kwargs):
+        """
+        Remove a manual override, and remove the rule from the fulfillment's selected
+        and unselected rules.
+
+        DELETE to `override/<rule_id>/`.
+        """
+        try:
+            rule = Rule.objects.get(id=int(rule_id))
+        except (ValueError, TypeError, Rule.DoesNotExist):
+            raise ValidationError({"rule_id": "Invalid rule_id."})
+
+        fulfillment = self.get_object()
+        fulfillment.overrides.remove(rule)
+        fulfillment.rules.remove(rule)
+        fulfillment.unselected_rules.remove(rule)
+
+        return Response(self.get_serializer(fulfillment).data, status=status.HTTP_200_OK)
 
 
 class DockedCourseViewset(viewsets.ModelViewSet):
@@ -375,8 +494,15 @@ class OnboardFromTranscript(APIView):
 
         satisfied_lookup = defaultdict(int)
 
-        rules_per_degree, rule_to_degree = map_rules_and_degrees(degree_plan)
+        rules_per_degree, rule_to_degree, double_counts = map_rules_and_degrees(degree_plan)
         satisfied_rules = set()
+
+        # Every course is known up front, so check them against the rules in bulk
+        belongs_cache = prewarm_belongs_cache(
+            {rule for rules in rules_per_degree.values() for rule in rules},
+            [full_code for semester in course_data for full_code in semester["courses"]],
+        )
+
         for semester in course_data:
             for full_code in semester["courses"]:
                 semester_code = semester["sem"]
@@ -384,24 +510,22 @@ class OnboardFromTranscript(APIView):
                     full_code,
                     rules_per_degree,
                     rule_to_degree,
+                    double_counts,
                     degree_plan=degree_plan,
                     satisfied_rules=satisfied_rules,
+                    belongs_cache=belongs_cache,
                 )
 
-                f, just_created = Fulfillment.objects.get_or_create(
+                # Keyed on Fulfillment's actual unique constraint. Including semester and
+                # legal in the lookup means a course already stored with either one different
+                # matches nothing and is then created against a row that already exists.
+                fulfillment, _ = Fulfillment.objects.update_or_create(
                     degree_plan=degree_plan,
                     full_code=full_code,
-                    semester=semester_code,
-                    legal=legal,
+                    defaults={"semester": semester_code, "legal": legal},
                 )
-                if just_created:
-                    f.save()
-                    f.rules.set(selected_rules)
-                    f.unselected_rules.set(unselected_rules)
-                else:
-                    f.rules.add(selected_rules)
-                    f.unselected_rules.add(unselected_rules)
-                f.save()
+                fulfillment.rules.set(selected_rules)
+                fulfillment.unselected_rules.set(unselected_rules)
 
                 for rule in selected_rules:
                     satisfied_lookup[rule.id] += 1
@@ -460,16 +584,21 @@ class SatisfiedRuleList(APIView):
                 f"{degree_plan_id}, {full_code}, {rule_selected}"
             )
 
-        rules_per_degree, rule_to_degree = map_rules_and_degrees(degree_plan)
+        rules_per_degree, rule_to_degree, double_counts = map_rules_and_degrees(degree_plan)
         selected_rules, unselected_rules, legal = allocate_rules(
-            full_code, rules_per_degree, rule_to_degree, rule_selected, degree_plan=degree_plan
+            full_code,
+            rules_per_degree,
+            rule_to_degree,
+            double_counts,
+            rule_selected,
+            degree_plan=degree_plan,
         )
 
         if fulfillment:
             selected_rules = selected_rules.union(fulfillment.rules.all())
 
         # Check for illegal double counting
-        legal = check_legal(selected_rules, rule_to_degree)
+        legal = check_legal(selected_rules, rule_to_degree, double_counts)
 
         selected_rules_to_return = RuleSerializer(
             Rule.objects.filter(id__in=[rule.id for rule in selected_rules]), many=True

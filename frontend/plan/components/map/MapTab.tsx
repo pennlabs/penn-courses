@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { connect } from "react-redux";
 import dynamic from "next/dynamic";
 import styled from "styled-components";
@@ -49,9 +49,16 @@ const Box = styled.section<{ $length: number }>`
 
 const MapContainer = styled.div`
     height: 40%;
-    margin-right: 8px;
-    margin-left: 8px;
-    margin-top: 5px;
+    margin: 8px 8px 12px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+
+    .leaflet-control-attribution {
+        font-size: 9px;
+        opacity: 0.6;
+        padding: 1px 4px;
+    }
 `;
 
 const MapCourseItemcontainer = styled.div`
@@ -106,7 +113,12 @@ function MapTab({
     focusSection,
 }: MabTapProps) {
     const [selectedDay, setSelectedDay] = useState<Day>(Weekdays.M);
+    const [focusedLocation, setFocusedLocation] = useState<{ lat: number; lng: number } | null>(null);
     const meeetingsForDay = meetingsByDay[selectedDay];
+
+    useEffect(() => {
+        setFocusedLocation(null);
+    }, [selectedDay]);
 
     return (
         <Box $length={meeetingsForDay.length} id="cart">
@@ -128,6 +140,10 @@ function MapTab({
                                     lat: meeting.latitude,
                                     lng: meeting.longitude,
                                     color: meeting.color,
+                                    id: meeting.id,
+                                    start: meeting.start,
+                                    end: meeting.end,
+                                    room: meeting.room,
                                 }))
                                 .filter(
                                     (locData) =>
@@ -135,6 +151,8 @@ function MapTab({
                                         locData.lng != null
                                 )}
                             zoom={14}
+                            focusedLocation={focusedLocation}
+                            onMarkerClick={setFocusedLocation}
                         />
                     </MapContainer>
                     <MapCourseItemcontainer>
@@ -163,7 +181,10 @@ function MapTab({
                                             latitude != null &&
                                             longitude != null
                                         }
+                                        lat={latitude}
+                                        lng={longitude}
                                         focusSection={focusSection}
+                                        focusLocation={setFocusedLocation}
                                     />
                                 );
                             }
