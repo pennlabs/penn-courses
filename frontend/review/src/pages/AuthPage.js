@@ -1,7 +1,6 @@
 import React, { useEffect, createContext } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { ErrorBox } from "../components/common";
 import { apiCheckAuth, redirectForAuth, queryKeys } from "../utils/api";
@@ -32,7 +31,6 @@ const TempAuthPage = ({ forceRedirect = false, children }) => {
   if (authFailed) {
     return (
       <>
-        <Navbar />
         <ErrorBox>
           Could not perform Platform authentication.
           <br />

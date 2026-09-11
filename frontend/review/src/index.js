@@ -12,6 +12,9 @@ import { AboutPage, CartPage, ErrorPage, FAQPage, ReviewPage } from "./pages";
 import { GoogleAnalytics } from "./components/common";
 import TempAuthPage from "./pages/AuthPage";
 import { queryClient, persistOptions } from "./utils/queryClient";
+import { FilterProvider } from "./utils/FilterContext";
+import Header from "./components/Header";
+import BrowsePage from "./pages/BrowsePage";
 import theme from "./styles/theme";
 
 if (window.location.hostname !== "localhost") {
@@ -28,24 +31,35 @@ root.render(
     persistOptions={persistOptions}
   >
     <ThemeProvider theme={theme}>
-      <Router>
-        <Switch>
-          <Route exact path="/" component={ReviewPage} />
-          <Route exact path="/about" component={AboutPage} />
-          <Route exact path="/faq" component={FAQPage} />
-          <Route exact path="/cart" component={CartPage} />
-          <Route
-            path="/:type(course|department|instructor)/:code/:semester?"
-            component={routeProps => (
-              <TempAuthPage forceRedirect={true}>
-                <ReviewPage {...routeProps} />
-              </TempAuthPage>
-            )}
-          />
-          <Route component={ErrorPage} />
-        </Switch>
-        <GoogleAnalytics />
-      </Router>
+      <FilterProvider>
+        <Router>
+          <Header />
+          <Switch>
+            <Route
+              exact
+              path="/"
+              component={() => (
+                <TempAuthPage>
+                  <BrowsePage />
+                </TempAuthPage>
+              )}
+            />
+            <Route exact path="/about" component={AboutPage} />
+            <Route exact path="/faq" component={FAQPage} />
+            <Route exact path="/cart" component={CartPage} />
+            <Route
+              path="/:type(course|department|instructor)/:code/:semester?"
+              component={routeProps => (
+                <TempAuthPage forceRedirect={true}>
+                  <ReviewPage {...routeProps} />
+                </TempAuthPage>
+              )}
+            />
+            <Route component={ErrorPage} />
+          </Switch>
+          <GoogleAnalytics />
+        </Router>
+      </FilterProvider>
     </ThemeProvider>
   </PersistQueryClientProvider>
 );
