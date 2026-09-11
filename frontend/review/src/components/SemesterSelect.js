@@ -1,0 +1,78 @@
+import React from "react";
+import styled from "styled-components";
+import { HiCheck } from "react-icons/hi2";
+import { PiPlus } from "react-icons/pi";
+import { SEMESTER_OPTIONS } from "../utils/filters";
+
+const Container = styled.div`
+  display: flex;
+  align-items: flex-start;
+  align-content: flex-start;
+  gap: 8px;
+  align-self: stretch;
+  flex-wrap: wrap;
+`;
+
+const OptionContainer = styled.div`
+  display: flex;
+  height: 29px;
+  padding: 6px 11px;
+  align-items: center;
+  gap: 3px;
+  border-radius: 10px;
+`;
+
+const ChooseBox = ({ text, isActive, setSemesterList }) => {
+  return (
+    <>
+      <OptionContainer
+        onClick={() => {
+          if (!isActive) {
+            setSemesterList(text);
+          }
+        }}
+        style={{
+          background: isActive
+            ? "var(--pcr-color-surface-selected)"
+            : "var(--pcr-color-surface-page)",
+          border: isActive
+            ? "none"
+            : "2px solid var(--pcr-color-border-strong)",
+          color: isActive
+            ? "var(--pcr-color-text-inverse)"
+            : "var(--pcr-color-text-primary)"
+        }}
+      >
+        <div
+          style={{ fontSize: "12px", overflow: "hidden", whiteSpace: "nowrap" }}
+        >
+          {text}
+        </div>
+        {isActive ? (
+          <HiCheck size={15} color="var(--pcr-color-text-inverse)" />
+        ) : (
+          <PiPlus size={15} color="var(--pcr-color-text-strong)" />
+        )}
+      </OptionContainer>
+    </>
+  );
+};
+
+const SemesterSelect = ({ chosenSemester, setSemesterList }) => {
+  return (
+    <div style={{ width: "100%" }}>
+      <Container>
+        {SEMESTER_OPTIONS.map(semester => (
+          <ChooseBox
+            key={semester}
+            text={semester}
+            isActive={chosenSemester === semester}
+            setSemesterList={setSemesterList}
+          />
+        ))}
+      </Container>
+    </div>
+  );
+};
+
+export default SemesterSelect;

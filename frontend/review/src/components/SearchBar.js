@@ -1,18 +1,50 @@
 import React, { Component } from "react";
 import AsyncSelect from "react-select/lib/Async";
 import { components } from "react-select";
-import { css } from "emotion";
 import { withRouter } from "react-router-dom";
+import styled from "styled-components";
 import fuzzysort from "fuzzysort";
-import { apiAutocomplete } from "../utils/api";
+import { HiMagnifyingGlass } from "react-icons/hi2";
+import { apiAutocomplete, queryKeys } from "../utils/api";
+import { queryClient } from "../utils/queryClient";
 
-// Takes in a course (ex: CIS 160) and returns various formats (ex: CIS-160, CIS 160, CIS160).
+const SearchBarWrapper = styled.div`
+  display: flex;
+  height: 40px;
+  width: 100%;
+  min-width: 0;
+  align-items: center;
+  border-radius: 8px;
+  align-self: stretch;
+  border: 1px solid ${({ theme }) => theme.color.border.default};
+  background: ${({ theme }) => theme.color.surface.subtle};
+`;
+
+const SearchInputStyled = styled.input`
+  border: none;
+  background: transparent;
+  outline: none;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0px 12px;
+  color: ${({ theme }) => theme.color.text.secondary};
+  font-family: ${({ theme }) => theme.font.family.sans};
+  font-size: 14px;
+  font-weight: ${({ theme }) => theme.font.weight.light};
+  line-height: 150%;
+
+  &:focus {
+    background-color: transparent;
+    outline: none;
+  }
+`;
+
 function expandCombo(course) {
   const a = course.split(" ");
   return `${course} ${a[0]}-${a[1]} ${a[0]}${a[1]}`;
 }
 
-// Remove duplicate courses by title.
 function removeDuplicates(dups) {
   const used = new Set();
   const clean = [];
@@ -24,6 +56,46 @@ function removeDuplicates(dups) {
   });
   return clean;
 }
+
+const CustomControl = ({ children, innerRef, innerProps }) => (
+  <SearchBarWrapper ref={innerRef} {...innerProps}>
+    <HiMagnifyingGlass
+      style={{
+        fontSize: "36px",
+        paddingLeft: "12px",
+        color: "var(--pcr-color-text-muted)",
+        flexShrink: 0
+      }}
+    />
+    {children}
+  </SearchBarWrapper>
+);
+
+const CustomInput = props => {
+  const { innerRef, isDisabled, isHidden, ...inputProps } = props;
+  const {
+    cx,
+    getStyles,
+    getValue,
+    hasValue,
+    selectProps,
+    theme,
+    isMulti,
+    clearValue,
+    ...domProps
+  } = inputProps;
+  if (isHidden) return <components.Input {...props} />;
+  return (
+    <SearchInputStyled
+      ref={innerRef}
+      disabled={isDisabled}
+      placeholder="Search"
+      {...domProps}
+    />
+  );
+};
+
+const NullComponent = () => null;
 
 /**
  * The search bar that appears on the homepage and navigation bar.
@@ -46,86 +118,87 @@ class SearchBar extends Component {
   }
 
   componentDidMount() {
-    apiAutocomplete()
-      .then(result => {
-        const courses = result.courses.map(i => ({
-          ...i,
-          value: i.url,
-          label: i.title,
-          group: i.category,
-          category: "Courses"
-        }));
-        const coursesIndex = [
-          courses.map(i => ({
-            term: fuzzysort.prepare(expandCombo(i.title)),
-            id: i.title
-          }))
-        ];
-        courses.forEach(i => {
-          coursesIndex.push(
-            i.desc.map(j => ({ term: fuzzysort.prepare(j), id: i.title }))
-          );
-        });
+    this.processAutocompleteData();
+  }
 
-        const formattedAutocomplete = [
-          {
-            label: "Departments",
-            options: result.departments.map(i => ({
-              ...i,
-              value: i.url,
-              label: i.title,
-              group: i.category,
-              search_desc: fuzzysort.prepare(i.desc),
-              category: "Departments"
-            }))
-          },
-          {
-            label: "Courses",
-            options: courses.reduce((map, obj) => {
-              map[obj.title] = obj;
-              return map;
-            }, {}),
-            search_index: coursesIndex.flat()
-          },
-          {
-            label: "Instructors",
-            options: result.instructors.map(i => ({
-              ...i,
-              value: i.url,
-              label: i.title,
-              group: i.category,
-              search_desc: fuzzysort.prepare(i.desc),
-              category: "Instructors"
-            }))
-          }
-        ];
+  async processAutocompleteData() {
+    let result = null;
+    try {
+      result = await queryClient.fetchQuery({
+        queryKey: queryKeys.autocomplete,
+        queryFn: apiAutocomplete
+      });
+    } catch (e) {
+      console.error("Failed to fetch autocomplete data:", e);
+    }
 
-        this.setState(
-          {
-            autocompleteOptions: formattedAutocomplete
-          },
-          () => {
-            this._autocompleteCallback.forEach(x =>
-              x(this.state.autocompleteOptions)
-            );
-            this._autocompleteCallback = [];
-          }
-        );
-      })
-      .catch(e => {
-        window.Raven.captureException(e);
-        this.setState(
-          {
-            autocompleteOptions: []
-          },
-          () => {
-            this._autocompleteCallback.forEach(x =>
-              x(this.state.autocompleteOptions)
-            );
-            this._autocompleteCallback = [];
-          }
+    if (result) {
+      const courses = result.courses.map(i => ({
+        ...i,
+        value: i.url,
+        label: i.title,
+        group: i.category,
+        category: "Courses"
+      }));
+      const coursesIndex = [
+        courses.map(i => ({
+          term: fuzzysort.prepare(expandCombo(i.title)),
+          id: i.title
+        }))
+      ];
+      courses.forEach(i => {
+        coursesIndex.push(
+          i.desc.map(j => ({ term: fuzzysort.prepare(j), id: i.title }))
         );
       });
+
+      const formattedAutocomplete = [
+        {
+          label: "Departments",
+          options: result.departments.map(i => ({
+            ...i,
+            value: i.url,
+            label: i.title,
+            group: i.category,
+            search_desc: fuzzysort.prepare(i.desc),
+            category: "Departments"
+          }))
+        },
+        {
+          label: "Courses",
+          options: courses.reduce((map, obj) => {
+            map[obj.title] = obj;
+            return map;
+          }, {}),
+          search_index: coursesIndex.flat()
+        },
+        {
+          label: "Instructors",
+          options: result.instructors.map(i => ({
+            ...i,
+            value: i.url,
+            label: i.title,
+            group: i.category,
+            search_desc: fuzzysort.prepare(i.desc),
+            category: "Instructors"
+          }))
+        }
+      ];
+
+      this.setState({ autocompleteOptions: formattedAutocomplete }, () => {
+        this._autocompleteCallback.forEach(x =>
+          x(this.state.autocompleteOptions)
+        );
+        this._autocompleteCallback = [];
+      });
+    } else {
+      this.setState({ autocompleteOptions: [] }, () => {
+        this._autocompleteCallback.forEach(x =>
+          x(this.state.autocompleteOptions)
+        );
+        this._autocompleteCallback = [];
+      });
+    }
   }
 
   filterOptionsList(autocompleteOptions, inputValue) {
@@ -181,7 +254,6 @@ class SearchBar extends Component {
       ]);
   }
 
-  // Called each time the input value inside the searchbar changes
   autocompleteCallback(inputValue) {
     this.setState({ searchValue: inputValue });
     return new Promise(resolve => {
@@ -198,13 +270,11 @@ class SearchBar extends Component {
       });
   }
 
-  // Hack to modify the handler to set the first option as the most relevant option
   setFocusedOption() {
     this.selectRef.current.select.select.getNextFocusedOption = options =>
       options[0];
   }
 
-  // Called when an option is selected in the AsyncSelect component
   handleChange(value) {
     this.props.history.push(value.url);
   }
@@ -212,49 +282,54 @@ class SearchBar extends Component {
   render() {
     const { state: parent } = this;
     return (
-      <div id="search" style={{ margin: "0 auto" }}>
+      <div id="search" style={{ minWidth: 0, width: "100%" }}>
         <AsyncSelect
           ref={this.selectRef}
-          autoFocus={this.props.isTitle}
+          autoFocus={this.props.autoFocus}
           onChange={this.handleChange}
           value={this.state.searchValue}
-          placeholder={
-            this.props.isTitle ? "Search for a class or professor" : ""
-          }
+          placeholder=""
           loadOptions={this.autocompleteCallback}
           defaultOptions
           components={{
+            Control: CustomControl,
+            Input: CustomInput,
+            DropdownIndicator: NullComponent,
+            IndicatorSeparator: NullComponent,
+            Placeholder: NullComponent,
+            SingleValue: NullComponent,
             Option: props => {
-              const {
-                children,
-                className,
-                cx,
-                getStyles,
-                isDisabled,
-                isFocused,
-                isSelected,
-                innerRef,
-                innerProps,
-                data
-              } = props;
+              const { children, innerRef, innerProps, isFocused, data } = props;
               return (
                 <div
                   ref={innerRef}
-                  className={cx(
-                    css(getStyles("option", props)),
-                    {
-                      option: true,
-                      "option--is-disabled": isDisabled,
-                      "option--is-focused": isFocused,
-                      "option--is-selected": isSelected
-                    },
-                    className
-                  )}
                   {...innerProps}
+                  style={{
+                    display: "flex",
+                    alignItems: "baseline",
+                    gap: 6,
+                    padding: "6px 14px",
+                    cursor: "pointer",
+                    fontFamily: "var(--pcr-font-family-sans)",
+                    background: isFocused
+                      ? "var(--pcr-color-surface-subtle)"
+                      : "transparent"
+                  }}
                 >
-                  <b>{children}</b>
+                  <b
+                    style={{
+                      fontSize: 14,
+                      fontWeight: 500,
+                      color: "var(--pcr-color-text-legacy)"
+                    }}
+                  >
+                    {children}
+                  </b>
                   <span
-                    style={{ color: "#aaa", fontSize: "0.8em", marginLeft: 3 }}
+                    style={{
+                      color: "var(--pcr-color-text-muted)",
+                      fontSize: 12
+                    }}
                   >
                     {(() => {
                       const { desc } = data;
@@ -273,53 +348,57 @@ class SearchBar extends Component {
                 </div>
               );
             },
-            DropdownIndicator: this.props.isTitle
-              ? null
-              : props => (
-                  <components.DropdownIndicator {...props}>
-                    <i className="fa fa-search mr-1" />
-                  </components.DropdownIndicator>
-                )
+            GroupHeading: props => (
+              <div
+                style={{
+                  padding: "8px 14px 4px",
+                  fontFamily: "var(--pcr-font-family-sans)",
+                  fontSize: 11,
+                  fontWeight: 600,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.04em",
+                  color: "var(--pcr-color-text-muted)"
+                }}
+              >
+                {props.children}
+              </div>
+            )
           }}
           styles={{
-            container: styles => ({
-              ...styles,
-              width: this.props.isTitle
-                ? "calc(100vw - 60px)"
-                : "calc(100vw - 200px)",
-              maxWidth: this.props.isTitle ? 600 : 514
+            container: () => ({
+              position: "relative"
             }),
-            control: (styles, state) => ({
-              ...styles,
-              borderRadius: this.props.isTitle ? 0 : 32,
-              boxShadow: !this.props.isTitle
-                ? "none"
-                : state.isFocused
-                ? "0px 2px 14px #ddd"
-                : "0 2px 14px 0 rgba(0, 0, 0, 0.07)",
-              backgroundColor: this.props.isTitle ? "white" : "#f8f8f8",
-              borderColor: "transparent",
-              cursor: "pointer",
-              "&:hover": {},
-              fontSize: this.props.isTitle ? "30px" : null
+            control: () => ({}),
+            valueContainer: base => ({
+              ...base,
+              padding: 0,
+              flex: 1,
+              display: "flex",
+              alignItems: "center",
+              minWidth: 0
             }),
-            input: styles => ({
-              ...styles,
-              marginLeft: this.props.isTitle ? 0 : 10,
-              outline: "none",
-              border: "none"
+            input: () => ({}),
+            menu: base => ({
+              ...base,
+              borderRadius: 8,
+              border: "1px solid var(--pcr-color-border-default)",
+              boxShadow: "0 4px 16px rgba(0, 0, 0, 0.08)",
+              marginTop: 4,
+              overflow: "hidden"
             }),
-            option: styles => ({
-              ...styles,
-              paddingTop: 5,
-              paddingBottom: 5,
-              cursor: "pointer"
+            menuList: base => ({
+              ...base,
+              padding: 0,
+              maxHeight: 360
             }),
-            placeholder: styles => ({
-              ...styles,
-              whiteSpace: "nowrap",
-              color: "#b2b2b2"
-            })
+            option: () => ({}),
+            group: base => ({
+              ...base,
+              padding: 0
+            }),
+            groupHeading: () => ({}),
+            placeholder: () => ({ display: "none" }),
+            indicatorsContainer: () => ({ display: "none" })
           }}
         />
       </div>
