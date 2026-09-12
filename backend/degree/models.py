@@ -293,7 +293,7 @@ class Rule(models.Model):
         return json_parser.parse(self.q)
 
 
-class DegreePlan(models.Model): 
+class DegreePlan(models.Model):
     """
     Stores a users plan for an associated degree.
     """
