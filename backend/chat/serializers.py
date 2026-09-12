@@ -25,6 +25,13 @@ class ChatRequestSerializer(serializers.Serializer):
         max_length=settings.CHAT_MAX_MESSAGES,
     )
     semester = serializers.CharField(required=False, allow_blank=True)
+    # The id is selected from the server-owned catalog in the view. Keeping this
+    # field opaque here prevents a client from smuggling an arbitrary provider URL
+    # or credential through the request body.
+    model = serializers.CharField(required=False, max_length=120)
+    # The backend remains stateless. The browser supplies an opaque id so OpenCode
+    # Go can maintain prompt-cache affinity for one visible conversation.
+    conversation_id = serializers.UUIDField(required=False)
 
     def validate_messages(self, messages):
         if messages[0]["role"] != "user":

@@ -5,7 +5,7 @@ import anthropic
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.db.models.signals import post_save
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from options.models import Option
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -643,6 +643,7 @@ class ChatStreamingTestCase(TestCase):
         self.assertEqual(streamed, whole)
 
 
+@override_settings(ANTHROPIC_API_KEY="test-anthropic-key", OPENCODE_GO_API_KEY="")
 class ChatStreamViewTestCase(TestCase):
     def setUp(self):
         cache.clear()
@@ -750,6 +751,7 @@ class ChatStreamViewTestCase(TestCase):
         self.assertNotIn("boom", frames[-1][1]["detail"])
 
 
+@override_settings(ANTHROPIC_API_KEY="test-anthropic-key", OPENCODE_GO_API_KEY="")
 class ChatViewTestCase(TestCase):
     def setUp(self):
         cache.clear()
@@ -769,6 +771,14 @@ class ChatViewTestCase(TestCase):
         response = self.post({"messages": [{"role": "user", "content": "hi"}]})
         self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
 
+    def test_model_catalog_is_key_gated(self):
+        response = self.client.get("/api/chat/models/")
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(
+            ["anthropic/claude-sonnet-5"],
+            [model["id"] for model in response.json()["models"]],
+        )
+
     @patch("chat.views.run_chat_turn")
     def test_happy_path(self, mock_run):
         mock_run.return_value = {"reply": "Hello!", "tool_calls": [], "truncated": False}
@@ -777,6 +787,7 @@ class ChatViewTestCase(TestCase):
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual("Hello!", response.json()["reply"])
         self.assertEqual(TEST_SEMESTER, response.json()["semester"])
+        self.assertEqual("anthropic/claude-sonnet-5", response.json()["model"])
         self.assertEqual(TEST_SEMESTER, mock_run.call_args.kwargs["semester"])
 
     @patch("chat.views.run_chat_turn")

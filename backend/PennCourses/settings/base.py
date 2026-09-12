@@ -211,6 +211,16 @@ REST_FRAMEWORK = {
 # Penn Course Chat
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 CHAT_MODEL = os.environ.get("CHAT_MODEL", "claude-sonnet-5")
+# OpenCode Go serves OpenAI-compatible Chat Completions for the two models that
+# Penn Course Chat currently supports. The key is kept server-side like the
+# Anthropic key; clients only ever receive the safe, curated model catalog.
+OPENCODE_GO_API_KEY = os.environ.get("OPENCODE_GO_API_KEY", "")
+OPENCODE_GO_BASE_URL = os.environ.get(
+    "OPENCODE_GO_BASE_URL", "https://opencode.ai/zen/go/v1"
+)
+# A fully-qualified model id from chat.providers. DeepSeek is preferred when
+# Go is configured; the registry falls back to the Anthropic model otherwise.
+CHAT_DEFAULT_MODEL = os.environ.get("CHAT_DEFAULT_MODEL", "opencode-go/deepseek-v4.1-flash")
 # Effort trades answer quality against latency; a course-search chat is interactive, so
 # it runs below the API default of "high".
 CHAT_EFFORT = os.environ.get("CHAT_EFFORT", "medium")
