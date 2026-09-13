@@ -145,6 +145,8 @@ export interface Fulfillment extends DBObject {
   unselected_rules: number[];
   overrides: number[]; // rule IDs manually overridden to count for
   legal: boolean;
+  /** User dismissed unmet-prerequisite warnings for this course in this plan. */
+  ignore_prereqs: boolean;
 }
 
 // Internal representation of a plan (this is derived from fulfillments)

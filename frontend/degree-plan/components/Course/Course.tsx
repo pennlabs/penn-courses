@@ -17,6 +17,43 @@ import ToastContext from "@/components/Toast/Toast";
 
 const DOUBLE_COUNT_ERROR_MESSAGE =
   "This course is being illegally double counted in your plan!";
+const PREREQ_WARNING_COLOR = "#E8A33D";
+
+/**
+ * Whether `a` is scheduled before `b`. Semesters are "YYYYx" with x in A (spring), B (summer),
+ * C (fall), so plain string comparison orders them; transfer credit counts as before everything
+ * and an unplaced (null) semester as before nothing.
+ */
+const semesterIsBefore = (a: string | null, b: string | null): boolean => {
+  if (!a || !b) return false;
+  if (a === TRANSFER_CREDIT_SEMESTER_KEY) return b !== TRANSFER_CREDIT_SEMESTER_KEY;
+  if (b === TRANSFER_CREDIT_SEMESTER_KEY) return false;
+  return a < b;
+};
+
+/**
+ * The prerequisites of `fulfillment` that are not taken in an earlier semester of the same plan.
+ * Transfer credit never has unmet prerequisites; neither does a course that isn't placed yet.
+ */
+const getMissingPrereqs = (
+  fulfillment: Fulfillment,
+  allFulfillments: Fulfillment[] | undefined
+): string[] => {
+  const prereqs = fulfillment.course?.prerequisite_courses ?? [];
+  if (
+    !prereqs.length ||
+    !fulfillment.semester ||
+    fulfillment.semester === TRANSFER_CREDIT_SEMESTER_KEY
+  ) {
+    return [];
+  }
+  const taken = new Set(
+    (allFulfillments ?? [])
+      .filter((f) => semesterIsBefore(f.semester, fulfillment.semester))
+      .map((f) => f.full_code)
+  );
+  return prereqs.filter((code) => !taken.has(code));
+};
 const COURSE_BORDER_RADIUS = "9px";
 const HIGHLIGHT_VARIANT_COLORS = {
   selected: "#E6F4EA",
@@ -438,12 +475,48 @@ const CourseComponent = ({
     courseType === ItemTypes.COURSE_IN_REQ && isUnselectedRule;
   const shouldShowCouldAlsoCountFor =
     courseType === ItemTypes.COURSE_IN_REQ && unselectedRuleNames.length > 0;
+  // Unmet prerequisites: compares this placement against every other placement in the plan.
+  // The fulfillments list is already in the SWR cache from the semester columns, so this is
+  // a cache read, not a new request.
+  const { data: allFulfillments } = useSWR<Fulfillment[]>(
+    fulfillment?.degree_plan
+      ? `/api/degree/degreeplans/${fulfillment.degree_plan}/fulfillments`
+      : null
+  );
+  const missingPrereqs = useMemo(
+    () => (fulfillment ? getMissingPrereqs(fulfillment, allFulfillments) : []),
+    [fulfillment, allFulfillments]
+  );
+  const prereqsIgnored = !!fulfillment?.ignore_prereqs;
+  const showPrereqWarning = missingPrereqs.length > 0 && !prereqsIgnored;
+  const [togglingPrereqs, setTogglingPrereqs] = useState(false);
+
+  const handleToggleIgnorePrereqs = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!fulfillment || togglingPrereqs) return;
+    const endpoint = `/api/degree/degreeplans/${fulfillment.degree_plan}/fulfillments`;
+    try {
+      setTogglingPrereqs(true);
+      // The fulfillments route upserts on POST, so this is a partial update of this placement.
+      await postFetcher(endpoint, {
+        full_code: fulfillment.full_code,
+        ignore_prereqs: !prereqsIgnored,
+      });
+      await mutate(endpoint);
+    } catch {
+      showToast("Could not update the prerequisite warning right now.", true);
+    } finally {
+      setTogglingPrereqs(false);
+    }
+  };
+
   const hasInfoContent =
     hasSemester ||
     selectedRuleNames.length > 0 ||
     shouldShowCouldAlsoCountFor ||
     shouldShowSwitchHint ||
-    !!displacedMessage;
+    !!displacedMessage ||
+    missingPrereqs.length > 0;
   const highlightVariant =
     courseType === ItemTypes.COURSE_IN_REQ
       ? isUsed
@@ -513,10 +586,29 @@ const CourseComponent = ({
                 >
                   <ExclamationIcon color={"#E66161"} />
                 </a>
-                <Tooltip 
-                  id={fulfillment.full_code + courseType} 
-                  place="top" 
+                <Tooltip
+                  id={fulfillment.full_code + courseType}
+                  place="top"
                   style={{ zIndex: 9999 }}
+                />
+              </div>
+            )}
+            {showPrereqWarning && (
+              <div style={{ paddingRight: "5px" }}>
+                <a
+                  data-tooltip-id={`prereq-${fulfillment.full_code}-${courseType}`}
+                  data-tooltip-content={`Prerequisite${
+                    missingPrereqs.length > 1 ? "s" : ""
+                  } not taken in an earlier semester: ${missingPrereqs
+                    .map((code) => code.replace("-", " "))
+                    .join(", ")}. Open the info icon to ignore this.`}
+                >
+                  <ExclamationIcon color={PREREQ_WARNING_COLOR} />
+                </a>
+                <Tooltip
+                  id={`prereq-${fulfillment.full_code}-${courseType}`}
+                  place="top"
+                  style={{ zIndex: 9999, maxWidth: "18rem" }}
                 />
               </div>
             )}
@@ -568,6 +660,32 @@ const CourseComponent = ({
                               </li>
                             ))}
                           </RuleList>
+                        </PopoverSection>
+                      )}
+                      {missingPrereqs.length > 0 && (
+                        <PopoverSection>
+                          <PopoverLabel>
+                            {prereqsIgnored
+                              ? "Prerequisites (ignored)"
+                              : "Prerequisites not yet taken"}
+                          </PopoverLabel>
+                          <RuleList>
+                            {missingPrereqs.map((code) => (
+                              <li key={code}>{code.replace("-", " ")}</li>
+                            ))}
+                          </RuleList>
+                          <div style={{ marginTop: "0.5rem" }}>
+                            <SwitchRuleButton
+                              onClick={handleToggleIgnorePrereqs}
+                              disabled={togglingPrereqs}
+                            >
+                              {togglingPrereqs
+                                ? "Saving..."
+                                : prereqsIgnored
+                                  ? "Show warning again"
+                                  : "Ignore for this course"}
+                            </SwitchRuleButton>
+                          </div>
                         </PopoverSection>
                       )}
                       {shouldShowCouldAlsoCountFor && (
