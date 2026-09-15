@@ -10,9 +10,7 @@
     ],
     "nohoist": [
       "penncoursereview/react-scripts",
-      "penncoursereview/react-scripts/**",
-      "penncoursereview/eslint",
-      "penncoursereview/eslint/**"
+      "penncoursereview/react-app-rewired"
     ]
   },
   "private": true,

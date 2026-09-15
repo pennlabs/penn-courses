@@ -38,7 +38,7 @@
   "scripts": {
     "dev": "react-app-rewired start",
     "start": "react-app-rewired start",
-    "build": "react-app-rewired build",
+    "build": "DISABLE_ESLINT_PLUGIN=true react-app-rewired build",
     "test": "exit 0",
     "eject": "react-scripts eject",
     "lint": "prettier --check \"src/**/*.js\" && eslint \"./src/**/*.js\" && tsc --noEmit",

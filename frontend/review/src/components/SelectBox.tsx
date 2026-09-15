@@ -134,7 +134,7 @@ const ChipRow = styled.div`
 
 const SelectSearchResultsContainer = styled.div`
   display: flex;
-  gap: 10px;
+  gap: 8px;
   width: 100%;
   flex-wrap: wrap;
   justify-content: flex-start;
@@ -167,7 +167,7 @@ const Chip = styled.div<{ $isSelected: boolean }>`
   box-sizing: border-box;
   width: 73px;
   gap: 1px;
-  font-size: ${({ theme }) => theme.font.size.xs};
+  font-size: ${({ theme }) => theme.font.size["2xs"]};
   border: 2px solid
     ${({ theme, $isSelected }) =>
       $isSelected ? "transparent" : theme.color.border.strong};
