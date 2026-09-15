@@ -57,6 +57,7 @@ export const theme = {
       sans: "var(--pcr-font-family-sans)",
     },
     size: {
+      "2xs": "var(--pcr-font-size-2xs)",
       xs: "var(--pcr-font-size-xs)",
       sm: "var(--pcr-font-size-sm)",
       md: "var(--pcr-font-size-md)",

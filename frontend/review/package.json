@@ -38,7 +38,7 @@
   "scripts": {
     "dev": "react-app-rewired start",
     "start": "react-app-rewired start",
-    "build": "react-app-rewired build",
+    "build": "DISABLE_ESLINT_PLUGIN=true react-app-rewired build",
     "test": "exit 0",
     "eject": "react-scripts eject",
     "lint": "prettier --check \"src/**/*.js\" && eslint \"./src/**/*.js\" && tsc --noEmit",
@@ -56,6 +56,7 @@
   "devDependencies": {
     "eslint": "^8.3.0",
     "eslint-config-prettier": "^6.10.0",
+    "eslint-config-react-app": "^7.0.1",
     "eslint-config-standard": "^14.1.0",
     "eslint-plugin-import": "^2.20.0",
     "eslint-plugin-promise": "^4.2.1",

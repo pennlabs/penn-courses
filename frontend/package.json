@@ -10,9 +10,7 @@
     ],
     "nohoist": [
       "penncoursereview/react-scripts",
-      "penncoursereview/react-scripts/**",
-      "penncoursereview/eslint",
-      "penncoursereview/eslint/**"
+      "penncoursereview/react-app-rewired"
     ]
   },
   "private": true,
@@ -36,8 +34,7 @@
       "pre-commit": "lerna run --concurrency 1 precommit"
     }
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "resolutions": {
     "**/@types/react": "^18.2.0",
     "**/@types/react-dom": "^18.2.0"
