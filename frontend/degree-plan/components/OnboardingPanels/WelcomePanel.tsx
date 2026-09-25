@@ -5,6 +5,7 @@ import {
 } from "@radix-ui/react-icons";
 import { Dispatch, MutableRefObject, SetStateAction } from "react";
 import { Document, Page } from "react-pdf";
+import { PulseLoader } from "react-spinners";
 import {
   CenteredFlexContainer,
   ChooseContainer,
@@ -23,6 +24,8 @@ type WelcomeLayoutProps = {
   PDF: any;
   addText: (items: any, index: number) => void;
   transcriptDetected: MutableRefObject<boolean | null>;
+  // The transcript has been read but the degree lists it is matched against are still loading.
+  waitingForPrograms: boolean;
   startingYear: { label: any; value: number } | null;
   setCurrentPage: Dispatch<SetStateAction<number>>;
   canExit?: boolean;
@@ -37,6 +40,7 @@ export default function WelcomeLayout({
   PDF,
   addText,
   transcriptDetected,
+  waitingForPrograms,
   startingYear,
   setCurrentPage,
   canExit = false,
@@ -119,7 +123,8 @@ export default function WelcomeLayout({
               transition: "all 0.25s",
             }}
           >
-            Next
+            {!waitingForPrograms && <div>Next</div>}
+            <PulseLoader size={8} color={"white"} loading={waitingForPrograms} />
           </NextButton>
         </ContainerGroup>
         <TextButton

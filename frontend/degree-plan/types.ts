@@ -34,7 +34,6 @@ export interface DegreeListing extends DBObject {
   major_name: string;
   concentration: string;
   concentration_name: string;
-  rules: number[];
   credits: number;
 }
 
