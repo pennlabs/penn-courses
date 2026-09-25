@@ -43,10 +43,30 @@ export default function Home() {
         <ToastContext.Provider value={showToast}>
           <SWRConfig
             value={{
-              fetcher: (resource, init) =>
-                fetch(resource, init).then((res) => res.json()),
+              // Fail on an error status rather than handing its body to the page as data. A
+              // 403 or a gateway timeout used to arrive as an object or a parse error where an
+              // array was expected, so a list would silently render empty.
+              fetcher: async (resource, init) => {
+                const res = await fetch(resource, init);
+                if (!res.ok) {
+                  const error = new Error(
+                    `Request to ${resource} failed with status ${res.status}`
+                  ) as Error & { status: number };
+                  error.status = res.status;
+                  throw error;
+                }
+                return res.json();
+              },
               provider: () => new Map(),
-              onError: () => {},
+              // SWR retries a failed request with backoff and calls this each time, so one
+              // toast per key rather than one per attempt.
+              onError: (error, key) => {
+                const status = (error as { status?: number }).status;
+                toast.error(
+                  `Couldn't load ${key}${status ? ` (status ${status})` : ""}. Retrying...`,
+                  { position: toast.POSITION.BOTTOM_CENTER, toastId: key }
+                );
+              },
             }}
           >
             {showLoginModal && (
