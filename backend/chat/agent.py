@@ -88,15 +88,8 @@ OPENAI_TOOLS = [
 def _completed_turn(reply_parts, tool_calls, previews, *, truncated):
     """Build the provider-independent payload shared by both model adapters."""
     reply = "".join(reply_parts).strip()
-    # A search can return dozens of courses while the reply names three. Send blurbs
-    # only for the codes the student will actually see.
     mentioned = set(COURSE_CODE_RE.findall(reply))
-    # A code can be mentioned without ever having been looked up directly — from the
-    # student's cart, from their degree plan, or from the model's own knowledge. Start
-    # from an empty blurb for each and let the catalog fill it.
     selected = {code: previews.get(code, {"course_code": code}) for code in sorted(mentioned)}
-    # Anything the catalog has never heard of is not a course — a regex match on
-    # something else, or a code the model invented.
     unknown = enrich_previews(selected)
     return {
         "reply": reply,
@@ -109,9 +102,9 @@ def _completed_turn(reply_parts, tool_calls, previews, *, truncated):
 def stream_chat_turn(messages, *, semester, user, client=None, model=None, conversation_id=None):
     """Dispatch a turn to the selected provider while preserving one event protocol."""
     model = model or ChatModel(
-        id=f"anthropic/{settings.CHAT_MODEL}",
-        api_model=settings.CHAT_MODEL,
-        label=settings.CHAT_MODEL,
+        id=f"anthropic/{settings.ANTHROPIC_CHAT_DEFAULT_MODEL}",
+        api_model=settings.ANTHROPIC_CHAT_DEFAULT_MODEL,
+        label=settings.ANTHROPIC_CHAT_DEFAULT_MODEL,
         provider="Anthropic",
     )
     if model.provider == "OpenCode Go":
@@ -148,9 +141,9 @@ def _stream_anthropic_chat_turn(messages, *, semester, user, client=None, model=
     """
     client = client or get_client()
     model = model or ChatModel(
-        id=f"anthropic/{settings.CHAT_MODEL}",
-        api_model=settings.CHAT_MODEL,
-        label=settings.CHAT_MODEL,
+        id=f"anthropic/{settings.ANTHROPIC_CHAT_DEFAULT_MODEL}",
+        api_model=settings.ANTHROPIC_CHAT_DEFAULT_MODEL,
+        label=settings.ANTHROPIC_CHAT_DEFAULT_MODEL,
         provider="Anthropic",
     )
 

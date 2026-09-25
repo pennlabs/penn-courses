@@ -70,7 +70,7 @@ These optional variables tune it (defaults in parentheses):
 
 | Variable | Purpose |
 | --- | --- |
-| `CHAT_MODEL` (`claude-sonnet-5`) | Anthropic model to offer when `ANTHROPIC_API_KEY` is set. |
+| `ANTHROPIC_CHAT_DEFAULT_MODEL` (`claude-sonnet-5`) | Anthropic model to offer when `ANTHROPIC_API_KEY` is set. |
 | `OPENCODE_GO_API_KEY` | Enables OpenCode Go's curated DeepSeek V4.1 Flash and GLM-5.3 choices. |
 | `OPENCODE_GO_BASE_URL` (`https://opencode.ai/zen/go/v1`) | OpenCode Go API base URL. |
 | `CHAT_DEFAULT_MODEL` (`opencode-go/deepseek-v4.1-flash`) | Preferred fully-qualified choice; falls back to an enabled model. |
@@ -80,6 +80,9 @@ These optional variables tune it (defaults in parentheses):
 | `CHAT_RATE_LIMIT` (`30/hour`) | Per-user rate limit on the chat route. |
 | `CHAT_MAX_MESSAGES` (`40`) | Longest conversation history a client may submit. |
 | `CHAT_MAX_MESSAGE_CHARS` (`4000`) | Longest single message a client may submit. |
+
+The curated OpenCode Go model choices are configured in `PennCourses/settings/base.py`
+under `OPENCODE_GO_MODELS`.
 
 The assistant can read and modify the requesting user's own PCP cart and schedules
 (`chat/plan_tools.py`) and read their Penn Degree Plan (`chat/degree_tools.py`). Those

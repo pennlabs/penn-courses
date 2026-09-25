@@ -33,28 +33,21 @@ def available_models():
     if settings.ANTHROPIC_API_KEY:
         models.append(
             ChatModel(
-                id=f"anthropic/{settings.CHAT_MODEL}",
-                api_model=settings.CHAT_MODEL,
-                label=settings.CHAT_MODEL.replace("-", " ").title(),
+                id=f"anthropic/{settings.ANTHROPIC_CHAT_DEFAULT_MODEL}",
+                api_model=settings.ANTHROPIC_CHAT_DEFAULT_MODEL,
+                label=settings.ANTHROPIC_CHAT_DEFAULT_MODEL.replace("-", " ").title(),
                 provider="Anthropic",
             )
         )
     if settings.OPENCODE_GO_API_KEY:
         models.extend(
-            [
-                ChatModel(
-                    id="opencode-go/deepseek-v4.1-flash",
-                    api_model="deepseek-v4.1-flash",
-                    label="DeepSeek V4.1 Flash",
-                    provider="OpenCode Go",
-                ),
-                ChatModel(
-                    id="opencode-go/glm-5.3",
-                    api_model="glm-5.3",
-                    label="GLM-5.3",
-                    provider="OpenCode Go",
-                ),
-            ]
+            ChatModel(
+                id=model_id,
+                api_model=api_model,
+                label=label,
+                provider="OpenCode Go",
+            )
+            for model_id, api_model, label in settings.OPENCODE_GO_MODELS
         )
     return models
 
@@ -70,7 +63,6 @@ def default_model(models=None):
         if model.id == configured_id:
             return model
 
-    # Keep the existing Anthropic deployment useful when OpenCode Go is absent.
     return models[0]
 
 
