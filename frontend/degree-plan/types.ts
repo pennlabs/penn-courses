@@ -12,6 +12,9 @@ export interface Rule extends DBObject {
   num: number | null;
   concentration: string;
   rules: Rule[];
+  // False when the rule's audit block takes no AP, IB or transfer credit, e.g. the College's
+  // Foundations. A course filed under TRANSFER_CREDIT_SEMESTER_KEY cannot be dropped on it.
+  transfer_credit_allowed: boolean;
 }
 
 /** Onboarding page types */
@@ -123,6 +126,7 @@ export interface Course {
 // The interface we use with React DND
 export interface DnDCourse {
   full_code: string;
+  semester?: string | null; // present when the item is a fulfillment dragged from the plan
   rules?: number[];
   rule_id?: number // only used when dragging from REQ panel
   unselected_rules?: number[];

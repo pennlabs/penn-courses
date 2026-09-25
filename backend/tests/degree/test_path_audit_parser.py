@@ -1,3 +1,4 @@
+import xml.etree.ElementTree as ET
 from decimal import Decimal
 from os import path
 
@@ -8,6 +9,7 @@ from degree.models import Degree
 from degree.utils.parse_path_audit import (
     ANY_BLOCK,
     ShareTarget,
+    block_allows_transfer_credit,
     parse_audit,
     parse_term,
     parse_terms,
@@ -104,6 +106,62 @@ class ParseAuditTest(TestCase):
         parsed = parse_audit(load_audit("BIOL-BA.xml"), self.biol)
         rules = [r for r in parsed.rules if r.q and "attributes__code__in" in r.q]
         self.assertTrue(any("ABB2" in rule.q for rule in rules))
+
+
+class TransferCreditTest(TestCase):
+    """
+    AP, IB and transfer credit does not count toward the College's Foundations. DegreeWorks
+    says so with a zero-valued MAXCLASS header qualifier restricted to DWTRANSFERSCHOOLID,
+    which the parser turns into `transfer_credit_allowed=False` on every rule of the block.
+    """
+
+    def setUp(self):
+        self.biol = Degree(program="AU_BA", degree="BA", major="BIOL", concentration=None)
+
+    def test_a_block_capping_transfer_credit_at_zero_bars_it_from_every_rule(self):
+        parsed = parse_audit(load_audit("BIOL-BA.xml"), self.biol)
+        blocks = blocks_by_value(parsed)
+
+        self.assertFalse(blocks["U-GE-FND"].transfer_credit_allowed)
+        self.assertTrue(blocks["BA"].transfer_credit_allowed)
+        self.assertTrue(blocks["BIOL"].transfer_credit_allowed)
+
+        foundations = [rule for rule in parsed.rules if rule.block_value == "U-GE-FND"]
+        self.assertTrue(any(rule.q for rule in foundations))
+        for rule in parsed.rules:
+            self.assertEqual(
+                rule.transfer_credit_allowed, rule.block_value != "U-GE-FND", rule.title
+            )
+
+    @staticmethod
+    def block_with(qualifier: str):
+        return ET.fromstring(
+            f'<Block Req_type="OTHER" Req_value="X" Title="X"><Header>{qualifier}</Header></Block>'
+        )
+
+    def test_a_credit_cap_counts_too(self):
+        block = self.block_with(
+            '<Qualifier Name="MAXCREDIT" Credits="0">'
+            "<SubText>@ @ (With </SubText><SubText>DWTRANSFERSCHOOLID = EQIVAP</SubText>"
+            "<SubText>)</SubText></Qualifier>"
+        )
+        self.assertFalse(block_allows_transfer_credit(block))
+
+    def test_a_non_zero_cap_is_a_policy_we_cannot_express_and_is_left_allowed(self):
+        block = self.block_with(
+            '<Qualifier Name="MAXCLASS" Classes="1">'
+            "<SubText>@ @ (With DWTRANSFERSCHOOLID = EQIVAP)</SubText></Qualifier>"
+        )
+        with self.assertLogs("degree.utils.parse_path_audit", level="WARNING"):
+            self.assertTrue(block_allows_transfer_credit(block))
+
+    def test_other_caps_do_not_touch_transfer_credit(self):
+        # the pass/fail cap every block carries
+        block = self.block_with(
+            '<Qualifier Name="MAXCREDIT" Credits="0">'
+            "<SubText>@ @ (With DWPASSFAIL = Y)</SubText></Qualifier>"
+        )
+        self.assertTrue(block_allows_transfer_credit(block))
 
 
 class OverlayRequirementTest(TestCase):

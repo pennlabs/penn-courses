@@ -28,12 +28,14 @@ def check_dept(q, dept):
     return any([match for match in matches if dept in match[1] and match[0] != "full_code"])
 
 
-def check_belongs(rule, full_code, belongs_cache):
+def check_belongs(rule, full_code, belongs_cache, is_transfer=False):
     """
     Rule.check_belongs, memoized in the given dict. Each rule is asked about the same course
     several times while allocating it (once to prioritize, once per double count, once to
     collect the leftovers), and every uncached call is a database query.
     """
+    if not rule.accepts(is_transfer=is_transfer):
+        return False
     key = (rule.id, full_code)
     if key not in belongs_cache:
         belongs_cache[key] = rule.check_belongs(full_code)
@@ -62,7 +64,7 @@ def prewarm_belongs_cache(rules, full_codes):
     return belongs_cache
 
 
-def get_priority_rule(rules, full_code, belongs_cache):
+def get_priority_rule(rules, full_code, belongs_cache, is_transfer=False):
     """
     Primitive method for finding the rule of highest priority given a set of applicable rules.
     If the rule is explicitly mentioned, returns that rule. Else, returns the rule with the highest
@@ -72,6 +74,9 @@ def get_priority_rule(rules, full_code, belongs_cache):
     priority_CUs = float("-inf")
 
     for r in rules:
+        if not r.accepts(is_transfer=is_transfer):
+            continue
+
         if full_code in r.q:
             return r
 
@@ -93,12 +98,16 @@ def allocate_rules(
     degree_plan=None,
     satisfied_rules=None,
     belongs_cache=None,
+    is_transfer=False,
 ):
     """
     Given a course (full_code), rule, degree and double count mappings, and optionally a selected
     rule, degree plan, list of satisfied rules, and a belongs_cache (see prewarm_belongs_cache),
     returns rules (of all degrees in degreeplans) to show as selected by the course, rules to
     show as unselected, and if the selections are legal.
+
+    `is_transfer` says the course is AP or transfer credit, which keeps it off every rule that
+    does not accept such credit.
     """
     selected_rules = set()
     unselected_rules = set()
@@ -115,7 +124,9 @@ def allocate_rules(
         chosen_rule = (
             rule_selected
             if rule_selected in rules
-            else get_priority_rule(rules.difference(satisfied_rules), full_code, belongs_cache)
+            else get_priority_rule(
+                rules.difference(satisfied_rules), full_code, belongs_cache, is_transfer=is_transfer
+            )
         )
         addl_selected_rules, addl_unselected_rules = assign_individual_rule(
             full_code,
@@ -125,6 +136,7 @@ def allocate_rules(
             rule_to_degree,
             double_counts,
             belongs_cache,
+            is_transfer=is_transfer,
         )
 
         selected_rules |= {
@@ -148,6 +160,7 @@ def assign_individual_rule(
     rule_to_degree,
     double_counts,
     belongs_cache,
+    is_transfer=False,
 ):
     """
     Given a course (full_code), a chosen rule, other rules, already satisfied rules, and the
@@ -169,7 +182,7 @@ def assign_individual_rule(
         relevant_dcrs = {
             r
             for r in double_counts.get(chosen_rule, set())
-            if check_belongs(r, full_code, belongs_cache)
+            if check_belongs(r, full_code, belongs_cache, is_transfer=is_transfer)
         }
         relevant_dcrs.add(chosen_rule)
 
@@ -190,7 +203,9 @@ def assign_individual_rule(
             picked_rule = (
                 chosen_rule
                 if chosen_rule in pick_one_rules
-                else get_priority_rule(pick_one_rules, full_code, belongs_cache)
+                else get_priority_rule(
+                    pick_one_rules, full_code, belongs_cache, is_transfer=is_transfer
+                )
             )
             if picked_rule:
                 selected_rules.add(picked_rule)
@@ -201,6 +216,8 @@ def assign_individual_rule(
     # to satisfied rules (Intentionally should cause illegal double count)
     existing_degrees = [rule_to_degree.get(r) for r in selected_rules]
     for rule in rules:
+        if not rule.accepts(is_transfer=is_transfer):
+            continue
         if full_code in rule.q and rule not in satisfied_rules:
             # check if this rule's degree is different from all degrees in selected_rules
             rule_degree = rule_to_degree.get(rule)
@@ -208,7 +225,7 @@ def assign_individual_rule(
                 selected_rules.add(rule)
             else:
                 unselected_rules.add(rule)
-        elif check_belongs(rule, full_code, belongs_cache):
+        elif check_belongs(rule, full_code, belongs_cache, is_transfer=is_transfer):
             unselected_rules.add(rule)
 
     return selected_rules, unselected_rules

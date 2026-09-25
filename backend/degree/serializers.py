@@ -8,6 +8,7 @@ from rest_framework import serializers
 from courses.models import Course
 from courses.util import get_current_semester
 from degree.models import (
+    TRANSFER_CREDIT_SEMESTER,
     Degree,
     DegreePlan,
     DockedCourse,
@@ -244,15 +245,29 @@ class FulfillmentSerializer(serializers.ModelSerializer):
             full_code = self.instance.full_code
         if degree_plan is None:
             degree_plan = self.instance.degree_plan
-
-        data["rules"] = rules
+        semester = data.get("semester", self.instance.semester if self.instance else None)
+        is_transfer = semester == TRANSFER_CREDIT_SEMESTER
 
         overridden_rules = set(self.instance.overrides.all()) if self.instance else set()
+
+        def still_applies(rule):
+            return rule in overridden_rules or rule.accepts(is_transfer=is_transfer)
+
+        # A course moved into the AP & transfer semester keeps only the rules that still take it
+        if "rules" not in data:
+            rules = list(filter(still_applies, rules))
+            data["unselected_rules"] = list(filter(still_applies, unselected_rules))
+
+        data["rules"] = rules
 
         # TODO: check that rules belong to this degree plan
         for rule in rules:
             if rule in overridden_rules:
                 continue
+            if not rule.accepts(is_transfer=is_transfer):
+                raise serializers.ValidationError(
+                    f"Rule {rule.id} does not accept AP or transfer credit"
+                )
             # NOTE: we don't do any validation if the course doesn't exist in DB. In future,
             # it may be better to prompt user for manual override
             if (

@@ -85,6 +85,7 @@ class ParsedBlock:
     catalog_year: int | None
     root_rule: Rule | None
     share_targets: list[ShareTarget] = field(default_factory=list)
+    transfer_credit_allowed: bool = True
 
 
 @dataclass
@@ -577,24 +578,48 @@ def block_share_targets(block) -> list[ShareTarget]:
     return targets
 
 
+def block_allows_transfer_credit(block) -> bool:
+    """
+    Whether AP, IB, transfer and advanced standing credit may count in a block.
+
+    DegreeWorks does not mark the courses; it caps them. A block that takes no such credit --
+    the College's General Education Foundations block, say -- carries a MAXCLASS or MAXCREDIT
+    header qualifier of zero whose With clause is DWTRANSFERSCHOOLID:
+
+        MaxClasses 0 in @ @ (With DWTRANSFERSCHOOLID = EQIVAP, EQIVIB, EQIVEX, EQIVAS)
+
+    A non-zero cap ("at most one AP course") is a policy the boolean cannot express, and is
+    left as allowed rather than over-restricting.
+    """
+    for qualifier in qualifiers(block, "MAXCLASS", "MAXCREDIT"):
+        if "DWTRANSFERSCHOOLID" not in subtext_of(qualifier):
+            continue
+        cap = qualifier.get("Classes") or qualifier.get("Credits")
+        if cap is not None and Decimal(cap) == 0:
+            return False
+        logger.warning(f"Ignoring non-zero transfer credit cap {cap!r} in {block.get('Title')!r}")
+    return True
+
+
 def catalog_year_of(block) -> int | None:
     year = block.get("Cat_yr_start")
     return int(year) if year and year.isdigit() and int(year) > 0 else None
 
 
-def apply_block_identity(rules: list[Rule], block_type: str, block_value: str, targets) -> None:
+def apply_block_identity(rules: list[Rule], block: ParsedBlock) -> None:
     """
     Denormalizes the block onto its rules, so a rule alone carries everything needed to decide
-    what it may double count with.
+    what it may double count with and whether transfer credit may count toward it.
 
     Rules arrive parents before children, so a rule's parent is already resolved and a
     qualifier on a Subset or Group reaches everything underneath it. Targets are held as
     ShareTargets while inheriting, then serialized for the JSON field.
     """
     for rule in rules:
-        inherited = rule.parent.share_targets if rule.parent is not None else targets
-        rule.block_type = block_type
-        rule.block_value = block_value
+        inherited = rule.parent.share_targets if rule.parent is not None else block.share_targets
+        rule.block_type = block.req_type
+        rule.block_value = block.req_value
+        rule.transfer_credit_allowed = block.transfer_credit_allowed
         rule.share_targets = unique([*inherited, *rule.share_targets])
 
     for rule in rules:
@@ -609,33 +634,28 @@ def parse_block(block, degree: Degree) -> tuple[ParsedBlock, list[Rule]]:
     pointers to the other blocks -- but is still returned, since it carries the credit
     requirement and the block-level share policy.
     """
-    block_type = block.get("Req_type")
-    block_value = block.get("Req_value") or ""
-    targets = block_share_targets(block)
-
     root = Rule(title=(block.get("Title") or "")[:MAX_TITLE_LENGTH], share_targets=[])
     rules = [
         root,
         *parse_rules(block.findall("Rule"), degree, root),
         *parse_header_requirements(block, root),
     ]
-    apply_block_identity(rules, block_type, block_value, targets)
+    parsed = ParsedBlock(
+        req_type=block.get("Req_type"),
+        req_value=block.get("Req_value") or "",
+        title=block.get("Title") or "",
+        credits=block_credits(block),
+        catalog_year=catalog_year_of(block),
+        root_rule=root,
+        share_targets=block_share_targets(block),
+        transfer_credit_allowed=block_allows_transfer_credit(block),
+    )
+    apply_block_identity(rules, parsed)
 
     if len(rules) == 1:
-        rules, root = [], None
+        rules, parsed.root_rule = [], None
 
-    return (
-        ParsedBlock(
-            req_type=block_type,
-            req_value=block_value,
-            title=block.get("Title") or "",
-            credits=block_credits(block),
-            catalog_year=catalog_year_of(block),
-            root_rule=root,
-            share_targets=targets,
-        ),
-        rules,
-    )
+    return parsed, rules
 
 
 def parse_audit(audit_xml: str, degree: Degree) -> ParsedAudit | None:
