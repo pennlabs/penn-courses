@@ -21,9 +21,17 @@ program_choices = [
     ("AU_BA", "College BA"),
     ("WU_BS", "Wharton BS"),
     ("NU_BSN", "Nursing BSN"),
+    # Submatriculants pursue a masters alongside their bachelors. Every SEAS masters
+    # program Path lists reports this one program code, regardless of major.
+    ("EM_MSE", "Engineering MSE"),
 ]
 
 program_code_to_name = dict(program_choices)
+
+# The programs above that award a graduate degree. A plan holding one of these alongside an
+# undergraduate degree belongs to a submatriculant, whose double counting between the two is
+# capped by policy rather than by the audit (see degree.utils.degree_logic).
+graduate_programs = {"EM_MSE"}
 
 
 class Degree(models.Model):

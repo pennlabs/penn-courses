@@ -102,6 +102,7 @@ const OnboardingPage = ({
     transcriptDetected.current = null;
     setSchools([]);
     setMajors([]);
+    setSecondMajors([]);
     setScrapedCourses([]);
     setStartingYear(null);
     setGraduationYear(null);
