@@ -11,40 +11,256 @@ from courses.util import get_semesters
 
 
 SCRAPE_OUTPUT_DIR = Path("courses/data/prereq_scrapes")
-# A course token is an upper-case department code followed by a course number ("CIS 1200",
-# "CIS-1200"), or a bare course number ("1600" in "CIS 1200, 1600"). Matching is case
-# sensitive on purpose: class notes write real codes in upper case, so this keeps ordinary
-# words like "in 2024" or "Section 001" from being read as departments.
-COURSE_TOKEN_RE = re.compile(r"\b([A-Z]{2,4})\s*-?\s*(\d{3,4}[A-Za-z]?)\b|\b(\d{3,4}[A-Za-z]?)\b")
-# A bare number only continues the previous department when the text between them is a list
-# separator, so "CIS 1200, 1600 or 1610" links all three but "CIS 1200. Starts in 2026" doesn't.
-LIST_GAP_RE = re.compile(r"[\s,/&]*(?:and|or)?[\s,/&]*", re.IGNORECASE)
 HTML_TAG_RE = re.compile(r"<[^>]+>")
+# A department code is upper case ("CIS") or, as some notes write it, title case ("Math").
+# Ordinary lower-case words like "in 2024" are never read as departments.
+DEPT = r"[A-Z](?:[A-Z]{1,3}|[a-z]{1,3})"
+COURSE_RE = re.compile(rf"\b{DEPT}\s*-?\s*\d{{3,4}}")
+# "Prerequisite(s):", "Prereq", "Pre-req", "pre-requisite" (but not "co-requisite").
+PREREQ_KEYWORD_RE = re.compile(r"\bpre-?\s?req\w*(?:\(s\))?\s*:?", re.IGNORECASE)
+SENTENCE_BREAK_RE = re.compile(r"(?<=[.!?])\s+(?=[A-Z(])|\n+")
+# Where a prerequisite clause ends even without a sentence break.
+CLAUSE_END_RE = re.compile(
+    r"\b(?:co-?\s?requisites?|anti-?\s?requisites?|recommended|credit cannot|not open to)\b",
+    re.IGNORECASE,
+)
+# Wording whose "or" is not an alternative ("C or better"), notes on old course numbers, and
+# asides that name no course ("MATH 1300 (may be taken concurrently)").
+IGNORED_PHRASE_RE = re.compile(
+    r"\bor\s+(?:better|higher|above)\b|\((?:formerly|previously)[^)]*\)|\([^()\d]*\)",
+    re.IGNORECASE,
+)
+TOKEN_RE = re.compile(
+    rf"(?P<course>\b(?P<depts>{DEPT}(?:\s*/\s*{DEPT})*)\s*-?\s*(?P<num>\d{{3,4}}[A-Za-z]?)\b)"
+    r"|(?P<dept>\b[A-Z]{2,4})\s*(?=\()"
+    r"|(?P<number>\b\d{3,4}[A-Za-z]?\b)"
+    r"|(?P<and>\b(?i:and)\b|&)"
+    r"|(?P<or>\b(?i:or)\b|(?<=\d)\s*/)"
+    r"|(?P<comma>[,;])"
+    r"|(?P<lp>\()"
+    r"|(?P<rp>\))"
+    r"|(?P<word>[^\s,;()&/]+)"
+)
+CONNECTORS = ("and", "or", "comma")
+
+
+def extract_prereq_clauses(notes_text: str) -> list[str]:
+    """
+    The parts of class notes that state prerequisites. Notes also name courses for other
+    reasons ("Grad students should enroll in REES 5183", "Antirequisite: ECON 4510"), so only
+    sentences with a prerequisite keyword are read: the text after "Prerequisites:", or the
+    text before the keyword in "FNCE 6110 is a prerequisite for this course".
+    """
+    clauses = []
+    for sentence in SENTENCE_BREAK_RE.split(HTML_TAG_RE.sub(" ", notes_text or "")):
+        match = PREREQ_KEYWORD_RE.search(sentence)
+        if not match:
+            continue
+        before, _, after = sentence.partition(match.group(0))
+        if COURSE_RE.search(after) and (
+            not COURSE_RE.search(before) or match.group(0).rstrip().endswith(":")
+        ):
+            clause = after
+        elif COURSE_RE.search(before):
+            clause = before
+        else:
+            continue
+        end = CLAUSE_END_RE.search(clause)
+        clauses.append(clause[: end.start()] if end else clause)
+    return clauses
+
+
+def tokenize_prereq_clause(clause: str) -> list[tuple]:
+    """
+    Split a clause into ("course", [(dept, code), ...]), ("text", words), "and", "or",
+    "comma", "lp" and "rp" tokens. "REAL/FNCE 7210" is one course token with two alternative
+    codes, and a bare number continues the previous department ("ECON 2100, 2200", "MATH (1400
+    or 1070)") only when nothing but connectors separates them.
+    """
+    tokens = []
+    last_dept = None
+    clause = clause.replace("[", "(").replace("]", ")")
+    for match in TOKEN_RE.finditer(IGNORED_PHRASE_RE.sub(" ", clause)):
+        kind = match.lastgroup
+        if kind == "course":
+            depts = [d.upper() for d in re.split(r"\s*/\s*", match.group("depts"))]
+            code = match.group("num").upper()
+            last_dept = depts[-1]
+            tokens.append(("course", [(dept, code) for dept in depts]))
+        elif kind == "dept":
+            last_dept = match.group("dept")
+        elif kind == "number" and last_dept:
+            tokens.append(("course", [(last_dept, match.group("number").upper())]))
+        elif kind in ("number", "word"):
+            last_dept = None
+            if tokens and tokens[-1][0] == "text":
+                tokens[-1] = ("text", f"{tokens[-1][1]} {match.group(0)}")
+            else:
+                tokens.append(("text", match.group(0)))
+        else:
+            tokens.append((kind,))
+    return tokens
+
+
+def drop_course_titles(tokens: list[tuple]) -> list[tuple]:
+    """
+    Drop text that describes a neighbouring course rather than standing on its own: titles
+    ("MATH 1410, Calculus, Part II"), and lead-ins ("completion of WH 1010 is a"). Text between
+    connectors, like "Placement score of 24+" in "MATH 1300 or Placement score of 24+", stays.
+    """
+    kept = []
+    i = 0
+    while i < len(tokens):
+        token = tokens[i]
+        following = tokens[i + 1] if i + 1 < len(tokens) else None
+        if token[0] == "text" and following and following[0] == "course":
+            i += 1
+            continue
+        kept.append(token)
+        i += 1
+        if token[0] != "course":
+            continue
+        run_end = i
+        while run_end < len(tokens) and tokens[run_end][0] in ("text", "comma"):
+            run_end += 1
+        if any(t[0] == "text" for t in tokens[i:run_end]):
+            if run_end < len(tokens) and tokens[run_end][0] == "course":
+                kept.append(("comma",))
+            i = run_end
+    return kept
+
+
+def collapse_connectors(tokens: list[tuple]) -> list[tuple]:
+    """Merge runs like ", and" or "and/or" into one connector; any "or" in a run wins."""
+    collapsed = []
+    for token in tokens:
+        if token[0] in CONNECTORS and collapsed and collapsed[-1][0] in CONNECTORS:
+            kinds = {collapsed[-1][0], token[0]}
+            collapsed[-1] = ("or",) if "or" in kinds else ("and",) if "and" in kinds else token
+        else:
+            collapsed.append(token)
+    return collapsed
+
+
+def make_node(op: str, children: list):
+    flat = []
+    for child in children:
+        if child is None:
+            continue
+        flat.extend(child[1] if child[0] == op else [child])
+    if not flat:
+        return None
+    return flat[0] if len(flat) == 1 else (op, flat)
+
+
+def combine_items(items: list, connectors: list[str]):
+    """
+    Commas take the meaning of the next connector in the list ("A, B, or C" is one choice),
+    defaulting to "and". "or" binds tighter than "and", so "CHEM 2410 or 2411 and CHEM 2420 or
+    2421" requires one course from each pair.
+    """
+    resolved = []
+    for i, connector in enumerate(connectors):
+        if connector == "comma":
+            later = (c for c in connectors[i:] if c != "comma")
+            connector = next(later, "and")
+        resolved.append(connector)
+    groups = [[items[0]]] if items else []
+    for connector, item in zip(resolved, items[1:]):
+        if connector == "and":
+            groups.append([item])
+        else:
+            groups[-1].append(item)
+    return make_node("and", [make_node("or", group) for group in groups])
+
+
+def parse_prereq_tokens(tokens: list[tuple], i: int = 0):
+    items, connectors = [], []
+    while i < len(tokens) and tokens[i][0] != "rp":
+        token = tokens[i]
+        if token[0] in CONNECTORS:
+            if len(connectors) < len(items):
+                connectors.append(token[0])
+            i += 1
+            continue
+        if token[0] == "lp":
+            node, i = parse_prereq_tokens(tokens, i + 1)
+            i += 1  # the closing parenthesis, if there is one
+        else:
+            node = token
+            i += 1
+        if node is None:
+            continue
+        if len(connectors) < len(items):
+            connectors.append("and")  # adjacent items with no connector between them
+        items.append(node)
+    return combine_items(items, connectors[: max(len(items) - 1, 0)]), i
+
+
+def parse_prereq_expression(notes_text: str):
+    """
+    Parse the prerequisites stated in class notes into a tree of ("and", [...]), ("or", [...]),
+    ("course", [(dept, code), ...]) and ("text", words) nodes, or None if none are stated.
+    Separate prerequisite sentences are all required.
+    """
+    clauses = []
+    for clause in extract_prereq_clauses(notes_text):
+        tokens = collapse_connectors(drop_course_titles(tokenize_prereq_clause(clause)))
+        clauses.append(parse_prereq_tokens(tokens)[0])
+    return make_node("and", clauses)
+
+
+def iter_prereq_pairs(node):
+    if node is None or node[0] == "text":
+        return
+    if node[0] == "course":
+        yield from node[1]
+        return
+    for child in node[1]:
+        yield from iter_prereq_pairs(child)
 
 
 def parse_prereq_pairs(prereq_text: str) -> set[tuple[str, str]]:
-    if not prereq_text:
-        return set()
+    """Every (dept, code) named as a prerequisite, whether required or one of several options."""
+    return set(iter_prereq_pairs(parse_prereq_expression(prereq_text)))
 
-    clean_text = HTML_TAG_RE.sub(" ", prereq_text)
-    pairs = set()
-    last_dept = None
-    last_end = 0
-    for match in COURSE_TOKEN_RE.finditer(clean_text):
-        start = match.start()
-        dept = match.group(1)
-        code = (match.group(2) or match.group(3)).upper()
 
-        if dept:
-            last_dept = dept
-            pairs.add((dept, code))
-        elif last_dept and LIST_GAP_RE.fullmatch(clean_text[last_end:start]):
-            pairs.add((last_dept, code))
-        else:
-            last_dept = None
-        last_end = match.end()
+def rule_has_courses(rule) -> bool:
+    if isinstance(rule, str):
+        return True
+    if isinstance(rule, dict) and "text" not in rule:
+        return any(rule_has_courses(child) for child in next(iter(rule.values())))
+    return False
 
-    return pairs
+
+def build_prereq_rule(node, resolve):
+    """
+    Turn a parsed expression into the JSON stored in `Course.prerequisite_rule`: a full code
+    string ("CIS-1200"), {"text": "..."} for a condition that isn't a course, or {"and": [...]}
+    / {"or": [...]}. `resolve(dept, code)` returns a full code, or None to drop a course that
+    isn't in the database. Returns None when no course prerequisite remains.
+    """
+
+    def build(node):
+        if node[0] == "text":
+            text = node[1].strip(" .:-")
+            return {"text": text} if re.search(r"[A-Za-z]", text) else None
+        if node[0] == "course":
+            codes = list(dict.fromkeys(filter(None, (resolve(*pair) for pair in node[1]))))
+            return (codes[0] if len(codes) == 1 else {"or": codes}) if codes else None
+        op = node[0]
+        children = {}
+        for child in map(build, node[1]):
+            for part in child[op] if isinstance(child, dict) and op in child else [child]:
+                if part is not None:
+                    children[json.dumps(part, sort_keys=True)] = part
+        children = list(children.values())
+        if not children:
+            return None
+        return children[0] if len(children) == 1 else {op: children}
+
+    rule = build(node) if node is not None else None
+    return rule if rule_has_courses(rule) else None
 
 
 def resolve_prereq_course(dept_code: str, course_code: str, semester: str) -> Course | None:
@@ -157,18 +373,24 @@ def populate_prereqs_from_scrape(
             course = section.course.primary_listing
             courses_touched += 1
 
-            pairs = parse_prereq_pairs(notes_text)
+            expression = parse_prereq_expression(notes_text)
+            pairs = set(iter_prereq_pairs(expression))
             parsed_pairs += len(pairs)
 
-            resolved_prereqs = []
+            resolved = {}
             for prereq_dept, prereq_code in pairs:
                 prereq = resolve_prereq_course(prereq_dept, prereq_code, course.semester)
                 if prereq is None:
                     unresolved_pairs += 1
-                    continue
-                if prereq.id == course.id:
-                    continue
-                resolved_prereqs.append(prereq)
+                elif prereq.id != course.id:
+                    resolved[(prereq_dept, prereq_code)] = prereq
+            resolved_prereqs = list({prereq.id: prereq for prereq in resolved.values()}.values())
+            rule = build_prereq_rule(
+                expression,
+                lambda dept, code: (
+                    resolved[(dept, code)].full_code if (dept, code) in resolved else None
+                ),
+            )
 
             if dry_run:
                 created_links += len(resolved_prereqs)
@@ -178,6 +400,9 @@ def populate_prereqs_from_scrape(
                 course.prerequisite_courses.set(resolved_prereqs)
             elif resolved_prereqs:
                 course.prerequisite_courses.add(*resolved_prereqs)
+            if clear_existing or rule is not None:
+                course.prerequisite_rule = rule
+                course.save(update_fields=["prerequisite_rule"])
 
             created_links += len(resolved_prereqs)
 

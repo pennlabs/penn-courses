@@ -8,7 +8,7 @@ from rest_framework.test import APIClient
 from alert.models import AddDropPeriod
 from courses.util import get_or_create_course_and_section, invalidate_current_semester_cache
 from degree.models import Degree, DegreePlan, Fulfillment, PDPBetaUser
-from degree.serializers import prerequisite_codes_by_full_code
+from degree.serializers import prerequisite_rules_by_full_code
 from tests.courses.util import fill_course_soft_state
 
 
@@ -25,23 +25,27 @@ def set_semester():
     AddDropPeriod(semester=TEST_SEMESTER).save()
 
 
-class PrerequisiteCodesByFullCodeTestCase(TestCase):
+class PrerequisiteRulesByFullCodeTestCase(TestCase):
     def setUp(self):
         set_semester()
         self.cis_1200, _, _, _ = get_or_create_course_and_section("CIS-1200-001", TEST_SEMESTER)
-        self.cis_1600, _, _, _ = get_or_create_course_and_section("CIS-1600-001", TEST_SEMESTER)
         self.cis_1210, _, _, _ = get_or_create_course_and_section("CIS-1210-001", TEST_SEMESTER)
         self.old_cis_1210, _, _, _ = get_or_create_course_and_section("CIS-1210-001", "2023C")
         fill_course_soft_state()
 
-    def test_collects_prerequisites_across_semesters(self):
-        self.cis_1210.prerequisite_courses.add(self.cis_1200)
-        self.old_cis_1210.prerequisite_courses.add(self.cis_1600)
-        codes = prerequisite_codes_by_full_code(["CIS-1210", "CIS-1200"])
-        self.assertEqual(codes, {"CIS-1210": ["CIS-1200", "CIS-1600"]})
+    def test_most_recent_rule_wins(self):
+        self.old_cis_1210.prerequisite_rule = "CIS-1600"
+        self.old_cis_1210.save()
+        self.assertEqual(prerequisite_rules_by_full_code(["CIS-1210"]), {"CIS-1210": "CIS-1600"})
+        self.cis_1210.prerequisite_rule = {"or": ["CIS-1200", "CIS-1600"]}
+        self.cis_1210.save()
+        self.assertEqual(
+            prerequisite_rules_by_full_code(["CIS-1210"]),
+            {"CIS-1210": {"or": ["CIS-1200", "CIS-1600"]}},
+        )
 
     def test_courses_without_prerequisites_are_absent(self):
-        self.assertEqual(prerequisite_codes_by_full_code(["CIS-1200"]), {})
+        self.assertEqual(prerequisite_rules_by_full_code(["CIS-1200"]), {})
 
 
 class FulfillmentPrerequisiteApiTestCase(TestCase):
@@ -55,7 +59,8 @@ class FulfillmentPrerequisiteApiTestCase(TestCase):
         self.cis_1200, _, _, _ = get_or_create_course_and_section("CIS-1200-001", TEST_SEMESTER)
         self.cis_1210, _, _, _ = get_or_create_course_and_section("CIS-1210-001", TEST_SEMESTER)
         fill_course_soft_state()
-        self.cis_1210.prerequisite_courses.add(self.cis_1200)
+        self.cis_1210.prerequisite_rule = {"or": ["CIS-1200", "CIS-1600"]}
+        self.cis_1210.save()
 
         degree = Degree.objects.create(program="EU_BSE", degree="BSE", major="CIS", year=2023)
         self.plan = DegreePlan.objects.create(name="Plan", person=self.user)
@@ -68,8 +73,10 @@ class FulfillmentPrerequisiteApiTestCase(TestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         by_code = {f["full_code"]: f for f in response.data}
-        self.assertEqual(by_code["CIS-1210"]["course"]["prerequisite_courses"], ["CIS-1200"])
-        self.assertEqual(by_code["CIS-1200"]["course"]["prerequisite_courses"], [])
+        self.assertEqual(
+            by_code["CIS-1210"]["course"]["prerequisite_rule"], {"or": ["CIS-1200", "CIS-1600"]}
+        )
+        self.assertIsNone(by_code["CIS-1200"]["course"]["prerequisite_rule"])
         self.assertFalse(by_code["CIS-1210"]["ignore_prereqs"])
 
     def test_ignore_prereqs_defaults_false_and_round_trips(self):

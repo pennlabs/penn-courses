@@ -14,6 +14,7 @@ import { ItemTypes } from "@/components/Dock/dnd/constants";
 import { postFetcher } from "@/hooks/swrcrud";
 import { useSWRConfig } from "swr";
 import ToastContext from "@/components/Toast/Toast";
+import { unmetPrereqs } from "@/utils/prereqUtils";
 
 const DOUBLE_COUNT_ERROR_MESSAGE =
   "This course is being illegally double counted in your plan!";
@@ -26,22 +27,24 @@ const PREREQ_WARNING_COLOR = "#E8A33D";
  */
 const semesterIsBefore = (a: string | null, b: string | null): boolean => {
   if (!a || !b) return false;
-  if (a === TRANSFER_CREDIT_SEMESTER_KEY) return b !== TRANSFER_CREDIT_SEMESTER_KEY;
+  if (a === TRANSFER_CREDIT_SEMESTER_KEY)
+    return b !== TRANSFER_CREDIT_SEMESTER_KEY;
   if (b === TRANSFER_CREDIT_SEMESTER_KEY) return false;
   return a < b;
 };
 
 /**
- * The prerequisites of `fulfillment` that are not taken in an earlier semester of the same plan.
- * Transfer credit never has unmet prerequisites; neither does a course that isn't placed yet.
+ * The prerequisites of `fulfillment` that are not met by courses in earlier semesters of the
+ * same plan, formatted for display ("CIS 1200 or CIS 1600"). Transfer credit never has unmet
+ * prerequisites; neither does a course that isn't placed yet.
  */
 const getMissingPrereqs = (
   fulfillment: Fulfillment,
   allFulfillments: Fulfillment[] | undefined
 ): string[] => {
-  const prereqs = fulfillment.course?.prerequisite_courses ?? [];
+  const rule = fulfillment.course?.prerequisite_rule;
   if (
-    !prereqs.length ||
+    !rule ||
     !fulfillment.semester ||
     fulfillment.semester === TRANSFER_CREDIT_SEMESTER_KEY
   ) {
@@ -52,7 +55,7 @@ const getMissingPrereqs = (
       .filter((f) => semesterIsBefore(f.semester, fulfillment.semester))
       .map((f) => f.full_code)
   );
-  return prereqs.filter((code) => !taken.has(code));
+  return unmetPrereqs(rule, taken);
 };
 const COURSE_BORDER_RADIUS = "9px";
 const HIGHLIGHT_VARIANT_COLORS = {
@@ -599,9 +602,9 @@ const CourseComponent = ({
                   data-tooltip-id={`prereq-${fulfillment.full_code}-${courseType}`}
                   data-tooltip-content={`Prerequisite${
                     missingPrereqs.length > 1 ? "s" : ""
-                  } not taken in an earlier semester: ${missingPrereqs
-                    .map((code) => code.replace("-", " "))
-                    .join(", ")}. Open the info icon to ignore this.`}
+                  } not taken in an earlier semester: ${missingPrereqs.join(
+                    "; "
+                  )}. Open the info icon to ignore this.`}
                 >
                   <ExclamationIcon color={PREREQ_WARNING_COLOR} />
                 </a>
@@ -670,8 +673,8 @@ const CourseComponent = ({
                               : "Prerequisites not yet taken"}
                           </PopoverLabel>
                           <RuleList>
-                            {missingPrereqs.map((code) => (
-                              <li key={code}>{code.replace("-", " ")}</li>
+                            {missingPrereqs.map((prereq) => (
+                              <li key={prereq}>{prereq}</li>
                             ))}
                           </RuleList>
                           <div style={{ marginTop: "0.5rem" }}>

@@ -123,7 +123,24 @@ export interface Course {
   prerequisite_courses?: string[];
   /** Full codes of courses that list this one as a prerequisite. Detail endpoint only. */
   dependent_courses?: string[];
+  /** Which prerequisites are required; null if none are known. Degree plan endpoints only. */
+  prerequisite_rule?: PrereqRule | null;
+  /** This course and its transitive prerequisites, by full code. Detail endpoint only. */
+  prerequisite_chain?: Record<
+    string,
+    { title: string; prerequisite_rule: PrereqRule | null }
+  >;
 }
+
+/**
+ * Required prerequisites: a course's full code, a condition that isn't a course (e.g.
+ * instructor permission), or all / one of several of these.
+ */
+export type PrereqRule =
+  | string
+  | { text: string }
+  | { and: PrereqRule[] }
+  | { or: PrereqRule[] };
 
 // The interface we use with React DND
 export interface DnDCourse {

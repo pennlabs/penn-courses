@@ -6,13 +6,15 @@ from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
 from courses.management.commands.populate_prereqs import (
+    build_prereq_rule,
     parse_course_code,
+    parse_prereq_expression,
     parse_prereq_pairs,
     populate_prereqs_from_scrape,
     resolve_prereq_course,
 )
 from courses.models import Course
-from courses.util import invalidate_current_semester_cache
+from courses.util import get_prerequisite_chain, invalidate_current_semester_cache
 from tests.courses.util import create_mock_data
 
 
@@ -62,6 +64,130 @@ class ParsePrereqPairsTestCase(TestCase):
     def test_empty_text(self):
         self.assertEqual(parse_prereq_pairs(""), set())
         self.assertEqual(parse_prereq_pairs(None), set())
+
+
+def parse_rule(text):
+    """Parse class notes into a rule, treating every course as present in the database."""
+    return build_prereq_rule(parse_prereq_expression(text), lambda dept, code: f"{dept}-{code}")
+
+
+class ParsePrereqRuleTestCase(TestCase):
+    def test_or_alternatives(self):
+        self.assertEqual(
+            parse_rule("Prerequisite: BIOL 2810 OR BIOL 2010 OR BIOL 2210"),
+            {"or": ["BIOL-2810", "BIOL-2010", "BIOL-2210"]},
+        )
+
+    def test_or_binds_tighter_than_and(self):
+        self.assertEqual(
+            parse_rule("Prerequisites: CHEM 2410 OR CHEM 2411 AND CHEM 2420 OR CHEM 2421"),
+            {"and": [{"or": ["CHEM-2410", "CHEM-2411"]}, {"or": ["CHEM-2420", "CHEM-2421"]}]},
+        )
+
+    def test_parentheses_and_brackets_group(self):
+        expected = {"and": ["ECON-2100", {"or": ["ECON-2200", "FNCE-1010"]}, "MATH-1400"]}
+        self.assertEqual(
+            parse_rule("Prerequisites: ECON 2100 AND (ECON 2200 OR FNCE 1010) AND MATH 1400"),
+            expected,
+        )
+        self.assertEqual(
+            parse_rule("Prerequisites: ECON 2100 and [ECON 2200 or FNCE 1010] and MATH 1400."),
+            expected,
+        )
+
+    def test_department_before_parenthesis_carries_in(self):
+        self.assertEqual(
+            parse_rule("Prerequisite: MATH (1400 or 1070) and ECON 2100"),
+            {"and": [{"or": ["MATH-1400", "MATH-1070"]}, "ECON-2100"]},
+        )
+
+    def test_comma_lists_take_the_final_connector(self):
+        self.assertEqual(
+            parse_rule("Prerequisites: ECON 2100, 2200, and 2300"),
+            {"and": ["ECON-2100", "ECON-2200", "ECON-2300"]},
+        )
+        self.assertEqual(
+            parse_rule("Prerequisite: PSYC 1210, or PSYC 1230, or PSYC 1530"),
+            {"or": ["PSYC-1210", "PSYC-1230", "PSYC-1530"]},
+        )
+
+    def test_slash_is_an_alternative(self):
+        self.assertEqual(
+            parse_rule("The prerequisite for this course is REAL/FNCE 7210."),
+            {"or": ["REAL-7210", "FNCE-7210"]},
+        )
+
+    def test_slash_between_numbers_is_an_alternative_but_not_between_words(self):
+        self.assertEqual(
+            parse_rule("Prerequisite: PSYC 1530/2300 and CIS 1200. Pass/Fail not an option."),
+            {"and": [{"or": ["PSYC-1530", "PSYC-2300"]}, "CIS-1200"]},
+        )
+        self.assertEqual(
+            parse_rule("Prerequisite: CIS 1200 and instructor/department permission"),
+            {"and": ["CIS-1200", {"text": "instructor department permission"}]},
+        )
+
+    def test_course_titles_are_dropped(self):
+        self.assertEqual(
+            parse_rule(
+                "Prerequisites: MATH 2400, Calculus, Part III or Math 2600, Honors Calculus."
+            ),
+            {"or": ["MATH-2400", "MATH-2600"]},
+        )
+
+    def test_non_course_alternatives_are_kept_as_text(self):
+        self.assertEqual(
+            parse_rule(
+                "Registration required for LEC and REC. Prerequisites: MATH 1400, Calculus, "
+                "Part I OR Placement score of 24+ OR instructor permission."
+            ),
+            {
+                "or": [
+                    "MATH-1400",
+                    {"text": "Placement score of 24+"},
+                    {"text": "instructor permission"},
+                ]
+            },
+        )
+
+    def test_keyword_after_the_course(self):
+        self.assertEqual(
+            parse_rule(
+                "Successful prior completion of WH 1010 is a pre-requisite for enrollment in "
+                "WH 2010."
+            ),
+            "WH-1010",
+        )
+
+    def test_only_prerequisite_sentences_are_read(self):
+        self.assertEqual(
+            parse_rule(
+                "Grad students should enroll in REES 5183. Prerequisites: ECON 0100 and 0200 "
+                "Antirequisite: ECON 4510"
+            ),
+            {"and": ["ECON-0100", "ECON-0200"]},
+        )
+        self.assertIsNone(parse_rule("ARCH 5990 is a co-requisite for this class."))
+
+    def test_asides_and_grade_qualifiers_are_ignored(self):
+        self.assertEqual(
+            parse_rule(
+                "Prerequisite: ECON 0100 (formerly ECON 001) with a grade of C or better and "
+                "MATH 1300 (may be taken concurrently)"
+            ),
+            {"and": ["ECON-0100", "MATH-1300"]},
+        )
+
+    def test_unresolved_courses_are_dropped(self):
+        rule = build_prereq_rule(
+            parse_prereq_expression("Prerequisite: CIS 1200 or CIS 9999 and MATH 9999"),
+            lambda dept, code: None if code == "9999" else f"{dept}-{code}",
+        )
+        self.assertEqual(rule, "CIS-1200")
+
+    def test_rule_without_courses_is_none(self):
+        self.assertIsNone(parse_rule("Prerequisite: permission of instructor"))
+        self.assertIsNone(parse_rule(""))
 
 
 class ParseCourseCodeTestCase(TestCase):
@@ -120,6 +246,14 @@ class PopulatePrereqsTestCase(TestCase):
             ["CIS-1210"],
         )
 
+    def test_stores_prerequisite_rule(self):
+        other, _ = create_mock_data("CIS-1600-001", TEST_SEMESTER)
+        records = [dict(self.records[0], clssnotes="Prerequisite: CIS 1200 or CIS 1600")]
+        populate_prereqs_from_scrape([TEST_SEMESTER], records)
+        self.course.refresh_from_db()
+        self.assertEqual(self.course.prerequisite_rule, {"or": ["CIS-1200", "CIS-1600"]})
+        self.assertEqual(self.course.prerequisite_courses.count(), 2)
+
     def test_self_reference_is_skipped(self):
         populate_prereqs_from_scrape([TEST_SEMESTER], self.records)
         self.assertNotIn(self.course, self.course.prerequisite_courses.all())
@@ -172,8 +306,54 @@ class CourseDetailPrereqFieldsTestCase(TestCase):
         self.assertEqual(self.detail("CIS-1200")["dependent_courses"], ["CIS-1210"])
         self.assertEqual(self.detail("CIS-1200")["prerequisite_courses"], [])
 
+    def test_detail_includes_prerequisite_chain(self):
+        Course.objects.filter(id=self.course.id).update(prerequisite_rule="CIS-1200")
+        self.assertEqual(
+            self.detail("CIS-1210")["prerequisite_chain"],
+            {
+                "CIS-1210": {"title": self.course.title, "prerequisite_rule": "CIS-1200"},
+                "CIS-1200": {"title": self.prereq.title, "prerequisite_rule": None},
+            },
+        )
+
     def test_fields_are_read_only_lists(self):
         data = self.detail("CIS-1210")
         self.assertIsInstance(data["prerequisite_courses"], list)
         self.assertIsInstance(data["dependent_courses"], list)
         self.assertEqual(Course.objects.get(full_code="CIS-1210").prerequisite_courses.count(), 1)
+
+
+class PrerequisiteChainTestCase(TestCase):
+    def setUp(self):
+        set_semester()
+        for code in ["CIS-1100", "CIS-1200", "CIS-1600", "CIS-1210", "CIS-3200"]:
+            create_mock_data(f"{code}-001", TEST_SEMESTER)
+        self.set_rule("CIS-1200", "CIS-1100")
+        self.set_rule("CIS-1210", {"and": ["CIS-1200", "CIS-1600"]})
+        self.set_rule("CIS-3200", {"or": ["CIS-1210", {"text": "instructor permission"}]})
+
+    def set_rule(self, full_code, rule):
+        Course.objects.filter(full_code=full_code).update(prerequisite_rule=rule)
+
+    def test_follows_rules_transitively(self):
+        chain = get_prerequisite_chain("CIS-3200")
+        self.assertEqual(set(chain), {"CIS-3200", "CIS-1210", "CIS-1200", "CIS-1600", "CIS-1100"})
+        self.assertEqual(chain["CIS-1200"]["prerequisite_rule"], "CIS-1100")
+        self.assertIsNone(chain["CIS-1100"]["prerequisite_rule"])
+
+    def test_cycles_terminate(self):
+        self.set_rule("CIS-1100", "CIS-3200")
+        self.assertEqual(len(get_prerequisite_chain("CIS-3200")), 5)
+
+    def test_prefers_the_most_recent_rule(self):
+        old, _ = create_mock_data("CIS-1200-001", "2023C")
+        Course.objects.filter(id=old.id).update(prerequisite_rule="CIS-1600")
+        self.assertEqual(
+            get_prerequisite_chain("CIS-1200")["CIS-1200"]["prerequisite_rule"], "CIS-1100"
+        )
+        Course.objects.filter(full_code="CIS-1200", semester=TEST_SEMESTER).update(
+            prerequisite_rule=None
+        )
+        self.assertEqual(
+            get_prerequisite_chain("CIS-1200")["CIS-1200"]["prerequisite_rule"], "CIS-1600"
+        )

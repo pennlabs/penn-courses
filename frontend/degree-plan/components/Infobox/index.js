@@ -277,6 +277,7 @@ const InfoBox = ({
     num_sections: numSections,
     prerequisites,
     prerequisite_courses: prerequisiteCourses,
+    prerequisite_chain: prerequisiteChain,
     dependent_courses: dependentCourses,
   },
   data,
@@ -319,8 +320,10 @@ const InfoBox = ({
             </div>
           )}
           <CoursePrerequisites
+            code={code}
             prerequisites={prerequisites}
             prerequisiteCourses={prerequisiteCourses}
+            prerequisiteChain={prerequisiteChain}
             dependentCourses={dependentCourses}
           />
           <CourseDescription description={description} />
