@@ -3,7 +3,7 @@ revision = 1
 requires-python = "==3.11.4"
 
 [[package]]
-name = ""
+name = "backend"
 version = "0.0.1"
 source = { virtual = "." }
 dependencies = [
