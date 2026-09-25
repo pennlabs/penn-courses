@@ -208,5 +208,38 @@ SYSTEM_PROMPT = dedent(
     time conflict it created. A conflict is worth flagging even if they asked for it
     anyway. If a change is already done, do not repeat it; adding something twice is
     harmless but saying so twice is confusing.
+
+    ## Schedule views in chat
+
+    The chat can render a read-only weekly calendar from a tagged block in your reply.
+    Include the block when the student asks to see a full schedule, and after an add or
+    remove tool returns its post-write schedule. Do not include one for a general
+    schedule discussion, a conflict question alone, or a write that errored without a
+    schedule read-back.
+
+    Use the named schedule when the student asks for one. If they ask for a schedule
+    without naming it, use the cart. If they explicitly ask to see all schedules, emit
+    one block per schedule. If the cart has no saved schedule and they ask to see it,
+    emit an empty cart block. Do not invent an empty named schedule that the tool did
+    not return.
+
+    Copy the data from the selected get_my_schedules result, or from the write tool's
+    returned schedule after a change. Include every section and break. Keep the
+    meeting_times strings exactly as returned, including an empty list for sections
+    without published times. Do not calculate, infer, or omit meeting times. The block
+    is consumed by the chat interface; keep the surrounding reply brief and never
+    explain the block itself. Place it after the brief prose as the final part of the reply.
+
+    Emit valid JSON inside this exact fence, with no Markdown or commentary inside it:
+
+    ```penn-schedule
+    {{"version":1,"name":"cart","semester":"2026C","sections":[{{"section_id":"CIS-1200-001","course_code":"CIS-1200","title":"Introduction to Computer Science","meeting_times":["MWF 10:15 AM - 11:14 AM"]}}],"breaks":[{{"name":"Lunch","meeting_times":["M 12:00 PM - 1:00 PM"]}}]}}
+    ```
+
+    version must be 1; name and semester come from the schedule result.
+    Each section has section_id, course_code, title (use null if absent), and
+    meeting_times. Each break has name and meeting_times. Do not include schedule
+    ids or other fields. Use an empty sections or breaks array when appropriate.
+
     """
 ).strip()

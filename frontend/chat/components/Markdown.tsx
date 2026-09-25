@@ -4,7 +4,9 @@ import remarkGfm from "remark-gfm";
 import styled, { css, keyframes } from "styled-components";
 
 import { CoursePreview } from "../lib/api";
+import { parseScheduleMarkup } from "../lib/scheduleMarkup";
 import CourseChip from "./CourseChip";
+import ScheduleView from "./ScheduleView";
 import { theme } from "./theme";
 
 // Kept in step with COURSE_CODE_RE in backend/chat/agent.py, which decides which
@@ -204,19 +206,13 @@ const linkify = (
  */
 type MarkdownElementProps = HTMLAttributes<HTMLElement> & { node?: unknown };
 
-const Markdown = ({
+const MarkdownText = ({
     children,
-    courses,
-    live = false,
+    previews,
 }: {
     children: string;
-    courses: CoursePreview[];
-    live?: boolean;
+    previews: Map<string, CoursePreview>;
 }) => {
-    const previews = new Map(
-        courses.map((course) => [course.course_code, course])
-    );
-
     // Course codes can appear inside any text-bearing element, so every one of these
     // gets the same treatment. Anything not listed renders normally.
     const withChips = (Tag: keyof JSX.IntrinsicElements) =>
@@ -232,39 +228,77 @@ const Markdown = ({
         };
 
     return (
+        <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+                // A table wider than the message bubble scrolls inside it
+                // rather than stretching the transcript.
+                table: function Table({
+                    children: rows,
+                    node,
+                    ...rest
+                }: MarkdownElementProps) {
+                    return (
+                        <TableScroll>
+                            <table {...rest}>{rows}</table>
+                        </TableScroll>
+                    );
+                },
+                p: withChips("p"),
+                li: withChips("li"),
+                strong: withChips("strong"),
+                em: withChips("em"),
+                td: withChips("td"),
+                th: withChips("th"),
+                h1: withChips("h3"),
+                h2: withChips("h3"),
+                h3: withChips("h3"),
+                h4: withChips("h4"),
+            }}
+        >
+            {children}
+        </ReactMarkdown>
+    );
+};
+
+const Markdown = ({
+    children,
+    courses,
+    live = false,
+}: {
+    children: string;
+    courses: CoursePreview[];
+    live?: boolean;
+}) => {
+    const previews = new Map(
+        courses.map((course) => [course.course_code, course])
+    );
+    const parts = parseScheduleMarkup(children, live);
+
+    // Segment order stays stable as a streamed reply grows, so indexes keep the
+    // existing Markdown and schedule nodes mounted in place.
+    /* eslint-disable react/no-array-index-key */
+    return (
         <Prose $live={live}>
-            <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                components={{
-                    // A table wider than the message bubble scrolls inside it
-                    // rather than stretching the transcript.
-                    table: function Table({
-                        children: rows,
-                        node,
-                        ...rest
-                    }: MarkdownElementProps) {
-                        return (
-                            <TableScroll>
-                                <table {...rest}>{rows}</table>
-                            </TableScroll>
-                        );
-                    },
-                    p: withChips("p"),
-                    li: withChips("li"),
-                    strong: withChips("strong"),
-                    em: withChips("em"),
-                    td: withChips("td"),
-                    th: withChips("th"),
-                    h1: withChips("h3"),
-                    h2: withChips("h3"),
-                    h3: withChips("h3"),
-                    h4: withChips("h4"),
-                }}
-            >
-                {children}
-            </ReactMarkdown>
+            {parts.map((part, index) => {
+                if (part.type === "schedule") {
+                    return (
+                        <ScheduleView
+                            key={`schedule-${index}`}
+                            schedule={part.schedule}
+                        />
+                    );
+                }
+                if (!part.text) return null;
+                return (
+                    <MarkdownText key={`markdown-${index}`} previews={previews}>
+                        {part.text}
+                    </MarkdownText>
+                );
+            })}
         </Prose>
     );
+    /* eslint-enable react/no-array-index-key */
 };
 
 export default Markdown;

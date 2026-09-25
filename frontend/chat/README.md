@@ -60,11 +60,13 @@ fail with a 403 — even when you are logged in.
 | `components/Chat.tsx` | The full-page chat: transcript, empty state, composer |
 | `components/Message.tsx` | One turn, plus the trace of what the assistant looked up |
 | `components/icons.tsx` | The per-tool icons that sit on the trace line |
-| `components/Markdown.tsx` | Renders a reply's Markdown and linkifies course codes |
+| `components/Markdown.tsx` | Renders reply Markdown, schedule blocks, and course links |
+| `components/ScheduleView.tsx` | Renders an agent-provided schedule as a weekly calendar |
 | `components/CourseChip.tsx` | A course code: links to PCR, positions the blurb |
 | `components/CourseBlurb.tsx` | The blurb itself |
 
 | `lib/api.ts` | Backend calls and their types |
+| `lib/scheduleMarkup.ts` | Parses the tagged schedule block from reply text |
 | `lib/useChat.ts` | Conversation state |
 | `server.js` | Dev server: proxies `/api` and `/accounts` to Django |
 
@@ -134,6 +136,16 @@ to set — as an `error` frame.
 
 Partial output is discarded when a turn fails. Half an answer that stops mid-sentence
 still reads as fact, and the student has no way to tell how much is missing.
+
+## Schedule views
+
+For a full schedule view or a confirmed schedule change, the agent can include a
+penn-schedule fenced JSON block in its reply. The chat consumes a version 1 block and
+renders it as a weekly calendar card. Its sections and breaks use the same
+meeting_times strings returned by the schedule tools, so the calendar reads the
+assistant's text without a separate response field. An incomplete block is held back
+while streaming; a completed block that does not match the format remains visible as
+Markdown.
 
 `POST /api/chat/` still returns the whole turn as JSON. It is the documented API and
 what the tests drive; the streaming route is a second view over the same agent.
