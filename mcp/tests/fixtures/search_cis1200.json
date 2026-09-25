@@ -1,0 +1,15 @@
+[
+  {
+    "id": "CIS-1200",
+    "title": "Prog Lang & Tech I",
+    "description": "A fast-paced introduction to the fundamental concepts of programming and software design. This course assumes some previous programming experience, at the level of a high school computer science class or CIS 1100. (If you got at least 4 in the AP Computer Science A or AB exam, you will do great.) No specific programming language background is assumed: basic experience with any language (for instance Java, C, C++, VB, Python, Perl, or Scheme) is fine. If you have never programmed before, you should take CIS 1100 first.",
+    "semester": "2026C",
+    "num_sections": 20,
+    "course_quality": 2.807,
+    "instructor_quality": 2.872,
+    "difficulty": 3.04,
+    "work_required": 3.329,
+    "recommendation_score": null,
+    "credits": 1.0
+  }
+]
