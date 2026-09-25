@@ -12,7 +12,16 @@ from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from degree.models import Degree, DegreePlan, DockedCourse, Fulfillment, Major, Minor, PDPBetaUser
+from degree.models import (
+    TRANSFER_CREDIT_SEMESTER,
+    Degree,
+    DegreePlan,
+    DockedCourse,
+    Fulfillment,
+    Major,
+    Minor,
+    PDPBetaUser,
+)
 from degree.serializers import (
     DegreeDetailSerializer,
     DegreeListSerializer,
@@ -101,6 +110,7 @@ def update_fulfillments(degree_plan):
             degree_plan=degree_plan,
             satisfied_rules=satisfied_rules,
             belongs_cache=belongs_cache,
+            is_transfer=fulfillment.is_transfer_credit,
             graduate_sharing=graduate_sharing,
             credits_cache=credits_cache,
         )
@@ -345,11 +355,15 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
         if target_rule not in rule_to_degree:
             raise ValidationError({"rule_id": "Rule does not belong to this degree plan."})
 
-        is_overridden = target_rule in fulfillment.overrides.all()
-        if not target_rule.check_belongs(full_code) and not is_overridden:
-            raise ValidationError(
-                {"rule_id": f"Course {full_code} does not satisfy rule {target_rule.id}"}
-            )
+        if target_rule not in fulfillment.overrides.all():
+            if not target_rule.accepts(is_transfer=fulfillment.is_transfer_credit):
+                raise ValidationError(
+                    {"rule_id": f"Rule {target_rule.id} does not accept AP or transfer credit"}
+                )
+            if not target_rule.check_belongs(full_code):
+                raise ValidationError(
+                    {"rule_id": f"Course {full_code} does not satisfy rule {target_rule.id}"}
+                )
 
         displaced = []
 
@@ -529,6 +543,7 @@ class OnboardFromTranscript(APIView):
                     degree_plan=degree_plan,
                     satisfied_rules=satisfied_rules,
                     belongs_cache=belongs_cache,
+                    is_transfer=semester_code == TRANSFER_CREDIT_SEMESTER,
                     graduate_sharing=graduate_sharing,
                     credits_cache=credits_cache,
                 )

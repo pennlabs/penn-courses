@@ -34,6 +34,11 @@ program_code_to_name = dict(program_choices)
 graduate_programs = {"EM_MSE"}
 
 
+# The semester the frontend files AP, IB and other transfer credit under (its
+# TRANSFER_CREDIT_SEMESTER_KEY). Such a fulfillment has no term at Penn.
+TRANSFER_CREDIT_SEMESTER = "_TRAN"
+
+
 class Degree(models.Model):
     """
     This model represents a degree for a specific year.
@@ -222,6 +227,16 @@ class Rule(models.Model):
         ),
     )
 
+    transfer_credit_allowed = models.BooleanField(
+        default=True,
+        help_text=dedent(
+            """
+            Whether AP, IB, transfer and advanced standing credit may count toward this rule.
+            A fulfillment is such credit when its semester is TRANSFER_CREDIT_SEMESTER.
+            """
+        ),
+    )
+
     parent = models.ForeignKey(
         "self",
         null=True,
@@ -246,6 +261,14 @@ class Rule(models.Model):
     @property
     def q_json(self):
         return self.get_json_q_object()
+
+    def accepts(self, *, is_transfer: bool) -> bool:
+        """
+        Whether this rule may take a course earned the given way, before its Q filter is
+        consulted: AP and transfer credit is barred from rules whose audit block caps such
+        credit at zero.
+        """
+        return self.transfer_credit_allowed or not is_transfer
 
     def evaluate(self, full_codes: Iterable[str]) -> bool:
         """
@@ -608,6 +631,10 @@ class Fulfillment(models.Model):
             """
         ),
     )
+
+    @property
+    def is_transfer_credit(self) -> bool:
+        return self.semester == TRANSFER_CREDIT_SEMESTER
 
     class Meta:
         unique_together = ("degree_plan", "full_code")
