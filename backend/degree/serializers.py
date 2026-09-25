@@ -21,9 +21,18 @@ from degree.models import (
 
 
 class DegreeListSerializer(serializers.ModelSerializer):
+    """
+    A degree as the onboarding and degree pickers list it, without its rules.
+
+    The rules are a many-to-many, so listing them costs a query per degree and puts every rule
+    id of every degree on the wire. Nothing that lists degrees reads them: the requirements
+    panel takes rules from the degree plan detail, and `DegreeDetailSerializer` still carries
+    them for a single degree.
+    """
+
     class Meta:
         model = Degree
-        fields = "__all__"
+        exclude = ["rules"]
 
 
 def attribute_codes_by_full_code(full_codes):

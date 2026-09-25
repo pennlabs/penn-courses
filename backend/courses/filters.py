@@ -314,6 +314,20 @@ def choice_filter(field):
     return filter_choices
 
 
+def department_filter(queryset, departments):
+    """
+    Filters courses by department code(s) with OR logic.
+    :param queryset: Course queryset
+    :param departments: Pipe-separated department codes (e.g. "CIS|NETS|ESE")
+    """
+    if not departments:
+        return queryset
+    codes = [code.strip().upper() for code in departments.split("|") if code.strip()]
+    if not codes:
+        return queryset
+    return queryset.filter(department__code__in=codes)
+
+
 def degree_rules_filter(queryset, rule_ids):
     """
     :param queryset: initial Course object queryset
@@ -347,6 +361,7 @@ class CourseSearchFilterBackend(filters.BaseFilterBackend):
             "difficulty": bound_filter("difficulty"),
             "is_open": is_open_filter,
             "rule_ids": degree_rules_filter,
+            "departments": department_filter,
         }
         for field, filter_func in filters.items():
             param = request.query_params.get(field)
