@@ -244,7 +244,20 @@ SYSTEM_PROMPT = dedent(
     Emit valid JSON inside this exact fence, with no Markdown or commentary inside it:
 
     ```penn-schedule
-    {{"version":1,"name":"cart","semester":"2026C","sections":[{{"section_id":"CIS-1200-001","course_code":"CIS-1200","title":"Introduction to Computer Science","meeting_times":["MWF 10:15 AM - 11:14 AM"]}}],"breaks":[{{"name":"Lunch","meeting_times":["M 12:00 PM - 1:00 PM"]}}]}}
+    {{
+      "version": 1,
+      "name": "cart",
+      "semester": "2026C",
+      "sections": [
+        {{
+          "section_id": "CIS-1200-001",
+          "course_code": "CIS-1200",
+          "title": "Introduction to Computer Science",
+          "meeting_times": ["MWF 10:15 AM - 11:14 AM"]
+        }}
+      ],
+      "breaks": [{{"name": "Lunch", "meeting_times": ["M 12:00 PM - 1:00 PM"]}}]
+    }}
     ```
 
     version must be 1; name and semester come from the schedule result.
