@@ -23,15 +23,11 @@ const FAQ = () => (
       <p className="question">What's new?</p>
       <p className="answer">
         The site includes new features intended to make PCR's content more
-        intuitive and accessible. The new search function allows students to
-        search by course name, number, or professor. In addition to the
-        traditional ratings, the site now offers ratings that average the
-        evaluations from every semester the course or professor has been
-        reviewed. Students can choose which information is relevant to them by
-        selecting which rating criteria appear on the page. As of fall 2021, PCR
-        now also displays additional metrics to give students a sense of
-        registration difficulty. See the section about "Registration Metrics"
-        below for more information.
+        intuitive and accessible. The new filter functions allow students to
+        search for courses by attributes, day of the week, time of day,
+        difficulty, course quality, instructor quality, and more for the first
+        time. The new design also includes a more modern look and feel, with
+        improved navigation and accessibility features.
       </p>
     </div>
 

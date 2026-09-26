@@ -1,3 +1,4 @@
+export * from "./Collapse";
 export * from "./ColumnSelector";
 export * from "./CourseDetails";
 export * from "./ErrorBox";

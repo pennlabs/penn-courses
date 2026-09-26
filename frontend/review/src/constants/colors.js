@@ -1,9 +1,11 @@
+import { chartColors } from "../styles/rawColors";
+
 export const EVAL_GRAPH_COLORS = {
-  DEMAND_LINE_BORDER_COLOR: "#6378E9",
-  DEMAND_FILL_BACKGROUND_COLOR: "#AAACEC",
-  PERCENT_LINE_BORDER_COLOR: "#87BD99",
-  PERCENT_FILL_BACKGROUND_COLOR: "#E0EBEC",
-  TOOLTIP_BACKGROUND_COLOR: "#FFFFFF",
-  TOOLTIP_FONT_COLOR: "#000000",
-  TOOLTIP_BORDER_COLOR: "rgba(5, 5, 5, 0.5)"
+  DEMAND_LINE_BORDER_COLOR: chartColors.demandLine,
+  DEMAND_FILL_BACKGROUND_COLOR: chartColors.demandFill,
+  PERCENT_LINE_BORDER_COLOR: chartColors.percentLine,
+  PERCENT_FILL_BACKGROUND_COLOR: chartColors.percentFill,
+  TOOLTIP_BACKGROUND_COLOR: chartColors.tooltipBackground,
+  TOOLTIP_FONT_COLOR: chartColors.tooltipText,
+  TOOLTIP_BORDER_COLOR: chartColors.tooltipBorder
 };
