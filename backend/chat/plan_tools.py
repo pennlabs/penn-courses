@@ -21,7 +21,7 @@ from django.db import transaction
 from chat.errors import ToolError
 from chat.formatting import meeting_spans, meeting_times, number
 from courses.models import Section
-from plan.models import Schedule
+from plan.models import PrimarySchedule, Schedule
 
 
 # Penn Course Plan stores the cart as a schedule with this name.
@@ -170,6 +170,27 @@ def get_my_schedules(*, user, semester):
     }
 
 
+def get_primary_schedule(*, user, semester):
+    """The one schedule the student selected as primary for this semester."""
+    primary_id = (
+        PrimarySchedule.objects.filter(
+            user=user, schedule__person=user, schedule__semester=semester
+        )
+        .values_list("schedule_id", flat=True)
+        .first()
+    )
+    schedule = (
+        _schedules_queryset(user, semester).filter(pk=primary_id).first()
+        if primary_id is not None
+        else None
+    )
+    return {
+        "semester": semester,
+        "schedule": _summarize(schedule) if schedule else None,
+        "note": (None if schedule else "The student has no primary schedule for this semester."),
+    }
+
+
 def add_to_schedule(
     *,
     user,
@@ -273,6 +294,7 @@ def remove_from_schedule(*, user, semester, section_ids, schedule_name=None):
 
 PLAN_TOOL_IMPLEMENTATIONS = {
     "get_my_schedules": get_my_schedules,
+    "get_primary_schedule": get_primary_schedule,
     "add_to_schedule": add_to_schedule,
     "remove_from_schedule": remove_from_schedule,
 }
@@ -301,13 +323,33 @@ SECTION_IDS_PARAM = {
 
 PLAN_TOOLS = [
     {
+        "name": "get_primary_schedule",
+        "description": (
+            "The student's selected primary Penn Course Plan schedule for the semester, "
+            "or null if none is selected. Returns only that schedule and its sections, "
+            "breaks, meeting times, and conflicts. Use this when the student asks about "
+            "their primary schedule; do not pick one by its name from the list of all "
+            "schedules."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "semester": {
+                    "type": "string",
+                    "description": "Semester as YYYYx. Defaults to the current planning semester.",
+                },
+            },
+        },
+    },
+    {
         "name": "get_my_schedules",
         "description": (
             "The student's own Penn Course Plan schedules for the semester, including "
             "their cart: every section with its meeting times and instructors, their "
             "breaks, total course units, and any time conflicts. Call this before "
-            "answering anything about what they are taking, whether something fits, or "
-            "how full their schedule is."
+            "answering what they are taking across schedules, whether something fits, "
+            "or how full their schedule is. For their primary schedule alone, use "
+            "get_primary_schedule instead."
         ),
         "input_schema": {
             "type": "object",

@@ -139,9 +139,11 @@ still reads as fact, and the student has no way to tell how much is missing.
 
 ## Schedule views
 
-For a full schedule view or a confirmed schedule change, the agent can include a
-penn-schedule fenced JSON block in its reply. The chat consumes a version 1 block and
-renders it as a weekly calendar card. Its sections and breaks use the same
+For a full schedule view or a confirmed schedule change, the agent emits a
+`penn-schedule` fenced JSON block in its reply. The chat consumes a version 1 block and
+renders it as a weekly calendar card, with days as columns and time as rows. Primary
+schedule requests use a dedicated lookup that returns only the schedule selected as
+primary in Penn Course Plan for that semester. Its sections and breaks use the same
 meeting_times strings returned by the schedule tools, so the calendar reads the
 assistant's text without a separate response field. An incomplete block is held back
 while streaming; a completed block that does not match the format remains visible as

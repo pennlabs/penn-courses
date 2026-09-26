@@ -83,6 +83,7 @@ export const TOOL_ICONS: { [name: string]: () => JSX.Element } = {
     get_course: Book,
     get_course_reviews: Star,
     get_my_schedules: Calendar,
+    get_primary_schedule: Calendar,
     add_to_schedule: CalendarPlus,
     remove_from_schedule: CalendarMinus,
     get_my_degree_plan: Checklist,

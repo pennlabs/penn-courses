@@ -291,6 +291,9 @@ def _stream_opencode_chat_turn(messages, *, semester, user, client, model, conve
                 timeout=(10, 300),
             ) as response:
                 response.raise_for_status()
+                # SSE is UTF-8. Without an explicit charset, requests can otherwise
+                # decode text/event-stream as Latin-1 and turn dashes into mojibake.
+                response.encoding = "utf-8"
                 for line in response.iter_lines(decode_unicode=True):
                     if not line or not line.startswith("data: "):
                         continue

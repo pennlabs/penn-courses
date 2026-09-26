@@ -407,7 +407,12 @@ def collect_previews(tool_name, result):
             )
         ]
 
-    if tool_name in ("get_my_schedules", "add_to_schedule", "remove_from_schedule"):
+    if tool_name in (
+        "get_my_schedules",
+        "get_primary_schedule",
+        "add_to_schedule",
+        "remove_from_schedule",
+    ):
         schedules = result.get("schedules") or [result.get("schedule")]
         return [
             _preview(
