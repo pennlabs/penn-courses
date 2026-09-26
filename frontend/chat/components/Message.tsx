@@ -201,6 +201,12 @@ const describeToolCall = ({ name, input }: ToolCall): StepText => {
                 subject: null,
                 suffix: null,
             };
+        case "get_primary_schedule":
+            return {
+                label: "Checked your primary schedule",
+                subject: null,
+                suffix: null,
+            };
         case "get_my_degree_plan":
             return {
                 label: "Read your degree plan",

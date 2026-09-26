@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 
+import { ChatModel, fetchChatModels } from "../lib/api";
 import { useChat } from "../lib/useChat";
 import Message from "./Message";
 import { theme } from "./theme";
@@ -56,6 +57,21 @@ const TextButton = styled.button`
     }
 `;
 
+const ModelSelect = styled.select`
+    max-width: 13rem;
+    border: 1px solid ${theme.border};
+    border-radius: 6px;
+    padding: 0.25rem 1.7rem 0.25rem 0.45rem;
+    color: ${theme.text};
+    background-color: ${theme.surface};
+    font: inherit;
+    font-size: 0.8rem;
+
+    &:disabled {
+        color: ${theme.textMuted};
+    }
+`;
+
 const Scroller = styled.div`
     flex: 1;
     overflow-y: auto;
@@ -107,6 +123,11 @@ const Suggestion = styled.button`
     &:hover {
         border-color: ${theme.accent};
         background-color: ${theme.accentWash};
+    }
+
+    &:disabled {
+        color: ${theme.textMuted};
+        cursor: default;
     }
 `;
 
@@ -192,11 +213,29 @@ const Disclaimer = styled.p`
     text-align: center;
 `;
 
+const CatalogNotice = styled.p`
+    margin: 1rem 0 0;
+    color: ${theme.danger};
+    font-size: 0.85rem;
+`;
+
 const SUGGESTIONS = [
     "What are some highly rated CIS electives?",
     "Is CIS-1200 hard? Who should I take it with?",
     "What's in my cart, and does it have any conflicts?",
 ];
+
+const createConversationId = (): string => {
+    if (typeof crypto !== "undefined" && crypto.randomUUID) {
+        return crypto.randomUUID();
+    }
+    // All supported production browsers have randomUUID; this preserves a stable
+    // opaque id for older ones without putting any user data in the value.
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (char) => {
+        const value = Math.floor(Math.random() * 16);
+        return (char === "x" ? value : (value & 0x3) | 0x8).toString(16);
+    });
+};
 
 const Chat = ({ username }: { username: string }) => {
     const {
@@ -211,7 +250,43 @@ const Chat = ({ username }: { username: string }) => {
         dismissError,
     } = useChat();
     const [draft, setDraft] = useState("");
+    const [models, setModels] = useState<ChatModel[]>([]);
+    const [selectedModel, setSelectedModel] = useState<string | null>(null);
+    const [loadingModels, setLoadingModels] = useState(true);
+    const [modelsError, setModelsError] = useState<string | null>(null);
     const bottomRef = useRef<HTMLDivElement>(null);
+    const conversationId = useRef(createConversationId());
+
+    useEffect(() => {
+        let active = true;
+        fetchChatModels()
+            .then((catalog) => {
+                if (!active) return;
+                setModels(catalog.models);
+                setSelectedModel(
+                    catalog.default_model || catalog.models[0]?.id || null
+                );
+                if (!catalog.models.length) {
+                    setModelsError(
+                        "No chat model is configured on this server."
+                    );
+                }
+            })
+            .catch((e) => {
+                if (!active) return;
+                setModelsError(
+                    e instanceof Error
+                        ? e.message
+                        : "Could not load the available chat models."
+                );
+            })
+            .finally(() => {
+                if (active) setLoadingModels(false);
+            });
+        return () => {
+            active = false;
+        };
+    }, []);
 
     useEffect(() => {
         if (bottomRef.current) {
@@ -221,9 +296,20 @@ const Chat = ({ username }: { username: string }) => {
 
     const submit = (event?: React.FormEvent) => {
         if (event) event.preventDefault();
-        if (!draft.trim() || pending) return;
-        send(draft);
+        if (!draft.trim() || pending || !selectedModel) return;
+        send(draft, selectedModel, conversationId.current);
         setDraft("");
+    };
+
+    const newChat = () => {
+        clear();
+        conversationId.current = createConversationId();
+    };
+
+    const changeModel = (model: string) => {
+        if (!model || model === selectedModel) return;
+        setSelectedModel(model);
+        newChat();
     };
 
     const isEmpty = turns.length === 0 && !pending && !failed;
@@ -235,10 +321,26 @@ const Chat = ({ username }: { username: string }) => {
                     Penn Course <span>Chat</span>
                 </Wordmark>
                 <BarRight>
+                    <ModelSelect
+                        aria-label="Chat model"
+                        value={selectedModel || ""}
+                        disabled={loadingModels || !!pending || !models.length}
+                        onChange={(event) => changeModel(event.target.value)}
+                    >
+                        {loadingModels ? (
+                            <option value="">Loading models…</option>
+                        ) : (
+                            models.map((model) => (
+                                <option key={model.id} value={model.id}>
+                                    {model.provider}: {model.label}
+                                </option>
+                            ))
+                        )}
+                    </ModelSelect>
                     {semester && <span>{semester}</span>}
                     <TextButton
                         type="button"
-                        onClick={clear}
+                        onClick={newChat}
                         disabled={isEmpty || !!pending}
                     >
                         New chat
@@ -261,12 +363,25 @@ const Chat = ({ username }: { username: string }) => {
                                     <Suggestion
                                         key={suggestion}
                                         type="button"
-                                        onClick={() => send(suggestion)}
+                                        disabled={
+                                            !selectedModel || loadingModels
+                                        }
+                                        onClick={() =>
+                                            selectedModel &&
+                                            send(
+                                                suggestion,
+                                                selectedModel,
+                                                conversationId.current
+                                            )
+                                        }
                                     >
                                         {suggestion}
                                     </Suggestion>
                                 ))}
                             </Suggestions>
+                            {modelsError && (
+                                <CatalogNotice>{modelsError}</CatalogNotice>
+                            )}
                         </Splash>
                     ) : (
                         <>
@@ -318,7 +433,17 @@ const Chat = ({ username }: { username: string }) => {
                 <ErrorBar>
                     <span>{error}</span>
                     {failed ? (
-                        <ErrorAction type="button" onClick={() => send(failed)}>
+                        <ErrorAction
+                            type="button"
+                            onClick={() =>
+                                selectedModel &&
+                                send(
+                                    failed,
+                                    selectedModel,
+                                    conversationId.current
+                                )
+                            }
+                        >
                             Retry
                         </ErrorAction>
                     ) : (
@@ -343,7 +468,15 @@ const Chat = ({ username }: { username: string }) => {
                             }
                         }}
                     />
-                    <Send type="submit" disabled={!draft.trim() || !!pending}>
+                    <Send
+                        type="submit"
+                        disabled={
+                            !draft.trim() ||
+                            !!pending ||
+                            !selectedModel ||
+                            loadingModels
+                        }
+                    >
                         Send
                     </Send>
                 </Composer>

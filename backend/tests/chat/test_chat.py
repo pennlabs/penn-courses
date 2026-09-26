@@ -2,10 +2,11 @@ import json
 from unittest.mock import MagicMock, patch
 
 import anthropic
+import requests
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.db.models.signals import post_save
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase, override_settings
 from options.models import Option
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -13,7 +14,14 @@ from rest_framework.test import APIClient
 from alert.models import AddDropPeriod
 from chat.agent import ChatUnavailable, run_chat_turn, stream_chat_turn
 from chat.degree_tools import get_my_degree_plan
-from chat.plan_tools import CART_NAME, add_to_schedule, get_my_schedules, remove_from_schedule
+from chat.plan_tools import (
+    CART_NAME,
+    add_to_schedule,
+    get_my_schedules,
+    get_primary_schedule,
+    remove_from_schedule,
+)
+from chat.providers import ChatModel
 from chat.student import course_history, crosslistings_for
 from chat.tools import (
     ToolError,
@@ -27,7 +35,7 @@ from chat.tools import (
 from courses.util import invalidate_current_semester_cache
 from degree.models import Degree, DegreePlan, Fulfillment, Rule
 from PennCourses.settings.base import PATH_REGISTRATION_SCHEDULE_NAME
-from plan.models import Schedule
+from plan.models import PrimarySchedule, Schedule
 from tests.courses.util import (
     create_mock_async_class,
     create_mock_data,
@@ -283,6 +291,40 @@ class ChatToolsTestCase(TestCase):
     def test_run_tool_bad_arguments(self):
         with self.assertRaises(ToolError):
             run_tool("get_course", {"nonexistent_arg": 1}, semester=TEST_SEMESTER, user=None)
+
+
+class OpenCodeEncodingTestCase(SimpleTestCase):
+    def test_opencode_stream_decodes_utf8(self):
+        reply = "MW 1:45–3:14 PM — no conflict"
+        response = requests.Response()
+        response.status_code = 200
+        response.headers["Content-Type"] = "text/event-stream"
+        response.encoding = "ISO-8859-1"
+        payload = {"choices": [{"delta": {"content": reply}, "finish_reason": "stop"}]}
+        response._content = (
+            f"data: {json.dumps(payload, ensure_ascii=False)}\n\n" "data: [DONE]\n\n"
+        ).encode("utf-8")
+        response._content_consumed = True
+        client = MagicMock()
+        client.post.return_value = response
+        model = ChatModel(
+            id="opencode/test",
+            api_model="test",
+            label="Test",
+            provider="OpenCode Go",
+        )
+
+        result = run_chat_turn(
+            [{"role": "user", "content": "Show my schedule"}],
+            semester=TEST_SEMESTER,
+            user=MagicMock(pk=1),
+            client=client,
+            model=model,
+            conversation_id="test-conversation",
+        )
+
+        self.assertEqual(reply, result["reply"])
+        self.assertEqual("utf-8", response.encoding)
 
 
 class ChatAgentTestCase(TestCase):
@@ -643,6 +685,7 @@ class ChatStreamingTestCase(TestCase):
         self.assertEqual(streamed, whole)
 
 
+@override_settings(ANTHROPIC_API_KEY="test-anthropic-key", OPENCODE_GO_API_KEY="")
 class ChatStreamViewTestCase(TestCase):
     def setUp(self):
         cache.clear()
@@ -750,6 +793,7 @@ class ChatStreamViewTestCase(TestCase):
         self.assertNotIn("boom", frames[-1][1]["detail"])
 
 
+@override_settings(ANTHROPIC_API_KEY="test-anthropic-key", OPENCODE_GO_API_KEY="")
 class ChatViewTestCase(TestCase):
     def setUp(self):
         cache.clear()
@@ -769,6 +813,14 @@ class ChatViewTestCase(TestCase):
         response = self.post({"messages": [{"role": "user", "content": "hi"}]})
         self.assertEqual(status.HTTP_403_FORBIDDEN, response.status_code)
 
+    def test_model_catalog_is_key_gated(self):
+        response = self.client.get("/api/chat/models/")
+        self.assertEqual(status.HTTP_200_OK, response.status_code)
+        self.assertEqual(
+            ["anthropic/claude-sonnet-5"],
+            [model["id"] for model in response.json()["models"]],
+        )
+
     @patch("chat.views.run_chat_turn")
     def test_happy_path(self, mock_run):
         mock_run.return_value = {"reply": "Hello!", "tool_calls": [], "truncated": False}
@@ -777,6 +829,7 @@ class ChatViewTestCase(TestCase):
         self.assertEqual(status.HTTP_200_OK, response.status_code)
         self.assertEqual("Hello!", response.json()["reply"])
         self.assertEqual(TEST_SEMESTER, response.json()["semester"])
+        self.assertEqual("anthropic/claude-sonnet-5", response.json()["model"])
         self.assertEqual(TEST_SEMESTER, mock_run.call_args.kwargs["semester"])
 
     @patch("chat.views.run_chat_turn")
@@ -849,6 +902,44 @@ class PlanToolsTestCase(TestCase):
         result = get_my_schedules(user=self.user, semester=TEST_SEMESTER)
         self.assertEqual([], result["schedules"])
         self.assertIn("no schedules", result["note"])
+
+    def test_primary_schedule_returns_only_selected_sections(self):
+        primary = Schedule.objects.create(
+            person=self.user, semester=TEST_SEMESTER, name="Primary plan"
+        )
+        primary.sections.add(self.cis120)
+        other = Schedule.objects.create(person=self.user, semester=TEST_SEMESTER, name="Other plan")
+        other.sections.add(self.free)
+        PrimarySchedule.objects.create(user=self.user, schedule=primary)
+
+        result = run_tool("get_primary_schedule", {}, semester=TEST_SEMESTER, user=self.user)
+
+        self.assertEqual("Primary plan", result["schedule"]["name"])
+        self.assertTrue(result["schedule"]["is_primary"])
+        self.assertEqual(
+            ["CIS-120-001"],
+            [section["section_id"] for section in result["schedule"]["sections"]],
+        )
+        previews = collect_previews("get_primary_schedule", result)
+        self.assertEqual(["CIS-120"], [preview["course_code"] for preview in previews])
+
+    def test_primary_schedule_is_not_inferred_from_name(self):
+        Schedule.objects.create(person=self.user, semester=TEST_SEMESTER, name="Schedule")
+
+        result = get_primary_schedule(user=self.user, semester=TEST_SEMESTER)
+
+        self.assertIsNone(result["schedule"])
+        self.assertIn("no primary schedule", result["note"])
+
+    def test_primary_schedule_is_scoped_to_requested_semester(self):
+        primary = Schedule.objects.create(person=self.user, semester="2020A", name="Spring plan")
+        PrimarySchedule.objects.create(user=self.user, schedule=primary)
+        Schedule.objects.create(person=self.user, semester=TEST_SEMESTER, name="Fall plan")
+
+        result = get_primary_schedule(user=self.user, semester=TEST_SEMESTER)
+
+        self.assertIsNone(result["schedule"])
+        self.assertIn("no primary schedule", result["note"])
 
     def test_add_creates_the_cart(self):
         result = add_to_schedule(

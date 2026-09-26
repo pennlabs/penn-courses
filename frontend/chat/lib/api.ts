@@ -33,9 +33,21 @@ export interface ChatTurn {
 export interface ChatReply {
     reply: string;
     semester: string;
+    model: string;
     tool_calls: ToolCall[];
     courses: CoursePreview[];
     truncated: boolean;
+}
+
+export interface ChatModel {
+    id: string;
+    label: string;
+    provider: string;
+}
+
+export interface ChatModelCatalog {
+    default_model: string | null;
+    models: ChatModel[];
 }
 
 export interface User {
@@ -68,6 +80,22 @@ export class ApiError extends Error {
     }
 }
 
+const messageBody = (
+    history: ChatTurn[],
+    content: string,
+    model: string,
+    conversationId: string,
+    semester?: string
+) => ({
+    messages: [
+        ...history.map(({ role, content: text }) => ({ role, content: text })),
+        { role: "user", content },
+    ],
+    model,
+    conversation_id: conversationId,
+    ...(semester ? { semester } : {}),
+});
+
 /** Returns the logged-in user, or null if this browser has no session. */
 export const fetchUser = async (): Promise<User | null> => {
     const response = await fetch("/accounts/me/", {
@@ -76,6 +104,22 @@ export const fetchUser = async (): Promise<User | null> => {
     });
     if (!response.ok) return null;
     return response.json();
+};
+
+/** Return only the models this server can authenticate to right now. */
+export const fetchChatModels = async (): Promise<ChatModelCatalog> => {
+    const response = await fetch("/api/chat/models/", {
+        credentials: "include",
+        headers: { Accept: "application/json" },
+    });
+    const body = await response.json().catch(() => ({} as any));
+    if (!response.ok) {
+        throw new ApiError(
+            body.detail || "Could not load the available chat models.",
+            response.status
+        );
+    }
+    return body as ChatModelCatalog;
 };
 
 /**
@@ -87,6 +131,8 @@ export const fetchUser = async (): Promise<User | null> => {
 export const sendMessage = async (
     history: ChatTurn[],
     content: string,
+    model: string,
+    conversationId: string,
     semester?: string
 ): Promise<ChatReply> => {
     const response = await fetch("/api/chat/", {
@@ -98,16 +144,9 @@ export const sendMessage = async (
             "Content-Type": "application/json",
             "X-CSRFToken": getCsrf(),
         },
-        body: JSON.stringify({
-            messages: [
-                ...history.map(({ role, content: text }) => ({
-                    role,
-                    content: text,
-                })),
-                { role: "user", content },
-            ],
-            ...(semester ? { semester } : {}),
-        }),
+        body: JSON.stringify(
+            messageBody(history, content, model, conversationId, semester)
+        ),
     });
 
     const body = await response.json().catch(() => ({} as any));
@@ -152,6 +191,8 @@ export interface StreamHandlers {
 export const streamMessage = async (
     history: ChatTurn[],
     content: string,
+    model: string,
+    conversationId: string,
     handlers: StreamHandlers
 ): Promise<ChatReply> => {
     const response = await fetch("/api/chat/stream/", {
@@ -163,15 +204,9 @@ export const streamMessage = async (
             "Content-Type": "application/json",
             "X-CSRFToken": getCsrf(),
         },
-        body: JSON.stringify({
-            messages: [
-                ...history.map(({ role, content: text }) => ({
-                    role,
-                    content: text,
-                })),
-                { role: "user", content },
-            ],
-        }),
+        body: JSON.stringify(
+            messageBody(history, content, model, conversationId)
+        ),
     });
 
     if (!response.ok) {

@@ -48,10 +48,14 @@ If you are in Penn Labs, reach out to a Penn Courses team lead for a .env file t
 ### Penn Course Chat
 
 Penn Course Chat (`POST /api/chat/`, plus `POST /api/chat/stream/` which delivers the
-same turn as Server-Sent Events; both served by the `chat` app) calls the Anthropic API and is disabled
-unless `ANTHROPIC_API_KEY` is set — without it the route returns a 503 explaining that it
-is unconfigured, and the rest of the backend is unaffected. Get a key from
-[console.anthropic.com](https://console.anthropic.com/) and add it to your `.env`.
+same turn as Server-Sent Events; both served by the `chat` app) uses whichever supported
+provider key is configured. `ANTHROPIC_API_KEY` enables the configured Claude model;
+`OPENCODE_GO_API_KEY` enables OpenCode Go's DeepSeek V4.1 Flash and GLM-5.3 models. The
+authenticated frontend reads `GET /api/chat/models/` and shows only those enabled models.
+If neither key is set, chat returns a 503 explaining that it is unconfigured, and the rest
+of the backend is unaffected. Get an Anthropic key from
+[console.anthropic.com](https://console.anthropic.com/) or an OpenCode Go key from your
+OpenCode account, then add it to `.env`.
 
 Note that nothing in this project reads `.env` automatically, so adding the key to the
 file is not enough on its own — you have to get it into the server's environment:
@@ -66,13 +70,19 @@ These optional variables tune it (defaults in parentheses):
 
 | Variable | Purpose |
 | --- | --- |
-| `CHAT_MODEL` (`claude-sonnet-5`) | Which model to call. |
+| `ANTHROPIC_CHAT_DEFAULT_MODEL` (`claude-sonnet-5`) | Anthropic model to offer when `ANTHROPIC_API_KEY` is set. |
+| `OPENCODE_GO_API_KEY` | Enables OpenCode Go's curated DeepSeek V4.1 Flash and GLM-5.3 choices. |
+| `OPENCODE_GO_BASE_URL` (`https://opencode.ai/zen/go/v1`) | OpenCode Go API base URL. |
+| `CHAT_DEFAULT_MODEL` (`opencode-go/deepseek-v4.1-flash`) | Preferred fully-qualified choice; falls back to an enabled model. |
 | `CHAT_EFFORT` (`medium`) | Reasoning effort: `low`, `medium`, `high`, `xhigh`, `max`. Higher is slower and costs more. |
 | `CHAT_MAX_TOKENS` (`4096`) | Output token cap per reply. |
 | `CHAT_MAX_TOOL_TURNS` (`16`) | Round trips to the model within one message. Each carries a batch of tool calls, so this is well above 16 lookups. Bounds latency and spend per message; hitting it abandons the turn rather than returning a partial answer. |
 | `CHAT_RATE_LIMIT` (`30/hour`) | Per-user rate limit on the chat route. |
 | `CHAT_MAX_MESSAGES` (`40`) | Longest conversation history a client may submit. |
 | `CHAT_MAX_MESSAGE_CHARS` (`4000`) | Longest single message a client may submit. |
+
+The curated OpenCode Go model choices are configured in `PennCourses/settings/base.py`
+under `OPENCODE_GO_MODELS`.
 
 The assistant can read and modify the requesting user's own PCP cart and schedules
 (`chat/plan_tools.py`) and read their Penn Degree Plan (`chat/degree_tools.py`). Those
