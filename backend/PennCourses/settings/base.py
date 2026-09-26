@@ -14,6 +14,10 @@ import os
 
 import boto3
 import dj_database_url
+import dotenv
+
+
+dotenv.load_dotenv()
 
 
 DOMAINS = os.environ.get("DOMAINS", "example.com").split(",")
@@ -174,6 +178,10 @@ OPEN_DATA_API_BASE = "https://3scale-public-prod-open-data.apps.k8s.upenn.edu/ap
 WEBHOOK_USERNAME = os.environ.get("WEBHOOK_USERNAME", "webhook")
 WEBHOOK_PASSWORD = os.environ.get("WEBHOOK_PASSWORD", "password")
 
+# Penn Labs Platform JWKs
+JWKS_URI = f"https://platform.pennlabs.org/accounts/.well-known/jwks.json"
+AUTH_OIDC_CLIENT_ID = os.environ.get("AUTH_OIDC_CLIENT_ID", "")
+
 # Email Configuration
 SMTP_HOST = os.environ.get("SMTP_HOST", "")
 SMTP_PORT = os.environ.get("SMTP_PORT", 587)
@@ -199,6 +207,7 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.SessionAuthentication",
         "rest_framework.authentication.BasicAuthentication",
         "accounts.authentication.PlatformAuthentication",
+        "PennCourses.authentication.jwt.JWTAuthentication",
     ],
 }
 
