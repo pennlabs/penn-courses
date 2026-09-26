@@ -49,8 +49,29 @@ def attribute_codes_by_full_code(full_codes):
     return {full_code: sorted(course_codes) for full_code, course_codes in codes.items()}
 
 
+def prerequisite_rules_by_full_code(full_codes):
+    """
+    Map each of the given course codes to its `prerequisite_rule`, in a single query. Rules are
+    stored per semester of a course, so the most recent semester with one wins; codes without
+    any rule are absent.
+    """
+    return dict(
+        Course.objects.filter(full_code__in=full_codes, prerequisite_rule__isnull=False)
+        .order_by("semester")
+        .values_list("full_code", "prerequisite_rule")
+    )
+
+
 class SimpleCourseSerializer(serializers.ModelSerializer):
     attribute_codes = serializers.SerializerMethodField()
+    prerequisite_rule = serializers.SerializerMethodField(
+        help_text=dedent(
+            """
+        This course's required prerequisites (see `Course.prerequisite_rule`), from the most
+        recent semester that has them. Null if none are known.
+        """
+        )
+    )
 
     def get_attribute_codes(self, obj):
         """
@@ -61,6 +82,15 @@ class SimpleCourseSerializer(serializers.ModelSerializer):
         if batched is None:
             batched = attribute_codes_by_full_code([obj.full_code])
         return batched.get(obj.full_code, [])
+
+    def get_prerequisite_rule(self, obj):
+        """
+        Same batching pattern as `get_attribute_codes`, keyed `prerequisite_rules_by_full_code`.
+        """
+        batched = self.context.get("prerequisite_rules_by_full_code")
+        if batched is None:
+            batched = prerequisite_rules_by_full_code([obj.full_code])
+        return batched.get(obj.full_code)
 
     id = serializers.ReadOnlyField(
         source="full_code",
@@ -99,6 +129,7 @@ class SimpleCourseSerializer(serializers.ModelSerializer):
             "difficulty",
             "work_required",
             "attribute_codes",
+            "prerequisite_rule",
         ]
         read_only_fields = fields
 
@@ -177,6 +208,7 @@ class FulfillmentSerializer(serializers.ModelSerializer):
 
     _course_cache = None
     _attribute_codes = None
+    _prerequisite_rules = None
 
     def prime_course_cache(self, fulfillments):
         """
@@ -190,6 +222,7 @@ class FulfillmentSerializer(serializers.ModelSerializer):
         # ascending by semester, so the last course seen for a code is the most recent one
         self._course_cache = {course.full_code: course for course in courses}
         self._attribute_codes = attribute_codes_by_full_code(full_codes)
+        self._prerequisite_rules = prerequisite_rules_by_full_code(full_codes)
 
     def get_course(self, obj):
         if self._course_cache is None:
@@ -199,7 +232,11 @@ class FulfillmentSerializer(serializers.ModelSerializer):
             return None
         return SimpleCourseSerializer(
             course,
-            context={**self.context, "attribute_codes_by_full_code": self._attribute_codes},
+            context={
+                **self.context,
+                "attribute_codes_by_full_code": self._attribute_codes,
+                "prerequisite_rules_by_full_code": self._prerequisite_rules,
+            },
         ).data
 
     rules = serializers.PrimaryKeyRelatedField(
@@ -227,6 +264,7 @@ class FulfillmentSerializer(serializers.ModelSerializer):
             "rules",
             "unselected_rules",
             "legal",
+            "ignore_prereqs",
             "overrides",
         ]
 

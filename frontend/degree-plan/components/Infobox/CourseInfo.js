@@ -174,18 +174,184 @@ export const CourseHeader = ({ close, aliases, code, name, notes, data }) => (
   </div>
 );
 
-export const CourseDescription = ({ description }) => {
-  const content = reactStringReplace(
-    description,
-    /([A-Z]{2,4}[ -]\d{3,4})/g,
-    (m, i) => (
-      <a
-        href={`https://penncoursereview.com/course/${m.replace(" ", "-")}`}
-        key={m + i}
-      >
-        {m}
-      </a>
-    )
+const linkCourseCodes = (text) =>
+  reactStringReplace(text, /([A-Z]{2,4}[ -]\d{3,4})/g, (m, i) => (
+    <a
+      href={`https://penncoursereview.com/course/${m.replace(" ", "-")}`}
+      key={m + i}
+    >
+      {m}
+    </a>
+  ));
+
+export const CourseDescription = ({ description }) => (
+  <p className="desc">{linkCourseCodes(description)}</p>
+);
+
+const MAX_LISTED_COURSES = 8;
+
+const CourseCodeList = ({ codes }) => {
+  const shown = codes.slice(0, MAX_LISTED_COURSES);
+  const hidden = codes.length - shown.length;
+  return (
+    <>
+      {shown.map((code, i) => [
+        i > 0 && <div key={`${code}-sep`}>&#44;&nbsp;</div>,
+        <a href={`https://penncoursereview.com/course/${code}`} key={code}>
+          {code}
+        </a>,
+      ])}
+      {hidden > 0 && <div>&nbsp;and {hidden} more</div>}
+    </>
   );
-  return <p className="desc">{content}</p>;
+};
+
+const CourseLink = ({ code }) => (
+  <a href={`https://penncoursereview.com/course/${code}`}>
+    {code.replace("-", " ")}
+  </a>
+);
+
+/** A prerequisite rule inline, e.g. "CIS 1200 and (CIS 1600 or MATH 1400)", with links. */
+const PrereqRuleText = ({ rule, nested = false }) => {
+  if (typeof rule === "string") return <CourseLink code={rule} />;
+  if ("text" in rule) return <span>{rule.text}</span>;
+  const [op, children] = "and" in rule ? ["and", rule.and] : ["or", rule.or];
+  return (
+    <span>
+      {nested && "("}
+      {children.map((child, i) => (
+        <React.Fragment key={i}>
+          {i > 0 && ` ${op} `}
+          <PrereqRuleText rule={child} nested />
+        </React.Fragment>
+      ))}
+      {nested && ")"}
+    </span>
+  );
+};
+
+const ChainList = styled.ul`
+  list-style: none;
+  margin: 0.25rem 0 0.25rem 0;
+  padding-left: 1rem;
+  border-left: 1px solid #dbdbdb;
+  font-size: 0.85rem;
+  color: #4a4a4a;
+`;
+
+const ChainToggle = styled.button`
+  border: none;
+  background: none;
+  padding: 0;
+  color: #3273dc;
+  cursor: pointer;
+  font-size: 0.85rem;
+`;
+
+/**
+ * One node of the prerequisite chain: a course (expanded into its own prerequisites unless it
+ * already appears above it), a condition that isn't a course, or all / one of several.
+ */
+const PrereqChainNode = ({ rule, chain, path }) => {
+  if (typeof rule === "string") {
+    const entry = chain[rule];
+    const expand = entry?.prerequisite_rule && !path.includes(rule);
+    return (
+      <li>
+        <CourseLink code={rule} />
+        {entry?.title && <span> {entry.title}</span>}
+        {expand && (
+          <ChainList>
+            <PrereqChainNode
+              rule={entry.prerequisite_rule}
+              chain={chain}
+              path={[...path, rule]}
+            />
+          </ChainList>
+        )}
+      </li>
+    );
+  }
+  if ("text" in rule) {
+    return (
+      <li>
+        <em>{rule.text}</em>
+      </li>
+    );
+  }
+  const [label, children] =
+    "and" in rule ? ["All of:", rule.and] : ["One of:", rule.or];
+  return (
+    <li>
+      {label}
+      <ChainList>
+        {children.map((child, i) => (
+          <PrereqChainNode key={i} rule={child} chain={chain} path={path} />
+        ))}
+      </ChainList>
+    </li>
+  );
+};
+
+/**
+ * Prerequisite information for a course. Prefers the required prerequisites parsed from
+ * Path@Penn (`prerequisite_chain`), then the structured links (`prerequisite_courses`), then
+ * the registrar's free text, so a course never shows less than the text field already
+ * offered. When the prerequisites have prerequisites of their own, the whole chain can be
+ * expanded. `dependent_courses` are the courses this one unlocks.
+ */
+export const CoursePrerequisites = ({
+  code,
+  prerequisites,
+  prerequisiteCourses,
+  prerequisiteChain,
+  dependentCourses,
+}) => {
+  const [showChain, setShowChain] = React.useState(false);
+  const chain = prerequisiteChain ?? {};
+  const rule = chain[code]?.prerequisite_rule;
+  const hasChain = Object.entries(chain).some(
+    ([other, entry]) => other !== code && entry.prerequisite_rule
+  );
+  const structured = prerequisiteCourses ?? [];
+  const dependents = dependentCourses ?? [];
+  const text = (prerequisites ?? "").trim();
+  if (!rule && !structured.length && !text && !dependents.length) {
+    return null;
+  }
+  return (
+    <div className="prereqs">
+      {(rule || structured.length > 0 || text) && (
+        <CourseCodeQualifier>
+          <strong>Prerequisites:&nbsp;</strong>
+          {rule ? (
+            <PrereqRuleText rule={rule} />
+          ) : structured.length > 0 ? (
+            <CourseCodeList codes={structured} />
+          ) : (
+            <span>{linkCourseCodes(text)}</span>
+          )}
+        </CourseCodeQualifier>
+      )}
+      {rule && hasChain && (
+        <div>
+          <ChainToggle onClick={() => setShowChain(!showChain)}>
+            {showChain ? "Hide prerequisite chain" : "Show prerequisite chain"}
+          </ChainToggle>
+          {showChain && (
+            <ChainList>
+              <PrereqChainNode rule={rule} chain={chain} path={[code]} />
+            </ChainList>
+          )}
+        </div>
+      )}
+      {dependents.length > 0 && (
+        <CourseCodeQualifier>
+          <strong>Unlocks:&nbsp;</strong>
+          <CourseCodeList codes={dependents} />
+        </CourseCodeQualifier>
+      )}
+    </div>
+  );
 };

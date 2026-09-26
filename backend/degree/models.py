@@ -596,6 +596,16 @@ class Fulfillment(models.Model):
             """
         ),
     )
+    ignore_prereqs = models.BooleanField(
+        default=False,
+        help_text=dedent(
+            """
+            True if the user has chosen to dismiss unmet-prerequisite warnings for this course in
+            this plan (e.g. they have a waiver or took an equivalent elsewhere). Purely a display
+            preference; it does not affect which rules the course fulfills.
+            """
+        ),
+    )
     overrides = models.ManyToManyField(
         Rule,
         related_name="overridden_fulfillments",
