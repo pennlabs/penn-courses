@@ -328,8 +328,8 @@ PLAN_TOOLS = [
             "The student's selected primary Penn Course Plan schedule for the semester, "
             "or null if none is selected. Returns only that schedule and its sections, "
             "breaks, meeting times, and conflicts. Use this when the student asks about "
-            "their primary schedule; do not pick one by its name from the list of all "
-            "schedules."
+            "their primary or current schedule; do not pick one by its name from the "
+            "list of all schedules."
         ),
         "input_schema": {
             "type": "object",
@@ -348,8 +348,8 @@ PLAN_TOOLS = [
             "their cart: every section with its meeting times and instructors, their "
             "breaks, total course units, and any time conflicts. Call this before "
             "answering what they are taking across schedules, whether something fits, "
-            "or how full their schedule is. For their primary schedule alone, use "
-            "get_primary_schedule instead."
+            "or how full their schedule is. For their primary or current schedule "
+            "alone, use get_primary_schedule instead."
         ),
         "input_schema": {
             "type": "object",
