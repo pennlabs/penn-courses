@@ -12,6 +12,7 @@ import {
   ContainerGroup,
   ErrorText,
   NextButton,
+  PrivacyNote,
   TextButton,
   Upload,
 } from "./SharedComponents";
@@ -103,6 +104,11 @@ export default function WelcomeLayout({
               )}
             </Upload>
           </label>
+          <PrivacyNote>
+            Your transcript is never uploaded or saved. It is read entirely on
+            your computer, and only the courses found in it are added to your
+            plan.
+          </PrivacyNote>
           <ErrorText>
             {PDF &&
               transcriptDetected.current !== null &&
