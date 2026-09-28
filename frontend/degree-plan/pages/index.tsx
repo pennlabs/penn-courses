@@ -10,9 +10,6 @@ import { toast, ToastContainer } from "react-toastify";
 import ToastContext from "@/components/Toast/Toast";
 import styled from "@emotion/styled";
 
-// The shared modal uses z-index 40, below the sticky requirement headers (up to 1001) and
-// the onboarding overlay (100000). A positioned wrapper puts its fixed overlay in a stacking
-// context above all of them.
 const LoginModalLayer = styled.div`
   position: relative;
   z-index: 100001;
