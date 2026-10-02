@@ -361,7 +361,9 @@ class CourseDetail(generics.RetrieveAPIView, BaseCourseMixin):
                 .filter(Q(status="O") | Q(status="C"))
                 .distinct()
                 .prefetch_related(*prefetch_list),
-            )
+            ),
+            "prerequisite_courses",
+            "dependent_courses",
         )
 
         check_offered_in = self.request.query_params.get("check_offered_in")
