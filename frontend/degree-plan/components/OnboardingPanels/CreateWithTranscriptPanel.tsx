@@ -25,16 +25,10 @@ import {
   TextInput,
   schoolOptions,
 } from "./SharedComponents";
+import styled from "@emotion/styled";
 import Select from "react-select";
 import { PulseLoader } from "react-spinners";
-import {
-  DegreeListing,
-  DegreePlan,
-  Major,
-  MajorOption,
-  Options,
-  SchoolOption,
-} from "@/types";
+import { DegreeListing, DegreePlan, Major, Options } from "@/types";
 import useSWR from "swr";
 import {
   getLocalSemestersKey,
@@ -43,10 +37,25 @@ import {
 import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
 import { postFetcher, getCsrf } from "@/hooks/swrcrud";
 import {
+  getAdditionalMajorOptions,
   getMajorOptions,
-  getSecondMajorOptions,
-  MajorOptionItem,
+  SchoolSelection,
 } from "@/utils/parseUtils";
+
+const SchoolCard = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.75rem 1rem 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+`;
+
+const SchoolCardHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
 
 type WelcomeLayoutProps = {
   inputtedStartingYear: { value: number; label: number } | null;
@@ -54,10 +63,8 @@ type WelcomeLayoutProps = {
   scrapedCourses: any;
   setCurrentPage: Dispatch<SetStateAction<number>>;
   setActiveDegreeplan: (arg0: DegreePlan) => void;
-  inputtedSchools: SchoolOption[];
-  inputtedMajors: MajorOption[];
+  inputtedSelections: SchoolSelection[];
   setShowOnboardingModal: (arg0: boolean) => void;
-  inputtedSecondMajors: MajorOptionItem[];
   canExit?: boolean;
   onExit?: () => void;
 };
@@ -68,9 +75,7 @@ export default function CreateWithTranscriptPanel({
   scrapedCourses,
   setCurrentPage,
   setActiveDegreeplan,
-  inputtedSchools,
-  inputtedMajors,
-  inputtedSecondMajors,
+  inputtedSelections,
   setShowOnboardingModal,
   canExit = false,
   onExit,
@@ -84,10 +89,8 @@ export default function CreateWithTranscriptPanel({
     value: number;
   } | null>(inputtedGraduationYear);
 
-  const [schools, setSchools] = useState<SchoolOption[]>(inputtedSchools);
-  const [majors, setMajors] = useState<MajorOption[]>(inputtedMajors);
-  const [secondMajors, setSecondMajors] =
-    useState<MajorOptionItem[]>(inputtedSecondMajors);
+  const [selections, setSelections] =
+    useState<SchoolSelection[]>(inputtedSelections);
   const [degreeID, setDegreeID] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
@@ -164,11 +167,12 @@ export default function CreateWithTranscriptPanel({
           );
         }
         await postFetcher(`/api/degree/degreeplans/${_new.id}/degrees`, {
-          degree_ids: majors.map((m) => m.value.id),
+          degree_ids: selections.flatMap((s) => (s.primary ? [s.primary.value.id] : [])),
         });
-        if (secondMajors.length) {
+        const additionalMajors = selections.flatMap((s) => s.additional);
+        if (additionalMajors.length) {
           await postFetcher(`/api/degree/degreeplans/${_new.id}/majors`, {
-            major_ids: secondMajors.map((m) => m.value.id),
+            major_ids: additionalMajors.map((m) => m.value.id),
           });
         }
         setActiveDegreeplan(_new);
@@ -192,8 +196,8 @@ export default function CreateWithTranscriptPanel({
   const complete =
     startingYear !== null &&
     graduationYear !== null &&
-    schools.length > 0 &&
-    majors.length > 0 &&
+    selections.length > 0 &&
+    selections.every((s) => s.primary) &&
     name !== "";
 
   const getYearOptions = useCallback(() => {
@@ -218,14 +222,31 @@ export default function CreateWithTranscriptPanel({
 
   const { startYears: startingYearOptions, gradYears: graduationYearOptions } = getYearOptions();
 
-  const majorOptions = useMemo(
-    () => getMajorOptions(degrees, schools, startingYear?.value ?? null),
-    [degrees, schools, startingYear]
-  );
+  // Majors are held to the year the student started, so changing it drops any that belong to
+  // a different year.
+  useEffect(() => {
+    const year = startingYear?.value;
+    setSelections((current) =>
+      current.map((s) => ({
+        ...s,
+        primary: s.primary?.value.year === year ? s.primary : null,
+        additional: s.additional.filter((m) => m.value.year === year),
+      }))
+    );
+  }, [startingYear?.value]);
 
-  const secondMajorOptions = useMemo(
-    () => getSecondMajorOptions(standaloneMajors, startingYear?.value ?? null),
-    [standaloneMajors, startingYear]
+  const updateSelection = (
+    school: SchoolSelection["school"],
+    changes: Partial<SchoolSelection>
+  ) =>
+    setSelections((current) =>
+      current.map((s) => (s.school.value === school.value ? { ...s, ...changes } : s))
+    );
+
+  const addableSchools = useMemo(
+    () =>
+      schoolOptions.filter((o) => !selections.some((s) => s.school.value === o.value)),
+    [selections]
   );
 
 
@@ -302,48 +323,76 @@ export default function CreateWithTranscriptPanel({
 
               <Label required>School(s) or Program(s)</Label>
               <Select
-                options={schoolOptions}
-                value={schools}
-                onChange={(selectedOptions) => setSchools([...selectedOptions])}
-                isClearable
-                isMulti
-                placeholder="Select School or Program"
-                styles={customSelectStylesRight}
-                isLoading={isLoadingDegrees}
-              />
-            </FieldWrapper>
-
-            <FieldWrapper>
-              <Label required>Major(s)</Label>
-              <Select
-                options={majorOptions}
-                value={majors}
-                onChange={(selectedOptions) => setMajors([...selectedOptions])}
-                isClearable
-                isMulti
-                isDisabled={schools.length === 0}
-                placeholder={"Major - Concentration"}
-                styles={customSelectStylesRight}
-                isLoading={isLoadingDegrees}
-              />
-            </FieldWrapper>
-
-            <FieldWrapper>
-              <Label required={false}>Additional Major(s)</Label>
-              <Select
-                options={secondMajorOptions}
-                value={secondMajors}
-                onChange={(selectedOptions) =>
-                  setSecondMajors([...selectedOptions])
+                options={addableSchools}
+                value={null}
+                onChange={(selected) =>
+                  selected &&
+                  setSelections((current) => [
+                    ...current,
+                    { school: selected, primary: null, additional: [] },
+                  ])
                 }
-                isClearable
-                isMulti
-                placeholder="Major pursued alongside your degree"
+                placeholder="Add a school or program"
                 styles={customSelectStylesRight}
-                isLoading={isLoadingMajors}
+                isLoading={isLoadingDegrees}
               />
             </FieldWrapper>
 
+            {selections.map(({ school, primary, additional }) => (
+              <SchoolCard key={school.value}>
+                <SchoolCardHeader>
+                  <h4>{school.label}</h4>
+                  <TextButton
+                    onClick={() =>
+                      setSelections((current) =>
+                        current.filter((s) => s.school.value !== school.value)
+                      )
+                    }
+                  >
+                    Remove
+                  </TextButton>
+                </SchoolCardHeader>
+
+                <FieldWrapper>
+                  <Label required>Primary Major</Label>
+                  <Select
+                    options={getMajorOptions(degrees, school, startingYear?.value ?? null)}
+                    value={primary}
+                    onChange={(selected) =>
+                      updateSelection(school, { primary: selected })
+                    }
+                    isClearable
+                    isDisabled={!startingYear}
+                    placeholder={
+                      startingYear ? "Major - Concentration" : "Select your starting year first"
+                    }
+                    styles={customSelectStylesRight}
+                    isLoading={isLoadingDegrees}
+                  />
+                </FieldWrapper>
+
+                <FieldWrapper>
+                  <Label required={false}>Additional Major(s)</Label>
+                  <Select
+                    options={getAdditionalMajorOptions(
+                      standaloneMajors,
+                      school,
+                      startingYear?.value ?? null
+                    )}
+                    value={additional}
+                    onChange={(selected) =>
+                      updateSelection(school, { additional: [...selected] })
+                    }
+                    isClearable
+                    isMulti
+                    isDisabled={!startingYear}
+                    placeholder="Major pursued alongside your primary major"
+                    styles={customSelectStylesRight}
+                    isLoading={isLoadingMajors}
+                  />
+                </FieldWrapper>
+              </SchoolCard>
+            ))}
 
             {!scrapedCourses.length && (
               <NextButtonContainer>
