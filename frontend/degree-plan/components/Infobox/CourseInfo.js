@@ -221,7 +221,7 @@ const PrereqRuleText = ({ rule, nested = false }) => {
     <span>
       {nested && "("}
       {children.map((child, i) => (
-        <React.Fragment key={i}>
+        <React.Fragment key={JSON.stringify(child)}>
           {i > 0 && ` ${op} `}
           <PrereqRuleText rule={child} nested />
         </React.Fragment>
@@ -256,6 +256,7 @@ const ChainToggle = styled.button`
 const PrereqChainNode = ({ rule, chain, path }) => {
   if (typeof rule === "string") {
     const entry = chain[rule];
+    // eslint-disable-next-line camelcase
     const expand = entry?.prerequisite_rule && !path.includes(rule);
     return (
       <li>
@@ -286,8 +287,13 @@ const PrereqChainNode = ({ rule, chain, path }) => {
     <li>
       {label}
       <ChainList>
-        {children.map((child, i) => (
-          <PrereqChainNode key={i} rule={child} chain={chain} path={path} />
+        {children.map((child) => (
+          <PrereqChainNode
+            key={JSON.stringify(child)}
+            rule={child}
+            chain={chain}
+            path={path}
+          />
         ))}
       </ChainList>
     </li>
@@ -310,6 +316,7 @@ export const CoursePrerequisites = ({
 }) => {
   const [showChain, setShowChain] = React.useState(false);
   const chain = prerequisiteChain ?? {};
+  // eslint-disable-next-line camelcase
   const rule = chain[code]?.prerequisite_rule;
   const hasChain = Object.entries(chain).some(
     ([other, entry]) => other !== code && entry.prerequisite_rule
@@ -320,18 +327,20 @@ export const CoursePrerequisites = ({
   if (!rule && !structured.length && !text && !dependents.length) {
     return null;
   }
+  let summary = null;
+  if (rule) {
+    summary = <PrereqRuleText rule={rule} />;
+  } else if (structured.length > 0) {
+    summary = <CourseCodeList codes={structured} />;
+  } else if (text) {
+    summary = <span>{linkCourseCodes(text)}</span>;
+  }
   return (
     <div className="prereqs">
-      {(rule || structured.length > 0 || text) && (
+      {summary && (
         <CourseCodeQualifier>
           <strong>Prerequisites:&nbsp;</strong>
-          {rule ? (
-            <PrereqRuleText rule={rule} />
-          ) : structured.length > 0 ? (
-            <CourseCodeList codes={structured} />
-          ) : (
-            <span>{linkCourseCodes(text)}</span>
-          )}
+          {summary}
         </CourseCodeQualifier>
       )}
       {rule && hasChain && (

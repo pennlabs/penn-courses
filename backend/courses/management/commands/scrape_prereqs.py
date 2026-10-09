@@ -301,18 +301,19 @@ class Command(BaseCommand):
                 "clssnotes": None,
             }
 
+            # A failed fetch is marked with "error" so populate_prereqs can tell it apart from a
+            # course that has no notes, rather than clearing that course's prerequisites.
             try:
                 response = session.post(API_URL, json=payload, timeout=timeout_seconds)
+                response.raise_for_status()
                 try:
-                    response_json = response.json()
-                    record["clssnotes"] = extract_clssnotes(response_json)
+                    record["clssnotes"] = extract_clssnotes(response.json())
                 except ValueError:
-                    record["clssnotes"] = None
+                    record["error"] = "invalid JSON response"
             except requests.RequestException as exc:
+                record["error"] = str(exc)
                 self.stderr.write(
-                    self.style.WARNING(
-                        f"Request failed for {course_code} (CRN {crn}): {exc}"
-                    )
+                    self.style.WARNING(f"Request failed for {course_code} (CRN {crn}): {exc}")
                 )
 
             records.append(record)

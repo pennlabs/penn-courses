@@ -254,6 +254,15 @@ class PopulatePrereqsTestCase(TestCase):
         self.assertEqual(self.course.prerequisite_rule, {"or": ["CIS-1200", "CIS-1600"]})
         self.assertEqual(self.course.prerequisite_courses.count(), 2)
 
+    def test_failed_scrape_record_keeps_existing_prerequisites(self):
+        populate_prereqs_from_scrape([TEST_SEMESTER], self.records)
+        failed = [dict(self.records[0], clssnotes=None, error="503 Server Error")]
+        stats = populate_prereqs_from_scrape([TEST_SEMESTER], failed, clear_existing=True)
+        self.assertEqual(stats["failed_records"], 1)
+        self.course.refresh_from_db()
+        self.assertEqual(self.course.prerequisite_rule, "CIS-1200")
+        self.assertEqual(self.course.prerequisite_courses.count(), 1)
+
     def test_self_reference_is_skipped(self):
         populate_prereqs_from_scrape([TEST_SEMESTER], self.records)
         self.assertNotIn(self.course, self.course.prerequisite_courses.all())

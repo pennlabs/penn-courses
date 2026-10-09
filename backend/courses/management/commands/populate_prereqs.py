@@ -339,6 +339,7 @@ def populate_prereqs_from_scrape(
     created_links = 0
     unresolved_pairs = 0
     missing_courses = 0
+    failed_records = 0
     courses_touched = 0
 
     with transaction.atomic():
@@ -347,6 +348,10 @@ def populate_prereqs_from_scrape(
             crn = record.get("crn")
             notes_text = get_notes_text(record.get("clssnotes"))
 
+            if record.get("error"):
+                # The scrape failed for this course; leave its existing prerequisites alone.
+                failed_records += 1
+                continue
             if not course_code or not crn:
                 continue
 
@@ -416,6 +421,7 @@ def populate_prereqs_from_scrape(
         "created_links": created_links,
         "unresolved_pairs": unresolved_pairs,
         "missing_courses": missing_courses,
+        "failed_records": failed_records,
     }
 
 
@@ -498,3 +504,4 @@ class Command(BaseCommand):
         self.stdout.write(f"Links created/resolved: {stats['created_links']}")
         self.stdout.write(f"Unresolved pairs: {stats['unresolved_pairs']}")
         self.stdout.write(f"Missing course matches: {stats['missing_courses']}")
+        self.stdout.write(f"Failed scrape records skipped: {stats['failed_records']}")
