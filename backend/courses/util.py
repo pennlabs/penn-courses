@@ -777,3 +777,46 @@ def historical_semester_probability(current_semester: str, semesters: list[str])
             ],
         )
     )
+
+
+MAX_PREREQUISITE_CHAIN_DEPTH = 5
+
+
+def prerequisite_rule_codes(rule):
+    """The full codes named anywhere in a `Course.prerequisite_rule`."""
+    if isinstance(rule, str):
+        yield rule
+    elif isinstance(rule, dict) and "text" not in rule:
+        for child in next(iter(rule.values()), []):
+            yield from prerequisite_rule_codes(child)
+
+
+def get_prerequisite_chain(full_code):
+    """
+    The course with the given full code and its transitive prerequisites, as a map from full
+    code to {"title", "prerequisite_rule"}, taking each code's most recent title and most
+    recent non-null rule. Uses one query per level, up to `MAX_PREREQUISITE_CHAIN_DEPTH`
+    levels below the course itself.
+    """
+    chain = {}
+    frontier = {full_code}
+    for _ in range(MAX_PREREQUISITE_CHAIN_DEPTH + 1):
+        rows = (
+            Course.objects.filter(full_code__in=frontier)
+            .order_by("semester")
+            .values_list("full_code", "title", "prerequisite_rule")
+        )
+        for code, title, rule in rows:
+            entry = chain.setdefault(code, {"title": title, "prerequisite_rule": None})
+            entry["title"] = title
+            if rule is not None:
+                entry["prerequisite_rule"] = rule
+        frontier = {
+            code
+            for parent in frontier
+            if parent in chain
+            for code in prerequisite_rule_codes(chain[parent]["prerequisite_rule"])
+        } - chain.keys()
+        if not frontier:
+            break
+    return chain

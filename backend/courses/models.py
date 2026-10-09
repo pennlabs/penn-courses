@@ -238,6 +238,29 @@ class Course(models.Model):
         help_text="Text describing the prereqs for a course, e.g. 'CIS 120, 160' for CIS-121.",
     )
 
+    prerequisite_courses = models.ManyToManyField(
+        "self",
+        symmetrical=False,
+        related_name="dependent_courses",
+        blank=True,
+        help_text=(
+            "Structured prerequisite links. "
+            "If A requires B, then A.prerequisite_courses includes B."
+        ),
+    )
+    prerequisite_rule = models.JSONField(
+        null=True,
+        blank=True,
+        help_text=dedent(
+            """
+        Which of `prerequisite_courses` are required, as parsed from Path@Penn class notes.
+        A full code string ("CIS-1200"), {"text": "..."} for a condition that isn't a course
+        (e.g. instructor permission), or {"and": [...]} / {"or": [...]} of these.
+        Null if no course prerequisites are known.
+        """
+        ),
+    )
+
     topic = models.ForeignKey(
         "Topic",
         related_name="courses",
