@@ -182,6 +182,46 @@ def sharing_from_fulfillments(fulfillments, rule_to_degree, credits_cache=None):
     return sharing
 
 
+def can_share(rule, others, double_counts):
+    """
+    Whether `rule` is allowed to double count with every rule in `others`. A rule always
+    shares with itself.
+    """
+    allowed = double_counts.get(rule, set())
+    return all(other == rule or other in allowed for other in others)
+
+
+def reconcile_rules(rules, preferred, rule_to_degree, double_counts):
+    """
+    Thins a set of rules selected for one course down to rules that may all share it.
+
+    `preferred` rules are kept first (they are what the student just asked for), then every
+    other rule that may share with everything kept so far, in id order so the result is
+    deterministic. Rules that are not leaf rules of the plan, such as a stale override, are
+    kept as they are, which is also how check_legal treats them.
+
+    Returns the rules kept and the rules demoted.
+    """
+    kept = set()
+
+    def fits(rule):
+        if rule_to_degree.get(rule) is None:
+            return True
+        return can_share(
+            rule, {r for r in kept if rule_to_degree.get(r) is not None}, double_counts
+        )
+
+    preferred = set(preferred)
+    ordered = sorted(preferred, key=lambda r: r.id) + sorted(
+        set(rules) - preferred, key=lambda r: r.id
+    )
+    for rule in ordered:
+        if fits(rule):
+            kept.add(rule)
+
+    return kept, set(ordered) - kept
+
+
 def get_priority_rule(rules, full_code, belongs_cache, is_transfer=False):
     """
     Primitive method for finding the rule of highest priority given a set of applicable rules.
@@ -219,6 +259,7 @@ def allocate_rules(
     is_transfer=False,
     graduate_sharing=None,
     credits_cache=None,
+    prior_selected=None,
 ):
     """
     Given a course (full_code), rule, degree and double count mappings, and optionally a selected
@@ -228,16 +269,34 @@ def allocate_rules(
 
     `is_transfer` says the course is AP or transfer credit, which keeps it off every rule that
     does not accept such credit.
+
+    `prior_selected` is what the course already counts for, when it is already in the plan.
+    Those choices are kept, except where they conflict with `rule_selected`, and the
+    allocation only adds what may share with them.
     """
     selected_rules = set()
     unselected_rules = set()
     if belongs_cache is None:
         belongs_cache = {}
+    if prior_selected:
+        seed = {rule for rule in prior_selected if rule in rule_to_degree}
+        preferred = {rule_selected} if rule_selected in rule_to_degree else set()
+        selected_rules, _ = reconcile_rules(
+            seed | preferred, preferred, rule_to_degree, double_counts
+        )
+    if satisfied_rules is None:
+        satisfied_rules = degree_plan.check_rules_already_satisfied(
+            {rule for rules in rules_per_degree.values() for rule in rules}
+        )
 
-    for degree in rules_per_degree:
+    # Each component chooses in turn, and may only choose what every earlier component's
+    # choice is allowed to share with, so the union is legal by construction. The component
+    # the course was dropped onto goes first: its choice is the one the student made.
+    components = sorted(
+        rules_per_degree, key=lambda degree: rule_selected not in rules_per_degree[degree]
+    )
+    for degree in components:
         rules = rules_per_degree[degree].copy()
-        if satisfied_rules is None:
-            satisfied_rules = degree_plan.check_rules_already_satisfied(rules)
 
         # Find rule whose double counts we should consider. If we're in the right degree,
         # then it's rule_selected.
@@ -245,7 +304,14 @@ def allocate_rules(
             rule_selected
             if rule_selected in rules
             else get_priority_rule(
-                rules.difference(satisfied_rules), full_code, belongs_cache, is_transfer=is_transfer
+                {
+                    rule
+                    for rule in rules.difference(satisfied_rules)
+                    if can_share(rule, selected_rules, double_counts)
+                },
+                full_code,
+                belongs_cache,
+                is_transfer=is_transfer,
             )
         )
         addl_selected_rules, addl_unselected_rules = assign_individual_rule(
@@ -257,6 +323,7 @@ def allocate_rules(
             double_counts,
             belongs_cache,
             is_transfer=is_transfer,
+            prior_selected=selected_rules,
         )
 
         selected_rules |= {
@@ -265,6 +332,9 @@ def allocate_rules(
         unselected_rules |= {
             rule for rule in addl_unselected_rules if rule_to_degree.get(rule) == degree
         }
+
+    # A seeded rule is still walked by its component's pass, which offers it as unselected.
+    unselected_rules -= selected_rules
 
     # A submatriculant may only share so much between their two degrees, which the audit's own
     # ShareWith policy has no way of saying.
@@ -278,7 +348,7 @@ def allocate_rules(
             (credits_cache or {}).get(full_code, DEFAULT_COURSE_CREDITS),
         )
 
-    # Check for illegal double counting
+    # Legal by construction; checked anyway so a regression surfaces as a flag, not silently.
     legal = check_legal(selected_rules, rule_to_degree, double_counts)
 
     return selected_rules, unselected_rules, legal
@@ -293,11 +363,16 @@ def assign_individual_rule(
     double_counts,
     belongs_cache,
     is_transfer=False,
+    prior_selected=frozenset(),
 ):
     """
     Given a course (full_code), a chosen rule, other rules, already satisfied rules, and the
     double counts allowed between rules, returns new sets of optimized selected and unselected
     rules relating to this full_code.
+
+    `prior_selected` holds what other components already selected for this course. Nothing
+    is selected here that may not double count with all of it; such rules are offered as
+    unselected instead, so the student can still choose them by hand.
     """
     # Add rules that can double count with chosen rule, and remove them from future
     # consideration.
@@ -315,6 +390,7 @@ def assign_individual_rule(
             r
             for r in double_counts.get(chosen_rule, set())
             if check_belongs(r, full_code, belongs_cache, is_transfer=is_transfer)
+            and can_share(r, prior_selected, double_counts)
         }
         relevant_dcrs.add(chosen_rule)
 
@@ -344,8 +420,8 @@ def assign_individual_rule(
                 rules.discard(picked_rule)
 
     # Consider all other rules within degree. If satisfies, add to unselected rules.
-    # However, if full_code is listed and rule is currently unsatisfied, add
-    # to satisfied rules (Intentionally should cause illegal double count)
+    # However, if full_code is listed by name, the rule is currently unsatisfied, and nothing
+    # already selected forbids sharing with it, select it too.
     existing_degrees = [rule_to_degree.get(r) for r in selected_rules]
     for rule in rules:
         if not rule.accepts(is_transfer=is_transfer):
@@ -353,7 +429,9 @@ def assign_individual_rule(
         if full_code in rule.q and rule not in satisfied_rules:
             # check if this rule's degree is different from all degrees in selected_rules
             rule_degree = rule_to_degree.get(rule)
-            if rule_degree not in existing_degrees:
+            if rule_degree not in existing_degrees and can_share(
+                rule, selected_rules | set(prior_selected), double_counts
+            ):
                 selected_rules.add(rule)
             else:
                 unselected_rules.add(rule)
