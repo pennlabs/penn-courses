@@ -11,7 +11,7 @@ import { queryClient } from "../utils/queryClient";
 import { scrollBehavior } from "../utils/helpers";
 
 /**
- * Represents a course, instructor, or department review page.
+ * Represents a course or instructor review page.
  */
 export class ReviewPage extends Component {
   constructor(props) {
@@ -28,7 +28,6 @@ export class ReviewPage extends Component {
       error_detail: null,
       rowCode: null,
       liveData: null,
-      selectedCourses: {},
       isAverage: localStorage.getItem("meta-column-type") !== "recent",
       isCourseEval: false,
       showBanner: false
@@ -47,7 +46,6 @@ export class ReviewPage extends Component {
       });
     };
     this.showRowHistory = this.showRowHistory.bind(this);
-    this.showDepartmentGraph = this.showDepartmentGraph.bind(this);
   }
 
   componentDidMount() {
@@ -101,7 +99,7 @@ export class ReviewPage extends Component {
   getPageInfo() {
     const pageInfo = window.location.pathname.substring(1).split("/");
 
-    if (["course", "instructor", "department"].indexOf(pageInfo[0]) === -1) {
+    if (["course", "instructor"].indexOf(pageInfo[0]) === -1) {
       pageInfo[0] = null;
       pageInfo[1] = null;
     }
@@ -171,10 +169,6 @@ export class ReviewPage extends Component {
     });
   }
 
-  showDepartmentGraph(selectedCourses) {
-    this.setState({ selectedCourses });
-  }
-
   static getDerivedStateFromError() {
     return { error: "An unknown error occurred." };
   }
@@ -199,14 +193,12 @@ export class ReviewPage extends Component {
       liveData,
       isAverage,
       isCourseEval,
-      selectedCourses,
       type
     } = this.state;
 
     const handleSelect = {
       instructor: this.showRowHistory,
-      course: this.showRowHistory,
-      department: this.showDepartmentGraph
+      course: this.showRowHistory
     }[type];
 
     return (
@@ -221,7 +213,6 @@ export class ReviewPage extends Component {
                   url_semester={url_semester}
                   data={data}
                   liveData={liveData}
-                  selectedCourses={selectedCourses}
                   isCourseEval={isCourseEval}
                   setIsCourseEval={this.setIsCourseEval}
                 />

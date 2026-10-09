@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import Ratings from "./InfoRatings";
 import { CourseDescription, CourseHeader } from "./CourseInfo";
 import InstructorInfo from "./InstructorInfo";
-import { DepartmentHeader, DepartmentGraphs } from "./DepartmentInfo";
 import { apiContact, queryKeys } from "../../utils/api";
 
 import styled from "styled-components";
@@ -38,7 +37,6 @@ const InfoBox = ({
   },
   data,
   liveData,
-  selectedCourses,
   isCourseEval,
   setIsCourseEval
 }) => {
@@ -65,7 +63,6 @@ const InfoBox = ({
 
   const isCourse = type === "course";
   const isInstructor = type === "instructor";
-  const isDepartment = type === "department";
 
   const { data: contact = null } = useQuery({
     queryKey: queryKeys.contact(name),
@@ -130,8 +127,6 @@ const InfoBox = ({
         {isInstructor && (
           <InstructorInfo name={name} contact={contact} notes={notes} />
         )}
-
-        {isDepartment && <DepartmentHeader name={name} code={code} />}
       </div>
 
       {data.registration_metrics && (
@@ -157,7 +152,7 @@ const InfoBox = ({
         </StatsToggleContainer>
       )}
 
-      {!isDepartment && hasReviews && (
+      {hasReviews && (
         <div id="banner-score">
           <Ratings
             value="Average"
@@ -177,13 +172,6 @@ const InfoBox = ({
             num_sections={numSectionsRecent}
           />
         </div>
-      )}
-
-      {isDepartment && (
-        <DepartmentGraphs
-          courses={selectedCourses}
-          isCourseEval={isCourseEval}
-        />
       )}
 
       {isCourse && <CourseDescription description={description} />}

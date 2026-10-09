@@ -15,6 +15,7 @@ import { queryClient, persistOptions } from "./utils/queryClient";
 import { FilterProvider } from "./utils/FilterContext";
 import Header from "./components/Header";
 import BrowsePage from "./pages/BrowsePage";
+import DepartmentRedirect from "./pages/DepartmentRedirect";
 import theme from "./styles/theme";
 
 if (window.location.hostname !== "localhost") {
@@ -48,7 +49,11 @@ root.render(
             <Route exact path="/faq" component={FAQPage} />
             <Route exact path="/cart" component={CartPage} />
             <Route
-              path="/:type(course|department|instructor)/:code/:semester?"
+              path="/department/:code/:semester?"
+              component={DepartmentRedirect}
+            />
+            <Route
+              path="/:type(course|instructor)/:code/:semester?"
               component={routeProps => (
                 <TempAuthPage forceRedirect={true}>
                   <ReviewPage {...routeProps} />
