@@ -140,7 +140,7 @@ export const useChat = () => {
                             dispatch({ type: "text", fragment }),
                         onToolCall: (call) =>
                             dispatch({ type: "toolCall", call }),
-                    }
+                    },
                 );
                 dispatch({
                     type: "replied",
