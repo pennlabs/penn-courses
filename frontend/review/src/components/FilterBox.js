@@ -205,7 +205,6 @@ const FilterBox = () => {
                 setTimeString={payload =>
                   dispatch({ type: "SET_TIME", payload })
                 }
-                diameter={200}
               />
             )}
           />

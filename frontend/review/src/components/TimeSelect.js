@@ -1,13 +1,9 @@
-import React, {
-  useState,
-  useEffect,
-  useCallback,
-  useRef,
-  useReducer
-} from "react";
+import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
+import RangeSlider from "react-range-slider-input";
 import CustomDropdown from "./CustomDropdown";
-import { DEFAULT_FILTERS, isValidTimeString } from "../utils/filters";
+import { RangeMarkers, SliderContainer } from "./SliderSelect";
+import { DEFAULT_FILTERS, normalizeTimeString } from "../utils/filters";
 
 const Container = styled.div`
   display: flex;
@@ -17,12 +13,6 @@ const Container = styled.div`
   justify-content: center;
   gap: 12px;
   align-self: stretch;
-`;
-
-const ClockFace = styled.svg`
-  width: 100%;
-  touch-action: none;
-  cursor: ${props => (props.$drag ? "grabbing" : "default")};
 `;
 
 const TimeInputContainer = styled.div`
@@ -60,10 +50,19 @@ const TimeInput = styled.input`
   }
 `;
 
+const SLIDER_STEP = 5;
+const SLIDER_MAX = 1440;
+const LAST_MINUTE = 1439;
+
+const toSliderMinutes = m => (m === LAST_MINUTE ? SLIDER_MAX : m);
+const fromSliderMinutes = m => Math.min(m, LAST_MINUTE);
+
+// Start must come before end, at least one slider step apart
+const isValidRange = (start, end) =>
+  toSliderMinutes(end) - toSliderMinutes(start) >= SLIDER_STEP;
+
 const stringToMinutes = timeString => {
-  const safe = isValidTimeString(timeString)
-    ? timeString
-    : DEFAULT_FILTERS.time;
+  const safe = normalizeTimeString(timeString) || DEFAULT_FILTERS.time;
   const [start, end] = safe.split("-");
   const [startHours, startMinutes] = start.split(".").map(Number);
   const [endHours, endMinutes] = end.split(".").map(Number);
@@ -71,17 +70,6 @@ const stringToMinutes = timeString => {
     start: startHours * 60 + startMinutes,
     end: endHours * 60 + endMinutes
   };
-};
-
-const minutesToRadians = minutes => {
-  return ((minutes / 1440) * 360 - 90) * (Math.PI / 180); // -90 to start at 12 o'clock (browser angles are CW, so negative)
-};
-
-const radiansToMinutes = radians => {
-  const degrees = ((radians * 180) / Math.PI + 90 + 360) % 360; // +90 to convert back, +360 to ensure positive
-  let minutes = Math.round((degrees / 360) * 1440);
-  minutes = Math.round(minutes / 5) * 5; // snap to nearest 5 minutes
-  return minutes % 1440;
 };
 
 const formatMinutes = m =>
@@ -159,74 +147,43 @@ const isValid12HourTime = timeString => {
   return true;
 };
 
-const TimeSelect = ({ timeString, setTimeString, diameter }) => {
-  const { start: initialStart, end: initialEnd } = stringToMinutes(timeString);
-  const [time, dispatch] = useReducer(
-    (state, action) => {
-      if (action.type === "setStart") {
-        const delta = (state.end - action.minutes + 1440) % 1440;
-        return delta >= 5 ? { ...state, start: action.minutes } : state;
-      }
-      if (action.type === "setEnd") {
-        const delta = (action.minutes - state.start + 1440) % 1440;
-        return delta >= 5 ? { ...state, end: action.minutes } : state;
-      }
-      return state;
-    },
-    { start: initialStart, end: initialEnd }
-  );
+const TimeSelect = ({ timeString, setTimeString }) => {
+  const [time, setTime] = useState(() => stringToMinutes(timeString));
 
+  // Refs so the slider's drag callbacks always see the latest values
   const timeRef = useRef(time);
+  const timeStringRef = useRef(timeString);
+  const isDragging = useRef(false);
   useEffect(() => {
-    timeRef.current = time;
-  }, [time]);
+    timeStringRef.current = timeString;
+  }, [timeString]);
+
+  const updateTime = next => {
+    timeRef.current = next;
+    setTime(next);
+  };
+
+  const commitTime = next => {
+    const newTime = `${formatMinutes(next.start)}-${formatMinutes(next.end)}`;
+    if (newTime !== timeStringRef.current) {
+      setTimeString(newTime);
+    }
+  };
 
   useEffect(() => {
-    const { start: newStart, end: newEnd } = stringToMinutes(timeString);
-    // Compared through the ref so pulling the prop in doesn't re-run this
-    // effect on every local edit.
+    const next = stringToMinutes(timeString);
     const current = timeRef.current;
-    if (newStart !== current.start || newEnd !== current.end) {
-      dispatch({ type: "setStart", minutes: newStart });
-      dispatch({ type: "setEnd", minutes: newEnd });
+    if (next.start !== current.start || next.end !== current.end) {
+      updateTime(next);
     }
   }, [timeString]);
 
-  const [drag, setDrag] = useState(null);
-
   const [startText, setStartText] = useState(
-    formatMinutesForDisplay(initialStart).time
+    formatMinutesForDisplay(time.start).time
   );
   const [endText, setEndText] = useState(
-    formatMinutesForDisplay(initialEnd).time
+    formatMinutesForDisplay(time.end).time
   );
-
-  const clockRef = useRef(null);
-
-  const startAMPM = formatMinutesForDisplay(time.start).ampm;
-  const endAMPM = formatMinutesForDisplay(time.end).ampm;
-
-  const viewBoxOffset = diameter / 2; //extra space around the clock for ticks and labels
-  const C = diameter / 2 + viewBoxOffset / 2; //center of clock in svg coordinates
-  const R = diameter / 2; //safe radius for ticks and hands
-  const HAND_LEN = R - 16;
-  const KNOB = 8;
-
-  const polarToCartesian = useCallback(
-    (r, a) => {
-      return { x: C + r * Math.cos(a), y: C + r * Math.sin(a) };
-    },
-    [C]
-  );
-
-  const arcPath = (startAngle, endAngle) => {
-    let sweep = endAngle - startAngle;
-    if (sweep < 0) sweep += 2 * Math.PI;
-    const largeFlag = sweep > Math.PI ? 1 : 0; //if the sweep angle > 180, we need the svg to go the long way around
-    const startSweepPos = polarToCartesian(R, startAngle);
-    const endSweepPos = polarToCartesian(R, endAngle);
-    return `M ${C} ${C} L ${startSweepPos.x} ${startSweepPos.y} A ${R} ${R} 0 ${largeFlag} 1 ${endSweepPos.x} ${endSweepPos.y} Z`;
-  };
 
   useEffect(() => {
     setStartText(formatMinutesForDisplay(time.start).time);
@@ -236,53 +193,47 @@ const TimeSelect = ({ timeString, setTimeString, diameter }) => {
     setEndText(formatMinutesForDisplay(time.end).time);
   }, [time.end]);
 
-  useEffect(() => {
-    if (!drag) return;
-
-    const handleMove = e => {
-      e.preventDefault();
-      const ev = e.touches ? e.touches[0] : e;
-      const rect = clockRef.current?.getBoundingClientRect();
-      if (!rect) return;
-      const scalingFactor = (2 * C) / rect.width;
-      const angle = Math.atan2(
-        (ev.clientY - rect.top) * scalingFactor - C,
-        (ev.clientX - rect.left) * scalingFactor - C
-      );
-      const minutes = radiansToMinutes(angle);
-      dispatch({ type: drag === "start" ? "setStart" : "setEnd", minutes });
-    };
-
-    const onUp = () => {
-      setDrag(null);
-      setTimeString(
-        `${formatMinutes(timeRef.current.start)}-${formatMinutes(
-          timeRef.current.end
-        )}`
-      );
-    };
-
-    window.addEventListener("pointermove", handleMove);
-    window.addEventListener("pointerup", onUp);
-    window.addEventListener("touchmove", handleMove, { passive: false });
-    window.addEventListener("touchend", onUp);
-    return () => {
-      window.removeEventListener("pointermove", handleMove);
-      window.removeEventListener("pointerup", onUp);
-      window.removeEventListener("touchmove", handleMove);
-      window.removeEventListener("touchend", onUp);
-    };
-  }, [drag, C, setTimeString]);
-
-  const startAngle = minutesToRadians(time.start);
-  const endAngle = minutesToRadians(time.end);
-  const startPos = polarToCartesian(HAND_LEN, startAngle);
-  const endPos = polarToCartesian(HAND_LEN, endAngle);
+  const startAMPM = formatMinutesForDisplay(time.start).ampm;
+  const endAMPM = formatMinutesForDisplay(time.end).ampm;
 
   const isStartError = !isValid12HourTime(startText);
   const isEndError = !isValid12HourTime(endText);
 
+  // Applies a typed or AM/PM change, returning whether it was a valid range
+  const applyTime = next => {
+    if (!isValidRange(next.start, next.end)) return false;
+    updateTime(next);
+    commitTime(next);
+    return true;
+  };
+
+  // Searching on every step would fire a request per 5 minutes dragged, so drags only
+  // commit when released. Keyboard changes have no drag and commit right away.
+  const onSliderInput = ([sliderStart, sliderEnd]) => {
+    if (sliderEnd - sliderStart < SLIDER_STEP) {
+      // Re-render with a fresh object so the slider snaps back to the last valid range
+      updateTime({ ...timeRef.current });
+      return;
+    }
+    const next = {
+      start: fromSliderMinutes(sliderStart),
+      end: fromSliderMinutes(sliderEnd)
+    };
+    updateTime(next);
+    if (!isDragging.current) commitTime(next);
+  };
+
+  const onDragStart = () => {
+    isDragging.current = true;
+  };
+
+  const onDragEnd = () => {
+    isDragging.current = false;
+    commitTime(timeRef.current);
+  };
+
   return (
+    <>
     <Container>
       <TimeInputContainer>
         <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
@@ -299,18 +250,13 @@ const TimeSelect = ({ timeString, setTimeString, diameter }) => {
                 e.preventDefault();
                 const fixedValue = fixTimeInputOnBlur(startText);
                 setStartText(fixedValue);
-                if (isValid12HourTime(fixedValue)) {
-                  dispatch({
-                    type: "setStart",
-                    minutes: ampmTimeToMinutes(fixedValue, startAMPM)
-                  });
-                  const newTime = `${formatMinutes(
-                    ampmTimeToMinutes(fixedValue, startAMPM)
-                  )}-${formatMinutes(time.end)}`;
-                  if (newTime !== timeString) {
-                    setTimeString(newTime);
-                  }
-                } else {
+                if (
+                  !isValid12HourTime(fixedValue) ||
+                  !applyTime({
+                    start: ampmTimeToMinutes(fixedValue, startAMPM),
+                    end: time.end
+                  })
+                ) {
                   setStartText(formatMinutesForDisplay(time.start).time);
                 }
                 e.target.querySelector("input").blur();
@@ -334,21 +280,13 @@ const TimeSelect = ({ timeString, setTimeString, diameter }) => {
             options={["AM", "PM"]}
             value={startAMPM}
             onChange={option => {
-              dispatch({
-                type: "setStart",
-                minutes: ampmTimeToMinutes(
+              applyTime({
+                start: ampmTimeToMinutes(
                   formatMinutesForDisplay(time.start).time,
                   option
-                )
+                ),
+                end: time.end
               });
-              setTimeString(
-                `${formatMinutes(
-                  ampmTimeToMinutes(
-                    formatMinutesForDisplay(time.start).time,
-                    option
-                  )
-                )}-${formatMinutes(time.end)}`
-              );
             }}
           />
         </div>
@@ -366,18 +304,13 @@ const TimeSelect = ({ timeString, setTimeString, diameter }) => {
                 e.preventDefault();
                 const fixedValue = fixTimeInputOnBlur(endText);
                 setEndText(fixedValue);
-                if (isValid12HourTime(fixedValue)) {
-                  dispatch({
-                    type: "setEnd",
-                    minutes: ampmTimeToMinutes(fixedValue, endAMPM)
-                  });
-                  const newTime = `${formatMinutes(time.start)}-${formatMinutes(
-                    ampmTimeToMinutes(fixedValue, endAMPM)
-                  )}`;
-                  if (newTime !== timeString) {
-                    setTimeString(newTime);
-                  }
-                } else {
+                if (
+                  !isValid12HourTime(fixedValue) ||
+                  !applyTime({
+                    start: time.start,
+                    end: ampmTimeToMinutes(fixedValue, endAMPM)
+                  })
+                ) {
                   setEndText(formatMinutesForDisplay(time.end).time);
                 }
                 e.target.querySelector("input").blur();
@@ -401,179 +334,48 @@ const TimeSelect = ({ timeString, setTimeString, diameter }) => {
             options={["AM", "PM"]}
             value={endAMPM}
             onChange={option => {
-              dispatch({
-                type: "setEnd",
-                minutes: ampmTimeToMinutes(
+              applyTime({
+                start: time.start,
+                end: ampmTimeToMinutes(
                   formatMinutesForDisplay(time.end).time,
                   option
                 )
               });
-              setTimeString(
-                `${formatMinutes(time.start)}-${formatMinutes(
-                  ampmTimeToMinutes(
-                    formatMinutesForDisplay(time.end).time,
-                    option
-                  )
-                )}`
-              );
             }}
           />
         </div>
       </TimeInputContainer>
-      <ClockFace
-        ref={clockRef}
-        viewBox={`0 0 ${diameter + viewBoxOffset} ${diameter + viewBoxOffset}`}
-        $drag={drag}
-        style={{ maxWidth: diameter + viewBoxOffset }}
-      >
-        {/* Circle */}
-        <circle
-          cx={C}
-          cy={C}
-          r={R}
-          fill="none"
-          stroke="var(--pcr-color-border-muted)"
-          strokeWidth="1.5"
-        />
-
-        {/* 12 small ticks */}
-        {Array.from({ length: 12 }, (_, i) => {
-          const angle = ((i / 12) * 360 - 90) * (Math.PI / 180);
-          const outer = polarToCartesian(R - 1, angle);
-          const inner = polarToCartesian(R - (i % 3 === 0 ? 10 : 6), angle);
-          return (
-            <line
-              key={i}
-              x1={outer.x}
-              y1={outer.y}
-              x2={inner.x}
-              y2={inner.y}
-              stroke={
-                i % 3 === 0
-                  ? "var(--pcr-color-text-subtle)"
-                  : "var(--pcr-color-border-muted)"
-              }
-              strokeWidth={i % 3 === 0 ? 1.5 : 1}
-              strokeLinecap="round"
-            />
-          );
-        })}
-
-        {/* Time labels */}
-        {["12 AM", "6 AM", "12 PM", "6 PM"].map((label, i) => {
-          const angle = (((i * 3) / 12) * 360 - 90) * (Math.PI / 180);
-          const pos = polarToCartesian(R + 20, angle); // R + 15 pushes the text outside the dial
-          return (
-            <text
-              key={label}
-              x={pos.x}
-              y={pos.y}
-              fill="var(--pcr-color-text-dim)"
-              fontSize="11px"
-              fontWeight="500"
-              fontFamily="var(--pcr-font-family-sans)"
-              textAnchor="middle"
-              dominantBaseline="central"
-            >
-              {label}
-            </text>
-          );
-        })}
-
-        {/* Highlighted wedge */}
-        <path
-          d={arcPath(startAngle, endAngle)}
-          fill="rgba(174, 174, 184, 0.2)"
-        />
-
-        {/* Start hand */}
-        <line
-          x1={C}
-          y1={C}
-          x2={startPos.x}
-          y2={startPos.y}
-          stroke="var(--pcr-color-border-selected)"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-
-        {/* End hand */}
-        <line
-          x1={C}
-          y1={C}
-          x2={endPos.x}
-          y2={endPos.y}
-          stroke="var(--pcr-color-border-selected)"
-          strokeWidth="2"
-          strokeLinecap="round"
-        />
-
-        {/* Center dot */}
-        <circle cx={C} cy={C} r="4" fill="var(--pcr-color-text-strong)" />
-
-        {/* Start knob */}
-        <g
-          onPointerDown={e => {
-            e.preventDefault();
-            e.stopPropagation();
-            setDrag("start");
-          }}
-          style={{ cursor: "grab" }}
-        >
-          <circle
-            cx={startPos.x}
-            cy={startPos.y}
-            r={KNOB + 10}
-            fill="transparent"
-          />
-          <circle
-            cx={startPos.x}
-            cy={startPos.y}
-            r={KNOB}
-            fill="var(--pcr-color-text-strong)"
-          />
-          {drag === "start" && (
-            <circle
-              cx={startPos.x}
-              cy={startPos.y}
-              r={KNOB + 8}
-              fill="rgba(174, 174, 184,0.2)"
-            />
-          )}
-        </g>
-
-        {/* End knob */}
-        <g
-          onPointerDown={e => {
-            e.preventDefault();
-            e.stopPropagation();
-            setDrag("end");
-          }}
-          style={{ cursor: "grab" }}
-        >
-          <circle
-            cx={endPos.x}
-            cy={endPos.y}
-            r={KNOB + 10}
-            fill="transparent"
-          />
-          <circle
-            cx={endPos.x}
-            cy={endPos.y}
-            r={KNOB}
-            fill="var(--pcr-color-text-strong)"
-          />
-          {drag === "end" && (
-            <circle
-              cx={endPos.x}
-              cy={endPos.y}
-              r={KNOB + 8}
-              fill="rgba(174, 174, 184,0.2)"
-            />
-          )}
-        </g>
-      </ClockFace>
     </Container>
+    <div
+        style={{
+          width: "100%",
+          userSelect: "none",
+          WebkitUserSelect: "none",
+          MozUserSelect: "none",
+          maxWidth: "600px"
+        }}
+      >
+        <SliderContainer>
+          <RangeSlider
+            min={0}
+            max={SLIDER_MAX}
+            step={SLIDER_STEP}
+            value={[toSliderMinutes(time.start), toSliderMinutes(time.end)]}
+            onInput={onSliderInput}
+            onThumbDragStart={onDragStart}
+            onThumbDragEnd={onDragEnd}
+            onRangeDragStart={onDragStart}
+            onRangeDragEnd={onDragEnd}
+            ariaLabel={["Start time", "End time"]}
+          />
+        </SliderContainer>
+        <RangeMarkers>
+          <div>12 AM</div>
+          <div>12 PM</div>
+          <div>11:59 PM</div>
+        </RangeMarkers>
+      </div>
+      </>
   );
 };
 

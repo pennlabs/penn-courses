@@ -3,7 +3,7 @@ import styled from "styled-components";
 import RangeSlider from "react-range-slider-input";
 import "react-range-slider-input/dist/style.css";
 
-const Container = styled.div`
+export const SliderContainer = styled.div`
   display: flex;
   padding: 24px 12px 0 12px;
   flex-direction: column;
@@ -50,7 +50,7 @@ const Container = styled.div`
   }
 `;
 
-const RangeMarkers = styled.div`
+export const RangeMarkers = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -72,7 +72,7 @@ const SliderSelect = ({ ratingValues, setRatingValues, rangeDescription }) => {
         maxWidth: "400px"
       }}
     >
-      <Container>
+      <SliderContainer>
         <RangeSlider
           min={0}
           max={4}
@@ -82,7 +82,7 @@ const SliderSelect = ({ ratingValues, setRatingValues, rangeDescription }) => {
             setRatingValues(value);
           }}
         />
-      </Container>
+      </SliderContainer>
       <RangeMarkers>
         <div>0</div>
         <div>1</div>

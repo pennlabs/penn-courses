@@ -348,7 +348,7 @@ const CourseResults = () => {
                     {filters.semester === "Next Available" && (
                       <i>
                         Matching results may exist for previous semesters (Try
-                        "All")
+                        "Any")
                       </i>
                     )}
                   </InfoBanner>

@@ -39,8 +39,25 @@ export const SEMESTER_OPTIONS = ["Any", "Next Available"];
 
 const TIME_PATTERN = /^([01]?\d|2[0-3])\.[0-5]\d-([01]?\d|2[0-3])\.[0-5]\d$/;
 
+const toMinutes = (time: string): number => {
+  const [hours, minutes] = time.split(".").map(Number);
+  return hours * 60 + minutes;
+};
+
+/*
+ Time ranges stay within a single day (00:00-23:59) and never cross midnight, so a reversed
+ range like "6.00-4.25" is reordered to "4.25-6.00". Returns null for malformed or empty ranges.
+ */
+export const normalizeTimeString = (value: string): string | null => {
+  if (!TIME_PATTERN.test(value)) return null;
+  const [start, end] = value.split("-");
+  const delta = toMinutes(end) - toMinutes(start);
+  if (delta === 0) return null;
+  return delta > 0 ? value : `${end}-${start}`;
+};
+
 export const isValidTimeString = (value: string): boolean =>
-  TIME_PATTERN.test(value);
+  normalizeTimeString(value) === value;
 
 export const isFilterDefault = <K extends FilterKey>(
   key: K,
@@ -49,10 +66,16 @@ export const isFilterDefault = <K extends FilterKey>(
   const def = DEFAULT_FILTERS[key];
   if (Array.isArray(value) && Array.isArray(def)) {
     const defValues = def as (string | number)[];
-    return (
-      value.length === defValues.length &&
-      value.every((v: string | number) => defValues.includes(v))
-    );
+    // Ranges are ordered [min, max] pairs, so compare by position
+    if (RANGE_KEYS.includes(key)) {
+      return (
+        value.length === defValues.length &&
+        value.every((v: string | number, i: number) => v === defValues[i])
+      );
+    }
+    // Other arrays are unordered sets, so ignore order and duplicates
+    const set = new Set(value as (string | number)[]);
+    return set.size === defValues.length && defValues.every((v) => set.has(v));
   }
   return value === def;
 };
@@ -170,7 +193,8 @@ export const loadStateFromURL = (
         (filters[key] as number[]) = nums;
       }
     } else if (key === "time") {
-      if (isValidTimeString(raw)) filters.time = raw;
+      const time = normalizeTimeString(raw);
+      if (time) filters.time = time;
     } else if (key === "semester") {
       if (SEMESTER_OPTIONS.includes(raw)) filters.semester = raw;
     } else {
