@@ -143,7 +143,10 @@ const Dots = styled.span`
 
 // Tools that change the student's plan, rather than only reading. These get a filled
 // node so an edit never looks like a lookup.
-const WRITE_TOOLS = new Set(["add_to_schedule", "remove_from_schedule"]);
+const WRITE_TOOLS = new Set([
+    "add_to_schedule",
+    "remove_from_schedule",
+]);
 
 const asString = (value: unknown): string | null =>
     typeof value === "string" && value.trim() ? value.trim() : null;
@@ -302,6 +305,7 @@ const Message = ({
                     )}
                 </Bubble>
             )}
+
         </Row>
     );
 };
