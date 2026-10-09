@@ -7,6 +7,8 @@ import fuzzysort from "fuzzysort";
 import { HiMagnifyingGlass } from "react-icons/hi2";
 import { apiAutocomplete, queryKeys } from "../utils/api";
 import { queryClient } from "../utils/queryClient";
+import { useFilterDispatch } from "../utils/FilterContext";
+import { filtersForDepartment, getFilteredURL } from "../utils/filters";
 
 const SearchBarWrapper = styled.div`
   display: flex;
@@ -276,6 +278,13 @@ class SearchBar extends Component {
   }
 
   handleChange(value) {
+    // Departments open the browse page filtered to that department instead of their own page
+    if (value.category === "Departments") {
+      const filters = filtersForDepartment(value.title);
+      this.props.filterDispatch({ type: "SET_ALL", payload: filters });
+      this.props.history.push(getFilteredURL(filters));
+      return;
+    }
     this.props.history.push(value.url);
   }
 
@@ -406,4 +415,9 @@ class SearchBar extends Component {
   }
 }
 
-export default withRouter(SearchBar);
+// SearchBar is a class component, so the filter dispatch is passed in from a hook here
+const SearchBarWithFilters = props => (
+  <SearchBar {...props} filterDispatch={useFilterDispatch()} />
+);
+
+export default withRouter(SearchBarWithFilters);

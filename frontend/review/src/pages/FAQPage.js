@@ -7,15 +7,16 @@ const FAQ = () => (
     <div>
       <p className="question">How do I use the website?</p>
       <p className="answer">
-        Each professor, course, and department has its own page. Summary ratings
-        for the recent semester and for all semesters are provided at the left
-        of each page, with more detailed rating information provided on the
-        right. You can choose to view or hide each course rating criteria by
-        clicking the plus icon on the top of the table. You can also toggle the
-        view mode of ratings between aggregate and most recent on the right side
-        of the page. You can hover over the tags on the left side of the page or
-        the stars on the right side of the page in order to learn more about
-        courses offered in the upcoming semester.
+        Each professor and course has its own page, and you can browse a
+        department's courses with the Department filter. Summary ratings for the
+        recent semester and for all semesters are provided at the left of each
+        page, with more detailed rating information provided on the right. You
+        can choose to view or hide each course rating criteria by clicking the
+        plus icon on the top of the table. You can also toggle the view mode of
+        ratings between aggregate and most recent on the right side of the page.
+        You can hover over the tags on the left side of the page or the stars on
+        the right side of the page in order to learn more about courses offered
+        in the upcoming semester.
       </p>
     </div>
 
@@ -83,9 +84,9 @@ const FAQ = () => (
         difficult it will be to register for a course (which is important for
         planning out your course registration). You can view these metrics by
         clicking the "Registration Metrics" tab in the left window on an
-        instructor, department, or course page. For more information about any
-        specific metric, hover over the question mark icon next to its name (or
-        for plots, see the description below the title).
+        instructor or course page. For more information about any specific
+        metric, hover over the question mark icon next to its name (or for
+        plots, see the description below the title).
       </p>
     </div>
   </div>

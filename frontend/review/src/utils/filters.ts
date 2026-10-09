@@ -155,6 +155,13 @@ export const formatFiltersForAPI = (
   return formatted;
 };
 
+// A fresh search for one department, used when a department is picked from the search bar
+// or reached through an old /department/:code link
+export const filtersForDepartment = (code: string): FilterState => ({
+  ...DEFAULT_FILTERS,
+  departments: [code.toUpperCase()],
+});
+
 export const getFilteredURL = (filters: FilterState): string => {
   const params = new URLSearchParams();
 
