@@ -146,29 +146,73 @@ export const getSecondMajorOptions = (
     }))
     .sort((a, b) => a.label.localeCompare(b.label));
 
+const WHARTON = { value: "BS", label: "Wharton" };
+const SEAS_BSE = { value: "BSE", label: "Engineering BSE" };
+const SEAS_BAS = { value: "BAS", label: "Engineering BAS" };
+
+// The Jerome Fisher Program in Management & Technology, a dual degree in Wharton and SEAS. Its
+// transcripts hold one record per school, each program named "... - Jerome Fisher Program in
+// Management & Technology". The name wraps across lines, so this is tested on joined text.
+const isMandTText = (text: string) =>
+  /management\s*(&|and)\s*technology|jerome\s+fisher/.test(text);
+
+// A program's name wraps onto the lines after its `Program:` line, e.g.
+//   Program: School of Engineering and Applied Science -
+//            Bachelor of Science in Engineering - Jerome
+//            Fisher Program in Management & Technology
+//   Division : School of Engineering and Applied Science
+// Returns the whole name, which ends at the record's next labelled field.
+const programText = (textResult: string[], l: number) => {
+  const parts = [textResult[l].replace(/^.*?:\s*/, "")];
+  for (let next = l + 1; next < textResult.length && next <= l + 4; next++) {
+    const line = textResult[next];
+    if (line.includes(":") || line.includes("program(s)")) break;
+    parts.push(line);
+  }
+  return normalize(parts.join(" "));
+};
+
 // Given a string[] where we're guaranteed to have a school line, return a list of scraped schools.
 const checkSchool = (textResult: string[], l: number) => {
   const tempSchools = [];
-  let program = textResult[l].replace(/^.*?:\s*/, "");
+  const program = programText(textResult, l);
   if (program.includes("arts"))
     tempSchools.push({ value: "BA", label: "Arts & Sciences" });
-  if (program.includes("school of engineering and applied science")) {
-    // SEAS names the degree on the line after the program. A submatriculant's masters record
-    // names a MSE there, which would otherwise fall through to the BAS branch and read as a
-    // second bachelors.
-    const degreeLine = textResult[l + 1] ?? "";
-    if (degreeLine.includes("bachelor of science in engineering"))
-      tempSchools.push({ value: "BSE", label: "Engineering BSE" });
-    else if (degreeLine.includes("master of science in engineering"))
+  if (program.includes("engineering and applied science")) {
+    // SEAS names the degree within the program's name. A submatriculant's masters record names
+    // a MSE there, which would otherwise fall through to the BAS branch and read as a second
+    // bachelors.
+    if (program.includes("bachelor of science in engineering"))
+      tempSchools.push(SEAS_BSE);
+    else if (program.includes("master of science in engineering"))
       tempSchools.push({ value: "MSE", label: "Engineering MSE" });
-    else tempSchools.push({ value: "BAS", label: "Engineering BAS" });
+    else tempSchools.push(SEAS_BAS);
   }
-  if (program.includes("wharton"))
-    tempSchools.push({ value: "BS", label: "Wharton" });
+  if (program.includes("wharton")) tempSchools.push(WHARTON);
   if (program.includes("nursing"))
     tempSchools.push({ value: "BSN", label: "Nursing" });
 
   return tempSchools;
+};
+
+// An M&T student is always in both Wharton and SEAS. If a transcript names the program but either
+// school's record was worded in a way `checkSchool` missed, add that school back.
+const withMandTSchools = (
+  textResult: string[],
+  schools: { value: string; label: string }[]
+) => {
+  // Only program names count, so a course title cannot mark a transcript as M&T.
+  const text = textResult
+    .map((line, l) => (isProgramLine(line) ? programText(textResult, l) : ""))
+    .join(" ");
+  if (!isMandTText(text)) return schools;
+  const has = (value: string) => schools.some((school) => school.value === value);
+  const added = [...schools];
+  if (!has(WHARTON.value)) added.push(WHARTON);
+  if (!has(SEAS_BSE.value) && !has(SEAS_BAS.value)) {
+    added.push(text.includes("bachelor of applied science") ? SEAS_BAS : SEAS_BSE);
+  }
+  return added;
 };
 
 // Given a string[] where we're guaranteed to have a transfer credit line,
@@ -235,23 +279,30 @@ const matchOption = <T>(
   major: string,
   concentration: string,
   options: T[] | undefined,
-  namesOf: (option: T) => [string, string]
+  namesOf: (option: T) => [string, string, number],
+  startYear?: number
 ): T | undefined => {
   if (!options?.length) return undefined;
 
   const target = normalize(major);
   const scored = options.map((option) => {
-    const [name, optionConcentration] = namesOf(option);
+    const [name, optionConcentration, year] = namesOf(option);
     return {
       option,
       name: normalize(name ?? ""),
       concentration: normalize(optionConcentration ?? ""),
       distance: distance(target, normalize(name ?? "")),
+      // How far the option's catalog year sits from the student's first year.
+      yearGap: startYear ? Math.abs(year - startYear) : 0,
     };
   });
 
   const best = Math.min(...scored.map((candidate) => candidate.distance));
-  const closest = scored.filter((candidate) => candidate.distance === best);
+  // A program is listed once per catalog year, so equally close names are ordered to prefer the
+  // catalog nearest the student's start rather than whichever year happens to come first.
+  const closest = scored
+    .filter((candidate) => candidate.distance === best)
+    .sort((a, b) => a.yearGap - b.yearGap);
   if (best > matchTolerance(closest[0].name)) return undefined;
 
   const wanted = normalize(concentration);
@@ -277,7 +328,8 @@ export const detectMajors = (
   detectedMajors: string[],
   detectedConcentrations: string[],
   possibleDegrees: DegreeOption[] | undefined,
-  possibleMajors: MajorOptionItem[] | undefined
+  possibleMajors: MajorOptionItem[] | undefined,
+  startYear?: number
 ) => {
   const degreeOptions: DegreeOption[] = [];
   const majorOptions: MajorOptionItem[] = [];
@@ -286,19 +338,25 @@ export const detectMajors = (
     if (!major || major.includes("undeclared")) return;
     const concentration = detectedConcentrations[i] ?? "";
 
-    const degree = matchOption(major, concentration, possibleDegrees, (option) => [
-      option.value.major_name,
-      option.value.concentration_name,
-    ]);
+    const degree = matchOption(
+      major,
+      concentration,
+      possibleDegrees,
+      (option) => [option.value.major_name, option.value.concentration_name, option.value.year],
+      startYear
+    );
     if (degree) {
       degreeOptions.push(degree);
       return;
     }
 
-    const standalone = matchOption(major, concentration, possibleMajors, (option) => [
-      option.value.name ?? "",
-      option.value.concentration_name ?? "",
-    ]);
+    const standalone = matchOption(
+      major,
+      concentration,
+      possibleMajors,
+      (option) => [option.value.name ?? "", option.value.concentration_name ?? "", option.value.year],
+      startYear
+    );
     if (standalone) majorOptions.push(standalone);
   });
 
@@ -407,6 +465,7 @@ export const parseTranscript = (
     // keeps the semester its most complete record gives it.
     Object.assign(courseToSem, record.courseToSem);
   });
+  tempSchools = withMandTSchools(textResult, tempSchools);
 
   const formattedSeparatedCourses = Object.values(
     Object.entries(courseToSem).reduce(
@@ -435,11 +494,15 @@ export const parseTranscript = (
 
   parsedRecords.forEach((record) => {
     if (!record.majors.length) return;
+    // A record whose school went unrecognised matches against every school on the transcript,
+    // including any `withMandTSchools` added back.
+    const recordSchools = record.schools.length ? record.schools : tempSchools;
     const detected = detectMajors(
       record.majors,
       record.concentrations,
-      getMajorOptions(degrees, record.schools, startYear),
-      secondMajorPool
+      getMajorOptions(degrees, recordSchools, startYear),
+      secondMajorPool,
+      startYear
     );
     degreeOptions.push(...detected.degreeOptions);
     majorOptions.push(...detected.majorOptions);
