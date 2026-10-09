@@ -297,6 +297,7 @@ export const DetailsBox = forwardRef(
           {viewingRatings ? (
             <div id="course-details-data">
               <ScoreTable
+                style={{ maxHeight: 400 }}
                 alternating
                 ignoreSelect
                 sorted={[{ id: "semester", desc: false }]}

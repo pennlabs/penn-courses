@@ -141,7 +141,7 @@ export function apiCourseSearch(params, page = 1) {
     (instructor_quality
       ? `instructor_quality=${encodeURIComponent(instructor_quality)}&`
       : "") +
-    (days ? `days=${encodeURIComponent(days)}&` : "") +
+    (days !== undefined ? `days=${encodeURIComponent(days)}&` : "") +
     (time ? `time=${encodeURIComponent(time)}&` : "") +
     (departments ? `departments=${encodeURIComponent(departments)}&` : "") +
     `page=${page}`;
