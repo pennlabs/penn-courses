@@ -9,6 +9,20 @@ from django.conf import settings
 from django.template import loader
 from twilio.base.exceptions import TwilioRestException
 from twilio.rest import Client
+# from identity.identity import authenticated_b2b_request
+
+# SNIP -- Remove Below for Prod
+configfile = './../../django-labs-accounts/'
+
+import os
+import sys
+
+sys.path.append(os.path.dirname(os.path.expanduser(configfile)))
+
+from identity.identity import get_platform_jwks, attest, authenticated_b2b_request
+get_platform_jwks()
+attest()
+# -- END SNIP
 
 from PennCourses.settings.production import MOBILE_NOTIFICATION_SECRET
 
@@ -137,6 +151,10 @@ class Text(Alert):
             return False
         if self.registration.user is not None and self.registration.user.profile.push_notifications:
             # Do not send text if push_notifications is enabled
+            
+            payload = {"users": ["tuneer"], "service": "PENN_MOBILE", "title": "haha", "body": "haha"}
+            
+            result = authenticated_b2b_request('POST', 'localhost:8080/api/user/notifications/alerts/', payload)
             return False
         if self.registration.user is not None and self.registration.user.profile.phone is not None:
             phone_number = self.registration.user.profile.phone
