@@ -1,5 +1,5 @@
 
-import { useMemo, useState, useContext, useRef, useLayoutEffect } from 'react';
+import { useMemo, useState, useContext, useRef, useLayoutEffect, useEffect } from 'react';
 import RuleComponent, { SkeletonRule } from './Rule';
 import { Degree as DegreeType, DegreePlan, Fulfillment, Rule, Degree as DegreeD } from '@/types';
 import styled from '@emotion/styled';
@@ -10,6 +10,10 @@ import { Icon } from '../common/bulma_derived_components';
 import React from 'react';
 import { ModalKey } from '../FourYearPlan/DegreeModal';
 import { LightTrashIcon } from '../common/TrashIcon';
+import PlanSummaryBar from './PlanSummaryBar';
+import { centerInRequirements, containsRule, subscribeRuleNav } from '@/hooks/requirementNav';
+import { PanelOption, PanelOptionsContext } from './QObject';
+import { programColor } from '../FourYearPlan/programColor';
 
 const EmptyPanelContainer = styled.div`
   display: flex;
@@ -38,29 +42,70 @@ const DegreeHeaderContainer = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 1rem;
-  font-weight: 500;
+  gap: 8px;
+  font-size: var(--type-body);
+  font-weight: 700;
+  line-height: 1.25;
   background-color: var(--primary-color-xx-dark);
   color: #FFF;
-  padding: 0.75rem 1.25rem;
-  border-radius: var(--req-item-radius);
+  padding: 6px 10px;
+  border-radius: 6px;
   position: sticky;
   top: 0;
   z-index: 1000;
 `
 
 const ReqPanelTitle = styled.div`
-  font-size: 1.25rem;
+  font-size: var(--type-title);
   font-weight: 700; 
 `
 
 const DegreeBody = styled.div`
-  overflow-y: none;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
 `
+
+const TabRow = styled.div`
+  display: flex;
+  width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 1001;
+  background: #fff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+`;
+
+const Tab = styled.button<{ $active: boolean }>`
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  margin: 0;
+  padding: 8px 10px;
+  border: none;
+  border-bottom: 3px solid ${(props) => (props.$active ? "var(--primary-color-xx-dark)" : "transparent")};
+  background: ${(props) => (props.$active ? "rgba(98, 116, 241, 0.12)" : "transparent")};
+  color: inherit;
+  font: inherit;
+  font-size: var(--type-body);
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+
+  span {
+    width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+`;
 
 export const DegreeYear = styled.span`
   margin-left: .25rem;
-  font-size: .9rem;
+  font-size: var(--type-body);
   font-weight: 500;
 `
 const DegreeTitleWrapper = styled.div`
@@ -82,24 +127,36 @@ const AddButton = styled.div`
   color: white;
 `
 
+const ReqPanelShell = styled(PanelContainer)`
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+`
+
 const ReqPanelBody = styled(PanelBody)`
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
   overflow-y: scroll;
-  padding: 1.5rem;
+  padding: 0.55rem 0.65rem;
   gap: 0;
 `
 
 // pr, mr for scroll bar
 const ReqContent = styled.div`
+  min-width: 0;
+  max-width: 100%;
   padding: 0;
   padding-right: 12px;
   margin-right: -12px;
   display: flex;
   flex-direction: column;
-  gap: .5rem;
+  gap: 6px;
+  overflow-x: hidden;
   overflow-y: scroll;
 `
 
-export const HEADER_DEFAULT_BUFFER = 8;
+export const HEADER_DEFAULT_BUFFER = 2;
 export const WhiteSpace = styled.div<{ $headerHeight: number, $zIndex: number }>`
   height: ${HEADER_DEFAULT_BUFFER}px;
   background-color: white;
@@ -109,40 +166,75 @@ export const WhiteSpace = styled.div<{ $headerHeight: number, $zIndex: number }>
 `
 
 export interface PlanProgram {
-  id: number;
-  relation: "degrees" | "majors" | "minors";
+  id: number | null;
+  key: string;
+  relation: "degrees" | "majors" | "minors" | "college" | "degree-major";
+  role: string;
   title: string;
-  year: number;
+  year: number | null;
+  removable: boolean;
   rules: Rule[];
 }
 
-const planPrograms = (detail: DegreePlan): PlanProgram[] => [
-  ...(detail.degrees ?? []).map((degree) => ({
-    id: degree.id,
-    relation: "degrees" as const,
-    title: `${degree.degree} in ${degree.major_name}${
-      degree.concentration ? ` (${degree.concentration_name})` : ""
-    }`,
-    year: degree.year,
-    rules: degree.rules,
-  })),
-  ...(detail.majors ?? []).map((major) => ({
-    id: major.id,
-    relation: "majors" as const,
-    title: `Major in ${major.name}${
-      major.concentration_name ? ` (${major.concentration_name})` : ""
-    }`,
-    year: major.year,
-    rules: major.rules,
-  })),
-  ...(detail.minors ?? []).map((minor) => ({
-    id: minor.id,
-    relation: "minors" as const,
-    title: `Minor in ${minor.name}`,
-    year: minor.year,
-    rules: minor.rules,
-  })),
-];
+const ROLE_LABELS: { [role: string]: string } = {
+  primary_degree: "Primary degree",
+  second_degree: "Second degree",
+  second_major: "Second major",
+  major: "Major",
+  minor: "Minor",
+  college: "College",
+};
+
+const planPrograms = (detail: DegreePlan): PlanProgram[] => {
+  if (detail.components?.length) {
+    return detail.components.map((component) => ({
+      id: component.id,
+      key: component.key,
+      relation: component.relation,
+      role: component.role,
+      title: component.title,
+      year: component.year,
+      removable: component.removable,
+      rules: component.rules,
+    }));
+  }
+  return [
+    ...(detail.degrees ?? []).map((degree) => ({
+      id: degree.id,
+      key: `degree:${degree.id}`,
+      relation: "degrees" as const,
+      role: "primary_degree",
+      title: `${degree.degree} in ${degree.major_name}${
+        degree.concentration ? ` (${degree.concentration_name})` : ""
+      }`,
+      year: degree.year,
+      removable: true,
+      rules: degree.rules,
+    })),
+    ...(detail.majors ?? []).map((major) => ({
+      id: major.id,
+      key: `major:${major.id}`,
+      relation: "majors" as const,
+      role: "second_major",
+      title: `Major in ${major.name}${
+        major.concentration_name ? ` (${major.concentration_name})` : ""
+      }`,
+      year: major.year,
+      removable: true,
+      rules: major.rules,
+    })),
+    ...(detail.minors ?? []).map((minor) => ({
+      id: minor.id,
+      key: `minor:${minor.id}`,
+      relation: "minors" as const,
+      role: "minor",
+      title: `Minor in ${minor.name}`,
+      year: minor.year,
+      removable: true,
+      rules: minor.rules,
+    })),
+  ];
+};
 
 interface DegreeHeaderProps {
   program: PlanProgram,
@@ -169,14 +261,19 @@ const DegreeHeader = ({
       <DegreeTitleWrapper>
         <div>
           {degreeName}
+          {!skeleton && ROLE_LABELS[program.role] && (
+            <span style={{ marginLeft: "0.6em", fontSize: "var(--type-body)", opacity: 0.8 }}>
+              {ROLE_LABELS[program.role]}
+            </span>
+          )}
         </div>
         <DegreeYear>
-          {!skeleton ? program.year : <DarkBlueBackgroundSkeleton width="4em" />}
+          {!skeleton && program.year ? program.year : skeleton ? <DarkBlueBackgroundSkeleton width="4em" /> : null}
         </DegreeYear>
       </DegreeTitleWrapper>
       <span>
-        {!skeleton && editMode ?
-          <LightTrashIcon role="button" onClick={() => remove(program.id)}>
+        {!skeleton && editMode && program.removable ?
+          <LightTrashIcon role="button" onClick={() => program.id != null && remove(program.id)}>
             <i className="fa fa-trash fa-md" />
           </LightTrashIcon>
           :
@@ -246,7 +343,8 @@ const Degree = ({
   editMode, 
   setModalKey, 
   setModalObject, 
-  isLoading 
+  isLoading,
+  showHeader = true,
 }: any) => {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -304,24 +402,31 @@ const Degree = ({
 
   return (
     <div>
-      <DegreeHeader
-        containerRef={headerRef}
-        program={program}
-        key={program.id}
-        remove={() => {
-          setModalObject({
-            degreeplanId: activeDegreeplan.id,
-            degreeId: program.id,
-            relation: program.relation,
-          });
-          setModalKey("degree-remove");
-        }}
-        setCollapsed={setCollapsed}
-        collapsed={collapsed || editMode} // Collapse degree view in edit mode
-        editMode={editMode}
-        skeleton={false}
-      />
-      <WhiteSpace $headerHeight={headerHeight} $zIndex={999} />
+      {showHeader && (
+        <>
+          <DegreeHeader
+            containerRef={headerRef}
+            program={program}
+            key={program.id}
+            remove={() => {
+              if (!program.removable || program.id == null) return;
+              // A College double major's major block is removed by removing that degree.
+              const relation = program.relation === "degree-major" ? "degrees" : program.relation;
+              setModalObject({
+                degreeplanId: activeDegreeplan.id,
+                degreeId: program.id,
+                relation,
+              });
+              setModalKey("degree-remove");
+            }}
+            setCollapsed={setCollapsed}
+            collapsed={collapsed || editMode} // Collapse degree view in edit mode
+            editMode={editMode}
+            skeleton={false}
+          />
+          <WhiteSpace $headerHeight={headerHeight} $zIndex={999} />
+        </>
+      )}
       {!collapsed && !editMode &&
         <>
           <DegreeBody>
@@ -355,8 +460,11 @@ interface ReqPanelProps {
 const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: ReqPanelProps) => {
   const [editMode, setEditMode] = React.useState(false);
   const [allRuleLeaves, setAllRuleLeaves] = React.useState(false);
+  const [activeProgramKey, setActiveProgramKey] = React.useState<string | null>(null);
+  const [focusRule, setFocusRule] = React.useState<{ id: number; nonce: number } | null>(null);
 
   const { data: activeDegreeplanDetail = null, isLoading: isLoadingDegrees } = useSWR<DegreePlan>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}` : null);
+  const { data: panelOptions = {} } = useSWR<Record<string, PanelOption>>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/panel-options` : null);
   const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null);
 
   const rulesToFulfillments = useMemo(() => {
@@ -390,8 +498,23 @@ const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: 
     return rulesToCourses;
   }, [fulfillments, isLoadingFulfillments])
 
+  const programs = activeDegreeplanDetail ? planPrograms(activeDegreeplanDetail) : [];
+
+  useEffect(() => subscribeRuleNav((ruleId) => {
+    const program = programs.find((item) => containsRule(item.rules, ruleId));
+    if (program && programs.length > 1) setActiveProgramKey(program.key);
+    setFocusRule({ id: ruleId, nonce: Date.now() });
+  }), [programs]);
+
+  useEffect(() => {
+    if (focusRule == null) return undefined;
+    const timer = window.setTimeout(() => centerInRequirements(focusRule.id), 60);
+    return () => window.clearTimeout(timer);
+  }, [focusRule, activeProgramKey]);
+
   return (
-    <PanelContainer>
+    <PanelOptionsContext.Provider value={panelOptions}>
+    <ReqPanelShell>
       <PanelHeader>
         <ReqPanelTitle>Requirements</ReqPanelTitle>
         <PanelTopBarIconList>
@@ -402,11 +525,30 @@ const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: 
         <>
           {activeDegreeplanDetail &&
             <ReqPanelBody>
-              <ReqContent>
-                {planPrograms(activeDegreeplanDetail).length == 0 && !editMode && <EmptyPanel />}
-                {planPrograms(activeDegreeplanDetail).map(program => (
+              <ReqContent id="requirements-scroll">
+                {programs.length == 0 && !editMode && <EmptyPanel />}
+                <PlanSummaryBar degreePlanId={activeDegreeplan.id} />
+                {programs.length > 1 && (
+                  <TabRow>
+                    {programs.map((program, index) => (
+                      <Tab
+                        key={program.key}
+                        type="button"
+                        $active={program.key === (activeProgramKey || programs[0].key)}
+                        onClick={() => setActiveProgramKey(program.key)}
+                        style={{ boxShadow: `inset 4px 0 0 ${programColor(index)}` }}
+                      >
+                        <span>{program.title}</span>
+                        {program.year && <span style={{ fontWeight: 500, opacity: 0.75 }}>{program.year}</span>}
+                      </Tab>
+                    ))}
+                  </TabRow>
+                )}
+                {programs
+                  .filter((program) => programs.length < 2 || program.key === (activeProgramKey || programs[0].key))
+                  .map(program => (
                   <Degree
-                    key={`${program.relation}-${program.id}`}
+                    key={program.key}
                     allRuleLeaves={allRuleLeaves}
                     program={program}
                     rulesToFulfillments={rulesToFulfillments}
@@ -416,6 +558,7 @@ const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: 
                     setModalKey={setModalKey}
                     setModalObject={setModalObject}
                     isLoading={isLoading}
+                    showHeader={programs.length < 2 || editMode}
                   />
                 ))}
                 {editMode && <AddButton role="button" onClick={() => {
@@ -431,7 +574,8 @@ const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: 
             </ReqPanelBody>
           }
         </>}
-    </PanelContainer>
+    </ReqPanelShell>
+    </PanelOptionsContext.Provider>
   );
 }
 export default ReqPanel;

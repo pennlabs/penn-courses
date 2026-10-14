@@ -64,13 +64,23 @@ export default function Home() {
                 return res.json();
               },
               provider: () => new Map(),
-              // A 401/403 means the session is gone: ask for login instead of toasting.
+              // A 401 means the session is gone: ask for login instead of toasting.
+              // A 403 means the session is valid but this route refused it (for example the
+              // degree-plan beta list). Clearing the user there makes AccountIndicator fetch
+              // /accounts/me/, which succeeds and logs them back in, and the page blinks forever.
               // Anything else is retried by SWR with backoff, which calls this each time,
               // so one toast per key rather than one per attempt.
               onError: (error, key) => {
                 const status = (error as { status?: number }).status;
-                if (status === 401 || status === 403) {
+                if (status === 401) {
                   updateUser(null);
+                  return;
+                }
+                if (status === 403) {
+                  toast.error(
+                    `Couldn't load ${key} (not allowed).`,
+                    { position: toast.POSITION.BOTTOM_CENTER, toastId: key }
+                  );
                   return;
                 }
                 toast.error(

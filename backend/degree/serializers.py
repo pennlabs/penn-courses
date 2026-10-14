@@ -13,11 +13,13 @@ from degree.models import (
     DegreePlan,
     DockedCourse,
     DoubleCountRestriction,
+    DualProgram,
     Fulfillment,
     Major,
     Minor,
     Rule,
 )
+from degree.utils.composition import compose
 
 
 class DegreeListSerializer(serializers.ModelSerializer):
@@ -207,6 +209,7 @@ class FulfillmentSerializer(serializers.ModelSerializer):
         many=True, queryset=Rule.objects.all(), required=False
     )
     overrides = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+    from_transcript = serializers.BooleanField(read_only=True)
 
     def to_internal_value(self, data):
         """
@@ -229,6 +232,7 @@ class FulfillmentSerializer(serializers.ModelSerializer):
             "unselected_rules",
             "legal",
             "overrides",
+            "from_transcript",
         ]
 
     def validate(self, data):
@@ -301,6 +305,67 @@ class FulfillmentSerializer(serializers.ModelSerializer):
         return data
 
 
+def serialize_kept_rule(rule, keep_ids):
+    """A rule tree with leaves the component does not own pruned out."""
+    if rule.q:
+        if rule.id not in keep_ids:
+            return None
+        data = RuleSerializer(rule).data
+        data["rules"] = []
+        return data
+    children = []
+    for child in rule.children.all():
+        kept = serialize_kept_rule(child, keep_ids)
+        if kept is not None:
+            children.append(kept)
+    if not children:
+        return None
+    data = RuleSerializer(rule).data
+    data["rules"] = children
+    return data
+
+
+def serialize_component(component):
+    rules = []
+    for root in component.roots:
+        kept = serialize_kept_rule(root, component.keep_ids)
+        if kept is not None:
+            rules.append(kept)
+    for extra in component.extra_rules:
+        rules.append(RuleSerializer(extra).data)
+    return {
+        "key": component.key,
+        "relation": component.relation,
+        "id": component.owner_id,
+        "role": component.role,
+        "title": component.title,
+        "year": component.year,
+        "program": component.program,
+        "removable": component.removable,
+        "rules": rules,
+    }
+
+
+class DualProgramSerializer(serializers.ModelSerializer):
+    left_variant = serializers.SlugRelatedField(slug_field="code", read_only=True)
+    right_variant = serializers.SlugRelatedField(slug_field="code", read_only=True)
+
+    class Meta:
+        model = DualProgram
+        fields = [
+            "code",
+            "name",
+            "left_programs",
+            "right_programs",
+            "left_allowed_majors",
+            "right_allowed_majors",
+            "left_variant",
+            "right_variant",
+            "cu_floor",
+            "max_shared_cu",
+        ]
+
+
 class DegreePlanListSerializer(serializers.ModelSerializer):
     class Meta:
         model = DegreePlan
@@ -319,8 +384,14 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
     minors = MinorDetailSerializer(
         many=True, read_only=True, help_text="The minors belonging to this degree plan"
     )
+    dual_program = DualProgramSerializer(read_only=True)
+    right_variant = serializers.SlugRelatedField(slug_field="code", read_only=True)
+    components = serializers.SerializerMethodField()
 
     person = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
+    def get_components(self, obj):
+        return [serialize_component(component) for component in compose(obj).components]
 
     class Meta:
         model = DegreePlan
@@ -330,6 +401,9 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
             "degrees",
             "majors",
             "minors",
+            "dual_program",
+            "right_variant",
+            "components",
             "person",
             "created_at",
             "updated_at",

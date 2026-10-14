@@ -2,7 +2,8 @@ import { useContext, useMemo, useState, useRef, useEffect, useLayoutEffect } fro
 import { ConnectDragSource } from "react-dnd";
 import { GrayIcon, Icon } from "@/components/common/bulma_derived_components";
 import styled from "@emotion/styled";
-import { Course, Degree, DegreePlan, DnDCourse, Fulfillment, Rule } from "@/types";
+import { Course, Degree, DegreePlan, DnDCourse, Fulfillment, PlanSummary, Rule } from "@/types";
+import { violationMessage } from "@/components/Requirements/PlanSummaryBar";
 import { ReviewPanelTrigger } from "@/components/Infobox/ReviewPanel";
 import { Draggable } from "@/components/common/DnD";
 import Skeleton from "react-loading-skeleton";
@@ -14,10 +15,10 @@ import { ItemTypes } from "@/components/Dock/dnd/constants";
 import { postFetcher } from "@/hooks/swrcrud";
 import { useSWRConfig } from "swr";
 import ToastContext from "@/components/Toast/Toast";
+import { ClaimBar, useProgramClaims } from "@/components/FourYearPlan/programColor";
 
 const DOUBLE_COUNT_ERROR_MESSAGE =
   "This course is being illegally double counted in your plan!";
-const COURSE_BORDER_RADIUS = "9px";
 const HIGHLIGHT_VARIANT_COLORS = {
   selected: "#E6F4EA",
   unselected: "#FFF7D6",
@@ -28,40 +29,62 @@ export const BaseCourseContainer = styled.div<{
   $isUsed: boolean;
   $isDisabled: boolean;
   $highlightVariant?: "selected" | "unselected";
+  $tone?: "taken" | "frozen";
+  $compact?: boolean;
 }>`
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
-  min-width: 70px;
-  min-height: 35px;
-  border-radius: ${COURSE_BORDER_RADIUS};
-  padding: 0.75rem;
+  min-width: 0;
+  min-height: 0;
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: var(--type-body);
+  font-weight: 600;
   text-wrap: nowrap;
   cursor: ${(props) => (props.$isDisabled ? "not-allowed" : "grab")};
   opacity: ${(props) => (props.$isDisabled || props.$isDragging ? 0.7 : 1)};
+  border: 1px solid
+    ${(props) =>
+      props.$tone === "taken"
+        ? "rgba(34, 197, 94, 0.45)"
+        : props.$tone === "frozen"
+          ? "#d97706"
+          : "rgba(0, 0, 0, 0.14)"};
   background-color: ${(props) =>
     props.$isDragging
       ? "#4B9AE7"
-      : (props.$highlightVariant &&
-          HIGHLIGHT_VARIANT_COLORS[props.$highlightVariant]) ||
-        "var(--background-grey)"};
-  box-shadow: rgba(0, 0, 0, 0.01) 0px 6px 5px 0px,
-    rgba(0, 0, 0, 0.04) 0px 0px 0px 1px;
+      : props.$tone === "taken"
+        ? "rgba(34, 197, 94, 0.12)"
+        : props.$tone === "frozen"
+          ? "rgba(217, 119, 6, 0.12)"
+          : (props.$highlightVariant &&
+              HIGHLIGHT_VARIANT_COLORS[props.$highlightVariant]) ||
+            "#fff"};
+  box-shadow: none;
+  color: ${(props) =>
+    props.$tone === "taken"
+      ? "#15803d"
+      : props.$tone === "frozen"
+        ? "#b45309"
+        : "#4b5563"};
 `;
 
 export const PlannedCourseContainer = styled(BaseCourseContainer)`
-  width: 100%;
+  width: ${(props) => (props.$compact ? "auto" : "100%")};
+  gap: 0.65rem;
+  padding: ${(props) => (props.$compact ? "1px 5px" : "4px 8px")};
   position: relative;
+  overflow: hidden;
   opacity: ${(props) => (props.$isDragging ? 0.5 : 1)};
 
   .close-button {
-    padding-left: 1rem;
-    padding-right: 10px;
-    margin-top: auto;
-    margin-bottom: auto;
-    height: 100%;
+    padding: 0;
+    margin: 0;
+    height: auto;
     align-items: center;
     opacity: 0.6;
+    flex-shrink: 0;
   }
 
   .illegal-icon {
@@ -120,9 +143,21 @@ export const SkeletonCourse = () => (
 
 const CourseBadge = styled.div`
   display: flex;
+  flex: 1;
+  min-width: 0;
   flex-direction: row;
   align-items: center;
+  justify-content: flex-start;
   gap: 0.25rem;
+`;
+
+export const CuLabel = styled.span`
+  margin-left: 0;
+  font-size: var(--type-body);
+  font-weight: 600;
+  color: #6b7280;
+  white-space: nowrap;
+  flex-shrink: 0;
 `;
 
 const IconBadge = styled.div`
@@ -136,21 +171,40 @@ const IconBadge = styled.div`
   background-color: transparent;
 
   p {
-    font-size: 14px;
+    font-size: var(--type-body);
     font-weight: bold;
   }
+`;
+
+const IconSlot = styled.span`
+  width: 1rem;
+  height: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+`;
+
+const TrailingActions = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
 `;
 
 const InfoIconButton = styled.button`
   background: none;
   border: none;
   cursor: pointer;
-  padding: 0.2rem;
+  padding: 0;
+  width: 1rem;
+  height: 1rem;
   display: flex;
   align-items: center;
+  justify-content: center;
   color: #aaa;
-  font-size: 0.85rem;
-  margin-left: 0.25rem;
+  font-size: var(--type-body);
+  line-height: 1;
 
   &:hover {
     color: #555;
@@ -174,7 +228,7 @@ const InfoPopover = styled.div`
   max-width: min(350px, calc(100vw - 16px));
   width: max-content;
   text-align: left;
-  font-size: 0.85rem;
+  font-size: var(--type-body);
   color: #333;
   white-space: normal;
   word-wrap: break-word;
@@ -192,7 +246,7 @@ const PopoverSection = styled.div`
 
 const PopoverLabel = styled.div`
   font-weight: 600;
-  font-size: 0.7rem;
+  font-size: var(--type-body);
   color: #888;
   margin-bottom: 0.25rem;
   text-transform: uppercase;
@@ -214,7 +268,7 @@ const OverrideBadge = styled.span`
   display: inline-flex;
   align-items: center;
   gap: 0.2rem;
-  font-size: 0.7rem;
+  font-size: var(--type-body);
   color: #b8860b;
   font-weight: 600;
 `;
@@ -224,7 +278,7 @@ const SwitchRuleButton = styled.button`
   border-radius: 6px;
   background: #fff7d6;
   color: #645500;
-  font-size: 0.8rem;
+  font-size: var(--type-body);
   font-weight: 500;
   padding: 0.35rem 0.55rem;
   cursor: pointer;
@@ -242,7 +296,7 @@ const DisplacedBanner = styled.div`
   background: #fff3e0;
   border: 1px solid #e0c080;
   color: #7a4f00;
-  font-size: 0.78rem;
+  font-size: var(--type-body);
   line-height: 1.35;
 `;
 
@@ -332,6 +386,7 @@ const CourseComponent = ({
 }: DraggableComponentProps) => {
   const { mutate } = useSWRConfig();
   const showToast = useContext(ToastContext);
+  const tone = fulfillment ? (fulfillment.from_transcript ? "taken" : "frozen") : undefined;
 
   // Look up rule titles for unselected rules (uses SWR cache from ReqPanel)
   const { data: degreePlanDetail } = useSWR<DegreePlan>(
@@ -339,33 +394,47 @@ const CourseComponent = ({
       ? `/api/degree/degreeplans/${fulfillment.degree_plan}`
       : null
   );
+  const { data: planSummary } = useSWR<PlanSummary>(
+    fulfillment?.degree_plan
+      ? `/api/degree/degreeplans/${fulfillment.degree_plan}/summary`
+      : null
+  );
+  const programs = useProgramClaims(
+    courseType === ItemTypes.COURSE_IN_PLAN ? fulfillment?.degree_plan : null
+  );
+  const claimKeys = fulfillment ? programs.claimsFor(fulfillment.full_code) : [];
 
-  const unselectedRuleNames = useMemo(() => {
-    if (!fulfillment?.unselected_rules?.length || !degreePlanDetail?.degrees) return [];
-    const ruleMap = new Map<number, { title: string; degreeName: string }>();
-    for (const degree of degreePlanDetail.degrees) {
-      const degreeName = formatDegreeName(degree);
-      flattenRules(degree.rules, degreeName).forEach((ruleInfo, id) =>
-        ruleMap.set(id, ruleInfo)
+  const ruleMap = useMemo(() => {
+    const map = new Map<number, { title: string; degreeName: string }>();
+    const components = degreePlanDetail?.components;
+    if (components?.length) {
+      for (const component of components) {
+        flattenRules(component.rules, component.title).forEach((ruleInfo, id) =>
+          map.set(id, ruleInfo)
+        );
+      }
+      return map;
+    }
+    for (const degree of degreePlanDetail?.degrees ?? []) {
+      flattenRules(degree.rules, formatDegreeName(degree)).forEach((ruleInfo, id) =>
+        map.set(id, ruleInfo)
       );
     }
+    return map;
+  }, [degreePlanDetail]);
+
+  const unselectedRuleNames = useMemo(() => {
+    if (!fulfillment?.unselected_rules?.length) return [];
     return fulfillment.unselected_rules
       .map(id => ruleMap.get(id))
       .filter((t): t is { title: string; degreeName: string } => !!t);
-  }, [fulfillment?.unselected_rules, degreePlanDetail]);
+  }, [fulfillment?.unselected_rules, ruleMap]);
   const overrideSet = useMemo(
     () => new Set(fulfillment?.overrides ?? []),
     [fulfillment?.overrides]
   );
   const selectedRuleNames = useMemo(() => {
-    if (!fulfillment?.rules?.length || !degreePlanDetail?.degrees) return [];
-    const ruleMap = new Map<number, { title: string; degreeName: string }>();
-    for (const degree of degreePlanDetail.degrees) {
-      const degreeName = formatDegreeName(degree);
-      flattenRules(degree.rules, degreeName).forEach((ruleInfo, id) =>
-        ruleMap.set(id, ruleInfo)
-      );
-    }
+    if (!fulfillment?.rules?.length) return [];
     return fulfillment.rules
       .map(id => {
         const info = ruleMap.get(id);
@@ -373,7 +442,7 @@ const CourseComponent = ({
         return { ...info, isOverride: overrideSet.has(id) };
       })
       .filter((t): t is { title: string; degreeName: string; isOverride: boolean } => !!t);
-  }, [fulfillment?.rules, degreePlanDetail, overrideSet]);
+  }, [fulfillment?.rules, ruleMap, overrideSet]);
 
   const [infoOpen, setInfoOpen] = useState(false);
   const [switchingRule, setSwitchingRule] = useState(false);
@@ -502,14 +571,29 @@ const CourseComponent = ({
             $isUsed={isUsed}
             $isDisabled={isDisabled}
             $highlightVariant={highlightVariant}
+            $compact={courseType === ItemTypes.COURSE_IN_REQ}
+            $tone={tone}
             ref={dragRef}
             className={className}
           >
+            {courseType === ItemTypes.COURSE_IN_PLAN && (
+              <ClaimBar keys={claimKeys} order={programs.order} titles={programs.titles} />
+            )}
             {!fulfillment?.legal && (
               <div style={{ paddingRight: "5px" }}>
                 <a
                   data-tooltip-id={fulfillment.full_code + courseType}
-                  data-tooltip-content={DOUBLE_COUNT_ERROR_MESSAGE}
+                  data-tooltip-content={
+                    planSummary?.violations.find(
+                      (violation) => violation.full_code === fulfillment.full_code
+                    )
+                      ? `This course ${violationMessage(
+                          planSummary.violations.find(
+                            (violation) => violation.full_code === fulfillment.full_code
+                          )!.kind
+                        )}.`
+                      : DOUBLE_COUNT_ERROR_MESSAGE
+                  }
                 >
                   <ExclamationIcon color={"#E66161"} />
                 </a>
@@ -522,6 +606,11 @@ const CourseComponent = ({
             )}
             <CourseBadge>
               {course.full_code.replace("-", " ")}
+              {courseType === ItemTypes.COURSE_IN_REQ && (
+                <CuLabel>
+                  {Number(fulfillment.course?.credits ?? 1).toFixed(1)} CU
+                </CuLabel>
+              )}
               {isOverride && (
                 <OverrideBadge
                   data-tooltip-id={`override-${fulfillment.full_code}-${ruleId}`}
@@ -540,19 +629,17 @@ const CourseComponent = ({
               {showSemesterOnCard && (
                 <SemesterIcon semester={displaySemester} />
               )}
-              {hasInfoContent && (
+            </CourseBadge>
+            {courseType === ItemTypes.COURSE_IN_PLAN && (
+              <TrailingActions>
+                <IconSlot>
+                  {hasInfoContent && (
                 <InfoPopoverWrapper ref={infoRef}>
                   <InfoIconButton onClick={(e) => { e.stopPropagation(); setInfoOpen(!infoOpen); }}>
                     <i className="fas fa-info-circle"></i>
                   </InfoIconButton>
                   {infoOpen && (
                     <InfoPopover ref={popoverRef}>
-                      {/* {hasSemester && (
-                        <PopoverSection>
-                          <PopoverLabel>Semester</PopoverLabel>
-                          {formatSemester(fulfillment.semester)}
-                        </PopoverSection>
-                      )} */}
                       {selectedRuleNames.length > 0 && (
                         <PopoverSection>
                           <PopoverLabel>Currently counts for</PopoverLabel>
@@ -582,7 +669,6 @@ const CourseComponent = ({
                           </RuleList>
                         </PopoverSection>
                       )}
-                      
                       {shouldShowSwitchHint && (
                         <PopoverSection>
                           <PopoverLabel>Tip</PopoverLabel>
@@ -609,8 +695,21 @@ const CourseComponent = ({
                   )}
                 </InfoPopoverWrapper>
               )}
-            </CourseBadge>
+                </IconSlot>
+                <IconSlot>
             {isUsed && (
+                    <CourseXButton
+                      onClick={(e) => {
+                        removeCourse(course.full_code);
+                        e.stopPropagation();
+                      }}
+                      hidden={false}
+                    />
+                  )}
+                </IconSlot>
+              </TrailingActions>
+            )}
+            {courseType !== ItemTypes.COURSE_IN_PLAN && isUsed && (
               <CourseXButton
                 onClick={(e) => {
                   removeCourse(course.full_code);
@@ -618,6 +717,11 @@ const CourseComponent = ({
                 }}
                 hidden={false}
               />
+            )}
+            {courseType === ItemTypes.COURSE_IN_PLAN && (
+              <CuLabel>
+                {Number(fulfillment.course?.credits ?? 1).toFixed(1)} CU
+              </CuLabel>
             )}
           </PlannedCourseContainer>
         </ReviewPanelTrigger>
@@ -632,6 +736,7 @@ const CourseComponent = ({
           $isUsed={isUsed}
           $isDisabled={isDisabled}
           $highlightVariant={highlightVariant}
+          $compact={courseType === ItemTypes.COURSE_IN_REQ}
           ref={dragRef}
           className={className}
         >
@@ -640,7 +745,7 @@ const CourseComponent = ({
             {showSemesterOnCard && (
               <SemesterIcon semester={displaySemester} />
             )}
-            {hasInfoContent && (
+            {hasInfoContent && courseType !== ItemTypes.COURSE_IN_REQ && (
               <InfoPopoverWrapper ref={infoRef}>
                 <InfoIconButton onClick={(e) => { e.stopPropagation(); setInfoOpen(!infoOpen); }}>
                   <i className="fas fa-info-circle"></i>

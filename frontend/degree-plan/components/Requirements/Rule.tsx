@@ -7,74 +7,154 @@ import { baseFetcher, postFetcher, useSWRCrud } from "@/hooks/swrcrud";
 import { useDrop } from "react-dnd";
 import { ItemTypes } from "../Dock/dnd/constants";
 import { DarkBlueBackgroundSkeleton } from "../FourYearPlan/PanelCommon";
-import { DegreeYear, RuleTree, FaultyRuleTree, WhiteSpace, HEADER_DEFAULT_BUFFER } from "./ReqPanel";
+import { RuleTree, FaultyRuleTree, WhiteSpace, HEADER_DEFAULT_BUFFER } from "./ReqPanel";
 import SatisfiedCheck from "../FourYearPlan/SatisfiedCheck";
 import { ExpandedCoursesPanelContext } from "@/components/ExpandedBox/ExpandedCoursesPanelTrigger";
+import { subscribeProposal, currentProposal } from "@/hooks/generateConfig";
 import { parseQJson } from "./ruleUtils";
 import { useSWRConfig } from "swr";
 import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
+import { containsRule, scrollToPlacement, subscribeRuleNav } from "@/hooks/requirementNav";
 
 /** Whether a dragged course sits in the AP & transfer credit semester. */
 const isTransferCredit = (course: DnDCourse) =>
   (course?.semester ?? course?.fulfillment?.semester) === TRANSFER_CREDIT_SEMESTER_KEY;
 
-const RuleTitleWrapper = styled.div<{ $headerHeight?: number, $zIndex?: number }>`
-  background-color: var(--primary-color);
+/** Course codes when a rule is nothing but a list of courses. Otherwise null. */
+const listedCourseCodes = (node: any): string[] | null => {
+  if (!node || typeof node !== "object") return null;
+  if (node.type === "COURSE" && node.full_code) return [node.full_code];
+  if (node.type === "LEAF" && node.key === "full_code" && node.value) return [String(node.value)];
+  if (node.type === "OR" && Array.isArray(node.clauses) && node.clauses.length) {
+    const codes: string[] = [];
+    for (const clause of node.clauses) {
+      const child = listedCourseCodes(clause);
+      if (!child) return null;
+      codes.push(...child);
+    }
+    return codes;
+  }
+  if (node.type === "AND" && Array.isArray(node.clauses)) {
+    const codes: string[] = [];
+    for (const clause of node.clauses) {
+      if (clause?.type === "LEAF" && clause.key === "semester") continue;
+      const child = listedCourseCodes(clause);
+      if (!child) return null;
+      codes.push(...child);
+    }
+    return codes.length ? codes : null;
+  }
+  return null;
+};
+
+const normalizeCourseText = (value: string) =>
+  value.toUpperCase().replace(/-/g, " ").replace(/\s+/g, " ").trim();
+
+/** A title like "ESE 2900 & ESE 2910" only repeats the courses already shown as chips. */
+const titleRestatesCourses = (title: string, codes: string[]) => {
+  const parts = normalizeCourseText(title).split(/\s*(?:&|\/|,|\bAND\b)\s*/).filter(Boolean);
+  if (parts.length !== codes.length) return false;
+  const want = codes.map(normalizeCourseText).sort();
+  const got = [...parts].sort();
+  return want.every((code, index) => code === got[index]);
+};
+
+const SuggestionChips = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  min-width: 0;
+  max-width: 100%;
+  align-items: center;
+`;
+
+const SuggestionChip = styled.button<{ $dashed?: boolean }>`
+  font: inherit;
+  font-size: var(--type-body);
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px ${(props) => (props.$dashed ? "dashed" : "solid")} rgba(0, 0, 0, 0.18);
+  background: #fff;
+  color: #4b5563;
+
+  &:hover {
+    border-color: rgba(15, 118, 110, 0.55);
+  }
+`;
+
+const RuleTitleWrapper = styled.div<{ $headerHeight?: number, $zIndex?: number, $done?: boolean }>`
   position: sticky;
-  border-radius: var(--req-item-radius);
   top: ${(props) => (props.$headerHeight || 0) + HEADER_DEFAULT_BUFFER}px;
   z-index: ${(props) => props.$zIndex || 995};
+  margin-top: 4px;
+  background: ${(props) => (props.$done ? "rgba(34, 197, 94, 0.06)" : "#fff")};
+  color: #1f2937;
+  border: 1px solid ${(props) => (props.$done ? "rgba(34, 197, 94, 0.25)" : "rgba(0, 0, 0, 0.08)")};
+  border-radius: 6px;
+  overflow: hidden;
 `;
 
-const ProgressBar = styled.div<{ $progress: number }>`
-  width: ${(props) => props.$progress * 100}%;
-  height: 100%;
-  position: absolute;
-  background-color: var(--primary-color-dark);
-  border-top-left-radius: 0.3rem;
-  border-bottom-left-radius: 0.3rem;
-`;
-
-const RuleTitle = styled.div`
+const RuleTitle = styled.div<{ $done?: boolean }>`
   position: relative;
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: var(--type-body);
+  font-weight: 700;
+  line-height: 1.3;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 6px;
   width: 100%;
-  color: #575757;
-  padding: 0.5rem 1.25rem;
-  margin-bottom: 0.5rem;
+  color: #1f2937;
+  padding: 5px 8px;
+  background: ${(props) => (props.$done ? "rgba(34, 197, 94, 0.06)" : "rgba(0, 0, 0, 0.035)")};
+
+  > div:first-child {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 `;
 
-const RuleLeafWrapper = styled.div<{ $isDroppable: boolean; $isOver: boolean }>`
-  padding: 0.5rem 0.5rem 0.5rem 0rem;
+const CountPill = styled.span<{ $done?: boolean }>`
+  flex-shrink: 0;
+  font-size: var(--type-body);
+  font-weight: 700;
+  color: ${(props) => (props.$done ? "#15803d" : "#64748b")};
+  background: ${(props) => (props.$done ? "rgba(34, 197, 94, 0.12)" : "rgba(0, 0, 0, 0.04)")};
+  border: 1px solid ${(props) => (props.$done ? "rgba(34, 197, 94, 0.25)" : "rgba(0, 0, 0, 0.08)")};
+  border-radius: 8px;
+  padding: 0 6px;
+`;
+
+const RuleLeafWrapper = styled.div<{ $isDroppable: boolean; $isOver: boolean; $scroll?: boolean }>`
+  padding: 0;
   margin-left: 0;
   display: flex;
-  justify-content: space-between;
-  gap: 0.5rem;
+  justify-content: flex-start;
+  flex-wrap: ${(props) => (props.$scroll ? "nowrap" : "wrap")};
+  gap: 2px;
   align-items: center;
+  flex: ${(props) => (props.$scroll ? "1 1 0" : "1 1 10rem")};
+  min-width: ${(props) => (props.$scroll ? "0" : "min(100%, 10rem)")};
+  max-width: 100%;
+  overflow-x: ${(props) => (props.$scroll ? "auto" : "visible")};
   box-shadow: ${(props) =>
     props.$isOver && props.$isDroppable
-      ? "0px 0px 4px 2px var(--selected-color);"
-      : props.$isDroppable
-      ? "0px 0px 4px 2px var(--primary-color-dark);"
-      : "rgba(0, 0, 0, 0.05);"};
+      ? "0px 0px 0px 2px var(--selected-color);"
+      : "none"};
+  border-radius: 4px;
 `;
 
 const CusCourses = styled.div`
-  font-weight: 500;
-  font-size: 0.9rem;
+  font-weight: 700;
+  font-size: var(--type-body);
   white-space: nowrap;
-
-  sup {
-    margin-right: 0.2em;
-  }
-
-  sub {
-    margin-left: 0.2em;
-  }
+  color: #64748b;
 `;
 
 const Row = styled.div`
@@ -84,37 +164,90 @@ const Row = styled.div`
 `;
 
 const Indented = styled.div`
-  margin-left: 0.75rem;
-  margin-bottom: 0.5rem;
+  margin-left: 10px;
+  padding-left: 8px;
+  min-width: 0;
+  max-width: 100%;
+  border-left: 2px solid rgba(0, 0, 0, 0.06);
 `;
 
 const Column = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0rem;
+  min-width: 0;
+  max-width: 100%;
+`;
+
+const Counts = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  flex-shrink: 0;
+  margin-left: 6px;
 `;
 
 const PickNWrapper = styled.div`
-  background-color: var(--primary-color-extra-light);
-  padding: 0.5rem;
-  padding-bottom: 0.25rem;
-  border-radius: 0.5rem;
+  margin-top: 4px;
+  min-width: 0;
+  max-width: 100%;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
+  overflow: hidden;
 `;
 
 const PickNTitle = styled.div`
   display: flex;
-  font-weight: 500;
-  font-size: 1.05rem;
-  margin-bottom: 1rem;
-  margin-left: 0.25rem;
+  align-items: center;
+  font-weight: 700;
+  font-size: var(--type-body);
+  padding: 5px 8px;
+  background: rgba(0, 0, 0, 0.035);
   justify-content: space-between;
 `;
 
-const RuleLeafLabel = styled.div`
-  font-size: 0.9rem;
+const LeafMain = styled.div<{ $scroll?: boolean }>`
   display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-wrap: ${(props) => (props.$scroll ? "nowrap" : "wrap")};
   align-items: center;
-  gap: 0.4rem;
+  gap: 4px;
+  font-size: var(--type-body);
+  font-weight: 600;
+  line-height: 1.35;
+`;
+
+const Stem = styled.span<{ $scroll?: boolean }>`
+  color: #1f2937;
+  min-width: 0;
+  ${(props) =>
+    props.$scroll
+      ? `
+    flex: 0 1 auto;
+    max-width: 46%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  `
+      : "word-break: break-word;"}
+`;
+
+const Colon = styled.span`
+  color: #94a3b8;
+  font-weight: 600;
+`;
+
+const StatusMark = styled.span<{ $tone: "done" | "partial" | "open" }>`
+  flex-shrink: 0;
+  width: 12px;
+  margin-top: 1px;
+  text-align: center;
+  font-weight: 800;
+  line-height: 1.35;
+  color: ${(props) =>
+    props.$tone === "done" ? "#16a34a" : props.$tone === "partial" ? "#d97706" : "#94a3b8"};
 `;
 
 const OverrideTagWrapper = styled.div`
@@ -126,7 +259,7 @@ const OverrideTag = styled.span`
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  font-size: 0.7rem;
+  font-size: var(--type-body);
   font-weight: 600;
   color: #b8860b;
   background: #fff7d6;
@@ -150,12 +283,12 @@ const OverridePopover = styled.div`
   padding: 0.6rem 0.75rem;
   z-index: 1000;
   min-width: 200px;
-  font-size: 0.8rem;
+  font-size: var(--type-body);
 `;
 
 const OverridePopoverTitle = styled.div`
   font-weight: 600;
-  font-size: 0.7rem;
+  font-size: var(--type-body);
   color: #888;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -183,7 +316,7 @@ const RemoveOverrideButton = styled.button`
   border: none;
   color: #c0392b;
   cursor: pointer;
-  font-size: 0.75rem;
+  font-size: var(--type-body);
   padding: 0.15rem 0.35rem;
   border-radius: 4px;
 
@@ -222,13 +355,13 @@ const OverrideModalCard = styled.div`
 
 const OverrideModalTitle = styled.div`
   font-weight: 600;
-  font-size: 1.1rem;
+  font-size: var(--type-title);
   margin-bottom: 0.75rem;
   color: var(--modal-title-color, #333);
 `;
 
 const OverrideModalBody = styled.div`
-  font-size: 0.9rem;
+  font-size: var(--type-body);
   color: #555;
   margin-bottom: 1.25rem;
   line-height: 1.5;
@@ -243,7 +376,7 @@ const OverrideModalActions = styled.div`
 const OverrideModalButton = styled.button<{ $primary?: boolean }>`
   padding: 0.45rem 1rem;
   border-radius: 6px;
-  font-size: 0.85rem;
+  font-size: var(--type-body);
   font-weight: 500;
   cursor: pointer;
   border: 1px solid ${(props) => (props.$primary ? "#7876f3" : "#d6d6d6")};
@@ -292,8 +425,21 @@ const OverrideModal = ({ fullCode, ruleTitle, onConfirm, onCancel, isLoading }: 
   </OverrideModalOverlay>
 );
 
-const RuleLeafContainer = styled(Column)`
-  margin-top: 0.25rem;
+const RuleLeafContainer = styled.div<{ $tone: "done" | "partial" | "open" }>`
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 5px 8px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  background: ${(props) =>
+    props.$tone === "done"
+      ? "rgba(22, 163, 74, 0.04)"
+      : props.$tone === "partial"
+        ? "rgba(217, 119, 6, 0.08)"
+        : "transparent"};
 `;
 
 /**
@@ -319,7 +465,6 @@ export const SkeletonRule: React.FC<React.PropsWithChildren> = ({
       </RuleLeafWrapper>
     ) : (
       <RuleTitleWrapper>
-        <ProgressBar $progress={0}></ProgressBar>
         <RuleTitle>
           <Row>
             <DarkBlueBackgroundSkeleton width="10em" />
@@ -368,6 +513,11 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
 
   // state for INTERNAL_NODEs
   const [collapsed, setCollapsed] = useState(false);
+  const [proposal, setProposal] = useState(currentProposal());
+  useEffect(() => subscribeProposal(() => setProposal(currentProposal())), []);
+  useEffect(() => subscribeRuleNav((ruleId) => {
+    if (rule.id === ruleId || containsRule(rule.rules, ruleId)) setCollapsed(false);
+  }), [rule]);
 
   // hooks for LEAFs
   const { createOrUpdate } = useSWRCrud<Fulfillment>(
@@ -552,8 +702,16 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
     const overrideFulfillments = fulfillments.filter(
       (f) => f.overrides?.includes(rule.id)
     );
+    const codes = listedCourseCodes(rule.q_json);
+    const hideTitle = !!(codes && titleRestatesCourses(rule.title || "", codes));
+    const title = hideTitle ? null : rule.title;
+    const scrollCourses = (codes?.length || 0) > 3;
+    const tone = satisfied ? "done" : progress > 0 ? "partial" : "open";
+    const suggestions = codes
+      ? []
+      : (proposal?.placements.filter((row) => row.rules.includes(rule.id)) || []);
     return (
-      <RuleLeafContainer>
+      <RuleLeafContainer id={`rule-${rule.id}`} $tone={tone}>
         {overrideModal && (
           <OverrideModal
             fullCode={overrideModal.fullCode}
@@ -563,8 +721,39 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
             isLoading={overrideLoading}
           />
         )}
-        <RuleLeafLabel>
-          {rule.title}
+        <StatusMark $tone={tone}>{tone === "done" ? "✓" : tone === "partial" ? "◐" : "○"}</StatusMark>
+        <LeafMain $scroll={scrollCourses}>
+          {title && (
+            <Stem $scroll={scrollCourses}>
+              {title}
+              <Colon>:</Colon>
+            </Stem>
+          )}
+          <RuleLeafWrapper $isDroppable={canDrop} $isOver={isOver} $scroll={scrollCourses} ref={drop}>
+            <RuleLeaf
+              q_json={rule.q_json}
+              rule={rule}
+              fulfillmentsForRule={fulfillments}
+              unselectedFulfillmentsForRule={unselectedFulfillments}
+              satisfied={satisfied}
+              activeDegreePlanId={activeDegreePlanId}
+            />
+          </RuleLeafWrapper>
+          {suggestions.length > 0 && (
+            <SuggestionChips>
+              {suggestions.map((row) => (
+                <SuggestionChip
+                  key={row.slot_ids[0] || row.full_code || row.label}
+                  type="button"
+                  $dashed={row.kind !== "placement"}
+                  title={row.semester ? "Show on the schedule" : undefined}
+                  onClick={() => scrollToPlacement(row)}
+                >
+                  {(row.kind === "course" ? (row.short_label || row.label) : (row.full_code || row.label)).replace(/-/g, " ")}
+                </SuggestionChip>
+              ))}
+            </SuggestionChips>
+          )}
           {overrideFulfillments.length > 0 && (
             <OverrideTagWrapper ref={overridePopoverRef}>
               <OverrideTag onClick={() => setOverridePopoverOpen(!overridePopoverOpen)}>
@@ -589,33 +778,19 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
               )}
             </OverrideTagWrapper>
           )}
-        </RuleLeafLabel>
-        <RuleLeafWrapper $isDroppable={canDrop} $isOver={isOver} ref={drop}>
-          <RuleLeaf
-            q_json={rule.q_json}
-            rule={rule}
-            fulfillmentsForRule={fulfillments}
-            unselectedFulfillmentsForRule={unselectedFulfillments}
-            satisfied={satisfied}
-            activeDegreePlanId={activeDegreePlanId}
-          />
-          <Row>
-            {!!satisfied && <SatisfiedCheck />}
-            <Column>
-              {rule.credits && (
-                <CusCourses>
-                  <sup>{cus}</sup>/<sub>{rule.credits}</sub>
-                  <div>{rule.credits > 1 ? "cus" : "cu"}</div>
-                </CusCourses>
-              )}{" "}
-              {rule.num && (
-                <CusCourses>
-                  <sup>{num}</sup>/<sub>{rule.num}</sub>
-                </CusCourses>
-              )}
-            </Column>
-          </Row>
-        </RuleLeafWrapper>
+        </LeafMain>
+        <Counts>
+          {rule.credits != null && (
+            <CusCourses>
+              {cus}/{rule.credits}
+            </CusCourses>
+          )}
+          {rule.num != null && (
+            <CusCourses>
+              {num}/{rule.num}
+            </CusCourses>
+          )}
+        </Counts>
       </RuleLeafContainer>
     );
   }
@@ -655,15 +830,15 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
 
   return (
     <>
-      <RuleTitleWrapper $headerHeight={headerHeight} $zIndex={zIndex} onClick={() => setCollapsed(!collapsed)} ref={myHeaderRef}>
-        <ProgressBar $progress={progress}></ProgressBar>
-        <RuleTitle>
+      <RuleTitleWrapper $done={progress >= 1} $headerHeight={headerHeight} $zIndex={zIndex} onClick={() => setCollapsed(!collapsed)} ref={myHeaderRef}>
+        <RuleTitle $done={progress >= 1}>
           <div>
-            {rule.title} <DegreeYear>{(progress * 100).toFixed(0)}%</DegreeYear>
+            {rule.title}
           </div>
+          <CountPill $done={progress >= 1}>{(progress * 100).toFixed(0)}%</CountPill>
           {rule.rules.length && (
-            <Icon>
-              <i className={`fas fa-chevron-${collapsed ? "up" : "down"}`}></i>
+            <Icon style={{ color: "#64748b" }}>
+              <i className={`fas fa-chevron-${collapsed ? "right" : "down"}`}></i>
             </Icon>
           )}
         </RuleTitle>
