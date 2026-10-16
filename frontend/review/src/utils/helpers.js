@@ -3,6 +3,13 @@ import { DEFAULT_COLUMNS } from "../constants";
 export const capitalize = str =>
   str.replace(/(?:^|\s)\S/g, e => e.toUpperCase());
 
+export const prefersReducedMotion = () =>
+  typeof window !== "undefined" &&
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+export const scrollBehavior = () =>
+  prefersReducedMotion() ? "auto" : "smooth";
+
 export function orderColumns(cols) {
   const colSet = new Set(cols);
   const fixedCols = [
@@ -58,8 +65,14 @@ export const getCartCourses = () =>
   Object.keys(localStorage)
     .filter(k => !k.startsWith("meta-"))
     .map(k => {
-      const out = JSON.parse(localStorage.getItem(k));
-      if (typeof out !== "object") {
+      let out;
+      try {
+        out = JSON.parse(localStorage.getItem(k));
+      } catch (e) {
+        // Not a cart entry (could be a key written by a browser extension), so ignore it.
+        return null;
+      }
+      if (typeof out !== "object" || out === null) {
         return null;
       }
       const typeDict = {};

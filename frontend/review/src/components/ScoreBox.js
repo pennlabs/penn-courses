@@ -455,13 +455,12 @@ class ScoreBox extends Component {
           </div>
         </div>
         <ScoreTable
-          multi={type === "department"}
+          style={{ maxHeight: 400 }}
           sorted={[{ id: isCourse ? "name" : "code", desc: false }]}
           filtered={filtered}
           data={data}
           columns={columns}
           onSelect={this.handleSelect}
-          ignoreSelect={type === "department" && isCourseEval}
           noun={isCourse ? "instructor" : "course"}
           isAverage={isAverage}
           isCourseEval={isCourseEval}

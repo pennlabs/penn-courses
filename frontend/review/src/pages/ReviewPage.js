@@ -3,15 +3,15 @@ import Cookies from "universal-cookie";
 import InfoBox from "../components/InfoBox";
 import ScoreBox from "../components/ScoreBox";
 import GraphBox from "../components/GraphBox";
-import Navbar from "../components/Navbar";
 import DetailsBox from "../components/DetailsBox";
-import SearchBar from "../components/SearchBar";
 import Footer from "../components/Footer";
 import { ErrorBox } from "../components/common";
-import { apiReviewData, apiLive } from "../utils/api";
+import { apiReviewData, apiLive, queryKeys } from "../utils/api";
+import { queryClient } from "../utils/queryClient";
+import { scrollBehavior } from "../utils/helpers";
 
 /**
- * Represents a course, instructor, or department review page.
+ * Represents a course or instructor review page.
  */
 export class ReviewPage extends Component {
   constructor(props) {
@@ -28,7 +28,6 @@ export class ReviewPage extends Component {
       error_detail: null,
       rowCode: null,
       liveData: null,
-      selectedCourses: {},
       isAverage: localStorage.getItem("meta-column-type") !== "recent",
       isCourseEval: false,
       showBanner: false
@@ -47,7 +46,6 @@ export class ReviewPage extends Component {
       });
     };
     this.showRowHistory = this.showRowHistory.bind(this);
-    this.showDepartmentGraph = this.showDepartmentGraph.bind(this);
   }
 
   componentDidMount() {
@@ -101,7 +99,7 @@ export class ReviewPage extends Component {
   getPageInfo() {
     const pageInfo = window.location.pathname.substring(1).split("/");
 
-    if (["course", "instructor", "department"].indexOf(pageInfo[0]) === -1) {
+    if (["course", "instructor"].indexOf(pageInfo[0]) === -1) {
       pageInfo[0] = null;
       pageInfo[1] = null;
     }
@@ -112,7 +110,11 @@ export class ReviewPage extends Component {
   getReviewData() {
     const { type, code, url_code, url_semester } = this.state;
     if (type && code) {
-      apiReviewData(type, code, url_semester)
+      queryClient
+        .fetchQuery({
+          queryKey: queryKeys.reviewData(type, code, url_semester),
+          queryFn: () => apiReviewData(type, code, url_semester)
+        })
         .then(data => {
           const { error, detail } = data;
           if (error) {
@@ -123,7 +125,13 @@ export class ReviewPage extends Component {
           } else {
             this.setState({ data });
             if (type === "course") {
-              apiLive(data.code, url_semester && `${url_code}@${url_semester}`)
+              const checkOfferedIn =
+                url_semester && `${url_code}@${url_semester}`;
+              queryClient
+                .fetchQuery({
+                  queryKey: queryKeys.live(data.code, checkOfferedIn),
+                  queryFn: () => apiLive(data.code, checkOfferedIn)
+                })
                 .then(result => this.setState({ liveData: result }))
                 .catch(() => undefined);
             }
@@ -154,15 +162,11 @@ export class ReviewPage extends Component {
     this.setState({ rowCode: nextCode }, () => {
       if (nextCode) {
         window.scrollTo({
-          behavior: "smooth",
+          behavior: scrollBehavior(),
           top: this.tableRef.current.offsetTop
         });
       }
     });
-  }
-
-  showDepartmentGraph(selectedCourses) {
-    this.setState({ selectedCourses });
   }
 
   static getDerivedStateFromError() {
@@ -173,58 +177,10 @@ export class ReviewPage extends Component {
     if (this.state.error) {
       return (
         <div>
-          <Navbar />
           <ErrorBox detail={this.state.error_detail}>
             {this.state.error}
           </ErrorBox>
           <Footer />
-        </div>
-      );
-    }
-
-    if (!this.state.code) {
-      return (
-        <div id="content" className="row">
-          {this.state.showBanner && (
-            <div id="banner">
-              <span role="img" aria-label="Party Popper Emoji">
-                🎉
-              </span>{" "}
-              <b>Want to build impactful products like Penn Course Review?</b>{" "}
-              Join Penn Labs this spring! Apply{" "}
-              <a
-                href="https://pennlabs.org/apply"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                here
-              </a>
-              !{" "}
-              <span role="img" aria-label="Party Popper Emoji">
-                🎉
-              </span>
-              <span
-                className="close"
-                onClick={e => {
-                  this.setState({ showBanner: false });
-                  this.cookies.set("hide_pcr_banner", true, {
-                    expires: new Date(Date.now() + 12096e5)
-                  });
-                  e.preventDefault();
-                }}
-              >
-                <i className="fa fa-times" />
-              </span>
-            </div>
-          )}
-          <div className="col-md-12">
-            <div id="title">
-              <img src="/static/image/logo.png" alt="Penn Course Review" />{" "}
-              <span className="title-text">Penn Course Review</span>
-            </div>
-          </div>
-          <SearchBar isTitle />
-          <Footer style={{ marginTop: 150 }} />
         </div>
       );
     }
@@ -237,19 +193,16 @@ export class ReviewPage extends Component {
       liveData,
       isAverage,
       isCourseEval,
-      selectedCourses,
       type
     } = this.state;
 
     const handleSelect = {
       instructor: this.showRowHistory,
-      course: this.showRowHistory,
-      department: this.showDepartmentGraph
+      course: this.showRowHistory
     }[type];
 
     return (
       <div>
-        <Navbar />
         {this.state.data ? (
           <>
             <div id="content" className="row">
@@ -260,7 +213,6 @@ export class ReviewPage extends Component {
                   url_semester={url_semester}
                   data={data}
                   liveData={liveData}
-                  selectedCourses={selectedCourses}
                   isCourseEval={isCourseEval}
                   setIsCourseEval={this.setIsCourseEval}
                 />
@@ -311,7 +263,10 @@ export class ReviewPage extends Component {
           <div style={{ textAlign: "center", padding: 45 }}>
             <i
               className="fa fa-spin fa-cog fa-fw"
-              style={{ fontSize: "150px", color: "#aaa" }}
+              style={{
+                fontSize: "150px",
+                color: "var(--pcr-color-text-muted)"
+              }}
             />
             <h1 style={{ fontSize: "2em", marginTop: 15 }}>
               Loading {type === "instructor" ? "" : code}...

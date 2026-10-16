@@ -17,7 +17,7 @@ const activityMap = {
 
 const TagsNotOffered = ({ data }) => {
   let {
-    instructors: instructorData = {},
+    instructors: instructorData,
     latest_semester: mostRecent,
     code = ""
   } = data;
@@ -80,9 +80,9 @@ const TagsWhenOffered = ({
     });
 
   const syllabi = [];
-  const courses = [];
+  // const courses = []; unused
   const prereqs = [];
-  const links = [];
+  // const links = []; unused
 
   return (
     <div>
@@ -192,7 +192,7 @@ const TagsWhenOffered = ({
 const CourseCodeQualifier = styled.div`
   display: flex;
   flex-direction: row;
-  color: #4a4a4a;
+  color: ${({ theme }) => theme.color.text.legacy};
   align-items: center;
   flex-wrap: wrap;
 `;
@@ -283,7 +283,7 @@ export const CourseHeader = ({
           <i
             className="fa fa-question-circle"
             style={{
-              color: "#c6c6c6",
+              color: "var(--pcr-color-text-faint)",
               fontSize: "13px",
               marginBottom: "0.3rem"
             }}
@@ -296,8 +296,8 @@ export const CourseHeader = ({
           type="light"
           effect="solid"
           border={true}
-          borderColor="#ededed"
-          textColor="#4a4a4a"
+          borderColor="var(--pcr-color-border-divider)"
+          textColor="var(--pcr-color-text-legacy)"
         >
           <span className="tooltip-text">
             This course was last offered in{" "}
@@ -353,7 +353,7 @@ export const CourseHeader = ({
           <i
             className="fa fa-question-circle"
             style={{
-              color: "#c6c6c6",
+              color: "var(--pcr-color-text-faint)",
               fontSize: "13px",
               marginBottom: "0.3rem"
             }}
@@ -366,8 +366,8 @@ export const CourseHeader = ({
           type="light"
           effect="solid"
           border={true}
-          borderColor="#ededed"
-          textColor="#4a4a4a"
+          borderColor="var(--pcr-color-border-divider)"
+          textColor="var(--pcr-color-text-legacy)"
         >
           <span className="tooltip-text">
             Historical courses are grouped on PCR <br />
