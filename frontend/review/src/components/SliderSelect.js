@@ -50,7 +50,7 @@ export const SliderContainer = styled.div`
   }
 `;
 
-export const RangeMarkers = styled.div`
+const RangeMarkers = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;

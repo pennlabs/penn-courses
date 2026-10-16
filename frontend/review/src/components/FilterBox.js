@@ -134,13 +134,26 @@ const FilterDropdown = ({ title, renderContent, active }) => {
   );
 };
 
+// Defined outside the component so react-query can keep the selected result stable
+const selectAttributes = attributes => ({
+  codes: attributes.map(attr => attr.code),
+  names: Object.fromEntries(
+    attributes.map(attr => [attr.code, attr.description])
+  )
+});
+
+const EMPTY_ATTRIBUTES = { codes: [], names: {} };
+
 const FilterBox = () => {
   const filters = useFilterState();
   const dispatch = useFilterDispatch();
 
-  const { data: attributes = [] } = useQuery({
+  const {
+    data: { codes: attributes, names: attributeNames } = EMPTY_ATTRIBUTES
+  } = useQuery({
     queryKey: queryKeys.attributes,
-    queryFn: apiAttributes
+    queryFn: apiAttributes,
+    select: selectAttributes
   });
 
   const { data: departments = [] } = useQuery({
@@ -192,6 +205,7 @@ const FilterBox = () => {
                   dispatch({ type: "SET_ATTRIBUTES", payload })
                 }
                 availableItems={attributes}
+                optionNames={attributeNames}
                 label="attributes"
               />
             )}

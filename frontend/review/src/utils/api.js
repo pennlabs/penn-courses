@@ -4,7 +4,9 @@ const API_TOKEN = "platform";
 export const queryKeys = {
   checkAuth: ["checkAuth"],
   autocomplete: ["autocomplete"],
-  attributes: ["attributes"],
+  // Versioned because this query is persisted to localStorage, and older caches hold
+  // plain code strings rather than { code, description } objects
+  attributes: ["attributes", "withDescriptions"],
   courseSearch: params => ["courseSearch", params],
   reviewData: (type, code, semester) => ["reviewData", type, code, semester],
   live: (code, checkOfferedIn) => ["live", code, checkOfferedIn],
@@ -116,7 +118,9 @@ export function apiFetchPCADemandChartData(course, semester) {
 
 export function apiAttributes() {
   return apiFetch(`${API_DOMAIN}/api/base/attributes/`).then(data =>
-    data.map(attr => attr.code).sort((a, b) => a.localeCompare(b))
+    data
+      .map(({ code, description }) => ({ code, description }))
+      .sort((a, b) => a.code.localeCompare(b.code))
   );
 }
 
