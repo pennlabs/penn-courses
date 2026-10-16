@@ -7,7 +7,6 @@ from django.db.models import Q
 from courses.models import Course
 from degree.utils.double_counts import get_degree_trees, resolve_double_counts
 
-
 # A submatriculant may double count at most this many CUs between their undergraduate and
 # their graduate degree, and only graduate-level coursework is eligible. Path@Penn cannot
 # express this: each audit's ShareWith policy is written about the blocks of that one audit,
@@ -95,9 +94,14 @@ def prewarm_credits_cache(full_codes):
 
 def is_graduate(component) -> bool:
     """
-    Whether a plan component (a Degree, Major or Minor) awards a graduate degree. Only degrees
-    carry a program code, so majors and minors are never graduate.
+    Whether a plan component awards a graduate degree. Only degrees carry a program code, so
+    majors and minors are never graduate. A composed Component carries the flag directly.
     """
+    if component is None:
+        return False
+    flag = getattr(component, "is_graduate", None)
+    if isinstance(flag, bool):
+        return flag
     # Imported here because degree.models imports this module; sys.modules makes the repeat
     # lookup cheap.
     from degree.models import graduate_programs
@@ -113,22 +117,32 @@ def course_number(full_code: str):
 
 class GraduateSharing:
     """
-    Tracks how much of a submatriculant's double counting allowance a plan has used.
+    Tracks how much of a plan's sharing allowances have been used.
 
     One instance spans all of a plan's courses, and courses are allocated in the order they
-    were taken, so the allowance goes to the earliest eligible courses. That is a default
+    were taken, so an allowance goes to the earliest eligible courses. That is a default
     rather than an optimum: the student can still move a course by hand afterwards.
+
+    `used` / `allows` / `take` are the undergraduate-graduate allowance. `program_shared_cu_used`
+    is a coordinated program's own cap. `claims` records which components already hold a course,
+    keyed by the course's canonical (cross-list) code.
     """
 
     def __init__(self, limit=MAX_SHARED_GRADUATE_CREDITS):
         self.limit = limit
         self.used = Decimal(0)
+        self.program_shared_cu_used = Decimal(0)
+        self.claims = defaultdict(set)
 
     def allows(self, credits) -> bool:
         return self.used + credits <= self.limit
 
     def take(self, credits) -> None:
         self.used += credits
+
+
+# The composition pass and the submatriculation cap share one tracker.
+SharingState = GraduateSharing
 
 
 def split_by_level(selected_rules, rule_to_degree):
@@ -167,6 +181,142 @@ def apply_graduate_sharing(
         return selected_rules, unselected_rules
 
     return selected_rules - graduate_rules, unselected_rules | graduate_rules
+
+
+def prewarm_canonical_cache(full_codes):
+    """
+    Maps each course code to the full code of its primary cross-listing. Two codes for one
+    course then count as one claim.
+    """
+    cache = {}
+    courses = Course.objects.filter(full_code__in=full_codes).select_related("primary_listing")
+    for course in courses:
+        primary = course.primary_listing
+        cache[course.full_code] = primary.full_code if primary is not None else course.full_code
+    for full_code in full_codes:
+        cache.setdefault(full_code, full_code)
+    return cache
+
+
+def _component_score(rules, full_code):
+    """Prefer a rule that names the course, then the one that asks for the most credit."""
+    named = any(full_code and full_code in (rule.q or "") for rule in rules)
+    weight = max((Decimal(rule.credits or rule.num or 0) for rule in rules), default=Decimal(0))
+    return (1 if named else 0, weight)
+
+
+def _cap_components(selected_rules, rule_to_component):
+    grouped = {}
+    for rule in selected_rules:
+        component = rule_to_component.get(rule)
+        if component is None or not component.counts_toward_degree_cap:
+            continue
+        grouped.setdefault(component.key, (component, []))
+        grouped[component.key][1].append(rule)
+    return grouped
+
+
+def _demote(selected_rules, unselected_rules, rules):
+    for rule in rules:
+        selected_rules.discard(rule)
+        unselected_rules.add(rule)
+
+
+def apply_sharing_policy(
+    full_code,
+    selected_rules,
+    unselected_rules,
+    rule_to_component,
+    policy,
+    sharing,
+    credits,
+    canonical=None,
+):
+    """
+    Plan-level sharing the audits cannot express, applied after each component has had its say.
+
+    Order matches the degree planner's conflict repair: at most two degree claims for a course,
+    then a coordinated program's shared-CU cap, then the undergraduate/graduate cap, then
+    graduate programs not sharing a graduate course with each other.
+    """
+    selected_rules = set(selected_rules)
+    unselected_rules = set(unselected_rules)
+    canonical = canonical or full_code
+    already = set(sharing.claims.get(canonical, ()))
+
+    grouped = _cap_components(selected_rules, rule_to_component)
+    newcomers = [key for key in grouped if key not in already]
+    room = policy.max_degree_claims - len(already)
+    if room < len(newcomers):
+        ranked = sorted(
+            newcomers,
+            key=lambda key: _component_score(grouped[key][1], full_code),
+            reverse=True,
+        )
+        for key in ranked[max(room, 0) :]:
+            _demote(selected_rules, unselected_rules, grouped[key][1])
+
+    if policy.max_shared_cu is not None:
+        sides = set()
+        side_rules = {"left": [], "right": []}
+        for rule in selected_rules:
+            component = rule_to_component.get(rule)
+            if component is not None and component.side in side_rules:
+                sides.add(component.side)
+                side_rules[component.side].append(rule)
+        if sides == {"left", "right"}:
+            if sharing.program_shared_cu_used + credits <= policy.max_shared_cu:
+                sharing.program_shared_cu_used += credits
+            else:
+                weaker = min(
+                    ("left", "right"),
+                    key=lambda side: _component_score(side_rules[side], full_code),
+                )
+                _demote(selected_rules, unselected_rules, side_rules[weaker])
+
+    selected_rules, unselected_rules = apply_graduate_sharing(
+        full_code,
+        selected_rules,
+        unselected_rules,
+        rule_to_component,
+        sharing,
+        credits,
+    )
+
+    if policy.forbid_grad_grad:
+        graduate = {}
+        for rule in selected_rules:
+            component = rule_to_component.get(rule)
+            if component is not None and component.is_graduate:
+                graduate.setdefault(component.key, []).append(rule)
+        if len(graduate) > 1:
+            ranked = sorted(
+                graduate,
+                key=lambda key: _component_score(graduate[key], full_code),
+                reverse=True,
+            )
+            for key in ranked[1:]:
+                _demote(selected_rules, unselected_rules, graduate[key])
+
+    sharing.claims.setdefault(canonical, set()).update(
+        _cap_components(selected_rules, rule_to_component)
+    )
+    return selected_rules, unselected_rules
+
+
+def selection_is_legal(selected_rules, rule_to_component, double_counts, policy=None):
+    """ShareWith legality, plus the plan-level cap on how many degrees may claim a course."""
+    if not check_legal(selected_rules, rule_to_component, double_counts):
+        return False
+    if policy is None or not policy.cross_component_sharing:
+        return True
+    claimed = {
+        rule_to_component[rule].key
+        for rule in selected_rules
+        if rule_to_component.get(rule) is not None
+        and rule_to_component[rule].counts_toward_degree_cap
+    }
+    return len(claimed) <= policy.max_degree_claims
 
 
 def sharing_from_fulfillments(fulfillments, rule_to_degree, credits_cache=None):
@@ -259,6 +409,8 @@ def allocate_rules(
     is_transfer=False,
     graduate_sharing=None,
     credits_cache=None,
+    policy=None,
+    canonical=None,
     prior_selected=None,
 ):
     """
@@ -336,20 +488,33 @@ def allocate_rules(
     # A seeded rule is still walked by its component's pass, which offers it as unselected.
     unselected_rules -= selected_rules
 
-    # A submatriculant may only share so much between their two degrees, which the audit's own
-    # ShareWith policy has no way of saying.
-    if graduate_sharing is not None:
+    # Plan-level caps the audits cannot state. With a policy, that includes the two-claim
+    # limit and a coordinated program's shared-CU cap as well as the submatriculation cap.
+    # Without one, only the submatriculation cap runs, which is what older callers pass.
+    course_credits = (credits_cache or {}).get(full_code, DEFAULT_COURSE_CREDITS)
+    if policy is not None and graduate_sharing is not None:
+        selected_rules, unselected_rules = apply_sharing_policy(
+            full_code,
+            selected_rules,
+            unselected_rules,
+            rule_to_degree,
+            policy,
+            graduate_sharing,
+            course_credits,
+            canonical=canonical or full_code,
+        )
+    elif graduate_sharing is not None:
         selected_rules, unselected_rules = apply_graduate_sharing(
             full_code,
             selected_rules,
             unselected_rules,
             rule_to_degree,
             graduate_sharing,
-            (credits_cache or {}).get(full_code, DEFAULT_COURSE_CREDITS),
+            course_credits,
         )
 
-    # Legal by construction; checked anyway so a regression surfaces as a flag, not silently.
-    legal = check_legal(selected_rules, rule_to_degree, double_counts)
+    # ShareWith is legal by construction; the policy caps are checked too.
+    legal = selection_is_legal(selected_rules, rule_to_degree, double_counts, policy)
 
     return selected_rules, unselected_rules, legal
 
@@ -483,17 +648,142 @@ def map_rules_and_degrees(degree_plan):
     Given a degree plan, produces mappings of rules to the component they belong to, and of
     each rule to the rules it is allowed to double count with.
 
-    The "degree" in the returned mappings is whatever contributed the rule -- a Degree, a
-    Major or a Minor. The names are kept for the callers that already use them.
+    The mapping key is a Component. Iterating the return value still yields
+    `(rules_per_component, rule_to_component, double_counts)`.
     """
-    degree_trees = get_degree_trees(plan_components(degree_plan))
+    from degree.utils.composition import PlanRules, compose
 
-    rules_per_degree = defaultdict(set)
+    composition = compose(degree_plan)
+    rules_per_degree = {}
     rule_to_degree = {}
-    for degree, rules in degree_trees.items():
-        for rule in rules:
-            if rule.q:  # i.e., if this rule is a leaf
-                rules_per_degree[degree].add(rule)
-                rule_to_degree[rule] = degree
+    trees = {}
+    for component in composition.components:
+        leaves = [rule for rule in component.rules if rule.q]
+        rules_per_degree[component] = set(leaves)
+        trees[component] = leaves
+        for rule in leaves:
+            rule_to_degree[rule] = component
 
-    return rules_per_degree, rule_to_degree, resolve_double_counts(degree_trees)
+    return PlanRules(
+        rules_per_degree,
+        rule_to_degree,
+        resolve_double_counts(trees, composition.policy),
+        composition,
+    )
+
+
+def cas_credit_summary(composition, fulfillments, credits_cache):
+    """
+    College double major: one credit floor, major CU reduced by courses that landed in more
+    than one major, and whatever is left after the college requirements.
+    """
+    if composition.kind != "cas_double_major" or composition.college_owner_id is None:
+        return None
+
+    from degree.models import Degree
+
+    def required(component):
+        total = Decimal(0)
+        for rule in component.rules:
+            if rule.credits is not None:
+                total += rule.credits
+            elif rule.num is not None:
+                total += Decimal(rule.num)
+        return total
+
+    majors = [component for component in composition.components if component.role == "major"]
+    college = next(
+        (component for component in composition.components if component.role == "college"), None
+    )
+    by_code = defaultdict(set)
+    for fulfillment in fulfillments:
+        for rule in fulfillment.rules.all():
+            for component in majors:
+                if rule in component.rules:
+                    by_code[fulfillment.full_code].add(component.key)
+    shared = sum(
+        (credits_cache.get(full_code) or DEFAULT_COURSE_CREDITS)
+        for full_code, keys in by_code.items()
+        if len(keys) >= 2
+    )
+    major_required = sum((required(component) for component in majors), Decimal(0))
+    major_cu = max(major_required - shared, Decimal(0))
+    college_cu = required(college) if college is not None else Decimal(0)
+    degree = Degree.objects.filter(id=composition.college_owner_id).first()
+    floor = degree.credits if degree is not None and degree.credits is not None else Decimal(36)
+    return {
+        "floor": floor,
+        "major_cu": major_cu,
+        "shared_cu": shared,
+        "remaining": floor - college_cu - major_cu,
+    }
+
+
+def summarize_plan(degree_plan, fulfillments):
+    """Claims, cap violations and the College remainder for a plan's stored fulfillments."""
+    plan_rules = map_rules_and_degrees(degree_plan)
+    composition = plan_rules.composition
+    policy = composition.policy
+    rule_to_component = plan_rules.rule_to_component
+    credits_cache = prewarm_credits_cache([fulfillment.full_code for fulfillment in fulfillments])
+    canonicals = prewarm_canonical_cache([fulfillment.full_code for fulfillment in fulfillments])
+
+    claims = {}
+    violations = []
+    sharing = GraduateSharing(limit=policy.graduate_cu_limit)
+    ordered = sorted(
+        fulfillments, key=lambda fulfillment: (fulfillment.semester or "", fulfillment.full_code)
+    )
+    for fulfillment in ordered:
+        selected = list(fulfillment.rules.all())
+        grouped = _cap_components(selected, rule_to_component)
+        claims[fulfillment.full_code] = sorted(grouped)
+        if len(grouped) > policy.max_degree_claims:
+            violations.append(
+                {
+                    "full_code": fulfillment.full_code,
+                    "kind": "too_many_degrees",
+                    "components": sorted(grouped),
+                }
+            )
+        graduate, undergraduate = split_by_level(selected, rule_to_component)
+        number = course_number(fulfillment.full_code)
+        credits = credits_cache.get(fulfillment.full_code, DEFAULT_COURSE_CREDITS)
+        if graduate and undergraduate:
+            eligible = number is not None and number >= policy.min_graduate_number
+            if not eligible or not sharing.allows(credits):
+                violations.append(
+                    {
+                        "full_code": fulfillment.full_code,
+                        "kind": "undergrad_grad_cu",
+                        "components": sorted(grouped),
+                    }
+                )
+            else:
+                sharing.take(credits)
+        if (
+            policy.forbid_grad_grad
+            and len({rule_to_component[rule].key for rule in graduate if rule in rule_to_component})
+            > 1
+        ):
+            violations.append(
+                {
+                    "full_code": fulfillment.full_code,
+                    "kind": "grad_grad",
+                    "components": sorted(grouped),
+                }
+            )
+        canonical = canonicals.get(fulfillment.full_code, fulfillment.full_code)
+        sharing.claims.setdefault(canonical, set()).update(grouped)
+
+    return {
+        "kind": composition.kind,
+        "dual_program": (
+            {"code": composition.dual_program.code, "name": composition.dual_program.name}
+            if composition.dual_program is not None
+            else None
+        ),
+        "course_claims": claims,
+        "violations": violations,
+        "cas": cas_credit_summary(composition, fulfillments, credits_cache),
+    }

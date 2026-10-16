@@ -105,7 +105,7 @@ class SecondMajorPlanTest(TestCase):
     def test_the_plan_is_the_degree_plus_the_major_alone(self):
         rules_per_degree, _, _ = map_rules_and_degrees(self.plan)
 
-        self.assertEqual({type(owner).__name__ for owner in rules_per_degree}, {"Degree", "Major"})
+        self.assertEqual({owner.role for owner in rules_per_degree}, {"primary_degree", "second_major"})
         blocks = {rule.block_value for rules in rules_per_degree.values() for rule in rules}
         self.assertIn("MEAM", blocks)
         self.assertIn("MATH", blocks)

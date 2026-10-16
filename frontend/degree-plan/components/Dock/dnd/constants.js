@@ -5,4 +5,5 @@ export const ItemTypes = {
   COURSE_IN_DOCK: "course-in-dock",
   COURSE_IN_EXPAND: "course-in-expand",
   COURSE_IN_SEARCH: "course-in-search",
+  GHOST: "schedule-ghost",
 };

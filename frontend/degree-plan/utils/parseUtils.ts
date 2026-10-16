@@ -386,6 +386,22 @@ const parseRecord = (lines: string[]): ParsedRecord => {
   return record;
 };
 
+/** Coordinated programs are named on the transcript, not as a normal school line. */
+export const detectDualProgram = (text: string): string | null => {
+  const lower = text.toLowerCase();
+  if (lower.includes("huntsman")) return "HUNTSMAN";
+  if (
+    lower.includes("jerome fisher") ||
+    lower.includes("management & technology") ||
+    lower.includes("management and technology")
+  )
+    return "MT";
+  if (lower.includes("life sciences and management")) return "LSM";
+  if (lower.includes("vagelos integrated") || lower.includes("energy research"))
+    return "VIPER";
+  return null;
+};
+
 // Given a list of lines from the PDF and a list of possible degrees,
 // return a scraped information.
 export const parseTranscript = (
@@ -446,6 +462,7 @@ export const parseTranscript = (
   });
 
   return {
+    dualProgramCode: detectDualProgram(textResult.join(" ")),
     scrapedCourses: formattedSeparatedCourses,
     startYear: startYear,
     scrapedSchools: dedupeBy(tempSchools, (school) => school.value),

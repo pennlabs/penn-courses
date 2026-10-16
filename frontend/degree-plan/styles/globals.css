@@ -135,6 +135,21 @@ button {
   cursor: pointer;
 }
 
+.nav-flash {
+  animation: navFlash 2s ease-out;
+}
+
+@keyframes navFlash {
+  0% {
+    background: rgba(5, 150, 105, 0.22);
+    box-shadow: inset 0 0 0 2px rgba(5, 150, 105, 0.45);
+  }
+  100% {
+    background: transparent;
+    box-shadow: none;
+  }
+}
+
 a {
   color: inherit;
   text-decoration: none;
