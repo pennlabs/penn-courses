@@ -19,6 +19,7 @@ import { ClaimBar, useProgramClaims } from "@/components/FourYearPlan/programCol
 
 const DOUBLE_COUNT_ERROR_MESSAGE =
   "This course is being illegally double counted in your plan!";
+const COURSE_BORDER_RADIUS = "9px";
 const HIGHLIGHT_VARIANT_COLORS = {
   selected: "#E6F4EA",
   unselected: "#FFF7D6",
@@ -30,17 +31,14 @@ export const BaseCourseContainer = styled.div<{
   $isDisabled: boolean;
   $highlightVariant?: "selected" | "unselected";
   $tone?: "taken" | "frozen";
-  $compact?: boolean;
 }>`
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  min-width: 0;
-  min-height: 0;
-  border-radius: 3px;
-  padding: 1px 5px;
-  font-size: var(--type-body);
-  font-weight: 600;
+  min-width: 70px;
+  min-height: 35px;
+  border-radius: ${COURSE_BORDER_RADIUS};
+  padding: 0.75rem;
   text-wrap: nowrap;
   cursor: ${(props) => (props.$isDisabled ? "not-allowed" : "grab")};
   opacity: ${(props) => (props.$isDisabled || props.$isDragging ? 0.7 : 1)};
@@ -50,7 +48,7 @@ export const BaseCourseContainer = styled.div<{
         ? "rgba(34, 197, 94, 0.45)"
         : props.$tone === "frozen"
           ? "#d97706"
-          : "rgba(0, 0, 0, 0.14)"};
+          : "transparent"};
   background-color: ${(props) =>
     props.$isDragging
       ? "#4B9AE7"
@@ -60,31 +58,32 @@ export const BaseCourseContainer = styled.div<{
           ? "rgba(217, 119, 6, 0.12)"
           : (props.$highlightVariant &&
               HIGHLIGHT_VARIANT_COLORS[props.$highlightVariant]) ||
-            "#fff"};
-  box-shadow: none;
+            "var(--background-grey)"};
+  box-shadow: rgba(0, 0, 0, 0.01) 0px 6px 5px 0px,
+    rgba(0, 0, 0, 0.04) 0px 0px 0px 1px;
   color: ${(props) =>
     props.$tone === "taken"
       ? "#15803d"
       : props.$tone === "frozen"
         ? "#b45309"
-        : "#4b5563"};
+        : "inherit"};
 `;
 
 export const PlannedCourseContainer = styled(BaseCourseContainer)`
-  width: ${(props) => (props.$compact ? "auto" : "100%")};
+  width: 100%;
   gap: 0.65rem;
-  padding: ${(props) => (props.$compact ? "1px 5px" : "4px 8px")};
   position: relative;
   overflow: hidden;
   opacity: ${(props) => (props.$isDragging ? 0.5 : 1)};
 
   .close-button {
-    padding: 0;
-    margin: 0;
-    height: auto;
+    padding-left: 1rem;
+    padding-right: 10px;
+    margin-top: auto;
+    margin-bottom: auto;
+    height: 100%;
     align-items: center;
     opacity: 0.6;
-    flex-shrink: 0;
   }
 
   .illegal-icon {
@@ -151,9 +150,16 @@ const CourseBadge = styled.div`
   gap: 0.25rem;
 `;
 
+const TrailingActions = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
+`;
+
 export const CuLabel = styled.span`
   margin-left: 0;
-  font-size: var(--type-body);
+  font-size: 14px;
   font-weight: 600;
   color: #6b7280;
   white-space: nowrap;
@@ -171,40 +177,21 @@ const IconBadge = styled.div`
   background-color: transparent;
 
   p {
-    font-size: var(--type-body);
+    font-size: 14px;
     font-weight: bold;
   }
-`;
-
-const IconSlot = styled.span`
-  width: 1rem;
-  height: 1rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-`;
-
-const TrailingActions = styled.span`
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  flex-shrink: 0;
 `;
 
 const InfoIconButton = styled.button`
   background: none;
   border: none;
   cursor: pointer;
-  padding: 0;
-  width: 1rem;
-  height: 1rem;
+  padding: 0.2rem;
   display: flex;
   align-items: center;
-  justify-content: center;
   color: #aaa;
-  font-size: var(--type-body);
-  line-height: 1;
+  font-size: 0.85rem;
+  margin-left: 0.25rem;
 
   &:hover {
     color: #555;
@@ -228,7 +215,7 @@ const InfoPopover = styled.div`
   max-width: min(350px, calc(100vw - 16px));
   width: max-content;
   text-align: left;
-  font-size: var(--type-body);
+  font-size: 0.85rem;
   color: #333;
   white-space: normal;
   word-wrap: break-word;
@@ -246,7 +233,7 @@ const PopoverSection = styled.div`
 
 const PopoverLabel = styled.div`
   font-weight: 600;
-  font-size: var(--type-body);
+  font-size: 0.7rem;
   color: #888;
   margin-bottom: 0.25rem;
   text-transform: uppercase;
@@ -268,7 +255,7 @@ const OverrideBadge = styled.span`
   display: inline-flex;
   align-items: center;
   gap: 0.2rem;
-  font-size: var(--type-body);
+  font-size: 0.7rem;
   color: #b8860b;
   font-weight: 600;
 `;
@@ -278,7 +265,7 @@ const SwitchRuleButton = styled.button`
   border-radius: 6px;
   background: #fff7d6;
   color: #645500;
-  font-size: var(--type-body);
+  font-size: 0.78rem;
   font-weight: 500;
   padding: 0.35rem 0.55rem;
   cursor: pointer;
@@ -296,7 +283,7 @@ const DisplacedBanner = styled.div`
   background: #fff3e0;
   border: 1px solid #e0c080;
   color: #7a4f00;
-  font-size: var(--type-body);
+  font-size: 0.8rem;
   line-height: 1.35;
 `;
 
@@ -571,7 +558,6 @@ const CourseComponent = ({
             $isUsed={isUsed}
             $isDisabled={isDisabled}
             $highlightVariant={highlightVariant}
-            $compact={courseType === ItemTypes.COURSE_IN_REQ}
             $tone={tone}
             ref={dragRef}
             className={className}
@@ -632,81 +618,77 @@ const CourseComponent = ({
             </CourseBadge>
             {courseType === ItemTypes.COURSE_IN_PLAN && (
               <TrailingActions>
-                <IconSlot>
-                  {hasInfoContent && (
-                <InfoPopoverWrapper ref={infoRef}>
-                  <InfoIconButton onClick={(e) => { e.stopPropagation(); setInfoOpen(!infoOpen); }}>
-                    <i className="fas fa-info-circle"></i>
-                  </InfoIconButton>
-                  {infoOpen && (
-                    <InfoPopover ref={popoverRef}>
-                      {selectedRuleNames.length > 0 && (
-                        <PopoverSection>
-                          <PopoverLabel>Currently counts for</PopoverLabel>
-                          <RuleList>
-                            {selectedRuleNames.map((ruleInfo, i) => (
-                              <li key={i}>
-                                [{ruleInfo.degreeName}] {ruleInfo.title}
-                                {ruleInfo.isOverride && (
-                                  <OverrideBadge style={{ marginLeft: "0.35rem" }}>
-                                    <i className="fas fa-star" /> override
-                                  </OverrideBadge>
-                                )}
-                              </li>
-                            ))}
-                          </RuleList>
-                        </PopoverSection>
-                      )}
-                      {shouldShowCouldAlsoCountFor && (
-                        <PopoverSection>
-                          <PopoverLabel>Could also count for</PopoverLabel>
-                          <RuleList>
-                            {unselectedRuleNames.map((ruleInfo, i) => (
-                              <li key={i}>
-                                [{ruleInfo.degreeName}] {ruleInfo.title}
-                              </li>
-                            ))}
-                          </RuleList>
-                        </PopoverSection>
-                      )}
-                      {shouldShowSwitchHint && (
-                        <PopoverSection>
-                          <PopoverLabel>Tip</PopoverLabel>
-                          You can switch this course to count for this rule.
-                          <div style={{ marginTop: "0.5rem" }}>
-                            <SwitchRuleButton onClick={handleSwitchRule} disabled={switchingRule}>
-                              {switchingRule ? "Switching..." : "Count this course for this rule"}
-                            </SwitchRuleButton>
-                          </div>
-                          {switchError && (
-                            <div style={{ marginTop: "0.35rem", color: "#a94442" }}>
-                              {switchError}
+                {hasInfoContent && (
+                  <InfoPopoverWrapper ref={infoRef}>
+                    <InfoIconButton onClick={(e) => { e.stopPropagation(); setInfoOpen(!infoOpen); }}>
+                      <i className="fas fa-info-circle"></i>
+                    </InfoIconButton>
+                    {infoOpen && (
+                      <InfoPopover ref={popoverRef}>
+                        {selectedRuleNames.length > 0 && (
+                          <PopoverSection>
+                            <PopoverLabel>Currently counts for</PopoverLabel>
+                            <RuleList>
+                              {selectedRuleNames.map((ruleInfo, i) => (
+                                <li key={i}>
+                                  [{ruleInfo.degreeName}] {ruleInfo.title}
+                                  {ruleInfo.isOverride && (
+                                    <OverrideBadge style={{ marginLeft: "0.35rem" }}>
+                                      <i className="fas fa-star" /> override
+                                    </OverrideBadge>
+                                  )}
+                                </li>
+                              ))}
+                            </RuleList>
+                          </PopoverSection>
+                        )}
+                        {shouldShowCouldAlsoCountFor && (
+                          <PopoverSection>
+                            <PopoverLabel>Could also count for</PopoverLabel>
+                            <RuleList>
+                              {unselectedRuleNames.map((ruleInfo, i) => (
+                                <li key={i}>
+                                  [{ruleInfo.degreeName}] {ruleInfo.title}
+                                </li>
+                              ))}
+                            </RuleList>
+                          </PopoverSection>
+                        )}
+                        {shouldShowSwitchHint && (
+                          <PopoverSection>
+                            <PopoverLabel>Tip</PopoverLabel>
+                            You can switch this course to count for this rule.
+                            <div style={{ marginTop: "0.5rem" }}>
+                              <SwitchRuleButton onClick={handleSwitchRule} disabled={switchingRule}>
+                                {switchingRule ? "Switching..." : "Count this course for this rule"}
+                              </SwitchRuleButton>
                             </div>
-                          )}
-                        </PopoverSection>
-                      )}
-                      {displacedMessage && (
-                        <PopoverSection>
-                          <PopoverLabel>Displaced</PopoverLabel>
-                          <DisplacedBanner>{displacedMessage}</DisplacedBanner>
-                        </PopoverSection>
-                      )}
-                    </InfoPopover>
-                  )}
-                </InfoPopoverWrapper>
-              )}
-                </IconSlot>
-                <IconSlot>
-            {isUsed && (
-                    <CourseXButton
-                      onClick={(e) => {
-                        removeCourse(course.full_code);
-                        e.stopPropagation();
-                      }}
-                      hidden={false}
-                    />
-                  )}
-                </IconSlot>
+                            {switchError && (
+                              <div style={{ marginTop: "0.35rem", color: "#a94442" }}>
+                                {switchError}
+                              </div>
+                            )}
+                          </PopoverSection>
+                        )}
+                        {displacedMessage && (
+                          <PopoverSection>
+                            <PopoverLabel>Displaced</PopoverLabel>
+                            <DisplacedBanner>{displacedMessage}</DisplacedBanner>
+                          </PopoverSection>
+                        )}
+                      </InfoPopover>
+                    )}
+                  </InfoPopoverWrapper>
+                )}
+                {isUsed && (
+                  <CourseXButton
+                    onClick={(e) => {
+                      removeCourse(course.full_code);
+                      e.stopPropagation();
+                    }}
+                    hidden={false}
+                  />
+                )}
               </TrailingActions>
             )}
             {courseType !== ItemTypes.COURSE_IN_PLAN && isUsed && (
@@ -736,7 +718,6 @@ const CourseComponent = ({
           $isUsed={isUsed}
           $isDisabled={isDisabled}
           $highlightVariant={highlightVariant}
-          $compact={courseType === ItemTypes.COURSE_IN_REQ}
           ref={dragRef}
           className={className}
         >
@@ -745,35 +726,48 @@ const CourseComponent = ({
             {showSemesterOnCard && (
               <SemesterIcon semester={displaySemester} />
             )}
-            {hasInfoContent && courseType !== ItemTypes.COURSE_IN_REQ && (
-              <InfoPopoverWrapper ref={infoRef}>
-                <InfoIconButton onClick={(e) => { e.stopPropagation(); setInfoOpen(!infoOpen); }}>
-                  <i className="fas fa-info-circle"></i>
-                </InfoIconButton>
-                {infoOpen && (
-                  <InfoPopover ref={popoverRef}>
-                    {shouldShowSwitchHint && (
-                      <PopoverSection>
-                        <PopoverLabel>Tip</PopoverLabel>
-                        You can switch this course to count for this rule.
-                        <div style={{ marginTop: "0.5rem" }}>
-                          <SwitchRuleButton onClick={handleSwitchRule} disabled={switchingRule}>
-                            {switchingRule ? "Switching..." : "Count this course for this rule"}
-                          </SwitchRuleButton>
-                        </div>
-                        {switchError && (
-                          <div style={{ marginTop: "0.35rem", color: "#a94442" }}>
-                            {switchError}
-                          </div>
-                        )}
-                      </PopoverSection>
-                    )}
-                  </InfoPopover>
-                )}
-              </InfoPopoverWrapper>
-            )}
           </CourseBadge>
-          {isUsed && (
+          {courseType === ItemTypes.COURSE_IN_PLAN && (
+            <TrailingActions>
+              {hasInfoContent && (
+                <InfoPopoverWrapper ref={infoRef}>
+                  <InfoIconButton onClick={(e) => { e.stopPropagation(); setInfoOpen(!infoOpen); }}>
+                    <i className="fas fa-info-circle"></i>
+                  </InfoIconButton>
+                  {infoOpen && (
+                    <InfoPopover ref={popoverRef}>
+                      {shouldShowSwitchHint && (
+                        <PopoverSection>
+                          <PopoverLabel>Tip</PopoverLabel>
+                          You can switch this course to count for this rule.
+                          <div style={{ marginTop: "0.5rem" }}>
+                            <SwitchRuleButton onClick={handleSwitchRule} disabled={switchingRule}>
+                              {switchingRule ? "Switching..." : "Count this course for this rule"}
+                            </SwitchRuleButton>
+                          </div>
+                          {switchError && (
+                            <div style={{ marginTop: "0.35rem", color: "#a94442" }}>
+                              {switchError}
+                            </div>
+                          )}
+                        </PopoverSection>
+                      )}
+                    </InfoPopover>
+                  )}
+                </InfoPopoverWrapper>
+              )}
+              {isUsed && (
+                <CourseXButton
+                  onClick={(e) => {
+                    removeCourse(course.full_code);
+                    e.stopPropagation();
+                  }}
+                  hidden={false}
+                />
+              )}
+            </TrailingActions>
+          )}
+          {courseType !== ItemTypes.COURSE_IN_PLAN && isUsed && (
             <CourseXButton
               onClick={(e) => {
                 removeCourse(course.full_code);

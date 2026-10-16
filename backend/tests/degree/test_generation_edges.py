@@ -702,21 +702,13 @@ class ScheduleCodeTests(SimpleTestCase):
         )
         self.assertEqual(schedule_code(rule), "WH Business Breadth")
 
-    def test_a_free_elective_keeps_its_own_stub(self):
+    def test_an_unrestricted_elective_uses_its_query(self):
         rule = _Rule(Q(department__code="CIS"), title="Unrestricted Electives")
-        self.assertEqual(schedule_code(rule), "Free Elective")
+        self.assertEqual(schedule_code(rule), "CIS")
 
     def test_a_rule_with_no_query_keeps_a_short_title(self):
         rule = _Rule(None, title="Math Elective")
         self.assertEqual(schedule_code(rule), "Math Elective")
-
-
-def _free_electives(result):
-    return [
-        item
-        for item in result["items"]
-        if item["slot_ids"] and str(item["slot_ids"][0]).startswith("slot:free:")
-    ]
 
 
 def _scheduled_cu(result):
@@ -725,48 +717,41 @@ def _scheduled_cu(result):
     return item_cu + pin_cu
 
 
-class FreeElectivePaddingTests(TestCase):
+class CreditGapTests(TestCase):
+    """Leftover credits are not filled with invented elective cards."""
+
     def setUp(self):
         use_semester()
 
-    def test_a_degree_is_padded_up_to_its_declared_credits(self):
+    def test_a_credit_gap_is_left_empty(self):
         course("CIS-1200")
         degree = Degree.objects.create(
             program="EU_BSE", degree="BSE", major="PAD1", year=2026, credits=Decimal("3")
         )
         degree.rules.add(leaf("Core", Q(full_code="CIS-1200"), num=1))
         result = suggest(plan_for(degree, username="pad-short"))
-        electives = _free_electives(result)
-        self.assertEqual([item["cu"] for item in electives], [1.0, 1.0])
-        self.assertTrue(
-            all(
-                item["kind"] == "placeholder"
-                and item["short_label"] == "Free Elective"
-                and item["full_code"] is None
-                and item["rules"] == []
-                for item in electives
-            )
-        )
-        self.assertEqual(_scheduled_cu(result), Decimal("3"))
+        self.assertEqual([item["short_label"] for item in result["items"]], ["CIS 1200"])
+        self.assertEqual(_scheduled_cu(result), Decimal("1"))
 
-    def test_a_degree_already_at_its_total_is_not_padded(self):
+    def test_a_degree_already_at_its_total_schedules_only_its_rules(self):
         course("CIS-1200")
         degree = Degree.objects.create(
             program="EU_BSE", degree="BSE", major="PAD2", year=2026, credits=Decimal("1")
         )
         degree.rules.add(leaf("Core", Q(full_code="CIS-1200"), num=1))
         result = suggest(plan_for(degree, username="pad-full"))
-        self.assertEqual(_free_electives(result), [])
+        self.assertEqual([item["short_label"] for item in result["items"]], ["CIS 1200"])
         self.assertEqual(_scheduled_cu(result), Decimal("1"))
 
-    def test_a_fractional_shortfall_keeps_a_trailing_half(self):
+    def test_a_fractional_shortfall_is_not_filled(self):
         degree = Degree.objects.create(
             program="EU_BSE", degree="BSE", major="PAD3", year=2026, credits=Decimal("2.5")
         )
-        electives = _free_electives(suggest(plan_for(degree, username="pad-frac")))
-        self.assertEqual([item["cu"] for item in electives], [1.0, 1.0, 0.5])
+        result = suggest(plan_for(degree, username="pad-frac"))
+        self.assertEqual(result["items"], [])
+        self.assertEqual(_scheduled_cu(result), Decimal("0"))
 
-    def test_a_ruleless_course_on_the_plan_shrinks_the_gap(self):
+    def test_a_ruleless_course_does_not_grow_an_elective_card(self):
         course("CIS-1200")
         course("ELEC-1000")
         degree = Degree.objects.create(
@@ -778,10 +763,10 @@ class FreeElectivePaddingTests(TestCase):
             degree_plan=degree_plan, full_code="ELEC-1000", semester="2023C"
         )
         result = suggest(degree_plan)
-        self.assertEqual([item["cu"] for item in _free_electives(result)], [1.0])
-        self.assertEqual(_scheduled_cu(result), Decimal("3"))
+        self.assertFalse(any(item["rules"] == [] for item in result["items"]))
+        self.assertEqual(_scheduled_cu(result), Decimal("2"))
 
-    def test_each_degree_is_padded_on_its_own_and_a_shared_course_counts_for_both(self):
+    def test_each_degree_keeps_only_its_shared_course(self):
         course("BOTH-1000")
         left = Degree.objects.create(
             program="EU_BSE", degree="BSE", major="PADL", year=2026, credits=Decimal("2")
@@ -800,13 +785,8 @@ class FreeElectivePaddingTests(TestCase):
         )
         fulfillment.rules.add(left_rule, right_rule)
         result = suggest(degree_plan)
-        electives = _free_electives(result)
-        self.assertEqual(sorted(item["cu"] for item in electives), [1.0, 1.0])
-        slots = {item["slot_ids"][0] for item in electives}
-        self.assertIn(f"slot:free:degree:{left.id}:0", slots)
-        self.assertIn(f"slot:free:degree:{right.id}:0", slots)
-        # One shared course plus one elective per degree.
-        self.assertEqual(_scheduled_cu(result), Decimal("3"))
+        self.assertEqual(result["items"], [])
+        self.assertEqual(_scheduled_cu(result), Decimal("1"))
 
 
 def _attribute(code):
@@ -846,7 +826,7 @@ class CoverageLabelTests(TestCase):
         self.assertEqual([item["rules"] for item in items], [[core.id]])
         self.assertNotIn(sector.id, {rule_id for item in items for rule_id in item["rules"]})
 
-    def test_an_open_sector_fills_the_credit_gap_before_a_free_elective(self):
+    def test_an_open_sector_fills_the_credit_gap(self):
         degree, degree_plan, _core = self._plan("2", "cov-gap")
         block, sector = _gen_ed("General Education, Sectors", "Society", Q(attributes__code__in=["AUSO"]))
         degree.rules.add(block)
@@ -856,15 +836,12 @@ class CoverageLabelTests(TestCase):
         self.assertEqual(items[1]["rules"], [sector.id])
         self.assertIsNone(items[1]["full_code"])
 
-    def test_credits_past_the_open_labels_are_free_electives(self):
+    def test_credits_past_the_open_labels_are_left_empty(self):
         degree, degree_plan, _core = self._plan("3", "cov-free")
         block, _sector = _gen_ed("General Education, Sectors", "Society", Q(attributes__code__in=["AUSO"]))
         degree.rules.add(block)
         items = suggest(degree_plan)["items"]
-        self.assertEqual(
-            [item["short_label"] for item in items],
-            ["CIS 1200", "Society", "Free Elective"],
-        )
+        self.assertEqual([item["short_label"] for item in items], ["CIS 1200", "Society"])
 
     def test_a_course_in_the_degree_carries_a_matching_label(self):
         degree, degree_plan, _core = self._plan("2", "cov-carry")
@@ -896,7 +873,7 @@ class CoverageLabelTests(TestCase):
         self.assertEqual(items[0]["short_label"], "CIS 1200")
         self.assertEqual(len(items), 2)
         self.assertTrue(items[1]["rules"])
-        self.assertNotEqual(items[1]["short_label"], "Free Elective")
+        self.assertIn(items[1]["short_label"], {"Society", "History", "Arts"})
 
     def test_writing_stays_a_course_when_a_sector_does_not_fit(self):
         degree = Degree.objects.create(

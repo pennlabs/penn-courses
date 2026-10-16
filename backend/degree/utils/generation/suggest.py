@@ -36,7 +36,6 @@ from degree.utils.generation.open_rules import (
 
 
 ALTERNATIVE_LIMIT = 24
-FREE_ELECTIVE_LABEL = "Free Elective"
 # A course already in the degree may carry at most two general-education labels.
 MAX_COVERAGE_PER_COURSE = 2
 # Relations whose owner is a Degree. Majors and minors share the owner_id column shape
@@ -45,12 +44,10 @@ _DEGREE_RELATIONS = frozenset({"degrees", "college", "degree-major"})
 
 
 def _fill_key(slot):
-    """Specific courses and writing before broad restrictions. Breadth and free electives last."""
+    """Specific courses and writing before broad restrictions. Business breadth last."""
     exception = schedule_exception(slot.rule) or ""
     if exception == "WH Business Breadth":
         return (3, slot.slot_id)
-    if exception == "Free Elective":
-        return (4, slot.slot_id)
     title = (slot.rule.title or "").lower()
     if slot.kind == "listed" or "writ" in title or "writing" in title:
         return (0, slot.slot_id)
@@ -249,11 +246,11 @@ def _pad_to_degree_credits(plan_rules, fulfillments, credits_cache, ghosts, cove
     Fill each degree up to Degree.credits.
 
     Open sector and foundational-approach labels take the first credits of that
-    gap, and only within the gap. The rest are Free Elective stubs. A label a
-    pool course already carries is not passed in. Components that split one
-    degree share one floor. A course claimed by two degrees counts toward both.
-    A course on the plan that fills no rule is elective credit for the first
-    degree that still has a gap.
+    gap, and only within the gap. Leftover credits stay empty. A label a pool
+    course already carries is not passed in. Components that split one degree
+    share one floor. A course claimed by two degrees counts toward both. A
+    course on the plan that fills no rule counts toward the first degree that
+    still has a gap.
 
     Returns the new cards and the coverage slot ids a degree total accounted for,
     including labels that did not fit and so are not scheduled.
@@ -322,25 +319,10 @@ def _pad_to_degree_credits(plan_rules, fulfillments, credits_cache, ghosts, cove
         if shortfall <= 0:
             continue
         pending = list(owned)
-        for index, cu in enumerate(slot_cus(None, shortfall)):
-            if pending:
-                padding.append(_coverage_placeholder(pending.pop(0), cu))
-                continue
-            padding.append(
-                {
-                    "slot_ids": [f"slot:free:{row['key']}:{index}"],
-                    "kind": "placeholder",
-                    "full_code": None,
-                    "fulfillment_id": None,
-                    "label": FREE_ELECTIVE_LABEL,
-                    "short_label": FREE_ELECTIVE_LABEL,
-                    "cu": float(cu),
-                    "rules": [],
-                    "rule_q": None,
-                    "alternatives": [],
-                    "course_number": 10**9,
-                }
-            )
+        for cu in slot_cus(None, shortfall):
+            if not pending:
+                break
+            padding.append(_coverage_placeholder(pending.pop(0), cu))
     return padding, consumed
 
 
@@ -363,8 +345,8 @@ def suggest(degree_plan):
     open_rule_count = len(slots)
     coverage = [slot for slot in slots if is_coverage_rule(slot.rule)]
     slots = [slot for slot in slots if not is_coverage_rule(slot.rule)]
-    # Specific courses and writing first. Business breadth and free electives last,
-    # and those named stubs are never guessed into a single course.
+    # Specific courses and writing first. Business breadth last, and that named
+    # stub is never guessed into a single course.
     # A named single course goes first, so it can cover another open slot it is
     # allowed to share. Lists and restrictions are scheduled after that, as stubs.
     slots = sorted(slots, key=lambda slot: (sole_listed_code(slot.rule) is None, _fill_key(slot)))

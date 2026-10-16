@@ -11,6 +11,7 @@ import {
   ExpandedCoursesPanelContext,
   ExpandedCoursesPanelTrigger,
 } from "@/components/ExpandedBox/ExpandedCoursesPanelTrigger";import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
+import { CuLabel } from "../Course/Course";
 
 const interpolate = <T,>(arr: T[], separator: T) =>
     arr.flatMap(
@@ -88,8 +89,9 @@ const SearchChip = styled.button<{ $active: boolean }>`
     align-items: center;
     gap: 0.3rem;
     max-width: 100%;
-    padding: 1px 5px;
-    border-radius: 3px;
+    padding: 0.75rem;
+    min-height: 35px;
+    border-radius: 9px;
     border: 1px dashed ${(props) => (props.$active ? "#3d4ed8" : "rgba(98, 116, 241, 0.55)")};
     background: ${(props) => (props.$active ? "rgba(98, 116, 241, 0.16)" : "rgba(98, 116, 241, 0.08)")};
     color: #3d4ed8;
@@ -122,38 +124,6 @@ export const DarkBlueIcon = styled(Icon)`
 interface SearchConditionInnerProps {
     q: ParsedQObj;
 }
-const levelLabel = (gte?: string | number, lte?: string | number) => {
-    const upper = lte != null && Number(lte) < 9000 ? lte : null;
-    if (gte != null && upper != null) return `${gte}–${upper}`;
-    if (gte != null) return `${gte}+`;
-    if (upper != null) return `≤${upper}`;
-    return "";
-};
-
-/** Short text for a search chip, in the same shape as a schedule stub. */
-const searchLabel = (q: ParsedQObj): string => {
-    if (!q || q.type === "COURSE" || q.type === "SEARCH") return "Search";
-    if (q.type === "LEAF") return searchLabel({ type: "AND", clauses: [q] });
-    const leaves = q.clauses.filter((clause) => clause.type === "LEAF") as Condition[];
-    const nested = q.clauses.filter((clause) => clause.type === "OR" || clause.type === "AND") as Compound[];
-    const fields: Partial<Record<ConditionKey, any>> = {};
-    leaves.forEach((leaf) => { fields[leaf.key] = leaf.value; });
-    const departments = fields.department__code
-        ? [fields.department__code]
-        : (fields.department__code__in as string[] | undefined) || [];
-    const deptText = departments.length > 3
-        ? `${departments.slice(0, 3).join("/")} +${departments.length - 3}`
-        : departments.join("/");
-    const attrs = (fields.attributes__code__in as string[] | undefined) || [];
-    const own = [deptText, attrs.join("/"), levelLabel(fields.code__gte, fields.code__lte)]
-        .filter(Boolean)
-        .join(" ");
-    const prefix = fields.full_code__startswith ? String(fields.full_code__startswith) : "";
-    const parts = [own || prefix, ...nested.map(searchLabel).filter((label) => label && label !== "Search")];
-    const label = parts.filter(Boolean).join(q.type === "OR" ? " / " : " ");
-    return label || "Search";
-};
-
 const ExpandOrRetractIcon = ({ showExpand }: { showExpand: boolean }) => {
     return (
         <DarkGrayIcon>
@@ -181,7 +151,7 @@ interface SearchConditionProps extends SearchConditionInnerProps {
     count?: number;
     showCode?: boolean;
 }
-const SearchCondition = ({ cu, num, ruleId, ruleQuery, fulfillments, unselectedFulfillments, ruleIsSatisfied, q, activeDegreeplanId, count, showCode }: SearchConditionProps) => {
+const SearchCondition = ({ cu, num, ruleId, ruleQuery, fulfillments, unselectedFulfillments, ruleIsSatisfied, q, activeDegreeplanId }: SearchConditionProps) => {
     const { setSearchPanelOpen, searchRuleId, setSearchRuleQuery, setSearchRuleId, setSearchFulfillments, } = useContext(SearchPanelContext);
     
     const { searchRef } = useContext(ExpandedCoursesPanelContext);
@@ -201,9 +171,7 @@ const SearchCondition = ({ cu, num, ruleId, ruleQuery, fulfillments, unselectedF
         }, 75)
     }, [toExpand])
 
-    const codeLabel = showCode ? searchLabel(q) : "";
-    const quantity = count == null ? "" : count.toLocaleString();
-    const text = [codeLabel, quantity].filter(Boolean).join(" ");
+    const text = "Search";
 
     return (
 
@@ -218,7 +186,7 @@ const SearchCondition = ({ cu, num, ruleId, ruleQuery, fulfillments, unselectedF
             <SearchChip
                 type="button"
                 $active={searchRuleId == ruleId}
-                aria-label={count == null ? "Search courses" : `Search ${count.toLocaleString()} courses`}
+                aria-label="Search courses"
                 onClick={() => {
                     setSearchRuleQuery(ruleQuery);
                     if ((q.type === "OR" || q.type === "AND") && q.clauses.length == 0) {
@@ -262,10 +230,14 @@ const OptionChipRow = styled.div<{ $scroll?: boolean }>`
 `;
 
 const OptionChip = styled.span<{ $kind: "open" | "taken" | "frozen" }>`
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
     font-size: var(--type-body);
     font-weight: 600;
-    padding: 1px 5px;
-    border-radius: 3px;
+    padding: 0.75rem;
+    min-height: 35px;
+    border-radius: 9px;
     white-space: nowrap;
     border: 1px solid ${(props) =>
         props.$kind === "taken" ? "rgba(34, 197, 94, 0.45)"
@@ -296,6 +268,9 @@ const CourseOptionChips = ({ options, fulfillments }: { options: QCourse[]; fulf
                 return (
                     <OptionChip key={`${course.full_code}-${course.semester || ""}`} $kind={kind}>
                         {course.full_code.replace(/-/g, " ")}
+                        {fulfillment?.course?.credits != null && (
+                            <CuLabel>{Number(fulfillment.course.credits).toFixed(1)} CU</CuLabel>
+                        )}
                     </OptionChip>
                 );
             })}

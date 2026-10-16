@@ -304,14 +304,11 @@ def schedule_exception(rule) -> str | None:
     Named schedule stubs that should not be collapsed into a course list.
 
     Business breadth is every Wharton department, so the card says
-    `WH Business Breadth` instead of `ACCT/BEPP/FNCE/...`. A free elective
-    stays `Free Elective`.
+    `WH Business Breadth` instead of `ACCT/BEPP/FNCE/...`.
     """
     titles = _ancestor_titles(rule).lower()
     if "business breadth" in titles:
         return "WH Business Breadth"
-    if "unrestricted" in titles or "free elective" in titles:
-        return "Free Elective"
     return None
 
 

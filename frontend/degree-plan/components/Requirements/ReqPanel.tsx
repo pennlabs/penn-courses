@@ -90,7 +90,6 @@ const Tab = styled.button<{ $active: boolean }>`
   background: ${(props) => (props.$active ? "rgba(98, 116, 241, 0.12)" : "transparent")};
   color: inherit;
   font: inherit;
-  font-size: var(--type-body);
   font-weight: 700;
   text-align: left;
   cursor: pointer;

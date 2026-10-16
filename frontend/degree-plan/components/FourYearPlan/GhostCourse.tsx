@@ -19,17 +19,20 @@ const Card = styled.div<{ $dashed?: boolean; $dragging?: boolean; $frozen?: bool
   position: relative;
   overflow: hidden;
   width: 100%;
+  min-height: 35px;
   margin-top: 0.75rem;
-  padding: 4px 8px;
-  border-radius: 3px;
-  background: ${(props) => (props.$frozen ? "rgba(217, 119, 6, 0.12)" : "#fff")};
+  padding: 0.75rem;
+  border-radius: 9px;
+  background: ${(props) =>
+    props.$frozen ? "rgba(217, 119, 6, 0.12)" : "var(--background-grey)"};
   border-width: 1px;
   border-style: ${(props) => (props.$dashed && !props.$frozen ? "dashed" : "solid")};
   border-color: ${(props) =>
-    props.$frozen ? "#d97706" : props.$dashed ? "rgba(0, 0, 0, 0.32)" : "rgba(0, 0, 0, 0.14)"};
+    props.$frozen ? "#d97706" : props.$dashed ? "rgba(0, 0, 0, 0.32)" : "transparent"};
+  box-shadow: rgba(0, 0, 0, 0.01) 0px 6px 5px 0px, rgba(0, 0, 0, 0.04) 0px 0px 0px 1px;
   font-size: var(--type-body);
   font-weight: 600;
-  color: ${(props) => (props.$frozen ? "#b45309" : "#4b5563")};
+  color: ${(props) => (props.$frozen ? "#b45309" : "inherit")};
   text-wrap: nowrap;
   cursor: grab;
   opacity: ${(props) => (props.$dragging ? 0.5 : 1)};

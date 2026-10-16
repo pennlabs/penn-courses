@@ -116,9 +116,6 @@ def pair_placeholders(ghosts, plan_rules, sharing):
         if ghost.get("kind") != "placeholder" or len(rule_ids) != 1:
             rest.append(ghost)
             continue
-        if str(ghost.get("slot_ids", [""])[0]).startswith("slot:free:"):
-            rest.append(ghost)
-            continue
         rule = rules.get(rule_ids[0])
         component = components.get(rule) if rule is not None else None
         if rule is None or component is None or not component.counts_toward_degree_cap:

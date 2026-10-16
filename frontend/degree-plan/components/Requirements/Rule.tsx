@@ -14,6 +14,7 @@ import { subscribeProposal, currentProposal } from "@/hooks/generateConfig";
 import { parseQJson } from "./ruleUtils";
 import { useSWRConfig } from "swr";
 import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
+import { CuLabel } from "../Course/Course";
 import { containsRule, scrollToPlacement, subscribeRuleNav } from "@/hooks/requirementNav";
 
 /** Whether a dragged course sits in the AP & transfer credit semester. */
@@ -69,11 +70,15 @@ const SuggestionChips = styled.div`
 `;
 
 const SuggestionChip = styled.button<{ $dashed?: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
   font: inherit;
   font-size: var(--type-body);
   font-weight: 600;
-  padding: 1px 5px;
-  border-radius: 3px;
+  padding: 0.75rem;
+  min-height: 35px;
+  border-radius: 9px;
   white-space: nowrap;
   cursor: pointer;
   border: 1px ${(props) => (props.$dashed ? "dashed" : "solid")} rgba(0, 0, 0, 0.18);
@@ -750,6 +755,7 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
                   onClick={() => scrollToPlacement(row)}
                 >
                   {(row.kind === "course" ? (row.short_label || row.label) : (row.full_code || row.label)).replace(/-/g, " ")}
+                  <CuLabel>{Number(row.cu).toFixed(1)} CU</CuLabel>
                 </SuggestionChip>
               ))}
             </SuggestionChips>
