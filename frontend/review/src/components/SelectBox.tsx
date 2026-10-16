@@ -208,6 +208,8 @@ const ChipRemove = styled.button`
 
 interface OptionChipProps {
   label: string;
+  // Full name shown on hover, e.g. "SEAS Humanities" for EUHS
+  name?: string;
   isSelected: boolean;
   onToggle: (option: string) => void;
   // Only the chips sitting in the grey box can be taken off it.
@@ -215,13 +217,13 @@ interface OptionChipProps {
 }
 
 const OptionChip = React.memo(
-  ({ label, isSelected, onToggle, onRemove }: OptionChipProps) => {
+  ({ label, name, isSelected, onToggle, onRemove }: OptionChipProps) => {
     // The X doubles as the toggle for a selected chip, so it only needs its own
     // button when the chip is unselected and removable.
     const showRemoveButton = !isSelected && onRemove !== undefined;
 
     return (
-      <Chip $isSelected={isSelected}>
+      <Chip $isSelected={isSelected} title={name}>
         <ChipToggle
           type="button"
           aria-pressed={isSelected}
@@ -273,6 +275,8 @@ interface SelectBoxProps {
   options: string[];
   setOptions: (options: string[]) => void;
   availableItems: string[];
+  // Optional full names for the items, which can also be searched by
+  optionNames?: Record<string, string>;
   label?: string;
   className?: string;
 }
@@ -281,6 +285,7 @@ const SelectBox = ({
   options,
   setOptions,
   availableItems,
+  optionNames,
   label = "options",
   className,
 }: SelectBoxProps) => {
@@ -374,13 +379,26 @@ const SelectBox = ({
     if (isSearchFocused) closeSearchBar();
   });
 
+  // Matches on the item itself or its full name. Items starting with the query come
+  // first, then items containing it, then items matched only by name.
   const searchResults = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
-    return availableItems.filter(
-      (option) =>
-        !chipOptions.has(option) && option.toLowerCase().includes(query)
-    );
-  }, [availableItems, chipOptions, searchQuery]);
+    const prefixMatches: string[] = [];
+    const codeMatches: string[] = [];
+    const nameMatches: string[] = [];
+    availableItems.forEach((option) => {
+      if (chipOptions.has(option)) return;
+      const code = option.toLowerCase();
+      if (code.startsWith(query)) {
+        prefixMatches.push(option);
+      } else if (code.includes(query)) {
+        codeMatches.push(option);
+      } else if (optionNames?.[option]?.toLowerCase().includes(query)) {
+        nameMatches.push(option);
+      }
+    });
+    return [...prefixMatches, ...codeMatches, ...nameMatches];
+  }, [availableItems, optionNames, chipOptions, searchQuery]);
 
   const handleSearchChipVanish = useCallback((option: string) => {
     setChipOptions((prev) =>
@@ -426,6 +444,7 @@ const SelectBox = ({
               <OptionChip
                 key={`selected-${option}`}
                 label={option}
+                name={optionNames?.[option]}
                 isSelected={options.includes(option)}
                 onToggle={handleToggle}
                 onRemove={handleRemoveChip}
@@ -484,6 +503,7 @@ const SelectBox = ({
                       <SearchResultChip
                         key={`search-${option}`}
                         label={option}
+                        name={optionNames?.[option]}
                         isSelected={options.includes(option)}
                         onToggle={handleToggle}
                         onVanish={handleSearchChipVanish}

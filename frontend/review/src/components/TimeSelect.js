@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
 import RangeSlider from "react-range-slider-input";
 import CustomDropdown from "./CustomDropdown";
-import { RangeMarkers, SliderContainer } from "./SliderSelect";
+import { SliderContainer } from "./SliderSelect";
 import { DEFAULT_FILTERS, normalizeTimeString } from "../utils/filters";
 
 const Container = styled.div`
@@ -48,6 +48,17 @@ const TimeInput = styled.input`
     background-color: ${props =>
       props.$isError ? "var(--pcr-color-feedback-error-bg)" : "transparent"};
   }
+`;
+
+const ExtendedRangeMarkers = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  align-self: stretch;
+  font-size: 12px;
+  font-family: ${({ theme }) => theme.font.family.sans};
+  font-weight: ${({ theme }) => theme.font.weight.bold};
+  margin: 15px 3% 0 3%;
 `;
 
 const SLIDER_STEP = 5;
@@ -158,9 +169,14 @@ const TimeSelect = ({ timeString, setTimeString }) => {
     timeStringRef.current = timeString;
   }, [timeString]);
 
+  // What the text boxes and AM/PM dropdowns show. It may hold an invalid range
+  // (end before start), in which case it is never committed to the slider or API.
+  const [draft, setDraft] = useState(time);
+
   const updateTime = next => {
     timeRef.current = next;
     setTime(next);
+    setDraft(next);
   };
 
   const commitTime = next => {
@@ -179,32 +195,36 @@ const TimeSelect = ({ timeString, setTimeString }) => {
   }, [timeString]);
 
   const [startText, setStartText] = useState(
-    formatMinutesForDisplay(time.start).time
+    formatMinutesForDisplay(draft.start).time
   );
   const [endText, setEndText] = useState(
-    formatMinutesForDisplay(time.end).time
+    formatMinutesForDisplay(draft.end).time
   );
 
   useEffect(() => {
-    setStartText(formatMinutesForDisplay(time.start).time);
-  }, [time.start]);
+    setStartText(formatMinutesForDisplay(draft.start).time);
+  }, [draft.start]);
 
   useEffect(() => {
-    setEndText(formatMinutesForDisplay(time.end).time);
-  }, [time.end]);
+    setEndText(formatMinutesForDisplay(draft.end).time);
+  }, [draft.end]);
 
-  const startAMPM = formatMinutesForDisplay(time.start).ampm;
-  const endAMPM = formatMinutesForDisplay(time.end).ampm;
+  const startAMPM = formatMinutesForDisplay(draft.start).ampm;
+  const endAMPM = formatMinutesForDisplay(draft.end).ampm;
 
-  const isStartError = !isValid12HourTime(startText);
-  const isEndError = !isValid12HourTime(endText);
+  const isRangeError = !isValidRange(draft.start, draft.end);
+  const isStartError = !isValid12HourTime(startText) || isRangeError;
+  const isEndError = !isValid12HourTime(endText) || isRangeError;
 
-  // Applies a typed or AM/PM change, returning whether it was a valid range
-  const applyTime = next => {
-    if (!isValidRange(next.start, next.end)) return false;
-    updateTime(next);
-    commitTime(next);
-    return true;
+  // Applies a typed or AM/PM change. An invalid range is kept in the boxes so the
+  // user can see and fix it, but the slider and time string only follow valid ones.
+  const applyDraft = next => {
+    if (isValidRange(next.start, next.end)) {
+      updateTime(next);
+      commitTime(next);
+    } else {
+      setDraft(next);
+    }
   };
 
   // Searching on every step would fire a request per 5 minutes dragged, so drags only
@@ -234,119 +254,117 @@ const TimeSelect = ({ timeString, setTimeString }) => {
 
   return (
     <>
-    <Container>
-      <TimeInputContainer>
-        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center"
-            }}
-          >
-            <span style={{ fontSize: "12px" }}>Start</span>
-            <form
-              onSubmit={e => {
-                e.preventDefault();
-                const fixedValue = fixTimeInputOnBlur(startText);
-                setStartText(fixedValue);
-                if (
-                  !isValid12HourTime(fixedValue) ||
-                  !applyTime({
-                    start: ampmTimeToMinutes(fixedValue, startAMPM),
-                    end: time.end
-                  })
-                ) {
-                  setStartText(formatMinutesForDisplay(time.start).time);
-                }
-                e.target.querySelector("input").blur();
+      <Container>
+        <TimeInputContainer>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center"
               }}
             >
-              <TimeInput
-                type="text"
-                value={startText}
-                $isError={isStartError}
-                onChange={e => {
-                  handleTimeInputChange(e, setStartText);
+              <span style={{ fontSize: "12px" }}>Start</span>
+              <form
+                onSubmit={e => {
+                  e.preventDefault();
+                  const fixedValue = fixTimeInputOnBlur(startText);
+                  if (isValid12HourTime(fixedValue)) {
+                    setStartText(fixedValue);
+                    applyDraft({
+                      start: ampmTimeToMinutes(fixedValue, startAMPM),
+                      end: draft.end
+                    });
+                  } else {
+                    setStartText(formatMinutesForDisplay(draft.start).time);
+                  }
+                  e.target.querySelector("input").blur();
                 }}
-                onBlur={e => {
-                  e.target.form.requestSubmit();
-                }}
-              />
-            </form>
+              >
+                <TimeInput
+                  type="text"
+                  value={startText}
+                  $isError={isStartError}
+                  onChange={e => {
+                    handleTimeInputChange(e, setStartText);
+                  }}
+                  onBlur={e => {
+                    e.target.form.requestSubmit();
+                  }}
+                />
+              </form>
+            </div>
+            <CustomDropdown
+              style={{ width: "60px", marginTop: "18px" }}
+              options={["AM", "PM"]}
+              value={startAMPM}
+              onChange={option => {
+                applyDraft({
+                  start: ampmTimeToMinutes(
+                    formatMinutesForDisplay(draft.start).time,
+                    option
+                  ),
+                  end: draft.end
+                });
+              }}
+            />
           </div>
-          <CustomDropdown
-            style={{ width: "60px", marginTop: "18px" }}
-            options={["AM", "PM"]}
-            value={startAMPM}
-            onChange={option => {
-              applyTime({
-                start: ampmTimeToMinutes(
-                  formatMinutesForDisplay(time.start).time,
-                  option
-                ),
-                end: time.end
-              });
-            }}
-          />
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center"
-            }}
-          >
-            <span style={{ fontSize: "12px" }}>End</span>
-            <form
-              onSubmit={e => {
-                e.preventDefault();
-                const fixedValue = fixTimeInputOnBlur(endText);
-                setEndText(fixedValue);
-                if (
-                  !isValid12HourTime(fixedValue) ||
-                  !applyTime({
-                    start: time.start,
-                    end: ampmTimeToMinutes(fixedValue, endAMPM)
-                  })
-                ) {
-                  setEndText(formatMinutesForDisplay(time.end).time);
-                }
-                e.target.querySelector("input").blur();
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center"
               }}
             >
-              <TimeInput
-                type="text"
-                value={endText}
-                $isError={isEndError}
-                onChange={e => {
-                  handleTimeInputChange(e, setEndText);
+              <span style={{ fontSize: "12px" }}>End</span>
+              <form
+                onSubmit={e => {
+                  e.preventDefault();
+                  const fixedValue = fixTimeInputOnBlur(endText);
+                  if (isValid12HourTime(fixedValue)) {
+                    setEndText(fixedValue);
+                    applyDraft({
+                      start: draft.start,
+                      end: ampmTimeToMinutes(fixedValue, endAMPM)
+                    });
+                  } else {
+                    setEndText(formatMinutesForDisplay(draft.end).time);
+                  }
+                  e.target.querySelector("input").blur();
                 }}
-                onBlur={e => {
-                  e.target.form.requestSubmit();
-                }}
-              />
-            </form>
+              >
+                <TimeInput
+                  type="text"
+                  value={endText}
+                  $isError={isEndError}
+                  onChange={e => {
+                    handleTimeInputChange(e, setEndText);
+                  }}
+                  onBlur={e => {
+                    e.target.form.requestSubmit();
+                  }}
+                />
+              </form>
+            </div>
+            <CustomDropdown
+              style={{ width: "60px", marginTop: "18px" }}
+              options={["AM", "PM"]}
+              value={endAMPM}
+              onChange={option => {
+                applyDraft({
+                  start: draft.start,
+                  end: ampmTimeToMinutes(
+                    formatMinutesForDisplay(draft.end).time,
+                    option
+                  )
+                });
+              }}
+            />
           </div>
-          <CustomDropdown
-            style={{ width: "60px", marginTop: "18px" }}
-            options={["AM", "PM"]}
-            value={endAMPM}
-            onChange={option => {
-              applyTime({
-                start: time.start,
-                end: ampmTimeToMinutes(
-                  formatMinutesForDisplay(time.end).time,
-                  option
-                )
-              });
-            }}
-          />
-        </div>
-      </TimeInputContainer>
-    </Container>
-    <div
+        </TimeInputContainer>
+      </Container>
+      <div
         style={{
           width: "100%",
           userSelect: "none",
@@ -369,13 +387,13 @@ const TimeSelect = ({ timeString, setTimeString }) => {
             ariaLabel={["Start time", "End time"]}
           />
         </SliderContainer>
-        <RangeMarkers>
+        <ExtendedRangeMarkers>
           <div>12 AM</div>
           <div>12 PM</div>
           <div>11:59 PM</div>
-        </RangeMarkers>
+        </ExtendedRangeMarkers>
       </div>
-      </>
+    </>
   );
 };
 
