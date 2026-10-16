@@ -9,6 +9,7 @@ import { SearchPanelContext } from "../Search/SearchPanel";
 import { CuLabel } from "../Course/Course";
 import RequirementJump from "../Requirements/RequirementJump";
 import { ghostDomId } from "@/hooks/requirementNav";
+import { scheduleCardTitle } from "@/utils/scheduleLabel";
 import { ClaimBar, useProgramClaims } from "./programColor";
 
 const Card = styled.div<{ $dashed?: boolean; $dragging?: boolean; $frozen?: boolean }>`
@@ -122,6 +123,9 @@ const publishOpenOptions = (id: string | null) => {
 const GhostCourse = ({ placement, planId, frozen = false, onUnpin }: GhostCourseProps) => {
   const programs = useProgramClaims(planId);
   const claimKeys = programs.claimsForRules(placement.rules || []);
+  if (placement.component_key && !claimKeys.includes(placement.component_key)) {
+    claimKeys.push(placement.component_key);
+  }
   const claimBar = (
     <ClaimBar keys={claimKeys} order={programs.order} titles={programs.titles} />
   );
@@ -186,7 +190,7 @@ const GhostCourse = ({ placement, planId, frozen = false, onUnpin }: GhostCourse
   };
 
   const code = (value: string) => value.replace(/-/g, " ");
-  const slotName = placement.short_label || placement.label;
+  const slotName = scheduleCardTitle(placement);
   const options = [
     ...(placement.full_code ? [placement.full_code] : []),
     ...placement.alternatives.filter((alt) => alt !== placement.full_code),

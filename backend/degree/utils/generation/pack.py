@@ -121,13 +121,19 @@ def _senior_target(code, anchor):
 
 
 def _sort_items(items):
-    kind_order = {"placement": 0, "course": 1, "placeholder": 2}
+    # Placements are courses the student already has. Free electives fill the
+    # earliest terms after those. Named courses and other placeholders follow.
+    kind_order = {"placement": 0, "course": 2, "placeholder": 3}
 
     def key(item):
+        slot = item["slot_ids"][0] if item.get("slot_ids") else ""
+        rank = kind_order.get(item.get("kind"), 9)
+        if str(slot).startswith("slot:free:"):
+            rank = 1
         return (
-            kind_order.get(item["kind"], 9),
+            rank,
             item.get("course_number", 10**9),
-            item["slot_ids"][0] if item["slot_ids"] else item.get("full_code") or "",
+            slot or item.get("full_code") or "",
         )
 
     return sorted(items, key=key)

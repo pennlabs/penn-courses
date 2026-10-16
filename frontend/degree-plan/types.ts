@@ -214,6 +214,8 @@ export interface GeneratedPlacement {
   semester: string;
   alternatives: string[];
   rules: number[];
+  /** Degree component this card belongs to, when it is not claimed on a rule. */
+  component_key?: string;
   rule_q: string | null;
   /** Two open slots, one card. alternatives are courses that could fill both. */
   overlap?: boolean;

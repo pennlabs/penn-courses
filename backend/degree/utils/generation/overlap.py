@@ -116,6 +116,11 @@ def pair_placeholders(ghosts, plan_rules, sharing):
         if ghost.get("kind") != "placeholder" or len(rule_ids) != 1:
             rest.append(ghost)
             continue
+        # Credit-gap electives belong to one degree. Pairing would spend them
+        # on the other degree's requirement.
+        if str(ghost.get("slot_ids", [""])[0]).startswith("slot:free:"):
+            rest.append(ghost)
+            continue
         rule = rules.get(rule_ids[0])
         component = components.get(rule) if rule is not None else None
         if rule is None or component is None or not component.counts_toward_degree_cap:
@@ -147,7 +152,9 @@ def pair_placeholders(ghosts, plan_rules, sharing):
         if left[0]["slot_ids"][0] in used or right[0]["slot_ids"][0] in used:
             continue
         crosses = is_graduate(left[2]) != is_graduate(right[2])
-        cu = min(Decimal(str(left[0]["cu"])), Decimal(str(right[0]["cu"])))
+        left_cu = Decimal(str(left[0]["cu"]))
+        right_cu = Decimal(str(right[0]["cu"]))
+        cu = min(left_cu, right_cu)
         if crosses and not sharing.allows(cu):
             continue
         if crosses:
@@ -155,6 +162,15 @@ def pair_placeholders(ghosts, plan_rules, sharing):
         used.add(left[0]["slot_ids"][0])
         used.add(right[0]["slot_ids"][0])
         paired.append(_card(left[0], right[0], shared, cu))
+        # The larger requirement keeps the credits this one course did not cover.
+        for side, side_cu in ((left, left_cu), (right, right_cu)):
+            leftover = side_cu - cu
+            if leftover <= 0:
+                continue
+            remainder = dict(side[0])
+            remainder["cu"] = float(leftover)
+            remainder["slot_ids"] = [f"{side[0]['slot_ids'][0]}:rest"]
+            paired.append(remainder)
 
     kept = [ghost for ghost, *_rest in eligible if ghost["slot_ids"][0] not in used]
     return rest + kept + paired

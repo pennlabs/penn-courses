@@ -63,7 +63,7 @@ const ReqPanelTitle = styled.div`
 const DegreeBody = styled.div`
   min-width: 0;
   max-width: 100%;
-  overflow-x: hidden;
+  overflow-x: clip;
 `
 
 const TabRow = styled.div`
@@ -429,9 +429,10 @@ const Degree = ({
       {!collapsed && !editMode &&
         <>
           <DegreeBody>
-            {program.rules.map((rule: any) => (
+            {program.rules.map((rule: any, index: number) => (
               <RuleComponent
                 key={rule.id}
+                flushTop={index === 0}
                 headerHeight={headerHeight}
                 zIndex={999}
                 {...computeRuleTree({

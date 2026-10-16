@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState, useLayoutEffect, useRef, useCallback } from "react";
-import RuleLeaf, { SkeletonRuleLeaf } from "./QObject";
+import RuleLeaf, { PanelOptionsContext, SHORT_LIST_MAX, SkeletonRuleLeaf } from "./QObject";
 import { DnDCourse, Fulfillment } from "@/types";
 import styled from "@emotion/styled";
 import { Icon } from "../common/bulma_derived_components";
@@ -14,8 +14,8 @@ import { subscribeProposal, currentProposal } from "@/hooks/generateConfig";
 import { parseQJson } from "./ruleUtils";
 import { useSWRConfig } from "swr";
 import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
-import { CuLabel } from "../Course/Course";
 import { containsRule, scrollToPlacement, subscribeRuleNav } from "@/hooks/requirementNav";
+import { fitsOnCard } from "@/utils/scheduleLabel";
 
 /** Whether a dragged course sits in the AP & transfer credit semester. */
 const isTransferCredit = (course: DnDCourse) =>
@@ -90,11 +90,11 @@ const SuggestionChip = styled.button<{ $dashed?: boolean }>`
   }
 `;
 
-const RuleTitleWrapper = styled.div<{ $headerHeight?: number, $zIndex?: number, $done?: boolean }>`
+const RuleTitleWrapper = styled.div<{ $headerHeight?: number, $zIndex?: number, $done?: boolean, $flush?: boolean }>`
   position: sticky;
   top: ${(props) => (props.$headerHeight || 0) + HEADER_DEFAULT_BUFFER}px;
   z-index: ${(props) => props.$zIndex || 995};
-  margin-top: 4px;
+  margin-top: ${(props) => (props.$flush ? 0 : 4)}px;
   background: ${(props) => (props.$done ? "rgba(34, 197, 94, 0.06)" : "#fff")};
   color: #1f2937;
   border: 1px solid ${(props) => (props.$done ? "rgba(34, 197, 94, 0.25)" : "rgba(0, 0, 0, 0.08)")};
@@ -113,7 +113,7 @@ const RuleTitle = styled.div<{ $done?: boolean }>`
   gap: 6px;
   width: 100%;
   color: #1f2937;
-  padding: 5px 8px;
+  padding: 6px 10px;
   background: ${(props) => (props.$done ? "rgba(34, 197, 94, 0.06)" : "rgba(0, 0, 0, 0.035)")};
 
   > div:first-child {
@@ -144,8 +144,8 @@ const RuleLeafWrapper = styled.div<{ $isDroppable: boolean; $isOver: boolean; $s
   flex-wrap: ${(props) => (props.$scroll ? "nowrap" : "wrap")};
   gap: 2px;
   align-items: center;
-  flex: ${(props) => (props.$scroll ? "1 1 0" : "1 1 10rem")};
-  min-width: ${(props) => (props.$scroll ? "0" : "min(100%, 10rem)")};
+  flex: 0 1 auto;
+  min-width: 0;
   max-width: 100%;
   overflow-x: ${(props) => (props.$scroll ? "auto" : "visible")};
   box-shadow: ${(props) =>
@@ -247,7 +247,6 @@ const Colon = styled.span`
 const StatusMark = styled.span<{ $tone: "done" | "partial" | "open" }>`
   flex-shrink: 0;
   width: 12px;
-  margin-top: 1px;
   text-align: center;
   font-weight: 800;
   line-height: 1.35;
@@ -433,11 +432,11 @@ const OverrideModal = ({ fullCode, ruleTitle, onConfirm, onCancel, isLoading }: 
 const RuleLeafContainer = styled.div<{ $tone: "done" | "partial" | "open" }>`
   display: flex;
   flex-wrap: nowrap;
-  align-items: flex-start;
+  align-items: center;
   gap: 6px;
   min-width: 0;
   max-width: 100%;
-  padding: 5px 8px;
+  padding: 5px 10px;
   border-top: 1px solid rgba(0, 0, 0, 0.06);
   background: ${(props) =>
     props.$tone === "done"
@@ -488,8 +487,13 @@ export const SkeletonRule: React.FC<React.PropsWithChildren> = ({
 /**
  * Recursive component to represent a rule.
  */
-const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: number }) => {
+const sameText = (left: string, right: string) =>
+  left.replace(/-/g, " ").replace(/\s+/g, " ").trim().toLowerCase()
+  === right.replace(/-/g, " ").replace(/\s+/g, " ").trim().toLowerCase();
+
+const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: number, flushTop?: boolean }) => {
   const { setCourses, courses } = useContext(ExpandedCoursesPanelContext);
+  const panelOptions = useContext(PanelOptionsContext);
   const { type, activeDegreePlanId, rule, progress } = ruleTree;
   const satisfied = progress === 1;
 
@@ -714,7 +718,25 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
     const tone = satisfied ? "done" : progress > 0 ? "partial" : "open";
     const suggestions = codes
       ? []
-      : (proposal?.placements.filter((row) => row.rules.includes(rule.id)) || []);
+      : (proposal?.placements.filter((row) =>
+          row.rules.includes(rule.id)
+          && !(row.slot_ids?.[0] || "").startsWith("slot:free:")
+        ) || []);
+    const chipText = (row: { short_label?: string; full_code?: string | null; label?: string }) =>
+      row.short_label || row.full_code || row.label || "";
+    const preferSearch = suggestions.some((row) => !fitsOnCard(chipText(row)));
+    const listed = panelOptions[String(rule.id)];
+    const panelListsCourses = Boolean(
+      listed?.courses && listed.courses.length > 0 && listed.count <= SHORT_LIST_MAX
+    );
+    // A search already stands for this requirement. A chip that only repeats
+    // the rule title sits beside it and says the same thing.
+    const showsSearch = preferSearch || !panelListsCourses;
+    const visibleSuggestions = suggestions.filter((row) => {
+      if (!fitsOnCard(chipText(row))) return false;
+      if (showsSearch && rule.title && sameText(chipText(row), rule.title)) return false;
+      return true;
+    });
     return (
       <RuleLeafContainer id={`rule-${rule.id}`} $tone={tone}>
         {overrideModal && (
@@ -742,11 +764,12 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
               unselectedFulfillmentsForRule={unselectedFulfillments}
               satisfied={satisfied}
               activeDegreePlanId={activeDegreePlanId}
+              preferSearch={preferSearch}
             />
           </RuleLeafWrapper>
-          {suggestions.length > 0 && (
+          {visibleSuggestions.length > 0 && (
             <SuggestionChips>
-              {suggestions.map((row) => (
+              {visibleSuggestions.map((row) => (
                 <SuggestionChip
                   key={row.slot_ids[0] || row.full_code || row.label}
                   type="button"
@@ -754,8 +777,7 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
                   title={row.semester ? "Show on the schedule" : undefined}
                   onClick={() => scrollToPlacement(row)}
                 >
-                  {(row.kind === "course" ? (row.short_label || row.label) : (row.full_code || row.label)).replace(/-/g, " ")}
-                  <CuLabel>{Number(row.cu).toFixed(1)} CU</CuLabel>
+                  {chipText(row).replace(/-/g, " ")}
                 </SuggestionChip>
               ))}
             </SuggestionChips>
@@ -836,7 +858,7 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
 
   return (
     <>
-      <RuleTitleWrapper $done={progress >= 1} $headerHeight={headerHeight} $zIndex={zIndex} onClick={() => setCollapsed(!collapsed)} ref={myHeaderRef}>
+      <RuleTitleWrapper $done={progress >= 1} $flush={ruleTree.flushTop} $headerHeight={headerHeight} $zIndex={zIndex} onClick={() => setCollapsed(!collapsed)} ref={myHeaderRef}>
         <RuleTitle $done={progress >= 1}>
           <div>
             {rule.title}

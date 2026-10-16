@@ -256,30 +256,12 @@ def _ancestor_titles(rule) -> str:
     return " ".join(titles)
 
 
-def _mentions_department(node, code) -> bool:
-    if not isinstance(node, dict):
-        return False
-    if node.get("type") == "LEAF":
-        key = node.get("key") or ""
-        value = node.get("value")
-        if key == "department__code" and str(value).upper() == code:
-            return True
-        if key == "department__code__in" and isinstance(value, list):
-            return any(str(item).upper() == code for item in value)
-        if key == "full_code__startswith" and str(value).upper().startswith(code):
-            return True
-    return any(_mentions_department(child, code) for child in node.get("clauses") or [])
-
-
 def is_writing_rule(rule) -> bool:
     """A writing seminar is a course of its own, even inside a general-education block."""
     if "writ" in (getattr(rule, "title", None) or "").lower():
         return True
-    try:
-        parsed = rule.q_json
-    except Exception:
-        return False
-    return _mentions_department(parsed, "WRIT")
+    # A college CU overlay lists WRIT among many departments. That is not writing.
+    return rule_departments(rule) == {"WRIT"}
 
 
 def is_coverage_rule(rule) -> bool:
@@ -299,13 +281,41 @@ def is_coverage_rule(rule) -> bool:
     )
 
 
+def is_free_elective_floor(rule) -> bool:
+    """
+    A credit minimum over the college's own departments, such as the Arts and
+    Sciences 30 CU requirement.
+
+    It is not a list of courses to schedule. Courses already in the degree
+    count toward it, and the credits still missing are free electives.
+    """
+    if getattr(rule, "credits", None) is None:
+        return False
+    return "cu requirement" in _ancestor_titles(rule).lower()
+
+
+def rule_departments(rule) -> set[str]:
+    """Department codes a leaf names. Empty when the leaf is not a department rule."""
+    parts = {"courses": [], "depts": [], "attrs": [], "gte": None, "lte": None}
+    try:
+        parsed = rule.q_json
+    except Exception:
+        parsed = None
+    if parsed:
+        _collect_schedule_parts(parsed, parts)
+    return {str(code).upper() for code in parts["depts"]}
+
+
 def schedule_exception(rule) -> str | None:
     """
     Named schedule stubs that should not be collapsed into a course list.
 
     Business breadth is every Wharton department, so the card says
-    `WH Business Breadth` instead of `ACCT/BEPP/FNCE/...`.
+    `WH Business Breadth` instead of `ACCT/BEPP/FNCE/...`. A college CU
+    requirement is a free elective, not the department list inside it.
     """
+    if is_free_elective_floor(rule):
+        return "Free Elective"
     titles = _ancestor_titles(rule).lower()
     if "business breadth" in titles:
         return "WH Business Breadth"

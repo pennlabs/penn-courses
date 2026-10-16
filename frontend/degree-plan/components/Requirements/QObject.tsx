@@ -11,7 +11,6 @@ import {
   ExpandedCoursesPanelContext,
   ExpandedCoursesPanelTrigger,
 } from "@/components/ExpandedBox/ExpandedCoursesPanelTrigger";import { ReviewPanelTrigger } from "../Infobox/ReviewPanel";
-import { CuLabel } from "../Course/Course";
 
 const interpolate = <T,>(arr: T[], separator: T) =>
     arr.flatMap(
@@ -268,9 +267,6 @@ const CourseOptionChips = ({ options, fulfillments }: { options: QCourse[]; fulf
                 return (
                     <OptionChip key={`${course.full_code}-${course.semester || ""}`} $kind={kind}>
                         {course.full_code.replace(/-/g, " ")}
-                        {fulfillment?.course?.credits != null && (
-                            <CuLabel>{Number(fulfillment.course.credits).toFixed(1)} CU</CuLabel>
-                        )}
                     </OptionChip>
                 );
             })}
@@ -476,6 +472,8 @@ interface RuleLeafProps {
     rule: Rule;
     satisfied: boolean;
     activeDegreePlanId: number;
+    /** The scheduled code is too long to show. The row is a search instead. */
+    preferSearch?: boolean;
 }
 
 export const SkeletonRuleLeaf = () => (
@@ -495,11 +493,11 @@ export const SkeletonRuleLeaf = () => (
 
 const RuleLeafWrapper = styled(Row)`
     margin-bottom: 0;
-    width: 100%;
-    flex: 1 1 auto;
+    width: auto;
+    flex: 0 1 auto;
     min-width: 0;
 `
-const RuleLeaf = ({ q_json, fulfillmentsForRule, unselectedFulfillmentsForRule, rule, satisfied, activeDegreePlanId }: RuleLeafProps) => {
+const RuleLeaf = ({ q_json, fulfillmentsForRule, unselectedFulfillmentsForRule, rule, satisfied, activeDegreePlanId, preferSearch }: RuleLeafProps) => {
     const t1 = transformDepartmentInClauses(q_json);
     const t2 = transformCourseClauses(t1);
     const t3 = transformSearchConditions(t2)
@@ -507,7 +505,21 @@ const RuleLeaf = ({ q_json, fulfillmentsForRule, unselectedFulfillmentsForRule, 
 
     return (
         <RuleLeafWrapper $wrap $inline $gap="4px">
-            <QObject q={q_json} fulfillments={fulfillmentsForRule} unselectedFulfillments={unselectedFulfillmentsForRule} rule={rule} satisfied={satisfied} activeDegreePlanId={activeDegreePlanId} />
+            {preferSearch ? (
+                <SearchCondition
+                    cu={rule.credits}
+                    num={rule.num}
+                    ruleId={rule.id}
+                    ruleQuery={rule.q}
+                    fulfillments={fulfillmentsForRule}
+                    unselectedFulfillments={unselectedFulfillmentsForRule}
+                    ruleIsSatisfied={satisfied}
+                    q={q_json}
+                    activeDegreeplanId={activeDegreePlanId}
+                />
+            ) : (
+                <QObject q={q_json} fulfillments={fulfillmentsForRule} unselectedFulfillments={unselectedFulfillmentsForRule} rule={rule} satisfied={satisfied} activeDegreePlanId={activeDegreePlanId} />
+            )}
         </RuleLeafWrapper>
     )
 }

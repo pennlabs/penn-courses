@@ -14,7 +14,7 @@ export interface StoredGenConfig {
 }
 
 export const emptyGenConfig = (): StoredGenConfig => ({
-  enabled: false,
+  enabled: true,
   allowSummer: false,
   semesters: {},
 });
@@ -34,7 +34,7 @@ export function parseGenConfig(raw: string | null): StoredGenConfig {
           };
         }
       });
-      return { enabled: false, allowSummer: false, semesters, pinnedSlots: {} };
+      return { enabled: true, allowSummer: false, semesters, pinnedSlots: {} };
     }
     if (parsed && typeof parsed === "object") {
       return {

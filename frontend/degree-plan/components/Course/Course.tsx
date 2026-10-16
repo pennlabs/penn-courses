@@ -69,8 +69,8 @@ export const BaseCourseContainer = styled.div<{
         : "inherit"};
 `;
 
-export const PlannedCourseContainer = styled(BaseCourseContainer)`
-  width: 100%;
+export const PlannedCourseContainer = styled(BaseCourseContainer)<{ $hug?: boolean }>`
+  width: ${(props) => (props.$hug ? "fit-content" : "100%")};
   gap: 0.65rem;
   position: relative;
   overflow: hidden;
@@ -559,6 +559,7 @@ const CourseComponent = ({
             $isDisabled={isDisabled}
             $highlightVariant={highlightVariant}
             $tone={tone}
+            $hug={courseType === ItemTypes.COURSE_IN_REQ}
             ref={dragRef}
             className={className}
           >
@@ -592,11 +593,6 @@ const CourseComponent = ({
             )}
             <CourseBadge>
               {course.full_code.replace("-", " ")}
-              {courseType === ItemTypes.COURSE_IN_REQ && (
-                <CuLabel>
-                  {Number(fulfillment.course?.credits ?? 1).toFixed(1)} CU
-                </CuLabel>
-              )}
               {isOverride && (
                 <OverrideBadge
                   data-tooltip-id={`override-${fulfillment.full_code}-${ruleId}`}
@@ -718,6 +714,7 @@ const CourseComponent = ({
           $isUsed={isUsed}
           $isDisabled={isDisabled}
           $highlightVariant={highlightVariant}
+          $hug={courseType === ItemTypes.COURSE_IN_REQ}
           ref={dragRef}
           className={className}
         >

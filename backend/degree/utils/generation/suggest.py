@@ -24,10 +24,13 @@ from degree.utils.degree_logic import (
 )
 from degree.utils.generation.overlap import pair_placeholders
 from degree.utils.generation.open_rules import (
+    _collect_schedule_parts,
     is_coverage_rule,
-    open_slots,
-    schedule_code,
+    is_free_elective_floor,
     listed_course_codes,
+    open_slots,
+    rule_departments,
+    schedule_code,
     schedule_exception,
     slot_cus,
     sole_listed_code,
@@ -36,6 +39,7 @@ from degree.utils.generation.open_rules import (
 
 
 ALTERNATIVE_LIMIT = 24
+FREE_ELECTIVE_LABEL = "Free Elective"
 # A course already in the degree may carry at most two general-education labels.
 MAX_COVERAGE_PER_COURSE = 2
 # Relations whose owner is a Degree. Majors and minors share the owner_id column shape
@@ -241,16 +245,132 @@ def _coverage_placeholder(slot, cu):
     }
 
 
-def _pad_to_degree_credits(plan_rules, fulfillments, credits_cache, ghosts, coverage_slots=()):
+def _department_of(code):
+    text = str(code or "")
+    if "-" not in text:
+        return ""
+    return text.split("-", 1)[0].upper()
+
+
+def _rule_parts(rule):
+    parts = {"courses": [], "depts": [], "attrs": [], "gte": None, "lte": None}
+    try:
+        parsed = rule.q_json
+    except Exception:
+        parsed = None
+    if parsed:
+        _collect_schedule_parts(parsed, parts)
+    return parts
+
+
+def _placeholder_satisfies_floor(rule_ids, rules_by_id, degree_rule_ids, floor_rule, floor_depts, belongs):
+    """
+    A stub on this degree counts when every course it could be is in the college.
+
+    A match-all query does not count: those credits might be taken outside the
+    college. A named list still counts when the catalog is missing a row, if
+    every code's department is on the floor.
+    """
+    relevant = [
+        rules_by_id[rule_id]
+        for rule_id in rule_ids
+        if rule_id in rules_by_id and rule_id in degree_rule_ids
+    ]
+    if not relevant:
+        return False
+    for other in relevant:
+        departments = rule_departments(other)
+        if departments:
+            if not departments <= floor_depts:
+                return False
+            continue
+        codes = listed_course_codes(other) or []
+        if codes:
+            for code in codes:
+                if belongs.get((floor_rule.id, code)):
+                    continue
+                department = _department_of(code)
+                if department and department in floor_depts:
+                    continue
+                return False
+            continue
+        if _rule_parts(other)["attrs"]:
+            continue
+        return False
+    return True
+
+
+def _cu_toward_floor(rule, degree_rule_ids, fulfillments, ghosts, credits_cache, rules_by_id):
+    """
+    Credits already on the plan or the schedule that satisfy a college CU floor.
+
+    A stored course counts from its code, whether or not it was claimed on the
+    floor. A suggestion counts the same way. A stub with no course counts when
+    it belongs to this degree and cannot name a department outside the floor.
+    """
+    codes = []
+    for fulfillment in fulfillments:
+        codes.append(fulfillment.full_code)
+    for ghost in ghosts:
+        code = ghost.get("full_code")
+        if code:
+            codes.append(code)
+            continue
+        for rule_id in ghost.get("rules") or []:
+            other = rules_by_id.get(rule_id)
+            if other is not None:
+                codes.extend(listed_course_codes(other) or [])
+    unique_codes = list(dict.fromkeys(codes))
+    belongs = prewarm_belongs_cache([rule], unique_codes) if unique_codes else {}
+    floor_depts = rule_departments(rule)
+    total = Decimal(0)
+    seen = set()
+
+    def add(code, cu):
+        nonlocal total
+        if not code or code in seen or not belongs.get((rule.id, code)):
+            return
+        seen.add(code)
+        total += cu
+
+    for fulfillment in fulfillments:
+        add(
+            fulfillment.full_code,
+            credits_cache.get(fulfillment.full_code, DEFAULT_COURSE_CREDITS),
+        )
+    for ghost in ghosts:
+        code = ghost.get("full_code")
+        cu = Decimal(str(ghost["cu"]))
+        if code:
+            add(code, cu)
+            continue
+        rule_ids = ghost.get("rules") or []
+        if _placeholder_satisfies_floor(
+            rule_ids, rules_by_id, degree_rule_ids, rule, floor_depts, belongs
+        ):
+            total += cu
+    return total
+
+
+def _pad_to_degree_credits(
+    plan_rules, fulfillments, credits_cache, ghosts, coverage_slots=(), floor_rules=()
+):
     """
     Fill each degree up to Degree.credits.
 
     Open sector and foundational-approach labels take the first credits of that
-    gap, and only within the gap. Leftover credits stay empty. A label a pool
-    course already carries is not passed in. Components that split one degree
-    share one floor. A course claimed by two degrees counts toward both. A
-    course on the plan that fills no rule counts toward the first degree that
-    still has a gap.
+    gap, and only within the gap. Whatever is still short becomes Free Elective
+    cards for that degree. A college CU requirement, such as Arts and Sciences
+    30 CU, is the same kind of card: courses that already satisfy it shrink the
+    number, and the degree total can ask for more. A label a pool course already
+    carries is not passed in. Components that split one degree share one floor.
+    A course claimed by two degrees counts once toward each floor, and a course
+    already stored on the plan is not counted again when it also appears as a
+    suggestion. A course on the plan that fills no rule counts toward the first
+    degree that still has a gap. A degree that has already reached its total
+    gets no elective, even when the other degree still has one, unless its own
+    CU requirement is still short. A College double major is one BA, so it has
+    one credit floor.
 
     Returns the new cards and the coverage slot ids a degree total accounted for,
     including labels that did not fit and so are not scheduled.
@@ -265,6 +385,25 @@ def _pad_to_degree_credits(plan_rules, fulfillments, credits_cache, ghosts, cove
     if not groups:
         return [], set()
 
+    rules_by_id = {rule.id: rule for rule in plan_rules.rule_to_component}
+    floors_by_degree = {}
+    for rule in floor_rules:
+        component = plan_rules.rule_to_component.get(rule)
+        if component is None or component.owner_id is None:
+            continue
+        floors_by_degree.setdefault(component.owner_id, []).append(rule)
+
+    # A College double major is one BA. Padding each Degree row to 36 CU
+    # would add a second pile of electives on top of the other major.
+    if plan_rules.composition.kind == "cas_double_major":
+        owner = plan_rules.composition.college_owner_id
+        if owner is None:
+            owner = next(iter(groups))
+        merged_components = [component for components in groups.values() for component in components]
+        merged_floors = [rule for rules in floors_by_degree.values() for rule in rules]
+        groups = {owner: merged_components}
+        floors_by_degree = {owner: merged_floors} if merged_floors else {}
+
     degrees = {degree.id: degree for degree in Degree.objects.filter(id__in=groups)}
 
     ruleless = []
@@ -275,29 +414,44 @@ def _pad_to_degree_credits(plan_rules, fulfillments, credits_cache, ghosts, cove
     rows = []
     for degree_id, components in groups.items():
         degree = degrees.get(degree_id)
-        if degree is None or degree.credits is None:
+        if degree is None:
+            continue
+        has_floor = bool(floors_by_degree.get(degree_id))
+        if degree.credits is None and not has_floor:
             continue
         rule_ids = {rule.id for component in components for rule in component.rules}
         counted = Decimal(0)
+        # A stored course is counted from the fulfillment. A suggestion for that
+        # same course must not be added again, which is what pushed a shared
+        # engineering course into the Wharton floor twice and ate the elective.
+        already = set()
         for fulfillment in fulfillments:
             if _claimed_rule_ids(fulfillment) & rule_ids:
                 counted += credits_cache.get(fulfillment.full_code, DEFAULT_COURSE_CREDITS)
+                already.add(fulfillment.full_code)
         for ghost in ghosts:
+            code = ghost.get("full_code")
+            if code and code in already:
+                continue
             if set(ghost.get("rules") or []) & rule_ids:
                 counted += Decimal(str(ghost["cu"]))
+                if code:
+                    already.add(code)
         anchor = sorted(
             components,
             key=lambda component: (
+                component.relation != "college",
                 component.relation != "degrees",
                 not component.counts_toward_degree_cap,
                 component.key,
             ),
         )[0]
+        required = Decimal(degree.credits) if degree.credits is not None else Decimal(0)
         rows.append(
             {
                 "key": anchor.key,
                 "degree_id": degree_id,
-                "required": Decimal(degree.credits),
+                "required": required,
                 "counted": counted,
                 "rule_ids": rule_ids,
             }
@@ -315,14 +469,53 @@ def _pad_to_degree_credits(plan_rules, fulfillments, credits_cache, ghosts, cove
     for row in rows:
         owned = [slot for slot in coverage_slots if slot.rule_id in row["rule_ids"]]
         consumed.update(slot.slot_id for slot in owned)
-        shortfall = row["required"] - row["counted"]
-        if shortfall <= 0:
+        # The college CU requirement and the degree total share one pile of
+        # free electives. Whichever still needs more credits sets the count.
+        floor_short = Decimal(0)
+        for rule in floors_by_degree.get(row["degree_id"], []):
+            satisfied_cu = _cu_toward_floor(
+                rule,
+                row["rule_ids"],
+                fulfillments,
+                ghosts,
+                credits_cache,
+                rules_by_id,
+            )
+            remaining = max(Decimal(0), Decimal(rule.credits) - satisfied_cu)
+            if remaining > floor_short:
+                floor_short = remaining
+        degree_short = row["required"] - row["counted"]
+        if degree_short < 0:
+            degree_short = Decimal(0)
+        needed = max(degree_short, floor_short)
+        if needed <= 0:
             continue
         pending = list(owned)
-        for cu in slot_cus(None, shortfall):
-            if not pending:
-                break
-            padding.append(_coverage_placeholder(pending.pop(0), cu))
+        free_index = 0
+        for cu in slot_cus(None, needed):
+            if pending:
+                padding.append(_coverage_placeholder(pending.pop(0), cu))
+                continue
+            # These fill the college CU floor and the degree total, but they are
+            # not a row on that 30 CU requirement. The requirements panel would
+            # otherwise draw leftover chips and an info button on that leaf.
+            padding.append(
+                {
+                    "slot_ids": [f"slot:free:{row['key']}:{free_index}"],
+                    "kind": "placeholder",
+                    "full_code": None,
+                    "fulfillment_id": None,
+                    "label": FREE_ELECTIVE_LABEL,
+                    "short_label": FREE_ELECTIVE_LABEL,
+                    "cu": float(cu),
+                    "rules": [],
+                    "component_key": row["key"],
+                    "rule_q": None,
+                    "alternatives": [],
+                    "course_number": 10**9,
+                }
+            )
+            free_index += 1
     return padding, consumed
 
 
@@ -334,6 +527,19 @@ def suggest(degree_plan):
     One ghost may list several slot ids when `allocate_rules` shares the course.
     """
     slots = open_slots(degree_plan)
+    floor_rules = []
+    seen_floors = set()
+    schedulable = []
+    for slot in slots:
+        # The college CU requirement is not one card per department. Its
+        # remainder is added later, as free electives for that degree.
+        if is_free_elective_floor(slot.rule):
+            if slot.rule.id not in seen_floors:
+                floor_rules.append(slot.rule)
+                seen_floors.add(slot.rule.id)
+            continue
+        schedulable.append(slot)
+    slots = schedulable
 
     fulfillments = list(degree_plan.fulfillments.prefetch_related("rules", "overrides"))
     plan_codes = [f.full_code for f in fulfillments]
@@ -526,7 +732,12 @@ def suggest(degree_plan):
     ghosts = pair_placeholders(ghosts, plan_rules, sharing)
     unmet = _unmet_coverage(coverage, fulfillments, ghosts)
     padding, consumed = _pad_to_degree_credits(
-        plan_rules, fulfillments, credits_cache, ghosts, coverage_slots=unmet
+        plan_rules,
+        fulfillments,
+        credits_cache,
+        ghosts,
+        coverage_slots=unmet,
+        floor_rules=floor_rules,
     )
     for slot in unmet:
         if slot.slot_id in consumed:
