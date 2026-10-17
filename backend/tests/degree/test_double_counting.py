@@ -247,16 +247,16 @@ class CrossDegreeDoubleCountingTest(TestCase):
         self.assertIn(self.math_rule, double_counts[self.cis_rule])
         self.assertTrue(check_legal({self.cis_rule, self.math_rule}, rule_to_degree, double_counts))
 
-    def test_majors_that_do_not_permit_sharing_are_illegal_together(self):
-        # Sharing is not free between programs: with the (MAJOR) target removed from both,
-        # neither permits the other and the pairing is caught.
+    def test_a_dual_degree_shares_even_when_the_audits_name_nothing(self):
+        # Cross-component sharing comes from the plan being two degrees, not from a (MAJOR)
+        # target happening to match the other school's block.
         for rule in [self.cis_rule, self.math_rule]:
             rule.share_targets = []
             rule.save()
 
         _, rule_to_degree, double_counts = map_rules_and_degrees(self.degree_plan)
-        self.assertNotIn(self.cis_rule, double_counts)
-        self.assertFalse(
+        self.assertIn(self.math_rule, double_counts[self.cis_rule])
+        self.assertTrue(
             check_legal({self.cis_rule, self.math_rule}, rule_to_degree, double_counts)
         )
 
@@ -279,12 +279,13 @@ class CrossDegreeDoubleCountingTest(TestCase):
         _, _, double_counts = map_rules_and_degrees(self.degree_plan)
         self.assertIn(self.math_rule, double_counts[self.cis_rule])
 
-        # and a target naming a major that is not in the plan matches nothing
+        # Across two degrees the pair is allowed because the plan is a dual degree, even
+        # when the target names a major that is not on the plan.
         self.cis_rule.share_targets = [{"kind": "MAJOR", "value": "PHYS"}]
         self.cis_rule.save()
 
         _, _, double_counts = map_rules_and_degrees(self.degree_plan)
-        self.assertNotIn(self.cis_rule, double_counts)
+        self.assertIn(self.math_rule, double_counts[self.cis_rule])
 
 
 class ComponentPassIsolationTest(TestCase):

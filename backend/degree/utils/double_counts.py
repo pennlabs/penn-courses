@@ -89,15 +89,40 @@ def leaf_rules(degree_trees) -> list:
     )
 
 
-def resolve_double_counts(degree_trees):
+def _owner_key(owner):
+    key = getattr(owner, "key", None)
+    if key is not None:
+        return key
+    return (type(owner).__name__, getattr(owner, "pk", id(owner)))
+
+
+def resolve_double_counts(degree_trees, policy=None):
     """
     Given the rule trees of some degrees (as returned by get_degree_trees), returns a mapping
     from each of their leaf rules to the set of leaf rules it is allowed to double count with.
-    """
-    double_counts = defaultdict(set)
 
-    for home, other in permutations(leaf_rules(degree_trees), 2):
-        if any(target_matches(target, home, other) for target in home.share_targets):
+    ShareWith applies inside one component. Across components, sharing is allowed only when
+    the plan's policy says so (`cross_component_sharing`): a dual degree, a College double
+    major, a second major, or a submatriculation. A `(MAJOR)` target no longer matches a
+    major block that belongs to a different program by accident.
+    """
+    leaf_to_key = {}
+    for owner, rules in degree_trees.items():
+        key = _owner_key(owner)
+        for rule in rules:
+            if rule.q:
+                leaf_to_key[rule.id] = key
+
+    double_counts = defaultdict(set)
+    cross = bool(policy and policy.cross_component_sharing)
+    leaves = leaf_rules(degree_trees)
+
+    for home, other in permutations(leaves, 2):
+        if leaf_to_key.get(home.id) == leaf_to_key.get(other.id):
+            if any(target_matches(target, home, other) for target in home.share_targets or []):
+                double_counts[home].add(other)
+                double_counts[other].add(home)
+        elif cross:
             double_counts[home].add(other)
             double_counts[other].add(home)
 
