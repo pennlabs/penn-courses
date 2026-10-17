@@ -15,6 +15,7 @@ from courses.models import (
     StatusUpdate,
     UserProfile,
 )
+from courses.util import MAX_PREREQUISITE_CHAIN_DEPTH, get_prerequisite_chain
 from plan.management.commands.recommendcourses import cosine_similarity
 
 
@@ -361,6 +362,39 @@ class CourseDetailSerializer(CourseListSerializer):
     sections = SectionDetailSerializer(
         many=True, read_only=True, help_text="A list of the sections of this course."
     )
+    prerequisite_courses = serializers.SlugRelatedField(
+        slug_field="full_code",
+        many=True,
+        read_only=True,
+        help_text=dedent(
+            """
+        The full codes (DEPT-####) of courses that are structured prerequisites of this
+        course, as parsed from Path@Penn class notes. Empty if none are known; see the
+        free-text `prerequisites` field for the registrar's own wording.
+        """
+        ),
+    )
+    dependent_courses = serializers.SlugRelatedField(
+        slug_field="full_code",
+        many=True,
+        read_only=True,
+        help_text=dedent(
+            """
+        The full codes (DEPT-####) of courses that list this course as a structured
+        prerequisite, i.e. the courses this one unlocks.
+        """
+        ),
+    )
+    prerequisite_chain = serializers.SerializerMethodField(
+        help_text=dedent(
+            f"""
+        This course and its prerequisites, their prerequisites and so on (up to
+        {MAX_PREREQUISITE_CHAIN_DEPTH} levels), as a map from full code to
+        `{{"title": ..., "prerequisite_rule": ...}}`. See `Course.prerequisite_rule` for the
+        rule format; each rule is from the most recent semester that has one.
+        """
+        ),
+    )
     pre_ngss_requirements = PreNGSSRequirementListSerializer(
         many=True,
         read_only=True,
@@ -411,6 +445,9 @@ class CourseDetailSerializer(CourseListSerializer):
         max_digits=4, decimal_places=3, read_only=True, help_text=work_required_help
     )
 
+    def get_prerequisite_chain(self, obj):
+        return get_prerequisite_chain(obj.full_code)
+
     class Meta:
         model = Course
         fields = [
@@ -427,6 +464,9 @@ class CourseDetailSerializer(CourseListSerializer):
             "credits",
         ] + [
             "crosslistings",
+            "prerequisite_courses",
+            "dependent_courses",
+            "prerequisite_chain",
             "pre_ngss_requirements",
             "attributes",
             "restrictions",

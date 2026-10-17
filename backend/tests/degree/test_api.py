@@ -52,7 +52,7 @@ class DegreePlanViewsetTest(TestCase):
 
 class FulfillmentViewsetTest(TestCase):
     def assertSerializedFulfillmentEquals(self, fulfillment: dict, expected: Fulfillment):
-        self.assertEqual(len(fulfillment), 9)
+        self.assertEqual(len(fulfillment), 10)
         self.assertEqual(fulfillment["id"], expected.id)
 
         expected_course = SimpleCourseSerializer(
@@ -63,6 +63,7 @@ class FulfillmentViewsetTest(TestCase):
         self.assertEqual(fulfillment["semester"], expected.semester)
         self.assertEqual(fulfillment["degree_plan"], expected.degree_plan.id)
         self.assertEqual(fulfillment["full_code"], expected.full_code)
+        self.assertEqual(fulfillment["ignore_prereqs"], expected.ignore_prereqs)
         self.assertEqual(
             fulfillment["unselected_rules"], [rule.id for rule in expected.unselected_rules.all()]
         )
