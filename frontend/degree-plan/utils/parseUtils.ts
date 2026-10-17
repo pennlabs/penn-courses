@@ -20,6 +20,19 @@ const NO_CONCENTRATION = new Set([
   "not designated",
 ]);
 
+// Distance between a catalog year and the year the student started; 0 when the start is unknown.
+const yearDistance = (year: number, startYear: number | null) =>
+  startYear ? Math.abs(year - startYear) : 0;
+
+// Sort key placing semesters in the order taken, transfer credit first.
+const semesterIndex = (sem: string) => {
+  const year = parseInt(sem.replace(/\D/g, ""), 10);
+  if (isNaN(year)) return -Infinity;
+  if (/spring/i.test(sem)) return year * 3;
+  if (/summer/i.test(sem)) return year * 3 + 1;
+  return year * 3 + 2;
+};
+
 type LineItem = {
   dir: string;
   fontName: string;
@@ -297,12 +310,15 @@ const getCourseToSem = (truncatedTranscript: string[]) => {
 };
 
 // Returns the option whose program name is closest to the transcript's wording, or undefined
-// if no option is close enough. 
+// if no option is close enough. Ties are broken by matching concentration, then by the catalog
+// year nearest the student's start, then by exact wording.
 const matchOption = <T>(
   major: string,
   concentration: string,
+  startYear: number | null,
   options: T[] | undefined,
-  namesOf: (option: T) => [string, string]
+  namesOf: (option: T) => [string, string],
+  yearOf: (option: T) => number
 ): T | undefined => {
   if (!options?.length) return undefined;
 
@@ -314,6 +330,7 @@ const matchOption = <T>(
       name: normalize(name ?? ""),
       concentration: normalize(optionConcentration ?? ""),
       distance: distance(target, normalize(name ?? "")),
+      yearDistance: yearDistance(yearOf(option), startYear),
     };
   });
 
@@ -324,15 +341,22 @@ const matchOption = <T>(
   const wanted = normalize(concentration);
   // A transcript naming no concentration and one naming "Non Designated" mean the same thing,
   // so both look for the option that names none rather than for a close spelling.
-  const preferred = NO_CONCENTRATION.has(wanted)
-    ? closest.find((candidate) => NO_CONCENTRATION.has(candidate.concentration))
-    : closest.find(
-        (candidate) =>
-          candidate.concentration &&
-          distance(wanted, candidate.concentration) <= matchTolerance(candidate.concentration)
-      );
+  const concentrationMatches = (candidate: typeof scored[number]) =>
+    NO_CONCENTRATION.has(wanted)
+      ? NO_CONCENTRATION.has(candidate.concentration)
+      : Boolean(candidate.concentration) &&
+        distance(wanted, candidate.concentration) <=
+          matchTolerance(candidate.concentration);
 
-  return (preferred ?? closest[0]).option;
+  const withConcentration = closest.filter(concentrationMatches);
+  const pool = withConcentration.length ? withConcentration : closest;
+  pool.sort(
+    (a, b) =>
+      a.yearDistance - b.yearDistance ||
+      Number(b.concentration === wanted) - Number(a.concentration === wanted)
+  );
+
+  return pool[0].option;
 };
 
 // Given the programs read off a transcript, work out the student's selections. Under each school
@@ -350,18 +374,24 @@ export const detectSelections = (
       ? matchOption(
           first.name,
           first.concentration,
+          startingYear,
           getMajorOptions(degrees, school, startingYear),
-          (option) => [option.value.major_name, option.value.concentration_name]
+          (option) => [option.value.major_name, option.value.concentration_name],
+          (option) => option.value.year
         ) ?? null
       : null;
 
     const additionalOptions = getAdditionalMajorOptions(majors, school, startingYear);
     const additional: MajorOptionItem[] = [];
     rest.forEach(({ name, concentration }) => {
-      const match = matchOption(name, concentration, additionalOptions, (option) => [
-        option.value.name ?? "",
-        option.value.concentration_name ?? "",
-      ]);
+      const match = matchOption(
+        name,
+        concentration,
+        startingYear,
+        additionalOptions,
+        (option) => [option.value.name ?? "", option.value.concentration_name ?? ""],
+        (option) => option.value.year
+      );
       if (match && !additional.includes(match)) additional.push(match);
     });
 
@@ -434,11 +464,25 @@ export const parseTranscript = (
   let courseToSem: { [key: string]: string } = {};
   let startYear: number = 0;
 
-  // A submatriculant's shared courses appear on both records. Later records win, so a course
-  // keeps the semester its most complete record gives it.
-  splitRecords(textResult).forEach((record) => {
-    Object.assign(courseToSem, parseRecordCourses(record.lines));
-  });
+  // Earliest year named by the semesters, or null (e.g. only _TRAN).
+  const firstYear = (sems: string[]): number | null => {
+    const years = sems
+      .map((sem) => parseInt(sem.replace(/\D/g, ""), 10))
+      .filter((y) => !isNaN(y));
+    return years.length ? Math.min(...years) : null;
+  };
+
+  // A submatriculant's masters record comes first on the transcript; take records in the order
+  // they were begun. Their shared courses appear on both records, and later records win, so a
+  // course keeps the semester its most complete record gives it.
+  splitRecords(textResult)
+    .map((record) => parseRecordCourses(record.lines))
+    .map((recordCourses) => ({
+      recordCourses,
+      startYear: firstYear(Object.values(recordCourses)),
+    }))
+    .sort((a, b) => (a.startYear ?? Infinity) - (b.startYear ?? Infinity))
+    .forEach(({ recordCourses }) => Object.assign(courseToSem, recordCourses));
 
   const formattedSeparatedCourses = Object.values(
     Object.entries(courseToSem).reduce(
@@ -450,13 +494,11 @@ export const parseTranscript = (
       },
       {} as { [key: string]: { sem: string; courses: string[] } }
     )
-  );
+    // Chronological order: the panel displays this, and the backend gives the submatriculation
+    // double counting allowance to the earliest courses it receives.
+  ).sort((a, b) => semesterIndex(a.sem) - semesterIndex(b.sem));
 
-  // Scrape start year and infer grad year (skip _TRAN which yields NaN)
-  const years = formattedSeparatedCourses
-    .map(({ sem }) => parseInt(sem.replace(/\D/g, "")))
-    .filter((y) => !isNaN(y));
-  startYear = years.length ? Math.min(...years) : 0;
+  startYear = firstYear(formattedSeparatedCourses.map(({ sem }) => sem)) ?? 0;
 
   return {
     scrapedCourses: formattedSeparatedCourses,

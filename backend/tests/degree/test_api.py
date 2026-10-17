@@ -92,23 +92,28 @@ class FulfillmentViewsetTest(TestCase):
         fill_course_soft_state()
 
         self.degree = Degree.objects.create(program="EU_BSE", degree="BSE", major="CIS", year=2023)
+        # One block whose rules all share with each other, so a course may count for several
+        shares = dict(block_type="MAJOR", block_value="CIS", share_targets=[{"kind": "THISBLOCK"}])
         self.parent_rule = Rule.objects.create()
         self.rule1 = Rule.objects.create(
             parent=self.parent_rule,
             q=repr(Q(full_code="CIS-1200")),
             num=1,
+            **shares,
         )
         self.rule2 = Rule.objects.create(  # .5 cus / 1 course CIS-19XX classes
             parent=self.parent_rule,
             q=repr(Q(full_code__startswith="CIS-19")),
             credits=0.5,
             num=1,
+            **shares,
         )
         self.rule3_parent = Rule.objects.create()
         self.rule3 = Rule.objects.create(  # 2 CIS classes
             parent=self.rule3_parent,
             q=repr(Q(full_code__startswith="CIS")),
             num=2,
+            **shares,
         )
         self.degree.rules.add(
             self.parent_rule, self.rule1, self.rule2, self.rule3_parent, self.rule3
