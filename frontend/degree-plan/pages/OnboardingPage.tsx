@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from "react";
-import styled from "@emotion/styled";
 import useSWR from "swr";
 import { pdfjs } from "react-pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
