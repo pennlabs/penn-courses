@@ -394,15 +394,20 @@ export default function CreateWithTranscriptPanel({
   const { startYears: startingYearOptions, gradYears: graduationYearOptions } = getYearOptions();
 
   // Majors are held to the year the student started, so changing it drops any that belong to
-  // a different year.
+  // a different year. A school with its own start year (a submatriculant's masters) keeps its
+  // majors, since they don't follow the plan's.
   useEffect(() => {
     const year = startingYear?.value;
     setSelections((current) =>
-      current.map((s) => ({
-        ...s,
-        primary: s.primary?.value.year === year ? s.primary : null,
-        additional: s.additional.filter((m) => m.value.year === year),
-      }))
+      current.map((s) =>
+        s.startYear
+          ? s
+          : {
+              ...s,
+              primary: s.primary?.value.year === year ? s.primary : null,
+              additional: s.additional.filter((m) => m.value.year === year),
+            }
+      )
     );
   }, [startingYear?.value]);
 
@@ -540,7 +545,7 @@ export default function CreateWithTranscriptPanel({
                           <SchoolCard
                             key={selection.school.value}
                             selection={selection}
-                            startingYear={startingYear?.value ?? null}
+                            startingYear={selection.startYear ?? startingYear?.value ?? null}
                             degrees={degrees}
                             standaloneMajors={standaloneMajors}
                             isLoadingDegrees={isLoadingDegrees}

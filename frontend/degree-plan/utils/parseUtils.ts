@@ -135,6 +135,10 @@ export type MajorOptionItem = {
 // A Path program code reads MAJOR-DEGREE[-CONCENTRATION], e.g. CSCI-BA-GEN.
 const degreeCodeOf = (programCode: string) => programCode.split("-")[1];
 
+// Whether a student can add majors on top of the one a school's degree includes. A masters is a
+// single program, so it takes none.
+export const takesAdditionalMajors = (school: SchoolOption) => school.value !== "MSE";
+
 // Given the majors that can be added on top of a degree, a school and a starting year, return
 // the additional majors the school offers for that starting year. A major's requirements depend
 // on the degree it sits under (CSCI as a College major is not CSCI as an Engineering major), so
@@ -145,7 +149,7 @@ export const getAdditionalMajorOptions = (
   startingYear: number | null
 ): MajorOptionItem[] | undefined => {
   if (!majors) return undefined;
-  if (!school || !startingYear) return [];
+  if (!school || !startingYear || !takesAdditionalMajors(school)) return [];
   return majors
     .filter(
       (major) =>
@@ -166,12 +170,17 @@ export type SchoolSelection = {
   school: SchoolOption;
   primary: DegreeOption | null;
   additional: MajorOptionItem[];
+  // The catalog year this school's majors come from, when it isn't the plan's starting year. A
+  // submatriculant's masters begins years after their undergraduate degree, so it keeps its own.
+  startYear?: number;
 };
 
 // What a transcript says about one program: a school and the majors listed under it, in order.
 type ParsedProgram = {
   school: SchoolOption;
   majors: { name: string; concentration: string }[];
+  // The year the program's record began, or null if its record names no semester.
+  startYear: number | null;
 };
 
 // Given the lines from where a program is named, return the school it belongs to. The program
@@ -212,41 +221,47 @@ const valueAfter = (line: string, label: string): string | null => {
   return match[1].split(/\s+subj\s+no\.|\s*_{5,}|\s+[a-z]{2,5}\s\d{4}\b/)[0].trim();
 };
 
-// Given the lines of a transcript, return each program it lists with the majors under it. A
-// major belongs to the closest program above it, and a concentration to the major above it.
-export const parsePrograms = (textResult: string[]): ParsedProgram[] => {
+// Given a transcript's records, return each program it lists with the majors under it. A major
+// belongs to the closest program above it, and a concentration to the major above it. Each
+// program takes the start year of the record it is listed in.
+export const parsePrograms = (
+  records: { lines: string[]; startYear: number | null }[]
+): ParsedProgram[] => {
   const programs: ParsedProgram[] = [];
   let current: ParsedProgram | undefined;
 
-  for (let l = 0; l < textResult.length; l++) {
-    const line = textResult[l];
+  records.forEach(({ lines, startYear }) => {
+    for (let l = 0; l < lines.length; l++) {
+      const line = lines[l];
 
-    if (PROGRAM_LINE.test(line)) {
-      const school = detectSchool(programHeader(textResult, l));
-      // A program that isn't one of our schools takes its majors with it.
-      current = school && { school, majors: [] };
-      if (current) {
-        // A student's program is sometimes listed again, e.g. on a later page.
-        const existing = programs.find((p) => p.school.value === current!.school.value);
-        if (existing) current = existing;
-        else programs.push(current);
+      if (PROGRAM_LINE.test(line)) {
+        const school = detectSchool(programHeader(lines, l));
+        // A program that isn't one of our schools takes its majors with it.
+        current = school && { school, majors: [], startYear };
+        if (current) {
+          // A student's program is sometimes listed again, e.g. on a later page. It keeps the
+          // year of its first listing, since a later page's record starts partway through.
+          const existing = programs.find((p) => p.school.value === current!.school.value);
+          if (existing) current = existing;
+          else programs.push(current);
+        }
+      }
+
+      const major = valueAfter(line, "major");
+      if (major !== null && current) {
+        const known = current.majors.some((m) => m.name === major);
+        if (major && !major.includes("undeclared") && !known) {
+          current.majors.push({ name: major, concentration: "" });
+        }
+      }
+
+      const concentration = valueAfter(line, "concentration");
+      if (concentration !== null && current?.majors.length) {
+        const latest = current.majors[current.majors.length - 1];
+        if (!latest.concentration) latest.concentration = concentration;
       }
     }
-
-    const major = valueAfter(line, "major");
-    if (major !== null && current) {
-      const known = current.majors.some((m) => m.name === major);
-      if (major && !major.includes("undeclared") && !known) {
-        current.majors.push({ name: major, concentration: "" });
-      }
-    }
-
-    const concentration = valueAfter(line, "concentration");
-    if (concentration !== null && current?.majors.length) {
-      const latest = current.majors[current.majors.length - 1];
-      if (!latest.concentration) latest.concentration = concentration;
-    }
-  }
+  });
 
   return programs;
 };
@@ -361,33 +376,36 @@ const matchOption = <T>(
 
 // Given the programs read off a transcript, work out the student's selections. Under each school
 // the first major listed is the one they are enrolled in, and any others are added on top of it.
+// Each program is matched against the catalog of the year its own record began, falling back to
+// the plan's starting year.
 export const detectSelections = (
   programs: ParsedProgram[],
   degrees: DegreeListing[] | undefined,
   majors: Major[] | undefined,
   startingYear: number | null
 ): SchoolSelection[] =>
-  programs.map(({ school, majors: listed }) => {
+  programs.map(({ school, majors: listed, startYear: programStart }) => {
+    const year = programStart ?? startingYear;
     const [first, ...rest] = listed;
 
     const primary = first
       ? matchOption(
           first.name,
           first.concentration,
-          startingYear,
-          getMajorOptions(degrees, school, startingYear),
+          year,
+          getMajorOptions(degrees, school, year),
           (option) => [option.value.major_name, option.value.concentration_name],
           (option) => option.value.year
         ) ?? null
       : null;
 
-    const additionalOptions = getAdditionalMajorOptions(majors, school, startingYear);
+    const additionalOptions = getAdditionalMajorOptions(majors, school, year);
     const additional: MajorOptionItem[] = [];
     rest.forEach(({ name, concentration }) => {
       const match = matchOption(
         name,
         concentration,
-        startingYear,
+        year,
         additionalOptions,
         (option) => [option.value.name ?? "", option.value.concentration_name ?? ""],
         (option) => option.value.year
@@ -395,7 +413,9 @@ export const detectSelections = (
       if (match && !additional.includes(match)) additional.push(match);
     });
 
-    return { school, primary, additional };
+    return year !== null && year !== startingYear
+      ? { school, primary, additional, startYear: year }
+      : { school, primary, additional };
   });
 
 // One academic record within a transcript. A submatriculant's transcript holds two — an
@@ -472,15 +492,15 @@ export const parseTranscript = (
     return years.length ? Math.min(...years) : null;
   };
 
+  const records = splitRecords(textResult).map(({ lines }) => {
+    const recordCourses = parseRecordCourses(lines);
+    return { lines, recordCourses, startYear: firstYear(Object.values(recordCourses)) };
+  });
+
   // A submatriculant's masters record comes first on the transcript; take records in the order
   // they were begun. Their shared courses appear on both records, and later records win, so a
   // course keeps the semester its most complete record gives it.
-  splitRecords(textResult)
-    .map((record) => parseRecordCourses(record.lines))
-    .map((recordCourses) => ({
-      recordCourses,
-      startYear: firstYear(Object.values(recordCourses)),
-    }))
+  [...records]
     .sort((a, b) => (a.startYear ?? Infinity) - (b.startYear ?? Infinity))
     .forEach(({ recordCourses }) => Object.assign(courseToSem, recordCourses));
 
@@ -504,7 +524,7 @@ export const parseTranscript = (
     scrapedCourses: formattedSeparatedCourses,
     startYear: startYear,
     detectedSelections: detectSelections(
-      parsePrograms(textResult),
+      parsePrograms(records),
       degrees,
       majors,
       startYear
