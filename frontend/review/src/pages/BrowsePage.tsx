@@ -11,7 +11,7 @@ import Collapse from "../components/common/Collapse";
 import ScrollToTop from "../components/common/ScrollToTop";
 import { useFilterState, useFilterDispatch } from "../utils/FilterContext";
 import { getFilteredURL, loadStateFromURL } from "../utils/filters";
-import { maxWidth, isBelow } from "../styles/media";
+import { maxWidth, minWidth, isBelow } from "../styles/media";
 import { interactiveTransition } from "../styles/mixins";
 
 // Browse Page is the main entrypoint for the app
@@ -19,7 +19,6 @@ import { interactiveTransition } from "../styles/mixins";
 const PageWrapper = styled.div`
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
   width: 100%;
   margin: 0;
   padding: 0;
@@ -32,7 +31,6 @@ const ContentView = styled.div`
   flex-direction: row;
   gap: 30px;
   width: 100%;
-  flex: 1;
   min-height: 0;
 
   ${maxWidth("lg")} {
@@ -57,12 +55,21 @@ const CourseResultsWrapper = styled.div`
   width: calc(
     100vw - ${({ theme }) => theme.size.sidebarWidth} - 80px - 30px
   );
-  min-height: 0;
   display: flex;
   flex-direction: column;
 
+  // The results scroll inside a capped panel instead of running down the page. On
+  // desktop this keeps the filters in view beside it.
+  ${minWidth("lg")} {
+    height: 80vh;
+  }
+
+  // Stacked under the filters, so size to the content (up to the cap) rather than
+  // stretching short states like "No results" to full height.
   ${maxWidth("lg")} {
     width: 100%;
+    flex: none;
+    max-height: 80dvh;
   }
 `;
 

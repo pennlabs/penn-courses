@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 import { HiBars3, HiXMark } from "react-icons/hi2";
 import Collapse from "./common/Collapse";
@@ -111,20 +111,6 @@ const Header = () => {
 
   const dispatch = useFilterDispatch();
 
-  const getCourseCount = () =>
-    Object.keys(localStorage).filter(a => !a.startsWith("meta-")).length;
-  const [courseCount, setCourseCount] = useState(getCourseCount());
-
-  useEffect(() => {
-    const onStorageChange = () => setCourseCount(getCourseCount());
-    window.addEventListener("storage", onStorageChange);
-    window.onCartUpdated = onStorageChange;
-    return () => {
-      window.removeEventListener("storage", onStorageChange);
-      window.onCartUpdated = null;
-    };
-  }, []);
-
   const history = useHistory();
 
   return (
@@ -166,10 +152,6 @@ const Header = () => {
           >
             Feedback
           </StyledLink>
-          <Link to="/cart" id="cart-icon" title="Course Cart">
-            <i id="cart" className="fa fa-shopping-cart" />
-            {courseCount > 0 && <span id="cart-count">{courseCount}</span>}
-          </Link>
         </LinksContainer>
         <Hamburger onClick={() => setIsOpen(!isOpen)}>
           {isOpen ? <HiXMark /> : <HiBars3 />}
@@ -185,7 +167,6 @@ const Header = () => {
           >
             Feedback
           </StyledLink>
-          <StyledNavLink to="/cart">Course Cart</StyledNavLink>
         </MobileLinksInner>
       </MobileMenuWrapper>
     </>

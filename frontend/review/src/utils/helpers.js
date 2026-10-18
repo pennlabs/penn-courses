@@ -61,32 +61,6 @@ export function convertInstructorName(name) {
   return out;
 }
 
-export const getCartCourses = () =>
-  Object.keys(localStorage)
-    .filter(k => !k.startsWith("meta-"))
-    .map(k => {
-      let out;
-      try {
-        out = JSON.parse(localStorage.getItem(k));
-      } catch (e) {
-        // Not a cart entry (could be a key written by a browser extension), so ignore it.
-        return null;
-      }
-      if (typeof out !== "object" || out === null) {
-        return null;
-      }
-      const typeDict = {};
-      if (out.info != null) {
-        out.info.forEach(v => {
-          typeDict[v.category] = v;
-        });
-        out.info = typeDict;
-      }
-      out.course = k;
-      return out;
-    })
-    .filter(a => a !== null);
-
 export const toNormalizedSemester = sem => {
   const year = sem.slice(0, 4);
   const code = sem.slice(4);

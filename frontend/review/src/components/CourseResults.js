@@ -28,8 +28,17 @@ const Container = styled.div`
   background: ${({ theme }) => theme.color.surface.page};
   flex: 1;
   min-height: 0;
-  overflow: hidden;
   border: 1px solid ${({ theme }) => theme.color.border.default};
+  overflow-y: auto;
+`;
+
+// Fills the rest of the panel so the table can scroll inside it
+const ResultsArea = styled.div`
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
 `;
 
 const BrowsingTitle = styled.span`
@@ -319,14 +328,14 @@ const CourseResults = () => {
                       </span>
                     </InfoBanner>
                   )}
-                  <div style={{ width: "100%", height: "100%" }}>
+                  <ResultsArea>
                     <CourseResultsTable
                       filteredResults={filteredResults}
                       isAverage={true} // true until later release when backend API is updated to show recent ratings
                       sentinelRef={sentinelRef}
                       isLoadingMore={isLoadingMore}
                     />
-                  </div>
+                  </ResultsArea>
                 </>
               ) : (
                 <div

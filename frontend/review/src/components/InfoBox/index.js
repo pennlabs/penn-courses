@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { useQuery } from "@tanstack/react-query";
 
 import Ratings from "./InfoRatings";
@@ -40,9 +40,6 @@ const InfoBox = ({
   isCourseEval,
   setIsCourseEval
 }) => {
-  const [inCourseCart, setInCourseCart] = useState(
-    Boolean(localStorage.getItem(code))
-  );
   const {
     rInstructorQuality: avgInstructorQuality,
     rCourseQuality: avgCourseQuality,
@@ -70,36 +67,6 @@ const InfoBox = ({
     enabled: isInstructor && Boolean(name)
   });
 
-  const handleCartAdd = key => {
-    let instructor = "Average Professor";
-    if (key !== "average") {
-      ({
-        name: instructor,
-        average_reviews: average,
-        recent_reviews: recent
-      } = instructors[key]);
-    }
-    const info = Object.keys(average).map(category => ({
-      category,
-      average: average[category],
-      recent: recent[category]
-    }));
-    const item = JSON.stringify({
-      version: 1,
-      course: code,
-      instructor,
-      info
-    });
-    localStorage.setItem(code, item);
-    if (window.onCartUpdated) window.onCartUpdated();
-    setInCourseCart(true);
-  };
-  const handleCartRemove = () => {
-    localStorage.removeItem(code);
-    setInCourseCart(false);
-    if (window.onCartUpdated) window.onCartUpdated();
-  };
-
   if (!data) {
     return <h1>Loading data...</h1>;
   }
@@ -117,9 +84,6 @@ const InfoBox = ({
             notes={notes}
             instructors={instructors}
             type={type}
-            inCourseCart={inCourseCart}
-            handleAdd={handleCartAdd}
-            handleRemove={handleCartRemove}
             liveData={liveData}
           />
         )}

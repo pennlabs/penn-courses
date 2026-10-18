@@ -113,26 +113,15 @@ const ampmTimeToMinutes = (value, ampm) => {
 };
 
 const handleTimeInputChange = (e, setTextState) => {
-  let input = e.target.value;
+  const digits = e.target.value.replace(/\D/g, "").slice(0, 4);
 
-  input = input.replace(/[^\d:]/g, "");
-
-  const parts = input.split(":");
-  if (parts.length > 2) {
-    input = parts[0] + ":" + parts[1];
-  }
-
-  if (parts[0].length > 2) {
-    const firstHalf = parts[0].slice(0, 2);
-    const secondHalf = parts[0].slice(2);
-    input =
-      firstHalf +
-      (secondHalf ? ":" + secondHalf : "") +
-      (parts[1] ? ":" + parts[1] : "");
-  }
-  if (parts.length > 1 && parts[1].length > 2) {
-    input = parts[0] + ":" + parts[1].slice(0, 2);
-  }
+  // Colon goes after the first digit ("300" -> "3:00") until there are four
+  // digits, then shifts right ("1200" -> "12:00")
+  const hourLength = digits.length === 4 ? 2 : 1;
+  const input =
+    digits.length > hourLength
+      ? digits.slice(0, hourLength) + ":" + digits.slice(hourLength)
+      : digits;
 
   setTextState(input);
 };

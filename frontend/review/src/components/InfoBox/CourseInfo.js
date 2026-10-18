@@ -204,12 +204,9 @@ const Spacer = styled.div`
 export const CourseHeader = ({
   aliases,
   code,
-  inCourseCart,
   instructors,
   name,
   notes,
-  handleAdd,
-  handleRemove,
   liveData,
   data
 }) => (
@@ -219,50 +216,6 @@ export const CourseHeader = ({
 
       {!data?.last_offered_sem_if_superceded && (
         <span className="float-right">
-          {inCourseCart ? (
-            <span
-              onClick={handleRemove}
-              className="courseCart btn btn-action"
-              title="Remove from Cart"
-            >
-              <i className="fa fa-fw fa-trash-alt" />
-            </span>
-          ) : (
-            <Popover
-              button={
-                <span className="courseCart btn btn-action" title="Add to Cart">
-                  <i className="fa fa-fw fa-cart-plus" />
-                </span>
-              }
-            >
-              <div className="popover-title">Add to Cart</div>
-              <div
-                className="popover-content"
-                style={{ maxHeight: 400, overflowY: "auto" }}
-              >
-                <div id="divList">
-                  <ul className="professorList">
-                    <li>
-                      <button onClick={() => handleAdd("average")}>
-                        Average Professor
-                      </button>
-                    </li>
-                    {Object.keys(instructors)
-                      .sort((a, b) =>
-                        instructors[a].name.localeCompare(instructors[b].name)
-                      )
-                      .map(key => (
-                        <li key={key}>
-                          <button onClick={() => handleAdd(key)}>
-                            {instructors[key].name}
-                          </button>
-                        </li>
-                      ))}
-                  </ul>
-                </div>
-              </div>
-            </Popover>
-          )}{" "}
           <a
             target="_blank"
             rel="noopener noreferrer"

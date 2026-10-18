@@ -7,8 +7,6 @@ const autocompleteWorkerInstance = autocompleteWorker();
 const compressAutocomplete = autocompleteWorkerInstance.compress;
 const decompressAutocomplete = autocompleteWorkerInstance.decompress;
 
-// Prefixed "meta-" so the course cart's getCartCourses() (which treats
-// every non-"meta-" localStorage key as a cart item) ignores this entry.
 const PERSIST_STORAGE_KEY = "meta-pcr-query-cache";
 
 // The autocomplete/attributes dumps are large, rarely change

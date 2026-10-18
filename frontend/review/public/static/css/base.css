@@ -83,28 +83,6 @@ body {
     line-height: 2.5rem;
 }
 
-#cart-icon {
-    position: relative;
-}
-
-#cart-count {
-    position: absolute;
-    bottom: -3px;
-    right: 2px;
-    background-color: #df5d56;
-    width: 1rem;
-    height: 1rem;
-    border-radius: 1rem;
-    color: white;
-    line-height: 1rem;
-    text-align: center;
-    font-size: 0.8em;
-}
-
-#cart-count:empty {
-    display: none;
-}
-
 .btn {
     font-family: Lato, Helvetica, sans-serif;
     border: none;
@@ -212,18 +190,6 @@ body {
     height: 37px;
 }
 
-#cart {
-    font-size: 30px;
-    line-height: 37px;
-    margin-right: 10px;
-    color: #ccc;
-}
-
-#cart:hover {
-    color: #888;
-    cursor: pointer;
-}
-
 .box-wrapper {
     padding: 15px;
     padding-top: 0px;
@@ -257,17 +223,6 @@ input {
     margin-top: 80px;
 }
 
-.courseCartHeader {
-    font-size: 2em;
-}
-
-.courseCartDesc {
-    max-width: 650px;
-    margin-top: 5px;
-    margin-bottom: 30px;
-    color: #b2b2b2;
-}
-
 #linkbar {
     margin-top: 18px;
     text-align: right;
@@ -282,28 +237,6 @@ input {
 #linkbar span {
     display: inline-block;
 }
-
-#searchAndCart {
-    float: right;
-    margin-top: 16px;
-}
-
-#cartIcon {
-    color: #646464;
-    margin-left: 10px;
-    font-size: 23px;
-    padding-top: 2px;
-}
-
-#cartIcon:hover {
-    color: #90b8cb;
-    cursor: pointer;
-}
-
-#cartIcon {
-    text-decoration: none;
-}
-
 
 /***** BANNER *****/
 
@@ -361,32 +294,11 @@ input {
     background-color: #76bf96;
 }
 
-.courseCartRow {
-    float: none;
-}
-
 .scoredesc {
     margin-top: 15px;
     padding-bottom: 4px;
     margin-bottom: 9px;
     border-bottom: 1px solid #dbdbdb;
-}
-
-.courseCartRow>.scorebox {
-    width: 100px;
-    height: 100px;
-}
-
-.courseCartRow>.scorebox>.desc {
-    font-size: 15px;
-    margin-top: -5px;
-    color: white;
-}
-
-.courseCartRow>.scorebox>.num {
-    margin-top: 5px;
-    font-size: 3em;
-    color: white;
 }
 
 .scoredesc .title {
@@ -586,7 +498,6 @@ input {
 }
 
 #footer-inner {
-    padding-bottom: 15px;
     text-align: center;
     font-size: 0.8em;
 }
@@ -634,150 +545,10 @@ The result is this, which is a little unclean, but it works.
     margin-bottom: 10px;
 }
 
-.add-course-cart {
-    background-color: #dbdbdb;
-}
-
 li.average {
     text-align: center;
     margin-bottom: 1px;
 }
-
-.professorList {
-    list-style-type: none;
-    padding-left: 0;
-    margin-bottom: 0;
-}
-
-.professorList>li>button {
-    width: 100%;
-    border: 1px solid #b2b2b2;
-    color: #b2b2b2;
-    padding: 6px 12px;
-    border-radius: 3px;
-    cursor: pointer;
-    background-color: transparent;
-    font-family: Lato, Helvetica, sans-serif;
-}
-
-.professorList>li {
-    margin-bottom: 5px;
-}
-
-.professorList>li:last-child {
-    margin-bottom: 0;
-}
-
-.professorList>li>button:hover {
-    background-color: #84b8ba;
-    border-color: #84b8ba;
-    color: white;
-}
-
-.professorList>li>button:focus {
-    outline: 0;
-}
-
-.professorList>tbody>tr>td>button {
-    color: #b2b2b2;
-    width: 27px;
-    font-size: 80%;
-    margin: 3px;
-    background-color: white;
-    border: 1px #b2b2b2 solid;
-    border-radius: 5px;
-    margin-bottom: 4px;
-    cursor: pointer;
-    font-family: Lato, Helvetica, sans-serif;
-}
-
-.professorList>tbody>tr>td>button:hover,
-.professorList>tbody>tr>td>button:focus,
-.professorList>tbody>tr>td>button.selected {
-    outline: none;
-    background-color: #84b8ba;
-    border-color: #84b8ba;
-    color: white;
-}
-
-.professorList>tbody>tr>td>button.grayedOut:hover,
-.professorList>tbody>tr>td>button.grayedOut {
-    color: #eaeaea;
-    border-color: #eaeaea;
-    cursor: default;
-    background-color: white;
-}
-
-
-/***** COURSE CART EXTRAS ***/
-
-.fillerBox {
-    height: 24px;
-}
-
-#courseBox {
-    text-align: left;
-    margin-top: 5px;
-    margin-bottom: 15px;
-    border: 1px solid #b2b2b2;
-    border-radius: 5px;
-    padding: 10px;
-    min-height: 150px;
-    max-width: 470px;
-}
-
-.courseInBox a {
-    color: white;
-}
-
-.courseInBox {
-    margin-bottom: 6px;
-    margin-right: 6px;
-    padding: 7px 13px;
-    border: 1px solid white;
-    border-radius: 3px;
-    color: white;
-    background-color: #84b8ba;
-    cursor: pointer;
-    z-index: 0;
-}
-
-.courseInBox:hover {
-    background: #9ed2d4;
-}
-
-.courseInBoxGrayed {
-    background-color: #b2b2b2;
-}
-
-.courseInBoxGrayed:hover {
-    background-color: #ccc;
-}
-
-.courseInBox .fa-times {
-    margin-top: 2px;
-    margin-left: 8px;
-}
-
-.courseInBox .fa-times:hover {
-    color: #df5d56;
-}
-
-.courseInBox .fa-link {
-    margin-top: 2px;
-    margin-left: 4px;
-    font-size: 0.9em;
-}
-
-.courseInBox .fa-link:hover {
-    color: #76bf96;
-}
-
-#boxHelpTag {
-    margin-top: 25px;
-    color: #b2b2b2;
-}
-
 
 /***** TITLE *****/
 
