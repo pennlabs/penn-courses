@@ -10,12 +10,20 @@ const TableContainer = styled.div`
   display: flex;
   flex-direction: column;
   gap: 12px;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
 
   .course-results-table,
   .course-results-table .rt-tbody .rt-td {
     font-family: ${({ theme }) => theme.font.family.sans};
   }
+`;
+
+// Scrolls the rows, and wide tables sideways, rather than growing the page
+const TableScroller = styled.div`
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
 `;
 
 // Map r-prefixed column names to backend field names
@@ -184,7 +192,7 @@ const CourseResultsTable = ({
          onSelect={handleColumnSelect}
        />
      </div> */}
-      <div style={{ maxHeight: "100%", overflowY: "auto" }}>
+      <TableScroller>
         <ScoreTable
           className="course-results-table"
           columns={visibleColumns}
@@ -208,7 +216,7 @@ const CourseResultsTable = ({
             />
           </div>
         )}
-      </div>
+      </TableScroller>
     </TableContainer>
   );
 };

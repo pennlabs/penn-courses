@@ -250,27 +250,6 @@ const OptionChip = React.memo(
   }
 );
 
-interface SearchResultChipProps extends OptionChipProps {
-  // Called when the chip leaves the results list while selected.
-  onVanish: (option: string) => void;
-}
-
-const SearchResultChip = ({ onVanish, ...chip }: SearchResultChipProps) => {
-  const { label, isSelected } = chip;
-
-  const isSelectedRef = useRef(isSelected);
-  isSelectedRef.current = isSelected;
-
-  useEffect(
-    () => () => { // Second () => runs on unmount
-      if (isSelectedRef.current) onVanish(label);
-    },
-    [label, onVanish]
-  );
-
-  return <OptionChip {...chip} />;
-};
-
 interface SelectBoxProps {
   options: string[];
   setOptions: (options: string[]) => void;
@@ -340,6 +319,19 @@ const SelectBox = ({
     [emitOptions]
   );
 
+  // Picking a search result moves it straight into the grey box, selected, so the
+  // box always shows every active option
+  const handleAddFromSearch = useCallback(
+    (option: string) => {
+      setChipOptions((prev) =>
+        prev.has(option) ? prev : new Set(prev).add(option)
+      );
+      const selected = optionsRef.current;
+      if (!selected.includes(option)) emitOptions([...selected, option]);
+    },
+    [emitOptions]
+  );
+
   const handleRemoveChip = useCallback((option: string) => {
     setChipOptions((prev) => {
       const next = new Set(prev);
@@ -350,11 +342,6 @@ const SelectBox = ({
 
   const closeSearchBar = useCallback(() => {
     setIsSearchFocused(false);
-    setChipOptions((prev) => {
-      const next = new Set(prev);
-      optionsRef.current.forEach((option) => next.add(option));
-      return next;
-    });
     setSearchQuery("");
   }, []);
 
@@ -399,12 +386,6 @@ const SelectBox = ({
     });
     return [...prefixMatches, ...codeMatches, ...nameMatches];
   }, [availableItems, optionNames, chipOptions, searchQuery]);
-
-  const handleSearchChipVanish = useCallback((option: string) => {
-    setChipOptions((prev) =>
-      prev.has(option) ? prev : new Set(prev).add(option)
-    );
-  }, []);
 
   return (
     <Wrapper
@@ -500,13 +481,12 @@ const SelectBox = ({
                 ) : (
                   <>
                     {searchResults.slice(0, MAX_RESULTS).map((option) => (
-                      <SearchResultChip
+                      <OptionChip
                         key={`search-${option}`}
                         label={option}
                         name={optionNames?.[option]}
-                        isSelected={options.includes(option)}
-                        onToggle={handleToggle}
-                        onVanish={handleSearchChipVanish}
+                        isSelected={false}
+                        onToggle={handleAddFromSearch}
                       />
                     ))}
                     {searchResults.length > MAX_RESULTS && (

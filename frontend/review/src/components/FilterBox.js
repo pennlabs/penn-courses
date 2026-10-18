@@ -142,7 +142,15 @@ const selectAttributes = attributes => ({
   )
 });
 
+const selectDepartments = data => ({
+  codes: data.departments.map(dept => dept.title),
+  names: Object.fromEntries(
+    data.departments.map(dept => [dept.title, dept.desc])
+  )
+});
+
 const EMPTY_ATTRIBUTES = { codes: [], names: {} };
+const EMPTY_DEPARTMENTS = { codes: [], names: {} };
 
 const FilterBox = () => {
   const filters = useFilterState();
@@ -156,10 +164,12 @@ const FilterBox = () => {
     select: selectAttributes
   });
 
-  const { data: departments = [] } = useQuery({
+  const {
+    data: { codes: departments, names: departmentNames } = EMPTY_DEPARTMENTS
+  } = useQuery({
     queryKey: queryKeys.autocomplete,
     queryFn: apiAutocomplete,
-    select: data => data.departments.map(dept => dept.title)
+    select: selectDepartments
   });
 
   const filterHasChanged = filterName =>
@@ -191,6 +201,7 @@ const FilterBox = () => {
                   dispatch({ type: "SET_DEPARTMENTS", payload })
                 }
                 availableItems={departments}
+                optionNames={departmentNames}
                 label="departments"
               />
             )}

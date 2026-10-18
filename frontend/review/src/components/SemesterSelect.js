@@ -20,6 +20,7 @@ const OptionContainer = styled.div`
   align-items: center;
   gap: 3px;
   border-radius: 10px;
+  cursor: pointer;
 `;
 
 const ChooseBox = ({ text, isActive, setSemesterList }) => {

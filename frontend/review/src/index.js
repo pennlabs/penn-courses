@@ -8,7 +8,7 @@ import { createRoot } from "react-dom/client";
 import { Route, Switch, BrowserRouter as Router } from "react-router-dom";
 import { ThemeProvider } from "styled-components";
 import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
-import { AboutPage, CartPage, ErrorPage, FAQPage, ReviewPage } from "./pages";
+import { AboutPage, ErrorPage, FAQPage, ReviewPage } from "./pages";
 import { GoogleAnalytics } from "./components/common";
 import TempAuthPage from "./pages/AuthPage";
 import { queryClient, persistOptions } from "./utils/queryClient";
@@ -47,7 +47,6 @@ root.render(
             />
             <Route exact path="/about" component={AboutPage} />
             <Route exact path="/faq" component={FAQPage} />
-            <Route exact path="/cart" component={CartPage} />
             <Route
               path="/department/:code/:semester?"
               component={DepartmentRedirect}
