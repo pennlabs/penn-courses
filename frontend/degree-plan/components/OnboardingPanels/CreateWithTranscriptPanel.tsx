@@ -1,4 +1,4 @@
-import { ArrowLeftIcon } from "@radix-ui/react-icons";
+import { ArrowLeftIcon, PlusIcon } from "@radix-ui/react-icons";
 import {
   Dispatch,
   SetStateAction,
@@ -9,32 +9,14 @@ import {
 } from "react";
 import {
   CenteredFlexContainer,
-  Column,
-  ColumnsContainer,
-  CourseContainer,
-  ErrorText,
-  customSelectStylesCourses,
-  customSelectStylesLeft,
-  customSelectStylesRight,
-  FieldWrapper,
-  Label,
   NextButton,
-  NextButtonContainer,
-  PanelContainer,
-  TextButton,
-  TextInput,
+  panelCard,
   schoolOptions,
 } from "./SharedComponents";
-import Select from "react-select";
+import styled from "@emotion/styled";
+import Select, { StylesConfig } from "react-select";
 import { PulseLoader } from "react-spinners";
-import {
-  DegreeListing,
-  DegreePlan,
-  Major,
-  MajorOption,
-  Options,
-  SchoolOption,
-} from "@/types";
+import { DegreeListing, DegreePlan, Major, Options } from "@/types";
 import useSWR from "swr";
 import {
   getLocalSemestersKey,
@@ -42,11 +24,208 @@ import {
 } from "@/components/FourYearPlan/Semesters";
 import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
 import { postFetcher, getCsrf } from "@/hooks/swrcrud";
+import { SchoolSelection } from "@/utils/parseUtils";
 import {
-  getMajorOptions,
-  getSecondMajorOptions,
-  MajorOptionItem,
-} from "@/utils/parseUtils";
+  color,
+  Field,
+  FieldGrid,
+  FieldLabel,
+  Required,
+  selectStyles,
+} from "./onboardingStyles";
+import SchoolCard from "./SchoolCard";
+import ImportedCourses from "./ImportedCourses";
+
+const Page = styled(CenteredFlexContainer)`
+  overflow: hidden;
+  color: ${color.text};
+`;
+
+const contentMaxWidth = 1200;
+const contentWidth = `
+  width: 100%;
+  max-width: ${contentMaxWidth}px;
+  margin: 0 auto;
+  box-sizing: border-box;
+`;
+
+const Card = styled.div`
+  ${panelCard}
+  width: 90%;
+  height: 85%;
+  overflow: hidden;
+  box-sizing: border-box;
+  border: 1px solid ${color.border};
+  display: flex;
+  flex-direction: column;
+`;
+
+const ScrollArea = styled.div`
+  flex: 1;
+  position: relative;
+`;
+
+const ScrollContent = styled.div`
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+`;
+
+const Header = styled.div`
+  ${contentWidth}
+  padding: 32px 40px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  @media (max-width: 600px) {
+    padding: 24px 16px 0;
+  }
+`;
+
+const BackButton = styled.button`
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: ${color.muted};
+  cursor: pointer;
+
+  &:hover {
+    color: ${color.text};
+  }
+`;
+
+const Title = styled.h1`
+  margin: 0;
+  font-size: 32px;
+  line-height: 1.15;
+  font-weight: 700;
+`;
+
+const Body = styled.div`
+  ${contentWidth}
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+  padding: 32px 40px 40px;
+
+  @media (max-width: 600px) {
+    padding: 24px 16px 32px;
+  }
+`;
+
+const FormColumn = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 36px;
+`;
+
+const Section = styled.section`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+`;
+
+const TextInput = styled.input`
+  height: 44px;
+  padding: 0 14px;
+  border: 1px solid ${color.inputBorder};
+  border-radius: 8px;
+  font: inherit;
+  font-size: 15px;
+  color: ${color.text};
+  background: #ffffff;
+  box-sizing: border-box;
+  width: 100%;
+
+  &::placeholder {
+    color: ${color.subtle};
+  }
+
+  &:focus {
+    outline: none;
+    border-color: ${color.accent};
+    box-shadow: 0 0 0 3px rgba(47, 79, 216, 0.15);
+  }
+`;
+
+const ErrorText = styled.p`
+  margin: 0;
+  font-size: 13px;
+  color: ${color.required};
+`;
+
+const SchoolList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+`;
+
+// Groups the add button and the school cards; matches the imported-courses box.
+const SchoolsBox = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  background: #f8f9fb;
+  border: 1px solid ${color.border};
+  border-radius: 12px;
+`;
+
+const AddSchoolButton = styled.button`
+  min-height: 52px;
+  border: 1.5px dashed #c4c9d2;
+  border-radius: 12px;
+  background: #ffffff;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  color: ${color.accent};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+
+  &:hover {
+    border-color: ${color.accent};
+    background: #f5f7ff;
+  }
+`;
+
+const Footer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  // Divider spans the card; the button lines up with the capped content above.
+  padding: 20px max(40px, calc((100% - ${contentMaxWidth}px) / 2 + 40px));
+  border-top: 1px solid ${color.border};
+  background: #fcfcfd;
+  border-radius: 0 0 10px 10px;
+
+  @media (max-width: 600px) {
+    padding: 16px;
+  }
+`;
+
+// The school picker replaces AddSchoolButton in place, so it takes the button's size and corners.
+const addSchoolSelectStyles: StylesConfig<any, boolean> = {
+  ...selectStyles,
+  control: (provided, state) => ({
+    ...selectStyles.control!(provided, state),
+    minHeight: 52,
+    borderRadius: 12,
+  }),
+};
 
 type WelcomeLayoutProps = {
   inputtedStartingYear: { value: number; label: number } | null;
@@ -54,10 +233,8 @@ type WelcomeLayoutProps = {
   scrapedCourses: any;
   setCurrentPage: Dispatch<SetStateAction<number>>;
   setActiveDegreeplan: (arg0: DegreePlan) => void;
-  inputtedSchools: SchoolOption[];
-  inputtedMajors: MajorOption[];
+  inputtedSelections: SchoolSelection[];
   setShowOnboardingModal: (arg0: boolean) => void;
-  inputtedSecondMajors: MajorOptionItem[];
   canExit?: boolean;
   onExit?: () => void;
 };
@@ -68,9 +245,7 @@ export default function CreateWithTranscriptPanel({
   scrapedCourses,
   setCurrentPage,
   setActiveDegreeplan,
-  inputtedSchools,
-  inputtedMajors,
-  inputtedSecondMajors,
+  inputtedSelections,
   setShowOnboardingModal,
   canExit = false,
   onExit,
@@ -84,10 +259,9 @@ export default function CreateWithTranscriptPanel({
     value: number;
   } | null>(inputtedGraduationYear);
 
-  const [schools, setSchools] = useState<SchoolOption[]>(inputtedSchools);
-  const [majors, setMajors] = useState<MajorOption[]>(inputtedMajors);
-  const [secondMajors, setSecondMajors] =
-    useState<MajorOptionItem[]>(inputtedSecondMajors);
+  const [selections, setSelections] =
+    useState<SchoolSelection[]>(inputtedSelections);
+  const [addingSchool, setAddingSchool] = useState(false);
   const [degreeID, setDegreeID] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
@@ -164,11 +338,12 @@ export default function CreateWithTranscriptPanel({
           );
         }
         await postFetcher(`/api/degree/degreeplans/${_new.id}/degrees`, {
-          degree_ids: majors.map((m) => m.value.id),
+          degree_ids: selections.flatMap((s) => (s.primary ? [s.primary.value.id] : [])),
         });
-        if (secondMajors.length) {
+        const additionalMajors = selections.flatMap((s) => s.additional);
+        if (additionalMajors.length) {
           await postFetcher(`/api/degree/degreeplans/${_new.id}/majors`, {
-            major_ids: secondMajors.map((m) => m.value.id),
+            major_ids: additionalMajors.map((m) => m.value.id),
           });
         }
         setActiveDegreeplan(_new);
@@ -192,8 +367,8 @@ export default function CreateWithTranscriptPanel({
   const complete =
     startingYear !== null &&
     graduationYear !== null &&
-    schools.length > 0 &&
-    majors.length > 0 &&
+    selections.length > 0 &&
+    selections.every((s) => s.primary) &&
     name !== "";
 
   const getYearOptions = useCallback(() => {
@@ -218,221 +393,187 @@ export default function CreateWithTranscriptPanel({
 
   const { startYears: startingYearOptions, gradYears: graduationYearOptions } = getYearOptions();
 
-  const majorOptions = useMemo(
-    () => getMajorOptions(degrees, schools, startingYear?.value ?? null),
-    [degrees, schools, startingYear]
-  );
+  // Majors are held to the year the student started, so changing it drops any that belong to
+  // a different year. A school with its own start year (a submatriculant's masters) keeps its
+  // majors, since they don't follow the plan's.
+  useEffect(() => {
+    const year = startingYear?.value;
+    setSelections((current) =>
+      current.map((s) =>
+        s.startYear
+          ? s
+          : {
+              ...s,
+              primary: s.primary?.value.year === year ? s.primary : null,
+              additional: s.additional.filter((m) => m.value.year === year),
+            }
+      )
+    );
+  }, [startingYear?.value]);
 
-  const secondMajorOptions = useMemo(
-    () => getSecondMajorOptions(standaloneMajors, startingYear?.value ?? null),
-    [standaloneMajors, startingYear]
+  const updateSelection = (
+    school: SchoolSelection["school"],
+    changes: Partial<SchoolSelection>
+  ) =>
+    setSelections((current) =>
+      current.map((s) => (s.school.value === school.value ? { ...s, ...changes } : s))
+    );
+
+  const addableSchools = useMemo(
+    () =>
+      schoolOptions.filter((o) => !selections.some((s) => s.school.value === o.value)),
+    [selections]
   );
 
 
   return (
-    <CenteredFlexContainer>
-      <PanelContainer $maxWidth="90%" $minWidth="90%">
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginLeft: "5%",
-            marginRight: "5%",
-            marginTop: "3%",
-          }}
-        >
-          <TextButton
-            onClick={() => {
-              setCurrentPage(0);
-            }}
-          >
-            <ArrowLeftIcon />
-            <p>Back</p>
-          </TextButton>
-        </div>
-        <ColumnsContainer>
-          <Column>
-            <h1 style={{ paddingTop: "1.25%" }}>Enter your degree(s):</h1>
-            <FieldWrapper>
-              <Label required>Degree Plan Name</Label>
-              <TextInput
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder=""
-              />
-              {nameAlreadyExists && (
-                <ErrorText
-                  style={{
-                    color: "red",
-                    visibility: nameAlreadyExists ? "visible" : "hidden",
-                  }}
-                  >
-                    A degree plan with this name already exists. Please choose a different name.
-                  </ErrorText>
-              )}
-            </FieldWrapper>
-
-            <FieldWrapper>
-              <FieldWrapper>
-                <Label required>Starting Year</Label>
-                <Select
-                  options={startingYearOptions}
-                  value={startingYear}
-                  onChange={(selectedOption) => setStartingYear(selectedOption)}
-                  isClearable
-                  placeholder="Select Year Started"
-                  styles={customSelectStylesLeft}
-                />
-              </FieldWrapper>
-
-              <FieldWrapper>
-                <Label required>Graduation Year</Label>
-                <Select
-                  options={graduationYearOptions}
-                  value={graduationYear}
-                  onChange={(selectedOption) =>
-                    setGraduationYear(selectedOption)
-                  }
-                  isClearable
-                  placeholder="Select Year of Graduation"
-                  styles={customSelectStylesLeft}
-                />
-              </FieldWrapper>
-
-              <Label required>School(s) or Program(s)</Label>
-              <Select
-                options={schoolOptions}
-                value={schools}
-                onChange={(selectedOptions) => setSchools([...selectedOptions])}
-                isClearable
-                isMulti
-                placeholder="Select School or Program"
-                styles={customSelectStylesRight}
-                isLoading={isLoadingDegrees}
-              />
-            </FieldWrapper>
-
-            <FieldWrapper>
-              <Label required>Major(s)</Label>
-              <Select
-                options={majorOptions}
-                value={majors}
-                onChange={(selectedOptions) => setMajors([...selectedOptions])}
-                isClearable
-                isMulti
-                isDisabled={schools.length === 0}
-                placeholder={"Major - Concentration"}
-                styles={customSelectStylesRight}
-                isLoading={isLoadingDegrees}
-              />
-            </FieldWrapper>
-
-            <FieldWrapper>
-              <Label required={false}>Additional Major(s)</Label>
-              <Select
-                options={secondMajorOptions}
-                value={secondMajors}
-                onChange={(selectedOptions) =>
-                  setSecondMajors([...selectedOptions])
-                }
-                isClearable
-                isMulti
-                placeholder="Major pursued alongside your degree"
-                styles={customSelectStylesRight}
-                isLoading={isLoadingMajors}
-              />
-            </FieldWrapper>
-
-
-            {!scrapedCourses.length && (
-              <NextButtonContainer>
-                <NextButton
-                  onClick={handleAddDegrees}
-                  disabled={!complete}
-                  style={{
-                    height: "35px",
-                    width: "90px",
-                    borderRadius: "7px",
-                    color: "white",
-                    transition: "all 0.25s",
-                  }}
-                >
-                  {!loading && <div>Next</div>}
-                  <PulseLoader size={8} color={"white"} loading={loading} />
-                </NextButton>
-              </NextButtonContainer>
-            )}
-          </Column>
-
-          {scrapedCourses.length > 0 && (
-            <Column>
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 5,
-                  paddingTop: "1.25%",
-                }}
-              >
-                <h2>Your Courses</h2>
-                <p>You can make edits on the next page.</p>
+    <Page>
+      <Card>
+        <ScrollArea>
+          <ScrollContent>
+            <Header>
+              <BackButton type="button" onClick={() => setCurrentPage(0)}>
+                <ArrowLeftIcon width={16} height={16} />
+                Back
+              </BackButton>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                <Title>Set up your degree plan</Title>
+                <ImportedCourses scrapedCourses={scrapedCourses} />
               </div>
+            </Header>
 
-              <CourseContainer>
-                {scrapedCourses.map((e: any, i: number) => {
-                  const semCourses = e.courses.map(
-                    (course: any, _: any) =>
-                      [
-                        {
-                          value: course.toUpperCase(),
-                          label: course.toUpperCase(),
-                        },
-                      ][0]
-                  );
-                  return (
-                    <FieldWrapper style={{ display: "flex" }} key={i}>
-                      {e.sem === "_TRAN" ? (
-                        <Label required={false}>Transfer Credit</Label>
-                      ) : (
-                        <Label required={false}>
-                          {e.sem[0].toUpperCase() + e.sem.slice(1)}
-                        </Label>
-                      )}
+            <Body>
+              <FormColumn>
+                <Section>
+                  <Field>
+                    <FieldLabel htmlFor="plan-name">
+                      Plan name
+                      <Required />
+                    </FieldLabel>
+                    <TextInput
+                      id="plan-name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="e.g. My Degree Plan"
+                      aria-invalid={nameAlreadyExists}
+                      aria-describedby={nameAlreadyExists ? "plan-name-error" : undefined}
+                    />
+                    {nameAlreadyExists && (
+                      <ErrorText id="plan-name-error" role="alert">
+                        A degree plan with this name already exists. Please choose a different name.
+                      </ErrorText>
+                    )}
+                  </Field>
+                  <FieldGrid $min={200}>
+                    <Field>
+                      <FieldLabel htmlFor="start-year">
+                        Starting year
+                        <Required />
+                      </FieldLabel>
                       <Select
-                        components={{ MultiValueRemove: () => null }}
-                        options={semCourses}
-                        value={semCourses}
-                        isMulti
-                        placeholder="Courses"
-                        styles={customSelectStylesCourses}
-                        isLoading={isLoadingDegrees}
-                        isDisabled
+                        inputId="start-year"
+                        options={startingYearOptions}
+                        value={startingYear}
+                        onChange={(selectedOption) => setStartingYear(selectedOption)}
+                        formatOptionLabel={(o) => `Fall ${o.value}`}
+                        isClearable
+                        placeholder="Select a year"
+                        styles={selectStyles}
+                        menuPortalTarget={typeof document !== "undefined" ? document.body : null}
                       />
-                    </FieldWrapper>
-                  );
-                })}
-              </CourseContainer>
-              <NextButtonContainer>
-                <NextButton
-                  onClick={handleAddDegrees}
-                  disabled={!complete}
-                  style={{
-                    height: "35px",
-                    width: "90px",
-                    borderRadius: "7px",
-                    color: "white",
-                    transition: "all 0.25s",
-                  }}
-                >
-                  {!loading && <div>Next</div>}
-                  <PulseLoader size={8} color={"white"} loading={loading} />
-                </NextButton>
-              </NextButtonContainer>
-            </Column>
-          )}
-        </ColumnsContainer>
-      </PanelContainer>
-    </CenteredFlexContainer>
+                    </Field>
+                    <Field>
+                      <FieldLabel htmlFor="grad-year">
+                        Graduation year
+                        <Required />
+                      </FieldLabel>
+                      <Select
+                        inputId="grad-year"
+                        options={graduationYearOptions}
+                        value={graduationYear}
+                        onChange={(selectedOption) => setGraduationYear(selectedOption)}
+                        formatOptionLabel={(o) => `Spring ${o.value}`}
+                        isClearable
+                        placeholder="Select a year"
+                        styles={selectStyles}
+                        menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+                      />
+                    </Field>
+                  </FieldGrid>
+                </Section>
+
+                <Section>
+                  <div>
+                    <FieldLabel>
+                      Schools &amp; majors
+                      <Required />
+                    </FieldLabel>
+                  </div>
+
+                  <SchoolsBox>
+                    {addableSchools.length > 0 &&
+                      (addingSchool ? (
+                        <Select
+                          aria-label="Add a school or program"
+                          options={addableSchools}
+                          value={null}
+                          onChange={(selected) => {
+                            if (selected)
+                              setSelections((current) => [
+                                { school: selected, primary: null, additional: [] },
+                                ...current,
+                              ]);
+                            setAddingSchool(false);
+                          }}
+                          onMenuClose={() => setAddingSchool(false)}
+                          autoFocus
+                          defaultMenuIsOpen
+                          placeholder="Choose a school or program"
+                          styles={addSchoolSelectStyles}
+                          menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+                          isLoading={isLoadingDegrees}
+                        />
+                      ) : (
+                        <AddSchoolButton type="button" onClick={() => setAddingSchool(true)}>
+                          <PlusIcon width={16} height={16} />
+                          Add a school or program
+                        </AddSchoolButton>
+                      ))}
+
+                    {selections.length > 0 && (
+                      <SchoolList role="region" aria-label="Your schools">
+                        {selections.map((selection) => (
+                          <SchoolCard
+                            key={selection.school.value}
+                            selection={selection}
+                            startingYear={selection.startYear ?? startingYear?.value ?? null}
+                            degrees={degrees}
+                            standaloneMajors={standaloneMajors}
+                            isLoadingDegrees={isLoadingDegrees}
+                            isLoadingMajors={isLoadingMajors}
+                            onChange={(changes) => updateSelection(selection.school, changes)}
+                            onRemove={() =>
+                              setSelections((current) =>
+                                current.filter((s) => s.school.value !== selection.school.value)
+                              )
+                            }
+                          />
+                        ))}
+                      </SchoolList>
+                    )}
+                  </SchoolsBox>
+                </Section>
+              </FormColumn>
+            </Body>
+          </ScrollContent>
+        </ScrollArea>
+
+        <Footer>
+          <NextButton onClick={handleAddDegrees} disabled={!complete || loading}>
+            {loading ? <PulseLoader size={8} color="white" /> : "Next"}
+          </NextButton>
+        </Footer>
+      </Card>
+    </Page>
   );
 }

@@ -1,10 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
-import styled from "@emotion/styled";
 import useSWR from "swr";
 import { pdfjs } from "react-pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
-import { DegreeListing, DegreePlan, Major, MajorOption, SchoolOption } from "@/types";
+import { DegreeListing, DegreePlan, Major } from "@/types";
 import { polyfillPromiseWithResolvers } from "./polyfilsResolver";
 
 import "core-js/full/promise/with-resolvers.js";
@@ -14,7 +13,7 @@ import {
   parseTranscript,
   ParsedText,
   flattenParsedText,
-  MajorOptionItem,
+  SchoolSelection,
 } from "../utils/parseUtils";
 import WelcomeLayout from "@/components/OnboardingPanels/WelcomePanel";
 import CreateWithTranscriptPanel from "@/components/OnboardingPanels/CreateWithTranscriptPanel";
@@ -40,9 +39,7 @@ const OnboardingPage = ({
     label: any;
     value: number;
   } | null>(null);
-  const [schools, setSchools] = useState<SchoolOption[]>([]);
-  const [majors, setMajors] = useState<MajorOption[]>([]);
-  const [secondMajors, setSecondMajors] = useState<MajorOptionItem[]>([]);
+  const [selections, setSelections] = useState<SchoolSelection[]>([]);
 
   const [PDF, setPDF] = useState<File | null>(null);
   const [numPages, setNumPages] = useState<number | null>(null);
@@ -86,13 +83,11 @@ const OnboardingPage = ({
       all = all.concat(flattenParsedText(pageEntry));
     });
 
-    const {
-      scrapedCourses,
-      startYear,
-      scrapedSchools,
-      detectedMajorsOptions,
-      detectedSecondMajorOptions,
-    } = parseTranscript(all, degrees, standaloneMajors);
+    const { scrapedCourses, startYear, detectedSelections } = parseTranscript(
+      all,
+      degrees,
+      standaloneMajors
+    );
     setScrapedCourses(scrapedCourses);
     setStartingYear({
       value: startYear,
@@ -102,9 +97,7 @@ const OnboardingPage = ({
       value: startYear + 4,
       label: startYear + 4,
     });
-    setSchools(scrapedSchools);
-    setMajors(detectedMajorsOptions);
-    setSecondMajors(detectedSecondMajorOptions);
+    setSelections(detectedSelections);
     transcriptDetected.current = startYear ? true : false;
   }, [pagesRead, programsLoaded, degrees, standaloneMajors]);
 
@@ -115,9 +108,7 @@ const OnboardingPage = ({
     parsed.current = false;
     setPagesRead(false);
     transcriptDetected.current = null;
-    setSchools([]);
-    setMajors([]);
-    setSecondMajors([]);
+    setSelections([]);
     setScrapedCourses([]);
     setStartingYear(null);
     setGraduationYear(null);
@@ -154,9 +145,7 @@ const OnboardingPage = ({
       scrapedCourses={scrapedCourses}
       setCurrentPage={setCurrentPage}
       setActiveDegreeplan={setActiveDegreeplan}
-      inputtedSchools={schools}
-      inputtedMajors={majors}
-      inputtedSecondMajors={secondMajors}
+      inputtedSelections={selections}
       setShowOnboardingModal={setShowOnboardingModal}
       canExit={canExit}
       onExit={exitOnboarding}
