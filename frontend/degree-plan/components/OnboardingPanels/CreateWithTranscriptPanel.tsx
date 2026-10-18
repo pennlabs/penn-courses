@@ -456,9 +456,10 @@ export default function CreateWithTranscriptPanel({
                       onChange={(e) => setName(e.target.value)}
                       placeholder="e.g. My Degree Plan"
                       aria-invalid={nameAlreadyExists}
+                      aria-describedby={nameAlreadyExists ? "plan-name-error" : undefined}
                     />
                     {nameAlreadyExists && (
-                      <ErrorText role="alert">
+                      <ErrorText id="plan-name-error" role="alert">
                         A degree plan with this name already exists. Please choose a different name.
                       </ErrorText>
                     )}
