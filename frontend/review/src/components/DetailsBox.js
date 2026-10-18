@@ -243,7 +243,7 @@ export const DetailsBox = forwardRef(
           <h3>
             <Link
               style={{
-                color: "var(--pcr-color-text-subtle)",
+                color: "var(--pcr-color-text-heading)",
                 textDecoration: "none"
               }}
               to={isCourse ? `/instructor/${instructor}` : `/course/${course}`}
