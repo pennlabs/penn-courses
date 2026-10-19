@@ -19,7 +19,6 @@ const TableContainer = styled.div`
   }
 `;
 
-// Scrolls the rows, and wide tables sideways, rather than growing the page
 const TableScroller = styled.div`
   flex: 1;
   min-height: 0;

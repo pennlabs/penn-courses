@@ -271,7 +271,7 @@ class ScoreBox extends Component {
               to={`/instructor/${key}`}
               title={`Go to ${value}`}
               className="mr-1"
-              style={{ color: "rgb(102, 146, 161)" }}
+              style={{ color: "var(--pcr-color-text-link)" }}
             >
               <i className="instructor-link far fa-user" />
             </Link>

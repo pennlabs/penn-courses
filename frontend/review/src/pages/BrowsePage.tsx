@@ -22,6 +22,10 @@ const PageWrapper = styled.div`
   width: 100%;
   margin: 0;
   padding: 0;
+
+  ${minWidth("lg")} {
+    min-height: calc(100dvh - ${({ theme }) => theme.size.headerHeight});
+  }
 `;
 
 const ContentView = styled.div`
@@ -32,6 +36,10 @@ const ContentView = styled.div`
   gap: 30px;
   width: 100%;
   min-height: 0;
+
+  ${minWidth("lg")} {
+    flex: 1;
+  }
 
   ${maxWidth("lg")} {
     flex-direction: column;
@@ -58,14 +66,11 @@ const CourseResultsWrapper = styled.div`
   display: flex;
   flex-direction: column;
 
-  // The results scroll inside a capped panel instead of running down the page. On
-  // desktop this keeps the filters in view beside it.
   ${minWidth("lg")} {
-    height: 80vh;
+    contain: size;
+    min-height: 320px;
   }
 
-  // Stacked under the filters, so size to the content (up to the cap) rather than
-  // stretching short states like "No results" to full height.
   ${maxWidth("lg")} {
     width: 100%;
     flex: none;
@@ -79,8 +84,6 @@ const BackToTop = styled(ScrollToTop)`
   bottom: 24px;
   z-index: ${({ theme }) => theme.zIndex.dropdown};
 
-  // The whole page column scrolls on mobile, so anchor to the viewport instead
-  // of the results panel to keep the button in the same spot while scrolling.
   ${maxWidth("lg")} {
     position: fixed;
     right: 30px;

@@ -89,6 +89,7 @@
 
   /* Fixed layout sizes shared between components */
   --pcr-size-sidebar-width: 330px;
+  --pcr-size-header-height: 80px;
   --pcr-size-filter-widget-max: 400px;
   --pcr-size-control-height: 29px;
 
@@ -100,7 +101,7 @@
   --pcr-motion-ease-emphasized: cubic-bezier(0.04, 0.62, 0.23, 0.98);
 }
 
-/* Registered as a property so that it can be animated. This is used by the SelectBox's search list and CustomDropdown. */
+/* Registered as a property so that it can be animated. This is used by the SelectBox's search list */
 @property --pcr-select-slot-h {
   syntax: "<length>";
   inherits: true;

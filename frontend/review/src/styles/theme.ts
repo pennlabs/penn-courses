@@ -96,6 +96,7 @@ export const theme = {
 
   size: {
     sidebarWidth: "var(--pcr-size-sidebar-width)",
+    headerHeight: "var(--pcr-size-header-height)",
     filterWidgetMax: "var(--pcr-size-filter-widget-max)",
     controlHeight: "var(--pcr-size-control-height)",
   },

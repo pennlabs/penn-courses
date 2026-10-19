@@ -56,9 +56,6 @@ export const normalizeTimeString = (value: string): string | null => {
   return delta > 0 ? value : `${end}-${start}`;
 };
 
-export const isValidTimeString = (value: string): boolean =>
-  normalizeTimeString(value) === value;
-
 export const isFilterDefault = <K extends FilterKey>(
   key: K,
   value: FilterState[K]

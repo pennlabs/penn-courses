@@ -115,8 +115,6 @@ const ampmTimeToMinutes = (value, ampm) => {
 const handleTimeInputChange = (e, setTextState) => {
   const digits = e.target.value.replace(/\D/g, "").slice(0, 4);
 
-  // Colon goes after the first digit ("300" -> "3:00") until there are four
-  // digits, then shifts right ("1200" -> "12:00")
   const hourLength = digits.length === 4 ? 2 : 1;
   const input =
     digits.length > hourLength
@@ -140,7 +138,6 @@ const isValid12HourTime = timeString => {
   const hours = parseInt(parts[0], 10);
   const minutes = parts.length > 1 ? parseInt(parts[1], 10) : 0;
 
-  // Check if hours > 12 or minutes > 59
   if (hours > 12) return false;
   if (parts.length > 1 && minutes > 59) return false;
 
@@ -158,8 +155,6 @@ const TimeSelect = ({ timeString, setTimeString }) => {
     timeStringRef.current = timeString;
   }, [timeString]);
 
-  // What the text boxes and AM/PM dropdowns show. It may hold an invalid range
-  // (end before start), in which case it is never committed to the slider or API.
   const [draft, setDraft] = useState(time);
 
   const updateTime = next => {
@@ -205,8 +200,6 @@ const TimeSelect = ({ timeString, setTimeString }) => {
   const isStartError = !isValid12HourTime(startText) || isRangeError;
   const isEndError = !isValid12HourTime(endText) || isRangeError;
 
-  // Applies a typed or AM/PM change. An invalid range is kept in the boxes so the
-  // user can see and fix it, but the slider and time string only follow valid ones.
   const applyDraft = next => {
     if (isValidRange(next.start, next.end)) {
       updateTime(next);
@@ -220,7 +213,6 @@ const TimeSelect = ({ timeString, setTimeString }) => {
   // commit when released. Keyboard changes have no drag and commit right away.
   const onSliderInput = ([sliderStart, sliderEnd]) => {
     if (sliderEnd - sliderStart < SLIDER_STEP) {
-      // Re-render with a fresh object so the slider snaps back to the last valid range
       updateTime({ ...timeRef.current });
       return;
     }
