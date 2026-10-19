@@ -52,7 +52,6 @@ const Collapse = ({
   if (open && !mounted) setMounted(true);
 
   const handleTransitionEnd = (event: React.TransitionEvent<HTMLDivElement>) => {
-    // Ignore transitions bubbling up from the content, including a nested Collapse.
     if (
       event.target !== outerRef.current ||
       event.propertyName !== "grid-template-rows"
@@ -64,7 +63,6 @@ const Collapse = ({
     else setMounted(false);
   };
 
-  // Clip the content while it is moving or closed, unless the caller has requested
   const clip = !unclipped && (moving || !open);
 
   const inertProps = open ? {} : ({ inert: "" } as React.HTMLAttributes<HTMLDivElement>);

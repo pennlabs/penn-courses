@@ -55,7 +55,6 @@ const FilterDropdownContainer = styled.div`
   padding: 6px 0;
   justify-content: space-between;
   align-items: center;
-  self-align: stretch;
   width: 100%;
   cursor: pointer;
 

@@ -32,7 +32,6 @@ const Container = styled.div`
   overflow-y: auto;
 `;
 
-// Fills the rest of the panel so the table can scroll inside it
 const ResultsArea = styled.div`
   width: 100%;
   display: flex;
@@ -63,7 +62,6 @@ const SubjectCard = styled.div`
   align-items: center;
   align-self: stretch;
   gap: 24px;
-  overflow: ellipsis;
   margin: 2px 0;
 
   ${maxWidth("sm")} {
@@ -90,6 +88,15 @@ const DescText = styled.span`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+`;
+
+const PromptText = styled.span`
+  color: ${({ theme }) => theme.color.text.secondary};
+  font-size: 16px;
+  font-weight: ${({ theme }) => theme.font.weight.light};
+  word-spacing: 5px;
+  text-align: center;
+  overflow-wrap: anywhere;
 `;
 
 const PaginationContainer = styled.div`
@@ -142,7 +149,7 @@ const SpecialPromptContainer = styled.div`
   align-items: center;
   gap: 12px;
   width: 100%;
-  padding: 40px 0;
+  padding: 40px 16px;
 `;
 
 const InfoBanner = styled.div`
@@ -269,7 +276,7 @@ const CourseResults = () => {
                       color: "var(--pcr-color-text-muted)"
                     }}
                   />
-                  <DescText>Loading search results...</DescText>
+                  <PromptText>Loading search results...</PromptText>
                 </SpecialPromptContainer>
               ) : isSearchError ? (
                 <div
@@ -382,7 +389,7 @@ const CourseResults = () => {
             className="fa fa-spin fa-cog fa-fw"
             style={{ fontSize: "100px", color: "var(--pcr-color-text-muted)" }}
           />
-          <DescText>Loading course catalog...</DescText>
+          <PromptText>Loading course catalog...</PromptText>
         </SpecialPromptContainer>
       ) : isCatalogError ? (
         <SpecialPromptContainer>
@@ -390,10 +397,10 @@ const CourseResults = () => {
             className="fa fa-exclamation-circle"
             style={{ fontSize: "100px", color: "var(--pcr-color-text-muted)" }}
           />
-          <DescText>
+          <PromptText>
             Couldn't load the course catalog. Check your connection and{" "}
             <LinkText onClick={() => refetchCatalog()}>try again</LinkText>.
-          </DescText>
+          </PromptText>
         </SpecialPromptContainer>
       ) : (
         <>

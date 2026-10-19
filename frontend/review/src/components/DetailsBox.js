@@ -168,7 +168,7 @@ export const DetailsBox = forwardRef(
           : semesters[0];
       });
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [data]);
+    }, [data, isCourseEval]);
 
     const hasData = Boolean(data && Object.keys(data).length);
     const isCourse = type === "course";
@@ -218,7 +218,7 @@ export const DetailsBox = forwardRef(
           </div>
           <h3
             style={{
-              color: "var(--pcr-color-text-subtle)",
+              color: "var(--pcr-color-text-heading)",
               margin: "1.5em",
               marginBottom: ".5em"
             }}

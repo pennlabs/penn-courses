@@ -13,16 +13,14 @@ import { pill, unstyledButton } from "../styles/mixins";
 import { useOnClickOutside } from "../utils/hooks";
 import { scrollBehavior } from "../utils/helpers";
 
-const BOX_PAD = 12; // SelectBoxContainer's padding
-const ROW_GAP = 10; // gap between the chips and the search bar
-const ROW_H = 20; // the search icon / input row
-const PANEL_PAD_Y = 9; // SelectSearchBarContainer's vertical padding
-const RESULTS_GAP = 15; // space between the search input and the results
-const PANEL_MAX_H = 180; // the panel's old max height, which applied to its content box
+const BOX_PAD = 12; 
+const ROW_GAP = 10; 
+const ROW_H = 20; 
+const PANEL_PAD_Y = 9; 
+const RESULTS_GAP = 15;
+const PANEL_MAX_H = 180;
 
-// Outer height of the collapsed search bar, contains the row, the panel's padding, and its border
 const BAR_H = ROW_H + PANEL_PAD_Y * 2 + 2;
-// The slot the grey box opens up. PanelLayer pulls itself back up by the same amount
 const SLOT_H = ROW_GAP + BAR_H;
 const RESULTS_MAX_H = PANEL_MAX_H - ROW_H - RESULTS_GAP;
 
@@ -178,8 +176,7 @@ const ChipToggle = styled.button`
   display: flex;
   flex: 1;
   min-width: 0;
-  align-items: center;
-  gap: 1px;
+  align-items: space-between;
   color: inherit;
   font-size: inherit;
 `;
@@ -189,7 +186,8 @@ const ChipLabel = styled.span`
   min-width: 0;
   overflow: hidden;
   white-space: nowrap;
-  text-overflow: none;
+  text-overflow: clip;
+  font-size: 10px;
 `;
 
 const ChipIcon = styled.span<{ $isSelected: boolean }>`
@@ -208,11 +206,9 @@ const ChipRemove = styled.button`
 
 interface OptionChipProps {
   label: string;
-  // Full name shown on hover, e.g. "SEAS Humanities" for EUHS
   name?: string;
   isSelected: boolean;
   onToggle: (option: string) => void;
-  // Only the chips sitting in the grey box can be taken off it.
   onRemove?: (option: string) => void;
 }
 
@@ -254,7 +250,6 @@ interface SelectBoxProps {
   options: string[];
   setOptions: (options: string[]) => void;
   availableItems: string[];
-  // Optional full names for the items, which can also be searched by
   optionNames?: Record<string, string>;
   label?: string;
   className?: string;
@@ -280,7 +275,6 @@ const SelectBox = ({
   const floatingRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Lets the callbacks below stay stable, so the chips can be memoized.
   const optionsRef = useRef(options);
   optionsRef.current = options;
 
@@ -319,8 +313,6 @@ const SelectBox = ({
     [emitOptions]
   );
 
-  // Picking a search result moves it straight into the grey box, selected, so the
-  // box always shows every active option
   const handleAddFromSearch = useCallback(
     (option: string) => {
       setChipOptions((prev) =>
@@ -345,7 +337,6 @@ const SelectBox = ({
     setSearchQuery("");
   }, []);
 
-  // Clicking the box opens the panel while it is empty, and closes it either way.
   const togglePanel = () => {
     if (isSearchFocused) {
       closeSearchBar();
@@ -402,8 +393,6 @@ const SelectBox = ({
             type="button"
             aria-expanded={isPanelOpen}
             aria-label={`Choose ${label}`}
-            /* The box itself handles pointers, so this only covers the keyboard.
-               Using onClick as well would fire twice for a mouse click. */
             onKeyDown={(event) => {
               if (event.key !== "Enter" && event.key !== " ") return;
               event.preventDefault();

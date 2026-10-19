@@ -12,7 +12,7 @@ const HeaderContainer = styled.div`
   display: flex;
   align-items: center;
   width: 100%;
-  height: 80px;
+  height: ${({ theme }) => theme.size.headerHeight};
   background: white;
   border: 1px ${({ theme }) => theme.color.border.default} solid;
   z-index: 1000;
