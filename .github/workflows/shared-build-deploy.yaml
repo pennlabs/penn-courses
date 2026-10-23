@@ -8,7 +8,7 @@ on: push
 jobs:
     backend-check:
         name: "Backend Check"
-        uses: pennlabs/shared-actions/.github/workflows/django.yaml@b227580b1791e5812e58c1244595452fc848eff5
+        uses: pennlabs/shared-actions/.github/workflows/django.yaml@62fd1d5617a54681e15e3094a1c3522738a73994
         with:
             projectName: PennCourses
             path: backend
@@ -46,7 +46,7 @@ jobs:
 
     frontend-check:
         name: "Frontend Check"
-        uses: pennlabs/shared-actions/.github/workflows/react.yaml@b227580b1791e5812e58c1244595452fc848eff5
+        uses: pennlabs/shared-actions/.github/workflows/react.yaml@62fd1d5617a54681e15e3094a1c3522738a73994
         strategy:
             fail-fast: true
             matrix:
