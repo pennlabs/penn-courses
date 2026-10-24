@@ -1,5 +1,6 @@
 import { createMajorLabel } from "@/components/FourYearPlan/DegreeModal";
 import { DegreeListing, Major, SchoolOption } from "@/types";
+import { MT_UNDECLARED_PROGRAM, isMandTDegree, suitsMandT } from "@/utils/programs";
 const { distance } = require("fastest-levenshtein");
 
 // How far a transcript's wording may sit from a program's name and still be the same thing.
@@ -195,16 +196,22 @@ const checkSchool = (textResult: string[], l: number) => {
   return tempSchools;
 };
 
+// The transcript's program names joined. Only these count, so a course title cannot mark a
+// transcript as M&T.
+const programNames = (textResult: string[]) =>
+  textResult
+    .map((line, l) => (isProgramLine(line) ? programText(textResult, l) : ""))
+    .join(" ");
+
+const isMandTTranscript = (textResult: string[]) => isMandTText(programNames(textResult));
+
 // An M&T student is always in both Wharton and SEAS. If a transcript names the program but either
 // school's record was worded in a way `checkSchool` missed, add that school back.
 const withMandTSchools = (
   textResult: string[],
   schools: { value: string; label: string }[]
 ) => {
-  // Only program names count, so a course title cannot mark a transcript as M&T.
-  const text = textResult
-    .map((line, l) => (isProgramLine(line) ? programText(textResult, l) : ""))
-    .join(" ");
+  const text = programNames(textResult);
   if (!isMandTText(text)) return schools;
   const has = (value: string) => schools.some((school) => school.value === value);
   const added = [...schools];
@@ -214,6 +221,16 @@ const withMandTSchools = (
   }
   return added;
 };
+
+// A course line carries its course units, e.g. `cis 1200 prog lang & tech i 1.00 a`. A long
+// title's continuation on the next line carries none, even when it reads like a course or a
+// year ("major authors since 1900").
+const CREDITS = /\b\d+\.\d{2}\b/;
+
+// Grades of a course that does not count. A line can end in a space, so the grade is its last
+// word rather than its last character.
+const FAILED_GRADES = new Set(["f", "w"]);
+const gradeOf = (line: string) => line.trim().split(/\s+/).pop() ?? "";
 
 // Given a string[] where we're guaranteed to have a transfer credit line,
 // return a list of scraped AP and transfer courses. Stops when we reach potentially
@@ -226,6 +243,7 @@ const getAPAndTransferCourses = (textResult: any, l: number) => {
     let courseMatch = line.match(/\b\w+\s\d{3,4}\b/);
     if (
       courseMatch &&
+      CREDITS.test(line) &&
       // Match lines following [term] [year] format
       !/(fall|spring|summer)\s\d{4}/i.test(courseMatch)
     ) {
@@ -251,9 +269,9 @@ const getCourseToSem = (truncatedTranscript: string[]) => {
       }
     } else {
       let courseMatch = line.match(/\b[A-Za-z]{2,}\s\d{3,4}\b/);
-      if (courseMatch) {
+      if (courseMatch && CREDITS.test(line)) {
         // Check if course didn't get an F or a W. If so, add to current sem or _TRAN
-        if (!(line[line.length - 1] == "f" || line[line.length - 1] == "w")) {
+        if (!FAILED_GRADES.has(gradeOf(line))) {
           // TODO: We don't yet have a way to track courses that can be taken multiple times,
           // so we store a course that appears multiple times only in the most recent semester it appears in.
           if (courseMatch[0] in courseToSem) {
@@ -273,8 +291,39 @@ const getCourseToSem = (truncatedTranscript: string[]) => {
   return courseToSem;
 };
 
+// The words of a program name that carry meaning, with "&" read as "and".
+const NAME_FILLER = new Set(["and", "of", "in", "the", "for"]);
+const nameWords = (name: string) =>
+  normalize(name)
+    .replace(/&/g, " and ")
+    .split(/[^a-z0-9]+/)
+    .filter((word) => word && !NAME_FILLER.has(word));
+
+// Whether `short` is an abbreviation of `long`: a word starting the same and keeping the rest of
+// its letters in order, as "engr" does "engineering" and "mgmt" does "management".
+const abbreviatesWord = (short: string, long: string) => {
+  if (short === long) return true;
+  if (short.length < 2 || short[0] !== long[0]) return false;
+  let at = 0;
+  for (const letter of long) if (letter === short[at]) at++;
+  return at === short.length;
+};
+
+// Whether one program name abbreviates another word for word, as "Bus Econ & Public Policy" does
+// "business economics and public policy". Both must have the same number of words, so a shorter
+// name never matches a longer program that merely starts the same way.
+export const abbreviates = (short: string, long: string) => {
+  const shortWords = nameWords(short);
+  const longWords = nameWords(long);
+  return (
+    shortWords.length > 0 &&
+    shortWords.length === longWords.length &&
+    shortWords.every((word, i) => abbreviatesWord(word, longWords[i]))
+  );
+};
+
 // Returns the option whose program name is closest to the transcript's wording, or undefined
-// if no option is close enough. 
+// if no option is close enough.
 const matchOption = <T>(
   major: string,
   concentration: string,
@@ -298,12 +347,17 @@ const matchOption = <T>(
   });
 
   const best = Math.min(...scored.map((candidate) => candidate.distance));
+  let closest = scored.filter((candidate) => candidate.distance === best);
+  // Transcripts spell a program out ("mechanical engineering and applied mechanics") where the
+  // catalog may hold Path's abbreviation of it ("Mech Engr & Appl Mechanics"), which no edit
+  // distance tolerance bridges.
+  if (best > matchTolerance(closest[0].name)) {
+    closest = scored.filter((candidate) => abbreviates(candidate.name, target));
+    if (!closest.length) return undefined;
+  }
   // A program is listed once per catalog year, so equally close names are ordered to prefer the
   // catalog nearest the student's start rather than whichever year happens to come first.
-  const closest = scored
-    .filter((candidate) => candidate.distance === best)
-    .sort((a, b) => a.yearGap - b.yearGap);
-  if (best > matchTolerance(closest[0].name)) return undefined;
+  closest.sort((a, b) => a.yearGap - b.yearGap);
 
   const wanted = normalize(concentration);
   // A transcript naming no concentration and one naming "Non Designated" mean the same thing,
@@ -313,7 +367,9 @@ const matchOption = <T>(
     : closest.find(
         (candidate) =>
           candidate.concentration &&
-          distance(wanted, candidate.concentration) <= matchTolerance(candidate.concentration)
+          (distance(wanted, candidate.concentration) <=
+            matchTolerance(candidate.concentration) ||
+            abbreviates(candidate.concentration, wanted))
       );
 
   return (preferred ?? closest[0]).option;
@@ -408,6 +464,11 @@ type ParsedRecord = {
   courseToSem: { [key: string]: string };
 };
 
+// A record's labelled major and concentration fields ("major : computer science", "second major :
+// ..."), as opposed to a course title that happens to contain the word ("major authors").
+const MAJOR_FIELD = /^\s*(?:[a-z]+\s+)?major\s*:/;
+const CONCENTRATION_FIELD = /^\s*(?:[a-z]+\s+)?concentration\s*:/;
+
 // Reads one record's program, majors, concentrations and courses. Scanning a record at a time
 // keeps each record's majors paired with its own concentrations, and stops one record's
 // `institution credit` from running on into the next record's courses.
@@ -424,11 +485,11 @@ const parseRecord = (lines: string[]): ParsedRecord => {
       record.schools = record.schools.concat(checkSchool(lines, l));
     }
 
-    if (lines[l].includes("major")) {
+    if (MAJOR_FIELD.test(lines[l])) {
       record.majors.push(lines[l].replace(/^.*?:\s*/, ""));
     }
 
-    if (lines[l].includes("concentration")) {
+    if (CONCENTRATION_FIELD.test(lines[l])) {
       record.concentrations.push(lines[l].replace(/^.*?:\s*/, ""));
     }
 
@@ -443,6 +504,15 @@ const parseRecord = (lines: string[]): ParsedRecord => {
 
   return record;
 };
+
+// The degree whose catalog year is nearest the student's start.
+const nearestYear = (
+  degrees: DegreeListing[] | undefined,
+  startYear: number
+): DegreeListing | undefined =>
+  degrees
+    ?.slice()
+    .sort((a, b) => Math.abs(a.year - startYear) - Math.abs(b.year - startYear))[0];
 
 // Given a list of lines from the PDF and a list of possible degrees,
 // return a scraped information.
@@ -492,6 +562,13 @@ export const parseTranscript = (
   const degreeOptions: DegreeOption[] = [];
   const majorOptions: MajorOptionItem[] = [];
 
+  // An M&T transcript matches the M&T versions of its Wharton and SEAS degrees, and any other
+  // transcript only the ordinary ones, since the two carry the same names. A catalog that has no
+  // M&T degrees yet (they come from a fetch_degrees_from_path run) falls back to the ordinary
+  // ones rather than matching nothing.
+  const mandT = isMandTTranscript(textResult) && !!degrees?.some(isMandTDegree);
+  const programDegrees = degrees?.filter((degree) => suitsMandT(degree, mandT));
+
   parsedRecords.forEach((record) => {
     if (!record.majors.length) return;
     // A record whose school went unrecognised matches against every school on the transcript,
@@ -500,12 +577,25 @@ export const parseTranscript = (
     const detected = detectMajors(
       record.majors,
       record.concentrations,
-      getMajorOptions(degrees, recordSchools, startYear),
+      getMajorOptions(programDegrees, recordSchools, startYear),
       secondMajorPool,
       startYear
     );
     degreeOptions.push(...detected.degreeOptions);
     majorOptions.push(...detected.majorOptions);
+
+    // An M&T student who has not chosen a Wharton concentration still has a Wharton degree.
+    const undeclaredWharton =
+      mandT &&
+      recordSchools.some((school) => school.value === WHARTON.value) &&
+      record.majors.some((major) => major.includes("undeclared"));
+    if (undeclaredWharton) {
+      const undeclared = nearestYear(
+        programDegrees?.filter((degree) => degree.program === MT_UNDECLARED_PROGRAM),
+        startYear
+      );
+      if (undeclared) degreeOptions.push({ value: undeclared, label: createMajorLabel(undeclared) });
+    }
   });
 
   return {
