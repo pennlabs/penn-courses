@@ -43,6 +43,7 @@ from degree.utils.degree_logic import (
     map_rules_and_degrees,
     prewarm_belongs_cache,
     prewarm_credits_cache,
+    reconcile_rules,
     sharing_from_fulfillments,
 )
 from PennCourses.docs_settings import PcxAutoSchema
@@ -269,6 +270,23 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         return Response(self.get_serializer(degree_plan).data, status=status.HTTP_200_OK)
 
 
+def list_field(data, key):
+    """
+    A list-valued field of a request body, or None if absent. Form-encoded bodies arrive as a
+    QueryDict, whose plain `get` would return only the last value.
+    """
+    if key not in data:
+        return None
+    return data.getlist(key) if hasattr(data, "getlist") else data[key]
+
+
+def set_list_field(data, key, values):
+    if hasattr(data, "setlist"):
+        data.setlist(key, values)
+    else:
+        data[key] = values
+
+
 class FulfillmentViewSet(viewsets.ModelViewSet):
     """
     List, retrieve, create, destroy, and update a Fulfillment.
@@ -303,21 +321,43 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
             raise ValidationError({"full_code": "This field is required."})
         self.kwargs["full_code"] = request.data["full_code"]
 
-        # Add check for if double counting is now legal
-        legal = True
-        request_rules = request.data.get("rules")
-        if request_rules:
-            rules = list(Rule.objects.filter(id__in=request_rules))
+        # The client sends the rules it wants the course to count for, usually by appending
+        # one to what the course already counted for. Rules that may not share are resolved
+        # here, in favour of the ones just added, so what gets stored is always legal.
+        request_rules = list_field(request.data, "rules")
+        if request_rules is not None:
             degree_plan = get_object_or_404(
                 DegreePlan, id=self.get_degree_plan_id(), person=request.user
             )
             _, rule_to_degree, double_counts = map_rules_and_degrees(degree_plan)
-            legal = check_legal(rules, rule_to_degree, double_counts)
+            rules = list(Rule.objects.filter(id__in=request_rules))
+            existing = (
+                Fulfillment.objects.filter(
+                    degree_plan=degree_plan, full_code=request.data["full_code"]
+                )
+                .prefetch_related("rules", "unselected_rules")
+                .first()
+            )
+            stored = set(existing.rules.all()) if existing else set()
+            kept, demoted = reconcile_rules(
+                rules, {rule for rule in rules if rule not in stored}, rule_to_degree, double_counts
+            )
+
+            request_unselected = list_field(request.data, "unselected_rules")
+            if request_unselected is None:
+                request_unselected = (
+                    [rule.id for rule in existing.unselected_rules.all()] if existing else []
+                )
+            unselected_ids = (
+                {int(rule_id) for rule_id in request_unselected} | {rule.id for rule in demoted}
+            ) - {rule.id for rule in kept}
 
             # Make request.data mutable before modifying it
             if hasattr(request.data, "_mutable"):
                 request.data._mutable = True
-            request.data["legal"] = legal
+            set_list_field(request.data, "rules", sorted(rule.id for rule in kept))
+            set_list_field(request.data, "unselected_rules", sorted(unselected_ids))
+            request.data["legal"] = check_legal(kept, rule_to_degree, double_counts)
 
         try:
             return self.partial_update(request, *args, **kwargs)
@@ -383,6 +423,11 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
             demoted_rules = {rule for rule in selected_same_degree if rule != target_rule}
             selected_rules.difference_update(demoted_rules)
             selected_rules.add(target_rule)
+            # Another component's rule may not share with the target either
+            selected_rules, conflicting = reconcile_rules(
+                selected_rules, {target_rule}, rule_to_degree, double_counts
+            )
+            demoted_rules |= conflicting
             unselected_rules.update(demoted_rules)
             unselected_rules.discard(target_rule)
 
@@ -634,13 +679,10 @@ class SatisfiedRuleList(APIView):
                 [f for f in stored if f.full_code != full_code], rule_to_degree, credits_cache
             ),
             credits_cache=credits_cache,
+            # A course already in the plan keeps what it counts for, so the preview adds to
+            # the student's choices rather than replacing or conflicting with them.
+            prior_selected=set(fulfillment.rules.all()) if fulfillment else None,
         )
-
-        if fulfillment:
-            selected_rules = selected_rules.union(fulfillment.rules.all())
-
-        # Check for illegal double counting
-        legal = check_legal(selected_rules, rule_to_degree, double_counts)
 
         selected_rules_to_return = RuleSerializer(
             Rule.objects.filter(id__in=[rule.id for rule in selected_rules]), many=True
