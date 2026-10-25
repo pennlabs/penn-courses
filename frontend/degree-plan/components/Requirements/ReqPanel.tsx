@@ -10,6 +10,7 @@ import { Icon } from '../common/bulma_derived_components';
 import React from 'react';
 import { ModalKey } from '../FourYearPlan/DegreeModal';
 import { LightTrashIcon } from '../common/TrashIcon';
+import { isMandTDegree } from '@/utils/programs';
 
 const EmptyPanelContainer = styled.div`
   display: flex;
@@ -120,7 +121,8 @@ const planPrograms = (detail: DegreePlan): PlanProgram[] => [
   ...(detail.degrees ?? []).map((degree) => ({
     id: degree.id,
     relation: "degrees" as const,
-    title: `${degree.degree} in ${degree.major_name}${
+    // M&T versions carry the same names as the ordinary degrees.
+    title: `${isMandTDegree(degree) ? "M&T: " : ""}${degree.degree} in ${degree.major_name}${
       degree.concentration ? ` (${degree.concentration_name})` : ""
     }`,
     year: degree.year,
