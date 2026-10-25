@@ -13,6 +13,7 @@ from django.utils import timezone
 from courses.models import Course
 from degree.utils.degree_logic import aggregate_rule_leaves
 from degree.utils.model_utils import json_parser, q_object_parser
+from degree.utils.programs import MT_PROGRAM_CHOICES
 
 
 program_choices = [
@@ -24,6 +25,7 @@ program_choices = [
     # Submatriculants pursue a masters alongside their bachelors. Every SEAS masters
     # program Path lists reports this one program code, regardless of major.
     ("EM_MSE", "Engineering MSE"),
+    *MT_PROGRAM_CHOICES,
 ]
 
 program_code_to_name = dict(program_choices)

@@ -1,0 +1,780 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Path@Penn audit for FNCS-BS, srcdb 202530. Trimmed: Liberal Arts and Sciences keeps only its Foreign Language Proficiency rule, Business Fundamentals and Business Breadth are dropped, and Advice is removed. -->
+<Report>
+  <Audit>
+<Block Cat_yr="9999" Cat_yrLit="End of Time" Cat_yr_start="0000" Cat_yr_stop="9999" Classes_applied="0" Credits_applied="0" Degree="BS" GPA="*" Gpa_credits="0" Gpa_grade_pts="*" Per_complete="2" Req_id="RA000462" Req_type="DEGREE" Req_value="BS" Title="Degree in Bachelor of Science in Economics">
+        <Header>
+          <Qualifier Applied="0" ClassesApplied="0" Credits="37" CreditsApplied="0" Label="Minimum Total Credits Required" LabelTag="9" Name="CLASSESCREDITS" Needed="37" Node_id="31" Node_type="4121" Satisfied="No">
+            <Text>37 Credits</Text>
+          </Qualifier>
+          <Qualifier Applied="0" Credits="19" Label="Minimum Credits Earned from University of Pennsylvania" LabelTag="10" Name="MINRES" Needed="19" Node_id="32" Node_type="4119" Satisfied="No">
+            <Text>MINRES 19 Credits</Text>
+          </Qualifier>
+          <Qualifier Classes="0" ClassesApplied="0" CreditsApplied="0" Name="MAXCLASS" Node_id="33" Node_type="4101" Tag="1001">
+            <SubText>COLL 0@</SubText>
+            <Text>MaxClasses 0 in </Text>
+          </Qualifier>
+          <Qualifier Classes="0" ClassesApplied="0" CreditsApplied="0" Name="MAXCLASS" Node_id="35" Node_type="4101" Tag="1002">
+            <SubText>MSCI @</SubText>
+            <Text>MaxClasses 0 in </Text>
+          </Qualifier>
+          <Qualifier Classes="0" ClassesApplied="0" CreditsApplied="0" Name="MAXCLASS" Node_id="37" Node_type="4101" Tag="1003">
+            <SubText>NSCI @</SubText>
+            <Text>MaxClasses 0 in </Text>
+          </Qualifier>
+          <Qualifier Classes="3" ClassesApplied="0" CreditsApplied="0" Name="MAXCLASS" Node_id="39" Node_type="4101" Tag="1004">
+            <SubText>@ 5000:9999</SubText>
+            <Text>MaxClasses 3 in </Text>
+          </Qualifier>
+          <Qualifier Classes="1" ClassesApplied="0" CreditsApplied="0" Name="MAXCLASS" Node_id="41" Node_type="4101" Tag="1005">
+            <SubText>BEPP 2500, 2508, ECON 2100</SubText>
+            <Text>MaxClasses 1 in </Text>
+          </Qualifier>
+          <Qualifier Applied="" Code="MaxReason" Name="HEADERTAG" Node_id="" Node_type="4142" Value="You exceeded the max 3 credits of grad course work, please see advisor for assistance">
+            <Text>HeaderTag MaxReason=You exceeded the max 3 credits of grad course work, please see advisor for assistance</Text>
+          </Qualifier>
+          <Qualifier Applied="" JustAdded="TRUE" Name="CHECKELECTIVES" Node_id="" Node_type="4140">
+            <ECA-Overall Credits="37" Text="Credits required by degree block"/>
+            <ECA-BlocksRequired Text="RA001189 RA000454 RA000456 RA000453 RA001329 "/>
+            <ECA-BlocksNotRequired Text=""/>
+            <ECA-BlocksRequiredIncluded Text=""/>
+            <ECA-Blocksum Credits="32" Text="Sum of credits required in all *required* blocks; excludes credits in blocks included in other required blocks"/>
+            <ECA-Shared Credits="0" Text="Credits shared between required blocks"/>
+            <ECA-ECA Credits="5" Text="Credits allowed/needed in fall-through and non-required blocks"/>
+            <ECA-RequiredCreditsApplied Credits="0" Text="Credits applied to required blocks"/>
+            <ECA-NonrequiredCreditsApplied Credits="0" Text="Credits applied to non-required blocks"/>
+            <ECA-fallthruCounts Text="1"/>
+            <ECA-Overflow Credits="0" Text="Excess fall-through credits"/>
+            <CREDITSAPPLIEDTOWARDSDEGREE Credits="0" Text="Credits applied minus overflow"/>
+            <Text>CHECK-ELECTIVE-CREDITS-ALLOWED</Text>
+          </Qualifier>
+        </Header>
+        <Rule IndentLevel="1" Label="IF Statement" Node_id="45" Node_type="4300" Per_complete="100" RuleType="IfStmt" Rule_id="1">
+          <BooleanEvaluation>False</BooleanEvaluation>
+          <Requirement>
+            <LeftCondition Connector="OR">
+              <LeftCondition>
+                <Rop Evaluation="0" Left="-COURSE-" Operator="WAS" Right="TAKEN">
+                  <Course Disc="@" NewDiscipline="Yes" Node_id="48" Num="@">
+                    <With Code="DWLETTERGRADE" Connector="OR" Operator="=">
+                      <Value>NR</Value>
+                    </With>
+                    <With Code="DWLETTERGRADE" Connector="OR" Operator="=">
+                      <Value>NG</Value>
+                    </With>
+                    <With Code="DWLETTERGRADE" Connector="OR" Operator="=">
+                      <Value>I</Value>
+                    </With>
+                  </Course>
+                </Rop>
+              </LeftCondition>
+            </LeftCondition>
+            <IfPart>
+              <Rule IndentLevel="1" Label="Grade of &apos;I&apos; Check" LabelTag="IFLSKE" Node_id="50" Node_type="4971" Per_complete="Not Used" RuleType="Incomplete" Rule_id="1-0">
+                <IfElsePart>IfPart</IfElsePart>
+                <Requirement/>
+              </Rule>
+            </IfPart>
+            <ElsePart>
+              <Rule IndentLevel="1" Label="There are no &apos;I&apos; grades in this Degree Audit" LabelTag="KFSOEL" Node_id="52" Node_type="4900" Per_complete="100" RuleType="Complete" Rule_id="1-1">
+                <IfElsePart>ElsePart</IfElsePart>
+                <Requirement/>
+              </Rule>
+            </ElsePart>
+          </Requirement>
+        </Rule>
+        <Rule IndentLevel="1" Label="IF Statement" Node_id="53" Node_type="4300" Per_complete="0" RuleType="IfStmt" Rule_id="2">
+          <BooleanEvaluation>False</BooleanEvaluation>
+          <Requirement>
+            <LeftCondition Connector="OR">
+              <LeftCondition>
+                <Rop Evaluation="0" Left="BANNERGPA" Operator="&gt;=" Right="2.0"/>
+              </LeftCondition>
+            </LeftCondition>
+            <IfPart>
+              <Rule IndentLevel="1" Label="Minimum 2.0 Overall GPA met" LabelTag="11" Node_id="57" Node_type="4900" Per_complete="Not Used" RuleType="Complete" Rule_id="2-0">
+                <IfElsePart>IfPart</IfElsePart>
+                <Requirement/>
+              </Rule>
+            </IfPart>
+            <ElsePart>
+              <Rule IndentLevel="1" Label="IF Statement" Node_id="59" Node_type="4300" Per_complete="0" RuleType="IfStmt" Rule_id="2-1">
+                <IfElsePart>ElsePart</IfElsePart>
+                <BooleanEvaluation>True</BooleanEvaluation>
+                <Requirement>
+                  <LeftCondition Connector="OR">
+                    <LeftCondition>
+                      <Rop Evaluation="1" Left="BANNERGPA" Operator="=" Right="NODATA"/>
+                    </LeftCondition>
+                  </LeftCondition>
+                  <IfPart>
+                    <Rule IndentLevel="1" Label="Cumulative GPA Requirement " LabelTag="12" Node_id="63" Node_type="4971" Per_complete="0" ProxyAdvice="Yes" RuleType="Incomplete" Rule_id="2-1-0">
+                      <IfElsePart>IfPart</IfElsePart>
+                      <Requirement/>
+                      <ProxyAdvice>
+                        <Text>When your first term is graded, your cumulative GPA</Text>
+                        <Text>will be calculated. If your cumulative GPA falls below</Text>
+                        <Text>2.0 it is important to see an advisor to make plans</Text>
+                        <Text>for raising your GPA.</Text>
+                      </ProxyAdvice>
+                    </Rule>
+                  </IfPart>
+                  <ElsePart>
+                    <Rule IndentLevel="1" Label="Your cumulative GPA is below 2.0 - please see an advisor" LabelTag="13" Node_id="65" Node_type="4971" Per_complete="Not Used" RuleType="Incomplete" Rule_id="2-1-1">
+                      <IfElsePart>ElsePart</IfElsePart>
+                      <Requirement/>
+                    </Rule>
+                  </ElsePart>
+                </Requirement>
+              </Rule>
+            </ElsePart>
+          </Requirement>
+        </Rule>
+        <Rule IndentLevel="1" Label="IF Statement" Node_id="66" Node_type="4300" Per_complete="0" RuleType="IfStmt" Rule_id="3">
+          <BooleanEvaluation>True</BooleanEvaluation>
+          <Requirement>
+            <LeftCondition Connector="AND">
+              <LeftCondition>
+                <Rop Evaluation="1" Left="PROGRAM" Operator="&lt;&gt;" Right="WU_BS_MANT"/>
+              </LeftCondition>
+              <RightCondition>
+                <Rop Evaluation="1" Left="PROGRAM" Operator="&lt;&gt;" Right="WU_BS_MAT_U"/>
+              </RightCondition>
+            </LeftCondition>
+            <IfPart>
+              <Rule IndentLevel="1" Label="First-Year Foundations" LabelTag="14" Node_id="71" Node_type="4400" Per_complete="0" RuleType="Block" Rule_id="3-0">
+                <IfElsePart>IfPart</IfElsePart>
+                <Requirement>
+                  <NumBlocks>1</NumBlocks>
+                  <Type>OTHER</Type>
+                  <Value>U-WFYF</Value>
+                </Requirement>
+              </Rule>
+            </IfPart>
+            <ElsePart>
+              <Rule IndentLevel="1" Label="Quantitative/Computational Skills" LabelTag="AHSJN" Node_id="74" Node_type="4400" Per_complete="Not Used" RuleType="Block" Rule_id="3-1">
+                <IfElsePart>ElsePart</IfElsePart>
+                <Requirement>
+                  <NumBlocks>1</NumBlocks>
+                  <Type>OTHER</Type>
+                  <Value>U-WQCS</Value>
+                </Requirement>
+              </Rule>
+            </ElsePart>
+          </Requirement>
+        </Rule>
+        <Rule IndentLevel="1" Label="Business Fundamentals" LabelTag="16" Node_id="76" Node_type="4400" Per_complete="0" RuleType="Block" Rule_id="4">
+          <Requirement>
+            <NumBlocks>1</NumBlocks>
+            <Type>OTHER</Type>
+            <Value>U-WBUS</Value>
+          </Requirement>
+        </Rule>
+        <Rule IndentLevel="1" Label="IF Statement" Node_id="78" Node_type="4300" Per_complete="0" RuleType="IfStmt" Rule_id="5">
+          <BooleanEvaluation>True</BooleanEvaluation>
+          <Requirement>
+            <LeftCondition Connector="AND">
+              <LeftCondition Connector="AND">
+                <LeftCondition>
+                  <Rop Evaluation="1" Left="PROGRAM" Operator="&lt;&gt;" Right="WU_BS_VAGL"/>
+                </LeftCondition>
+                <RightCondition>
+                  <Rop Evaluation="1" Left="PROGRAM" Operator="&lt;&gt;" Right="WU_BS_VAGL_U"/>
+                </RightCondition>
+              </LeftCondition>
+              <RightCondition>
+                <Rop Evaluation="1" Left="PROGRAM" Operator="&lt;&gt;" Right="WU_BS_HUNTS"/>
+              </RightCondition>
+            </LeftCondition>
+            <IfPart>
+              <Rule IndentLevel="1" Label="Liberal Arts and Sciences" LabelTag="15" Node_id="85" Node_type="4400" Per_complete="0" RuleType="Block" Rule_id="5-0">
+                <IfElsePart>IfPart</IfElsePart>
+                <Requirement>
+                  <NumBlocks>1</NumBlocks>
+                  <Type>OTHER</Type>
+                  <Value>U-WLAS</Value>
+                </Requirement>
+              </Rule>
+            </IfPart>
+          </Requirement>
+        </Rule>
+        <Rule IndentLevel="1" Label="IF Statement" Node_id="87" Node_type="4300" Per_complete="0" RuleType="IfStmt" Rule_id="6">
+          <BooleanEvaluation>True</BooleanEvaluation>
+          <Requirement>
+            <LeftCondition Connector="OR">
+              <LeftCondition>
+                <Rop Evaluation="1" Left="PROGRAM" Operator="&lt;&gt;" Right="WU_BS_HUNTS"/>
+              </LeftCondition>
+            </LeftCondition>
+            <IfPart>
+              <Rule IndentLevel="1" Label="IF Statement" Node_id="91" Node_type="4300" Per_complete="0" RuleType="IfStmt" Rule_id="6-0">
+                <IfElsePart>IfPart</IfElsePart>
+                <BooleanEvaluation>False</BooleanEvaluation>
+                <Requirement>
+                  <LeftCondition Connector="OR">
+                    <LeftCondition>
+                      <Rop Evaluation="0" Left="WUEXPTGRDTRM" Operator="&lt;" Right="202330"/>
+                    </LeftCondition>
+                  </LeftCondition>
+                  <IfPart>
+                    <Rule IndentLevel="1" Label="Business Breadth" LabelTag="17" Node_id="95" Node_type="4400" Per_complete="Not Used" RuleType="Block" Rule_id="6-0-0">
+                      <IfElsePart>IfPart</IfElsePart>
+                      <Requirement>
+                        <NumBlocks>1</NumBlocks>
+                        <Type>OTHER</Type>
+                        <Value>U-WBBR</Value>
+                      </Requirement>
+                    </Rule>
+                  </IfPart>
+                  <ElsePart>
+                    <Rule IndentLevel="1" Label="Business Breadth" LabelTag="171" Node_id="98" Node_type="4400" Per_complete="0" RuleType="Block" Rule_id="6-0-1">
+                      <IfElsePart>ElsePart</IfElsePart>
+                      <Requirement>
+                        <NumBlocks>1</NumBlocks>
+                        <Type>OTHER</Type>
+                        <Value>U-WBBR2</Value>
+                      </Requirement>
+                    </Rule>
+                  </ElsePart>
+                </Requirement>
+              </Rule>
+            </IfPart>
+          </Requirement>
+        </Rule>
+        <Rule IndentLevel="1" Label="IF Statement" Node_id="113" Node_type="4300" Per_complete="0" RuleType="IfStmt" Rule_id="9">
+          <BooleanEvaluation>True</BooleanEvaluation>
+          <Requirement>
+            <LeftCondition Connector="OR">
+              <LeftCondition>
+                <Rop Evaluation="1" Left="PROGRAM" Operator="&lt;&gt;" Right="WU_BS_NHCM"/>
+              </LeftCondition>
+            </LeftCondition>
+            <IfPart>
+              <Rule IndentLevel="1" Label="Concentration Requirement(s)" LabelTag="21" Node_id="117" Node_type="4500" Per_complete="0" RuleType="Blocktype" Rule_id="9-0">
+                <IfElsePart>IfPart</IfElsePart>
+                <Requirement>
+                  <NumBlocktypes>1</NumBlocktypes>
+                  <Type>MAJOR</Type>
+                </Requirement>
+              </Rule>
+            </IfPart>
+          </Requirement>
+        </Rule>
+      </Block>
+<Block Cat_yr="9999" Cat_yrLit="End of Time" Cat_yr_start="0000" Cat_yr_stop="9999" Classes_applied="0" Credits_applied="0" GPA="*" Gpa_credits="0" Gpa_grade_pts="*" Per_complete="0" Req_id="RA000454" Req_type="OTHER" Req_value="U-WFYF" Title="First-Year Foundations">
+        <Header>
+          <Qualifier Applied="0" ClassesApplied="0" Credits="3" CreditsApplied="0" Label="Minimum Credits Requirement" LabelTag="HUNTMINCR1" Name="CLASSESCREDITS" Needed="3" Node_id="1" Node_type="4121" Satisfied="No">
+            <Text>3 Credits</Text>
+          </Qualifier>
+          <Qualifier ClassesApplied="0" CreditsApplied="0" Name="NONEXCLUSIVE" Node_id="2" Node_type="4111" Tag="SWJWS">
+            <SubText>(OTHER = U-SCHOLARS)</SubText>
+            <Text>ShareWith </Text>
+          </Qualifier>
+          <Qualifier Applied="" Code="DWCredits" Name="HEADERTAG" Node_id="" Node_type="4142" Value="DWRuleSum">
+            <Text>HeaderTag DWCredits=DWRuleSum</Text>
+          </Qualifier>
+        </Header>
+        <Rule IndentLevel="1" Label="IF Statement" Node_id="4" Node_type="4300" Per_complete="0" RuleType="IfStmt" Rule_id="1">
+          <BooleanEvaluation>False</BooleanEvaluation>
+          <Requirement>
+            <LeftCondition Connector="OR">
+              <LeftCondition Connector="OR">
+                <LeftCondition>
+                  <Rop Evaluation="0" Left="-COURSE-" Operator="IS" Right="PASSED">
+                    <Course Disc="BEPP" NewDiscipline="Yes" Node_id="8" Num="1000"/>
+                  </Rop>
+                </LeftCondition>
+                <RightCondition>
+                  <Rop Evaluation="" Left="-COURSE-" Operator="IS" Right="PASSED">
+                    <Course Disc="ECON" NewDiscipline="Yes" Node_id="10" Num="0110"/>
+                  </Rop>
+                </RightCondition>
+              </LeftCondition>
+              <RightCondition>
+                <Rop Evaluation="" Left="-COURSE-" Operator="IS" Right="PASSED">
+                  <Course Disc="ECON" NewDiscipline="Yes" Node_id="12" Num="@">
+                    <With Code="DWTERM" Connector="AND" Operator="&lt;">
+                      <Value>Summer 2022</Value>
+                    </With>
+                    <With Code="DWCOURSENUMBER" Connector="AND" Operator="=">
+                      <Value>010</Value>
+                    </With>
+                  </Course>
+                </Rop>
+              </RightCondition>
+            </LeftCondition>
+            <IfPart>
+              <Rule IndentLevel="1" Label="Introductory Economics" LabelTag="WHEWV1" Node_id="14" Node_type="4200" Per_complete="Not Used" RuleType="Course" Rule_id="1-0">
+                <IfElsePart>IfPart</IfElsePart>
+                <Classes_applied>0</Classes_applied>
+                <Credits_applied>0</Credits_applied>
+                <ClassesApplied/>
+                <Requirement Class_cred_op="OR" Connector="," Credits_begin="1">
+                  <Course Disc="BEPP" NewDiscipline="Yes" Node_id="15" Num="1000"/>
+                  <Course Disc="ECON" NewDiscipline="Yes" Node_id="16" Num="0110"/>
+                  <Course Disc="ECON" HideFromAdvice="Yes" Node_id="17" Num="010@">
+                    <With Code="DWTERM" Connector="" Operator="&lt;">
+                      <Value>Summer 2022</Value>
+                    </With>
+                  </Course>
+                </Requirement>
+              </Rule>
+            </IfPart>
+            <ElsePart>
+              <Rule IndentLevel="1" Label="IF Statement" Node_id="19" Node_type="4300" Per_complete="0" RuleType="IfStmt" Rule_id="1-1">
+                <IfElsePart>ElsePart</IfElsePart>
+                <BooleanEvaluation>False</BooleanEvaluation>
+                <Requirement>
+                  <LeftCondition Connector="AND">
+                    <LeftCondition>
+                      <Rop Evaluation="0" Left="-COURSE-" Operator="IS" Right="PASSED">
+                        <Course Disc="ECON" NewDiscipline="Yes" Node_id="22" Num="0100"/>
+                      </Rop>
+                    </LeftCondition>
+                    <RightCondition>
+                      <Rop Evaluation="" Left="-COURSE-" Operator="IS" Right="PASSED">
+                        <Course Disc="ECON" NewDiscipline="Yes" Node_id="24" Num="0200"/>
+                      </Rop>
+                    </RightCondition>
+                  </LeftCondition>
+                  <IfPart>
+                    <Rule IndentLevel="1" Label="ECON 0100 or ECON 0200 (both taken)" LabelTag="AHJSHJ" Node_id="26" Node_type="4200" Per_complete="Not Used" RuleType="Course" Rule_id="1-1-0">
+                      <IfElsePart>IfPart</IfElsePart>
+                      <Classes_applied>0</Classes_applied>
+                      <Credits_applied>0</Credits_applied>
+                      <ClassesApplied/>
+                      <Requirement Class_cred_op="OR" Connector="," Credits_begin="1">
+                        <Course Disc="ECON" NewDiscipline="Yes" Node_id="27" Num="0100"/>
+                        <Course Disc="ECON" Node_id="28" Num="0200"/>
+                      </Requirement>
+                    </Rule>
+                  </IfPart>
+                  <ElsePart>
+                    <Rule IndentLevel="1" Label="IF Statement" Node_id="30" Node_type="4300" Per_complete="0" RuleType="IfStmt" Rule_id="1-1-1">
+                      <IfElsePart>ElsePart</IfElsePart>
+                      <BooleanEvaluation>False</BooleanEvaluation>
+                      <Requirement>
+                        <LeftCondition Connector="AND">
+                          <LeftCondition Connector="OR">
+                            <LeftCondition>
+                              <Rop Evaluation="0" Left="-COURSE-" Operator="IS" Right="PASSED">
+                                <Course Disc="ECON" NewDiscipline="Yes" Node_id="34" Num="0100"/>
+                              </Rop>
+                            </LeftCondition>
+                            <RightCondition>
+                              <Rop Evaluation="" Left="-COURSE-" Operator="IS" Right="PASSED">
+                                <Course Disc="ECON" NewDiscipline="Yes" Node_id="36" Num="0200"/>
+                              </Rop>
+                            </RightCondition>
+                          </LeftCondition>
+                          <RightCondition Connector="OR">
+                            <LeftCondition Connector="OR">
+                              <LeftCondition Connector="OR">
+                                <LeftCondition>
+                                  <Rop Evaluation="" Left="IECH" Operator="&gt;=" Right="6"/>
+                                </LeftCondition>
+                                <RightCondition>
+                                  <Rop Evaluation="" Left="ALEC" Operator="&gt;=" Right="4"/>
+                                </RightCondition>
+                              </LeftCondition>
+                              <RightCondition>
+                                <Rop Evaluation="" Left="ALEC" Operator="=" Right="A"/>
+                              </RightCondition>
+                            </LeftCondition>
+                            <RightCondition>
+                              <Rop Evaluation="" Left="ALEC" Operator="=" Right="A*"/>
+                            </RightCondition>
+                          </RightCondition>
+                        </LeftCondition>
+                        <IfPart>
+                          <Rule IndentLevel="1" Label="ECON 0100 or ECON 0200 with Waiver" LabelTag="FRGHA" Node_id="45" Node_type="4200" Per_complete="Not Used" RuleType="Course" Rule_id="1-1-1-0">
+                            <IfElsePart>IfPart</IfElsePart>
+                            <Classes_applied>0</Classes_applied>
+                            <Credits_applied>0</Credits_applied>
+                            <ClassesApplied/>
+                            <Requirement Class_cred_op="OR" Connector="," Credits_begin="1">
+                              <Course Disc="ECON" NewDiscipline="Yes" Node_id="46" Num="0100"/>
+                              <Course Disc="ECON" Node_id="47" Num="0200"/>
+                            </Requirement>
+                          </Rule>
+                        </IfPart>
+                        <ElsePart>
+                          <Rule IndentLevel="1" Label="IF Statement" Node_id="49" Node_type="4300" Per_complete="0" RuleType="IfStmt" Rule_id="1-1-1-1">
+                            <IfElsePart>ElsePart</IfElsePart>
+                            <BooleanEvaluation>False</BooleanEvaluation>
+                            <Requirement>
+                              <LeftCondition Connector="AND">
+                                <LeftCondition>
+                                  <Rop Evaluation="0" Left="EXPTGRDTRMCD" Operator="&lt;=" Right="202410"/>
+                                </LeftCondition>
+                                <RightCondition Connector="AND">
+                                  <LeftCondition>
+                                    <Rop Evaluation="" Left="AP34" Operator="=" Right="5"/>
+                                  </LeftCondition>
+                                  <RightCondition>
+                                    <Rop Evaluation="" Left="AP35" Operator="=" Right="5"/>
+                                  </RightCondition>
+                                </RightCondition>
+                              </LeftCondition>
+                              <IfPart>
+                                <Rule IndentLevel="1" Label="ECON 0100 and 0200 Waivers Granted" LabelTag="AJSJFU" Node_id="56" Node_type="4900" Per_complete="Not Used" RuleType="Complete" Rule_id="1-1-1-1-0">
+                                  <IfElsePart>IfPart</IfElsePart>
+                                  <Requirement/>
+                                </Rule>
+                              </IfPart>
+                              <ElsePart>
+                                <Rule IndentLevel="1" Label="IF Statement" Node_id="58" Node_type="4300" Per_complete="0" RuleType="IfStmt" Rule_id="1-1-1-1-1">
+                                  <IfElsePart>ElsePart</IfElsePart>
+                                  <BooleanEvaluation>False</BooleanEvaluation>
+                                  <Requirement>
+                                    <LeftCondition Connector="AND">
+                                      <LeftCondition>
+                                        <Rop Evaluation="0" Left="AP34" Operator="=" Right="5"/>
+                                      </LeftCondition>
+                                      <RightCondition>
+                                        <Rop Evaluation="" Left="-COURSE-" Operator="IS" Right="PASSED">
+                                          <Course Disc="ECON" NewDiscipline="Yes" Node_id="62" Num="0200"/>
+                                        </Rop>
+                                      </RightCondition>
+                                    </LeftCondition>
+                                    <IfPart>
+                                      <Rule IndentLevel="1" Label="ECON 0200 (ECON 0100 waived)" LabelTag="WHEWV3" Node_id="64" Node_type="4200" Per_complete="Not Used" RuleType="Course" Rule_id="1-1-1-1-1-0">
+                                        <IfElsePart>IfPart</IfElsePart>
+                                        <Classes_applied>0</Classes_applied>
+                                        <Credits_applied>0</Credits_applied>
+                                        <ClassesApplied/>
+                                        <Requirement Class_cred_op="OR" Connector="," Credits_begin="1">
+                                          <Course Disc="ECON" NewDiscipline="Yes" Node_id="65" Num="0200"/>
+                                          <Course Disc="ECON" HideFromAdvice="Yes" Node_id="66" Num="@">
+                                            <With Code="DWTERM" Connector="AND" Operator="&lt;">
+                                              <Value>Summer 2022</Value>
+                                            </With>
+                                            <With Code="DWCOURSENUMBER" Connector="AND" Operator="=">
+                                              <Value>020</Value>
+                                            </With>
+                                          </Course>
+                                        </Requirement>
+                                      </Rule>
+                                    </IfPart>
+                                    <ElsePart>
+                                      <Rule IndentLevel="1" Label="IF Statement" Node_id="68" Node_type="4300" Per_complete="0" RuleType="IfStmt" Rule_id="1-1-1-1-1-1">
+                                        <IfElsePart>ElsePart</IfElsePart>
+                                        <BooleanEvaluation>False</BooleanEvaluation>
+                                        <Requirement>
+                                          <LeftCondition Connector="AND">
+                                            <LeftCondition>
+                                              <Rop Evaluation="0" Left="AP35" Operator="=" Right="5"/>
+                                            </LeftCondition>
+                                            <RightCondition>
+                                              <Rop Evaluation="" Left="-COURSE-" Operator="IS" Right="PASSED">
+                                                <Course Disc="ECON" NewDiscipline="Yes" Node_id="72" Num="0100"/>
+                                              </Rop>
+                                            </RightCondition>
+                                          </LeftCondition>
+                                          <IfPart>
+                                            <Rule IndentLevel="1" Label="ECON 0100 (ECON 0200 waived)" LabelTag="WHEWV4" Node_id="74" Node_type="4200" Per_complete="Not Used" RuleType="Course" Rule_id="1-1-1-1-1-1-0">
+                                              <IfElsePart>IfPart</IfElsePart>
+                                              <Classes_applied>0</Classes_applied>
+                                              <Credits_applied>0</Credits_applied>
+                                              <ClassesApplied/>
+                                              <Requirement Class_cred_op="OR" Connector="," Credits_begin="1">
+                                                <Course Disc="ECON" NewDiscipline="Yes" Node_id="75" Num="0100"/>
+                                                <Course Disc="ECON" HideFromAdvice="Yes" Node_id="76" Num="@">
+                                                  <With Code="DWTERM" Connector="AND" Operator="&lt;">
+                                                    <Value>Summer 2022</Value>
+                                                  </With>
+                                                  <With Code="DWCOURSENUMBER" Connector="AND" Operator="=">
+                                                    <Value>010</Value>
+                                                  </With>
+                                                </Course>
+                                              </Requirement>
+                                            </Rule>
+                                          </IfPart>
+                                          <ElsePart>
+                                            <Rule IndentLevel="1" Label="IF Statement" Node_id="78" Node_type="4300" Per_complete="0" RuleType="IfStmt" Rule_id="1-1-1-1-1-1-1">
+                                              <IfElsePart>ElsePart</IfElsePart>
+                                              <BooleanEvaluation>False</BooleanEvaluation>
+                                              <Requirement>
+                                                <LeftCondition Connector="OR">
+                                                  <LeftCondition Connector="OR">
+                                                    <LeftCondition Connector="OR">
+                                                      <LeftCondition Connector="OR">
+                                                        <LeftCondition Connector="OR">
+                                                          <LeftCondition Connector="AND">
+                                                            <LeftCondition>
+                                                              <Rop Evaluation="0" Left="DE01" Operator="&gt;=" Right="70"/>
+                                                            </LeftCondition>
+                                                            <RightCondition>
+                                                              <Rop Evaluation="" Left="DE02" Operator="&gt;=" Right="70"/>
+                                                            </RightCondition>
+                                                          </LeftCondition>
+                                                          <RightCondition Connector="AND">
+                                                            <LeftCondition>
+                                                              <Rop Evaluation="0" Left="AP34" Operator="=" Right="5"/>
+                                                            </LeftCondition>
+                                                            <RightCondition>
+                                                              <Rop Evaluation="" Left="AP35" Operator="=" Right="5"/>
+                                                            </RightCondition>
+                                                          </RightCondition>
+                                                        </LeftCondition>
+                                                        <RightCondition>
+                                                          <Rop Evaluation="0" Left="IECH" Operator="&gt;=" Right="6"/>
+                                                        </RightCondition>
+                                                      </LeftCondition>
+                                                      <RightCondition>
+                                                        <Rop Evaluation="0" Left="ALEC" Operator="&gt;=" Right="4"/>
+                                                      </RightCondition>
+                                                    </LeftCondition>
+                                                    <RightCondition>
+                                                      <Rop Evaluation="0" Left="ALEC" Operator="=" Right="A"/>
+                                                    </RightCondition>
+                                                  </LeftCondition>
+                                                  <RightCondition>
+                                                    <Rop Evaluation="0" Left="ALEC" Operator="=" Right="A*"/>
+                                                  </RightCondition>
+                                                </LeftCondition>
+                                                <IfPart>
+                                                  <Rule IndentLevel="1" Label="ECON 0100 and 0200 Waivers Granted" LabelTag="WHEWV2" Node_id="95" Node_type="4900" Per_complete="Not Used" RuleType="Complete" Rule_id="1-1-1-1-1-1-1-0">
+                                                    <IfElsePart>IfPart</IfElsePart>
+                                                    <Requirement/>
+                                                  </Rule>
+                                                </IfPart>
+                                                <ElsePart>
+                                                  <Rule IndentLevel="1" Label="Introductory Economics" LabelTag="WHEWV5" Node_id="97" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="1-1-1-1-1-1-1-1">
+                                                    <IfElsePart>ElsePart</IfElsePart>
+                                                    <Classes_applied>0</Classes_applied>
+                                                    <Credits_applied>0</Credits_applied>
+                                                    <ClassesApplied/>
+                                                    <Requirement Class_cred_op="OR" Connector="," Credits_begin="1">
+                                                      <Course Disc="BEPP" NewDiscipline="Yes" Node_id="98" Num="1000"/>
+                                                      <Course Disc="ECON" HideFromAdvice="Yes" NewDiscipline="Yes" Node_id="99" Num="0110"/>
+                                                      <Course Disc="ECON" HideFromAdvice="Yes" Node_id="100" Num="@">
+                                                        <With Code="DWTERM" Connector="AND" Operator="&lt;">
+                                                          <Value>Summer 2022</Value>
+                                                        </With>
+                                                        <With Code="DWCOURSENUMBER" Connector="AND" Operator="=">
+                                                          <Value>010</Value>
+                                                        </With>
+                                                      </Course>
+                                                    </Requirement>
+                                                  </Rule>
+                                                </ElsePart>
+                                              </Requirement>
+                                            </Rule>
+                                          </ElsePart>
+                                        </Requirement>
+                                      </Rule>
+                                    </ElsePart>
+                                  </Requirement>
+                                </Rule>
+                              </ElsePart>
+                            </Requirement>
+                          </Rule>
+                        </ElsePart>
+                      </Requirement>
+                    </Rule>
+                  </ElsePart>
+                </Requirement>
+              </Rule>
+            </ElsePart>
+          </Requirement>
+        </Rule>
+        <Rule IndentLevel="1" Label="IF Statement" Node_id="101" Node_type="4300" Per_complete="0" RuleType="IfStmt" Rule_id="2">
+          <BooleanEvaluation>False</BooleanEvaluation>
+          <Requirement>
+            <LeftCondition Connector="OR">
+              <LeftCondition>
+                <Rop Evaluation="0" Left="PROGRAM" Operator="=" Right="WU_BS_HUNTS"/>
+              </LeftCondition>
+              <RightCondition>
+                <Rop Evaluation="0" Left="PROGRAM" Operator="=" Right="WU_BS_NHCM"/>
+              </RightCondition>
+            </LeftCondition>
+            <IfPart>
+              <Rule IndentLevel="1" Label="Mathematics" LabelTag="WFY312" Node_id="106" Node_type="4200" Per_complete="Not Used" RuleType="Course" Rule_id="2-0">
+                <IfElsePart>IfPart</IfElsePart>
+                <Classes_applied>0</Classes_applied>
+                <Credits_applied>0</Credits_applied>
+                <ClassesApplied/>
+                <Requirement Class_cred_op="OR" Connector="," Credits_begin="1">
+                  <Course Disc="MATH" NewDiscipline="Yes" Node_id="107" Num="1070"/>
+                  <Course Disc="MATH" Node_id="108" Num="1400"/>
+                  <Course Disc="MATH" HideFromAdvice="Yes" Node_id="109" Num="1100"/>
+                </Requirement>
+              </Rule>
+            </IfPart>
+            <ElsePart>
+              <Rule IndentLevel="1" Label="Mathematics" LabelTag="WFYFMATH2" Node_id="111" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="2-1">
+                <IfElsePart>ElsePart</IfElsePart>
+                <Classes_applied>0</Classes_applied>
+                <Credits_applied>0</Credits_applied>
+                <ClassesApplied/>
+                <Requirement Class_cred_op="OR" Connector="," Credits_begin="1">
+                  <Course Disc="MATH" NewDiscipline="Yes" Node_id="112" Num="1070"/>
+                  <Course Disc="MATH" Node_id="113" Num="1400"/>
+                  <Course Disc="MATH" HideFromAdvice="Yes" Node_id="114" Num="1100"/>
+                </Requirement>
+              </Rule>
+              <Rule IndentLevel="1" Label="Critical Writing Seminar" LabelTag="WFYFCRITWR" Node_id="115" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="2-2">
+                <IfElsePart>ElsePart</IfElsePart>
+                <Classes_applied>0</Classes_applied>
+                <Credits_applied>0</Credits_applied>
+                <ClassesApplied/>
+                <Requirement Class_cred_op="OR" Connector="," Credits_begin="1">
+                  <Course Disc="WRIT" NewDiscipline="Yes" Node_id="116" Num="0000" Num_end="0991"/>
+                  <Except>
+                    <Course Disc="WRIT" NewDiscipline="Yes" Node_id="118" Num="135@"/>
+                    <Course Disc="WRIT" Node_id="119" Num="138@"/>
+                  </Except>
+                </Requirement>
+              </Rule>
+            </ElsePart>
+          </Requirement>
+        </Rule>
+      </Block>
+<Block Cat_yr="9999" Cat_yrLit="End of Time" Cat_yr_start="0000" Cat_yr_stop="9999" Classes_applied="0" Credits_applied="0" GPA="*" Gpa_credits="0" Gpa_grade_pts="*" Per_complete="0" Req_id="RA000453" Req_type="OTHER" Req_value="U-WLAS" Title="Liberal Arts and Sciences">
+<Header>
+          <Qualifier Applied="0" ClassesApplied="0" Credits="7" CreditsApplied="0" Label="Minimum Credits Requirement" LabelTag="FJDKSL" Name="CLASSESCREDITS" Needed="7" Node_id="14" Node_type="4121" Satisfied="No">
+            <Text>7 Credits</Text>
+          </Qualifier>
+          <Qualifier Classes="0" ClassesApplied="0" CreditsApplied="0" Name="MAXCLASS" Node_id="15" Node_type="4101" Tag="NOAPCRSE">
+            <SubText>FRSM 097@ (With </SubText>
+            <SubText>DWTERM &lt; 202220 </SubText>
+            <SubText>)</SubText>
+            <SubText>, </SubText>
+            <SubText>@ @ (With </SubText>
+            <SubText>DWTRANSFERSCHOOLID = EQIVAP, EQIVIB, EQIVEX, EQIVAS </SubText>
+            <SubText>)</SubText>
+            <Text>MaxClasses 0 in </Text>
+          </Qualifier>
+          <Qualifier ClassesApplied="0" CreditsApplied="0" Name="NONEXCLUSIVE" Node_id="18" Node_type="4111" Tag="SWMNR">
+            <SubText>(MINOR)</SubText>
+            <Text>ShareWith </Text>
+          </Qualifier>
+          <Qualifier ClassesApplied="0" CreditsApplied="0" Name="NONEXCLUSIVE" Node_id="20" Node_type="4111" Tag="SWJWS">
+            <SubText>(OTHER = U-SCHOLARS)</SubText>
+            <Text>ShareWith </Text>
+          </Qualifier>
+        </Header>
+<Rule IndentLevel="1" Label="Foreign Language Proficiency" LabelTag="OUTOQQ" Node_id="1238" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="4-5-1">
+                      <IfElsePart>ElsePart</IfElsePart>
+                      <Classes_applied>0</Classes_applied>
+                      <Credits_applied>0</Credits_applied>
+                      <ClassesApplied/>
+                      <Requirement Class_cred_op="OR" Connector="," Credits_begin="1">
+                        <Course Disc="@" NewDiscipline="Yes" Node_id="1239" Num="@">
+                          <With Code="ATTRIBUTE" Connector="" Operator="=">
+                            <Value>WUFL</Value>
+                          </With>
+                        </Course>
+                        <Qualifier Applied="" Name="NONEXCLUSIVE" Node_id="1240" Node_type="4111">
+                          <SubText>(THISBLOCK)</SubText>
+                          <Text>ShareWith </Text>
+                        </Qualifier>
+                      </Requirement>
+                    </Rule>
+</Block>
+<Block Cat_yr="9999" Cat_yrLit="End of Time" Cat_yr_start="2020" Cat_yr_stop="9999" Classes_applied="0" Credits_applied="0" Degree="BS" GPA="*" Gpa_credits="0" Gpa_grade_pts="*" Major1="FNCS" Per_complete="0" Req_id="RA001189" Req_type="MAJOR" Req_value="FNCS" Title="Concentration in Finance (FNCS)">
+        <Header>
+          <Qualifier Applied="0" ClassesApplied="0" Credits="4" CreditsApplied="0" Label="Minimum Credits Requirement" LabelTag="MINCREDMT" Name="CLASSESCREDITS" Needed="4" Node_id="7" Node_type="4121" Satisfied="No">
+            <Text>4 Credits</Text>
+          </Qualifier>
+          <Qualifier Applied="0.00" Label="Minimum Concentration GPA of 2.5 Required" LabelTag="FNCEMINGPA" MinGPA="2.5" Name="MINGPA" Needed="2.5" Node_id="8" Node_type="4116" Satisfied="No">
+            <Text>MINGPA 2.5</Text>
+          </Qualifier>
+          <Qualifier Classes="0" ClassesApplied="0" CreditsApplied="0" Name="MAXCLASS" Node_id="9" Node_type="4101" Tag="MXCLH">
+            <SubText>@ @ (With </SubText>
+            <SubText>DWAGE &gt; 8 </SubText>
+            <SubText>)</SubText>
+            <Text>MaxClasses 0 in </Text>
+          </Qualifier>
+          <Qualifier ClassesApplied="0" Credits="1" CreditsApplied="0" Name="MAXCREDIT" Node_id="11" Node_type="4103">
+            <SubText>FNCE 3510, 3860</SubText>
+            <Text>MaxCredits 1 in </Text>
+          </Qualifier>
+          <Qualifier Applied="0" Credits="2" Label="Minimum Credits Earned from University of Pennsylvania" LabelTag="FNCEMINRES" Name="MINRES" Needed="2" Node_id="14" Node_type="4119" Satisfied="No">
+            <Text>MINRES 2 Credits</Text>
+          </Qualifier>
+          <Qualifier ClassesApplied="0" Credits="0" CreditsApplied="0" Name="MAXCREDIT" Node_id="15" Node_type="4103" Tag="MXPFCOVID">
+            <SubText>@ @ (With </SubText>
+            <SubText>DWPASSFAIL = Y AND</SubText>
+            <SubText>DWTERM &lt;&gt; 202010, 202020, 202030, 202110 AND</SubText>
+            <SubText>)</SubText>
+            <Text>MaxCredits 0 in </Text>
+          </Qualifier>
+          <Qualifier ClassesApplied="0" CreditsApplied="0" Name="NONEXCLUSIVE" Node_id="17" Node_type="4111" Tag="SWHMIN">
+            <SubText>(MINOR)</SubText>
+            <Text>ShareWith </Text>
+          </Qualifier>
+          <Qualifier ClassesApplied="0" CreditsApplied="0" Name="NONEXCLUSIVE" Node_id="19" Node_type="4111" Tag="SWHCONC">
+            <SubText>(CONC)</SubText>
+            <Text>ShareWith </Text>
+          </Qualifier>
+          <Qualifier ClassesApplied="0" CreditsApplied="0" Name="NONEXCLUSIVE" Node_id="21" Node_type="4111" Tag="SWJWS">
+            <SubText>(OTHER = U-SCHOLARS)</SubText>
+            <Text>ShareWith </Text>
+          </Qualifier>
+        </Header>
+        <Rule IndentLevel="1" Label="Finance Courses" LabelTag="FNCEREQ" Node_id="23" Node_type="4200" Per_complete="0" RuleType="Course" Rule_id="1">
+          <Classes_applied>0</Classes_applied>
+          <Credits_applied>0</Credits_applied>
+          <ClassesApplied/>
+          <Requirement Class_cred_op="OR" Connector="," Credits_begin="4" Decide="BESTGRADE">
+            <Course CrossListed="Parent" Disc="BEPP" NewDiscipline="Yes" Node_id="24" Num="2020">
+              <CrossListedCourse CrossListed="Child" Disc="FNCE" NewDiscipline="Yes" Node_id="" Num="2020"/>
+            </Course>
+            <Course CrossListed="Parent" Disc="BEPP" Node_id="25" Num="2300">
+              <CrossListedCourse CrossListed="Child" Disc="FNCE" NewDiscipline="Yes" Node_id="" Num="2300"/>
+              <CrossListedCourse CrossListed="Child" Disc="REAL" NewDiscipline="Yes" Node_id="" Num="2300"/>
+              <CrossListedCourse CrossListed="Child" Disc="REAL" Node_id="" Num="2300">
+                <With Code="DWTERM" Connector="AND" Operator="&gt;=">
+                  <Value>Summer 2025</Value>
+                </With>
+              </CrossListedCourse>
+              <CrossListedCourse CrossListed="Child" Disc="REAL" Node_id="" Num="2300"/>
+            </Course>
+            <Course Disc="FNCE" NewDiscipline="Yes" Node_id="26" Num="2020" Num_end="4030"/>
+            <Course CrossListed="Parent" Disc="REAL" NewDiscipline="Yes" Node_id="27" Num="2090">
+              <CrossListedCourse CrossListed="Child" Disc="FNCE" NewDiscipline="Yes" Node_id="" Num="2090"/>
+            </Course>
+            <Course CrossListed="Parent" Disc="REAL" Node_id="28" Num="2300">
+              <CrossListedCourse CrossListed="Child" Disc="BEPP" NewDiscipline="Yes" Node_id="" Num="2300">
+                <With Code="DWTERM" Connector="AND" Operator="&gt;=">
+                  <Value>Spring 2023</Value>
+                </With>
+              </CrossListedCourse>
+              <CrossListedCourse CrossListed="Child" Disc="BEPP" Node_id="" Num="2300">
+                <With Code="DWTERM" Connector="AND" Operator="&gt;=">
+                  <Value>Spring 2025</Value>
+                </With>
+              </CrossListedCourse>
+              <CrossListedCourse CrossListed="Child" Disc="BEPP" Node_id="" Num="2300">
+                <With Code="DWTERM" Connector="AND" Operator="&gt;=">
+                  <Value>Spring 2022</Value>
+                </With>
+              </CrossListedCourse>
+              <CrossListedCourse CrossListed="Child" Disc="BEPP" Node_id="" Num="2300">
+                <With Code="DWTERM" Connector="AND" Operator="&gt;=">
+                  <Value>Fall 2023</Value>
+                </With>
+              </CrossListedCourse>
+              <CrossListedCourse CrossListed="Child" Disc="FNCE" NewDiscipline="Yes" Node_id="" Num="2300"/>
+            </Course>
+            <Course Disc="FNCE" HideFromAdvice="Yes" NewDiscipline="Yes" Node_id="29" Num="202" Num_end="403">
+              <With Code="DWTERM" Connector="" Operator="&lt;">
+                <Value>Summer 2022</Value>
+              </With>
+            </Course>
+            <Course Disc="BEPP" HideFromAdvice="Yes" NewDiscipline="Yes" Node_id="30" Num="230@">
+              <With Code="DWTERM" Connector="" Operator="&lt;">
+                <Value>Summer 2022</Value>
+              </With>
+            </Course>
+            <Except>
+              <Course Disc="FNCE" NewDiscipline="Yes" Node_id="32" Num="3990"/>
+            </Except>
+          </Requirement>
+        </Rule>
+      </Block>
+  </Audit>
+</Report>
