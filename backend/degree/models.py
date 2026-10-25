@@ -11,7 +11,7 @@ from django.db.models.signals import m2m_changed
 from django.utils import timezone
 
 from courses.models import Course
-from degree.utils.degree_logic import aggregate_rule_leaves
+from degree.utils.degree_logic import FULFILLMENT_LEVELS, aggregate_rule_leaves
 from degree.utils.model_utils import json_parser, q_object_parser
 
 
@@ -616,6 +616,20 @@ class Fulfillment(models.Model):
             """
             True if course associated with this fulfillment isn't illegally double counted anywhere,
             false otherwise.
+            """
+        ),
+    )
+    level = models.CharField(
+        max_length=16,
+        null=True,
+        blank=True,
+        choices=FULFILLMENT_LEVELS,
+        help_text=dedent(
+            """
+            For a submatriculant, which of their transcript's records list this course: the
+            undergraduate one, the graduate one, or both (a double counted course). A course on
+            one record only counts toward that level's degree. Null when unknown, e.g. a course
+            the student added by hand, which may count toward either.
             """
         ),
     )

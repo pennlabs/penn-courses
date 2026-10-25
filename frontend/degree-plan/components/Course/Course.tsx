@@ -17,6 +17,18 @@ import ToastContext from "@/components/Toast/Toast";
 
 const DOUBLE_COUNT_ERROR_MESSAGE =
   "This course is being illegally double counted in your plan!";
+// Which of a submatriculant's degrees a course counts toward, as the backend names them.
+const LEVEL_OPTIONS: { value: Fulfillment["level"]; label: string }[] = [
+  { value: null, label: "Not marked (either)" },
+  { value: "UNDERGRADUATE", label: "Bachelors only" },
+  { value: "GRADUATE", label: "Masters only" },
+  { value: "SHARED", label: "Both (double counted)" },
+];
+// Courses on the masters record get a band down the card's left edge.
+const LEVEL_BANDS: { [level: string]: { text: string; color: string; title: string } } = {
+  GRADUATE: { text: "MSE", color: "#5b61b8", title: "Counts toward your masters only" },
+  SHARED: { text: "MSE+", color: "#3a8a5f", title: "Double counted toward both degrees" },
+};
 const COURSE_BORDER_RADIUS = "9px";
 const HIGHLIGHT_VARIANT_COLORS = {
   selected: "#E6F4EA",
@@ -219,6 +231,48 @@ const OverrideBadge = styled.span`
   font-weight: 600;
 `;
 
+// Sits inside the card's left padding so the course code keeps its alignment. Its outer
+// corners share the card's radius; only the text inside is rotated, or the corners would be too.
+const LevelBand = styled.button<{ $color: string }>`
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  border-radius: ${COURSE_BORDER_RADIUS} 0 0 ${COURSE_BORDER_RADIUS};
+  background: ${({ $color }) => $color};
+  color: white;
+  cursor: pointer;
+
+  &:hover {
+    filter: brightness(1.1);
+  }
+`;
+
+const LevelBandText = styled.span`
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+`;
+
+const LevelSelect = styled.select`
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+  padding: 0.25rem 0.4rem;
+  border: 1px solid #d8d8d8;
+  border-radius: 6px;
+  background: white;
+  color: #333;
+`;
+
 const SwitchRuleButton = styled.button`
   border: 1px solid #d7cc86;
   border-radius: 6px;
@@ -375,6 +429,16 @@ const CourseComponent = ({
       .filter((t): t is { title: string; degreeName: string; isOverride: boolean } => !!t);
   }, [fulfillment?.rules, degreePlanDetail, overrideSet]);
 
+  // Only a plan with a masters degree has anything to mark a course's level against, and the
+  // mark belongs to the course in the plan, not to its copies in the requirements panel.
+  const showLevel = !!fulfillment && courseType !== ItemTypes.COURSE_IN_REQ;
+  const canSetLevel =
+    showLevel &&
+    !!activeDegreePlanId &&
+    !!degreePlanDetail?.degrees.some((degree) => degree.degree === "MSE");
+  const [settingLevel, setSettingLevel] = useState(false);
+  const [levelError, setLevelError] = useState<string | null>(null);
+
   const [infoOpen, setInfoOpen] = useState(false);
   const [switchingRule, setSwitchingRule] = useState(false);
   const [switchError, setSwitchError] = useState<string | null>(null);
@@ -443,7 +507,28 @@ const CourseComponent = ({
     selectedRuleNames.length > 0 ||
     shouldShowCouldAlsoCountFor ||
     shouldShowSwitchHint ||
+    canSetLevel ||
     !!displacedMessage;
+
+  const handleSetLevel = async (level: Fulfillment["level"]) => {
+    if (!activeDegreePlanId || !fulfillment || settingLevel) return;
+    try {
+      setSettingLevel(true);
+      setLevelError(null);
+      await postFetcher(
+        `/api/degree/degreeplans/${activeDegreePlanId}/fulfillments/${fulfillment.full_code}/level`,
+        { level }
+      );
+      await Promise.all([
+        mutate(`/api/degree/degreeplans/${activeDegreePlanId}/fulfillments`),
+        mutate(`/api/degree/degreeplans/${activeDegreePlanId}`),
+      ]);
+    } catch {
+      setLevelError("Could not change this course's level right now.");
+    } finally {
+      setSettingLevel(false);
+    }
+  };
   const highlightVariant =
     courseType === ItemTypes.COURSE_IN_REQ
       ? isUsed
@@ -505,6 +590,19 @@ const CourseComponent = ({
             ref={dragRef}
             className={className}
           >
+            {showLevel && fulfillment.level && LEVEL_BANDS[fulfillment.level] && (
+              <LevelBand
+                type="button"
+                $color={LEVEL_BANDS[fulfillment.level].color}
+                title={`${LEVEL_BANDS[fulfillment.level].title}. Click to change.`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setInfoOpen(true);
+                }}
+              >
+                <LevelBandText>{LEVEL_BANDS[fulfillment.level].text}</LevelBandText>
+              </LevelBand>
+            )}
             {!fulfillment?.legal && (
               <div style={{ paddingRight: "5px" }}>
                 <a
@@ -595,6 +693,35 @@ const CourseComponent = ({
                           {switchError && (
                             <div style={{ marginTop: "0.35rem", color: "#a94442" }}>
                               {switchError}
+                            </div>
+                          )}
+                        </PopoverSection>
+                      )}
+                      {canSetLevel && (
+                        <PopoverSection>
+                          <PopoverLabel>Counts toward</PopoverLabel>
+                          Which degree this course is on your transcript for.
+                          <div>
+                            <LevelSelect
+                              value={fulfillment.level ?? ""}
+                              disabled={settingLevel}
+                              onClick={(e) => e.stopPropagation()}
+                              onChange={(e) =>
+                                handleSetLevel(
+                                  (e.target.value || null) as Fulfillment["level"]
+                                )
+                              }
+                            >
+                              {LEVEL_OPTIONS.map((option) => (
+                                <option key={option.value ?? ""} value={option.value ?? ""}>
+                                  {option.label}
+                                </option>
+                              ))}
+                            </LevelSelect>
+                          </div>
+                          {levelError && (
+                            <div style={{ marginTop: "0.35rem", color: "#a94442" }}>
+                              {levelError}
                             </div>
                           )}
                         </PopoverSection>

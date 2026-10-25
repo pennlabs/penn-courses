@@ -43,6 +43,7 @@ import {
 import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
 import { postFetcher, getCsrf } from "@/hooks/swrcrud";
 import {
+  CourseLevel,
   getMajorOptions,
   getSecondMajorOptions,
   MajorOptionItem,
@@ -52,6 +53,9 @@ type WelcomeLayoutProps = {
   inputtedStartingYear: { value: number; label: number } | null;
   inputtedGraduationYear: { value: number; label: number } | null;
   scrapedCourses: any;
+  // Which transcript record each scraped course is on; empty unless the transcript has a
+  // masters record.
+  courseLevels?: { [course: string]: CourseLevel };
   setCurrentPage: Dispatch<SetStateAction<number>>;
   setActiveDegreeplan: (arg0: DegreePlan) => void;
   inputtedSchools: SchoolOption[];
@@ -66,6 +70,7 @@ export default function CreateWithTranscriptPanel({
   inputtedStartingYear,
   inputtedGraduationYear,
   scrapedCourses,
+  courseLevels = {},
   setCurrentPage,
   setActiveDegreeplan,
   inputtedSchools,
@@ -105,6 +110,10 @@ export default function CreateWithTranscriptPanel({
   // Will likely change in the future!
   useEffect(() => {
     if (degreeID) {
+      const toFullCode = (course: string) => course.replace(" ", "-").toUpperCase();
+      const levels = Object.fromEntries(
+        Object.entries(courseLevels).map(([course, level]) => [toFullCode(course), level])
+      );
       const courses = scrapedCourses.map((semester: any) => {
         const rawSem = semester.sem;
         let sem: string;
@@ -117,9 +126,7 @@ export default function CreateWithTranscriptPanel({
         }
         return {
           sem,
-          courses: semester.courses.map((course: string) =>
-            course.replace(" ", "-").toUpperCase()
-          ),
+          courses: semester.courses.map(toFullCode),
         };
       });
 
@@ -128,6 +135,7 @@ export default function CreateWithTranscriptPanel({
       } else {
         postFetcher(`/api/degree/onboard-from-transcript/${degreeID}`, {
           courses,
+          levels,
         }).then((r) => setShowOnboardingModal(false));
       }
     }

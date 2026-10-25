@@ -22,6 +22,18 @@ MIN_GRADUATE_COURSE_NUMBER = 5000
 
 DEFAULT_COURSE_CREDITS = Decimal(1)
 
+# Which of a submatriculant's degrees a course is on the books for. A transcript lists a course
+# under its undergraduate record, its graduate record, or both; only a course on both records
+# is double counted, and the rest may only count toward the degree whose record names them.
+UNDERGRADUATE_LEVEL = "UNDERGRADUATE"
+GRADUATE_LEVEL = "GRADUATE"
+SHARED_LEVEL = "SHARED"
+FULFILLMENT_LEVELS = [
+    (UNDERGRADUATE_LEVEL, "Undergraduate only"),
+    (GRADUATE_LEVEL, "Graduate only"),
+    (SHARED_LEVEL, "Shared between both"),
+]
+
 
 def aggregate_rule_leaves(rules, f):
     """
@@ -103,6 +115,18 @@ def is_graduate(component) -> bool:
     from degree.models import graduate_programs
 
     return getattr(component, "program", None) in graduate_programs
+
+
+def level_allows(level, component) -> bool:
+    """
+    Whether a course of the given level may count toward a plan component. A level of None
+    (a course not read off a transcript) and SHARED allow every component.
+    """
+    if level == GRADUATE_LEVEL:
+        return is_graduate(component)
+    if level == UNDERGRADUATE_LEVEL:
+        return not is_graduate(component)
+    return True
 
 
 def course_number(full_code: str):
@@ -260,6 +284,7 @@ def allocate_rules(
     graduate_sharing=None,
     credits_cache=None,
     prior_selected=None,
+    level=None,
 ):
     """
     Given a course (full_code), rule, degree and double count mappings, and optionally a selected
@@ -270,6 +295,10 @@ def allocate_rules(
     `is_transfer` says the course is AP or transfer credit, which keeps it off every rule that
     does not accept such credit.
 
+    `level` is which of a submatriculant's records the course is on (see FULFILLMENT_LEVELS).
+    A course on only one record counts toward only that level's components; the other level's
+    rules are not offered at all, because the registrar does not let the course count there.
+
     `prior_selected` is what the course already counts for, when it is already in the plan.
     Those choices are kept, except where they conflict with `rule_selected`, and the
     allocation only adds what may share with them.
@@ -278,6 +307,9 @@ def allocate_rules(
     unselected_rules = set()
     if belongs_cache is None:
         belongs_cache = {}
+    rules_per_degree = {
+        degree: rules for degree, rules in rules_per_degree.items() if level_allows(level, degree)
+    }
     if prior_selected:
         seed = {rule for rule in prior_selected if rule in rule_to_degree}
         preferred = {rule_selected} if rule_selected in rule_to_degree else set()

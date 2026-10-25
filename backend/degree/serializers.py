@@ -228,6 +228,7 @@ class FulfillmentSerializer(serializers.ModelSerializer):
             "rules",
             "unselected_rules",
             "legal",
+            "level",
             "overrides",
         ]
 
