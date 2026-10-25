@@ -80,9 +80,7 @@ const TagsWhenOffered = ({
     });
 
   const syllabi = [];
-  // const courses = []; unused
   const prereqs = [];
-  // const links = []; unused
 
   return (
     <div>

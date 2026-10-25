@@ -162,6 +162,7 @@ const ResultsFooter = styled(Placeholder)`
 
 const Chip = styled.div<{ $isSelected: boolean }>`
   ${pill}
+  position: relative;
   box-sizing: border-box;
   width: 73px;
   gap: 1px;
@@ -176,9 +177,21 @@ const ChipToggle = styled.button`
   display: flex;
   flex: 1;
   min-width: 0;
-  align-items: space-between;
+  align-items: center;
   color: inherit;
   font-size: inherit;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+  }
+
+  &:focus-visible::after {
+    outline: 2px solid currentColor;
+    outline-offset: 1px;
+  }
 `;
 
 const ChipLabel = styled.span`
@@ -197,11 +210,19 @@ const ChipIcon = styled.span<{ $isSelected: boolean }>`
     $isSelected ? theme.color.text.inverse : theme.color.text.strong};
 `;
 
-const ChipRemove = styled.button`
+const ChipRemove = styled.button<{ $isSelected: boolean }>`
   ${unstyledButton}
+  position: relative;
+  z-index: 1; //required to make sure this button is above the ChipToggle's focus outline
   display: flex;
   align-items: center;
-  color: ${({ theme }) => theme.color.text.strong};
+  border-radius: ${({ theme }) => theme.radius.sm};
+  color: ${({ theme, $isSelected }) =>
+    $isSelected ? theme.color.text.inverse : theme.color.text.strong};
+
+  &:focus-visible {
+    outline: 2px solid currentColor;
+  }
 `;
 
 interface OptionChipProps {
@@ -214,10 +235,6 @@ interface OptionChipProps {
 
 const OptionChip = React.memo(
   ({ label, name, isSelected, onToggle, onRemove }: OptionChipProps) => {
-    // The X doubles as the toggle for a selected chip, so it only needs its own
-    // button when the chip is unselected and removable.
-    const showRemoveButton = !isSelected && onRemove !== undefined;
-
     return (
       <Chip $isSelected={isSelected} title={name}>
         <ChipToggle
@@ -226,19 +243,20 @@ const OptionChip = React.memo(
           onClick={() => onToggle(label)}
         >
           <ChipLabel>{label}</ChipLabel>
-          {!showRemoveButton && (
+          {onRemove === undefined && (
             <ChipIcon $isSelected={isSelected} aria-hidden="true">
-              {isSelected ? <HiXMark size={15} /> : <PiPlus size={15} />}
+              <PiPlus size={15} />
             </ChipIcon>
           )}
         </ChipToggle>
-        {showRemoveButton && (
+        {onRemove !== undefined && (
           <ChipRemove
             type="button"
+            $isSelected={isSelected}
             aria-label={`Remove ${label}`}
-            onClick={() => onRemove?.(label)}
+            onClick={() => onRemove(label)}
           >
-            <HiXMark size={15} />
+            <HiXMark size={15} aria-hidden="true" />
           </ChipRemove>
         )}
       </Chip>
@@ -324,13 +342,21 @@ const SelectBox = ({
     [emitOptions]
   );
 
-  const handleRemoveChip = useCallback((option: string) => {
-    setChipOptions((prev) => {
-      const next = new Set(prev);
-      next.delete(option);
-      return next;
-    });
-  }, []);
+  // Removing a selected chip also deselects it, so no filter is left active without a chip
+  const handleRemoveChip = useCallback(
+    (option: string) => {
+      setChipOptions((prev) => {
+        const next = new Set(prev);
+        next.delete(option);
+        return next;
+      });
+      const selected = optionsRef.current;
+      if (selected.includes(option)) {
+        emitOptions(selected.filter((o) => o !== option));
+      }
+    },
+    [emitOptions]
+  );
 
   const closeSearchBar = useCallback(() => {
     setIsSearchFocused(false);

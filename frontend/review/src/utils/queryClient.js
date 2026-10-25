@@ -26,6 +26,7 @@ export const queryClient = new QueryClient({
 
 queryClient.setQueryDefaults(queryKeys.autocomplete, STATIC_QUERY_OPTIONS);
 queryClient.setQueryDefaults(queryKeys.attributes, STATIC_QUERY_OPTIONS);
+queryClient.setQueryDefaults(["reviewData"], STATIC_QUERY_OPTIONS);
 
 export const asyncStoragePersister = createAsyncStoragePersister({
   key: PERSIST_STORAGE_KEY,

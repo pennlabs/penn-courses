@@ -29,8 +29,7 @@ export class ReviewPage extends Component {
       rowCode: null,
       liveData: null,
       isAverage: localStorage.getItem("meta-column-type") !== "recent",
-      isCourseEval: false,
-      showBanner: false
+      isCourseEval: false
     };
 
     this.navigateToPage = this.navigateToPage.bind(this);
@@ -50,14 +49,6 @@ export class ReviewPage extends Component {
 
   componentDidMount() {
     this.getReviewData();
-
-    fetch("https://platform.pennlabs.org/options/")
-      .then(response => response.json())
-      .then(options =>
-        this.setState({
-          showBanner: options.RECRUITING && !this.cookies.get("hide_pcr_banner")
-        })
-      );
   }
 
   componentDidUpdate(prevProps) {

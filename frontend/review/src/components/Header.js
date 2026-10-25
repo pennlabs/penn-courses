@@ -22,7 +22,7 @@ const Title = styled.div`
   color: ${({ theme }) => theme.color.text.primary};
   font-size: 1.375rem;
   font-family: ${({ theme }) => theme.font.family.sans};
-  font-weight: ${({ theme }) => theme.font.weight.regular};
+  font-weight: ${({ theme }) => theme.font.weight.semibold};
   white-space: nowrap;
 
   ${maxWidth("md")} {
