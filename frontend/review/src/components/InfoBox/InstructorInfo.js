@@ -1,6 +1,6 @@
 import React from "react";
 
-const InstructorInfo = ({ name, contact, notes }) => (
+export default ({ name, contact, notes }) => (
   <div className="instructor">
     <div className="title">{name}</div>
     {contact && (
@@ -19,5 +19,3 @@ const InstructorInfo = ({ name, contact, notes }) => (
       ))}
   </div>
 );
-
-export default InstructorInfo;

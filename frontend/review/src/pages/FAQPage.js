@@ -7,16 +7,15 @@ const FAQ = () => (
     <div>
       <p className="question">How do I use the website?</p>
       <p className="answer">
-        Each professor and course has its own page, and you can browse a
-        department's courses with the Department filter. Summary ratings for the
-        recent semester and for all semesters are provided at the left of each
-        page, with more detailed rating information provided on the right. You
-        can choose to view or hide each course rating criteria by clicking the
-        plus icon on the top of the table. You can also toggle the view mode of
-        ratings between aggregate and most recent on the right side of the page.
-        You can hover over the tags on the left side of the page or the stars on
-        the right side of the page in order to learn more about courses offered
-        in the upcoming semester.
+        Each professor, course, and department has its own page. Summary ratings
+        for the recent semester and for all semesters are provided at the left
+        of each page, with more detailed rating information provided on the
+        right. You can choose to view or hide each course rating criteria by
+        clicking the plus icon on the top of the table. You can also toggle the
+        view mode of ratings between aggregate and most recent on the right side
+        of the page. You can hover over the tags on the left side of the page or
+        the stars on the right side of the page in order to learn more about
+        courses offered in the upcoming semester.
       </p>
     </div>
 
@@ -24,11 +23,15 @@ const FAQ = () => (
       <p className="question">What's new?</p>
       <p className="answer">
         The site includes new features intended to make PCR's content more
-        intuitive and accessible. The new filter functions allow students to
-        search for courses by attributes, day of the week, time of day,
-        difficulty, course quality, instructor quality, and more for the first
-        time. The new design also includes a more modern look and feel, with
-        improved navigation and accessibility features.
+        intuitive and accessible. The new search function allows students to
+        search by course name, number, or professor. In addition to the
+        traditional ratings, the site now offers ratings that average the
+        evaluations from every semester the course or professor has been
+        reviewed. Students can choose which information is relevant to them by
+        selecting which rating criteria appear on the page. As of fall 2021, PCR
+        now also displays additional metrics to give students a sense of
+        registration difficulty. See the section about "Registration Metrics"
+        below for more information.
       </p>
     </div>
 
@@ -84,9 +87,9 @@ const FAQ = () => (
         difficult it will be to register for a course (which is important for
         planning out your course registration). You can view these metrics by
         clicking the "Registration Metrics" tab in the left window on an
-        instructor or course page. For more information about any specific
-        metric, hover over the question mark icon next to its name (or for
-        plots, see the description below the title).
+        instructor, department, or course page. For more information about any
+        specific metric, hover over the question mark icon next to its name (or
+        for plots, see the description below the title).
       </p>
     </div>
   </div>

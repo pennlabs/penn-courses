@@ -74,7 +74,7 @@ export class ColumnSelector extends Component {
 
   render() {
     let x = 0;
-    const { buttonStyle = "btn", imagePrefix = "btn", columns } = this.props;
+    const { buttonStyle = "btn", columns } = this.props;
     const button = (
       <button
         aria-label="Choose Columns"
@@ -83,8 +83,8 @@ export class ColumnSelector extends Component {
         Edit Columns
         <img
           alt="Edit Icon"
-          className={`${buttonStyle}-image ml-2`}
-          src={`/static/image/selectcol-${imagePrefix}.svg`}
+          className="btn-image ml-2"
+          src={`/static/image/selectcol-${buttonStyle}.svg`}
         />
       </button>
     );

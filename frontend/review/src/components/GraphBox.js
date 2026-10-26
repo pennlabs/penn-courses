@@ -1,11 +1,12 @@
-import React, { useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import { defaults, Scatter } from "react-chartjs-2";
-import { useQuery } from "@tanstack/react-query";
 
-import { apiFetchPCADemandChartData, queryKeys } from "../utils/api";
+import { apiFetchPCADemandChartData } from "../utils/api";
 import { toNormalizedSemester } from "../utils/helpers";
 import { EVAL_GRAPH_COLORS } from "../constants/colors";
+
+var cachedPCAChartDataResponse = null;
 
 const LoadingContainer = styled.div`
   display: flex;
@@ -25,7 +26,7 @@ const ChartTitle = styled.h3`
 const ChartDescription = styled.p`
   font-size: 15px;
   font-weight: normal;
-  color: ${({ theme }) => theme.color.text.subtle};
+  color: #b2b2b2;
   margin-bottom: 8px;
 `;
 
@@ -54,9 +55,8 @@ const GraphRow = styled.div`
 
 const GraphContainer = styled.div`
   padding: 35px;
-  background-color: ${({ theme }) => theme.color.surface.page};
-  border: 1px solid ${({ theme }) => theme.color.border.default};
-  border-radius: ${({ theme }) => theme.radius.lg};
+  background-color: #ffffff;
+  box-shadow: 0 0 14px 0 rgba(0, 0, 0, 0.07);
   margin-bottom: 30px;
   min-height: 500px;
   flex: 1;
@@ -328,39 +328,53 @@ const percentSectionChartOptions = {
 const GraphBox = ({ courseCode, url_semester, isAverage, setIsAverage }) => {
   const averageOrRecent = isAverage ? "average_plots" : "recent_plots";
 
-  defaults.global.defaultFontFamily = getComputedStyle(document.documentElement)
-    .getPropertyValue("--pcr-font-family-sans")
-    .trim();
+  const [chartData, setChartData] = useState(null);
+  const [loaded, setLoaded] = useState(true);
 
-  const { data: pcaData, isLoading } = useQuery({
-    queryKey: queryKeys.pcaChartData(courseCode, url_semester),
-    queryFn: () => apiFetchPCADemandChartData(courseCode, url_semester),
-    enabled: Boolean(courseCode)
-  });
+  defaults.global.defaultFontFamily = "Lato";
 
-  const loaded = !isLoading;
+  const handlePCAChartDataResponse = res => {
+    cachedPCAChartDataResponse = res;
 
-  const chartData = useMemo(() => {
-    if (!pcaData) return null;
-
-    const pcaDemandPlot = pcaData[averageOrRecent]["pca_demand_plot"];
+    const pcaDemandPlot = res[averageOrRecent]["pca_demand_plot"];
     const demandSemester =
-      pcaData[averageOrRecent]["pca_demand_plot_since_semester"];
-    const percentOpenPlot = pcaData[averageOrRecent]["percent_open_plot"];
+      res[averageOrRecent]["pca_demand_plot_since_semester"];
+    const percentOpenPlot = res[averageOrRecent]["percent_open_plot"];
     const percentSemester =
-      pcaData[averageOrRecent]["percent_open_plot_since_semester"];
-    return {
+      res[averageOrRecent]["percent_open_plot_since_semester"];
+    setChartData({
       demandSemester: demandSemester && toNormalizedSemester(demandSemester),
-      demandNumSemesters:
-        pcaData[averageOrRecent]["pca_demand_plot_num_semesters"],
+      demandNumSemesters: res[averageOrRecent]["pca_demand_plot_num_semesters"],
       pcaDemandChartData: pcaDemandPlot && genDemandChartData(pcaDemandPlot),
       percentSemester: percentSemester && toNormalizedSemester(percentSemester),
       percentNumSemesters:
-        pcaData[averageOrRecent]["percent_open_plot_num_semesters"],
+        res[averageOrRecent]["percent_open_plot_num_semesters"],
       percentSectionsChartData:
         percentOpenPlot && genPercentChartData(percentOpenPlot)
-    };
-  }, [pcaData, averageOrRecent]);
+    });
+  };
+
+  useEffect(() => {
+    if (!courseCode) {
+      setLoaded(true);
+      setChartData(null);
+      return;
+    }
+
+    if (
+      cachedPCAChartDataResponse &&
+      cachedPCAChartDataResponse.code === courseCode
+    ) {
+      handlePCAChartDataResponse(cachedPCAChartDataResponse);
+    } else {
+      setLoaded(false);
+      apiFetchPCADemandChartData(courseCode, url_semester)
+        .then(handlePCAChartDataResponse)
+        .finally(() => {
+          setLoaded(true);
+        });
+    }
+  }, [courseCode, averageOrRecent, handlePCAChartDataResponse, url_semester]);
 
   const showPcaDemandPlotContainer =
     (chartData && chartData.pcaDemandChartData) || !loaded;
@@ -424,10 +438,7 @@ const GraphBox = ({ courseCode, url_semester, isAverage, setIsAverage }) => {
                       <LoadingContainer>
                         <i
                           className="fa fa-spin fa-cog fa-fw"
-                          style={{
-                            fontSize: "150px",
-                            color: "var(--pcr-color-text-muted)"
-                          }}
+                          style={{ fontSize: "150px", color: "#aaa" }}
                         />
                         <h1 style={{ fontSize: "2em", marginTop: 15 }}>
                           Loading...
@@ -491,10 +502,7 @@ const GraphBox = ({ courseCode, url_semester, isAverage, setIsAverage }) => {
                       <LoadingContainer>
                         <i
                           className="fa fa-spin fa-cog fa-fw"
-                          style={{
-                            fontSize: "150px",
-                            color: "var(--pcr-color-text-muted)"
-                          }}
+                          style={{ fontSize: "150px", color: "#aaa" }}
                         />
                         <h1 style={{ fontSize: "2em", marginTop: 15 }}>
                           Loading...

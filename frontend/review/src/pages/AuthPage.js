@@ -1,36 +1,34 @@
-import React, { useEffect, createContext } from "react";
-import { useQuery } from "@tanstack/react-query";
+import React, { useEffect, useState } from "react";
 
+import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
+import { ReviewPage } from "./ReviewPage";
 import { ErrorBox } from "../components/common";
-import { apiCheckAuth, redirectForAuth, queryKeys } from "../utils/api";
+import { redirectForAuth, apiCheckAuth } from "../utils/api";
 
 /**
- * A wrapper around a Browse Page that performs Shibboleth authentication.
+ * A wrapper around a review page that performs Shibboleth authentication.
  */
 
-export const AuthContext = createContext();
-
-const TempAuthPage = ({ forceRedirect = false, children }) => {
-  const {
-    data: authed = false,
-    isSuccess: authChecked,
-    isError: authFailed
-  } = useQuery({
-    queryKey: queryKeys.checkAuth,
-    queryFn: apiCheckAuth,
-    staleTime: 1000 * 60 * 5 // 5 minutes
-  });
+export const AuthPage = props => {
+  const [authed, setAuthed] = useState(false);
+  const [authFailed, setAuthFailed] = useState(false);
 
   useEffect(() => {
-    if (authChecked && !authed && forceRedirect) {
-      redirectForAuth();
-    }
-  }, [authChecked, authed, forceRedirect]);
+    apiCheckAuth()
+      .then(isAuthed => {
+        if (!isAuthed) {
+          redirectForAuth();
+        }
+        setAuthed(isAuthed);
+      })
+      .catch(() => setAuthFailed(true));
+  }, []);
 
   if (authFailed) {
     return (
       <>
+        <Navbar />
         <ErrorBox>
           Could not perform Platform authentication.
           <br />
@@ -40,16 +38,6 @@ const TempAuthPage = ({ forceRedirect = false, children }) => {
       </>
     );
   }
-
-  return (
-    <>
-      {forceRedirect ? (
-        <>{authed ? children : null}</>
-      ) : (
-        <AuthContext.Provider value={authed}>{children}</AuthContext.Provider>
-      )}
-    </>
-  );
+  // TODO: Add loading spinner instead of null
+  return authed ? <ReviewPage {...props} /> : null;
 };
-
-export default TempAuthPage;
