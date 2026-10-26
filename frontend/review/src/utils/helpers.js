@@ -3,13 +3,6 @@ import { DEFAULT_COLUMNS } from "../constants";
 export const capitalize = str =>
   str.replace(/(?:^|\s)\S/g, e => e.toUpperCase());
 
-export const prefersReducedMotion = () =>
-  typeof window !== "undefined" &&
-  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
-export const scrollBehavior = () =>
-  prefersReducedMotion() ? "auto" : "smooth";
-
 export function orderColumns(cols) {
   const colSet = new Set(cols);
   const fixedCols = [
@@ -60,6 +53,26 @@ export function convertInstructorName(name) {
   nameCache[name] = out;
   return out;
 }
+
+export const getCartCourses = () =>
+  Object.keys(localStorage)
+    .filter(k => !k.startsWith("meta-"))
+    .map(k => {
+      const out = JSON.parse(localStorage.getItem(k));
+      if (typeof out !== "object") {
+        return null;
+      }
+      const typeDict = {};
+      if (out.info != null) {
+        out.info.forEach(v => {
+          typeDict[v.category] = v;
+        });
+        out.info = typeDict;
+      }
+      out.course = k;
+      return out;
+    })
+    .filter(a => a !== null);
 
 export const toNormalizedSemester = sem => {
   const year = sem.slice(0, 4);

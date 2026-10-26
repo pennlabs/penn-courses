@@ -29,10 +29,8 @@ const About = () => (
       </a>
       , allowing us to serve additional metrics about course registration
       difficulty (based on Penn Course Alert usage data and course status
-      updates). Most recently, in 2026, we upgraded the site to a new modern
-      design, focused on the user experience and course exploration process. We
-      hope to continue updating and improving Penn Course Review in the years to
-      come!
+      updates). We hope to continue updating and improving Penn Course Review in
+      the years to come!
     </p>
 
     <h1>About</h1>

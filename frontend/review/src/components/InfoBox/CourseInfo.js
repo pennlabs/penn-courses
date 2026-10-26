@@ -17,7 +17,7 @@ const activityMap = {
 
 const TagsNotOffered = ({ data }) => {
   let {
-    instructors: instructorData,
+    instructors: instructorData = {},
     latest_semester: mostRecent,
     code = ""
   } = data;
@@ -80,7 +80,9 @@ const TagsWhenOffered = ({
     });
 
   const syllabi = [];
+  const courses = [];
   const prereqs = [];
+  const links = [];
 
   return (
     <div>
@@ -190,7 +192,7 @@ const TagsWhenOffered = ({
 const CourseCodeQualifier = styled.div`
   display: flex;
   flex-direction: row;
-  color: ${({ theme }) => theme.color.text.legacy};
+  color: #4a4a4a;
   align-items: center;
   flex-wrap: wrap;
 `;
@@ -202,9 +204,12 @@ const Spacer = styled.div`
 export const CourseHeader = ({
   aliases,
   code,
+  inCourseCart,
   instructors,
   name,
   notes,
+  handleAdd,
+  handleRemove,
   liveData,
   data
 }) => (
@@ -214,6 +219,50 @@ export const CourseHeader = ({
 
       {!data?.last_offered_sem_if_superceded && (
         <span className="float-right">
+          {inCourseCart ? (
+            <span
+              onClick={handleRemove}
+              className="courseCart btn btn-action"
+              title="Remove from Cart"
+            >
+              <i className="fa fa-fw fa-trash-alt" />
+            </span>
+          ) : (
+            <Popover
+              button={
+                <span className="courseCart btn btn-action" title="Add to Cart">
+                  <i className="fa fa-fw fa-cart-plus" />
+                </span>
+              }
+            >
+              <div className="popover-title">Add to Cart</div>
+              <div
+                className="popover-content"
+                style={{ maxHeight: 400, overflowY: "auto" }}
+              >
+                <div id="divList">
+                  <ul className="professorList">
+                    <li>
+                      <button onClick={() => handleAdd("average")}>
+                        Average Professor
+                      </button>
+                    </li>
+                    {Object.keys(instructors)
+                      .sort((a, b) =>
+                        instructors[a].name.localeCompare(instructors[b].name)
+                      )
+                      .map(key => (
+                        <li key={key}>
+                          <button onClick={() => handleAdd(key)}>
+                            {instructors[key].name}
+                          </button>
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              </div>
+            </Popover>
+          )}{" "}
           <a
             target="_blank"
             rel="noopener noreferrer"
@@ -234,7 +283,7 @@ export const CourseHeader = ({
           <i
             className="fa fa-question-circle"
             style={{
-              color: "var(--pcr-color-text-faint)",
+              color: "#c6c6c6",
               fontSize: "13px",
               marginBottom: "0.3rem"
             }}
@@ -247,8 +296,8 @@ export const CourseHeader = ({
           type="light"
           effect="solid"
           border={true}
-          borderColor="var(--pcr-color-border-divider)"
-          textColor="var(--pcr-color-text-legacy)"
+          borderColor="#ededed"
+          textColor="#4a4a4a"
         >
           <span className="tooltip-text">
             This course was last offered in{" "}
@@ -304,7 +353,7 @@ export const CourseHeader = ({
           <i
             className="fa fa-question-circle"
             style={{
-              color: "var(--pcr-color-text-faint)",
+              color: "#c6c6c6",
               fontSize: "13px",
               marginBottom: "0.3rem"
             }}
@@ -317,8 +366,8 @@ export const CourseHeader = ({
           type="light"
           effect="solid"
           border={true}
-          borderColor="var(--pcr-color-border-divider)"
-          textColor="var(--pcr-color-text-legacy)"
+          borderColor="#ededed"
+          textColor="#4a4a4a"
         >
           <span className="tooltip-text">
             Historical courses are grouped on PCR <br />

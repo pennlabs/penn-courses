@@ -1,36 +1,20 @@
+import autocompleteWorker from "workerize-loader!../workers/autocomplete.worker"; // eslint-disable-line import/no-webpack-loader-syntax
+
+const autocompleteWorkerInstance = autocompleteWorker();
+const compressAutocomplete = autocompleteWorkerInstance.compress;
+const decompressAutocomplete = autocompleteWorkerInstance.decompress;
+
 const API_DOMAIN = `${window.location.protocol}//${window.location.host}`;
+const PUBLIC_API_TOKEN = "public";
 const API_TOKEN = "platform";
 
-export const queryKeys = {
-  checkAuth: ["checkAuth"],
-  autocomplete: ["autocomplete"],
-  // Versioned because this query is persisted to localStorage, and older caches hold
-  // plain code strings rather than { code, description } objects
-  attributes: ["attributes", "withDescriptions"],
-  courseSearch: params => ["courseSearch", params],
-  reviewData: (type, code, semester) => ["reviewData", type, code, semester],
-  live: (code, checkOfferedIn) => ["live", code, checkOfferedIn],
-  history: (course, instructor, semester) => [
-    "history",
-    course,
-    instructor,
-    semester
-  ],
-  pcaChartData: (course, semester) => ["pcaChartData", course, semester],
-  contact: name => ["contact", name]
-};
-
-async function apiFetch(url) {
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`Request to ${url} failed with status ${res.status}`);
-  }
-  return res.json();
+function apiFetch(url) {
+  return fetch(url).then(res => res.json());
 }
 
 export function redirectForAuth() {
   window.location.href = `${API_DOMAIN}/accounts/login/?next=${encodeURIComponent(
-    window.location.pathname + window.location.search
+    window.location.pathname
   )}`;
 }
 
@@ -40,8 +24,55 @@ export function getLogoutUrl() {
   )}`;
 }
 
+// Necessary for backwards compatibility (we used to just store uncompressed
+// JSON stringified autocomplete data)
+const isCompressedAutocomplete = data => {
+  return data.startsWith("compressed:");
+};
+
+// Cache the decompressed autocomplete dump as a global variable
+var uncompressedAutocompleteData = null;
+
 export function apiAutocomplete() {
-  return apiFetch(`${API_DOMAIN}/api/review/autocomplete`);
+  // If we have decompressed autocomplete data since last page refresh, return previous data.
+  if (uncompressedAutocompleteData) {
+    return Promise.resolve(uncompressedAutocompleteData);
+  }
+  // Cache the autocomplete JSON in local storage using the stale-while-revalidate
+  // strategy.
+  const key = "meta-pcr-autocomplete";
+  const cached_autocomplete = localStorage.getItem(key);
+  if (cached_autocomplete) {
+    // If a cached version exists, replace it in the cache asynchronously and return the old cache.
+    apiFetch(`${API_DOMAIN}/api/review/autocomplete`)
+      .then(compressAutocomplete)
+      .then(compressed => {
+        try {
+          localStorage.setItem(key, compressed);
+        } catch (e) {
+          localStorage.removeItem(key);
+        }
+      });
+    return isCompressedAutocomplete(cached_autocomplete)
+      ? decompressAutocomplete(cached_autocomplete)
+      : Promise.resolve(cached_autocomplete);
+  } else {
+    // If no cached data exists, fetch, set the cache and return in the same promise.
+    return new Promise((resolve, reject) => {
+      apiFetch(`${API_DOMAIN}/api/review/autocomplete`)
+        .then(data => {
+          resolve(data);
+          return compressAutocomplete(data);
+        })
+        .then(compressed => {
+          try {
+            localStorage.setItem(key, compressed);
+          } catch (e) {
+            localStorage.removeItem(key);
+          }
+        });
+    });
+  }
 }
 
 export async function apiCheckAuth() {
@@ -51,6 +82,21 @@ export async function apiCheckAuth() {
   } else {
     return false;
   }
+}
+
+export function apiIsAuthenticated(func) {
+  apiFetch(
+    `${API_DOMAIN}/api/review/auth?token=${encodeURIComponent(
+      PUBLIC_API_TOKEN
+    )}`
+  ).then(data => {
+    if (data.authed == null) {
+      window.Raven.captureMessage(`Auth check error: ${JSON.stringify(data)}`, {
+        level: "error"
+      });
+    }
+    func(data.authed);
+  });
 }
 
 // To check that the course was offered as a certain code@semester,
@@ -114,40 +160,4 @@ export function apiFetchPCADemandChartData(course, semester) {
       course
     )}?token=${encodeURIComponent(API_TOKEN)}` + getSemesterQParam(semester)
   );
-}
-
-export function apiAttributes() {
-  return apiFetch(`${API_DOMAIN}/api/base/attributes/`).then(data =>
-    data
-      .map(({ code, description }) => ({ code, description }))
-      .sort((a, b) => a.code.localeCompare(b.code))
-  );
-}
-
-export function apiCourseSearch(params, page = 1) {
-  const {
-    semester,
-    attributes,
-    difficulty,
-    course_quality,
-    instructor_quality,
-    days,
-    time,
-    departments
-  } = params;
-  const url =
-    `${API_DOMAIN}/api/base/${encodeURIComponent(semester)}/courses/?` +
-    (attributes ? `attributes=${encodeURIComponent(attributes)}&` : "") +
-    (difficulty ? `difficulty=${encodeURIComponent(difficulty)}&` : "") +
-    (course_quality
-      ? `course_quality=${encodeURIComponent(course_quality)}&`
-      : "") +
-    (instructor_quality
-      ? `instructor_quality=${encodeURIComponent(instructor_quality)}&`
-      : "") +
-    (days !== undefined ? `days=${encodeURIComponent(days)}&` : "") +
-    (time ? `time=${encodeURIComponent(time)}&` : "") +
-    (departments ? `departments=${encodeURIComponent(departments)}&` : "") +
-    `page=${page}`;
-  return apiFetch(url);
 }
