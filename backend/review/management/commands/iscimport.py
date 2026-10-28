@@ -4,6 +4,7 @@ import logging
 import os
 import zipfile
 
+from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
@@ -305,6 +306,7 @@ class Command(BaseCommand):
         print("Recomputing Section.has_reviews...")
         recompute_has_reviews()
         precompute_pcr_views(verbose=True, is_new_data=True)
+        call_command("cache_course_reviews")
 
         print("Done.")
         return 0
