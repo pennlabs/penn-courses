@@ -7,13 +7,14 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
-from django.db.models import F, OuterRef, Q, Subquery, UniqueConstraint
+from django.db.models import Case, FloatField, OuterRef, Q, Subquery, UniqueConstraint, When
+from django.db.models.functions import Cast
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.utils import timezone
 
 from PennCourses.settings.base import FIRST_BANNER_SEM, PRE_NGSS_PERMIT_REQ_RESTRICTION_CODES
-from review.annotations import review_averages
+from review.annotations import review_average_expressions, review_averages
 
 
 User = get_user_model()
@@ -89,21 +90,30 @@ class Department(models.Model):
         return self.code
 
 
+def section_instructors_subquery():
+    # get all the reviews for instructors in the Section.instructors many-to-many
+    return Subquery(Instructor.objects.filter(section__id=OuterRef(OuterRef("id"))).values("id"))
+
+
+def section_reviewbit_subfilters():
+    """
+    ReviewBit filter matching reviews of a Section's topic, taught by any of the Section's
+    instructors. Meant to be used in a subquery on a Section queryset.
+    """
+    return Q(review__section__course__topic=OuterRef("course__topic")) & Q(
+        review__instructor__in=section_instructors_subquery()
+    )
+
+
 def sections_with_reviews(queryset, prefix=""):
     from review.views import section_filters_pcr
 
     # ^ imported here to avoid circular imports
-    # get all the reviews for instructors in the Section.instructors many-to-many
-    instructors_subquery = Subquery(
-        Instructor.objects.filter(section__id=OuterRef(OuterRef("id"))).values("id")
-    )
+    instructors_subquery = section_instructors_subquery()
 
     return review_averages(
         queryset,
-        reviewbit_subfilters=(
-            Q(review__section__course__topic=OuterRef("course__topic"))
-            & Q(review__instructor__in=instructors_subquery)
-        ),
+        reviewbit_subfilters=section_reviewbit_subfilters(),
         section_subfilters=(
             section_filters_pcr
             & Q(course__topic=OuterRef("course__topic"))
@@ -114,6 +124,14 @@ def sections_with_reviews(queryset, prefix=""):
     ).order_by("code")
 
 
+def course_reviewbit_subfilters():
+    """
+    ReviewBit filter matching reviews of a Course's topic. Meant to be used in a subquery on a
+    Course queryset.
+    """
+    return Q(review__section__course__topic=OuterRef("topic"))
+
+
 def course_reviews(queryset, prefix=""):
     from review.views import section_filters_pcr
 
@@ -121,28 +139,40 @@ def course_reviews(queryset, prefix=""):
 
     return review_averages(
         queryset,
-        reviewbit_subfilters=(Q(review__section__course__topic=OuterRef("topic"))),
+        reviewbit_subfilters=course_reviewbit_subfilters(),
         section_subfilters=(section_filters_pcr & Q(course__topic=OuterRef("topic"))),
         prefix=prefix,
         extra_metrics=False,
     )
 
 
+def cache_or_compute_review_averages(queryset, reviewbit_subfilters):
+    """
+    Annotates a Course or Section queryset with review averages, per row: rows whose annotations
+    have not expired use their cached precompute fields, and expired rows compute the averages
+    from the reviews. Postgres only evaluates the review subqueries for the expired rows.
+    """
+    fresh = Q(annotation_expiration__gte=timezone.now())
+    return queryset.annotate(
+        **{
+            field: Case(
+                When(fresh, then=Cast(f"precompute_{field}", FloatField())),
+                default=live_average,
+                output_field=FloatField(),
+            )
+            for field, live_average in review_average_expressions(reviewbit_subfilters).items()
+        }
+    )
+
+
 def cache_or_compute_course_reviews(queryset):
     """
-    A helper function which takes a Course queryset and annotates it with review averages, either by
-    using cached precompute fields if the annotations have not expired or by computing the averages
-    from the reviews if they have expired or are missing.
+    A helper function which takes a Course queryset and annotates it with review averages
+    (see `cache_or_compute_review_averages`).
     """
-    if queryset.filter(annotation_expiration__lt=timezone.now()).exists():
-        return course_reviews(queryset).order_by("full_code", "semester")
-
-    return queryset.annotate(
-        course_quality=F("precompute_course_quality"),
-        instructor_quality=F("precompute_instructor_quality"),
-        difficulty=F("precompute_difficulty"),
-        work_required=F("precompute_work_required"),
-    ).order_by("full_code", "semester")
+    return cache_or_compute_review_averages(queryset, course_reviewbit_subfilters()).order_by(
+        "full_code", "semester"
+    )
 
 
 class CourseManager(models.Manager):
@@ -601,19 +631,12 @@ class NGSSRestriction(models.Model):
 
 def cache_or_compute_section_reviews(queryset):
     """
-    A helper function which takes a Section queryset and annotates it with review averages, either
-    by using cached precompute fields if the annotations have not expired or by computing the
-    averages if they have expired or are missing.
+    A helper function which takes a Section queryset and annotates it with review averages
+    (see `cache_or_compute_review_averages`).
     """
-    if queryset.filter(annotation_expiration__lt=timezone.now()).exists():
-        return sections_with_reviews(queryset).order_by("full_code")
-
-    return queryset.annotate(
-        course_quality=F("precompute_course_quality"),
-        instructor_quality=F("precompute_instructor_quality"),
-        difficulty=F("precompute_difficulty"),
-        work_required=F("precompute_work_required"),
-    ).order_by("full_code")
+    return cache_or_compute_review_averages(queryset, section_reviewbit_subfilters()).order_by(
+        "full_code"
+    )
 
 
 class SectionManager(models.Manager):

@@ -37,6 +37,36 @@ the DB), be *much* slower, and require cacheing.
 """
 
 
+def review_average_expressions(reviewbit_subfilters, fields=None, prefix=""):
+    """
+    Build (but do not apply) a Subquery expression per field, averaging all ReviewBits matching
+    the given subfilters. Useful for embedding the averages inside other expressions (e.g. `Case`).
+    :param reviewbit_subfilters: `Q()` expression to filter down the ReviewBits used in each
+        individual aggregation. Use OuterRef() to refer to values in the outer queryset.
+    :param fields: the ReviewBit fields to aggregate. if None, defaults to the four fields
+        used in PCP.
+    :param prefix: prefix for the keys of the returned dict.
+    """
+    if fields is None:
+        fields = ["course_quality", "difficulty", "instructor_quality", "work_required"]
+
+    return {
+        (prefix + field): Subquery(
+            ReviewBit.objects.filter(
+                reviewbit_subfilters,
+                field=field,
+                review__responses__gt=0,
+            )
+            .values("field")
+            .order_by()
+            .annotate(avg=Avg("average"))
+            .values("avg")[:1],
+            output_field=FloatField(),
+        )
+        for field in fields
+    }
+
+
 def review_averages(
     queryset,
     reviewbit_subfilters,
@@ -82,21 +112,7 @@ def review_averages(
 
     queryset = queryset.annotate(
         **{
-            **{
-                (prefix + field): Subquery(
-                    ReviewBit.objects.filter(
-                        reviewbit_subfilters,
-                        field=field,
-                        review__responses__gt=0,
-                    )
-                    .values("field")
-                    .order_by()
-                    .annotate(avg=Avg("average"))
-                    .values("avg")[:1],
-                    output_field=FloatField(),
-                )
-                for field in fields
-            },
+            **review_average_expressions(reviewbit_subfilters, fields, prefix),
             **(
                 {
                     (prefix + "final_enrollment"): Subquery(
