@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from courses.util import get_or_create_course_and_section
-from degree.models import Degree, DegreePlan, Fulfillment, Major, PDPBetaUser, Rule
+from degree.models import Degree, DegreePlan, Fulfillment, Major, Minor, PDPBetaUser, Rule
 from degree.utils.degree_logic import (
     allocate_rules,
     check_legal,
@@ -247,16 +247,16 @@ class CrossDegreeDoubleCountingTest(TestCase):
         self.assertIn(self.math_rule, double_counts[self.cis_rule])
         self.assertTrue(check_legal({self.cis_rule, self.math_rule}, rule_to_degree, double_counts))
 
-    def test_majors_that_do_not_permit_sharing_are_illegal_together(self):
-        # Sharing is not free between programs: with the (MAJOR) target removed from both,
-        # neither permits the other and the pairing is caught.
+    def test_a_dual_degree_shares_even_when_the_audits_name_nothing(self):
+        # Cross-component sharing comes from the plan being two degrees, not from a (MAJOR)
+        # target happening to match the other school's block.
         for rule in [self.cis_rule, self.math_rule]:
             rule.share_targets = []
             rule.save()
 
         _, rule_to_degree, double_counts = map_rules_and_degrees(self.degree_plan)
-        self.assertNotIn(self.cis_rule, double_counts)
-        self.assertFalse(
+        self.assertIn(self.math_rule, double_counts[self.cis_rule])
+        self.assertTrue(
             check_legal({self.cis_rule, self.math_rule}, rule_to_degree, double_counts)
         )
 
@@ -279,12 +279,13 @@ class CrossDegreeDoubleCountingTest(TestCase):
         _, _, double_counts = map_rules_and_degrees(self.degree_plan)
         self.assertIn(self.math_rule, double_counts[self.cis_rule])
 
-        # and a target naming a major that is not in the plan matches nothing
+        # Across two degrees the pair is allowed because the plan is a dual degree, even
+        # when the target names a major that is not on the plan.
         self.cis_rule.share_targets = [{"kind": "MAJOR", "value": "PHYS"}]
         self.cis_rule.save()
 
         _, _, double_counts = map_rules_and_degrees(self.degree_plan)
-        self.assertNotIn(self.cis_rule, double_counts)
+        self.assertIn(self.math_rule, double_counts[self.cis_rule])
 
 
 class ComponentPassIsolationTest(TestCase):
@@ -369,6 +370,9 @@ class NeverIllegalTest(TestCase):
     rule in each of two components whose blocks forbid sharing, one component gets the course
     and the other is only offered it as unselected, rather than both taking it and the
     fulfillment being flagged as illegally double counted.
+
+    The second component is a minor: a second major or degree turns on cross-component
+    sharing, so only a single-degree plan still has two components that may not share.
     """
 
     def setUp(self):
@@ -386,14 +390,14 @@ class NeverIllegalTest(TestCase):
         )
         self.degree.rules.add(self.elective)
 
-        self.major = Major.objects.create(
-            program_code="MATH-BA-GEN", code="MATH", name="Mathematics", year=2026
+        self.minor = Minor.objects.create(
+            program_code="MATH-MINOR", code="MATH", name="Mathematics", year=2026
         )
         self.math_rule = Rule.objects.create(
             title="Mathematics Electives",
             q=matches,
             credits=3,
-            block_type="MAJOR",
+            block_type="MINOR",
             block_value="MATH",
             share_targets=[],
         )
@@ -401,16 +405,16 @@ class NeverIllegalTest(TestCase):
             title="Core",
             q=repr(Q(full_code="CIS-1200")),
             num=1,
-            block_type="MAJOR",
+            block_type="MINOR",
             block_value="MATH",
             share_targets=[],
         )
-        self.major.rules.add(self.math_rule, self.core)
+        self.minor.rules.add(self.math_rule, self.core)
 
         person = get_user_model().objects.create_user(username="t", password="top_secret")
-        self.plan = DegreePlan.objects.create(name="degree plus major", person=person)
+        self.plan = DegreePlan.objects.create(name="degree plus minor", person=person)
         self.plan.degrees.add(self.degree)
-        self.plan.majors.add(self.major)
+        self.plan.minors.add(self.minor)
 
     def allocate(self, rule_selected=None):
         rules_per_degree, rule_to_degree, double_counts = map_rules_and_degrees(self.plan)

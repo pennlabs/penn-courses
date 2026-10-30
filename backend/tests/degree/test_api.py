@@ -52,7 +52,7 @@ class DegreePlanViewsetTest(TestCase):
 
 class FulfillmentViewsetTest(TestCase):
     def assertSerializedFulfillmentEquals(self, fulfillment: dict, expected: Fulfillment):
-        self.assertEqual(len(fulfillment), 9)
+        self.assertEqual(len(fulfillment), 10)
         self.assertEqual(fulfillment["id"], expected.id)
 
         expected_course = SimpleCourseSerializer(
@@ -68,6 +68,7 @@ class FulfillmentViewsetTest(TestCase):
         )
         self.assertEqual(fulfillment["legal"], expected.legal)
         self.assertEqual(fulfillment["overrides"], [rule.id for rule in expected.overrides.all()])
+        self.assertEqual(fulfillment["from_transcript"], expected.from_transcript)
 
     def setUp(self):
         self.user = User.objects.create_user(
