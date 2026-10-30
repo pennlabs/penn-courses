@@ -31,6 +31,19 @@ const NO_CONCENTRATION = new Set([
   "not designated",
 ]);
 
+// Distance between a catalog year and the year the student started; 0 when the start is unknown.
+const yearDistance = (year: number, startYear: number | null) =>
+  startYear ? Math.abs(year - startYear) : 0;
+
+// Sort key placing semesters in the order taken, transfer credit first.
+const semesterIndex = (sem: string) => {
+  const year = parseInt(sem.replace(/\D/g, ""), 10);
+  if (isNaN(year)) return -Infinity;
+  if (/spring/i.test(sem)) return year * 3;
+  if (/summer/i.test(sem)) return year * 3 + 1;
+  return year * 3 + 2;
+};
+
 type LineItem = {
   dir: string;
   fontName: string;
@@ -115,7 +128,10 @@ export const getMajorOptions = (
 ): DegreeOption[] | undefined => {
   const majorOptions = degrees
     ?.filter((d) => schools.map((s) => s.value).includes(d.degree))
-    .sort((d) => Math.abs((startingYear ? startingYear : d.year) - d.year))
+    .sort(
+      (a, b) =>
+        yearDistance(a.year, startingYear) - yearDistance(b.year, startingYear)
+    )
     .map((degree) => ({
       value: degree,
       label: createMajorLabel(degree),
@@ -230,12 +246,15 @@ const getCourseToSem = (truncatedTranscript: string[]) => {
 };
 
 // Returns the option whose program name is closest to the transcript's wording, or undefined
-// if no option is close enough. 
+// if no option is close enough. Ties are broken by matching concentration, then by the catalog
+// year nearest the student's start, then by exact wording.
 const matchOption = <T>(
   major: string,
   concentration: string,
+  startYear: number | null,
   options: T[] | undefined,
-  namesOf: (option: T) => [string, string]
+  namesOf: (option: T) => [string, string],
+  yearOf: (option: T) => number
 ): T | undefined => {
   if (!options?.length) return undefined;
 
@@ -247,6 +266,7 @@ const matchOption = <T>(
       name: normalize(name ?? ""),
       concentration: normalize(optionConcentration ?? ""),
       distance: distance(target, normalize(name ?? "")),
+      yearDistance: yearDistance(yearOf(option), startYear),
     };
   });
 
@@ -257,15 +277,22 @@ const matchOption = <T>(
   const wanted = normalize(concentration);
   // A transcript naming no concentration and one naming "Non Designated" mean the same thing,
   // so both look for the option that names none rather than for a close spelling.
-  const preferred = NO_CONCENTRATION.has(wanted)
-    ? closest.find((candidate) => NO_CONCENTRATION.has(candidate.concentration))
-    : closest.find(
-        (candidate) =>
-          candidate.concentration &&
-          distance(wanted, candidate.concentration) <= matchTolerance(candidate.concentration)
-      );
+  const concentrationMatches = (candidate: typeof scored[number]) =>
+    NO_CONCENTRATION.has(wanted)
+      ? NO_CONCENTRATION.has(candidate.concentration)
+      : Boolean(candidate.concentration) &&
+        distance(wanted, candidate.concentration) <=
+          matchTolerance(candidate.concentration);
 
-  return (preferred ?? closest[0]).option;
+  const withConcentration = closest.filter(concentrationMatches);
+  const pool = withConcentration.length ? withConcentration : closest;
+  pool.sort(
+    (a, b) =>
+      a.yearDistance - b.yearDistance ||
+      Number(b.concentration === wanted) - Number(a.concentration === wanted)
+  );
+
+  return pool[0].option;
 };
 
 // Given the majors and concentrations read off a transcript, work out which are degrees the
@@ -277,7 +304,8 @@ export const detectMajors = (
   detectedMajors: string[],
   detectedConcentrations: string[],
   possibleDegrees: DegreeOption[] | undefined,
-  possibleMajors: MajorOptionItem[] | undefined
+  possibleMajors: MajorOptionItem[] | undefined,
+  startYear: number | null = null
 ) => {
   const degreeOptions: DegreeOption[] = [];
   const majorOptions: MajorOptionItem[] = [];
@@ -286,19 +314,30 @@ export const detectMajors = (
     if (!major || major.includes("undeclared")) return;
     const concentration = detectedConcentrations[i] ?? "";
 
-    const degree = matchOption(major, concentration, possibleDegrees, (option) => [
-      option.value.major_name,
-      option.value.concentration_name,
-    ]);
+    const degree = matchOption(
+      major,
+      concentration,
+      startYear,
+      possibleDegrees,
+      (option) => [option.value.major_name, option.value.concentration_name],
+      (option) => option.value.year
+    );
     if (degree) {
       degreeOptions.push(degree);
       return;
     }
 
-    const standalone = matchOption(major, concentration, possibleMajors, (option) => [
-      option.value.name ?? "",
-      option.value.concentration_name ?? "",
-    ]);
+    const standalone = matchOption(
+      major,
+      concentration,
+      startYear,
+      possibleMajors,
+      (option) => [
+        option.value.name ?? "",
+        option.value.concentration_name ?? "",
+      ],
+      (option) => option.value.year
+    );
     if (standalone) majorOptions.push(standalone);
   });
 
@@ -413,9 +452,23 @@ export const parseTranscript = (
   let startYear: number = 0;
   let tempSchools: { value: string; label: string }[] = [];
 
-  const parsedRecords = splitRecords(textResult).map((record) =>
-    parseRecord(record.lines)
-  );
+  // Earliest year named by the semesters, or null (e.g. only _TRAN).
+  const firstYear = (sems: string[]): number | null => {
+    const years = sems
+      .map((sem) => parseInt(sem.replace(/\D/g, ""), 10))
+      .filter((y) => !isNaN(y));
+    return years.length ? Math.min(...years) : null;
+  };
+
+  // A submatriculant's masters record comes first on the transcript; take records in the order
+  // they were begun.
+  const parsedRecords = splitRecords(textResult)
+    .map((record) => parseRecord(record.lines))
+    .map((record) => ({
+      ...record,
+      startYear: firstYear(Object.values(record.courseToSem)),
+    }))
+    .sort((a, b) => (a.startYear ?? Infinity) - (b.startYear ?? Infinity));
 
   parsedRecords.forEach((record) => {
     tempSchools = tempSchools.concat(record.schools);
@@ -424,6 +477,8 @@ export const parseTranscript = (
     Object.assign(courseToSem, record.courseToSem);
   });
 
+  // Chronological order: the panel displays this, and the backend gives the submatriculation
+  // double counting allowance to the earliest courses it receives.
   const formattedSeparatedCourses = Object.values(
     Object.entries(courseToSem).reduce(
       (acc, [course, sem]) => {
@@ -434,28 +489,24 @@ export const parseTranscript = (
       },
       {} as { [key: string]: { sem: string; courses: string[] } }
     )
-  );
+  ).sort((a, b) => semesterIndex(a.sem) - semesterIndex(b.sem));
 
-  // Scrape start year and infer grad year (skip _TRAN which yields NaN)
-  const years = formattedSeparatedCourses
-    .map(({ sem }) => parseInt(sem.replace(/\D/g, "")))
-    .filter((y) => !isNaN(y));
-  startYear = years.length ? Math.min(...years) : 0;
+  startYear = firstYear(formattedSeparatedCourses.map(({ sem }) => sem)) ?? 0;
 
-  // Match each record's majors against the degrees of that record's own school. A masters
-  // record names the MSE school, so its major matches a masters degree and an undergraduate
-  // record's matches a bachelors, without either pool needing to know about the other.
   const secondMajorPool = getSecondMajorOptions(majors, startYear);
   const degreeOptions: DegreeOption[] = [];
   const majorOptions: MajorOptionItem[] = [];
 
   parsedRecords.forEach((record) => {
     if (!record.majors.length) return;
+    // A masters record begins years after the undergraduate one, so match on its own start.
+    const recordStart = record.startYear ?? startYear;
     const detected = detectMajors(
       record.majors,
       record.concentrations,
-      getMajorOptions(degrees, record.schools, startYear),
-      secondMajorPool
+      getMajorOptions(degrees, record.schools, recordStart),
+      secondMajorPool,
+      recordStart
     );
     degreeOptions.push(...detected.degreeOptions);
     majorOptions.push(...detected.majorOptions);
