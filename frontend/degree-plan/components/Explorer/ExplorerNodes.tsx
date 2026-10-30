@@ -9,14 +9,21 @@ import { qToText } from "./qToText";
 /** Lets a node expand or collapse itself without putting callbacks in node data. */
 export const ToggleContext = createContext<(id: string) => void>(() => {});
 
-const Card = styled.div<{ $selected: boolean; $accent: string; $height: number }>`
+const Card = styled.div<{
+  $selected: boolean;
+  $highlighted: boolean;
+  $accent: string;
+  $height: number;
+}>`
   width: ${NODE_WIDTH}px;
   height: ${({ $height }) => $height}px;
   box-sizing: border-box;
   padding: 0.5rem 0.75rem;
   border-radius: 6px;
-  background: #fff;
-  border: 1px solid ${({ $selected }) => ($selected ? "#1a73e8" : "#d0d4da")};
+  background: ${({ $highlighted }) => ($highlighted ? "#fff8c5" : "#fff")};
+  border: 1px solid
+    ${({ $selected, $highlighted }) =>
+      $selected ? "#1a73e8" : $highlighted ? "#d4a72c" : "#d0d4da"};
   border-left: 4px solid ${({ $accent }) => $accent};
   box-shadow: ${({ $selected }) => ($selected ? "0 0 0 2px #1a73e855" : "0 1px 2px #0001")};
   font-size: 0.8rem;
@@ -104,7 +111,12 @@ const join = (parts: (string | false | null | undefined)[]) => parts.filter(Bool
 export const ProgramNodeView = memo(({ id, data, selected }: NodeProps<ProgramNode>) => {
   const { program, expanded } = data;
   return (
-    <Card $selected={!!selected} $accent="#1f2328" $height={NODE_HEIGHT.program}>
+    <Card
+      $selected={!!selected}
+      $highlighted={data.highlighted}
+      $accent="#1f2328"
+      $height={NODE_HEIGHT.program}
+    >
       <Handles target={false} />
       <TopRow>
         <Title>{program.name}</Title>
@@ -120,7 +132,12 @@ ProgramNodeView.displayName = "ProgramNodeView";
 export const GroupNodeView = memo(({ id, data, selected }: NodeProps<GroupNode>) => {
   const { rule, leafCount, expanded } = data;
   return (
-    <Card $selected={!!selected} $accent="#8250df" $height={NODE_HEIGHT.group}>
+    <Card
+      $selected={!!selected}
+      $highlighted={data.highlighted}
+      $accent="#8250df"
+      $height={NODE_HEIGHT.group}
+    >
       <Handles />
       <TopRow>
         <Title $lines={2}>{ruleTitle(rule)}</Title>
@@ -137,7 +154,12 @@ GroupNodeView.displayName = "GroupNodeView";
 export const LeafNodeView = memo(({ data, selected }: NodeProps<LeafNode>) => {
   const { rule } = data;
   return (
-    <Card $selected={!!selected} $accent="#1a7f37" $height={NODE_HEIGHT.leaf}>
+    <Card
+      $selected={!!selected}
+      $highlighted={data.highlighted}
+      $accent="#1a7f37"
+      $height={NODE_HEIGHT.leaf}
+    >
       <Handles source={false} />
       <Title>{ruleTitle(rule)}</Title>
       <Meta>

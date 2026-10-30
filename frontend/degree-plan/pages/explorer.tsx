@@ -1,6 +1,7 @@
 import dynamic from "next/dynamic";
 import Head from "next/head";
 import { useRouter } from "next/router";
+import { useEffect, useState } from "react";
 import styled from "@emotion/styled";
 import Select from "react-select";
 import useSWR from "swr";
@@ -17,6 +18,7 @@ import {
   type Program,
   type ProgramRef,
 } from "@/components/Explorer/programs";
+import { normalizeFullCode, type CourseDetail } from "@/components/Explorer/matcher";
 
 // React Flow and elkjs measure the DOM, so render the graph on the client only.
 const DegreeExplorer = dynamic(() => import("@/components/Explorer/DegreeExplorer"), {
@@ -57,6 +59,21 @@ const Header = styled.header`
   }
 `;
 
+const CourseSearch = styled.form`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  color: #57606a;
+  input {
+    width: 9rem;
+    padding: 0.45rem 0.6rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.85rem;
+  }
+`;
+
 const Message = styled.div`
   margin: auto;
   color: #57606a;
@@ -81,12 +98,23 @@ const option = (ref: ProgramRef, label: string): ProgramOption => ({
 /**
  * Internal tool for viewing how programs' rules fit together. Not linked from the app.
  * Pick any mix of degrees, majors and minors, e.g. two degrees from different schools.
- * The selection is kept in the URL (?programs=degree-3,major-12) so a view can be shared.
+ * Search a course to highlight every requirement it can count toward.
+ * The selection is kept in the URL (?programs=degree-3,major-12&course=CIS-1200) so a view
+ * can be shared.
  */
 export default function ExplorerPage() {
   const router = useRouter();
   const refs = parseProgramKeys(router.query.programs);
   const selectedKeys = refs.map(programKey).join(",");
+  const courseCode = typeof router.query.course === "string" ? router.query.course : "";
+  const [courseInput, setCourseInput] = useState(courseCode);
+  useEffect(() => setCourseInput(courseCode), [courseCode]);
+
+  const setQuery = (changes: Record<string, string>) => {
+    const query = { ...router.query, ...changes };
+    Object.keys(query).forEach((key) => !query[key] && delete query[key]);
+    router.push({ query }, undefined, { shallow: true });
+  };
 
   const { data: degrees, error: degreesError } = useSWR<DegreeListing[]>(
     ENDPOINTS.degree,
@@ -103,6 +131,11 @@ export default function ExplorerPage() {
       ),
     // Keep showing the current trees while a changed selection loads.
     { keepPreviousData: true }
+  );
+
+  const { data: course, error: courseError } = useSWR<CourseDetail>(
+    courseCode ? `/api/base/all/courses/${courseCode}` : null,
+    fetcher
   );
 
   const groups = [
@@ -141,15 +174,27 @@ export default function ExplorerPage() {
             value={refs
               .map((ref) => allOptions.find((o) => o.value === programKey(ref)))
               .filter((o): o is ProgramOption => o !== undefined)}
-            onChange={(selected) =>
-              router.push(
-                { query: selected.length ? { programs: selected.map((o) => o.value).join(",") } : {} },
-                undefined,
-                { shallow: true }
-              )
-            }
+            onChange={(selected) => setQuery({ programs: selected.map((o) => o.value).join(",") })}
           />
         </div>
+        <CourseSearch
+          onSubmit={(e) => {
+            e.preventDefault();
+            setQuery({ course: normalizeFullCode(courseInput) });
+          }}
+        >
+          <input
+            placeholder="Course, e.g. CIS 1200"
+            value={courseInput}
+            onChange={(e) => setCourseInput(e.target.value)}
+          />
+          {courseCode &&
+            (courseError
+              ? courseError.status === 404
+                ? "Course not found"
+                : "Couldn't load course"
+              : !course && "Loading...")}
+        </CourseSearch>
       </Header>
       {error ? (
         <Message>{errorMessage(error)}</Message>
@@ -158,7 +203,7 @@ export default function ExplorerPage() {
       ) : !programs ? (
         <Message>Loading programs...</Message>
       ) : (
-        <DegreeExplorer programs={programs} />
+        <DegreeExplorer programs={programs} course={courseError ? null : course ?? null} />
       )}
     </Page>
   );

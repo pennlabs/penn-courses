@@ -12,9 +12,19 @@ import {
   type Edge,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { allGroupIds, buildGraph, layoutGraph, type ExplorerNode, type NodeKind } from "./graph";
+import {
+  allGroupIds,
+  buildGraph,
+  layoutGraph,
+  NODE_HEIGHT,
+  NODE_WIDTH,
+  type ExplorerNode,
+  type NodeKind,
+} from "./graph";
 import { nodeTypes, ToggleContext } from "./ExplorerNodes";
 import DetailPanel from "./DetailPanel";
+import MatchPanel from "./MatchPanel";
+import { findMatches, matchNodeIds, toMatchableCourse, type CourseDetail } from "./matcher";
 import type { Program } from "./programs";
 
 const Layout = styled.div`
@@ -53,8 +63,14 @@ const MINIMAP_COLORS: Record<NodeKind, string> = {
   leaf: "#1a7f37",
 };
 
-const Explorer = ({ programs }: { programs: Program[] }) => {
-  const { fitView } = useReactFlow();
+interface ExplorerProps {
+  programs: Program[];
+  /** The searched course, if any; its matching leaves are highlighted and listed. */
+  course: CourseDetail | null;
+}
+
+const Explorer = ({ programs, course }: ExplorerProps) => {
+  const { fitView, getNode, setCenter } = useReactFlow();
   const [nodes, setNodes, onNodesChange] = useNodesState<ExplorerNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
   // Node ids flipped from their default (programs open, groups closed); see buildGraph.
@@ -68,9 +84,33 @@ const Explorer = ({ programs }: { programs: Program[] }) => {
     fitPending.current = true;
   }, [programKeys]);
 
+  const matchable = useMemo(() => course && toMatchableCourse(course), [course]);
+  const matches = useMemo(
+    () => (matchable ? findMatches(programs, matchable) : []),
+    [programs, matchable]
+  );
+  const highlighted = useMemo(() => matchNodeIds(matches), [matches]);
+
+  // Open the path to every match, so each matching leaf is on the canvas.
+  useEffect(() => {
+    if (highlighted.size === 0) return;
+    fitPending.current = true;
+    setToggled((previous) => {
+      const next = new Set(previous);
+      programs.forEach((program) => {
+        highlighted.forEach((id) => {
+          // Programs are open unless toggled; groups are closed unless toggled.
+          if (id === program.key) next.delete(id);
+          else if (id.startsWith(`${program.key}/`)) next.add(id);
+        });
+      });
+      return next;
+    });
+  }, [programs, highlighted]);
+
   useEffect(() => {
     let stale = false;
-    const graph = buildGraph(programs, toggled);
+    const graph = buildGraph(programs, toggled, highlighted);
     layoutGraph(graph.nodes, graph.edges).then((positioned) => {
       if (stale) return;
       // Carry the selection over, since these are new node objects.
@@ -83,7 +123,7 @@ const Explorer = ({ programs }: { programs: Program[] }) => {
     return () => {
       stale = true;
     };
-  }, [programs, toggled, setNodes, setEdges]);
+  }, [programs, toggled, highlighted, setNodes, setEdges]);
 
   useEffect(() => {
     if (!fitPending.current || nodes.length === 0) return;
@@ -110,10 +150,30 @@ const Explorer = ({ programs }: { programs: Program[] }) => {
     setToggled(new Set());
   };
 
+  const focusNode = (id: string) => {
+    setNodes((previous) => previous.map((n) => ({ ...n, selected: n.id === id })));
+    const node = getNode(id);
+    if (!node) return;
+    const height = NODE_HEIGHT[node.type as NodeKind];
+    setCenter(node.position.x + NODE_WIDTH / 2, node.position.y + height / 2, {
+      zoom: 1,
+      duration: 300,
+    });
+  };
+
   const selected = useMemo(() => nodes.find((n) => n.selected), [nodes]);
 
   return (
     <Layout>
+      {course && matchable && (
+        <MatchPanel
+          course={matchable}
+          title={course.title}
+          programs={programs}
+          matches={matches}
+          onSelect={focusNode}
+        />
+      )}
       <Canvas>
         <Toolbar>
           <button onClick={expandAll}>Expand all</button>
@@ -148,9 +208,9 @@ const Explorer = ({ programs }: { programs: Program[] }) => {
 };
 
 /** A read-only, collapsible graph of one or more programs' rule trees, one root each. */
-const DegreeExplorer = ({ programs }: { programs: Program[] }) => (
+const DegreeExplorer = (props: ExplorerProps) => (
   <ReactFlowProvider>
-    <Explorer programs={programs} />
+    <Explorer {...props} />
   </ReactFlowProvider>
 );
 

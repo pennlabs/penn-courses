@@ -3,7 +3,7 @@
  * read, e.g. `CIS 1200 or (dept MATH and level ≥ 2000)`.
  */
 
-type QJson =
+export type QJson =
   | { type: "AND" | "OR" | "NOT"; clauses: QJson[] }
   | { type: "COURSE"; full_code: string }
   | { type: "LEAF"; key: string; value: unknown };

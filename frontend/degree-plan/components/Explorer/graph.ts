@@ -11,12 +11,14 @@ export const NODE_WIDTH = 280;
 export const NODE_HEIGHT = { program: 72, group: 68, leaf: 84 };
 export type NodeKind = keyof typeof NODE_HEIGHT;
 
-export type ProgramNodeData = { program: Program; expanded: boolean };
+export type ProgramNodeData = { program: Program; expanded: boolean; highlighted: boolean };
 export type RuleNodeData = {
   rule: Rule;
   /** Leaves anywhere below this rule, shown on a collapsed group so you know what's hidden. */
   leafCount: number;
   expanded: boolean;
+  /** On the path to a leaf the searched course matches. */
+  highlighted: boolean;
 };
 
 export type ProgramNode = Node<ProgramNodeData, "program">;
@@ -52,12 +54,14 @@ export const allGroupIds = (programs: Program[]): string[] => {
 /**
  * Flattens each program's nested rules into React Flow nodes and edges, one root per program.
  * Programs start expanded and groups collapsed; `toggled` holds the node ids flipped from
- * that default, so adding a program opens it without collapsing the others. Nodes come back
- * unpositioned; `layoutGraph` places them.
+ * that default, so adding a program opens it without collapsing the others. `highlighted`
+ * holds the node ids to mark for a searched course. Nodes come back unpositioned;
+ * `layoutGraph` places them.
  */
 export const buildGraph = (
   programs: Program[],
-  toggled: Set<string>
+  toggled: Set<string>,
+  highlighted: Set<string>
 ): { nodes: ExplorerNode[]; edges: Edge[] } => {
   const leafCounts = new Map<number, number>();
   const position = { x: 0, y: 0 };
@@ -72,7 +76,12 @@ export const buildGraph = (
       id,
       type: leaf ? "leaf" : "group",
       position,
-      data: { rule, leafCount: countLeaves(rule, leafCounts), expanded: isExpanded },
+      data: {
+        rule,
+        leafCount: countLeaves(rule, leafCounts),
+        expanded: isExpanded,
+        highlighted: highlighted.has(id),
+      },
     });
     edges.push({ id: `${parentId}->${id}`, source: parentId, target: id, type: "smoothstep" });
     if (isExpanded) rule.rules.forEach((child) => visit(program, child, id));
@@ -80,7 +89,12 @@ export const buildGraph = (
 
   programs.forEach((program) => {
     const expanded = !toggled.has(program.key);
-    nodes.push({ id: program.key, type: "program", position, data: { program, expanded } });
+    nodes.push({
+      id: program.key,
+      type: "program",
+      position,
+      data: { program, expanded, highlighted: highlighted.has(program.key) },
+    });
     if (expanded) program.rules.forEach((rule) => visit(program, rule, program.key));
   });
   return { nodes, edges };
