@@ -33,6 +33,32 @@ program_code_to_name = dict(program_choices)
 # capped by policy rather than by the audit (see degree.utils.degree_logic).
 graduate_programs = {"EM_MSE"}
 
+# Same-school double majors share one set of college requirements. Only the College is
+# modeled that way today; other schools keep both degree audits.
+college_programs = {"AU_BA"}
+
+# Path program codes look like MATH-BA-GEN. The middle segment is the degree, which is
+# enough to tell which school a standalone major was scraped from.
+_DEGREE_CODE_TO_PROGRAM = {
+    "BA": "AU_BA",
+    "BAS": "EU_BAS",
+    "BSE": "EU_BSE",
+    "BS": "WU_BS",
+    "BSN": "NU_BSN",
+    "MSE": "EM_MSE",
+}
+
+
+def is_college(program: str | None) -> bool:
+    return program in college_programs
+
+
+def program_from_program_code(program_code: str | None) -> str | None:
+    parts = (program_code or "").split("-")
+    if len(parts) < 2:
+        return None
+    return _DEGREE_CODE_TO_PROGRAM.get(parts[1])
+
 
 # The semester the frontend files AP, IB and other transfer credit under (its
 # TRANSFER_CREDIT_SEMESTER_KEY). Such a fulfillment has no term at Penn.
@@ -429,6 +455,85 @@ class Minor(ProgramComponent):
         ]
 
 
+class ProgramVariant(models.Model):
+    """
+    A delta on a Path degree: rules a coordinated program adds, and leaves of the base
+    audit it suppresses. M&T's Wharton side and Huntsman's College side are variants;
+    LSM and VIPER are not, because they use the ordinary audits.
+    """
+
+    code = models.CharField(max_length=32, unique=True)
+    name = models.CharField(max_length=128)
+    rules = models.ManyToManyField(
+        "Rule",
+        blank=True,
+        related_name="variants",
+        help_text="Rules this variant adds on top of the base audit.",
+    )
+    suppressed_rules = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=dedent(
+            """
+            Leaves of the base audit to drop, as {"block_type", "block_value", "q_contains"}
+            objects. A leaf is suppressed when every field that is set matches. Titles are
+            not used: Path rewords them.
+            """
+        ),
+    )
+
+    def __str__(self) -> str:
+        return self.code
+
+
+class DualProgram(models.Model):
+    """
+    A named pair of programs: M&T, Huntsman, LSM, VIPER. An uncoordinated dual degree
+    is two degrees on a plan with no DualProgram row.
+    """
+
+    code = models.CharField(max_length=32, unique=True)
+    name = models.CharField(max_length=128)
+    left_programs = models.JSONField(
+        default=list,
+        help_text="Program codes allowed on the left side, e.g. ['EU_BSE', 'EU_BAS'].",
+    )
+    right_programs = models.JSONField(default=list)
+    left_allowed_majors = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Major codes allowed on the left. Empty means any major of left_programs.",
+    )
+    right_allowed_majors = models.JSONField(default=list, blank=True)
+    left_variant = models.ForeignKey(
+        ProgramVariant,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="dual_programs_left",
+    )
+    right_variant = models.ForeignKey(
+        ProgramVariant,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="dual_programs_right",
+    )
+    cu_floor = models.DecimalField(decimal_places=2, max_digits=4, null=True, blank=True)
+    max_shared_cu = models.DecimalField(
+        decimal_places=2,
+        max_digits=4,
+        null=True,
+        blank=True,
+        help_text=(
+            "Cap on CUs counted toward both sides. Null means only the two-claim cap applies."
+        ),
+    )
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class DegreePlan(models.Model):  #
     """
     Stores a users plan for an associated degree.
@@ -459,6 +564,29 @@ class DegreePlan(models.Model):  #
         blank=True,
         related_name="degree_plans",
         help_text="The minors this degree plan is associated with.",
+    )
+
+    dual_program = models.ForeignKey(
+        DualProgram,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="degree_plans",
+        help_text="The coordinated dual degree this plan is pursuing, if any.",
+    )
+
+    right_variant = models.ForeignKey(
+        ProgramVariant,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="degree_plans",
+        help_text=dedent(
+            """
+            Overrides the dual program's right-hand variant. M&T uses this to choose the
+            language-required Wharton tree instead of the default.
+            """
+        ),
     )
 
     person = models.ForeignKey(
@@ -526,36 +654,77 @@ class DegreePlan(models.Model):  #
         return (satisfied_rules, violated_dcrs)
 
     def check_rules_already_satisfied(self, rules: set[Rule]) -> set[Rule]:
+        """
+        A rule is already satisfied when the courses assigned to it meet its count, its CU
+        total, or both. CU is the sum of those courses' credits, not the number of courses.
+        """
+        from collections import defaultdict
+        from decimal import Decimal
+
+        rules = list(rules)
+        if not rules:
+            return set()
+
+        fulfillments = list(
+            Fulfillment.objects.filter(degree_plan=self, rules__in=rules).prefetch_related("rules")
+        )
+        by_rule = defaultdict(list)
+        for fulfillment in fulfillments:
+            for rule in fulfillment.rules.all():
+                by_rule[rule.id].append(fulfillment)
+
+        credits = {
+            full_code: cu
+            for full_code, cu in Course.objects.filter(
+                full_code__in={fulfillment.full_code for fulfillment in fulfillments}
+            )
+            .exclude(credits__isnull=True)
+            .values_list("full_code", "credits")
+        }
+
         satisfied_rules = set()
-
         for rule in rules:
-            f = Fulfillment.objects.all().filter(degree_plan=self).filter(rules=rule)
-            if (rule.num and len(f) >= rule.num) or (rule.credits and len(f) >= rule.credits):
+            assigned = by_rule.get(rule.id, [])
+            count = len(assigned)
+            cu = sum((credits.get(fulfillment.full_code) or Decimal(1)) for fulfillment in assigned)
+            num_ok = rule.num is None or count >= rule.num
+            cu_ok = rule.credits is None or cu >= rule.credits
+            if (rule.num is not None or rule.credits is not None) and num_ok and cu_ok:
                 satisfied_rules.add(rule)
-
         return satisfied_rules
 
     def copy(self, new_name: str) -> DegreePlan:
         """
         Returns a new DegreePlan that is a copy of this DegreePlan.
         """
-        new_degree_plan = DegreePlan(name=new_name, person=self.person)
+        new_degree_plan = DegreePlan(
+            name=new_name,
+            person=self.person,
+            dual_program=self.dual_program,
+            right_variant=self.right_variant,
+        )
         new_degree_plan.save()
 
         for degree in self.degrees.all():
             new_degree_plan.degrees.add(degree)
+        for major in self.majors.all():
+            new_degree_plan.majors.add(major)
+        for minor in self.minors.all():
+            new_degree_plan.minors.add(minor)
 
         # this also handles updating satisfaction statuses
 
         for fulfillment in self.fulfillments.all():
             rules = fulfillment.rules.all()
             unselected_rules = fulfillment.unselected_rules.all()
+            overrides = fulfillment.overrides.all()
 
             fulfillment.pk = None
             fulfillment.degree_plan = new_degree_plan
             fulfillment.save()
             fulfillment.rules.set(rules)
             fulfillment.unselected_rules.set(unselected_rules)
+            fulfillment.overrides.set(overrides)
 
         return new_degree_plan
 
@@ -616,6 +785,16 @@ class Fulfillment(models.Model):
             """
             True if course associated with this fulfillment isn't illegally double counted anywhere,
             false otherwise.
+            """
+        ),
+    )
+    from_transcript = models.BooleanField(
+        default=False,
+        help_text=dedent(
+            """
+            True when this course was read off a transcript. A course the student added
+            themselves is false. The two are scheduled the same way; the flag is only
+            how the plan is colored.
             """
         ),
     )
