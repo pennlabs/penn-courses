@@ -525,7 +525,9 @@ class DualProgram(models.Model):
         max_digits=4,
         null=True,
         blank=True,
-        help_text="Cap on CUs counted toward both sides. Null means only the two-claim cap applies.",
+        help_text=(
+            "Cap on CUs counted toward both sides. Null means only the two-claim cap applies."
+        ),
     )
 
     def __str__(self) -> str:

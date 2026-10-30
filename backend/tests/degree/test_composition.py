@@ -9,12 +9,8 @@ from courses.util import get_or_create_course_and_section
 from degree.data.dual_programs import load
 from degree.models import Degree, DegreePlan, DualProgram, Major, Rule
 from degree.utils.composition import compose
-from degree.utils.degree_logic import (
-    allocate_rules,
-    map_rules_and_degrees,
-    summarize_plan,
-)
-from degree.utils.double_counts import resolve_double_counts, get_degree_trees
+from degree.utils.degree_logic import allocate_rules, map_rules_and_degrees, summarize_plan
+from degree.utils.double_counts import get_degree_trees, resolve_double_counts
 
 from .test_double_counting import TEST_SEMESTER
 
@@ -54,13 +50,27 @@ class CompositionKindTest(TestCase):
 
     def test_two_college_degrees_are_one_college_degree(self):
         econ = Degree.objects.create(
-            program="AU_BA", degree="BA", major="ECON", major_name="Economics", year=2026, credits=36
+            program="AU_BA",
+            degree="BA",
+            major="ECON",
+            major_name="Economics",
+            year=2026,
+            credits=36,
         )
         math = Degree.objects.create(
-            program="AU_BA", degree="BA", major="MATH", major_name="Mathematics", year=2026, credits=36
+            program="AU_BA",
+            degree="BA",
+            major="MATH",
+            major_name="Mathematics",
+            year=2026,
+            credits=36,
         )
         writing = Rule.objects.create(
-            title="Writing", q=repr(Q(full_code="WRIT-0010")), num=1, block_type="OTHER", block_value="U-GE"
+            title="Writing",
+            q=repr(Q(full_code="WRIT-0010")),
+            num=1,
+            block_type="OTHER",
+            block_value="U-GE",
         )
         econ_major = leaf("Economics", "ECON-0100", "MAJOR", "ECON")
         math_major = leaf("Mathematics", "MATH-1400", "MAJOR", "MATH")
@@ -73,7 +83,9 @@ class CompositionKindTest(TestCase):
         self.assertEqual(composition.kind, "cas_double_major")
         roles = {component.role for component in composition.components}
         self.assertEqual(roles, {"college", "major"})
-        college = next(component for component in composition.components if component.role == "college")
+        college = next(
+            component for component in composition.components if component.role == "college"
+        )
         self.assertFalse(college.removable)
         self.assertEqual(college.key, f"college:{econ.id}")
         # The second degree's writing requirement is not a second copy.
@@ -84,7 +96,9 @@ class CompositionKindTest(TestCase):
 
     def test_engineering_and_a_college_major_share_across_components(self):
         degree = Degree.objects.create(program="EU_BSE", degree="BSE", major="MEAM", year=2026)
-        major = Major.objects.create(program_code="MATH-BA-GEN", code="MATH", name="Mathematics", year=2026)
+        major = Major.objects.create(
+            program_code="MATH-BA-GEN", code="MATH", name="Mathematics", year=2026
+        )
         plan = self.plan("second")
         plan.degrees.add(degree)
         plan.majors.add(major)
@@ -161,13 +175,21 @@ class DualPatternTest(TestCase):
         self.assertIn("M&T Freshman Course", titles)
         freshman = next(rule for rule in rule_to if rule.title == "M&T Freshman Course")
         selected, _, legal = allocate_rules(
-            "OIDD-2340", rules, rule_to, map_rules_and_degrees(plan).double_counts, satisfied_rules=set()
+            "OIDD-2340",
+            rules,
+            rule_to,
+            map_rules_and_degrees(plan).double_counts,
+            satisfied_rules=set(),
         )
         self.assertIn(freshman, selected)
         self.assertTrue(legal)
 
         selected, _, legal = allocate_rules(
-            "STAT-4300", rules, rule_to, map_rules_and_degrees(plan).double_counts, satisfied_rules=set()
+            "STAT-4300",
+            rules,
+            rule_to,
+            map_rules_and_degrees(plan).double_counts,
+            satisfied_rules=set(),
         )
         # STAT-4300 is only on the Wharton rule in this fixture, so it is legal there.
         self.assertIn(stat, selected)
@@ -178,7 +200,12 @@ class DualPatternTest(TestCase):
 
         degrees = []
         for program, major in [("EU_BSE", "CIS"), ("WU_BS", "WH"), ("AU_BA", "ECON")]:
-            degree = Degree.objects.create(program=program, degree="BSE" if program != "AU_BA" else "BA", major=major, year=2026)
+            degree = Degree.objects.create(
+                program=program,
+                degree="BSE" if program != "AU_BA" else "BA",
+                major=major,
+                year=2026,
+            )
             degree.rules.add(leaf(major, "CIS-1200", "MAJOR", major, share_targets=[]))
             degrees.append(degree)
         plan = DegreePlan.objects.create(name="three", person=self.person)
@@ -207,7 +234,11 @@ class DualPatternTest(TestCase):
         wharton = Degree.objects.create(program="WU_BS", degree="BS", major="WH", year=2026)
         plan = self.plan_with("hunt", "HUNTSMAN", inst, wharton)
         plan_rules = map_rules_and_degrees(plan)
-        seminar = next(rule for rule in plan_rules.rule_to_component if rule.title == "Huntsman First-Year Seminar")
+        seminar = next(
+            rule
+            for rule in plan_rules.rule_to_component
+            if rule.title == "Huntsman First-Year Seminar"
+        )
         selected, _, _ = allocate_rules(
             "INSP-1001",
             plan_rules.rules_per_component,
@@ -245,10 +276,20 @@ class CollegeCreditSummaryTest(TestCase):
         course("ECON-0100")
         person = get_user_model().objects.create_user(username="c", password="x")
         econ = Degree.objects.create(
-            program="AU_BA", degree="BA", major="ECON", major_name="Economics", year=2026, credits=36
+            program="AU_BA",
+            degree="BA",
+            major="ECON",
+            major_name="Economics",
+            year=2026,
+            credits=36,
         )
         math = Degree.objects.create(
-            program="AU_BA", degree="BA", major="MATH", major_name="Mathematics", year=2026, credits=36
+            program="AU_BA",
+            degree="BA",
+            major="MATH",
+            major_name="Mathematics",
+            year=2026,
+            credits=36,
         )
         writing = Rule.objects.create(
             title="Writing",
@@ -277,7 +318,9 @@ class CollegeCreditSummaryTest(TestCase):
         plan.degrees.add(econ, math)
         from degree.models import Fulfillment
 
-        fulfillment = Fulfillment.objects.create(degree_plan=plan, full_code="ECON-0100", semester="2023C")
+        fulfillment = Fulfillment.objects.create(
+            degree_plan=plan, full_code="ECON-0100", semester="2023C"
+        )
         fulfillment.rules.set([econ_rule, math_rule])
         summary = summarize_plan(plan, [fulfillment])
         self.assertEqual(summary["kind"], "cas_double_major")

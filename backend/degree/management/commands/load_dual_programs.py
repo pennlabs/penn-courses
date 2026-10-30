@@ -20,7 +20,10 @@ class Command(BaseCommand):
         parser.add_argument(
             "--check",
             action="store_true",
-            help="After loading, report attributes, courses and suppression matchers the database lacks.",
+            help=(
+                "After loading, report attributes, courses and suppression matchers "
+                "the database lacks."
+            ),
         )
 
     def handle(self, *args, **options):
@@ -31,7 +34,9 @@ class Command(BaseCommand):
 
     def check(self):
         missing_attrs = referenced_attribute_codes() - set(
-            Attribute.objects.filter(code__in=referenced_attribute_codes()).values_list("code", flat=True)
+            Attribute.objects.filter(code__in=referenced_attribute_codes()).values_list(
+                "code", flat=True
+            )
         )
         missing_courses = referenced_full_codes() - set(
             Course.objects.filter(full_code__in=referenced_full_codes()).values_list(

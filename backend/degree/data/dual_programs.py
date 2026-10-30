@@ -118,9 +118,15 @@ def _mt_las_language_pool(block_value: str) -> list[dict]:
         _leaf("M&T Cross-Cultural or Diversity", q_attr("WUCN", "WUCU"), block_value, credits=1)
     )
     shared = [
-        _leaf("M&T Foreign Language", q_attr("WUFL"), block_value, credits=1, share_targets=THIS_BLOCK),
         _leaf(
-            "M&T Foreign Language 2", q_attr("WUFL"), block_value, credits=1, share_targets=THIS_BLOCK
+            "M&T Foreign Language", q_attr("WUFL"), block_value, credits=1, share_targets=THIS_BLOCK
+        ),
+        _leaf(
+            "M&T Foreign Language 2",
+            q_attr("WUFL"),
+            block_value,
+            credits=1,
+            share_targets=THIS_BLOCK,
         ),
     ]
     return [_group("M&T Liberal Arts and Sciences", block_value, exclusive + shared)]
@@ -277,4 +283,12 @@ def referenced_attribute_codes() -> set[str]:
 
 
 def referenced_full_codes() -> set[str]:
-    return {"OIDD-2340", "MGMT-2370", "INSP-1001", "INSP-4998", "INSP-4999", "MGMT-4090", "INSP-4997"}
+    return {
+        "OIDD-2340",
+        "MGMT-2370",
+        "INSP-1001",
+        "INSP-4998",
+        "INSP-4999",
+        "MGMT-4090",
+        "INSP-4997",
+    }

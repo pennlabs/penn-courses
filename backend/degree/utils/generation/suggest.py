@@ -22,7 +22,6 @@ from degree.utils.degree_logic import (
     prewarm_credits_cache,
     sharing_from_fulfillments,
 )
-from degree.utils.generation.overlap import pair_placeholders
 from degree.utils.generation.open_rules import (
     _collect_schedule_parts,
     is_coverage_rule,
@@ -36,6 +35,7 @@ from degree.utils.generation.open_rules import (
     sole_listed_code,
     unplaced_fulfillments,
 )
+from degree.utils.generation.overlap import pair_placeholders
 
 
 ALTERNATIVE_LIMIT = 24
@@ -263,7 +263,9 @@ def _rule_parts(rule):
     return parts
 
 
-def _placeholder_satisfies_floor(rule_ids, rules_by_id, degree_rule_ids, floor_rule, floor_depts, belongs):
+def _placeholder_satisfies_floor(
+    rule_ids, rules_by_id, degree_rule_ids, floor_rule, floor_depts, belongs
+):
     """
     A stub on this degree counts when every course it could be is in the college.
 
@@ -399,7 +401,9 @@ def _pad_to_degree_credits(
         owner = plan_rules.composition.college_owner_id
         if owner is None:
             owner = next(iter(groups))
-        merged_components = [component for components in groups.values() for component in components]
+        merged_components = [
+            component for components in groups.values() for component in components
+        ]
         merged_floors = [rule for rules in floors_by_degree.values() for rule in rules]
         groups = {owner: merged_components}
         floors_by_degree = {owner: merged_floors} if merged_floors else {}
@@ -585,10 +589,7 @@ def suggest(degree_plan):
         candidate_pool[slot.rule_id] = _candidates(slot.rule, blocked_codes, blocked_listings)
 
     candidate_codes = [
-        course.full_code
-        for courses in candidate_pool.values()
-        if courses
-        for course in courses
+        course.full_code for courses in candidate_pool.values() if courses for course in courses
     ]
     belongs_cache = prewarm_belongs_cache(
         set(plan_rules.rule_to_component),
@@ -632,9 +633,7 @@ def suggest(degree_plan):
                 _restore_sharing(sharing, snapshot)
         if chosen is None:
             listed = [
-                code
-                for code in (listed_course_codes(slot.rule) or [])
-                if code not in blocked_codes
+                code for code in (listed_course_codes(slot.rule) or []) if code not in blocked_codes
             ]
             ghosts.append(
                 {

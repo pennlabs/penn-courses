@@ -9,6 +9,7 @@ courses can pair.
 from __future__ import annotations
 
 from decimal import Decimal
+from itertools import combinations
 
 from courses.models import Course
 from courses.util import get_current_semester
@@ -20,6 +21,7 @@ def _cutoff_semester():
     current = get_current_semester()
     year = int(str(current)[:4]) - 3
     return f"{year}A"
+
 
 MAX_LIST = 40
 MAX_SHOW = 12
@@ -133,17 +135,16 @@ def pair_placeholders(ghosts, plan_rules, sharing):
         eligible.append((ghost, rule, component, kind, codes))
 
     candidates = []
-    for index, left in enumerate(eligible):
-        for right in eligible[index + 1 :]:
-            if left[2].key == right[2].key:
-                continue
-            if is_graduate(left[2]) and is_graduate(right[2]):
-                continue
-            shared = _intersection(left[1], left[3], left[4], right[1], right[3], right[4])
-            if not shared:
-                continue
-            specificity = (left[3] != "listed") + (right[3] != "listed")
-            candidates.append((specificity, -len(shared), left, right, shared))
+    for left, right in combinations(eligible, 2):
+        if left[2].key == right[2].key:
+            continue
+        if is_graduate(left[2]) and is_graduate(right[2]):
+            continue
+        shared = _intersection(left[1], left[3], left[4], right[1], right[3], right[4])
+        if not shared:
+            continue
+        specificity = (left[3] != "listed") + (right[3] != "listed")
+        candidates.append((specificity, -len(shared), left, right, shared))
     candidates.sort(key=lambda row: (row[0], row[1]))
 
     used = set()
@@ -182,8 +183,14 @@ def _card(left, right, courses, cu):
         "kind": "placeholder",
         "full_code": None,
         "fulfillment_id": None,
-        "label": f"{left.get('label') or left.get('short_label')} + {right.get('label') or right.get('short_label')}",
-        "short_label": f"{left.get('short_label') or left.get('label')} + {right.get('short_label') or right.get('label')}",
+        "label": (
+            f"{left.get('label') or left.get('short_label')} + "
+            f"{right.get('label') or right.get('short_label')}"
+        ),
+        "short_label": (
+            f"{left.get('short_label') or left.get('label')} + "
+            f"{right.get('short_label') or right.get('label')}"
+        ),
         "cu": float(cu),
         "rules": [left["rules"][0], right["rules"][0]],
         "rule_q": left.get("rule_q"),

@@ -13,18 +13,17 @@ from django.test import SimpleTestCase, TestCase
 
 from courses.models import Attribute
 from degree.models import Degree, Fulfillment, Rule
-from degree.utils.generation import generate_schedule
 from degree.utils.degree_logic import map_rules_and_degrees, prewarm_credits_cache
+from degree.utils.generation import generate_schedule
 from degree.utils.generation.open_rules import (
     filter_panel_options,
     is_writing_rule,
     open_slots,
     schedule_code,
 )
-from degree.utils.model_utils import json_parser
 from degree.utils.generation.pack import PackError, next_semester, pack
 from degree.utils.generation.suggest import _pad_to_degree_credits, suggest
-
+from degree.utils.model_utils import json_parser
 from tests.degree.test_generation import (
     TEST_SEMESTER,
     course,
@@ -228,7 +227,10 @@ class PackEdgeTests(TestCase):
             pack({"items": []}, [{"key": "_TRAN", "cu_cap": 5.5, "gap": False}], pins=[])
         result = pack(
             {"items": [item()]},
-            [{"key": "", "cu_cap": 5.5, "gap": False}, {"key": "2024C", "cu_cap": 5.5, "gap": False}],
+            [
+                {"key": "", "cu_cap": 5.5, "gap": False},
+                {"key": "2024C", "cu_cap": 5.5, "gap": False},
+            ],
             pins=[],
         )
         self.assertEqual(result["placements"][0]["semester"], "2024C")
@@ -242,7 +244,10 @@ class PackEdgeTests(TestCase):
         with self.assertRaises(PackError):
             pack(
                 {"items": []},
-                [{"key": "2024C", "cu_cap": 4, "gap": False}, {"key": "2024C", "cu_cap": 5, "gap": False}],
+                [
+                    {"key": "2024C", "cu_cap": 4, "gap": False},
+                    {"key": "2024C", "cu_cap": 5, "gap": False},
+                ],
                 pins=[],
             )
 
@@ -305,7 +310,13 @@ class PackEdgeTests(TestCase):
 
     def test_generated_cu_sums_only_what_landed(self):
         result = pack(
-            {"items": [item(cu=1, slot="slot:1:0"), item(cu=0.5, slot="slot:1:1", number=2), item(cu=6, slot="slot:1:2", number=3)]},
+            {
+                "items": [
+                    item(cu=1, slot="slot:1:0"),
+                    item(cu=0.5, slot="slot:1:1", number=2),
+                    item(cu=6, slot="slot:1:2", number=3),
+                ]
+            },
             semesters("2024C"),
             pins=[],
         )
@@ -450,17 +461,13 @@ class OpenSlotEdgeTests(TestCase):
 class SuggestAndScheduleEdgeTests(TestCase):
     def setUp(self):
         use_semester()
-        self.degree = Degree.objects.create(
-            program="EU_BSE", degree="BSE", major="SUGG", year=2026
-        )
+        self.degree = Degree.objects.create(program="EU_BSE", degree="BSE", major="SUGG", year=2026)
         self.plan = plan_for(self.degree, username="edge-suggest")
 
     def test_a_choice_of_two_courses_stays_a_stub(self):
         course("TIE-1000", quality=2, difficulty=3)
         course("TIE-2000", quality=2, difficulty=1)
-        self.degree.rules.add(
-            leaf("Tie", Q(full_code="TIE-1000") | Q(full_code="TIE-2000"), num=1)
-        )
+        self.degree.rules.add(leaf("Tie", Q(full_code="TIE-1000") | Q(full_code="TIE-2000"), num=1))
         ghost = suggest(self.plan)["items"][0]
         self.assertEqual(ghost["kind"], "placeholder")
         self.assertIsNone(ghost["full_code"])
@@ -499,9 +506,7 @@ class SuggestAndScheduleEdgeTests(TestCase):
     def test_a_level_floor_stays_a_stub(self):
         course("RNG-1090", quality=9)
         course("RNG-2100", quality=1)
-        self.degree.rules.add(
-            leaf("Upper", Q(department__code="RNG", code__gte="2000"), num=1)
-        )
+        self.degree.rules.add(leaf("Upper", Q(department__code="RNG", code__gte="2000"), num=1))
         ghost = suggest(self.plan)["items"][0]
         self.assertEqual(ghost["kind"], "placeholder")
         self.assertEqual(ghost["short_label"], "RNG 2000+")
@@ -520,7 +525,9 @@ class SuggestAndScheduleEdgeTests(TestCase):
         self.degree.rules.add(leaf("Three", Q(department__code="DEPT"), num=3))
         ghosts = suggest(self.plan)["items"]
         self.assertEqual(len(ghosts), 3)
-        self.assertTrue(all(row["kind"] == "placeholder" and row["full_code"] is None for row in ghosts))
+        self.assertTrue(
+            all(row["kind"] == "placeholder" and row["full_code"] is None for row in ghosts)
+        )
 
     def test_a_half_credit_course_is_suggested_at_half_a_cu(self):
         course("LAB-1500", credits=0.5)
@@ -712,7 +719,9 @@ class ScheduleCodeTests(SimpleTestCase):
         self.assertEqual(schedule_code(rule), "W 2000–4999")
 
     def test_an_open_upper_bound_is_dropped(self):
-        rule = _Rule(Q(department__code="MATH", code__gte="1400", code__lte="9999"), title="Math Elective")
+        rule = _Rule(
+            Q(department__code="MATH", code__gte="1400", code__lte="9999"), title="Math Elective"
+        )
         self.assertEqual(schedule_code(rule), "MATH 1400+")
 
     def test_business_breadth_keeps_its_own_stub(self):
@@ -813,9 +822,7 @@ class FreeElectivePaddingTests(TestCase):
         )
         degree.rules.add(leaf("Core", Q(full_code="CIS-1200"), num=1))
         degree_plan = plan_for(degree, username="pad-loose")
-        Fulfillment.objects.create(
-            degree_plan=degree_plan, full_code="ELEC-1000", semester="2023C"
-        )
+        Fulfillment.objects.create(degree_plan=degree_plan, full_code="ELEC-1000", semester="2023C")
         result = suggest(degree_plan)
         self.assertEqual([item["cu"] for item in _free_electives(result)], [1.0])
         self.assertEqual(_scheduled_cu(result), Decimal("3"))
@@ -909,9 +916,7 @@ class FreeElectivePaddingTests(TestCase):
         )
         degree.rules.add(core, floor)
         degree_plan = plan_for(degree, username="sas-shrink")
-        Fulfillment.objects.create(
-            degree_plan=degree_plan, full_code="ECON-0100", semester="2023C"
-        )
+        Fulfillment.objects.create(degree_plan=degree_plan, full_code="ECON-0100", semester="2023C")
         electives = _free_electives(suggest(degree_plan))
         self.assertEqual([item["cu"] for item in electives], [1.0, 1.0])
 
@@ -1024,9 +1029,7 @@ class FreeElectivePaddingTests(TestCase):
             degree_plan=degree_plan, full_code="CIS-1200", semester="2023C"
         )
         fulfillment.rules.add(core)
-        fulfillments = list(
-            degree_plan.fulfillments.prefetch_related("rules", "overrides")
-        )
+        fulfillments = list(degree_plan.fulfillments.prefetch_related("rules", "overrides"))
         plan_rules = map_rules_and_degrees(degree_plan)
         credits_cache = prewarm_credits_cache(["CIS-1200"])
         ghosts = [
@@ -1038,9 +1041,7 @@ class FreeElectivePaddingTests(TestCase):
                 "rules": [core.id],
             }
         ]
-        padding, _consumed = _pad_to_degree_credits(
-            plan_rules, fulfillments, credits_cache, ghosts
-        )
+        padding, _consumed = _pad_to_degree_credits(plan_rules, fulfillments, credits_cache, ghosts)
         self.assertEqual(
             [item["cu"] for item in padding if str(item["slot_ids"][0]).startswith("slot:free:")],
             [1.0],
@@ -1066,7 +1067,9 @@ class FreeElectivePaddingTests(TestCase):
             credits=Decimal("3"),
         )
         econ.rules.add(
-            leaf("Economics", Q(full_code="ECON-0100"), num=1, block_type="MAJOR", block_value="ECON")
+            leaf(
+                "Economics", Q(full_code="ECON-0100"), num=1, block_type="MAJOR", block_value="ECON"
+            )
         )
         math.rules.add(
             leaf(
@@ -1083,12 +1086,7 @@ class FreeElectivePaddingTests(TestCase):
         electives = _free_electives(result)
         self.assertEqual([item["cu"] for item in electives], [1.0])
         self.assertEqual(_scheduled_cu(result), Decimal("3"))
-        self.assertTrue(
-            all(
-                item["component_key"] == f"college:{econ.id}"
-                for item in electives
-            )
-        )
+        self.assertTrue(all(item["component_key"] == f"college:{econ.id}" for item in electives))
 
 
 def _attribute(code):
@@ -1122,7 +1120,9 @@ class CoverageLabelTests(TestCase):
 
     def test_a_sector_does_not_add_a_course_past_the_degree_total(self):
         degree, degree_plan, core = self._plan("1", "cov-full")
-        block, sector = _gen_ed("General Education, Sectors", "Society", Q(attributes__code__in=["AUSO"]))
+        block, sector = _gen_ed(
+            "General Education, Sectors", "Society", Q(attributes__code__in=["AUSO"])
+        )
         degree.rules.add(block)
         items = suggest(degree_plan)["items"]
         self.assertEqual([item["rules"] for item in items], [[core.id]])
@@ -1130,7 +1130,9 @@ class CoverageLabelTests(TestCase):
 
     def test_an_open_sector_fills_the_credit_gap(self):
         degree, degree_plan, _core = self._plan("2", "cov-gap")
-        block, sector = _gen_ed("General Education, Sectors", "Society", Q(attributes__code__in=["AUSO"]))
+        block, sector = _gen_ed(
+            "General Education, Sectors", "Society", Q(attributes__code__in=["AUSO"])
+        )
         degree.rules.add(block)
         items = suggest(degree_plan)["items"]
         self.assertEqual([item["short_label"] for item in items], ["CIS 1200", "Society"])
@@ -1140,7 +1142,9 @@ class CoverageLabelTests(TestCase):
 
     def test_credits_past_the_open_labels_are_free_electives(self):
         degree, degree_plan, _core = self._plan("3", "cov-free")
-        block, _sector = _gen_ed("General Education, Sectors", "Society", Q(attributes__code__in=["AUSO"]))
+        block, _sector = _gen_ed(
+            "General Education, Sectors", "Society", Q(attributes__code__in=["AUSO"])
+        )
         degree.rules.add(block)
         items = suggest(degree_plan)["items"]
         self.assertEqual(
@@ -1221,6 +1225,7 @@ class PanelOptionsTests(TestCase):
         rule = leaf("Pick", Q(full_code="CIS-1100") | Q(full_code="CIS-1200"))
         self.assertIsNone(filter_panel_options(rule))
 
+
 class OverlapAndReconcileTests(TestCase):
     def setUp(self):
         use_semester()
@@ -1287,14 +1292,16 @@ class OverlapAndReconcileTests(TestCase):
         from degree.utils.generation.reconcile import mutex_violations, prepare_plan
 
         prepared = prepare_plan(degree_plan)
-        remaining = set(Fulfillment.objects.filter(degree_plan=degree_plan).values_list("full_code", flat=True))
+        remaining = set(
+            Fulfillment.objects.filter(degree_plan=degree_plan).values_list("full_code", flat=True)
+        )
         self.assertEqual(remaining, {"ACCT-2110", "MATH-1400"})
         self.assertEqual(prepared["removed"][0]["kind"], "also_offered")
         self.assertTrue(prepared["claims_updated"])
         claimed = set(
-            Fulfillment.objects.get(degree_plan=degree_plan, full_code="MATH-1400").rules.values_list(
-                "id", flat=True
-            )
+            Fulfillment.objects.get(
+                degree_plan=degree_plan, full_code="MATH-1400"
+            ).rules.values_list("id", flat=True)
         )
         self.assertEqual(claimed, {calculus.id, math.id})
 

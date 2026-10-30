@@ -27,15 +27,7 @@ from degree.models import Degree, Fulfillment
 from degree.utils.generation import generate_schedule
 from degree.utils.generation.open_rules import open_slots
 from degree.utils.generation.pack import next_semester
-
-from tests.degree.test_generation import (
-    TEST_SEMESTER,
-    course,
-    leaf,
-    plan_for,
-    semesters,
-    use_semester,
-)
+from tests.degree.test_generation import course, leaf, plan_for, semesters, use_semester
 
 
 def placements_in(result, semester):
@@ -54,11 +46,10 @@ class GapSemesterTests(TestCase):
         use_semester()
         for code in ("CIS-1100", "CIS-1200", "CIS-1600", "CIS-1210"):
             course(code)
-        self.degree = Degree.objects.create(
-            program="EU_BSE", degree="BSE", major="CIS", year=2026
-        )
+        self.degree = Degree.objects.create(program="EU_BSE", degree="BSE", major="CIS", year=2026)
         self.rules = [
-            leaf(code, Q(full_code=code), num=1) for code in ("CIS-1100", "CIS-1200", "CIS-1600", "CIS-1210")
+            leaf(code, Q(full_code=code), num=1)
+            for code in ("CIS-1100", "CIS-1200", "CIS-1600", "CIS-1210")
         ]
         self.degree.rules.set(self.rules)
         self.plan = plan_for(self.degree, username="gap-port")
@@ -202,10 +193,14 @@ class OpenSlotTests(TestCase):
         parent = leaf("Additional Biology", Q(), num=1)
         parent.q = ""
         parent.save()
-        child = leaf("Biology 2000-level", Q(department__code="BIOL", code__gte="2000"), num=1, parent=parent)
+        child = leaf(
+            "Biology 2000-level", Q(department__code="BIOL", code__gte="2000"), num=1, parent=parent
+        )
         self.degree.rules.add(parent)
         slots = open_slots(self.plan)
-        self.assertTrue(any(slot.rule_id == child.id and slot.label == "Biology 2000-level" for slot in slots))
+        self.assertTrue(
+            any(slot.rule_id == child.id and slot.label == "Biology 2000-level" for slot in slots)
+        )
         self.assertFalse(any("following options" in slot.label.lower() for slot in slots))
 
     def test_a_taken_named_course_is_not_suggested_again(self):

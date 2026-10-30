@@ -24,16 +24,13 @@ from degree.models import (
     PDPBetaUser,
     ProgramVariant,
 )
-from degree.utils.generation import generate_schedule
-from degree.utils.generation.open_rules import filter_panel_options
-from degree.utils.generation.pack import PackError
 from degree.serializers import (
     DegreeDetailSerializer,
     DegreeListSerializer,
     DegreePlanDetailSerializer,
     DegreePlanListSerializer,
-    DualProgramSerializer,
     DockedCourseSerializer,
+    DualProgramSerializer,
     FulfillmentSerializer,
     MajorDetailSerializer,
     MajorListSerializer,
@@ -55,6 +52,9 @@ from degree.utils.degree_logic import (
     sharing_from_fulfillments,
     summarize_plan,
 )
+from degree.utils.generation import generate_schedule
+from degree.utils.generation.open_rules import filter_panel_options
+from degree.utils.generation.pack import PackError
 from PennCourses.docs_settings import PcxAutoSchema
 
 
@@ -790,9 +790,11 @@ class SatisfiedRuleList(APIView):
     schema = PcxAutoSchema(
         response_codes={
             "satisfied-rule-list": {
-                "GET": {200: """Returns a list of degree requirements satisfied by the course,
+                "GET": {
+                    200: """Returns a list of degree requirements satisfied by the course,
                     including selected rules, newly selected rules, unselected rules that could
-                    be satisfied, and whether the selections can be legally double counted."""}
+                    be satisfied, and whether the selections can be legally double counted."""
+                }
             },
         },
         custom_path_parameter_desc={

@@ -5,7 +5,8 @@ from decimal import Decimal
 from django.db.models import Q
 
 from courses.models import Course
-from degree.utils.double_counts import get_degree_trees, resolve_double_counts
+from degree.utils.double_counts import resolve_double_counts
+
 
 # A submatriculant may double count at most this many CUs between their undergraduate and
 # their graduate degree, and only graduate-level coursework is eligible. Path@Penn cannot
@@ -253,7 +254,8 @@ def apply_sharing_policy(
             key=lambda key: _component_score(grouped[key][1], full_code),
             reverse=True,
         )
-        for key in ranked[max(room, 0) :]:
+        keep = max(room, 0)
+        for key in ranked[keep:]:
             _demote(selected_rules, unselected_rules, grouped[key][1])
 
     if policy.max_shared_cu is not None:

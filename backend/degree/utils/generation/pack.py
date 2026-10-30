@@ -161,7 +161,9 @@ def pack(suggestions, semesters, allow_summer=False, pins=None, pinned_slots=Non
 
     def place_in(item, row):
         used[row["key"]] += float(item["cu"])
-        placed.append({k: v for k, v in item.items() if k != "course_number"} | {"semester": row["key"]})
+        placed.append(
+            {k: v for k, v in item.items() if k != "course_number"} | {"semester": row["key"]}
+        )
 
     def row_for(key):
         return next((row for row in rows if row["key"] == key), None)
@@ -216,7 +218,9 @@ def pack(suggestions, semesters, allow_summer=False, pins=None, pinned_slots=Non
 
     for item in _sort_items(suggestions["items"]):
         slot_ids = item.get("slot_ids") or []
-        pinned_key = next((pinned_semester[slot] for slot in slot_ids if slot in pinned_semester), None)
+        pinned_key = next(
+            (pinned_semester[slot] for slot in slot_ids if slot in pinned_semester), None
+        )
         if pinned_key:
             row = row_for(pinned_key)
             if row is not None:
@@ -274,9 +278,7 @@ def pack(suggestions, semesters, allow_summer=False, pins=None, pinned_slots=Non
     return {
         "placements": placed,
         "semesters": [
-            {"key": row["key"], "synthetic": True}
-            for row in synthetic
-            if row["key"] in occupied
+            {"key": row["key"], "synthetic": True} for row in synthetic if row["key"] in occupied
         ],
         "unplaced": unplaced,
         "generated_cu": generated_cu,

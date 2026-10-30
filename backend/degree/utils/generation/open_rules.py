@@ -9,10 +9,14 @@ unrelated fulfillment does not rename them.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from decimal import Decimal, ROUND_CEILING
+from decimal import ROUND_CEILING, Decimal
 
 from degree.models import TRANSFER_CREDIT_SEMESTER
-from degree.utils.degree_logic import DEFAULT_COURSE_CREDITS, map_rules_and_degrees, prewarm_credits_cache
+from degree.utils.degree_logic import (
+    DEFAULT_COURSE_CREDITS,
+    map_rules_and_degrees,
+    prewarm_credits_cache,
+)
 
 
 @dataclass
@@ -70,7 +74,11 @@ def listed_course_codes(rule) -> list[str] | None:
         if kind == "LEAF" and node.get("key") == "full_code" and node.get("value"):
             codes.append(node["value"])
             return True
-        if kind == "LEAF" and node.get("key") == "full_code__in" and isinstance(node.get("value"), list):
+        if (
+            kind == "LEAF"
+            and node.get("key") == "full_code__in"
+            and isinstance(node.get("value"), list)
+        ):
             if not node["value"]:
                 return False
             codes.extend(node["value"])
@@ -274,11 +282,7 @@ def is_coverage_rule(rule) -> bool:
     if is_writing_rule(rule):
         return False
     titles = _ancestor_titles(rule).lower()
-    return (
-        "general education" in titles
-        or "foundational approach" in titles
-        or "sector" in titles
-    )
+    return "general education" in titles or "foundational approach" in titles or "sector" in titles
 
 
 def is_free_elective_floor(rule) -> bool:

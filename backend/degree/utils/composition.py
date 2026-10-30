@@ -139,9 +139,7 @@ def apply_variant(leaves, variant):
     matched = {rule.id for rule in suppressed}
     for matcher in variant.suppressed_rules:
         if not any(_matcher_hits(rule, matcher) for rule in leaves):
-            logger.warning(
-                "Variant %s matcher %s suppressed no rule.", variant.code, matcher
-            )
+            logger.warning("Variant %s matcher %s suppressed no rule.", variant.code, matcher)
 
     extra_roots = tuple(variant.rules.all())
     kept.extend(_leaves(extra_roots))
@@ -282,7 +280,9 @@ def _is_cas_double_major(components, dual) -> bool:
     if dual is not None:
         return False
     capped = [component for component in components if component.counts_toward_degree_cap]
-    return len(capped) >= 2 and all(component.is_college and not component.is_graduate for component in capped)
+    return len(capped) >= 2 and all(
+        component.is_college and not component.is_graduate for component in capped
+    )
 
 
 def _split_college(components) -> list[Component]:
@@ -296,7 +296,9 @@ def _split_college(components) -> list[Component]:
     )
     split = []
     if primary is not None:
-        college_leaves = [rule for rule in primary.rules if rule.block_type not in MAJOR_BLOCK_TYPES]
+        college_leaves = [
+            rule for rule in primary.rules if rule.block_type not in MAJOR_BLOCK_TYPES
+        ]
         split.append(
             _make(
                 key=f"college:{primary.owner_id}",
@@ -319,7 +321,9 @@ def _split_college(components) -> list[Component]:
         )
     for component in components:
         if component.relation == "degrees":
-            major_leaves = [rule for rule in component.rules if rule.block_type in MAJOR_BLOCK_TYPES]
+            major_leaves = [
+                rule for rule in component.rules if rule.block_type in MAJOR_BLOCK_TYPES
+            ]
             degree = Degree.objects.get(id=component.owner_id)
             split.append(
                 _make(
@@ -371,7 +375,9 @@ def compose(degree_plan) -> Composition:
     for index, degree in enumerate(degrees):
         role = "primary_degree" if index == 0 else "second_degree"
         raw.append(
-            _base_component(degree, "degrees", role, degree.program, _side_for(degree.program, dual))
+            _base_component(
+                degree, "degrees", role, degree.program, _side_for(degree.program, dual)
+            )
         )
     for major in degree_plan.majors.order_by("id"):
         program = program_from_program_code(major.program_code)
@@ -380,11 +386,7 @@ def compose(degree_plan) -> Composition:
         )
     for minor in degree_plan.minors.order_by("id"):
         program = program_from_program_code(minor.program_code)
-        raw.append(
-            _base_component(
-                minor, "minors", "minor", program, None, cap=False
-            )
-        )
+        raw.append(_base_component(minor, "minors", "minor", program, None, cap=False))
 
     if _is_cas_double_major(raw, dual):
         raw = _split_college(raw)

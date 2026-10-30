@@ -13,6 +13,7 @@ from pathlib import Path
 from degree.models import Fulfillment
 from degree.utils.degree_logic import prewarm_canonical_cache
 
+
 _PAIRS: dict[str, list[str]] | None = None
 
 
@@ -29,7 +30,9 @@ def exclusive_partners() -> dict[str, list[str]]:
 
 def collapse_cross_listings(degree_plan):
     """Drop a later fulfillment that is another spelling of a course already kept."""
-    rows = list(Fulfillment.objects.filter(degree_plan=degree_plan).order_by("semester", "full_code"))
+    rows = list(
+        Fulfillment.objects.filter(degree_plan=degree_plan).order_by("semester", "full_code")
+    )
     canonicals = prewarm_canonical_cache([row.full_code for row in rows])
     groups: dict[str, list] = {}
     for row in rows:
@@ -89,10 +92,7 @@ def mutex_violations(degree_plan):
 
 def _rule_snapshot(degree_plan):
     rows = Fulfillment.objects.filter(degree_plan=degree_plan).prefetch_related("rules")
-    return {
-        row.full_code: tuple(sorted(rule.id for rule in row.rules.all()))
-        for row in rows
-    }
+    return {row.full_code: tuple(sorted(rule.id for rule in row.rules.all())) for row in rows}
 
 
 def prepare_plan(degree_plan):

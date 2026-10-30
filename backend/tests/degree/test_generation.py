@@ -1,26 +1,22 @@
-from decimal import Decimal
 import random
+from decimal import Decimal
 
 from django.contrib.auth import get_user_model
-from django.db.models import Q
-from django.test import TestCase
 from django.db import connection
+from django.db.models import Q
+from django.db.models.signals import post_save
+from django.test import TestCase
 from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
+from options.models import Option
 from rest_framework.test import APIClient
 
-from courses.models import Course
-from courses.util import get_or_create_course_and_section
-from degree.models import PDPBetaUser, Degree, DegreePlan, Fulfillment, Minor, Rule
+from courses.util import get_or_create_course_and_section, invalidate_current_semester_cache
+from degree.models import Degree, DegreePlan, Fulfillment, Minor, PDPBetaUser, Rule
 from degree.utils.generation import generate_schedule
 from degree.utils.generation.open_rules import open_slots, slot_cus
 from degree.utils.generation.pack import PackError, next_semester, pack
-from degree.utils.generation.suggest import suggest
-
-from django.db.models.signals import post_save
-
-from courses.util import invalidate_current_semester_cache
-from options.models import Option
+from degree.utils.generation.suggest import _candidates, suggest
 
 
 TEST_SEMESTER = "2023C"
@@ -142,7 +138,11 @@ class OpenRulesTest(TestCase):
 
     def test_n_of_m_commits_to_the_child_with_progress_and_breaks_ties_by_id(self):
         # No progress: the lower id wins.
-        committed = [s.rule_id for s in open_slots(self.plan) if s.rule_id in {self.option_a.id, self.option_b.id}]
+        committed = [
+            s.rule_id
+            for s in open_slots(self.plan)
+            if s.rule_id in {self.option_a.id, self.option_b.id}
+        ]
         self.assertEqual(committed, [min(self.option_a.id, self.option_b.id)])
 
         winner = self.option_b if self.option_b.id > self.option_a.id else self.option_a
@@ -151,7 +151,11 @@ class OpenRulesTest(TestCase):
             degree_plan=self.plan, full_code="CIS-1910", semester="2023C"
         )
         fulfillment.rules.add(self.option_b)
-        committed = [s.rule_id for s in open_slots(self.plan) if s.rule_id in {self.option_a.id, self.option_b.id}]
+        committed = [
+            s.rule_id
+            for s in open_slots(self.plan)
+            if s.rule_id in {self.option_a.id, self.option_b.id}
+        ]
         # option b is now satisfied, so the group emits nothing for either child
         self.assertEqual(committed, [])
         self.assertNotEqual(winner, None)
@@ -192,19 +196,24 @@ class SuggestTest(TestCase):
         self.degree.rules.add(self.rule)
         self.plan = plan_for(self.degree, username="suggester")
 
-    def test_ranks_by_quality_then_difficulty_then_code(self):
+    def candidate_codes(self):
+        return [row.full_code for row in _candidates(self.rule, set(), set())]
+
+    def test_a_list_of_courses_is_a_placeholder(self):
         ghost = suggest(self.plan)["items"][0]
-        self.assertEqual(ghost["full_code"], "CIS-1100")
-        self.assertEqual(ghost["kind"], "course")
-        self.assertEqual(set(ghost["alternatives"]), {"CIS-1200", "CIS-1600"})
+        self.assertEqual(ghost["kind"], "placeholder")
+        self.assertIsNone(ghost["full_code"])
+        self.assertEqual(set(ghost["alternatives"]), {"CIS-1100", "CIS-1200", "CIS-1600"})
+
+    def test_ranks_by_quality_then_difficulty_then_code(self):
+        self.assertEqual(self.candidate_codes(), ["CIS-1100", "CIS-1600", "CIS-1200"])
 
     def test_null_quality_sorts_last(self):
         self.high.precompute_course_quality = None
         self.high.save()
         self.mid.precompute_course_quality = Decimal("2")
         self.mid.save()
-        ghost = suggest(self.plan)["items"][0]
-        self.assertEqual(ghost["full_code"], "CIS-1600")
+        self.assertEqual(self.candidate_codes(), ["CIS-1600", "CIS-1200", "CIS-1100"])
 
     def test_excludes_on_plan_codes_and_crosslists(self):
         twin, _, _, _ = get_or_create_course_and_section(
@@ -231,7 +240,9 @@ class SuggestTest(TestCase):
         self.assertEqual(items[0]["kind"], "placement")
 
     def test_one_course_covers_two_shared_slots(self):
-        other = leaf("Also intro", Q(full_code="CIS-1100"), num=1, share_targets=[{"kind": "MAJOR"}])
+        other = leaf(
+            "Also intro", Q(full_code="CIS-1100"), num=1, share_targets=[{"kind": "MAJOR"}]
+        )
         self.rule.share_targets = [{"kind": "MAJOR"}]
         self.rule.block_type = "MAJOR"
         self.rule.block_value = "CIS"
@@ -247,11 +258,16 @@ class SuggestTest(TestCase):
         self.assertEqual(len(ghosts[0]["slot_ids"]), 2)
 
     def test_no_course_is_reused_across_slots(self):
-        self.rule.num = 2
-        self.rule.save()
-        ghosts = [item for item in suggest(self.plan)["items"] if item["kind"] == "course"]
-        self.assertEqual(len(ghosts), 2)
-        self.assertEqual(len({item["full_code"] for item in ghosts}), 2)
+        self.degree.rules.remove(self.rule)
+        first = leaf("First", Q(full_code="CIS-1100"), num=1)
+        second = leaf("Second", Q(full_code="CIS-1100"), num=1)
+        self.degree.rules.add(first, second)
+        items = suggest(self.plan)["items"]
+        ghosts = [item for item in items if item["full_code"] == "CIS-1100"]
+        self.assertEqual(len(ghosts), 1)
+        self.assertEqual(len(ghosts[0]["rules"]), 1)
+        other = next(item for item in items if item is not ghosts[0])
+        self.assertEqual(other["kind"], "placeholder")
 
     def test_broad_restriction_stays_a_placeholder(self):
         broad = leaf("Any CIS", Q(department__code="CIS"), num=1)
@@ -271,8 +287,7 @@ class SuggestTest(TestCase):
         course("CIS-1090", semester="2018C", quality=9)
         self.rule.q = repr(Q(full_code="CIS-1090") | Q(full_code="CIS-1100"))
         self.rule.save()
-        ghost = next(item for item in suggest(self.plan)["items"] if item["kind"] == "course")
-        self.assertEqual(ghost["full_code"], "CIS-1100")
+        self.assertEqual(self.candidate_codes(), ["CIS-1100"])
 
     def test_graduate_cap_keeps_the_undergrad_rule_only(self):
         grad = Degree.objects.create(program="EM_MSE", degree="MSE", major="CIS", year=2026)
@@ -306,14 +321,12 @@ class SuggestTest(TestCase):
                 degree_plan=degree_plan, full_code=code, semester="2023C"
             )
             fulfillment.rules.set([under, graduate])
-        ghosts = [
-            item
-            for item in suggest(degree_plan)["items"]
-            if item["kind"] == "course" and item["full_code"] == "CIS-5450"
-        ]
-        self.assertEqual(len(ghosts), 1)
-        self.assertIn(under.id, ghosts[0]["rules"])
-        self.assertNotIn(graduate.id, ghosts[0]["rules"])
+        items = suggest(degree_plan)["items"]
+        self.assertTrue(any(under.id in item["rules"] for item in items))
+        # Three shared CU already hit the graduate cap, so the last slots do not pair.
+        self.assertFalse(
+            any(under.id in item["rules"] and graduate.id in item["rules"] for item in items)
+        )
 
     def test_a_taken_course_is_not_suggested_again_for_a_rule_it_can_share(self):
         course("WRIT-0400")
@@ -419,7 +432,9 @@ class PackTest(TestCase):
             pack({"items": []}, [{"key": "fall", "cu_cap": 5}], pins=[])
 
     def test_transfer_bucket_is_ignored_and_future_terms_still_fill(self):
-        suggestions = {"items": [self.item("course", slot=f"slot:1:{i}", number=1000 + i) for i in range(8)]}
+        suggestions = {
+            "items": [self.item("course", slot=f"slot:1:{i}", number=1000 + i) for i in range(8)]
+        }
         result = pack(
             suggestions,
             [{"key": "_TRAN", "cu_cap": 5.5, "gap": False}] + semesters("2023C", "2024A", "2024C"),
@@ -432,7 +447,9 @@ class PackTest(TestCase):
         self.assertIn("2024C", semesters_used)
 
     def test_a_pinned_slot_stays_on_its_semester(self):
-        suggestions = {"items": [self.item("placeholder", slot="slot:9:0", code=None, number=10**9)]}
+        suggestions = {
+            "items": [self.item("placeholder", slot="slot:9:0", code=None, number=10**9)]
+        }
         result = pack(
             suggestions,
             semesters("2024C", "2025A"),
@@ -483,7 +500,9 @@ class GenerateInvariantsTest(TestCase):
                 fulfillment.rules.add(rule)
             gap = ("2024C",) if seed % 2 == 0 else ()
             result = generate_schedule(
-                degree_plan, semesters("2022A", "2024B", "2024C", "2025A", gap=gap), allow_summer=False
+                degree_plan,
+                semesters("2022A", "2024B", "2024C", "2025A", gap=gap),
+                allow_summer=False,
             )
             seen = set(placed)
             for row in result["placements"]:
@@ -574,7 +593,9 @@ class GenerateRoundTripTest(TestCase):
             )
             fulfillment.rules.set(ghost["rules"])
         second_pass = generate_schedule(degree_plan, body)
-        suggested = {row["full_code"] for row in second_pass["placements"] if row["kind"] == "course"}
+        suggested = {
+            row["full_code"] for row in second_pass["placements"] if row["kind"] == "course"
+        }
         self.assertTrue(suggested.isdisjoint({ghost["full_code"] for ghost in course_ghosts}))
 
     def test_slot_ids_survive_adding_an_unrelated_minor(self):
@@ -586,7 +607,9 @@ class GenerateRoundTripTest(TestCase):
         degree_plan = plan_for(degree, username="minor-add")
         before = {slot.slot_id for slot in open_slots(degree_plan)}
         minor = Minor.objects.create(program_code="MATH-MINOR", code="MATH", name="Math", year=2026)
-        minor.rules.add(leaf("Math", Q(full_code="MATH-1400"), num=1, block_type="MINOR", block_value="MATH"))
+        minor.rules.add(
+            leaf("Math", Q(full_code="MATH-1400"), num=1, block_type="MINOR", block_value="MATH")
+        )
         degree_plan.minors.add(minor)
         after = {slot.slot_id for slot in open_slots(degree_plan)}
         self.assertTrue(before <= after)

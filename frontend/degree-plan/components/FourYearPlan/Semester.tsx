@@ -180,7 +180,7 @@ const FlexSemester = ({
 
     const [{ isOver, canDrop }, drop] = useDrop<DnDCourse, never, { isOver: boolean, canDrop: boolean }>(() => ({
         accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_DOCK, ItemTypes.COURSE_IN_REQ, ItemTypes.COURSE_IN_SEARCH, ItemTypes.GHOST],
-        drop: (course: DnDCourse & { kind?: string; slot_ids?: string[]; rules?: number[]; semester?: string }, monitor) => {
+        drop: (course: DnDCourse & { kind?: string; slot_ids?: string[] }, monitor) => {
             const itemType = monitor.getItemType();
             if (itemType === ItemTypes.GHOST) {
                 // A requirement stub stays a stub. Pin it only when it moves to
