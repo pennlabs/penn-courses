@@ -1,7 +1,7 @@
 import FlexSemester, { SkeletonSemester } from "./Semester";
 import styled from "@emotion/styled";
 import { Icon } from "../common/bulma_derived_components";
-import { Course, DegreePlan, Fulfillment } from "@/types";
+import { Course, DegreePlan, Fulfillment, GeneratedPlacement, SemesterGenConfig } from "@/types";
 import useSWR from "swr";
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import Select from "react-select";
@@ -84,7 +84,7 @@ const YearInput = styled.input`
   border-width: 1px;
   border-top-left-radius: 0;
   border-top-right-radius: 0;
-  font-size: 1rem;
+  font-size: var(--type-body);
 `
 
 const selectStyles = (topOrBottom: boolean) => ({
@@ -192,6 +192,14 @@ interface SemestersProps {
   setEditMode: (arg0: boolean) => void;
   isLoading: boolean;
   currentSemester?: string;
+  ghosts?: GeneratedPlacement[];
+  genBySemester?: Record<string, SemesterGenConfig>;
+  onGenConfig?: (semester: string, next: SemesterGenConfig) => void;
+  onSemesterKeys?: (keys: string[]) => void;
+  syntheticKeys?: string[];
+  onPinSlot?: (slotId: string, semester: string) => void;
+  onUnpinSlot?: (slotId: string) => void;
+  pinnedSlots?: Record<string, string>;
 }
 
 const Semesters = ({
@@ -204,6 +212,14 @@ const Semesters = ({
   setEditMode,
   currentSemester,
   isLoading,
+  ghosts = [],
+  genBySemester,
+  onGenConfig,
+  onSemesterKeys,
+  syntheticKeys = [],
+  onPinSlot,
+  onUnpinSlot,
+  pinnedSlots,
 }: SemestersProps) => {
   const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<
     Fulfillment[]
@@ -284,6 +300,41 @@ const Semesters = ({
     }
   }, [semesters, activeDegreeplan]);
 
+  useEffect(() => {
+    onSemesterKeys?.(Object.keys(semesters));
+  }, [semesters]);
+
+  const semesterKeyList = Object.keys(semesters).sort().join("|");
+  useEffect(() => {
+    const withGhosts = new Set(ghosts.map((ghost) => ghost.semester).filter(Boolean));
+    setSemesters((current) => {
+      const next = { ...current };
+      let changed = false;
+      syntheticKeys.forEach((key) => {
+        if (withGhosts.has(key) && !next[key]) {
+          next[key] = [];
+          changed = true;
+        }
+      });
+      // A trailing column with no courses and no suggestions is not part of the plan.
+      Object.keys(next).forEach((key) => {
+        if (!/^\d{4}[ABC]$/.test(key)) return;
+        if ((next[key] || []).length > 0 || withGhosts.has(key)) return;
+        if (key <= (currentSemester || "")) return;
+        const laterHasWork = Object.keys(next).some(
+          (other) =>
+            /^\d{4}[ABC]$/.test(other) &&
+            other > key &&
+            ((next[other] || []).length > 0 || withGhosts.has(other))
+        );
+        if (laterHasWork) return;
+        delete next[key];
+        changed = true;
+      });
+      return changed ? next : current;
+    });
+  }, [syntheticKeys, ghosts, currentSemester, semesterKeyList]);
+
   /** Parse fulfillments and group them by semesters */
   useEffect(() => {
     if (!activeDegreeplan || !fulfillments || isLoadingFulfillments) return; // TODO: need more logic in this case
@@ -308,14 +359,29 @@ const Semesters = ({
     } 
   }, [fulfillments, activeDegreeplan, isLoadingFulfillments]);
 
+  const visibleSemesters = Object.keys(semesters)
+    .sort((a, b) => a.localeCompare(b))
+    .filter((key, _index, all) => {
+      if (!/^\d{4}[ABC]$/.test(key)) return true;
+      const hasFulfillment = (semesters[key] || []).length > 0;
+      const hasGhost = ghosts.some((ghost) => ghost.semester === key);
+      if (hasFulfillment || hasGhost) return true;
+      if (key <= (currentSemester || "")) return true;
+      return all.some(
+        (other) =>
+          /^\d{4}[ABC]$/.test(other) &&
+          other > key &&
+          ((semesters[other] || []).length > 0 || ghosts.some((ghost) => ghost.semester === other))
+      );
+    });
+
   return (
     <SemestersContainer className={className}>
       {isLoading
         ? Array.from(Array(8).keys()).map(() => (
             <SkeletonSemester showStats={showStats} />
           ))
-        : Object.keys(semesters)
-            .sort((a,b) => a.localeCompare(b))
+        : visibleSemesters
             .map((semester: any) => (
               <FlexSemester
                 activeDegreeplanId={activeDegreeplan?.id}
@@ -329,6 +395,12 @@ const Semesters = ({
                 setModalObject={setModalObject}
                 currentSemester={currentSemester}
                 numSemesters={Object.keys(semesters).length}
+                ghosts={ghosts.filter((ghost) => ghost.semester === semester)}
+                genConfig={genBySemester?.[semester]}
+                onGenConfig={onGenConfig ? (next) => onGenConfig(semester, next) : undefined}
+                onPinSlot={onPinSlot}
+                onUnpinSlot={onUnpinSlot}
+                pinnedSlots={pinnedSlots}
               />
             ))}
       {editMode && (

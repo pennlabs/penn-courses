@@ -77,12 +77,61 @@ export interface Degree extends DBObject {
   rules: Rule[];
 }
 
+export interface DualProgram {
+  code: string;
+  name: string;
+  left_programs: string[];
+  right_programs: string[];
+  left_allowed_majors: string[];
+  right_allowed_majors: string[];
+  left_variant: string | null;
+  right_variant: string | null;
+  cu_floor: number | null;
+  max_shared_cu: number | null;
+}
+
+/** One slice of a plan after dual-degree composition: a degree, a major block, or shared College requirements. */
+export interface PlanComponent {
+  key: string;
+  relation: "degrees" | "majors" | "minors" | "college" | "degree-major";
+  id: number | null;
+  role: string;
+  title: string;
+  year: number | null;
+  program: string | null;
+  removable: boolean;
+  rules: Rule[];
+}
+
+export interface PlanViolation {
+  full_code: string;
+  kind: "too_many_degrees" | "undergrad_grad_cu" | "grad_grad" | "also_offered";
+  components: string[];
+  message?: string;
+}
+
+export interface PlanSummary {
+  kind: string;
+  dual_program: { code: string; name: string } | null;
+  course_claims: { [fullCode: string]: string[] };
+  violations: PlanViolation[];
+  cas: {
+    floor: number;
+    major_cu: number;
+    shared_cu: number;
+    remaining: number;
+  } | null;
+}
+
 export interface DegreePlan extends DBObject {
   id: number;
   degrees: Degree[]
   /** Majors pursued beyond the one this plan's degree already includes. */
   majors: Major[]
   minors: Minor[]
+  dual_program?: DualProgram | null;
+  right_variant?: string | null;
+  components?: PlanComponent[];
   name: string;
   updated_at: string;
   created_at: string;
@@ -143,12 +192,49 @@ export interface Fulfillment extends DBObject {
   unselected_rules: number[];
   overrides: number[]; // rule IDs manually overridden to count for
   legal: boolean;
+  /** True when the course was read from a transcript. Otherwise it was added on the plan. */
+  from_transcript?: boolean;
 }
 
 // Internal representation of a plan (this is derived from fulfillments)
 export interface Semester {
   semester: string;
   courses: string[];
+}
+
+export interface GeneratedPlacement {
+  slot_ids: string[];
+  kind: "course" | "placeholder" | "placement";
+  full_code: string | null;
+  fulfillment_id: number | null;
+  label: string;
+  /** Compact schedule code, such as `ESE 2000+` or `CIS 1100/CIS 1200 (+3)`. */
+  short_label?: string;
+  cu: number;
+  semester: string;
+  alternatives: string[];
+  rules: number[];
+  /** Degree component this card belongs to, when it is not claimed on a rule. */
+  component_key?: string;
+  rule_q: string | null;
+  /** Two open slots, one card. alternatives are courses that could fill both. */
+  overlap?: boolean;
+}
+
+export interface GenerateResponse {
+  placements: GeneratedPlacement[];
+  semesters: { key: string; synthetic: boolean }[];
+  unplaced: { slot_id: string | null; full_code: string | null; reason: string }[];
+  open_rule_count: number;
+  generated_cu: number;
+  course_claims?: { [fullCode: string]: string[] };
+  violations?: PlanViolation[];
+  claims_updated?: boolean;
+}
+
+export interface SemesterGenConfig {
+  cuCap: number;
+  gap: boolean;
 }
 
 export function assertValueType<T, K extends keyof T>(obj: T, idKey: K, value: any): asserts value is T[K] {
