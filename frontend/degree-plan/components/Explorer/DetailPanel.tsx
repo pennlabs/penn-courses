@@ -1,6 +1,8 @@
+import { Fragment } from "react";
 import styled from "@emotion/styled";
-import type { Degree, Rule } from "@/types";
+import type { Rule } from "@/types";
 import { isLeaf } from "./graph";
+import type { Program } from "./programs";
 import { qToText } from "./qToText";
 import { blockText, requirementText, ruleTitle, shareTargetText } from "./ruleText";
 
@@ -86,41 +88,33 @@ const RuleDetails = ({ rule }: { rule: Rule }) => (
   </>
 );
 
-const DegreeDetails = ({ degree }: { degree: Degree }) => (
+const ProgramDetails = ({ program }: { program: Program }) => (
   <>
-    <Heading>
-      {degree.degree} {degree.major_name || degree.major}
-    </Heading>
+    <Heading>{program.name}</Heading>
     <Fields>
-      <dt>Degree id</dt>
-      <dd>{degree.id}</dd>
-      <dt>Program</dt>
-      <dd>{degree.program}</dd>
-      <dt>Major</dt>
-      <dd>{degree.major}</dd>
-      <dt>Concentration</dt>
-      <dd>{degree.concentration_name || degree.concentration || "—"}</dd>
-      <dt>Year</dt>
-      <dd>{degree.year}</dd>
-      <dt>Top-level rules</dt>
-      <dd>{degree.rules.length}</dd>
+      {program.facts.map(([label, value]) => (
+        <Fragment key={label}>
+          <dt>{label}</dt>
+          <dd>{value}</dd>
+        </Fragment>
+      ))}
     </Fields>
   </>
 );
 
 interface DetailPanelProps {
-  degree: Degree;
-  /** The selected rule, or null when the degree itself (or nothing) is selected. */
+  /** The selected rule, if a rule is selected. */
   rule: Rule | null;
-  degreeSelected: boolean;
+  /** The selected program, if a program's own node is selected. */
+  program: Program | null;
 }
 
-const DetailPanel = ({ degree, rule, degreeSelected }: DetailPanelProps) => (
+const DetailPanel = ({ rule, program }: DetailPanelProps) => (
   <Panel>
     {rule ? (
       <RuleDetails rule={rule} />
-    ) : degreeSelected ? (
-      <DegreeDetails degree={degree} />
+    ) : program ? (
+      <ProgramDetails program={program} />
     ) : (
       <Hint>Click a node to see its details. Use + to expand a group.</Hint>
     )}

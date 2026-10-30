@@ -4,7 +4,19 @@ import { useRouter } from "next/router";
 import styled from "@emotion/styled";
 import Select from "react-select";
 import useSWR from "swr";
-import type { Degree, DegreeListing } from "@/types";
+import type { DegreeListing } from "@/types";
+import {
+  componentLabel,
+  degreeLabel,
+  ENDPOINTS,
+  parseProgramKeys,
+  programKey,
+  toProgram,
+  type MajorListing,
+  type MinorListing,
+  type Program,
+  type ProgramRef,
+} from "@/components/Explorer/programs";
 
 // React Flow and elkjs measure the DOM, so render the graph on the client only.
 const DegreeExplorer = dynamic(() => import("@/components/Explorer/DegreeExplorer"), {
@@ -50,35 +62,66 @@ const Message = styled.div`
   color: #57606a;
 `;
 
-const degreeLabel = (d: DegreeListing) =>
-  [d.year, d.degree, d.major_name || d.major, d.concentration_name || d.concentration]
-    .filter(Boolean)
-    .join(" · ");
-
 const errorMessage = (error: { status?: number }) =>
   error.status === 401 || error.status === 403
     ? "Log in to Penn Degree Plan (with beta access) to use the explorer."
-    : "Couldn't load degrees. Is the backend running?";
+    : "Couldn't load programs. Is the backend running?";
+
+interface ProgramOption extends ProgramRef {
+  value: string;
+  label: string;
+}
+
+const option = (ref: ProgramRef, label: string): ProgramOption => ({
+  ...ref,
+  value: programKey(ref),
+  label,
+});
 
 /**
- * Internal tool for viewing how a degree's rules fit together. Not linked from the app.
- * The selected degree is kept in the URL (?degree=<id>) so a view can be shared.
+ * Internal tool for viewing how programs' rules fit together. Not linked from the app.
+ * Pick any mix of degrees, majors and minors, e.g. two degrees from different schools.
+ * The selection is kept in the URL (?programs=degree-3,major-12) so a view can be shared.
  */
 export default function ExplorerPage() {
   const router = useRouter();
-  const degreeId = typeof router.query.degree === "string" ? router.query.degree : null;
+  const refs = parseProgramKeys(router.query.programs);
+  const selectedKeys = refs.map(programKey).join(",");
 
-  const { data: degrees, error: listError } = useSWR<DegreeListing[]>(
-    "/api/degree/degrees",
+  const { data: degrees, error: degreesError } = useSWR<DegreeListing[]>(
+    ENDPOINTS.degree,
     fetcher
   );
-  const { data: degree, error: degreeError } = useSWR<Degree>(
-    degreeId ? `/api/degree/degrees/${degreeId}` : null,
-    fetcher
+  const { data: majors, error: majorsError } = useSWR<MajorListing[]>(ENDPOINTS.major, fetcher);
+  const { data: minors, error: minorsError } = useSWR<MinorListing[]>(ENDPOINTS.minor, fetcher);
+
+  const { data: programs, error: programsError } = useSWR<Program[]>(
+    selectedKeys ? `explorer-programs:${selectedKeys}` : null,
+    () =>
+      Promise.all(
+        refs.map(async (ref) => toProgram(ref, await fetcher(`${ENDPOINTS[ref.kind]}/${ref.id}`)))
+      ),
+    // Keep showing the current trees while a changed selection loads.
+    { keepPreviousData: true }
   );
 
-  const options = (degrees ?? []).map((d) => ({ value: d.id, label: degreeLabel(d) }));
-  const error = listError ?? degreeError;
+  const groups = [
+    {
+      label: "Degrees",
+      options: (degrees ?? []).map((d) => option({ kind: "degree", id: d.id }, degreeLabel(d))),
+    },
+    {
+      label: "Majors",
+      options: (majors ?? []).map((m) => option({ kind: "major", id: m.id }, componentLabel(m))),
+    },
+    {
+      label: "Minors",
+      options: (minors ?? []).map((m) => option({ kind: "minor", id: m.id }, componentLabel(m))),
+    },
+  ];
+  const allOptions = groups.flatMap((group) => group.options);
+  const loadingLists = !degrees || !majors || !minors;
+  const error = degreesError ?? majorsError ?? minorsError ?? programsError;
 
   return (
     <Page>
@@ -87,26 +130,33 @@ export default function ExplorerPage() {
       </Head>
       <Header>
         <h1>Degree Explorer</h1>
-        <div style={{ flex: 1, maxWidth: 560 }}>
+        <div style={{ flex: 1, maxWidth: 720 }}>
           <Select
-            instanceId="degree-select"
-            placeholder={degrees ? "Pick a degree..." : "Loading degrees..."}
-            options={options}
-            value={options.find((o) => String(o.value) === degreeId) ?? null}
-            onChange={(option) =>
-              option && router.push({ query: { degree: option.value } }, undefined, { shallow: true })
+            instanceId="program-select"
+            isMulti
+            placeholder={loadingLists ? "Loading programs..." : "Pick degrees, majors or minors..."}
+            options={groups}
+            value={refs
+              .map((ref) => allOptions.find((o) => o.value === programKey(ref)))
+              .filter((o): o is ProgramOption => o !== undefined)}
+            onChange={(selected) =>
+              router.push(
+                { query: selected.length ? { programs: selected.map((o) => o.value).join(",") } : {} },
+                undefined,
+                { shallow: true }
+              )
             }
           />
         </div>
       </Header>
       {error ? (
         <Message>{errorMessage(error)}</Message>
-      ) : !degreeId ? (
-        <Message>Pick a degree to see its rule tree.</Message>
-      ) : !degree ? (
-        <Message>Loading degree...</Message>
+      ) : !selectedKeys ? (
+        <Message>Pick one or more programs to see their rule trees.</Message>
+      ) : !programs ? (
+        <Message>Loading programs...</Message>
       ) : (
-        <DegreeExplorer degree={degree} />
+        <DegreeExplorer programs={programs} />
       )}
     </Page>
   );

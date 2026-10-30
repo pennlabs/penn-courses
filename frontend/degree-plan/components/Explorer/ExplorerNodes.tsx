@@ -1,7 +1,7 @@
 import { createContext, memo, useContext } from "react";
 import styled from "@emotion/styled";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
-import type { DegreeNode, GroupNode, LeafNode } from "./graph";
+import type { GroupNode, LeafNode, ProgramNode } from "./graph";
 import { NODE_HEIGHT, NODE_WIDTH } from "./graph";
 import { blockText, requirementText, ruleTitle } from "./ruleText";
 import { qToText } from "./qToText";
@@ -101,23 +101,21 @@ const Handles = ({ source = true, target = true }) => (
 
 const join = (parts: (string | false | null | undefined)[]) => parts.filter(Boolean).join(" · ");
 
-export const DegreeNodeView = memo(({ id, data, selected }: NodeProps<DegreeNode>) => {
-  const { degree, expanded } = data;
+export const ProgramNodeView = memo(({ id, data, selected }: NodeProps<ProgramNode>) => {
+  const { program, expanded } = data;
   return (
-    <Card $selected={!!selected} $accent="#1f2328" $height={NODE_HEIGHT.degree}>
+    <Card $selected={!!selected} $accent="#1f2328" $height={NODE_HEIGHT.program}>
       <Handles target={false} />
       <TopRow>
-        <Title>{join([degree.degree, degree.major_name || degree.major])}</Title>
+        <Title>{program.name}</Title>
         <Toggle id={id} expanded={expanded} />
       </TopRow>
-      <Meta>
-        {join([degree.program, String(degree.year), degree.concentration_name || degree.concentration])}
-      </Meta>
-      <Meta>{degree.rules.length} top-level rules</Meta>
+      <Meta>{program.summary}</Meta>
+      <Meta>{program.rules.length} top-level rules</Meta>
     </Card>
   );
 });
-DegreeNodeView.displayName = "DegreeNodeView";
+ProgramNodeView.displayName = "ProgramNodeView";
 
 export const GroupNodeView = memo(({ id, data, selected }: NodeProps<GroupNode>) => {
   const { rule, leafCount, expanded } = data;
@@ -153,7 +151,7 @@ export const LeafNodeView = memo(({ data, selected }: NodeProps<LeafNode>) => {
 LeafNodeView.displayName = "LeafNodeView";
 
 export const nodeTypes = {
-  degree: DegreeNodeView,
+  program: ProgramNodeView,
   group: GroupNodeView,
   leaf: LeafNodeView,
 };

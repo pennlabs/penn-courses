@@ -12,17 +12,10 @@ import {
   type Edge,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import type { Degree } from "@/types";
-import {
-  allExpandableIds,
-  buildGraph,
-  DEGREE_NODE_ID,
-  layoutGraph,
-  type ExplorerNode,
-  type NodeKind,
-} from "./graph";
+import { allGroupIds, buildGraph, layoutGraph, type ExplorerNode, type NodeKind } from "./graph";
 import { nodeTypes, ToggleContext } from "./ExplorerNodes";
 import DetailPanel from "./DetailPanel";
+import type { Program } from "./programs";
 
 const Layout = styled.div`
   display: flex;
@@ -55,23 +48,29 @@ const Toolbar = styled.div`
 `;
 
 const MINIMAP_COLORS: Record<NodeKind, string> = {
-  degree: "#1f2328",
+  program: "#1f2328",
   group: "#8250df",
   leaf: "#1a7f37",
 };
 
-const Explorer = ({ degree }: { degree: Degree }) => {
+const Explorer = ({ programs }: { programs: Program[] }) => {
   const { fitView } = useReactFlow();
   const [nodes, setNodes, onNodesChange] = useNodesState<ExplorerNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
-  const [expanded, setExpanded] = useState<Set<string>>(() => new Set([DEGREE_NODE_ID]));
+  // Node ids flipped from their default (programs open, groups closed); see buildGraph.
+  const [toggled, setToggled] = useState<Set<string>>(() => new Set());
   // Fit the whole tree into view after the next layout, rather than after every toggle,
   // so expanding a group doesn't yank the viewport away from it.
   const fitPending = useRef(true);
 
+  const programKeys = programs.map((p) => p.key).join(",");
+  useEffect(() => {
+    fitPending.current = true;
+  }, [programKeys]);
+
   useEffect(() => {
     let stale = false;
-    const graph = buildGraph(degree, expanded);
+    const graph = buildGraph(programs, toggled);
     layoutGraph(graph.nodes, graph.edges).then((positioned) => {
       if (stale) return;
       // Carry the selection over, since these are new node objects.
@@ -84,7 +83,7 @@ const Explorer = ({ degree }: { degree: Degree }) => {
     return () => {
       stale = true;
     };
-  }, [degree, expanded, setNodes, setEdges]);
+  }, [programs, toggled, setNodes, setEdges]);
 
   useEffect(() => {
     if (!fitPending.current || nodes.length === 0) return;
@@ -94,7 +93,7 @@ const Explorer = ({ degree }: { degree: Degree }) => {
   }, [nodes, fitView]);
 
   const toggle = useCallback((id: string) => {
-    setExpanded((previous) => {
+    setToggled((previous) => {
       const next = new Set(previous);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -104,11 +103,11 @@ const Explorer = ({ degree }: { degree: Degree }) => {
 
   const expandAll = () => {
     fitPending.current = true;
-    setExpanded(new Set(allExpandableIds(degree)));
+    setToggled(new Set(allGroupIds(programs)));
   };
   const collapseAll = () => {
     fitPending.current = true;
-    setExpanded(new Set([DEGREE_NODE_ID]));
+    setToggled(new Set());
   };
 
   const selected = useMemo(() => nodes.find((n) => n.selected), [nodes]);
@@ -141,19 +140,17 @@ const Explorer = ({ degree }: { degree: Degree }) => {
         </ToggleContext.Provider>
       </Canvas>
       <DetailPanel
-        degree={degree}
         rule={selected && "rule" in selected.data ? selected.data.rule : null}
-        degreeSelected={selected?.type === "degree"}
+        program={selected && "program" in selected.data ? selected.data.program : null}
       />
     </Layout>
   );
 };
 
-/** A read-only, collapsible graph of one degree's rule tree. */
-const DegreeExplorer = ({ degree }: { degree: Degree }) => (
+/** A read-only, collapsible graph of one or more programs' rule trees, one root each. */
+const DegreeExplorer = ({ programs }: { programs: Program[] }) => (
   <ReactFlowProvider>
-    {/* Keyed so switching degrees starts from a fresh, collapsed tree */}
-    <Explorer key={degree.id} degree={degree} />
+    <Explorer programs={programs} />
   </ReactFlowProvider>
 );
 
