@@ -1,4 +1,4 @@
-import type { Rule } from "@/types";
+import type { Fulfillment, Rule } from "@/types";
 import { isLeaf, ruleNodeId } from "./graph";
 import type { Program } from "./programs";
 import type { QJson } from "./qToText";
@@ -21,16 +21,28 @@ export interface CourseDetail {
   attributes: { code: string }[];
 }
 
-export const toMatchableCourse = (course: CourseDetail): MatchableCourse => {
-  const [department, code] = course.id.split("-");
-  return {
-    full_code: course.id,
-    department,
-    code,
-    semester: course.semester,
-    attributes: course.attributes.map((a) => a.code),
-  };
+const matchableCourse = (
+  fullCode: string,
+  semester: string,
+  attributes: string[]
+): MatchableCourse => {
+  const [department, code] = fullCode.split("-");
+  return { full_code: fullCode, department, code, semester, attributes };
 };
+
+export const toMatchableCourse = (course: CourseDetail): MatchableCourse =>
+  matchableCourse(course.id, course.semester, course.attributes.map((a) => a.code));
+
+/**
+ * A plan's course, using the catalog course the backend attached to it. A course missing from
+ * the catalog has no attributes, so only rules that name it can match it.
+ */
+export const fulfillmentCourse = (fulfillment: Fulfillment): MatchableCourse =>
+  matchableCourse(
+    fulfillment.full_code,
+    fulfillment.course?.semester ?? fulfillment.semester ?? "",
+    fulfillment.course?.attribute_codes ?? []
+  );
 
 /** "cis 1200" or "CIS1200" → "CIS-1200". */
 export const normalizeFullCode = (input: string) =>

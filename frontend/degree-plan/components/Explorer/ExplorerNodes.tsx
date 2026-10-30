@@ -67,6 +67,15 @@ const Query = styled.div`
   -webkit-box-orient: vertical;
 `;
 
+const Courses = styled.div`
+  color: #9a6700;
+  font-weight: 600;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
 const ToggleButton = styled.button`
   flex-shrink: 0;
   width: 22px;
@@ -167,6 +176,13 @@ export const LeafNodeView = memo(({ data, selected }: NodeProps<LeafNode>) => {
       </Meta>
       {/* Untitled leaves already show their query as the title */}
       {rule.title && <Query>{qToText(rule.q_json)}</Query>}
+      {data.courses.length > 0 && (
+        <Courses title="Courses in the plan that could fill this. ✓ = the plan put it here.">
+          {data.courses
+            .map((c) => `${c.fullCode.replace("-", " ")}${c.placed ? " ✓" : ""}`)
+            .join(" · ")}
+        </Courses>
+      )}
     </Card>
   );
 });

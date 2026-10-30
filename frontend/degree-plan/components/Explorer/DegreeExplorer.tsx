@@ -11,6 +11,7 @@ import {
   type Edge,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import type { Fulfillment } from "@/types";
 import {
   allGroupIds,
   buildGraph,
@@ -23,7 +24,9 @@ import {
 import { nodeTypes, ToggleContext } from "./ExplorerNodes";
 import DetailPanel from "./DetailPanel";
 import MatchPanel from "./MatchPanel";
+import PlanPanel from "./PlanPanel";
 import { findMatches, matchNodeIds, toMatchableCourse, type CourseDetail } from "./matcher";
+import { leafCourses, toPlanCourses } from "./plan";
 import type { Program } from "./programs";
 
 const Layout = styled.div`
@@ -35,6 +38,22 @@ const Layout = styled.div`
 const Canvas = styled.div`
   flex: 1;
   position: relative;
+`;
+
+// The current course's buckets, then the clicked node's details.
+const RightBar = styled.aside`
+  width: 340px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  border-left: 1px solid #d0d4da;
+  background: #fff;
+  padding: 1rem;
+  font-size: 0.85rem;
+  & > section + section {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 1px solid #d0d4da;
+  }
 `;
 
 const Toolbar = styled.div`
@@ -60,9 +79,11 @@ interface ExplorerProps {
   programs: Program[];
   /** The searched course, if any; its matching leaves are highlighted and listed. */
   course: CourseDetail | null;
+  /** The degree plan the programs came from, if any; its courses are shown on the trees. */
+  plan: { name: string; fulfillments: Fulfillment[] } | null;
 }
 
-const Explorer = ({ programs, course }: ExplorerProps) => {
+const Explorer = ({ programs, course, plan }: ExplorerProps) => {
   const { fitView, getNode, setCenter } = useReactFlow();
   const [nodes, setNodes, onNodesChange] = useNodesState<ExplorerNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
@@ -77,12 +98,32 @@ const Explorer = ({ programs, course }: ExplorerProps) => {
     fitPending.current = true;
   }, [programKeys]);
 
-  const matchable = useMemo(() => course && toMatchableCourse(course), [course]);
-  const matches = useMemo(
-    () => (matchable ? findMatches(programs, matchable) : []),
-    [programs, matchable]
+  const searched = useMemo(() => course && toMatchableCourse(course), [course]);
+  const searchMatches = useMemo(
+    () => (searched ? findMatches(programs, searched) : []),
+    [programs, searched]
   );
-  const highlighted = useMemo(() => matchNodeIds(matches), [matches]);
+
+  const planCourses = useMemo(
+    () => (plan ? toPlanCourses(programs, plan.fulfillments) : []),
+    [programs, plan]
+  );
+  // A course picked from the plan's list, to see its buckets alone.
+  const [focusedCode, setFocusedCode] = useState<string | null>(null);
+  useEffect(() => setFocusedCode(null), [plan]);
+  const focused = planCourses.find((c) => c.fulfillment.full_code === focusedCode) ?? null;
+
+  // The search wins, then a course picked from the plan, then every course in the plan.
+  const activeMatches = useMemo(
+    () =>
+      searched ? searchMatches : focused ? focused.matches : planCourses.flatMap((c) => c.matches),
+    [searched, searchMatches, focused, planCourses]
+  );
+  const overlay = useMemo(
+    () => ({ highlighted: matchNodeIds(activeMatches), courses: leafCourses(planCourses) }),
+    [activeMatches, planCourses]
+  );
+  const { highlighted } = overlay;
 
   // Open the path to every match, so each matching leaf is on the canvas.
   useEffect(() => {
@@ -103,7 +144,7 @@ const Explorer = ({ programs, course }: ExplorerProps) => {
 
   useEffect(() => {
     let stale = false;
-    const graph = buildGraph(programs, toggled, highlighted);
+    const graph = buildGraph(programs, toggled, overlay);
     layoutGraph(graph.nodes, graph.edges).then((positioned) => {
       if (stale) return;
       // Carry the selection over, since these are new node objects.
@@ -116,7 +157,7 @@ const Explorer = ({ programs, course }: ExplorerProps) => {
     return () => {
       stale = true;
     };
-  }, [programs, toggled, highlighted, setNodes, setEdges]);
+  }, [programs, toggled, overlay, setNodes, setEdges]);
 
   useEffect(() => {
     if (!fitPending.current || nodes.length === 0) return;
@@ -155,16 +196,17 @@ const Explorer = ({ programs, course }: ExplorerProps) => {
   };
 
   const selected = useMemo(() => nodes.find((n) => n.selected), [nodes]);
+  const selectedRule = selected && "rule" in selected.data ? selected.data.rule : null;
+  const selectedProgram = selected && "program" in selected.data ? selected.data.program : null;
 
   return (
     <Layout>
-      {course && matchable && (
-        <MatchPanel
-          course={matchable}
-          title={course.title}
-          programs={programs}
-          matches={matches}
-          onSelect={focusNode}
+      {plan && (
+        <PlanPanel
+          name={plan.name}
+          planCourses={planCourses}
+          current={searched ? searched.full_code : focusedCode}
+          onSelect={setFocusedCode}
         />
       )}
       <Canvas>
@@ -191,10 +233,35 @@ const Explorer = ({ programs, course }: ExplorerProps) => {
           </ReactFlow>
         </ToggleContext.Provider>
       </Canvas>
-      <DetailPanel
-        rule={selected && "rule" in selected.data ? selected.data.rule : null}
-        program={selected && "program" in selected.data ? selected.data.program : null}
-      />
+      {(searched || focused || selected) && (
+        <RightBar>
+          {course && searched ? (
+            <MatchPanel
+              course={searched}
+              title={course.title}
+              programs={programs}
+              matches={searchMatches}
+              onSelect={focusNode}
+              placed={
+                planCourses.find((c) => c.fulfillment.full_code === searched.full_code)
+                  ?.fulfillment.rules
+              }
+            />
+          ) : (
+            focused && (
+              <MatchPanel
+                course={focused.course}
+                title={focused.fulfillment.course?.title}
+                programs={programs}
+                matches={focused.matches}
+                onSelect={focusNode}
+                placed={focused.fulfillment.rules}
+              />
+            )
+          )}
+          <DetailPanel rule={selectedRule} program={selectedProgram} />
+        </RightBar>
+      )}
     </Layout>
   );
 };

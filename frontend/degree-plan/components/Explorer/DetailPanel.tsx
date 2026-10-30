@@ -6,16 +6,6 @@ import type { Program } from "./programs";
 import { qToText } from "./qToText";
 import { blockText, requirementText, ruleTitle, shareTargetText } from "./ruleText";
 
-const Panel = styled.aside`
-  width: 340px;
-  flex-shrink: 0;
-  overflow-y: auto;
-  border-left: 1px solid #d0d4da;
-  background: #fff;
-  padding: 1rem;
-  font-size: 0.85rem;
-`;
-
 const Heading = styled.h2`
   font-size: 1rem;
   font-weight: 600;
@@ -44,10 +34,6 @@ const Code = styled.pre`
   font-size: 0.72rem;
   white-space: pre-wrap;
   word-break: break-word;
-`;
-
-const Hint = styled.p`
-  color: #57606a;
 `;
 
 const RuleDetails = ({ rule }: { rule: Rule }) => (
@@ -109,16 +95,15 @@ interface DetailPanelProps {
   program: Program | null;
 }
 
-const DetailPanel = ({ rule, program }: DetailPanelProps) => (
-  <Panel>
-    {rule ? (
+const DetailPanel = ({ rule, program }: DetailPanelProps) =>
+  rule ? (
+    <section>
       <RuleDetails rule={rule} />
-    ) : program ? (
+    </section>
+  ) : program ? (
+    <section>
       <ProgramDetails program={program} />
-    ) : (
-      <Hint>Click a node to see its details. Use + to expand a group.</Hint>
-    )}
-  </Panel>
-);
+    </section>
+  ) : null;
 
 export default DetailPanel;

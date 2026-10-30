@@ -1,16 +1,17 @@
 import dynamic from "next/dynamic";
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import styled from "@emotion/styled";
 import Select from "react-select";
 import useSWR from "swr";
-import type { DegreeListing } from "@/types";
+import type { DegreeListing, DegreePlan, Fulfillment } from "@/types";
 import {
   componentLabel,
   degreeLabel,
   ENDPOINTS,
   parseProgramKeys,
+  planPrograms,
   programKey,
   toProgram,
   type MajorListing,
@@ -98,14 +99,16 @@ const option = (ref: ProgramRef, label: string): ProgramOption => ({
 /**
  * Internal tool for viewing how programs' rules fit together. Not linked from the app.
  * Pick any mix of degrees, majors and minors, e.g. two degrees from different schools.
+ * Or open one of your degree plans to see its programs, with every course on the trees.
  * Search a course to highlight every requirement it can count toward.
- * The selection is kept in the URL (?programs=degree-3,major-12&course=CIS-1200) so a view
- * can be shared.
+ * The selection is kept in the URL (?programs=degree-3,major-12&course=CIS-1200, or
+ * ?plan=5) so a view can be shared.
  */
 export default function ExplorerPage() {
   const router = useRouter();
   const refs = parseProgramKeys(router.query.programs);
   const selectedKeys = refs.map(programKey).join(",");
+  const planId = typeof router.query.plan === "string" ? router.query.plan : "";
   const courseCode = typeof router.query.course === "string" ? router.query.course : "";
   const [courseInput, setCourseInput] = useState(courseCode);
   useEffect(() => setCourseInput(courseCode), [courseCode]);
@@ -123,8 +126,29 @@ export default function ExplorerPage() {
   const { data: majors, error: majorsError } = useSWR<MajorListing[]>(ENDPOINTS.major, fetcher);
   const { data: minors, error: minorsError } = useSWR<MinorListing[]>(ENDPOINTS.minor, fetcher);
 
-  const { data: programs, error: programsError } = useSWR<Program[]>(
-    selectedKeys ? `explorer-programs:${selectedKeys}` : null,
+  // Only the logged-in user's own plans.
+  const { data: plans, error: plansError } = useSWR<Pick<DegreePlan, "id" | "name">[]>(
+    "/api/degree/degreeplans",
+    fetcher
+  );
+  const { data: plan, error: planError } = useSWR<DegreePlan>(
+    planId ? `/api/degree/degreeplans/${planId}` : null,
+    fetcher
+  );
+  const { data: fulfillments, error: fulfillmentsError } = useSWR<Fulfillment[]>(
+    planId ? `/api/degree/degreeplans/${planId}/fulfillments` : null,
+    fetcher
+  );
+  const planView = useMemo(
+    () =>
+      plan && fulfillments
+        ? { programs: planPrograms(plan), overlay: { name: plan.name, fulfillments } }
+        : null,
+    [plan, fulfillments]
+  );
+
+  const { data: pickedPrograms, error: programsError } = useSWR<Program[]>(
+    selectedKeys && !planId ? `explorer-programs:${selectedKeys}` : null,
     () =>
       Promise.all(
         refs.map(async (ref) => toProgram(ref, await fetcher(`${ENDPOINTS[ref.kind]}/${ref.id}`)))
@@ -154,7 +178,14 @@ export default function ExplorerPage() {
   ];
   const allOptions = groups.flatMap((group) => group.options);
   const loadingLists = !degrees || !majors || !minors;
-  const error = degreesError ?? majorsError ?? minorsError ?? programsError;
+  const error =
+    degreesError ??
+    majorsError ??
+    minorsError ??
+    plansError ??
+    (planId ? planError ?? fulfillmentsError : programsError);
+  const programs = planId ? planView?.programs : pickedPrograms;
+  const planOptions = (plans ?? []).map((p) => ({ value: String(p.id), label: p.name }));
 
   return (
     <Page>
@@ -163,17 +194,39 @@ export default function ExplorerPage() {
       </Head>
       <Header>
         <h1>Degree Explorer</h1>
+        <div style={{ width: 220 }}>
+          <Select
+            instanceId="plan-select"
+            isClearable
+            placeholder={plans ? "Open a degree plan..." : "Loading plans..."}
+            options={planOptions}
+            styles={{ menu: (base) => ({ ...base, zIndex: 10 }) }}
+            value={planOptions.find((o) => o.value === planId) ?? null}
+            onChange={(selected) => setQuery({ plan: selected?.value ?? "" })}
+          />
+        </div>
         <div style={{ flex: 1, maxWidth: 720 }}>
           <Select
             instanceId="program-select"
             isMulti
-            placeholder={loadingLists ? "Loading programs..." : "Pick degrees, majors or minors..."}
+            isDisabled={!!planId}
+            placeholder={
+              planId
+                ? "Programs come from the degree plan"
+                : loadingLists
+                ? "Loading programs..."
+                : "Pick degrees, majors or minors..."
+            }
             options={groups}
             // Above the canvas toolbar and React Flow's panels, which sit at z-index 5
             styles={{ menu: (base) => ({ ...base, zIndex: 10 }) }}
-            value={refs
-              .map((ref) => allOptions.find((o) => o.value === programKey(ref)))
-              .filter((o): o is ProgramOption => o !== undefined)}
+            value={
+              planId
+                ? []
+                : refs
+                    .map((ref) => allOptions.find((o) => o.value === programKey(ref)))
+                    .filter((o): o is ProgramOption => o !== undefined)
+            }
             onChange={(selected) => setQuery({ programs: selected.map((o) => o.value).join(",") })}
           />
         </div>
@@ -198,12 +251,16 @@ export default function ExplorerPage() {
       </Header>
       {error ? (
         <Message>{errorMessage(error)}</Message>
-      ) : !selectedKeys ? (
-        <Message>Pick one or more programs to see their rule trees.</Message>
+      ) : !selectedKeys && !planId ? (
+        <Message>Pick one or more programs, or open a degree plan, to see their rule trees.</Message>
       ) : !programs ? (
         <Message>Loading programs...</Message>
       ) : (
-        <DegreeExplorer programs={programs} course={courseError ? null : course ?? null} />
+        <DegreeExplorer
+          programs={programs}
+          course={courseError ? null : course ?? null}
+          plan={planId ? planView?.overlay ?? null : null}
+        />
       )}
     </Page>
   );

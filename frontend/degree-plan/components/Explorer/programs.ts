@@ -1,4 +1,4 @@
-import type { Degree, DegreeListing, Major, Minor, Rule } from "@/types";
+import type { Degree, DegreeListing, DegreePlan, Major, Minor, Rule } from "@/types";
 
 /**
  * A Degree is a student's whole program (e.g. a SEAS BSE); a Major or Minor is only the block
@@ -109,3 +109,10 @@ export const toProgram = (ref: ProgramRef, data: Degree | Major | Minor): Progra
     rules: c.rules,
   };
 };
+
+/** A degree plan's degrees, then its extra majors, then its minors. */
+export const planPrograms = (plan: DegreePlan): Program[] => [
+  ...plan.degrees.map((d) => toProgram({ kind: "degree", id: d.id }, d)),
+  ...plan.majors.map((m) => toProgram({ kind: "major", id: m.id }, m)),
+  ...plan.minors.map((m) => toProgram({ kind: "minor", id: m.id }, m)),
+];

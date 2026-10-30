@@ -8,8 +8,19 @@ import type { Program } from "./programs";
 export const ruleNodeId = (program: Program, rule: Rule) => `${program.key}/rule-${rule.id}`;
 
 export const NODE_WIDTH = 280;
-export const NODE_HEIGHT = { program: 72, group: 68, leaf: 84 };
+export const NODE_HEIGHT = { program: 72, group: 68, leaf: 100 };
 export type NodeKind = keyof typeof NODE_HEIGHT;
+
+/** A degree plan's course on a leaf it could fill; `placed` if the plan put it there. */
+export type LeafCourse = { fullCode: string; placed: boolean };
+
+/** What a searched course or a degree plan adds on top of the trees. */
+export interface Overlay {
+  /** Node ids on the path to a leaf the active course(s) match. */
+  highlighted: Set<string>;
+  /** Leaf node id → the plan's courses that could fill it. */
+  courses: Map<string, LeafCourse[]>;
+}
 
 export type ProgramNodeData = { program: Program; expanded: boolean; highlighted: boolean };
 export type RuleNodeData = {
@@ -19,6 +30,7 @@ export type RuleNodeData = {
   expanded: boolean;
   /** On the path to a leaf the searched course matches. */
   highlighted: boolean;
+  courses: LeafCourse[];
 };
 
 export type ProgramNode = Node<ProgramNodeData, "program">;
@@ -54,14 +66,13 @@ export const allGroupIds = (programs: Program[]): string[] => {
 /**
  * Flattens each program's nested rules into React Flow nodes and edges, one root per program.
  * Programs start expanded and groups collapsed; `toggled` holds the node ids flipped from
- * that default, so adding a program opens it without collapsing the others. `highlighted`
- * holds the node ids to mark for a searched course. Nodes come back unpositioned;
- * `layoutGraph` places them.
+ * that default, so adding a program opens it without collapsing the others. Nodes come back
+ * unpositioned; `layoutGraph` places them.
  */
 export const buildGraph = (
   programs: Program[],
   toggled: Set<string>,
-  highlighted: Set<string>
+  { highlighted, courses }: Overlay
 ): { nodes: ExplorerNode[]; edges: Edge[] } => {
   const leafCounts = new Map<number, number>();
   const position = { x: 0, y: 0 };
@@ -81,6 +92,7 @@ export const buildGraph = (
         leafCount: countLeaves(rule, leafCounts),
         expanded: isExpanded,
         highlighted: highlighted.has(id),
+        courses: courses.get(id) ?? [],
       },
     });
     edges.push({ id: `${parentId}->${id}`, source: parentId, target: id, type: "smoothstep" });

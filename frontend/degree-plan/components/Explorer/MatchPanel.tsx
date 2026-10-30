@@ -6,16 +6,6 @@ import type { Program } from "./programs";
 import { ruleTitle } from "./ruleText";
 import { verifyAgainstBackend, type VerifyResult } from "./verify";
 
-const Panel = styled.aside`
-  width: 300px;
-  flex-shrink: 0;
-  overflow-y: auto;
-  border-right: 1px solid #d0d4da;
-  background: #fff;
-  padding: 1rem;
-  font-size: 0.85rem;
-`;
-
 const Heading = styled.h2`
   font-size: 1rem;
   font-weight: 600;
@@ -122,15 +112,24 @@ const Verify = ({ programs, course }: { programs: Program[]; course: MatchableCo
 
 interface MatchPanelProps {
   course: MatchableCourse;
-  title: string;
+  title?: string;
   programs: Program[];
   matches: Match[];
   onSelect: (nodeId: string) => void;
+  /** Rule ids a degree plan put this course in, marked with ✓. */
+  placed?: number[];
 }
 
-/** Lists every requirement the searched course can count toward, grouped by program. */
-const MatchPanel = ({ course, title, programs, matches, onSelect }: MatchPanelProps) => (
-  <Panel>
+/** Lists every requirement a course can count toward, grouped by program. */
+const MatchPanel = ({
+  course,
+  title,
+  programs,
+  matches,
+  onSelect,
+  placed = [],
+}: MatchPanelProps) => (
+  <section>
     <Heading>{course.full_code.replace("-", " ")}</Heading>
     <Muted>{title}</Muted>
     <p>
@@ -146,6 +145,7 @@ const MatchPanel = ({ course, title, programs, matches, onSelect }: MatchPanelPr
           {own.map(({ leaf, path }) => (
             <MatchButton key={leaf.id} onClick={() => onSelect(ruleNodeId(program, leaf))}>
               {ruleTitle(leaf)}
+              {placed.includes(leaf.id) && " ✓"}
               {path.length > 1 && (
                 <Muted>{path.slice(0, -1).map(ruleTitle).join(" › ")}</Muted>
               )}
@@ -155,7 +155,7 @@ const MatchPanel = ({ course, title, programs, matches, onSelect }: MatchPanelPr
       );
     })}
     <Verify programs={programs} course={course} />
-  </Panel>
+  </section>
 );
 
 export default MatchPanel;
