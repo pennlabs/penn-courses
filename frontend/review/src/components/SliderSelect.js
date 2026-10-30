@@ -1,7 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
 import RangeSlider from "react-range-slider-input";
 import "react-range-slider-input/dist/style.css";
+import { useSliderCommit } from "../utils/hooks";
 
 export const SliderContainer = styled.div`
   display: flex;
@@ -62,6 +63,15 @@ const RangeMarkers = styled.div`
 `;
 
 const SliderSelect = ({ ratingValues, setRatingValues, rangeDescription }) => {
+  //Draft before syncing with filter
+  const [draft, setDraft] = useState(null);
+  const values =
+    draft && draft.base === ratingValues ? draft.values : ratingValues;
+
+  const { update, dragProps } = useSliderCommit(next => {
+    if (next.base === ratingValues) setRatingValues(next.values);
+  });
+
   return (
     <div
       style={{
@@ -77,10 +87,13 @@ const SliderSelect = ({ ratingValues, setRatingValues, rangeDescription }) => {
           min={0}
           max={4}
           step={1}
-          value={ratingValues}
+          value={values}
           onInput={value => {
-            setRatingValues(value);
+            const next = { base: ratingValues, values: value };
+            setDraft(next);
+            update(next);
           }}
+          {...dragProps}
         />
       </SliderContainer>
       <RangeMarkers>

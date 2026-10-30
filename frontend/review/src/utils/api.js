@@ -20,8 +20,8 @@ export const queryKeys = {
   contact: name => ["contact", name]
 };
 
-async function apiFetch(url) {
-  const res = await fetch(url);
+async function apiFetch(url, signal) {
+  const res = await fetch(url, { signal });
   if (!res.ok) {
     throw new Error(`Request to ${url} failed with status ${res.status}`);
   }
@@ -124,7 +124,7 @@ export function apiAttributes() {
   );
 }
 
-export function apiCourseSearch(params, page = 1) {
+export function apiCourseSearch(params, page = 1, signal) {
   const {
     semester,
     attributes,
@@ -149,5 +149,5 @@ export function apiCourseSearch(params, page = 1) {
     (time ? `time=${encodeURIComponent(time)}&` : "") +
     (departments ? `departments=${encodeURIComponent(departments)}&` : "") +
     `page=${page}`;
-  return apiFetch(url);
+  return apiFetch(url, signal);
 }
