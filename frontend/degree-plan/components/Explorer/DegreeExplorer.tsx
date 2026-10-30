@@ -3,7 +3,6 @@ import styled from "@emotion/styled";
 import {
   Background,
   Controls,
-  MiniMap,
   ReactFlow,
   ReactFlowProvider,
   useEdgesState,
@@ -56,12 +55,6 @@ const Toolbar = styled.div`
     cursor: pointer;
   }
 `;
-
-const MINIMAP_COLORS: Record<NodeKind, string> = {
-  program: "#1f2328",
-  group: "#8250df",
-  leaf: "#1a7f37",
-};
 
 interface ExplorerProps {
   programs: Program[];
@@ -195,7 +188,6 @@ const Explorer = ({ programs, course }: ExplorerProps) => {
           >
             <Background />
             <Controls showInteractive={false} />
-            <MiniMap pannable zoomable nodeColor={(n) => MINIMAP_COLORS[n.type as NodeKind]} />
           </ReactFlow>
         </ToggleContext.Provider>
       </Canvas>
