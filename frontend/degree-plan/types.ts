@@ -15,6 +15,16 @@ export interface Rule extends DBObject {
   // False when the rule's audit block takes no AP, IB or transfer credit, e.g. the College's
   // Foundations. A course filed under TRANSFER_CREDIT_SEMESTER_KEY cannot be dropped on it.
   transfer_credit_allowed: boolean;
+  // The Path@Penn audit block this rule came from, e.g. MAJOR / CMPE. Blank if not from an audit.
+  block_type: string;
+  block_value: string;
+  // What this rule may double count with; empty means nothing.
+  share_targets: ShareTarget[];
+}
+
+export interface ShareTarget {
+  kind: string; // a block type, or THISBLOCK
+  value?: string | null;
 }
 
 /** Onboarding page types */
