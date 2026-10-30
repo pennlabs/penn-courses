@@ -1289,7 +1289,7 @@ class OverlapAndReconcileTests(TestCase):
             degree_plan=degree_plan, full_code="MATH-1400", semester="2023C"
         )
         kept.rules.add(math)
-        from degree.utils.generation.reconcile import mutex_violations, prepare_plan
+        from degree.utils.generation.reconcile import cross_listing_violations, prepare_plan
 
         prepared = prepare_plan(degree_plan)
         remaining = set(
@@ -1305,9 +1305,17 @@ class OverlapAndReconcileTests(TestCase):
         )
         self.assertEqual(claimed, {calculus.id, math.id})
 
+        self.assertEqual(cross_listing_violations(degree_plan), [])
+
         course("ACCT-2420")
         course("ACCT-7420")
         Fulfillment.objects.create(degree_plan=degree_plan, full_code="ACCT-2420", semester="2024C")
         Fulfillment.objects.create(degree_plan=degree_plan, full_code="ACCT-7420", semester="2025A")
-        kinds = {row["kind"] for row in mutex_violations(degree_plan)}
-        self.assertIn("mutually_exclusive", kinds)
+        self.assertEqual(cross_listing_violations(degree_plan), [])
+
+        Fulfillment.objects.create(degree_plan=degree_plan, full_code="BEPP-2110", semester="2025A")
+        violations = cross_listing_violations(degree_plan)
+        self.assertEqual(len(violations), 1)
+        self.assertEqual(violations[0]["kind"], "also_offered")
+        self.assertEqual(violations[0]["full_code"], "BEPP-2110")
+        self.assertEqual(violations[0]["components"], ["ACCT-2110"])

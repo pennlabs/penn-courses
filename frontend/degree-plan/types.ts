@@ -105,7 +105,7 @@ export interface PlanComponent {
 
 export interface PlanViolation {
   full_code: string;
-  kind: "too_many_degrees" | "undergrad_grad_cu" | "grad_grad" | "also_offered" | "mutually_exclusive";
+  kind: "too_many_degrees" | "undergrad_grad_cu" | "grad_grad" | "also_offered";
   components: string[];
   message?: string;
 }

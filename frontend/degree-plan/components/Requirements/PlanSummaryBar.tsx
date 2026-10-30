@@ -24,7 +24,6 @@ const VIOLATION_LABELS: { [kind: string]: string } = {
   undergrad_grad_cu: "exceeds the 3 CU bachelor's/master's share",
   grad_grad: "shared by two graduate programs",
   also_offered: "is the same course as another listing",
-  mutually_exclusive: "conflicts with a mutually exclusive course on the plan",
 };
 
 export const violationMessage = (kind: string) =>

@@ -340,7 +340,7 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         semesters = request.data.get("semesters")
         if not isinstance(semesters, list):
             raise ValidationError({"semesters": "This field must be a list."})
-        from degree.utils.generation.reconcile import mutex_violations, prepare_plan
+        from degree.utils.generation.reconcile import cross_listing_violations, prepare_plan
 
         prepared = prepare_plan(degree_plan)
         try:
@@ -358,7 +358,7 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         )
         payload["course_claims"] = summary["course_claims"]
         payload["violations"] = (
-            summary["violations"] + prepared["removed"] + mutex_violations(degree_plan)
+            summary["violations"] + prepared["removed"] + cross_listing_violations(degree_plan)
         )
         payload["claims_updated"] = prepared["claims_updated"]
         return Response(payload)
@@ -382,9 +382,9 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         degree_plan = self.get_object()
         fulfillments = list(degree_plan.fulfillments.prefetch_related("rules"))
         payload = summarize_plan(degree_plan, fulfillments)
-        from degree.utils.generation.reconcile import mutex_violations
+        from degree.utils.generation.reconcile import cross_listing_violations
 
-        payload["violations"] = payload["violations"] + mutex_violations(degree_plan)
+        payload["violations"] = payload["violations"] + cross_listing_violations(degree_plan)
         return Response(payload)
 
     def update_components(self, request, relation, field):
