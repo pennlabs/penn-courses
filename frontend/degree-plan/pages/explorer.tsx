@@ -136,6 +136,8 @@ export default function ExplorerPage() {
             isMulti
             placeholder={loadingLists ? "Loading programs..." : "Pick degrees, majors or minors..."}
             options={groups}
+            // Above the canvas toolbar and React Flow's panels, which sit at z-index 5
+            styles={{ menu: (base) => ({ ...base, zIndex: 10 }) }}
             value={refs
               .map((ref) => allOptions.find((o) => o.value === programKey(ref)))
               .filter((o): o is ProgramOption => o !== undefined)}
