@@ -1,4 +1,12 @@
-import { useContext, useMemo, useState, useRef, useEffect, useLayoutEffect } from "react";
+import {
+  useContext,
+  useMemo,
+  useState,
+  useRef,
+  useEffect,
+  useLayoutEffect,
+  RefObject,
+} from "react";
 import { ConnectDragSource } from "react-dnd";
 import { GrayIcon, Icon } from "@/components/common/bulma_derived_components";
 import styled from "@emotion/styled";
@@ -18,16 +26,131 @@ import ToastContext from "@/components/Toast/Toast";
 const DOUBLE_COUNT_ERROR_MESSAGE =
   "This course is being illegally double counted in your plan!";
 // Which of a submatriculant's degrees a course counts toward, as the backend names them.
-const LEVEL_OPTIONS: { value: Fulfillment["level"]; label: string }[] = [
-  { value: null, label: "Not marked (either)" },
-  { value: "UNDERGRADUATE", label: "Bachelors only" },
-  { value: "GRADUATE", label: "Masters only" },
-  { value: "SHARED", label: "Both (double counted)" },
+// Each level has a colour, used for the status dot on the card and in the menu that sets it;
+// a null colour draws a hollow dot for the unmarked state.
+const LEVEL_OPTIONS: {
+  value: Fulfillment["level"];
+  label: string;
+  title: string;
+  color: string | null;
+}[] = [
+  {
+    value: null,
+    label: "Not marked (either)",
+    title: "Not marked: may count toward either degree",
+    color: null,
+  },
+  {
+    value: "UNDERGRADUATE",
+    label: "Bachelors only",
+    title: "Counts toward your bachelors only",
+    color: "#3b82c4",
+  },
+  {
+    value: "GRADUATE",
+    label: "Masters only",
+    title: "Counts toward your masters only",
+    color: "#5b61b8",
+  },
+  {
+    value: "SHARED",
+    label: "Both (double counted)",
+    title: "Double counted toward both degrees",
+    color: "#3a8a5f",
+  },
 ];
-// Courses on the masters record get a band down the card's left edge.
-const LEVEL_BANDS: { [level: string]: { text: string; color: string; title: string } } = {
-  GRADUATE: { text: "MSE", color: "#5b61b8", title: "Counts toward your masters only" },
-  SHARED: { text: "MSE+", color: "#3a8a5f", title: "Double counted toward both degrees" },
+const levelOption = (level: Fulfillment["level"] | undefined) =>
+  LEVEL_OPTIONS.find((option) => option.value === (level ?? null)) ?? LEVEL_OPTIONS[0];
+// Only a course numbered 5000 or above can sit on a masters record, matching the backend's
+// MIN_GRADUATE_COURSE_NUMBER, so lower-numbered courses have no level to choose.
+const MIN_GRADUATE_COURSE_NUMBER = 5000;
+const isGraduateCourse = (fullCode: string | undefined) => {
+  const match = /-(\d+)/.exec(fullCode ?? "");
+  return !!match && parseInt(match[1], 10) >= MIN_GRADUATE_COURSE_NUMBER;
+};
+
+// Closes a popover on any mousedown outside `ref` while it is open.
+const useClickOutside = (
+  open: boolean,
+  ref: RefObject<HTMLElement>,
+  setOpen: (open: boolean) => void
+) => {
+  useEffect(() => {
+    if (!open) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open, ref, setOpen]);
+};
+
+// Marks the region a popover may occupy; see useAnchoredPopover.
+export const POPOVER_BOUNDS_ATTRIBUTE = "data-popover-bounds";
+
+// Positions a `position: fixed` popover just below its anchor, clamped within its bounds and
+// flipped above the anchor when it would overflow the bottom. The bounds are the nearest
+// ancestor marked with POPOVER_BOUNDS_ATTRIBUTE (the plan body, which stops above the footer
+// and dock), or the viewport when there is none. A fixed element does not move with a
+// scrolling panel, so the position is recomputed on every scroll and resize while the
+// popover is open; otherwise it would stay put on screen as its anchor slid away.
+const useAnchoredPopover = (
+  open: boolean,
+  anchorRef: RefObject<HTMLElement>,
+  popoverRef: RefObject<HTMLElement>
+) => {
+  useLayoutEffect(() => {
+    if (!open) return;
+    const position = () => {
+      const el = popoverRef.current;
+      const anchor = anchorRef.current;
+      if (!el || !anchor) return;
+      const anchorRect = anchor.getBoundingClientRect();
+      const boundsRect = anchor
+        .closest(`[${POPOVER_BOUNDS_ATTRIBUTE}]`)
+        ?.getBoundingClientRect();
+      const padding = 8;
+      const minTop = (boundsRect?.top ?? 0) + padding;
+      const maxBottom = (boundsRect?.bottom ?? window.innerHeight) - padding;
+      const minLeft = (boundsRect?.left ?? 0) + padding;
+      const maxRight = (boundsRect?.right ?? window.innerWidth) - padding;
+
+      let top = anchorRect.bottom + 8;
+      let left = anchorRect.left;
+
+      // Measure the popover so we can clamp
+      el.style.top = `${top}px`;
+      el.style.left = `${left}px`;
+      const popRect = el.getBoundingClientRect();
+
+      if (popRect.right > maxRight) {
+        left -= popRect.right - maxRight;
+      }
+      if (left < minLeft) {
+        left = minLeft;
+      }
+      if (top + popRect.height > maxBottom) {
+        top = anchorRect.top - popRect.height - 8;
+      }
+      if (top < minTop) {
+        top = minTop;
+      }
+
+      el.style.top = `${top}px`;
+      el.style.left = `${left}px`;
+    };
+
+    position();
+    // Capture phase so scrolls inside nested panels are seen, not just the window's.
+    document.addEventListener("scroll", position, true);
+    window.addEventListener("resize", position);
+    return () => {
+      document.removeEventListener("scroll", position, true);
+      window.removeEventListener("resize", position);
+    };
+  }, [open, anchorRef, popoverRef]);
 };
 const COURSE_BORDER_RADIUS = "9px";
 const HIGHLIGHT_VARIANT_COLORS = {
@@ -231,46 +354,96 @@ const OverrideBadge = styled.span`
   font-weight: 600;
 `;
 
-// Sits inside the card's left padding so the course code keeps its alignment. Its outer
-// corners share the card's radius; only the text inside is rotated, or the corners would be too.
-const LevelBand = styled.button<{ $color: string }>`
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 0.75rem;
-  display: flex;
+// A Gmail-style status dot: the course's level at a glance, and the handle for changing it.
+const LevelDot = styled.span<{ $color: string | null }>`
+  display: inline-block;
+  width: 0.6rem;
+  height: 0.6rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  box-sizing: border-box;
+  background: ${({ $color }) => $color ?? "transparent"};
+  border: 2px solid ${({ $color }) => $color ?? "#b5b5b5"};
+`;
+
+const LevelDotButton = styled.button`
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
+  padding: 0.3rem;
+  margin-right: 0.1rem;
   border: none;
-  border-radius: ${COURSE_BORDER_RADIUS} 0 0 ${COURSE_BORDER_RADIUS};
-  background: ${({ $color }) => $color};
-  color: white;
+  border-radius: 50%;
+  background: none;
   cursor: pointer;
 
-  &:hover {
-    filter: brightness(1.1);
+  &:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.07);
+  }
+
+  &:disabled {
+    cursor: default;
   }
 `;
 
-const LevelBandText = styled.span`
-  font-size: 0.5rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  line-height: 1;
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
+const LevelMenu = styled.div`
+  position: fixed;
+  z-index: 10000;
+  min-width: 210px;
+  padding: 0.3rem 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  text-align: left;
+  white-space: nowrap;
 `;
 
-const LevelSelect = styled.select`
-  margin-top: 0.25rem;
-  font-size: 0.8rem;
-  padding: 0.25rem 0.4rem;
-  border: 1px solid #d8d8d8;
-  border-radius: 6px;
-  background: white;
+const LevelMenuHeading = styled.div`
+  padding: 0.3rem 0.9rem 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+`;
+
+const LevelMenuItem = styled.button<{ $active: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.45rem 0.9rem;
+  border: none;
+  background: ${({ $active }) => ($active ? "#f1f3f4" : "none")};
   color: #333;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover:not(:disabled) {
+    background: #e8eaed;
+  }
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.6;
+  }
+`;
+
+const LevelMenuLabel = styled.span`
+  flex-grow: 1;
+`;
+
+const LevelMenuCheck = styled.i`
+  font-size: 0.75rem;
+  color: #555;
+`;
+
+const LevelMenuError = styled.div`
+  padding: 0.3rem 0.9rem 0.4rem;
+  font-size: 0.8rem;
+  color: #a94442;
+  white-space: normal;
 `;
 
 const SwitchRuleButton = styled.button`
@@ -431,13 +604,30 @@ const CourseComponent = ({
 
   // Only a plan with a masters degree has anything to mark a course's level against, and the
   // mark belongs to the course in the plan, not to its copies in the requirements panel.
-  const showLevel = !!fulfillment && courseType !== ItemTypes.COURSE_IN_REQ;
+  const showLevel =
+    !!fulfillment &&
+    courseType !== ItemTypes.COURSE_IN_REQ &&
+    isGraduateCourse(fulfillment.full_code);
+  // A planned course is not always handed the active plan's id, but its fulfillment knows
+  // which plan it belongs to, and that is the plan whose record the level is set on.
+  const levelPlanId = activeDegreePlanId ?? fulfillment?.degree_plan;
   const canSetLevel =
     showLevel &&
-    !!activeDegreePlanId &&
+    !!levelPlanId &&
     !!degreePlanDetail?.degrees.some((degree) => degree.degree === "MSE");
+  // A course already marked for the masters record keeps its dot even where it can't be
+  // changed, so the mark stays visible; otherwise the dot only appears where it can be set.
+  const currentLevel = levelOption(fulfillment?.level);
+  const showLevelDot =
+    canSetLevel ||
+    (showLevel && (fulfillment?.level === "GRADUATE" || fulfillment?.level === "SHARED"));
   const [settingLevel, setSettingLevel] = useState(false);
   const [levelError, setLevelError] = useState<string | null>(null);
+  const [levelOpen, setLevelOpen] = useState(false);
+  const levelRef = useRef<HTMLDivElement>(null);
+  const levelMenuRef = useRef<HTMLDivElement>(null);
+  useClickOutside(levelOpen, levelRef, setLevelOpen);
+  useAnchoredPopover(levelOpen, levelRef, levelMenuRef);
 
   const [infoOpen, setInfoOpen] = useState(false);
   const [switchingRule, setSwitchingRule] = useState(false);
@@ -445,50 +635,8 @@ const CourseComponent = ({
   const [displacedMessage, setDisplacedMessage] = useState<string | null>(null);
   const infoRef = useRef<HTMLDivElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!infoOpen) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (infoRef.current && !infoRef.current.contains(e.target as Node)) {
-        setInfoOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [infoOpen]);
-
-  // Position the fixed popover below the wrapper, clamped within the viewport
-  useLayoutEffect(() => {
-    if (!infoOpen || !popoverRef.current || !infoRef.current) return;
-    const el = popoverRef.current;
-    const wrapperRect = infoRef.current.getBoundingClientRect();
-    const padding = 8;
-
-    // Place below the wrapper
-    let top = wrapperRect.bottom + 8;
-    let left = wrapperRect.left;
-
-    // Measure the popover so we can clamp
-    el.style.top = `${top}px`;
-    el.style.left = `${left}px`;
-    const popRect = el.getBoundingClientRect();
-
-    // Clamp right edge
-    if (popRect.right > window.innerWidth - padding) {
-      left -= popRect.right - (window.innerWidth - padding);
-    }
-    // Clamp left edge
-    if (left < padding) {
-      left = padding;
-    }
-    // If it would overflow the bottom, flip above the wrapper
-    if (popRect.bottom > window.innerHeight - padding) {
-      top = wrapperRect.top - popRect.height - 8;
-    }
-
-    el.style.top = `${top}px`;
-    el.style.left = `${left}px`;
-  }, [infoOpen]);
+  useClickOutside(infoOpen, infoRef, setInfoOpen);
+  useAnchoredPopover(infoOpen, infoRef, popoverRef);
 
   const hasSemester = !!fulfillment?.semester && fulfillment.semester !== "";
   const courseSemester =
@@ -507,22 +655,26 @@ const CourseComponent = ({
     selectedRuleNames.length > 0 ||
     shouldShowCouldAlsoCountFor ||
     shouldShowSwitchHint ||
-    canSetLevel ||
     !!displacedMessage;
 
   const handleSetLevel = async (level: Fulfillment["level"]) => {
-    if (!activeDegreePlanId || !fulfillment || settingLevel) return;
+    if (!levelPlanId || !fulfillment || settingLevel) return;
+    if (level === currentLevel.value) {
+      setLevelOpen(false);
+      return;
+    }
     try {
       setSettingLevel(true);
       setLevelError(null);
       await postFetcher(
-        `/api/degree/degreeplans/${activeDegreePlanId}/fulfillments/${fulfillment.full_code}/level`,
+        `/api/degree/degreeplans/${levelPlanId}/fulfillments/${fulfillment.full_code}/level`,
         { level }
       );
       await Promise.all([
-        mutate(`/api/degree/degreeplans/${activeDegreePlanId}/fulfillments`),
-        mutate(`/api/degree/degreeplans/${activeDegreePlanId}`),
+        mutate(`/api/degree/degreeplans/${levelPlanId}/fulfillments`),
+        mutate(`/api/degree/degreeplans/${levelPlanId}`),
       ]);
+      setLevelOpen(false);
     } catch {
       setLevelError("Could not change this course's level right now.");
     } finally {
@@ -590,19 +742,6 @@ const CourseComponent = ({
             ref={dragRef}
             className={className}
           >
-            {showLevel && fulfillment.level && LEVEL_BANDS[fulfillment.level] && (
-              <LevelBand
-                type="button"
-                $color={LEVEL_BANDS[fulfillment.level].color}
-                title={`${LEVEL_BANDS[fulfillment.level].title}. Click to change.`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setInfoOpen(true);
-                }}
-              >
-                <LevelBandText>{LEVEL_BANDS[fulfillment.level].text}</LevelBandText>
-              </LevelBand>
-            )}
             {!fulfillment?.legal && (
               <div style={{ paddingRight: "5px" }}>
                 <a
@@ -619,6 +758,58 @@ const CourseComponent = ({
               </div>
             )}
             <CourseBadge>
+              {showLevelDot && (
+                <InfoPopoverWrapper
+                  ref={levelRef}
+                  title={
+                    canSetLevel
+                      ? `${currentLevel.title}. Click to change.`
+                      : currentLevel.title
+                  }
+                >
+                  <LevelDotButton
+                    type="button"
+                    disabled={!canSetLevel}
+                    aria-label="Which degree this course counts toward"
+                    aria-haspopup="menu"
+                    aria-expanded={levelOpen}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setLevelOpen(!levelOpen);
+                    }}
+                  >
+                    <LevelDot $color={currentLevel.color} />
+                  </LevelDotButton>
+                  {levelOpen && (
+                    <LevelMenu
+                      ref={levelMenuRef}
+                      role="menu"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <LevelMenuHeading>Counts toward</LevelMenuHeading>
+                      {LEVEL_OPTIONS.map((option) => {
+                        const active = option.value === currentLevel.value;
+                        return (
+                          <LevelMenuItem
+                            key={option.value ?? "none"}
+                            type="button"
+                            role="menuitemradio"
+                            aria-checked={active}
+                            $active={active}
+                            disabled={settingLevel}
+                            onClick={() => handleSetLevel(option.value)}
+                          >
+                            <LevelDot $color={option.color} />
+                            <LevelMenuLabel>{option.label}</LevelMenuLabel>
+                            {active && <LevelMenuCheck className="fas fa-check" />}
+                          </LevelMenuItem>
+                        );
+                      })}
+                      {levelError && <LevelMenuError>{levelError}</LevelMenuError>}
+                    </LevelMenu>
+                  )}
+                </InfoPopoverWrapper>
+              )}
               {course.full_code.replace("-", " ")}
               {isOverride && (
                 <OverrideBadge
@@ -693,35 +884,6 @@ const CourseComponent = ({
                           {switchError && (
                             <div style={{ marginTop: "0.35rem", color: "#a94442" }}>
                               {switchError}
-                            </div>
-                          )}
-                        </PopoverSection>
-                      )}
-                      {canSetLevel && (
-                        <PopoverSection>
-                          <PopoverLabel>Counts toward</PopoverLabel>
-                          Which degree this course is on your transcript for.
-                          <div>
-                            <LevelSelect
-                              value={fulfillment.level ?? ""}
-                              disabled={settingLevel}
-                              onClick={(e) => e.stopPropagation()}
-                              onChange={(e) =>
-                                handleSetLevel(
-                                  (e.target.value || null) as Fulfillment["level"]
-                                )
-                              }
-                            >
-                              {LEVEL_OPTIONS.map((option) => (
-                                <option key={option.value ?? ""} value={option.value ?? ""}>
-                                  {option.label}
-                                </option>
-                              ))}
-                            </LevelSelect>
-                          </div>
-                          {levelError && (
-                            <div style={{ marginTop: "0.35rem", color: "#a94442" }}>
-                              {levelError}
                             </div>
                           )}
                         </PopoverSection>
