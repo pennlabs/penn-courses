@@ -133,6 +133,13 @@ export class MyChart extends PennLabsChart {
 			cmd: ['python', 'manage.py', 'registrarimport'],
 		})
 
+		new CronJob(this, 'cache-course-reviews', {
+			schedule: cronTime.everyDayAt(10),
+			image: backendImage,
+			secret,
+			cmd: ['python', 'manage.py', 'cache_course_reviews'],
+		})
+
 		new CronJob(this, 'report-stats', {
 			schedule: cronTime.everyDayAt(20),
 			image: backendImage,
