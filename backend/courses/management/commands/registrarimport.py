@@ -4,6 +4,7 @@ from django.core.management.base import BaseCommand
 from tqdm import tqdm
 
 from courses import registrar
+from courses.management.commands.cache_course_reviews import cache_course_reviews
 from courses.management.commands.loadstatus import set_all_status
 from courses.management.commands.recompute_parent_courses import recompute_parent_courses
 from courses.management.commands.recompute_soft_state import recompute_soft_state
@@ -47,6 +48,7 @@ def registrar_import(semester=None, query=""):
         registrar_import(semester=semester[:-1] + "B", query=query)
 
     precompute_pcr_views(verbose=True, is_new_data=False)
+    cache_course_reviews(verbose=True)
 
 
 class Command(BaseCommand):
