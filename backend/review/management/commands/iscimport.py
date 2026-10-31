@@ -7,6 +7,7 @@ import zipfile
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
+from courses.management.commands.cache_course_reviews import cache_course_reviews
 from courses.management.commands.recompute_soft_state import recompute_has_reviews
 from courses.util import get_current_semester
 from PennCourses.settings.base import S3_client
@@ -305,6 +306,7 @@ class Command(BaseCommand):
         print("Recomputing Section.has_reviews...")
         recompute_has_reviews()
         precompute_pcr_views(verbose=True, is_new_data=True)
+        cache_course_reviews(verbose=True)
 
         print("Done.")
         return 0

@@ -1,3 +1,4 @@
+from courses.management.commands.cache_course_reviews import cache_course_reviews
 from courses.management.commands.recompute_parent_courses import recompute_parent_courses
 from courses.management.commands.recompute_soft_state import (
     recompute_precomputed_fields,
@@ -62,6 +63,7 @@ def create_mock_data_with_reviews(code, semester, number_of_instructors):
             }
         )
         reviews.append(review)
+    cache_course_reviews()
     return course, section, reviews
 
 
