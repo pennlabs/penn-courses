@@ -6,6 +6,7 @@ import useSWR from "swr";
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import Select from "react-select";
 import { ModalKey } from "./DegreeModal";
+import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
 
 const getNextSemester = (semester: string) => {
   const year = parseInt(semester.slice(0, 4));
@@ -25,11 +26,74 @@ const getNextSemester = (semester: string) => {
 export const getLocalSemestersKey = (degreeplanId: DegreePlan["id"]) =>
   `PDP-${degreeplanId}-semesters`;
 
+const YEAR_NAMES = ["Freshman", "Sophomore", "Junior", "Senior"];
+const SEASONS = [
+  { code: "C", label: "Fall" },
+  { code: "A", label: "Spring" },
+  { code: "B", label: "Summer" },
+] as const;
+
+const isTermKey = (key: string) => /^\d{4}[ABC]$/.test(key);
+
+/** Fall starts an academic year; the following spring and summer belong to it. */
+const academicYear = (key: string) => {
+  const year = Number(key.slice(0, 4));
+  return key.endsWith("C") ? year : year - 1;
+};
+
+const termKey = (academic: number, season: string) =>
+  season === "C" ? `${academic}C` : `${academic + 1}${season}`;
+
+const yearName = (index: number) => YEAR_NAMES[index] ?? `Year ${index + 1}`;
+
+const transferCollapsedKey = (degreeplanId: DegreePlan["id"]) =>
+  `PDP-${degreeplanId}-transfer-collapsed`;
+
 const SemestersContainer = styled.div`
-  display: flex;
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1.25rem;
-  flex-wrap: wrap;
+`;
+
+const YearSection = styled.section`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+`;
+
+const YearLabel = styled.div`
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7280;
+`;
+
+const YearGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
+  align-items: stretch;
+`;
+
+const EmptyTerm = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 6rem;
+  border: 2px dashed rgba(0, 0, 0, 0.12);
+  border-radius: 10px;
+  background: transparent;
+  color: #9ca3af;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--plus-button-color);
+    border-color: var(--plus-button-color);
+  }
 `;
 
 const AddSemesterContainer = styled.div`
@@ -121,7 +185,7 @@ const ModifySemesters = ({
   className,
 }: ModifySemestersProps) => {
   const latestSemester =
-    Object.keys(semesters).sort((a, b) => a.localeCompare(b)).pop() || "2026A"; // TODO: Change fallback value to start semester (based on onboarding?)
+    Object.keys(semesters).filter(isTermKey).sort((a, b) => a.localeCompare(b)).pop() || "2026A"; // TODO: Change fallback value to start semester (based on onboarding?)
 
   const nextSemester = getNextSemester(latestSemester);
   const [nextYear, nextSeason] = [
@@ -375,36 +439,98 @@ const Semesters = ({
       );
     });
 
+  const [transferCollapsed, setTransferCollapsed] = useState(true);
+  useEffect(() => {
+    if (!activeDegreeplan || typeof window === "undefined") return;
+    const stored = localStorage.getItem(transferCollapsedKey(activeDegreeplan.id));
+    setTransferCollapsed(stored === null ? true : stored === "true");
+  }, [activeDegreeplan?.id]);
+  const toggleTransfer = () => {
+    const next = !transferCollapsed;
+    setTransferCollapsed(next);
+    if (activeDegreeplan && typeof window !== "undefined") {
+      localStorage.setItem(transferCollapsedKey(activeDegreeplan.id), String(next));
+    }
+  };
+
+  const renderSemester = (semester: string, extra: Partial<React.ComponentProps<typeof FlexSemester>> = {}) => (
+    <FlexSemester
+      activeDegreeplanId={activeDegreeplan?.id}
+      showStats={showStats}
+      semester={semester}
+      fulfillments={semesters[semester] || []}
+      key={semester}
+      editMode={editMode}
+      removeSemester={removeSemester}
+      setModalKey={setModalKey}
+      setModalObject={setModalObject}
+      currentSemester={currentSemester}
+      numSemesters={Object.keys(semesters).length}
+      ghosts={ghosts.filter((ghost) => ghost.semester === semester)}
+      genConfig={genBySemester?.[semester]}
+      onGenConfig={onGenConfig ? (next) => onGenConfig(semester, next) : undefined}
+      onPinSlot={onPinSlot}
+      onUnpinSlot={onUnpinSlot}
+      pinnedSlots={pinnedSlots}
+      {...extra}
+    />
+  );
+
+  const visibleTerms = visibleSemesters.filter(isTermKey);
+  const otherKeys = visibleSemesters.filter(
+    (key) => !isTermKey(key) && key !== TRANSFER_CREDIT_SEMESTER_KEY
+  );
+  const academicYears = visibleTerms.map(academicYear);
+  const firstYear = academicYears.length ? Math.min(...academicYears) : null;
+  const lastYear = academicYears.length ? Math.max(...academicYears) : null;
+  const years =
+    firstYear === null || lastYear === null
+      ? []
+      : Array.from({ length: lastYear - firstYear + 1 }, (_, index) => firstYear + index);
+
+  if (isLoading) {
+    return (
+      <SemestersContainer className={className}>
+        <YearGrid>
+          {Array.from(Array(6).keys()).map((index) => (
+            <SkeletonSemester key={index} showStats={showStats} />
+          ))}
+        </YearGrid>
+      </SemestersContainer>
+    );
+  }
+
   return (
     <SemestersContainer className={className}>
-      {isLoading
-        ? Array.from(Array(8).keys()).map(() => (
-            <SkeletonSemester showStats={showStats} />
-          ))
-        : visibleSemesters
-            .map((semester: any) => (
-              <FlexSemester
-                activeDegreeplanId={activeDegreeplan?.id}
-                showStats={showStats}
-                semester={semester}
-                fulfillments={semesters[semester]}
-                key={semester}
-                editMode={editMode}
-                removeSemester={removeSemester}
-                setModalKey={setModalKey}
-                setModalObject={setModalObject}
-                currentSemester={currentSemester}
-                numSemesters={Object.keys(semesters).length}
-                ghosts={ghosts.filter((ghost) => ghost.semester === semester)}
-                genConfig={genBySemester?.[semester]}
-                onGenConfig={onGenConfig ? (next) => onGenConfig(semester, next) : undefined}
-                onPinSlot={onPinSlot}
-                onUnpinSlot={onUnpinSlot}
-                pinnedSlots={pinnedSlots}
-              />
-            ))}
+      {renderSemester(TRANSFER_CREDIT_SEMESTER_KEY, {
+        editMode: false,
+        collapsed: transferCollapsed,
+        onToggleCollapsed: toggleTransfer,
+      })}
+      {years.map((academic, index) => (
+        <YearSection key={academic}>
+          <YearLabel>
+            {yearName(index)} · {academic}–{String(academic + 1).slice(2)}
+          </YearLabel>
+          <YearGrid>
+            {SEASONS.map(({ code, label }) => {
+              const key = termKey(academic, code);
+              if (semesters[key] !== undefined) return renderSemester(key);
+              return (
+                <EmptyTerm key={key} type="button" onClick={() => addSemester(key)}>
+                  <i className="fas fa-plus" />
+                  {label} {key.slice(0, 4)}
+                </EmptyTerm>
+              );
+            })}
+          </YearGrid>
+        </YearSection>
+      ))}
+      {otherKeys.map((key) => renderSemester(key))}
       {editMode && (
-        <ModifySemesters addSemester={addSemester} semesters={semesters} />
+        <YearGrid>
+          <ModifySemesters addSemester={addSemester} semesters={semesters} />
+        </YearGrid>
       )}
     </SemestersContainer>
   );

@@ -36,9 +36,9 @@ export const BaseCourseContainer = styled.div<{
   justify-content: flex-start;
   align-items: center;
   min-width: 70px;
-  min-height: 35px;
+  min-height: 28px;
   border-radius: ${COURSE_BORDER_RADIUS};
-  padding: 0.75rem;
+  padding: 0.35rem 0.65rem;
   text-wrap: nowrap;
   cursor: ${(props) => (props.$isDisabled ? "not-allowed" : "grab")};
   opacity: ${(props) => (props.$isDisabled || props.$isDragging ? 0.7 : 1)};
@@ -144,6 +144,7 @@ const CourseBadge = styled.div`
   display: flex;
   flex: 1;
   min-width: 0;
+  overflow: hidden;
   flex-direction: row;
   align-items: center;
   justify-content: flex-start;
@@ -167,7 +168,7 @@ export const CuLabel = styled.span`
 `;
 
 const IconBadge = styled.div`
-  padding: 0.2rem;
+  padding: 0 0.2rem;
   border-radius: 5px;
   border: 1px solid #d8d8d8;
   display: flex;
@@ -179,6 +180,7 @@ const IconBadge = styled.div`
   p {
     font-size: 14px;
     font-weight: bold;
+    line-height: 1.3;
   }
 `;
 
@@ -613,7 +615,7 @@ const CourseComponent = ({
               )}
             </CourseBadge>
             {courseType === ItemTypes.COURSE_IN_PLAN && (
-              <TrailingActions>
+              <TrailingActions className={infoOpen ? "course-actions open" : "course-actions"}>
                 {hasInfoContent && (
                   <InfoPopoverWrapper ref={infoRef}>
                     <InfoIconButton onClick={(e) => { e.stopPropagation(); setInfoOpen(!infoOpen); }}>
@@ -697,7 +699,7 @@ const CourseComponent = ({
               />
             )}
             {courseType === ItemTypes.COURSE_IN_PLAN && (
-              <CuLabel>
+              <CuLabel className="course-cu">
                 {Number(fulfillment.course?.credits ?? 1).toFixed(1)} CU
               </CuLabel>
             )}

@@ -88,8 +88,8 @@ const SearchChip = styled.button<{ $active: boolean }>`
     align-items: center;
     gap: 0.3rem;
     max-width: 100%;
-    padding: 0.75rem;
-    min-height: 35px;
+    padding: 0.35rem 0.65rem;
+    min-height: 28px;
     border-radius: 9px;
     border: 1px dashed ${(props) => (props.$active ? "#3d4ed8" : "rgba(98, 116, 241, 0.55)")};
     background: ${(props) => (props.$active ? "rgba(98, 116, 241, 0.16)" : "rgba(98, 116, 241, 0.08)")};
@@ -234,8 +234,8 @@ const OptionChip = styled.span<{ $kind: "open" | "taken" | "frozen" }>`
     gap: 0.25rem;
     font-size: var(--type-body);
     font-weight: 600;
-    padding: 0.75rem;
-    min-height: 35px;
+    padding: 0.35rem 0.65rem;
+    min-height: 28px;
     border-radius: 9px;
     white-space: nowrap;
     border: 1px solid ${(props) =>

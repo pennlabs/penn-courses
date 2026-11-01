@@ -76,8 +76,8 @@ const SuggestionChip = styled.button<{ $dashed?: boolean }>`
   font: inherit;
   font-size: var(--type-body);
   font-weight: 600;
-  padding: 0.75rem;
-  min-height: 35px;
+  padding: 0.35rem 0.65rem;
+  min-height: 28px;
   border-radius: 9px;
   white-space: nowrap;
   cursor: pointer;

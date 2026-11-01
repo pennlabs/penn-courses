@@ -20,9 +20,9 @@ const Card = styled.div<{ $dashed?: boolean; $dragging?: boolean; $frozen?: bool
   position: relative;
   overflow: hidden;
   width: 100%;
-  min-height: 35px;
-  margin-top: 0.75rem;
-  padding: 0.75rem;
+  min-height: 28px;
+  margin-top: 0.5rem;
+  padding: 0.35rem 0.65rem;
   border-radius: 9px;
   background: ${(props) =>
     props.$frozen ? "rgba(217, 119, 6, 0.12)" : "var(--background-grey)"};
@@ -223,7 +223,7 @@ const GhostCourse = ({ placement, planId, frozen = false, onUnpin }: GhostCourse
     await accept(fullCode);
   };
 
-  const units = <CuLabel>{Number(placement.cu).toFixed(1)} CU</CuLabel>;
+  const units = <CuLabel className="course-cu">{Number(placement.cu).toFixed(1)} CU</CuLabel>;
   const showMenu = placement.overlap ? options.length > 0 : options.length >= 2;
   const optionsButton = showMenu && (
     <Quiet

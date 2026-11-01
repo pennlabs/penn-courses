@@ -35,10 +35,41 @@ export const SemesterCard = styled.div<{
     box-shadow: 0px 0px 4px 2px ${props => props.$isOver ? 'var(--selected-color);' : props.$isDroppable ? 'var(--primary-color-dark);' : 'rgba(0, 0, 0, 0.05);'}
     border-radius: 10px;
     border-width: 0px;
-    padding: 1rem;
+    padding: 0.75rem;
     display: flex;
     flex-direction: column;
     flex: 1 1 11rem;
+    min-width: 0;
+    container-type: inline-size;
+
+    @container (max-width: 200px) {
+        .course-cu,
+        .course-actions {
+            display: none;
+        }
+        *:hover > .course-actions,
+        .course-actions.open {
+            display: inline-flex;
+        }
+    }
+`;
+
+const CollapseToggle = styled.button`
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    font-weight: 600;
+    color: inherit;
+    cursor: pointer;
+`;
+
+const CollapsedSummary = styled.span`
+    font-weight: 500;
+    color: #6b7280;
 `;
 
 const SemesterHeader = styled.div`
@@ -53,7 +84,8 @@ const SemesterLabel = styled.div`
 `;
 
 const SemesterContent = styled.div`
-    margin-top: 1rem;
+    margin-top: 0.75rem;
+    min-width: 0;
     display: flex;
     flex-direction: row;
     gap: 1rem;
@@ -138,6 +170,8 @@ interface SemesterProps {
     onPinSlot?: (slotId: string, semester: string) => void;
     onUnpinSlot?: (slotId: string) => void;
     pinnedSlots?: Record<string, string>;
+    collapsed?: boolean;
+    onToggleCollapsed?: () => void;
 }
 
 const FlexSemester = ({
@@ -158,6 +192,8 @@ const FlexSemester = ({
     onPinSlot,
     onUnpinSlot,
     pinnedSlots,
+    collapsed = false,
+    onToggleCollapsed,
 }: SemesterProps) => {
     const showToast = useContext(ToastContext);
     const { mutate } = useSWRConfig();
@@ -271,9 +307,25 @@ const FlexSemester = ({
             $semesterComparison={currentSemester ? semester.localeCompare(currentSemester) : 1}
         >
             <SemesterHeader>
-                <SemesterLabel>
-                    {translateSemester(semester)}
-                </SemesterLabel>
+                {onToggleCollapsed ? (
+                    <CollapseToggle
+                        type="button"
+                        onClick={onToggleCollapsed}
+                        aria-expanded={!collapsed}
+                    >
+                        <i className={`fas fa-chevron-${collapsed ? "right" : "down"}`} />
+                        {translateSemester(semester)}
+                        {collapsed && (
+                            <CollapsedSummary>
+                                {fulfillments.length} course{fulfillments.length === 1 ? "" : "s"} · {credits.toFixed(1)} CU
+                            </CollapsedSummary>
+                        )}
+                    </CollapseToggle>
+                ) : (
+                    <SemesterLabel>
+                        {translateSemester(semester)}
+                    </SemesterLabel>
+                )}
                 {/* TODO: Current structure doesn't allow for last semester to be deleted.
                     Disabling deletion when there is only one semester 
                     is a quick fix that could be addressed later. */}
@@ -294,6 +346,7 @@ const FlexSemester = ({
                     </>)
                 }
             </SemesterHeader>
+            {!collapsed && (<>
             <SemesterContent>
                 <FlexCoursesPlanned
                     semester={semester}
@@ -355,6 +408,7 @@ const FlexSemester = ({
                     {credits.toFixed(1)} CU
                 </CreditsLabel>
             )}
+            </>)}
         </SemesterCard>
     )
 }
