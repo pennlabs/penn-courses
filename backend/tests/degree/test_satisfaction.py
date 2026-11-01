@@ -46,27 +46,23 @@ class RefreshSatisfactionTest(TestCase):
             for status in SatisfactionStatus.objects.filter(degree_plan=self.plan)
         }
 
-    def test_refreshing_everything_records_every_top_level_rule(self):
+    def test_refreshing_records_every_top_level_rule(self):
         self.add_course("CIS-1200", self.cis)
         self.plan.refresh_satisfaction()
         self.assertEqual(self.statuses(), {self.major.id: True, self.writing.id: False})
 
-    def test_refreshing_changed_rules_leaves_other_trees_alone(self):
-        self.add_course("CIS-1200", self.cis)
-        self.plan.refresh_satisfaction([self.cis])
-        self.assertEqual(self.statuses(), {self.major.id: True})
+    def test_adding_a_course_refreshes_rules_it_is_not_assigned_to(self):
+        client = APIClient()
+        client.force_authenticate(user=self.user)
+        response = client.post(
+            reverse("degreeplan-fulfillment-list", kwargs={"degreeplan_pk": self.plan.id}),
+            {"full_code": "CIS-1200", "semester": TEST_SEMESTER, "rules": []},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 201, response.content)
+        self.assertEqual(self.statuses(), {self.major.id: True, self.writing.id: False})
 
-        self.add_course("WRIT-0010", self.writ)
-        self.plan.refresh_satisfaction([self.writ])
-        self.assertEqual(self.statuses(), {self.major.id: True, self.writing.id: True})
-
-    def test_a_top_level_rule_that_is_also_a_leaf_is_refreshed(self):
-        self.degree.rules.add(self.cis)
-        self.add_course("CIS-1200", self.cis)
-        self.plan.refresh_satisfaction([self.cis])
-        self.assertEqual(self.statuses(), {self.major.id: True, self.cis.id: True})
-
-    def test_removing_a_course_through_the_api_refreshes_its_rules(self):
+    def test_removing_a_course_refreshes_every_rule(self):
         self.add_course("CIS-1200", self.cis)
         self.plan.refresh_satisfaction()
 

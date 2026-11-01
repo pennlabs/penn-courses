@@ -344,8 +344,12 @@ def allocate_rules(
         degree: rules for degree, rules in rules_per_degree.items() if level_allows(level, degree)
     }
     if prior_selected:
-        seed = {rule for rule in prior_selected if rule in rule_to_degree}
-        preferred = {rule_selected} if rule_selected in rule_to_degree else set()
+
+        def allowed(rule):
+            return rule in rule_to_degree and level_allows(level, rule_to_degree[rule])
+
+        seed = {rule for rule in prior_selected if allowed(rule)}
+        preferred = {rule_selected} if allowed(rule_selected) else set()
         selected_rules, _ = reconcile_rules(
             seed | preferred, preferred, rule_to_degree, double_counts
         )

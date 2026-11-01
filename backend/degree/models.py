@@ -428,16 +428,6 @@ class Minor(ProgramComponent):
         ]
 
 
-def rule_lineage(rules) -> set[int]:
-    lineage = set()
-    level = list(rules)
-    while level:
-        lineage.update(rule.id for rule in level)
-        parent_ids = {rule.parent_id for rule in level if rule.parent_id} - lineage
-        level = list(Rule.objects.filter(id__in=parent_ids)) if parent_ids else []
-    return lineage
-
-
 class DegreePlan(models.Model):  #
     """
     Stores a users plan for an associated degree.
@@ -508,13 +498,11 @@ class DegreePlan(models.Model):  #
                 return False
         return True
 
-    def refresh_satisfaction(self, changed_rules=None):
+    def refresh_satisfaction(self):
+        """Whether each top-level rule is satisfied depends only on which courses the plan holds."""
         top_level_rules = {
             rule for component in plan_components(self) for rule in component.rules.all()
         }
-        if changed_rules is not None:
-            lineage = rule_lineage(changed_rules)
-            top_level_rules = {rule for rule in top_level_rules if rule.id in lineage}
         if not top_level_rules:
             return
 

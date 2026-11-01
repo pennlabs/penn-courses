@@ -201,6 +201,24 @@ class FulfillmentLevelTest(GraduateSharingTest):
         self.assertFalse(result["graduate"])
         self.assertFalse(result["offered_graduate"])
 
+    def test_prior_selections_and_an_explicit_choice_cannot_cross_levels(self):
+        """A course already in the plan drops the other record's rules when its level says so."""
+        mse_rule = self.mse.rules.get()
+        bse_rule = self.bse.rules.get()
+        rules_per_degree, rule_to_degree, double_counts = map_rules_and_degrees(self.plan)
+        selected, _, _ = allocate_rules(
+            "CIS-5450",
+            rules_per_degree,
+            rule_to_degree,
+            double_counts,
+            bse_rule,
+            degree_plan=self.plan,
+            satisfied_rules=set(),
+            prior_selected={mse_rule, bse_rule},
+            level=GRADUATE_LEVEL,
+        )
+        self.assertEqual(selected, {mse_rule})
+
     def test_an_explicit_choice_cannot_cross_levels(self):
         """Dropping a masters-only course on a bachelors rule selects nothing there."""
         mse_rule = self.mse.rules.get()
