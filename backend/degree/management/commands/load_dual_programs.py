@@ -27,8 +27,10 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        load()
+        removed = load()
         self.stdout.write("Loaded dual programs.")
+        if removed:
+            self.stdout.write(f"Removed stale entries: {', '.join(removed)}")
         if options["check"]:
             self.check()
 

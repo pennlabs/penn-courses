@@ -1,4 +1,5 @@
 from collections import defaultdict
+from decimal import Decimal
 
 from django.db import IntegrityError, transaction
 from django.http import Http404
@@ -85,8 +86,6 @@ def update_fulfillments(degree_plan):
     loses a degree, major or minor: the rules a course can count toward, and what it may
     double count with, both change.
     """
-    from decimal import Decimal
-
     plan_rules = map_rules_and_degrees(degree_plan)
     rules_per_degree = plan_rules.rules_per_component
     rule_to_degree = plan_rules.rule_to_component
@@ -645,8 +644,6 @@ class OnboardFromTranscript(APIView):
 
     @action(detail=True, methods=["post"])
     def post(self, request, degree_plan_id):
-        from decimal import Decimal
-
         counts = defaultdict(int)
         cus = defaultdict(lambda: Decimal(0))
 

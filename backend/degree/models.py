@@ -37,8 +37,6 @@ graduate_programs = {"EM_MSE"}
 # modeled that way today; other schools keep both degree audits.
 college_programs = {"AU_BA"}
 
-# Path program codes look like MATH-BA-GEN. The middle segment is the degree, which is
-# enough to tell which school a standalone major was scraped from.
 _DEGREE_CODE_TO_PROGRAM = {
     "BA": "AU_BA",
     "BAS": "EU_BAS",

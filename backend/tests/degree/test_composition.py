@@ -270,6 +270,57 @@ class DualPatternTest(TestCase):
             self.assertNotIn("M&T Freshman Course", titles)
             self.assertNotIn("Huntsman First-Year Seminar", titles)
 
+    def test_m_and_t_variant_applies_once_with_a_second_wharton_concentration(self):
+        cis = Degree.objects.create(program="EU_BSE", degree="BSE", major="CIS", year=2026)
+        fnce = Degree.objects.create(program="WU_BS", degree="BS", major="FNCE", year=2026)
+        stat = Degree.objects.create(program="WU_BS", degree="BS", major="STAT", year=2026)
+        for degree in (fnce, stat):
+            degree.rules.add(
+                Rule.objects.create(
+                    title="Capstone",
+                    q=repr(Q(attributes__code__in=["WUCP"])),
+                    num=1,
+                    block_type="MAJOR",
+                    block_value=degree.major,
+                )
+            )
+        plan = self.plan_with("mt-stat", "MT", cis, fnce)
+        plan.degrees.add(stat)
+
+        components = {component.owner_id: component for component in compose(plan).components}
+        self.assertEqual(components[cis.id].side, "left")
+        self.assertEqual(components[fnce.id].side, "right")
+        self.assertIsNone(components[stat.id].side)
+        self.assertTrue(components[fnce.id].extra_rules)
+        self.assertFalse(components[stat.id].extra_rules)
+        self.assertNotIn("Capstone", {rule.title for rule in components[fnce.id].rules})
+        self.assertIn("Capstone", {rule.title for rule in components[stat.id].rules})
+
+    def test_load_removes_stale_programs_variants_and_rules(self):
+        from degree.models import ProgramVariant
+
+        old_variant = ProgramVariant.objects.create(code="OLD_V", name="Old")
+        old_variant.rules.add(
+            Rule.objects.create(title="Old", q="", block_type="VARIANT", block_value="OLD_V")
+        )
+        DualProgram.objects.create(code="OLD", name="Old", right_variant=old_variant)
+        mt_root = ProgramVariant.objects.get(code="WH_NOFL_MT").rules.first()
+        renamed = Rule.objects.create(
+            title="Renamed", q="", block_type="VARIANT", block_value="WH_NOFL_MT", parent=mt_root
+        )
+        plan = DegreePlan.objects.create(
+            name="old", person=self.person, dual_program=DualProgram.objects.get(code="OLD")
+        )
+
+        self.assertEqual(load(), ["OLD", "OLD_V"])
+        self.assertFalse(DualProgram.objects.filter(code="OLD").exists())
+        self.assertFalse(ProgramVariant.objects.filter(code="OLD_V").exists())
+        self.assertFalse(Rule.objects.filter(block_value="OLD_V").exists())
+        self.assertFalse(Rule.objects.filter(id=renamed.id).exists())
+        plan.refresh_from_db()
+        self.assertIsNone(plan.dual_program)
+        self.assertEqual(load(), [])
+
 
 class CollegeCreditSummaryTest(TestCase):
     def test_a_shared_major_course_counts_once(self):

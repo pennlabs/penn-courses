@@ -10,10 +10,16 @@ cannot state.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field, replace
 from decimal import Decimal
 
-from degree.models import Degree, graduate_programs, is_college, program_from_program_code
+from degree.models import (
+    Degree,
+    DegreePlan,
+    graduate_programs,
+    is_college,
+    program_from_program_code,
+)
 from degree.utils.double_counts import get_degree_trees
 
 
@@ -44,8 +50,14 @@ class Component:
     side: str | None
     rules: tuple
     roots: tuple
-    keep_ids: frozenset
-    extra_rules: tuple
+    extra_rules: tuple = ()
+    keep_ids: frozenset = field(init=False)
+
+    def __post_init__(self):
+        self.rules = tuple(self.rules)
+        self.roots = tuple(self.roots)
+        self.extra_rules = tuple(self.extra_rules)
+        self.keep_ids = frozenset(rule.id for rule in self.rules)
 
     def __hash__(self):
         return hash(self.key)
@@ -153,45 +165,6 @@ def _degree_title(degree) -> str:
     return f"{degree.degree} in {name}"
 
 
-def _make(
-    key,
-    relation,
-    owner_id,
-    role,
-    program,
-    title,
-    year,
-    graduate,
-    college,
-    cap,
-    removable,
-    side,
-    leaves,
-    roots,
-    suppressed,
-    extra,
-) -> Component:
-    kept = tuple(rule for rule in leaves if rule.id not in suppressed)
-    return Component(
-        key=key,
-        relation=relation,
-        owner_id=owner_id,
-        role=role,
-        program=program,
-        title=title,
-        year=year,
-        is_graduate=graduate,
-        is_college=college,
-        counts_toward_degree_cap=cap,
-        removable=removable,
-        side=side,
-        rules=kept,
-        roots=tuple(roots),
-        keep_ids=frozenset(rule.id for rule in kept),
-        extra_rules=tuple(extra),
-    )
-
-
 def _owner_rules(owner):
     trees = get_degree_trees([owner])
     rules = trees[owner]
@@ -199,27 +172,27 @@ def _owner_rules(owner):
     return rules, roots
 
 
-def _base_component(owner, relation, role, program, side, cap=True) -> Component:
+def _component_key(relation, owner_id) -> str:
+    return f"{relation[:-1] if relation != 'degrees' else 'degree'}:{owner_id}"
+
+
+def _base_component(owner, relation, role, program, cap=True) -> Component:
     rules, roots = _owner_rules(owner)
-    leaves = [rule for rule in rules if rule.q]
-    graduate = program in graduate_programs
-    return _make(
-        key=f"{relation[:-1] if relation != 'degrees' else 'degree'}:{owner.id}",
+    return Component(
+        key=_component_key(relation, owner.id),
         relation=relation,
         owner_id=owner.id,
         role=role,
         program=program,
         title=_title(owner, relation),
         year=getattr(owner, "year", None),
-        graduate=graduate,
-        college=is_college(program),
-        cap=cap,
+        is_graduate=program in graduate_programs,
+        is_college=is_college(program),
+        counts_toward_degree_cap=cap,
         removable=True,
-        side=side,
-        leaves=leaves,
+        side=None,
+        rules=[rule for rule in rules if rule.q],
         roots=roots,
-        suppressed=frozenset(),
-        extra=(),
     )
 
 
@@ -234,14 +207,64 @@ def _title(owner, relation) -> str:
     return f"Minor in {owner.name or owner.code}"
 
 
-def _side_for(program, dual) -> str | None:
-    if dual is None or program is None:
-        return None
-    if program in (dual.left_programs or []):
-        return "left"
-    if program in (dual.right_programs or []):
-        return "right"
-    return None
+def _side_owners(degree_plan, dual) -> dict[str, str]:
+    """
+    The component key that fills each side of a coordinated program.
+
+    A side goes to one degree, or failing that one major, from that side's schools and
+    allowed majors. The earliest added wins, since setting the program adds its pair first.
+    A second degree or major from the same school, such as a second Wharton concentration,
+    is an ordinary component: the program's variant and shared-CU cap do not apply to it.
+    """
+    candidates = [
+        (_component_key("degrees", row.degree_id), row.degree.program, row.degree.major)
+        for row in DegreePlan.degrees.through.objects.filter(degreeplan=degree_plan)
+        .select_related("degree")
+        .order_by("id")
+    ] + [
+        (
+            _component_key("majors", row.major_id),
+            program_from_program_code(row.major.program_code),
+            row.major.code,
+        )
+        for row in DegreePlan.majors.through.objects.filter(degreeplan=degree_plan)
+        .select_related("major")
+        .order_by("id")
+    ]
+    sides = (
+        ("left", dual.left_programs or [], dual.left_allowed_majors or []),
+        ("right", dual.right_programs or [], dual.right_allowed_majors or []),
+    )
+    owners = {}
+    for key, program, major in candidates:
+        for side, programs, allowed in sides:
+            if side in owners.values() or program not in programs:
+                continue
+            if allowed and major not in allowed:
+                continue
+            owners[key] = side
+            break
+    return owners
+
+
+def _gather(degree_plan, dual) -> list[Component]:
+    components = []
+    for index, degree in enumerate(degree_plan.degrees.order_by("id")):
+        role = "primary_degree" if index == 0 else "second_degree"
+        components.append(_base_component(degree, "degrees", role, degree.program))
+    for major in degree_plan.majors.order_by("id"):
+        program = program_from_program_code(major.program_code)
+        components.append(_base_component(major, "majors", "second_major", program))
+    for minor in degree_plan.minors.order_by("id"):
+        program = program_from_program_code(minor.program_code)
+        components.append(_base_component(minor, "minors", "minor", program, cap=False))
+    if dual is None:
+        return components
+    owners = _side_owners(degree_plan, dual)
+    return [
+        replace(component, side=owners[component.key]) if component.key in owners else component
+        for component in components
+    ]
 
 
 def _variant_for(side, dual, override):
@@ -255,34 +278,15 @@ def _variant_for(side, dual, override):
 def _with_variant(component: Component, variant) -> Component:
     if variant is None:
         return component
-    leaves, suppressed, extra = apply_variant(component.rules, variant)
-    return _make(
-        key=component.key,
-        relation=component.relation,
-        owner_id=component.owner_id,
-        role=component.role,
-        program=component.program,
-        title=component.title,
-        year=component.year,
-        graduate=component.is_graduate,
-        college=component.is_college,
-        cap=component.counts_toward_degree_cap,
-        removable=component.removable,
-        side=component.side,
-        leaves=leaves,
-        roots=component.roots,
-        suppressed=suppressed,
-        extra=extra,
-    )
+    rules, _, extra = apply_variant(component.rules, variant)
+    return replace(component, rules=rules, extra_rules=extra)
 
 
-def _is_cas_double_major(components, dual) -> bool:
-    if dual is not None:
-        return False
-    capped = [component for component in components if component.counts_toward_degree_cap]
-    return len(capped) >= 2 and all(
-        component.is_college and not component.is_graduate for component in capped
-    )
+def _apply_variants(components, dual, override) -> list[Component]:
+    return [
+        _with_variant(component, _variant_for(component.side, dual, override))
+        for component in components
+    ]
 
 
 def _split_college(components) -> list[Component]:
@@ -300,7 +304,7 @@ def _split_college(components) -> list[Component]:
             rule for rule in primary.rules if rule.block_type not in MAJOR_BLOCK_TYPES
         ]
         split.append(
-            _make(
+            Component(
                 key=f"college:{primary.owner_id}",
                 relation="college",
                 owner_id=primary.owner_id,
@@ -308,15 +312,13 @@ def _split_college(components) -> list[Component]:
                 program=primary.program,
                 title="College requirements",
                 year=primary.year,
-                graduate=False,
-                college=True,
-                cap=False,
+                is_graduate=False,
+                is_college=True,
+                counts_toward_degree_cap=False,
                 removable=False,
                 side=None,
-                leaves=college_leaves,
+                rules=college_leaves,
                 roots=primary.roots,
-                suppressed=frozenset(),
-                extra=(),
             )
         )
     for component in components:
@@ -326,7 +328,7 @@ def _split_college(components) -> list[Component]:
             ]
             degree = Degree.objects.get(id=component.owner_id)
             split.append(
-                _make(
+                Component(
                     key=f"degree-major:{component.owner_id}",
                     relation="degree-major",
                     owner_id=component.owner_id,
@@ -334,15 +336,13 @@ def _split_college(components) -> list[Component]:
                     program=component.program,
                     title=f"Major in {degree.major_name or degree.major}",
                     year=component.year,
-                    graduate=False,
-                    college=True,
-                    cap=True,
+                    is_graduate=False,
+                    is_college=True,
+                    counts_toward_degree_cap=True,
                     removable=True,
                     side=None,
-                    leaves=major_leaves,
+                    rules=major_leaves,
                     roots=component.roots,
-                    suppressed=frozenset(),
-                    extra=(),
                 )
             )
         else:
@@ -350,7 +350,7 @@ def _split_college(components) -> list[Component]:
     return split
 
 
-def _kind(components, dual) -> str:
+def _classify(components, dual) -> str:
     capped = [component for component in components if component.counts_toward_degree_cap]
     graduate = [component for component in capped if component.is_graduate]
     undergraduate = [component for component in capped if not component.is_graduate]
@@ -366,47 +366,28 @@ def _kind(components, dual) -> str:
     return "single"
 
 
-def compose(degree_plan) -> Composition:
-    dual = degree_plan.dual_program
-    override = degree_plan.right_variant
-
-    raw = []
-    degrees = list(degree_plan.degrees.order_by("id"))
-    for index, degree in enumerate(degrees):
-        role = "primary_degree" if index == 0 else "second_degree"
-        raw.append(
-            _base_component(
-                degree, "degrees", role, degree.program, _side_for(degree.program, dual)
-            )
-        )
-    for major in degree_plan.majors.order_by("id"):
-        program = program_from_program_code(major.program_code)
-        raw.append(
-            _base_component(major, "majors", "second_major", program, _side_for(program, dual))
-        )
-    for minor in degree_plan.minors.order_by("id"):
-        program = program_from_program_code(minor.program_code)
-        raw.append(_base_component(minor, "minors", "minor", program, None, cap=False))
-
-    if _is_cas_double_major(raw, dual):
-        raw = _split_college(raw)
-
-    components = [
-        _with_variant(component, _variant_for(component.side, dual, override)) for component in raw
-    ]
-    kind = _kind(components, dual)
-    policy = SharingPolicy(
+def _policy_for(kind, dual) -> SharingPolicy:
+    return SharingPolicy(
         cross_component_sharing=kind != "single",
         max_shared_cu=getattr(dual, "max_shared_cu", None),
         cas_double_major=kind == "cas_double_major",
     )
-    college_owner_id = next(
-        (component.owner_id for component in components if component.role == "college"), None
-    )
+
+
+def compose(degree_plan) -> Composition:
+    dual = degree_plan.dual_program
+    components = _gather(degree_plan, dual)
+    kind = _classify(components, dual)
+    if kind == "cas_double_major":
+        components = _split_college(components)
+    components = _apply_variants(components, dual, degree_plan.right_variant)
     return Composition(
         kind=kind,
         components=components,
-        policy=policy,
+        policy=_policy_for(kind, dual),
         dual_program=dual,
-        college_owner_id=college_owner_id,
+        college_owner_id=next(
+            (component.owner_id for component in components if component.role == "college"),
+            None,
+        ),
     )
