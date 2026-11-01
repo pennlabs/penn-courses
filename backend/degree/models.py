@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections import defaultdict
+from decimal import Decimal
 from textwrap import dedent
 from typing import Iterable
 
@@ -656,9 +658,6 @@ class DegreePlan(models.Model):  #
         A rule is already satisfied when the courses assigned to it meet its count, its CU
         total, or both. CU is the sum of those courses' credits, not the number of courses.
         """
-        from collections import defaultdict
-        from decimal import Decimal
-
         rules = list(rules)
         if not rules:
             return set()
