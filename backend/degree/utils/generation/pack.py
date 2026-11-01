@@ -2,8 +2,10 @@
 Lay suggestions into the student's semesters.
 
 Pins (fulfillments that already have a semester) occupy credit first and are never moved,
-including when that puts a semester over its cap. Ghosts only land in future, non-gap
-semesters that still have room.
+including when that puts a semester over its cap. No ghost is ever placed past a cap:
+whatever does not fit moves to a later semester, and terms are added past the end of the
+plan when the existing ones are full. A requirement the student dragged keeps its semester
+only while that semester has room. Other ghosts only land in future, non-gap semesters.
 """
 
 from __future__ import annotations
@@ -159,6 +161,18 @@ def pack(suggestions, semesters, allow_summer=False, pins=None, pinned_slots=Non
     def room(row):
         return row["cu_cap"] - used[row["key"]]
 
+    def fits(item, row):
+        return room(row) + 1e-9 >= float(item["cu"])
+
+    def refuse(item):
+        unplaced.append(
+            {
+                "slot_id": item["slot_ids"][0] if item["slot_ids"] else None,
+                "full_code": item.get("full_code"),
+                "reason": "no_capacity",
+            }
+        )
+
     def place_in(item, row):
         used[row["key"]] += float(item["cu"])
         placed.append(
@@ -190,13 +204,13 @@ def pack(suggestions, semesters, allow_summer=False, pins=None, pinned_slots=Non
         season = target[4]
         extend_through(target)
         preferred = row_for(target)
-        if preferred and _fillable(preferred, current, allow_summer) and not preferred["gap"]:
+        if preferred and _fillable(preferred, current, allow_summer) and fits(item, preferred):
             place_in(item, preferred)
             return True
         for row in rows:
             if row["key"] <= target or not row["key"].endswith(season):
                 continue
-            if _fillable(row, current, allow_summer):
+            if _fillable(row, current, allow_summer) and fits(item, row):
                 place_in(item, row)
                 return True
         while len(synthetic) < MAX_SYNTHETIC:
@@ -211,67 +225,56 @@ def pack(suggestions, semesters, allow_summer=False, pins=None, pinned_slots=Non
             synthetic.append(row)
             rows.append(row)
             used[nxt] = 0.0
-            if nxt.endswith(season) and nxt > target:
+            if nxt.endswith(season) and nxt > target and fits(item, row):
                 place_in(item, row)
                 return True
         return False
 
-    for item in _sort_items(suggestions["items"]):
-        slot_ids = item.get("slot_ids") or []
-        pinned_key = next(
-            (pinned_semester[slot] for slot in slot_ids if slot in pinned_semester), None
-        )
-        if pinned_key:
-            row = row_for(pinned_key)
-            if row is not None:
-                place_in(item, row)
-                continue
-        senior = _senior_code(item)
-        if senior:
-            if not place_senior(item, senior):
-                unplaced.append(
-                    {
-                        "slot_id": item["slot_ids"][0] if item["slot_ids"] else None,
-                        "full_code": item.get("full_code"),
-                        "reason": "no_capacity",
-                    }
-                )
-            continue
-        landed = False
+    def place_first_open(item):
         for row in rows:
-            if not _fillable(row, current, allow_summer):
-                continue
-            if room(row) + 1e-9 >= float(item["cu"]):
+            if _fillable(row, current, allow_summer) and fits(item, row):
                 place_in(item, row)
-                landed = True
-                break
-        if landed:
-            continue
-        # Extend past the last known semester, at most twice. Summer is skipped unless allowed,
-        # and a column that is still not in the future does not count as one of the two.
+                return True
+        # Extend past the last known semester. Summer is skipped unless allowed, and a
+        # column that is still not in the future does not count toward MAX_SYNTHETIC.
         origin = synthetic[-1]["key"] if synthetic else (rows[-1]["key"] if rows else current)
-        while len(synthetic) < MAX_SYNTHETIC and not landed:
+        while len(synthetic) < MAX_SYNTHETIC:
             origin = next_semester(origin, allow_summer)
             cap = DEFAULT_SUMMER_CAP if origin.endswith("B") else DEFAULT_CU_CAP
             row = {"key": origin, "cu_cap": cap, "gap": False}
             if not _fillable(row, current, allow_summer):
                 continue
             if float(item["cu"]) > cap + 1e-9:
-                break
+                return False
             synthetic.append(row)
             rows.append(row)
             used[origin] = 0.0
-            if room(row) + 1e-9 >= float(item["cu"]):
-                place_in(item, row)
-                landed = True
-        if not landed:
-            unplaced.append(
-                {
-                    "slot_id": item["slot_ids"][0] if item["slot_ids"] else None,
-                    "full_code": item.get("full_code"),
-                    "reason": "no_capacity",
-                }
-            )
+            place_in(item, row)
+            return True
+        return False
+
+    # Dragged requirements claim their room first, then senior design takes its senior-year
+    # seat, so neither is crowded out by an elective packed earlier.
+    seniors = []
+    rest = []
+    for item in _sort_items(suggestions["items"]):
+        slot_ids = item.get("slot_ids") or []
+        pinned_key = next(
+            (pinned_semester[slot] for slot in slot_ids if slot in pinned_semester), None
+        )
+        row = row_for(pinned_key) if pinned_key else None
+        if row is not None and fits(item, row):
+            place_in(item, row)
+        elif _senior_code(item):
+            seniors.append(item)
+        else:
+            rest.append(item)
+    for item in seniors:
+        if not place_senior(item, _senior_code(item)):
+            refuse(item)
+    for item in rest:
+        if not place_first_open(item):
+            refuse(item)
 
     generated_cu = round(sum(item["cu"] for item in placed), 2)
     occupied = {item["semester"] for item in placed}

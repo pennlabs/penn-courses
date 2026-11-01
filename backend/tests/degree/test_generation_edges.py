@@ -188,7 +188,7 @@ class PackEdgeTests(TestCase):
         )
         self.assertEqual(result["placements"][0]["semester"], "2024C")
 
-    def test_two_pinned_slots_share_a_semester_even_when_that_exceeds_the_cap(self):
+    def test_a_pinned_slot_past_the_cap_moves_to_the_next_open_term(self):
         rows = [
             item(kind="placeholder", code=None, slot="slot:1:0", number=1),
             item(kind="placeholder", code=None, slot="slot:1:1", number=2),
@@ -203,10 +203,59 @@ class PackEdgeTests(TestCase):
             ],
             pins=[],
         )
-        pinned = [row for row in result["placements"] if row["kind"] == "placeholder"]
-        self.assertEqual({row["semester"] for row in pinned}, {"2025A"})
-        course_row = next(row for row in result["placements"] if row["full_code"] == "CIS-3000")
-        self.assertEqual(course_row["semester"], "2024C")
+        semester_of = {row["slot_ids"][0]: row["semester"] for row in result["placements"]}
+        self.assertEqual(semester_of["slot:1:0"], "2025A")
+        self.assertEqual(semester_of["slot:2:0"], "2024C")
+        self.assertEqual(semester_of["slot:1:1"], "2025C")
+        self.assertEqual(result["semesters"], [{"key": "2025C", "synthetic": True}])
+        self.assertEqual(result["unplaced"], [])
+
+    def test_electives_do_not_crowd_senior_design_past_its_cap(self):
+        keys = ("2024C", "2025A", "2025C", "2026A", "2026C", "2027A", "2027C")
+        rows = [item(code=f"CIS-{i}", slot=f"slot:1:{i}", number=i) for i in range(7)]
+        rows.append(item(code="ESE-4500", slot="slot:design:0", number=4500))
+        result = pack({"items": rows}, semesters(*keys, cap=1), pins=[])
+        semester_of = {row["full_code"]: row["semester"] for row in result["placements"]}
+        self.assertEqual(semester_of["ESE-4500"], "2027C")
+        self.assertEqual(semester_of["CIS-6"], "2028A")
+        for term, placed in by_semester(result).items():
+            self.assertLessEqual(sum(row["cu"] for row in placed), 1, term)
+
+    def test_a_full_senior_fall_moves_senior_design_to_the_next_fall(self):
+        design = item(code="ESE-4500", slot="slot:design:0", number=4500)
+        result = pack(
+            {"items": [design]},
+            semesters("2024C", "2027C"),
+            pins=[{"semester": "2027C", "cu": 5.5, "full_code": "CIS-9999"}],
+        )
+        self.assertEqual(result["placements"][0]["semester"], "2028C")
+        self.assertEqual(result["semesters"], [{"key": "2028C", "synthetic": True}])
+
+    def test_no_generated_ghost_pushes_a_semester_past_its_cap(self):
+        keys = ("2024C", "2025A", "2025C", "2026A", "2026C", "2027A", "2027C", "2028A")
+        rows = [item(code=f"CIS-{i}", slot=f"slot:1:{i}", number=i, cu=1) for i in range(20)]
+        rows += [
+            item(code=f"MATH-{i}", slot=f"slot:2:{i}", number=5000 + i, cu=0.5) for i in range(5)
+        ]
+        rows += [
+            item(kind="placeholder", code=None, slot=f"slot:9:{i}", number=10**9)
+            for i in range(4)
+        ]
+        rows.append(item(code="ESE-4500", slot="slot:design:0", number=4500))
+        pins = [{"semester": "2025A", "cu": 3.0, "full_code": "CIS-9999"}]
+        result = pack(
+            {"items": rows},
+            semesters(*keys, cap=3),
+            pins=pins,
+            pinned_slots=[{"slot_id": f"slot:9:{i}", "semester": "2025A"} for i in range(4)],
+        )
+        caps = {key: 3 for key in keys}
+        load = {"2025A": 3.0}
+        for row in result["placements"]:
+            load[row["semester"]] = load.get(row["semester"], 0) + row["cu"]
+        for term, total in load.items():
+            self.assertLessEqual(total, caps.get(term, 5.5) + 1e-9, term)
+        self.assertEqual(result["unplaced"], [])
 
     def test_an_existing_load_leaves_only_the_remainder(self):
         result = pack(
