@@ -37,9 +37,12 @@ from degree.serializers import (
     RuleSerializer,
 )
 from degree.utils.degree_logic import (
+    FULFILLMENT_LEVELS,
+    MIN_GRADUATE_COURSE_NUMBER,
     GraduateSharing,
     allocate_rules,
     check_legal,
+    level_for_course,
     map_rules_and_degrees,
     prewarm_belongs_cache,
     prewarm_credits_cache,
@@ -114,6 +117,7 @@ def update_fulfillments(degree_plan):
             is_transfer=fulfillment.is_transfer_credit,
             graduate_sharing=graduate_sharing,
             credits_cache=credits_cache,
+            level=fulfillment.level,
         )
 
         fulfillment.rules.set(selected_rules)
@@ -125,6 +129,8 @@ def update_fulfillments(degree_plan):
             satisfied_lookup[rule.id] += 1
             if is_satisfied(rule):
                 satisfied_rules.add(rule)
+
+    degree_plan.refresh_satisfaction()
 
 
 class MajorViewset(viewsets.ReadOnlyModelViewSet):
@@ -364,6 +370,20 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
         except Http404:
             return super().create(request, *args, **kwargs)
 
+    def perform_create(self, serializer):
+        serializer.save().degree_plan.refresh_satisfaction()
+
+    def perform_update(self, serializer):
+        full_code = serializer.instance.full_code
+        fulfillment = serializer.save()
+        if fulfillment.full_code != full_code:
+            fulfillment.degree_plan.refresh_satisfaction()
+
+    def perform_destroy(self, fulfillment):
+        degree_plan = fulfillment.degree_plan
+        fulfillment.delete()
+        degree_plan.refresh_satisfaction()
+
     @action(detail=True, methods=["post"], url_path="switch-rule")
     def switch_rule(self, request, *args, **kwargs):
         """
@@ -462,9 +482,66 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
                     other.save()
                     displaced.append({"full_code": other.full_code, "removed": False})
 
+            if any(entry["removed"] for entry in displaced):
+                degree_plan.refresh_satisfaction()
+
         data = self.get_serializer(fulfillment).data
         data["displaced"] = displaced
         return Response(data, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=["post"], url_path="level")
+    def set_level(self, request, *args, **kwargs):
+        """
+        Marks which of a submatriculant's degrees a course is on the books for (see
+        Fulfillment.level), or clears the mark with a null level, and reallocates the course's
+        rules accordingly. Choices the student made that the new level still allows are kept.
+        """
+        if "level" not in request.data:
+            raise ValidationError({"level": "This field is required."})
+        level = request.data["level"] or None
+        if level is not None and level not in dict(FULFILLMENT_LEVELS):
+            raise ValidationError({"level": f"Must be one of {sorted(dict(FULFILLMENT_LEVELS))}."})
+
+        fulfillment = self.get_object()
+        degree_plan = fulfillment.degree_plan
+        full_code = fulfillment.full_code
+        if level_for_course(full_code, level) != level:
+            raise ValidationError(
+                {
+                    "level": f"{full_code} is numbered below {MIN_GRADUATE_COURSE_NUMBER}, "
+                    "so it cannot count toward a masters degree."
+                }
+            )
+
+        rules_per_degree, rule_to_degree, double_counts = map_rules_and_degrees(degree_plan)
+        others = (
+            Fulfillment.objects.filter(degree_plan=degree_plan)
+            .exclude(full_code=full_code)
+            .prefetch_related("rules")
+        )
+        credits_cache = prewarm_credits_cache([f.full_code for f in others] + [full_code])
+        stored = set(fulfillment.rules.all())
+        selected_rules, unselected_rules, legal = allocate_rules(
+            full_code,
+            rules_per_degree,
+            rule_to_degree,
+            double_counts,
+            degree_plan=degree_plan,
+            is_transfer=fulfillment.is_transfer_credit,
+            graduate_sharing=sharing_from_fulfillments(others, rule_to_degree, credits_cache),
+            credits_cache=credits_cache,
+            prior_selected=stored,
+            level=level,
+        )
+
+        with transaction.atomic():
+            fulfillment.level = level
+            fulfillment.rules.set(selected_rules)
+            fulfillment.unselected_rules.set(unselected_rules)
+            fulfillment.legal = legal
+            fulfillment.save()
+
+        return Response(self.get_serializer(fulfillment).data, status=status.HTTP_200_OK)
 
     @action(detail=True, methods=["post"], url_path="override")
     def add_override(self, request, *args, **kwargs):
@@ -559,6 +636,12 @@ class OnboardFromTranscript(APIView):
 
         degree_plan = DegreePlan.objects.get(id=degree_plan_id)
         course_data = request.data["courses"]
+        # Which transcript record each course was read off, keyed by full code. Absent for a
+        # transcript with a single record, whose courses may count toward any degree.
+        levels = {
+            full_code: level_for_course(full_code, level)
+            for full_code, level in (request.data.get("levels") or {}).items()
+        }
 
         satisfied_lookup = defaultdict(int)
 
@@ -591,6 +674,7 @@ class OnboardFromTranscript(APIView):
                     is_transfer=semester_code == TRANSFER_CREDIT_SEMESTER,
                     graduate_sharing=graduate_sharing,
                     credits_cache=credits_cache,
+                    level=levels.get(full_code),
                 )
 
                 # Keyed on Fulfillment's actual unique constraint. Including semester and
@@ -599,7 +683,11 @@ class OnboardFromTranscript(APIView):
                 fulfillment, _ = Fulfillment.objects.update_or_create(
                     degree_plan=degree_plan,
                     full_code=full_code,
-                    defaults={"semester": semester_code, "legal": legal},
+                    defaults={
+                        "semester": semester_code,
+                        "legal": legal,
+                        "level": levels.get(full_code),
+                    },
                 )
                 fulfillment.rules.set(selected_rules)
                 fulfillment.unselected_rules.set(unselected_rules)
@@ -609,6 +697,7 @@ class OnboardFromTranscript(APIView):
                     if is_satisfied(rule):
                         satisfied_rules.add(rule)
 
+        degree_plan.refresh_satisfaction()
         return Response({"message": "OK"}, status=status.HTTP_200_OK)
 
 
@@ -682,6 +771,7 @@ class SatisfiedRuleList(APIView):
             # A course already in the plan keeps what it counts for, so the preview adds to
             # the student's choices rather than replacing or conflicting with them.
             prior_selected=set(fulfillment.rules.all()) if fulfillment else None,
+            level=fulfillment.level if fulfillment else None,
         )
 
         selected_rules_to_return = RuleSerializer(
