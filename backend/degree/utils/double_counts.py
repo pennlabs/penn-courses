@@ -29,6 +29,8 @@ whether or not B names A's block back.
 from collections import defaultdict
 from itertools import permutations
 
+from degree.utils.programs import is_mt_program
+
 
 THIS_BLOCK = "THISBLOCK"
 ANY_BLOCK = "ANYBLOCK"
@@ -101,4 +103,20 @@ def resolve_double_counts(degree_trees):
             double_counts[home].add(other)
             double_counts[other].add(home)
 
+    for wharton, seas in coordinated_degree_pairs(degree_trees):
+        for home in leaf_rules({wharton: degree_trees[wharton]}):
+            for other in leaf_rules({seas: degree_trees[seas]}):
+                double_counts[home].add(other)
+                double_counts[other].add(home)
+
     return dict(double_counts)
+
+
+def coordinated_degree_pairs(owners) -> list[tuple]:
+    """
+    The pairs of a plan's components that are the two halves of one M&T dual degree: a Wharton
+    and a SEAS degree, both of an M&T program. DegreeWorks audits each separately, so any
+    course may count toward both; what the two share is a single minimum total instead.
+    """
+    mt = [owner for owner in owners if is_mt_program(getattr(owner, "program", None))]
+    return [(a, b) for a in mt for b in mt if a.degree == "BS" and b.degree in ("BSE", "BAS")]
