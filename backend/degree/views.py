@@ -38,10 +38,12 @@ from degree.serializers import (
 )
 from degree.utils.degree_logic import (
     FULFILLMENT_LEVELS,
+    MIN_GRADUATE_COURSE_NUMBER,
     GraduateSharing,
     allocate_rules,
     check_legal,
     level_allows,
+    level_for_course,
     map_rules_and_degrees,
     prewarm_belongs_cache,
     prewarm_credits_cache,
@@ -505,6 +507,13 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
         fulfillment = self.get_object()
         degree_plan = fulfillment.degree_plan
         full_code = fulfillment.full_code
+        if level_for_course(full_code, level) != level:
+            raise ValidationError(
+                {
+                    "level": f"{full_code} is numbered below {MIN_GRADUATE_COURSE_NUMBER}, "
+                    "so it cannot count toward a masters degree."
+                }
+            )
 
         rules_per_degree, rule_to_degree, double_counts = map_rules_and_degrees(degree_plan)
         others = (
@@ -635,7 +644,10 @@ class OnboardFromTranscript(APIView):
         course_data = request.data["courses"]
         # Which transcript record each course was read off, keyed by full code. Absent for a
         # transcript with a single record, whose courses may count toward any degree.
-        levels = request.data.get("levels") or {}
+        levels = {
+            full_code: level_for_course(full_code, level)
+            for full_code, level in (request.data.get("levels") or {}).items()
+        }
 
         satisfied_lookup = defaultdict(int)
 

@@ -312,6 +312,44 @@ class FulfillmentLevelTest(GraduateSharingTest):
         response = client.post(url, {"level": "BOGUS"}, format="json")
         self.assertEqual(response.status_code, 400)
 
+    def test_a_course_numbered_below_5000_cannot_be_marked_for_the_masters(self):
+        set_semester()
+        PDPBetaUser.objects.create(person=self.plan.person)
+        client = APIClient()
+        client.force_authenticate(user=self.plan.person)
+        Fulfillment.objects.create(degree_plan=self.plan, full_code="CIS-1200", semester="2024C")
+        url = reverse(
+            "degreeplan-fulfillment-set-level",
+            kwargs={"degreeplan_pk": self.plan.id, "full_code": "CIS-1200"},
+        )
+
+        for level in (GRADUATE_LEVEL, SHARED_LEVEL):
+            response = client.post(url, {"level": level}, format="json")
+            self.assertEqual(response.status_code, 400, level)
+            self.assertIn("5000", response.data["level"])
+        self.assertIsNone(Fulfillment.objects.get(full_code="CIS-1200").level)
+
+        response = client.post(url, {"level": UNDERGRADUATE_LEVEL}, format="json")
+        self.assertEqual(response.status_code, 200, response.content)
+
+    def test_onboarding_keeps_a_course_numbered_below_5000_off_the_masters_record(self):
+        PDPBetaUser.objects.create(person=self.plan.person)
+        client = APIClient()
+        client.force_authenticate(user=self.plan.person)
+        response = client.post(
+            reverse("onboard-from-transcript", kwargs={"degree_plan_id": self.plan.id}),
+            {
+                "courses": [{"sem": "2024C", "courses": ["CIS-1200", "CIS-5450"]}],
+                "levels": {"CIS-1200": SHARED_LEVEL, "CIS-5450": SHARED_LEVEL},
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        levels = dict(
+            Fulfillment.objects.filter(degree_plan=self.plan).values_list("full_code", "level")
+        )
+        self.assertEqual(levels, {"CIS-1200": UNDERGRADUATE_LEVEL, "CIS-5450": SHARED_LEVEL})
+
     def test_a_single_record_transcript_sends_no_levels(self):
         """Without levels every course may count toward any degree, as before."""
         PDPBetaUser.objects.create(person=self.plan.person)

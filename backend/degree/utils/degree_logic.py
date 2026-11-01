@@ -157,6 +157,18 @@ def course_number(full_code: str):
     return int(match.group(1)) if match else None
 
 
+def is_graduate_coursework(full_code: str) -> bool:
+    number = course_number(full_code)
+    return number is not None and number >= MIN_GRADUATE_COURSE_NUMBER
+
+
+def level_for_course(full_code: str, level):
+    """A course numbered below graduate coursework can only be on the undergraduate record."""
+    if level in (GRADUATE_LEVEL, SHARED_LEVEL) and not is_graduate_coursework(full_code):
+        return UNDERGRADUATE_LEVEL
+    return level
+
+
 class GraduateSharing:
     """
     Tracks how much of a submatriculant's double counting allowance a plan has used.
@@ -207,8 +219,7 @@ def apply_graduate_sharing(
         # Counts toward only one level, so no allowance is spent.
         return selected_rules, unselected_rules
 
-    number = course_number(full_code)
-    if number is not None and number >= MIN_GRADUATE_COURSE_NUMBER and sharing.allows(credits):
+    if is_graduate_coursework(full_code) and sharing.allows(credits):
         sharing.take(credits)
         return selected_rules, unselected_rules
 
