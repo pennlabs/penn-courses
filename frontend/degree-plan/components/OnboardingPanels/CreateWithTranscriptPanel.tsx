@@ -30,6 +30,7 @@ import { PulseLoader } from "react-spinners";
 import {
   DegreeListing,
   DegreePlan,
+  DualProgram,
   Major,
   MajorOption,
   Options,
@@ -58,6 +59,7 @@ type WelcomeLayoutProps = {
   inputtedMajors: MajorOption[];
   setShowOnboardingModal: (arg0: boolean) => void;
   inputtedSecondMajors: MajorOptionItem[];
+  detectedDualProgram?: string | null;
   canExit?: boolean;
   onExit?: () => void;
 };
@@ -71,6 +73,7 @@ export default function CreateWithTranscriptPanel({
   inputtedSchools,
   inputtedMajors,
   inputtedSecondMajors,
+  detectedDualProgram = null,
   setShowOnboardingModal,
   canExit = false,
   onExit,
@@ -88,6 +91,10 @@ export default function CreateWithTranscriptPanel({
   const [majors, setMajors] = useState<MajorOption[]>(inputtedMajors);
   const [secondMajors, setSecondMajors] =
     useState<MajorOptionItem[]>(inputtedSecondMajors);
+  const [dualProgram, setDualProgram] = useState<DualProgram | null>(null);
+  const [leftDegree, setLeftDegree] = useState<DegreeListing | null>(null);
+  const [rightDegree, setRightDegree] = useState<DegreeListing | null>(null);
+  const [languageRequired, setLanguageRequired] = useState(false);
   const [degreeID, setDegreeID] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
@@ -100,6 +107,13 @@ export default function CreateWithTranscriptPanel({
   >(`/api/degree/degrees`);
   const { data: standaloneMajors, isLoading: isLoadingMajors } =
     useSWR<Major[]>(`/api/degree/majors`);
+  const { data: dualPrograms } = useSWR<DualProgram[]>(`/api/degree/dual-programs`);
+
+  useEffect(() => {
+    if (!detectedDualProgram || !dualPrograms || dualProgram) return;
+    const match = dualPrograms.find((program) => program.code === detectedDualProgram);
+    if (match) setDualProgram(match);
+  }, [detectedDualProgram, dualPrograms, dualProgram]);
 
   // Workaround solution to only input courses once degree has been created and degreeID exists.
   // Will likely change in the future!
@@ -163,13 +177,24 @@ export default function CreateWithTranscriptPanel({
             JSON.stringify(semesters)
           );
         }
-        await postFetcher(`/api/degree/degreeplans/${_new.id}/degrees`, {
-          degree_ids: majors.map((m) => m.value.id),
-        });
-        if (secondMajors.length) {
-          await postFetcher(`/api/degree/degreeplans/${_new.id}/majors`, {
-            major_ids: secondMajors.map((m) => m.value.id),
+        if (dualProgram && leftDegree && rightDegree) {
+          await postFetcher(`/api/degree/degreeplans/${_new.id}/dual-program`, {
+            code: dualProgram.code,
+            left_id: leftDegree.id,
+            right_id: rightDegree.id,
+            ...(dualProgram.code === "MT" && languageRequired
+              ? { right_variant: "WH_FL_MT" }
+              : {}),
           });
+        } else {
+          await postFetcher(`/api/degree/degreeplans/${_new.id}/degrees`, {
+            degree_ids: majors.map((m) => m.value.id),
+          });
+          if (secondMajors.length) {
+            await postFetcher(`/api/degree/degreeplans/${_new.id}/majors`, {
+              major_ids: secondMajors.map((m) => m.value.id),
+            });
+          }
         }
         setActiveDegreeplan(_new);
         setDegreeID(_new.id);
@@ -189,12 +214,29 @@ export default function CreateWithTranscriptPanel({
     createDegreeplan().then(() => {});
   };
 
+  const degreesChosen = dualProgram
+    ? leftDegree !== null && rightDegree !== null
+    : schools.length > 0 && majors.length > 0;
   const complete =
     startingYear !== null &&
     graduationYear !== null &&
-    schools.length > 0 &&
-    majors.length > 0 &&
+    degreesChosen &&
     name !== "";
+
+  const sideOptions = (programs: string[], allowedMajors: string[]) =>
+    (degrees ?? [])
+      .filter(
+        (degree) =>
+          programs.includes(degree.program) &&
+          (allowedMajors.length === 0 || allowedMajors.includes(degree.major))
+      )
+      .map((degree) => ({
+        value: degree,
+        label: `${degree.major_name || degree.major}${
+          degree.concentration_name ? ` - ${degree.concentration_name}` : ""
+        } (${degree.year})`,
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label));
 
   const getYearOptions = useCallback(() => {
     if (!options)
@@ -300,6 +342,87 @@ export default function CreateWithTranscriptPanel({
                 />
               </FieldWrapper>
 
+              <Label required={false}>Dual-degree program</Label>
+              <Select
+                options={[
+                  { value: null, label: "None" },
+                  ...(dualPrograms ?? []).map((program) => ({
+                    value: program,
+                    label: program.name,
+                  })),
+                ]}
+                value={
+                  dualProgram
+                    ? { value: dualProgram, label: dualProgram.name }
+                    : { value: null, label: "None" }
+                }
+                onChange={(selected) => {
+                  setDualProgram(selected?.value ?? null);
+                  setLeftDegree(null);
+                  setRightDegree(null);
+                }}
+                placeholder="None"
+                styles={customSelectStylesRight}
+              />
+            </FieldWrapper>
+
+            {dualProgram && (
+              <>
+                <FieldWrapper>
+                  <Label required>{dualProgram.name.split(" ")[0]} — first degree</Label>
+                  <Select
+                    options={sideOptions(dualProgram.left_programs, dualProgram.left_allowed_majors)}
+                    value={
+                      leftDegree
+                        ? {
+                            value: leftDegree,
+                            label: leftDegree.major_name || leftDegree.major,
+                          }
+                        : null
+                    }
+                    onChange={(selected) => setLeftDegree(selected?.value ?? null)}
+                    placeholder="Select the first degree"
+                    styles={customSelectStylesRight}
+                  />
+                </FieldWrapper>
+                <FieldWrapper>
+                  <Label required>Second degree</Label>
+                  <Select
+                    options={sideOptions(
+                      dualProgram.right_programs,
+                      dualProgram.right_allowed_majors
+                    )}
+                    value={
+                      rightDegree
+                        ? {
+                            value: rightDegree,
+                            label: rightDegree.major_name || rightDegree.major,
+                          }
+                        : null
+                    }
+                    onChange={(selected) => setRightDegree(selected?.value ?? null)}
+                    placeholder="Select the second degree"
+                    styles={customSelectStylesRight}
+                  />
+                </FieldWrapper>
+                {dualProgram.code === "MT" && (
+                  <FieldWrapper>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={languageRequired}
+                        onChange={(event) => setLanguageRequired(event.target.checked)}
+                      />{" "}
+                      Foreign language required
+                    </label>
+                  </FieldWrapper>
+                )}
+              </>
+            )}
+
+            {!dualProgram && (
+            <>
+            <FieldWrapper>
               <Label required>School(s) or Program(s)</Label>
               <Select
                 options={schoolOptions}
@@ -343,7 +466,8 @@ export default function CreateWithTranscriptPanel({
                 isLoading={isLoadingMajors}
               />
             </FieldWrapper>
-
+            </>
+            )}
 
             {!scrapedCourses.length && (
               <NextButtonContainer>

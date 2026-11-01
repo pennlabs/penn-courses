@@ -51,7 +51,11 @@ from degree.utils.degree_logic import (
     reconcile_rules,
     selection_is_legal,
     sharing_from_fulfillments,
+    summarize_plan,
 )
+from degree.utils.generation import generate_schedule
+from degree.utils.generation.open_rules import filter_panel_options
+from degree.utils.generation.pack import PackError
 from PennCourses.docs_settings import PcxAutoSchema
 
 
@@ -324,6 +328,63 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             raise ValidationError({field: f"{degree.program} is not a side of this program."})
         if majors and degree.major not in majors:
             raise ValidationError({field: f"{degree.major} is not an allowed major."})
+
+    @action(detail=True, methods=["post"])
+    def generate(self, request, pk=None):
+        """
+        Propose a schedule. Ghosts are not saved. Claims on courses already on the plan
+        are rebuilt, and a second spelling of a cross-listed course is removed.
+        """
+        degree_plan = self.get_object()
+        semesters = request.data.get("semesters")
+        if not isinstance(semesters, list):
+            raise ValidationError({"semesters": "This field must be a list."})
+        from degree.utils.generation.reconcile import cross_listing_violations, prepare_plan
+
+        prepared = prepare_plan(degree_plan)
+        try:
+            payload = generate_schedule(
+                degree_plan,
+                semesters,
+                allow_summer=bool(request.data.get("allow_summer")),
+                pinned_slots=request.data.get("pinned_slots") or [],
+            )
+        except PackError as exc:
+            raise ValidationError({"semesters": str(exc)})
+        summary = summarize_plan(
+            degree_plan,
+            list(degree_plan.fulfillments.prefetch_related("rules")),
+        )
+        payload["course_claims"] = summary["course_claims"]
+        payload["violations"] = (
+            summary["violations"] + prepared["removed"] + cross_listing_violations(degree_plan)
+        )
+        payload["claims_updated"] = prepared["claims_updated"]
+        return Response(payload)
+
+    @action(detail=True, methods=["get"], url_path="panel-options")
+    def panel_options(self, request, pk=None):
+        """How many courses each restriction leaf matches, for the requirements panel."""
+        degree_plan = self.get_object()
+        plan_rules = map_rules_and_degrees(degree_plan)
+        payload = {}
+        for rule in plan_rules.rule_to_component:
+            if not rule.q:
+                continue
+            options = filter_panel_options(rule)
+            if options is not None:
+                payload[rule.id] = options
+        return Response(payload)
+
+    @action(detail=True, methods=["get"])
+    def summary(self, request, pk=None):
+        degree_plan = self.get_object()
+        fulfillments = list(degree_plan.fulfillments.prefetch_related("rules"))
+        payload = summarize_plan(degree_plan, fulfillments)
+        from degree.utils.generation.reconcile import cross_listing_violations
+
+        payload["violations"] = payload["violations"] + cross_listing_violations(degree_plan)
+        return Response(payload)
 
     def update_components(self, request, relation, field):
         ids = request.data.get(field)
