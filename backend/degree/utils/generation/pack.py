@@ -6,6 +6,8 @@ including when that puts a semester over its cap. No ghost is ever placed past a
 whatever does not fit moves to a later semester, and terms are added past the end of the
 plan when the existing ones are full. A requirement the student dragged keeps its semester
 only while that semester has room. Other ghosts only land in future, non-gap semesters.
+Requirements fill from the earliest open term; free electives are packed after them,
+from the last term backward, so they sit at the end of the schedule.
 """
 
 from __future__ import annotations
@@ -122,16 +124,18 @@ def _senior_target(code, anchor):
     return f"{anchor + 4}A"
 
 
+def _is_free_elective(item):
+    return any(str(slot).startswith("slot:free:") for slot in item.get("slot_ids") or [])
+
+
 def _sort_items(items):
-    # Placements are courses the student already has. Free electives fill the
-    # earliest terms after those. Named courses and other placeholders follow.
-    kind_order = {"placement": 0, "course": 2, "placeholder": 3}
+    # Placements are courses the student already has, then named courses, then other
+    # placeholders. Free electives go last.
+    kind_order = {"placement": 0, "course": 1, "placeholder": 2}
 
     def key(item):
         slot = item["slot_ids"][0] if item.get("slot_ids") else ""
-        rank = kind_order.get(item.get("kind"), 9)
-        if str(slot).startswith("slot:free:"):
-            rank = 1
+        rank = 3 if _is_free_elective(item) else kind_order.get(item.get("kind"), 9)
         return (
             rank,
             item.get("course_number", 10**9),
@@ -272,8 +276,29 @@ def pack(suggestions, semesters, allow_summer=False, pins=None, pinned_slots=Non
     for item in seniors:
         if not place_senior(item, _senior_code(item)):
             refuse(item)
-    for item in rest:
+
+    def place_free_elective(item, end):
+        for row in sorted(rows, key=lambda row: row["key"], reverse=True):
+            if row["key"] <= end and _fillable(row, current, allow_summer) and fits(item, row):
+                place_in(item, row)
+                return True
+        return place_first_open(item)
+
+    requirements = [item for item in rest if not _is_free_elective(item)]
+    electives = [item for item in rest if _is_free_elective(item)]
+    for item in requirements:
         if not place_first_open(item):
+            refuse(item)
+    # Free electives fill backward from the end of the schedule: spring of the fourth year,
+    # or later if courses or requirements already run past it. A longer grid left over
+    # from an earlier proposal is not a reason to stretch the schedule.
+    end = max(
+        [f"{anchor + 4}A"]
+        + [pin["semester"] for pin in pins or [] if pin["semester"] in used]
+        + [row["semester"] for row in placed]
+    )
+    for item in electives:
+        if not place_free_elective(item, end):
             refuse(item)
 
     generated_cu = round(sum(item["cu"] for item in placed), 2)

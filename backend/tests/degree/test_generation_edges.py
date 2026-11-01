@@ -123,19 +123,64 @@ class PackEdgeTests(TestCase):
         )
         self.assertEqual(used["2025A"][0]["full_code"], "CIS-1002")
 
-    def test_free_electives_land_before_later_requirements(self):
+    def test_free_electives_land_after_requirements(self):
         elective = item(code=None, slot="slot:free:degree:1:0", number=10**9, cu=1)
         elective["full_code"] = None
         elective["kind"] = "placeholder"
         elective["short_label"] = "Free Elective"
         result = pack(
-            {"items": [item(code="CIS-1200", slot="slot:1:0", number=1200), elective]},
+            {"items": [elective, item(code="CIS-1200", slot="slot:1:0", number=1200)]},
             semesters("2024C", "2025A", cap=1),
             pins=[],
         )
         used = by_semester(result)
-        self.assertEqual(used["2024C"][0]["slot_ids"], ["slot:free:degree:1:0"])
-        self.assertEqual(used["2025A"][0]["full_code"], "CIS-1200")
+        self.assertEqual(used["2024C"][0]["full_code"], "CIS-1200")
+        self.assertEqual(used["2025A"][0]["slot_ids"], ["slot:free:degree:1:0"])
+
+    def test_free_electives_fill_from_the_end_of_the_schedule(self):
+        electives = []
+        for index in range(3):
+            elective = item(code=None, slot=f"slot:free:degree:1:{index}", number=10**9, cu=1)
+            elective["full_code"] = None
+            elective["kind"] = "placeholder"
+            electives.append(elective)
+        result = pack(
+            {"items": electives + [item(code="CIS-1200", slot="slot:1:0", number=1200)]},
+            semesters("2024C", "2025A", "2025C", "2026A", cap=2),
+            pins=[],
+        )
+        semester_of = {row["slot_ids"][0]: row["semester"] for row in result["placements"]}
+        self.assertEqual(semester_of["slot:1:0"], "2024C")
+        self.assertEqual(
+            sorted(semester for slot, semester in semester_of.items() if "free" in slot),
+            ["2025C", "2026A", "2026A"],
+        )
+        self.assertEqual(result["semesters"], [])
+
+    def test_free_electives_do_not_stretch_into_a_stale_far_column(self):
+        elective = item(code=None, slot="slot:free:degree:1:0", number=10**9, cu=1)
+        elective["full_code"] = None
+        elective["kind"] = "placeholder"
+        result = pack(
+            {"items": [elective, item(code="CIS-1200", slot="slot:1:0", number=1200)]},
+            semesters("2024C", "2025A", "2028A", "2029C", cap=1),
+            pins=[],
+        )
+        semester_of = {row["slot_ids"][0]: row["semester"] for row in result["placements"]}
+        self.assertEqual(semester_of["slot:1:0"], "2024C")
+        self.assertEqual(semester_of["slot:free:degree:1:0"], "2028A")
+
+    def test_free_electives_extend_the_schedule_only_when_it_is_full(self):
+        elective = item(code=None, slot="slot:free:degree:1:0", number=10**9, cu=1)
+        elective["full_code"] = None
+        elective["kind"] = "placeholder"
+        result = pack(
+            {"items": [elective, item(code="CIS-1200", slot="slot:1:0", number=1200)]},
+            semesters("2024C", cap=1),
+            pins=[],
+        )
+        self.assertEqual(by_semester(result)["2024C"][0]["full_code"], "CIS-1200")
+        self.assertEqual(by_semester(result)["2025A"][0]["slot_ids"], ["slot:free:degree:1:0"])
 
     def test_a_one_cu_cap_seats_one_course_per_term(self):
         rows = [item(code=f"CIS-{i}", slot=f"slot:1:{i}", number=i) for i in range(3)]
