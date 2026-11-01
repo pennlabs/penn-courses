@@ -1,4 +1,5 @@
 from collections import defaultdict
+from decimal import Decimal
 
 from django.db import IntegrityError, transaction
 from django.http import Http404
@@ -17,10 +18,12 @@ from degree.models import (
     Degree,
     DegreePlan,
     DockedCourse,
+    DualProgram,
     Fulfillment,
     Major,
     Minor,
     PDPBetaUser,
+    ProgramVariant,
 )
 from degree.serializers import (
     DegreeDetailSerializer,
@@ -28,6 +31,7 @@ from degree.serializers import (
     DegreePlanDetailSerializer,
     DegreePlanListSerializer,
     DockedCourseSerializer,
+    DualProgramSerializer,
     FulfillmentSerializer,
     MajorDetailSerializer,
     MajorListSerializer,
@@ -37,13 +41,15 @@ from degree.serializers import (
     RuleSerializer,
 )
 from degree.utils.degree_logic import (
+    DEFAULT_COURSE_CREDITS,
     GraduateSharing,
     allocate_rules,
-    check_legal,
     map_rules_and_degrees,
     prewarm_belongs_cache,
+    prewarm_canonical_cache,
     prewarm_credits_cache,
     reconcile_rules,
+    selection_is_legal,
     sharing_from_fulfillments,
 )
 from PennCourses.docs_settings import PcxAutoSchema
@@ -80,14 +86,20 @@ def update_fulfillments(degree_plan):
     loses a degree, major or minor: the rules a course can count toward, and what it may
     double count with, both change.
     """
-    rules_per_degree, rule_to_degree, double_counts = map_rules_and_degrees(degree_plan)
-    # Helper to track satisfaction
-    satisfied_lookup = defaultdict(int)
+    plan_rules = map_rules_and_degrees(degree_plan)
+    rules_per_degree = plan_rules.rules_per_component
+    rule_to_degree = plan_rules.rule_to_component
+    double_counts = plan_rules.double_counts
+    policy = plan_rules.composition.policy
+    # Count and CU are tracked separately: a credit rule is satisfied by the sum of CUs.
+    counts = defaultdict(int)
+    cus = defaultdict(lambda: Decimal(0))
     satisfied_rules = set()
 
     def is_satisfied(rule):
-        f = satisfied_lookup[rule.id]
-        return (rule.num and f >= rule.num) or (rule.credits and f >= rule.credits)
+        num_ok = rule.num is None or counts[rule.id] >= rule.num
+        cu_ok = rule.credits is None or cus[rule.id] >= rule.credits
+        return (rule.num is not None or rule.credits is not None) and num_ok and cu_ok
 
     fulfillments = list(
         Fulfillment.objects.filter(degree_plan=degree_plan).order_by("semester", "full_code")
@@ -98,6 +110,9 @@ def update_fulfillments(degree_plan):
         [fulfillment.full_code for fulfillment in fulfillments],
     )
     credits_cache = prewarm_credits_cache([fulfillment.full_code for fulfillment in fulfillments])
+    canonical_cache = prewarm_canonical_cache(
+        [fulfillment.full_code for fulfillment in fulfillments]
+    )
     # Fulfillments are ordered by semester above, so the allowance goes to the earliest
     # courses eligible for it.
     graduate_sharing = GraduateSharing()
@@ -114,6 +129,8 @@ def update_fulfillments(degree_plan):
             is_transfer=fulfillment.is_transfer_credit,
             graduate_sharing=graduate_sharing,
             credits_cache=credits_cache,
+            policy=policy,
+            canonical=canonical_cache.get(fulfillment.full_code),
         )
 
         fulfillment.rules.set(selected_rules)
@@ -121,8 +138,10 @@ def update_fulfillments(degree_plan):
         fulfillment.legal = legal
         fulfillment.save()
 
+        credits = credits_cache.get(fulfillment.full_code, DEFAULT_COURSE_CREDITS)
         for rule in selected_rules:
-            satisfied_lookup[rule.id] += 1
+            counts[rule.id] += 1
+            cus[rule.id] += credits
             if is_satisfied(rule):
                 satisfied_rules.add(rule)
 
@@ -163,6 +182,16 @@ class MinorViewset(viewsets.ReadOnlyModelViewSet):
 
     def get_serializer_class(self):
         return MinorListSerializer if self.action == "list" else MinorDetailSerializer
+
+
+class DualProgramViewset(viewsets.ReadOnlyModelViewSet):
+    """Named coordinated dual degrees: M&T, Huntsman, LSM, VIPER."""
+
+    permission_classes = [IsAuthenticated & InPDPBeta]
+    queryset = DualProgram.objects.select_related("left_variant", "right_variant")
+
+    def get_serializer_class(self):
+        return DualProgramSerializer
 
 
 class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
@@ -245,6 +274,56 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         Add or remove minors from a degree plan.
         """
         return self.update_components(request, "minors", "minor_ids")
+
+    @action(detail=True, methods=["post", "delete"], url_path="dual-program")
+    def set_dual_program(self, request, pk=None):
+        """
+        Attach or clear a coordinated dual degree. Attaching replaces the plan's degrees
+        with the two sides and reallocates fulfillments.
+        """
+        degree_plan = self.get_object()
+        if request.method == "DELETE":
+            degree_plan.dual_program = None
+            degree_plan.right_variant = None
+            degree_plan.save(update_fields=["dual_program", "right_variant"])
+            update_fulfillments(degree_plan)
+            return Response(self.get_serializer(degree_plan).data)
+
+        code = request.data.get("code")
+        left_id = request.data.get("left_id")
+        right_id = request.data.get("right_id")
+        if code is None or left_id is None or right_id is None:
+            raise ValidationError("code, left_id and right_id are required.")
+        try:
+            dual = DualProgram.objects.get(code=code)
+            left = Degree.objects.get(id=left_id)
+            right = Degree.objects.get(id=right_id)
+        except (DualProgram.DoesNotExist, Degree.DoesNotExist):
+            raise ValidationError("Unknown dual program or degree.")
+
+        self._check_side(dual.left_programs, dual.left_allowed_majors, left, "left_id")
+        self._check_side(dual.right_programs, dual.right_allowed_majors, right, "right_id")
+
+        variant = None
+        variant_code = request.data.get("right_variant")
+        if variant_code:
+            try:
+                variant = ProgramVariant.objects.get(code=variant_code)
+            except ProgramVariant.DoesNotExist:
+                raise ValidationError({"right_variant": "Unknown variant."})
+
+        degree_plan.dual_program = dual
+        degree_plan.right_variant = variant
+        degree_plan.save(update_fields=["dual_program", "right_variant"])
+        degree_plan.degrees.set([left, right])
+        update_fulfillments(degree_plan)
+        return Response(self.get_serializer(degree_plan).data)
+
+    def _check_side(self, programs, majors, degree, field):
+        if programs and degree.program not in programs:
+            raise ValidationError({field: f"{degree.program} is not a side of this program."})
+        if majors and degree.major not in majors:
+            raise ValidationError({field: f"{degree.major} is not an allowed major."})
 
     def update_components(self, request, relation, field):
         ids = request.data.get(field)
@@ -329,7 +408,9 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
             degree_plan = get_object_or_404(
                 DegreePlan, id=self.get_degree_plan_id(), person=request.user
             )
-            _, rule_to_degree, double_counts = map_rules_and_degrees(degree_plan)
+            plan_rules = map_rules_and_degrees(degree_plan)
+            rule_to_degree = plan_rules.rule_to_component
+            double_counts = plan_rules.double_counts
             rules = list(Rule.objects.filter(id__in=request_rules))
             existing = (
                 Fulfillment.objects.filter(
@@ -340,7 +421,10 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
             )
             stored = set(existing.rules.all()) if existing else set()
             kept, demoted = reconcile_rules(
-                rules, {rule for rule in rules if rule not in stored}, rule_to_degree, double_counts
+                rules,
+                {rule for rule in rules if rule not in stored},
+                rule_to_degree,
+                double_counts,
             )
 
             request_unselected = list_field(request.data, "unselected_rules")
@@ -357,7 +441,9 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
                 request.data._mutable = True
             set_list_field(request.data, "rules", sorted(rule.id for rule in kept))
             set_list_field(request.data, "unselected_rules", sorted(unselected_ids))
-            request.data["legal"] = check_legal(kept, rule_to_degree, double_counts)
+            request.data["legal"] = selection_is_legal(
+                kept, rule_to_degree, double_counts, plan_rules.composition.policy
+            )
 
         try:
             return self.partial_update(request, *args, **kwargs)
@@ -391,7 +477,10 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
         degree_plan = fulfillment.degree_plan
         full_code = fulfillment.full_code
 
-        _, rule_to_degree, double_counts = map_rules_and_degrees(degree_plan)
+        plan_rules = map_rules_and_degrees(degree_plan)
+        rule_to_degree = plan_rules.rule_to_component
+        double_counts = plan_rules.double_counts
+        policy = plan_rules.composition.policy
         if target_rule not in rule_to_degree:
             raise ValidationError({"rule_id": "Rule does not belong to this degree plan."})
 
@@ -433,7 +522,9 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
 
             fulfillment.rules.set(selected_rules)
             fulfillment.unselected_rules.set(unselected_rules)
-            fulfillment.legal = check_legal(selected_rules, rule_to_degree, double_counts)
+            fulfillment.legal = selection_is_legal(
+                selected_rules, rule_to_degree, double_counts, policy
+            )
             fulfillment.save()
 
             other_fulfillments = (
@@ -458,7 +549,9 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
                 else:
                     other.rules.set(other_selected)
                     other.unselected_rules.set(other_unselected)
-                    other.legal = check_legal(other_selected, rule_to_degree, double_counts)
+                    other.legal = selection_is_legal(
+                        other_selected, rule_to_degree, double_counts, policy
+                    )
                     other.save()
                     displaced.append({"full_code": other.full_code, "removed": False})
 
@@ -486,8 +579,8 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
 
         fulfillment = self.get_object()
 
-        _, rule_to_degree, _ = map_rules_and_degrees(fulfillment.degree_plan)
-        if rule not in rule_to_degree:
+        plan_rules = map_rules_and_degrees(fulfillment.degree_plan)
+        if rule not in plan_rules.rule_to_component:
             raise ValidationError({"rule_id": "Rule does not belong to this degree plan."})
 
         fulfillment.overrides.add(rule)
@@ -551,18 +644,22 @@ class OnboardFromTranscript(APIView):
 
     @action(detail=True, methods=["post"])
     def post(self, request, degree_plan_id):
-        satisfied_lookup = {}
+        counts = defaultdict(int)
+        cus = defaultdict(lambda: Decimal(0))
 
         def is_satisfied(rule):
-            f = satisfied_lookup[rule.id]
-            return (rule.num and f >= rule.num) or (rule.credits and f >= rule.credits)
+            num_ok = rule.num is None or counts[rule.id] >= rule.num
+            cu_ok = rule.credits is None or cus[rule.id] >= rule.credits
+            return (rule.num is not None or rule.credits is not None) and num_ok and cu_ok
 
         degree_plan = DegreePlan.objects.get(id=degree_plan_id)
         course_data = request.data["courses"]
 
-        satisfied_lookup = defaultdict(int)
-
-        rules_per_degree, rule_to_degree, double_counts = map_rules_and_degrees(degree_plan)
+        plan_rules = map_rules_and_degrees(degree_plan)
+        rules_per_degree = plan_rules.rules_per_component
+        rule_to_degree = plan_rules.rule_to_component
+        double_counts = plan_rules.double_counts
+        policy = plan_rules.composition.policy
         satisfied_rules = set()
 
         # Every course is known up front, so check them against the rules in bulk
@@ -570,9 +667,9 @@ class OnboardFromTranscript(APIView):
             {rule for rules in rules_per_degree.values() for rule in rules},
             [full_code for semester in course_data for full_code in semester["courses"]],
         )
-        credits_cache = prewarm_credits_cache(
-            [full_code for semester in course_data for full_code in semester["courses"]]
-        )
+        full_codes = [full_code for semester in course_data for full_code in semester["courses"]]
+        credits_cache = prewarm_credits_cache(full_codes)
+        canonical_cache = prewarm_canonical_cache(full_codes)
         # A transcript arrives in the order its courses were taken, so the allowance goes to
         # the earliest courses eligible for it.
         graduate_sharing = GraduateSharing()
@@ -591,6 +688,8 @@ class OnboardFromTranscript(APIView):
                     is_transfer=semester_code == TRANSFER_CREDIT_SEMESTER,
                     graduate_sharing=graduate_sharing,
                     credits_cache=credits_cache,
+                    policy=policy,
+                    canonical=canonical_cache.get(full_code),
                 )
 
                 # Keyed on Fulfillment's actual unique constraint. Including semester and
@@ -599,13 +698,19 @@ class OnboardFromTranscript(APIView):
                 fulfillment, _ = Fulfillment.objects.update_or_create(
                     degree_plan=degree_plan,
                     full_code=full_code,
-                    defaults={"semester": semester_code, "legal": legal},
+                    defaults={
+                        "semester": semester_code,
+                        "legal": legal,
+                        "from_transcript": True,
+                    },
                 )
                 fulfillment.rules.set(selected_rules)
                 fulfillment.unselected_rules.set(unselected_rules)
 
+                credits = credits_cache.get(full_code, DEFAULT_COURSE_CREDITS)
                 for rule in selected_rules:
-                    satisfied_lookup[rule.id] += 1
+                    counts[rule.id] += 1
+                    cus[rule.id] += credits
                     if is_satisfied(rule):
                         satisfied_rules.add(rule)
 
@@ -661,13 +766,16 @@ class SatisfiedRuleList(APIView):
                 f"{degree_plan_id}, {full_code}, {rule_selected}"
             )
 
-        rules_per_degree, rule_to_degree, double_counts = map_rules_and_degrees(degree_plan)
+        plan_rules = map_rules_and_degrees(degree_plan)
+        rules_per_degree = plan_rules.rules_per_component
+        rule_to_degree = plan_rules.rule_to_component
+        double_counts = plan_rules.double_counts
+        policy = plan_rules.composition.policy
         # The preview has to agree with what the plan would actually grant, so the allowance
         # is charged for what the stored fulfillments already share.
-        stored = Fulfillment.objects.filter(degree_plan=degree_plan).prefetch_related("rules")
-        credits_cache = prewarm_credits_cache(
-            [fulfillment.full_code for fulfillment in stored] + [full_code]
-        )
+        stored = list(Fulfillment.objects.filter(degree_plan=degree_plan).prefetch_related("rules"))
+        credits_cache = prewarm_credits_cache([item.full_code for item in stored] + [full_code])
+        canonical_cache = prewarm_canonical_cache([item.full_code for item in stored] + [full_code])
         selected_rules, unselected_rules, legal = allocate_rules(
             full_code,
             rules_per_degree,
@@ -676,9 +784,13 @@ class SatisfiedRuleList(APIView):
             rule_selected,
             degree_plan=degree_plan,
             graduate_sharing=sharing_from_fulfillments(
-                [f for f in stored if f.full_code != full_code], rule_to_degree, credits_cache
+                [item for item in stored if item.full_code != full_code],
+                rule_to_degree,
+                credits_cache,
             ),
             credits_cache=credits_cache,
+            policy=policy,
+            canonical=canonical_cache.get(full_code),
             # A course already in the plan keeps what it counts for, so the preview adds to
             # the student's choices rather than replacing or conflicting with them.
             prior_selected=set(fulfillment.rules.all()) if fulfillment else None,

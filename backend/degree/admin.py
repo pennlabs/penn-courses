@@ -7,8 +7,10 @@ from degree.models import (
     Degree,
     DegreePlan,
     DoubleCountRestriction,
+    DualProgram,
     Fulfillment,
     PDPBetaUser,
+    ProgramVariant,
     Rule,
     SatisfactionStatus,
 )
@@ -70,6 +72,8 @@ class DegreeAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Rule, RuleAdmin)
+admin.site.register(ProgramVariant)
+admin.site.register(DualProgram)
 admin.site.register(DegreePlan)
 admin.site.register(SatisfactionStatus)
 admin.site.register(PDPBetaUser, PDPBetaUserAdmin)
