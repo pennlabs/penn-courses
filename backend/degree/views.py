@@ -129,6 +129,8 @@ def update_fulfillments(degree_plan):
             if is_satisfied(rule):
                 satisfied_rules.add(rule)
 
+    degree_plan.refresh_satisfaction()
+
 
 class MajorViewset(viewsets.ReadOnlyModelViewSet):
     """
@@ -367,6 +369,21 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
         except Http404:
             return super().create(request, *args, **kwargs)
 
+    def perform_create(self, serializer):
+        fulfillment = serializer.save()
+        fulfillment.degree_plan.refresh_satisfaction(fulfillment.rules.all())
+
+    def perform_update(self, serializer):
+        before = set(serializer.instance.rules.all())
+        fulfillment = serializer.save()
+        fulfillment.degree_plan.refresh_satisfaction(before ^ set(fulfillment.rules.all()))
+
+    def perform_destroy(self, fulfillment):
+        degree_plan = fulfillment.degree_plan
+        rules = list(fulfillment.rules.all())
+        fulfillment.delete()
+        degree_plan.refresh_satisfaction(rules)
+
     @action(detail=True, methods=["post"], url_path="switch-rule")
     def switch_rule(self, request, *args, **kwargs):
         """
@@ -412,6 +429,7 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
 
         with transaction.atomic():
             selected_rules = set(fulfillment.rules.all())
+            before = set(selected_rules)
             unselected_rules = set(fulfillment.unselected_rules.all())
             if target_rule not in unselected_rules | selected_rules:
                 raise ValidationError(
@@ -465,6 +483,8 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
                     other.save()
                     displaced.append({"full_code": other.full_code, "removed": False})
 
+            degree_plan.refresh_satisfaction((before ^ selected_rules) | {target_rule})
+
         data = self.get_serializer(fulfillment).data
         data["displaced"] = displaced
         return Response(data, status=status.HTTP_200_OK)
@@ -493,11 +513,8 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
             .prefetch_related("rules")
         )
         credits_cache = prewarm_credits_cache([f.full_code for f in others] + [full_code])
-        kept = {
-            rule
-            for rule in fulfillment.rules.all()
-            if level_allows(level, rule_to_degree.get(rule))
-        }
+        stored = set(fulfillment.rules.all())
+        kept = {rule for rule in stored if level_allows(level, rule_to_degree.get(rule))}
         selected_rules, unselected_rules, legal = allocate_rules(
             full_code,
             rules_per_degree,
@@ -517,6 +534,7 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
             fulfillment.unselected_rules.set(unselected_rules)
             fulfillment.legal = legal
             fulfillment.save()
+            degree_plan.refresh_satisfaction(stored ^ selected_rules)
 
         return Response(self.get_serializer(fulfillment).data, status=status.HTTP_200_OK)
 
@@ -547,6 +565,7 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
         fulfillment.overrides.add(rule)
         if rule not in fulfillment.rules.all():
             fulfillment.rules.add(rule)
+            fulfillment.degree_plan.refresh_satisfaction([rule])
 
         return Response(self.get_serializer(fulfillment).data, status=status.HTTP_200_OK)
 
@@ -567,6 +586,7 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
         fulfillment.overrides.remove(rule)
         fulfillment.rules.remove(rule)
         fulfillment.unselected_rules.remove(rule)
+        fulfillment.degree_plan.refresh_satisfaction([rule])
 
         return Response(self.get_serializer(fulfillment).data, status=status.HTTP_200_OK)
 
@@ -671,6 +691,7 @@ class OnboardFromTranscript(APIView):
                     if is_satisfied(rule):
                         satisfied_rules.add(rule)
 
+        degree_plan.refresh_satisfaction()
         return Response({"message": "OK"}, status=status.HTTP_200_OK)
 
 

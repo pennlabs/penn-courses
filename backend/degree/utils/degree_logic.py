@@ -2,7 +2,7 @@ import re
 from collections import defaultdict, deque
 from decimal import Decimal
 
-from django.db.models import Q
+from django.db.models import Exists, Q
 
 from courses.models import Course
 from degree.utils.double_counts import get_degree_trees, resolve_double_counts
@@ -90,6 +90,28 @@ def prewarm_belongs_cache(rules, full_codes):
             belongs_cache[(rule.id, full_code)] = full_code in matched
 
     return belongs_cache
+
+
+def prewarm_belongs_cache_for_course(rules, full_code):
+    """A belongs_cache for one course, filled by a single query instead of one per rule."""
+    rules = [rule for rule in rules if rule.q]
+    if not rules:
+        return {}
+
+    columns = {f"rule_{rule.id}": rule for rule in rules}
+    matched = (
+        Course.objects.filter(full_code=full_code)
+        .annotate(
+            **{
+                column: Exists(Course.objects.filter(rule.get_q_object(), full_code=full_code))
+                for column, rule in columns.items()
+            }
+        )
+        .values(*columns)
+        .first()
+    ) or {}
+
+    return {(rule.id, full_code): matched.get(column, False) for column, rule in columns.items()}
 
 
 def prewarm_credits_cache(full_codes):
@@ -306,7 +328,7 @@ def allocate_rules(
     selected_rules = set()
     unselected_rules = set()
     if belongs_cache is None:
-        belongs_cache = {}
+        belongs_cache = prewarm_belongs_cache_for_course(rule_to_degree, full_code)
     rules_per_degree = {
         degree: rules for degree, rules in rules_per_degree.items() if level_allows(level, degree)
     }

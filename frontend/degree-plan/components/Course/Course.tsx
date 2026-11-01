@@ -659,24 +659,36 @@ const CourseComponent = ({
 
   const handleSetLevel = async (level: Fulfillment["level"]) => {
     if (!levelPlanId || !fulfillment || settingLevel) return;
-    if (level === currentLevel.value) {
-      setLevelOpen(false);
-      return;
-    }
+    setLevelOpen(false);
+    if (level === currentLevel.value) return;
+
+    const replaceWith =
+      (updated: Fulfillment) =>
+      (fulfillments: Fulfillment[] = []) =>
+        fulfillments.map((f) => (f.full_code === updated.full_code ? updated : f));
+
+    setSettingLevel(true);
+    setLevelError(null);
     try {
-      setSettingLevel(true);
-      setLevelError(null);
-      await postFetcher(
-        `/api/degree/degreeplans/${levelPlanId}/fulfillments/${fulfillment.full_code}/level`,
-        { level }
+      await mutate(
+        `/api/degree/degreeplans/${levelPlanId}/fulfillments`,
+        async (fulfillments?: Fulfillment[]) => {
+          const updated: Fulfillment = await postFetcher(
+            `/api/degree/degreeplans/${levelPlanId}/fulfillments/${fulfillment.full_code}/level`,
+            { level }
+          );
+          return replaceWith(updated)(fulfillments);
+        },
+        {
+          optimisticData: replaceWith({ ...fulfillment, level }),
+          rollbackOnError: true,
+          // A level change reallocates only this course, so the response row is the whole update
+          revalidate: false,
+        }
       );
-      await Promise.all([
-        mutate(`/api/degree/degreeplans/${levelPlanId}/fulfillments`),
-        mutate(`/api/degree/degreeplans/${levelPlanId}`),
-      ]);
-      setLevelOpen(false);
     } catch {
       setLevelError("Could not change this course's level right now.");
+      setLevelOpen(true);
     } finally {
       setSettingLevel(false);
     }

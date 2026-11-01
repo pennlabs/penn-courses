@@ -7,11 +7,10 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models import Count, DecimalField, Q, Sum
 from django.db.models.functions import Coalesce
-from django.db.models.signals import m2m_changed
 from django.utils import timezone
 
 from courses.models import Course
-from degree.utils.degree_logic import FULFILLMENT_LEVELS, aggregate_rule_leaves
+from degree.utils.degree_logic import FULFILLMENT_LEVELS, aggregate_rule_leaves, plan_components
 from degree.utils.model_utils import json_parser, q_object_parser
 
 
@@ -429,6 +428,16 @@ class Minor(ProgramComponent):
         ]
 
 
+def rule_lineage(rules) -> set[int]:
+    lineage = set()
+    level = list(rules)
+    while level:
+        lineage.update(rule.id for rule in level)
+        parent_ids = {rule.parent_id for rule in level if rule.parent_id} - lineage
+        level = list(Rule.objects.filter(id__in=parent_ids)) if parent_ids else []
+    return lineage
+
+
 class DegreePlan(models.Model):  #
     """
     Stores a users plan for an associated degree.
@@ -499,6 +508,29 @@ class DegreePlan(models.Model):  #
                 return False
         return True
 
+    def refresh_satisfaction(self, changed_rules=None):
+        top_level_rules = {
+            rule for component in plan_components(self) for rule in component.rules.all()
+        }
+        if changed_rules is not None:
+            lineage = rule_lineage(changed_rules)
+            top_level_rules = {rule for rule in top_level_rules if rule.id in lineage}
+        if not top_level_rules:
+            return
+
+        full_codes = list(self.fulfillments.values_list("full_code", flat=True))
+        stored = {
+            status.rule_id: status for status in self.satisfactions.filter(rule__in=top_level_rules)
+        }
+        for rule in top_level_rules:
+            satisfied = rule.evaluate(full_codes)
+            status = stored.get(rule.id)
+            if status is None:
+                SatisfactionStatus.objects.create(degree_plan=self, rule=rule, satisfied=satisfied)
+            elif status.satisfied != satisfied:
+                status.satisfied = satisfied
+                status.save(update_fields=["satisfied", "last_updated"])
+
     def evaluate_rules(self, rules: list[Rule]) -> tuple[set[Rule], set[DoubleCountRestriction]]:
         """
         Evaluates this DegreePlan with respect to the given Rules. Returns a set of satisfied Rules
@@ -526,14 +558,18 @@ class DegreePlan(models.Model):  #
         return (satisfied_rules, violated_dcrs)
 
     def check_rules_already_satisfied(self, rules: set[Rule]) -> set[Rule]:
-        satisfied_rules = set()
+        courses_per_rule = dict(
+            Fulfillment.rules.through.objects.filter(fulfillment__degree_plan=self, rule__in=rules)
+            .values("rule_id")
+            .annotate(courses=Count("id"))
+            .values_list("rule_id", "courses")
+        )
 
-        for rule in rules:
-            f = Fulfillment.objects.all().filter(degree_plan=self).filter(rules=rule)
-            if (rule.num and len(f) >= rule.num) or (rule.credits and len(f) >= rule.credits):
-                satisfied_rules.add(rule)
+        def is_satisfied(rule):
+            courses = courses_per_rule.get(rule.id, 0)
+            return (rule.num and courses >= rule.num) or (rule.credits and courses >= rule.credits)
 
-        return satisfied_rules
+        return {rule for rule in rules if is_satisfied(rule)}
 
     def copy(self, new_name: str) -> DegreePlan:
         """
@@ -545,8 +581,6 @@ class DegreePlan(models.Model):  #
         for degree in self.degrees.all():
             new_degree_plan.degrees.add(degree)
 
-        # this also handles updating satisfaction statuses
-
         for fulfillment in self.fulfillments.all():
             rules = fulfillment.rules.all()
             unselected_rules = fulfillment.unselected_rules.all()
@@ -557,6 +591,7 @@ class DegreePlan(models.Model):  #
             fulfillment.rules.set(rules)
             fulfillment.unselected_rules.set(unselected_rules)
 
+        new_degree_plan.refresh_satisfaction()
         return new_degree_plan
 
 
@@ -652,30 +687,6 @@ class Fulfillment(models.Model):
 
     class Meta:
         unique_together = ("degree_plan", "full_code")
-
-
-def update_satisfaction_statuses(sender, instance, action, pk_set, **kwargs):
-    """
-    This function updates the SatisfactionStatuses associated with a DegreePlan when the rules
-    associated with a Fulfillment change.
-    """
-    if action == "pre_clear" or action == "pre_remove":
-        instance.degree_plan.satisfactions.filter(rule__in=pk_set).delete()
-        return
-
-    if action == "post_add" or action == "post_remove" or action == "post_clear":
-        degree_plan = instance.degree_plan
-        full_codes = Fulfillment.objects.filter(degree_plan=degree_plan).values_list(
-            "full_code", flat=True
-        )
-
-        for rule in Rule.objects.filter(degrees__in=degree_plan.degrees.all()):
-            status, _ = SatisfactionStatus.objects.get_or_create(degree_plan=degree_plan, rule=rule)
-            status.satisfied = rule.evaluate(full_codes)
-            status.save()
-
-
-m2m_changed.connect(update_satisfaction_statuses, sender=Fulfillment.rules.through)
 
 
 class SatisfactionStatus(models.Model):
