@@ -5,7 +5,8 @@ import { postFetcher } from "@/hooks/swrcrud";
 import { isCurrentRequest, nextRequestId, publishProposal, StoredGenConfig } from "@/hooks/generateConfig";
 
 /**
- * Debounced, stale-guarded call to POST /generate. Disabled plans never hit the network.
+ * Debounced, stale-guarded call to POST /generate. Nothing is requested until the plan and
+ * its semesters are known.
  * Fulfillment changes and semester-config changes both retrigger it.
  */
 export function useGenerateSchedule(
@@ -22,7 +23,7 @@ export function useGenerateSchedule(
   const skipFulfillmentRefresh = useRef(false);
   const { mutate } = useSWRConfig();
 
-  const enabled = Boolean(config?.enabled && planId && semesterKeys.length);
+  const enabled = Boolean(config && planId && semesterKeys.length);
 
   useEffect(() => {
     if (skipFulfillmentRefresh.current) {

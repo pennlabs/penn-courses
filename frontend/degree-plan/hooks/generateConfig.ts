@@ -6,7 +6,6 @@ export const DEFAULT_SUMMER_CAP = 2;
 export const genConfigKey = (planId: number | string) => `PDP-${planId}-generate`;
 
 export interface StoredGenConfig {
-  enabled: boolean;
   allowSummer: boolean;
   semesters: Record<string, SemesterGenConfig>;
   /** Requirement blocks the student dragged. Slot id to semester. */
@@ -14,7 +13,6 @@ export interface StoredGenConfig {
 }
 
 export const emptyGenConfig = (): StoredGenConfig => ({
-  enabled: true,
   allowSummer: false,
   semesters: {},
 });
@@ -34,11 +32,10 @@ export function parseGenConfig(raw: string | null): StoredGenConfig {
           };
         }
       });
-      return { enabled: true, allowSummer: false, semesters, pinnedSlots: {} };
+      return { allowSummer: false, semesters, pinnedSlots: {} };
     }
     if (parsed && typeof parsed === "object") {
       return {
-        enabled: Boolean(parsed.enabled),
         allowSummer: Boolean(parsed.allowSummer),
         semesters: parsed.semesters && typeof parsed.semesters === "object" ? parsed.semesters : {},
         pinnedSlots: parsed.pinnedSlots && typeof parsed.pinnedSlots === "object" ? parsed.pinnedSlots : {},

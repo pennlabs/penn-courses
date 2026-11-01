@@ -184,12 +184,6 @@ const PlanPanel = ({
                         isLoading={isLoading} 
                     />
                     <PanelTopBarIconList>
-                        <CompactButton $on={genConfig?.enabled !== false} onClick={() => setGenConfig((current) => {
-                            const base = current || emptyGenConfig();
-                            return { ...base, enabled: !base.enabled };
-                        })}>
-                            {genConfig?.enabled === false ? "Suggestions off" : "Suggestions"}
-                        </CompactButton>
                         <CompactButton $on={showStats} onClick={() => setShowStats(!showStats)}>
                             {showStats ? "Stats" : "Stats off"}
                         </CompactButton>
@@ -218,7 +212,7 @@ const PlanPanel = ({
                     setModalObject={setModalObject}
                     isLoading={isLoading}
                     currentSemester={currentSemester}
-                    ghosts={genConfig?.enabled ? proposal?.placements || [] : []}
+                    ghosts={proposal?.placements || []}
                     genBySemester={genConfig?.semesters}
                     onGenConfig={setSemesterGen}
                     onSemesterKeys={setSemesterKeys}

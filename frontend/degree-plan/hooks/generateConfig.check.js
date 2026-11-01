@@ -3,7 +3,7 @@ const assert = require("assert");
 // Mirrors hooks/generateConfig.ts. The degree-plan package has no test runner,
 // so the pure helpers are checked here with node.
 function parseGenConfig(raw) {
-  const empty = () => ({ enabled: true, allowSummer: false, semesters: {} });
+  const empty = () => ({ allowSummer: false, semesters: {} });
   if (!raw) return empty();
   const parsed = JSON.parse(raw);
   if (Array.isArray(parsed)) {
@@ -11,10 +11,9 @@ function parseGenConfig(raw) {
     parsed.forEach((key) => {
       semesters[key] = { cuCap: key.endsWith("B") ? 2 : 5.5, gap: false };
     });
-    return { enabled: true, allowSummer: false, semesters };
+    return { allowSummer: false, semesters };
   }
   return {
-    enabled: Boolean(parsed.enabled),
     allowSummer: Boolean(parsed.allowSummer),
     semesters: parsed.semesters || {},
   };
@@ -23,17 +22,18 @@ function parseGenConfig(raw) {
 const migrated = parseGenConfig(JSON.stringify(["2024C", "2024B"]));
 assert.strictEqual(migrated.semesters["2024C"].cuCap, 5.5);
 assert.strictEqual(migrated.semesters["2024B"].cuCap, 2);
-assert.strictEqual(migrated.enabled, true);
-assert.strictEqual(parseGenConfig(null).enabled, true);
+assert.strictEqual(parseGenConfig(null).allowSummer, false);
 
+// A config saved while suggestions could be switched off still loads; the flag is ignored.
 const kept = parseGenConfig(
   JSON.stringify({
-    enabled: true,
+    enabled: false,
     allowSummer: true,
     semesters: { "2025A": { cuCap: 4, gap: true } },
   })
 );
-assert.strictEqual(kept.enabled, true);
+assert.strictEqual("enabled" in kept, false);
+assert.strictEqual(kept.allowSummer, true);
 assert.strictEqual(kept.semesters["2025A"].gap, true);
 
 let serial = 0;
