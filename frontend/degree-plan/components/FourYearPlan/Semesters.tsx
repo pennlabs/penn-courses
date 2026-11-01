@@ -49,6 +49,9 @@ const yearName = (index: number) => YEAR_NAMES[index] ?? `Year ${index + 1}`;
 const transferCollapsedKey = (degreeplanId: DegreePlan["id"]) =>
   `PDP-${degreeplanId}-transfer-collapsed`;
 
+const collapsedYearsKey = (degreeplanId: DegreePlan["id"]) =>
+  `PDP-${degreeplanId}-collapsed-years`;
+
 const SemestersContainer = styled.div`
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -61,12 +64,31 @@ const YearSection = styled.section`
   gap: 0.5rem;
 `;
 
-const YearLabel = styled.div`
+const YearLabel = styled.button`
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
   font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: #6b7280;
+  cursor: pointer;
+
+  i {
+    width: 0.7rem;
+  }
+`;
+
+const YearSummary = styled.span`
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
 `;
 
 const YearGrid = styled.div<{ $columns: number }>`
@@ -456,6 +478,36 @@ const Semesters = ({
     }
   };
 
+  const [collapsedYears, setCollapsedYears] = useState<number[]>([]);
+  useEffect(() => {
+    if (!activeDegreeplan || typeof window === "undefined") return;
+    try {
+      const stored = JSON.parse(localStorage.getItem(collapsedYearsKey(activeDegreeplan.id)) || "[]");
+      setCollapsedYears(Array.isArray(stored) ? stored.filter(Number.isInteger) : []);
+    } catch {
+      setCollapsedYears([]);
+    }
+  }, [activeDegreeplan?.id]);
+  const toggleYear = (academic: number) => {
+    const next = collapsedYears.includes(academic)
+      ? collapsedYears.filter((year) => year !== academic)
+      : [...collapsedYears, academic];
+    setCollapsedYears(next);
+    if (activeDegreeplan && typeof window !== "undefined") {
+      localStorage.setItem(collapsedYearsKey(activeDegreeplan.id), JSON.stringify(next));
+    }
+  };
+  const yearCredits = (academic: number) =>
+    SEASONS.reduce(
+      (total, { code }) =>
+        total +
+        (semesters[termKey(academic, code)] || []).reduce(
+          (sum, fulfillment) => sum + (Number(fulfillment.course?.credits) || 1),
+          0
+        ),
+      0
+    );
+
   const renderSemester = (semester: string, extra: Partial<React.ComponentProps<typeof FlexSemester>> = {}) => (
     <FlexSemester
       activeDegreeplanId={activeDegreeplan?.id}
@@ -517,11 +569,16 @@ const Semesters = ({
         collapsed: transferCollapsed,
         onToggleCollapsed: toggleTransfer,
       })}
-      {years.map((academic, index) => (
+      {years.map((academic, index) => {
+        const collapsed = collapsedYears.includes(academic);
+        return (
         <YearSection key={academic}>
-          <YearLabel>
+          <YearLabel type="button" onClick={() => toggleYear(academic)} aria-expanded={!collapsed}>
+            <i className={`fas fa-chevron-${collapsed ? "right" : "down"}`} />
             {yearName(index)} · {academic}–{String(academic + 1).slice(2)}
+            {collapsed && <YearSummary>{yearCredits(academic).toFixed(1)} CU</YearSummary>}
           </YearLabel>
+          {!collapsed && (
           <YearGrid $columns={seasonsFor(academic).length}>
             {seasonsFor(academic).map(({ code, label }) => {
               const key = termKey(academic, code);
@@ -534,8 +591,10 @@ const Semesters = ({
               );
             })}
           </YearGrid>
+          )}
         </YearSection>
-      ))}
+        );
+      })}
       {otherKeys.map((key) => renderSemester(key))}
       {editMode && (
         <YearGrid $columns={baseColumns}>

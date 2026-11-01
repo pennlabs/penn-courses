@@ -316,9 +316,7 @@ const FlexSemester = ({
                         <i className={`fas fa-chevron-${collapsed ? "right" : "down"}`} />
                         {translateSemester(semester)}
                         {collapsed && (
-                            <CollapsedSummary>
-                                {fulfillments.length} course{fulfillments.length === 1 ? "" : "s"} · {credits.toFixed(1)} CU
-                            </CollapsedSummary>
+                            <CollapsedSummary>{credits.toFixed(1)} CU</CollapsedSummary>
                         )}
                     </CollapseToggle>
                 ) : (
