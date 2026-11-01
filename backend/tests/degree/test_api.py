@@ -52,7 +52,7 @@ class DegreePlanViewsetTest(TestCase):
 
 class FulfillmentViewsetTest(TestCase):
     def assertSerializedFulfillmentEquals(self, fulfillment: dict, expected: Fulfillment):
-        self.assertEqual(len(fulfillment), 10)
+        self.assertEqual(len(fulfillment), 9)
         self.assertEqual(fulfillment["id"], expected.id)
 
         expected_course = SimpleCourseSerializer(

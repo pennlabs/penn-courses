@@ -2,7 +2,7 @@ import re
 from collections import defaultdict, deque
 from decimal import Decimal
 
-from django.db.models import Exists, Q
+from django.db.models import Q
 
 from courses.models import Course
 from degree.utils.double_counts import get_degree_trees, resolve_double_counts
@@ -21,18 +21,6 @@ MAX_SHARED_GRADUATE_CREDITS = Decimal(3)
 MIN_GRADUATE_COURSE_NUMBER = 5000
 
 DEFAULT_COURSE_CREDITS = Decimal(1)
-
-# Which of a submatriculant's degrees a course is on the books for. A transcript lists a course
-# under its undergraduate record, its graduate record, or both; only a course on both records
-# is double counted, and the rest may only count toward the degree whose record names them.
-UNDERGRADUATE_LEVEL = "UNDERGRADUATE"
-GRADUATE_LEVEL = "GRADUATE"
-SHARED_LEVEL = "SHARED"
-FULFILLMENT_LEVELS = [
-    (UNDERGRADUATE_LEVEL, "Undergraduate only"),
-    (GRADUATE_LEVEL, "Graduate only"),
-    (SHARED_LEVEL, "Shared between both"),
-]
 
 
 def aggregate_rule_leaves(rules, f):
@@ -92,28 +80,6 @@ def prewarm_belongs_cache(rules, full_codes):
     return belongs_cache
 
 
-def prewarm_belongs_cache_for_course(rules, full_code):
-    """A belongs_cache for one course, filled by a single query instead of one per rule."""
-    rules = [rule for rule in rules if rule.q]
-    if not rules:
-        return {}
-
-    columns = {f"rule_{rule.id}": rule for rule in rules}
-    matched = (
-        Course.objects.filter(full_code=full_code)
-        .annotate(
-            **{
-                column: Exists(Course.objects.filter(rule.get_q_object(), full_code=full_code))
-                for column, rule in columns.items()
-            }
-        )
-        .values(*columns)
-        .first()
-    ) or {}
-
-    return {(rule.id, full_code): matched.get(column, False) for column, rule in columns.items()}
-
-
 def prewarm_credits_cache(full_codes):
     """
     Returns the CU of each of the given courses, for weighing against the sharing allowance.
@@ -139,34 +105,10 @@ def is_graduate(component) -> bool:
     return getattr(component, "program", None) in graduate_programs
 
 
-def level_allows(level, component) -> bool:
-    """
-    Whether a course of the given level may count toward a plan component. A level of None
-    (a course not read off a transcript) and SHARED allow every component.
-    """
-    if level == GRADUATE_LEVEL:
-        return is_graduate(component)
-    if level == UNDERGRADUATE_LEVEL:
-        return not is_graduate(component)
-    return True
-
-
 def course_number(full_code: str):
     """The numeric part of a course code, e.g. 5200 for CIS-5200. None if there is not one."""
     match = re.search(r"-(\d+)", full_code or "")
     return int(match.group(1)) if match else None
-
-
-def is_graduate_coursework(full_code: str) -> bool:
-    number = course_number(full_code)
-    return number is not None and number >= MIN_GRADUATE_COURSE_NUMBER
-
-
-def level_for_course(full_code: str, level):
-    """A course numbered below graduate coursework can only be on the undergraduate record."""
-    if level in (GRADUATE_LEVEL, SHARED_LEVEL) and not is_graduate_coursework(full_code):
-        return UNDERGRADUATE_LEVEL
-    return level
 
 
 class GraduateSharing:
@@ -219,7 +161,8 @@ def apply_graduate_sharing(
         # Counts toward only one level, so no allowance is spent.
         return selected_rules, unselected_rules
 
-    if is_graduate_coursework(full_code) and sharing.allows(credits):
+    number = course_number(full_code)
+    if number is not None and number >= MIN_GRADUATE_COURSE_NUMBER and sharing.allows(credits):
         sharing.take(credits)
         return selected_rules, unselected_rules
 
@@ -317,7 +260,6 @@ def allocate_rules(
     graduate_sharing=None,
     credits_cache=None,
     prior_selected=None,
-    level=None,
 ):
     """
     Given a course (full_code), rule, degree and double count mappings, and optionally a selected
@@ -328,10 +270,6 @@ def allocate_rules(
     `is_transfer` says the course is AP or transfer credit, which keeps it off every rule that
     does not accept such credit.
 
-    `level` is which of a submatriculant's records the course is on (see FULFILLMENT_LEVELS).
-    A course on only one record counts toward only that level's components; the other level's
-    rules are not offered at all, because the registrar does not let the course count there.
-
     `prior_selected` is what the course already counts for, when it is already in the plan.
     Those choices are kept, except where they conflict with `rule_selected`, and the
     allocation only adds what may share with them.
@@ -339,17 +277,10 @@ def allocate_rules(
     selected_rules = set()
     unselected_rules = set()
     if belongs_cache is None:
-        belongs_cache = prewarm_belongs_cache_for_course(rule_to_degree, full_code)
-    rules_per_degree = {
-        degree: rules for degree, rules in rules_per_degree.items() if level_allows(level, degree)
-    }
+        belongs_cache = {}
     if prior_selected:
-
-        def allowed(rule):
-            return rule in rule_to_degree and level_allows(level, rule_to_degree[rule])
-
-        seed = {rule for rule in prior_selected if allowed(rule)}
-        preferred = {rule_selected} if allowed(rule_selected) else set()
+        seed = {rule for rule in prior_selected if rule in rule_to_degree}
+        preferred = {rule_selected} if rule_selected in rule_to_degree else set()
         selected_rules, _ = reconcile_rules(
             seed | preferred, preferred, rule_to_degree, double_counts
         )

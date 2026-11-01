@@ -16,7 +16,6 @@ import Footer from "./Footer";
 
 import ExpandedCoursesPanel from "@/components/ExpandedBox/ExpandedCoursesPanel";
 import { ExpandedCoursesPanelContext } from "@/components/ExpandedBox/ExpandedCoursesPanelTrigger";
-import { POPOVER_BOUNDS_ATTRIBUTE } from "@/components/Course/Course";
 
 const PageContainer = styled.div`
   height: 100vh;
@@ -222,8 +221,7 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
               />
             )}
             <PageContainer>
-              {/* Course popovers keep within the body, so they never cover the footer or dock. */}
-              <BodyContainer ref={ref} {...{ [POPOVER_BOUNDS_ATTRIBUTE]: true }}>
+              <BodyContainer ref={ref}>
                 {!!showOnboardingModal ? (
                   <OnboardingPage
                     setShowOnboardingModal={setShowOnboardingModal}

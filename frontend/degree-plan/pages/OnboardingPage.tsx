@@ -15,7 +15,6 @@ import {
   ParsedText,
   flattenParsedText,
   MajorOptionItem,
-  CourseLevel,
 } from "../utils/parseUtils";
 import WelcomeLayout from "@/components/OnboardingPanels/WelcomePanel";
 import CreateWithTranscriptPanel from "@/components/OnboardingPanels/CreateWithTranscriptPanel";
@@ -48,7 +47,6 @@ const OnboardingPage = ({
   const [PDF, setPDF] = useState<File | null>(null);
   const [numPages, setNumPages] = useState<number | null>(null);
   const [scrapedCourses, setScrapedCourses] = useState<any>([]);
-  const [courseLevels, setCourseLevels] = useState<{ [course: string]: CourseLevel }>({});
   const [currentPage, setCurrentPage] = useState<number>(0);
 
   const { data: degrees } = useSWR<DegreeListing[]>(`/api/degree/degrees`);
@@ -90,14 +88,12 @@ const OnboardingPage = ({
 
     const {
       scrapedCourses,
-      courseLevels,
       startYear,
       scrapedSchools,
       detectedMajorsOptions,
       detectedSecondMajorOptions,
     } = parseTranscript(all, degrees, standaloneMajors);
     setScrapedCourses(scrapedCourses);
-    setCourseLevels(courseLevels);
     setStartingYear({
       value: startYear,
       label: startYear,
@@ -123,7 +119,6 @@ const OnboardingPage = ({
     setMajors([]);
     setSecondMajors([]);
     setScrapedCourses([]);
-    setCourseLevels({});
     setStartingYear(null);
     setGraduationYear(null);
   };
@@ -157,7 +152,6 @@ const OnboardingPage = ({
       inputtedStartingYear={startingYear}
       inputtedGraduationYear={graduationYear}
       scrapedCourses={scrapedCourses}
-      courseLevels={courseLevels}
       setCurrentPage={setCurrentPage}
       setActiveDegreeplan={setActiveDegreeplan}
       inputtedSchools={schools}

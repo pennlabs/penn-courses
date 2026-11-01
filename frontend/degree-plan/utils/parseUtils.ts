@@ -382,17 +382,11 @@ export const splitRecords = (textResult: string[]): TranscriptRecord[] => {
     : records;
 };
 
-// Which of a submatriculant's degrees a course is on the books for, as the backend names them.
-// A course on both records is the double counted kind; one on a single record counts only there.
-export type CourseLevel = "UNDERGRADUATE" | "GRADUATE" | "SHARED";
-
 type ParsedRecord = {
   schools: { value: string; label: string }[];
   majors: string[];
   concentrations: string[];
   courseToSem: { [key: string]: string };
-  // True for the record of a masters degree.
-  graduate: boolean;
 };
 
 // Reads one record's program, majors, concentrations and courses. Scanning a record at a time
@@ -404,7 +398,6 @@ const parseRecord = (lines: string[]): ParsedRecord => {
     majors: [],
     concentrations: [],
     courseToSem: {},
-    graduate: false,
   };
 
   for (let l = 0; l < lines.length; l++) {
@@ -429,7 +422,6 @@ const parseRecord = (lines: string[]): ParsedRecord => {
     }
   }
 
-  record.graduate = record.schools.some((school) => school.value === "MSE");
   return record;
 };
 
@@ -469,20 +461,6 @@ export const parseTranscript = (
     Object.assign(courseToSem, record.courseToSem);
   });
 
-  // A course on the masters record only counts toward the masters, one on the undergraduate
-  // record only toward the bachelors, and one on both is double counted. A transcript with no
-  // masters record says nothing about this, so its courses are left unmarked.
-  const courseLevels: { [course: string]: CourseLevel } = {};
-  if (parsedRecords.some((record) => record.graduate)) {
-    parsedRecords.forEach((record) => {
-      const level: CourseLevel = record.graduate ? "GRADUATE" : "UNDERGRADUATE";
-      Object.keys(record.courseToSem).forEach((course) => {
-        const seen = courseLevels[course];
-        courseLevels[course] = seen && seen !== level ? "SHARED" : level;
-      });
-    });
-  }
-
   // Chronological order: the panel displays this, and the backend gives the submatriculation
   // double counting allowance to the earliest courses it receives.
   const formattedSeparatedCourses = Object.values(
@@ -520,7 +498,6 @@ export const parseTranscript = (
 
   return {
     scrapedCourses: formattedSeparatedCourses,
-    courseLevels,
     startYear: startYear,
     scrapedSchools: dedupeBy(tempSchools, (school) => school.value),
     detectedMajorsOptions: dedupeBy(degreeOptions, (option) => option.value.id),

@@ -143,9 +143,6 @@ export interface Fulfillment extends DBObject {
   unselected_rules: number[];
   overrides: number[]; // rule IDs manually overridden to count for
   legal: boolean;
-  // For a submatriculant, which transcript record listed the course: their bachelors, their
-  // masters, or both (double counted). Null for a course added by hand.
-  level: "UNDERGRADUATE" | "GRADUATE" | "SHARED" | null;
 }
 
 // Internal representation of a plan (this is derived from fulfillments)
