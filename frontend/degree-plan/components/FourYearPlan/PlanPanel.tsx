@@ -226,6 +226,7 @@ const PlanPanel = ({
                     onPinSlot={pinSlot}
                     onUnpinSlot={unpinSlot}
                     pinnedSlots={genConfig?.pinnedSlots}
+                    showSummer={Boolean(genConfig?.allowSummer)}
                     />
                 </PanelBody>
             </PanelContainer>

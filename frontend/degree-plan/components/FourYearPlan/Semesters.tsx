@@ -69,9 +69,9 @@ const YearLabel = styled.div`
   color: #6b7280;
 `;
 
-const YearGrid = styled.div`
+const YearGrid = styled.div<{ $columns: number }>`
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(${(props) => props.$columns}, minmax(0, 1fr));
   gap: 1.25rem;
   align-items: stretch;
 `;
@@ -264,6 +264,8 @@ interface SemestersProps {
   onPinSlot?: (slotId: string, semester: string) => void;
   onUnpinSlot?: (slotId: string) => void;
   pinnedSlots?: Record<string, string>;
+  /** Off hides summer boxes, except a summer that already holds courses. */
+  showSummer?: boolean;
 }
 
 const Semesters = ({
@@ -284,6 +286,7 @@ const Semesters = ({
   onPinSlot,
   onUnpinSlot,
   pinnedSlots,
+  showSummer = true,
 }: SemestersProps) => {
   const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<
     Fulfillment[]
@@ -488,10 +491,17 @@ const Semesters = ({
       ? []
       : Array.from({ length: lastYear - firstYear + 1 }, (_, index) => firstYear + index);
 
+  const baseColumns = showSummer ? 3 : 2;
+  const seasonsFor = (academic: number) =>
+    SEASONS.filter(
+      ({ code }) =>
+        code !== "B" || showSummer || (semesters[termKey(academic, code)] || []).length > 0
+    );
+
   if (isLoading) {
     return (
       <SemestersContainer className={className}>
-        <YearGrid>
+        <YearGrid $columns={baseColumns}>
           {Array.from(Array(6).keys()).map((index) => (
             <SkeletonSemester key={index} showStats={showStats} />
           ))}
@@ -512,8 +522,8 @@ const Semesters = ({
           <YearLabel>
             {yearName(index)} · {academic}–{String(academic + 1).slice(2)}
           </YearLabel>
-          <YearGrid>
-            {SEASONS.map(({ code, label }) => {
+          <YearGrid $columns={seasonsFor(academic).length}>
+            {seasonsFor(academic).map(({ code, label }) => {
               const key = termKey(academic, code);
               if (semesters[key] !== undefined) return renderSemester(key);
               return (
@@ -528,7 +538,7 @@ const Semesters = ({
       ))}
       {otherKeys.map((key) => renderSemester(key))}
       {editMode && (
-        <YearGrid>
+        <YearGrid $columns={baseColumns}>
           <ModifySemesters addSemester={addSemester} semesters={semesters} />
         </YearGrid>
       )}

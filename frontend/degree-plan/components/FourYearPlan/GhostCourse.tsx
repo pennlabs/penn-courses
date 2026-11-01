@@ -50,8 +50,12 @@ const Title = styled.div`
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
   text-align: left;
+  white-space: normal;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 `;
 
 const Quiet = styled.button`
@@ -190,7 +194,10 @@ const GhostCourse = ({ placement, planId, frozen = false, onUnpin }: GhostCourse
   };
 
   const code = (value: string) => value.replace(/-/g, " ");
-  const slotName = scheduleCardTitle(placement);
+  // Keep each course code whole and let "FNCE 1010/FNCE 1018" wrap between options.
+  const slotName = scheduleCardTitle(placement)
+    .replace(/\b([A-Z]{2,5}) (\d{3,4})\b/g, "$1\u00a0$2")
+    .replace(/\//g, "/\u200b");
   const options = [
     ...(placement.full_code ? [placement.full_code] : []),
     ...placement.alternatives.filter((alt) => alt !== placement.full_code),
@@ -261,10 +268,12 @@ const GhostCourse = ({ placement, planId, frozen = false, onUnpin }: GhostCourse
     </Quiet>
   ) : null;
   const jump = (
-    <RequirementJump
-      ruleIds={placement.rules}
-      cycleKey={placement.slot_ids[0] || placement.full_code || placement.kind}
-    />
+    <span className="course-actions">
+      <RequirementJump
+        ruleIds={placement.rules}
+        cycleKey={placement.slot_ids[0] || placement.full_code || placement.kind}
+      />
+    </span>
   );
 
   if (placement.kind === "placeholder") {
