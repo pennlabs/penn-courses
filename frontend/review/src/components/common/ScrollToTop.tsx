@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import styled from "styled-components";
+import styled, { css } from "styled-components";
 import { FaArrowUp } from "react-icons/fa";
 import { maxWidth } from "../../styles/media";
-import { unstyledButton } from "../../styles/mixins";
+import { hoverState, unstyledButton } from "../../styles/mixins";
 
 interface ScrollToTopProps {
   // How far a scroll container has to travel before the button appears.
@@ -39,10 +39,10 @@ const Button = styled.button<{ $visible: boolean }>`
   pointer-events: ${({ $visible }) => ($visible ? "auto" : "none")};
   visibility: ${({ $visible }) => ($visible ? "visible" : "hidden")};
 
-  &:hover {
+  ${hoverState(css`
     background: ${({ theme }) => theme.color.surface.subtle};
     color: ${({ theme }) => theme.color.text.primary};
-  }
+  `)}
 
   /* A circular floating button once there is no room for the label. */
   ${maxWidth("lg")} {

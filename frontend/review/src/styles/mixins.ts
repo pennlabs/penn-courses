@@ -1,4 +1,4 @@
-import { css } from "styled-components";
+import { css, RuleSet } from "styled-components";
 
 /* Certain style patterns used to be copy-pasted everywhere. This file consolidates them into reusable blocks */
 
@@ -9,6 +9,22 @@ export const interactiveTransition = css`
       ${({ theme }) => theme.motion.ease.standard},
     border-color ${({ theme }) => theme.motion.duration.fast}
       ${({ theme }) => theme.motion.ease.standard};
+`;
+
+// Touch browsers keep :hover applied after a tap until something else is tapped, so touch-only devices
+// get these styles only while pressed. `target` is the selector to style, for descendants.
+export const hoverState = <P extends object>(styles: RuleSet<P>, target = "&") => css<P>`
+  @media (hover: hover) {
+    ${target}:hover {
+      ${styles}
+    }
+  }
+
+  @media (hover: none) {
+    ${target}:active {
+      ${styles}
+    }
+  }
 `;
 
 export const pill = css<{ $isSelected?: boolean }>`
@@ -26,12 +42,12 @@ export const pill = css<{ $isSelected?: boolean }>`
   color: ${({ theme, $isSelected }) =>
     $isSelected ? theme.color.text.inverse : theme.color.text.primary};
 
-  &:hover {
+  ${hoverState(css<{ $isSelected?: boolean }>`
     background: ${({ theme, $isSelected }) =>
       $isSelected
         ? theme.color.surface.selectedHover
         : theme.color.surface.hover};
-  }
+  `)}
 `;
 
 // Shared by Header's plain <a> and its react-router <Link> 
@@ -41,10 +57,10 @@ export const linkStyles = css`
   font-size: ${({ theme }) => theme.font.size.xl};
   ${interactiveTransition}
 
-  &:hover {
+  ${hoverState(css`
     color: ${({ theme }) => theme.color.text.black};
     text-decoration: none;
-  }
+  `)}
 `;
 
 export const unstyledButton = css`

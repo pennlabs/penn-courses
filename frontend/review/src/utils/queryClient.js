@@ -15,11 +15,20 @@ const STATIC_QUERY_OPTIONS = {
   gcTime: 1000 * 60 * 60 * 24 // 24 hours
 };
 
+// Every search runs an expensive query on the backend, and an infinite query refetches
+// every loaded page, so reuse results for a while and don't retry into a struggling DB
+const SEARCH_QUERY_OPTIONS = {
+  staleTime: 1000 * 60 * 5, // 5 minutes
+  gcTime: 1000 * 60 * 30, // 30 minutes
+  retry: false
+};
+
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
-      networkMode: "always"
+      networkMode: "always",
+      refetchOnWindowFocus: false
     }
   }
 });
@@ -27,6 +36,7 @@ export const queryClient = new QueryClient({
 queryClient.setQueryDefaults(queryKeys.autocomplete, STATIC_QUERY_OPTIONS);
 queryClient.setQueryDefaults(queryKeys.attributes, STATIC_QUERY_OPTIONS);
 queryClient.setQueryDefaults(["reviewData"], STATIC_QUERY_OPTIONS);
+queryClient.setQueryDefaults(["courseSearch"], SEARCH_QUERY_OPTIONS);
 
 export const asyncStoragePersister = createAsyncStoragePersister({
   key: PERSIST_STORAGE_KEY,

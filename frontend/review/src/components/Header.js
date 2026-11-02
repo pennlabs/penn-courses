@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import { HiBars3, HiXMark } from "react-icons/hi2";
 import Collapse from "./common/Collapse";
 import SearchBar from "./SearchBar";
-import { Link, useHistory } from "react-router-dom";
+import { Link, useHistory, useLocation } from "react-router-dom";
 import { useFilterDispatch } from "../utils/FilterContext";
 import { maxWidth, minWidth } from "../styles/media";
 import { linkStyles } from "../styles/mixins";
@@ -112,6 +112,12 @@ const Header = () => {
   const dispatch = useFilterDispatch();
 
   const history = useHistory();
+  const { pathname } = useLocation();
+
+  // Links in the mobile menu navigate without unmounting the header, so close it on route change
+  useEffect(() => {
+    setIsOpen(false);
+  }, [pathname]);
 
   return (
     <>

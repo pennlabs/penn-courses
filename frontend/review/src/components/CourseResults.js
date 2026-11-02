@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext, useRef, useMemo } from "react";
-import styled from "styled-components";
+import styled, { css } from "styled-components";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { apiAutocomplete, apiCourseSearch, queryKeys } from "../utils/api";
 import ResponsivePagination from "react-responsive-pagination";
@@ -16,6 +16,7 @@ import {
 } from "../utils/filters";
 import { AuthContext } from "../pages/AuthPage";
 import { maxWidth } from "../styles/media";
+import { hoverState } from "../styles/mixins";
 
 const Container = styled.div`
   display: flex;
@@ -75,9 +76,9 @@ const LinkText = styled.span`
   font-weight: ${({ theme }) => theme.font.weight.medium};
   cursor: pointer;
 
-  &:hover {
+  ${hoverState(css`
     color: ${({ theme }) => theme.color.text.linkHover};
-  }
+  `)}
 `;
 
 const DescText = styled.span`
@@ -118,9 +119,12 @@ const PaginationContainer = styled.div`
     text-decoration: none;
   }
 
-  .page-item .page-link:hover {
-    background-color: ${({ theme }) => theme.color.surface.disabled};
-  }
+  ${hoverState(
+    css`
+      background-color: ${({ theme }) => theme.color.surface.disabled};
+    `,
+    ".page-item .page-link"
+  )}
 
   .page-item.active .page-link {
     font-weight: ${({ theme }) => theme.font.weight.bold};
@@ -180,6 +184,25 @@ const InfoBanner = styled.div`
   }
 `;
 
+const BannerWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  width: 100%;
+`;
+
+const LoadingPrompt = ({ text }) => (
+  <SpecialPromptContainer>
+    <i
+      className="fa fa-spin fa-cog fa-fw"
+      style={{ fontSize: "100px", color: "var(--pcr-color-text-muted)" }}
+    />
+    <PromptText>{text}</PromptText>
+  </SpecialPromptContainer>
+);
+
 const CourseResults = () => {
   const [subjectSlice, setSubjectSlice] = useState({ start: 0, end: 101 });
 
@@ -216,6 +239,7 @@ const CourseResults = () => {
   const {
     data: searchData,
     isLoading,
+    isFetching,
     isFetchingNextPage: isLoadingMore,
     fetchNextPage,
     hasNextPage: hasMore,
@@ -228,8 +252,11 @@ const CourseResults = () => {
     initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) =>
       lastPage.next ? allPages.length + 1 : undefined,
-    enabled: isActivelyFiltering && isAuth
+    enabled: isActivelyFiltering && isAuth === true
   });
+
+  // Undefined until the auth check finishes, so logged-in users don't see the login prompt flash
+  const isAuthPending = isAuth === undefined;
 
   const filteredResults = useMemo(() => {
     if (!isActivelyFiltering) return null;
@@ -247,11 +274,11 @@ const CourseResults = () => {
   // Infinite scroll, sentinel is inside the table's scroll area
   useEffect(() => {
     const sentinel = sentinelRef.current;
-    if (!sentinel || !hasMore || isLoading) return;
+    if (!sentinel || !hasMore || isLoading || isFetching) return;
 
     const observer = new IntersectionObserver(
       entries => {
-        if (entries[0].isIntersecting && !isLoadingMore) {
+        if (entries[0].isIntersecting) {
           fetchNextPage();
         }
       },
@@ -260,194 +287,179 @@ const CourseResults = () => {
 
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [hasMore, isLoadingMore, fetchNextPage, isLoading]);
+  }, [hasMore, isFetching, fetchNextPage, isLoading]);
+
+  if (!isActivelyFiltering) {
+    if (isCatalogPending) {
+      return (
+        <Container>
+          <LoadingPrompt text="Loading course catalog..." />
+        </Container>
+      );
+    }
+
+    if (isCatalogError) {
+      return (
+        <Container>
+          <SpecialPromptContainer>
+            <i
+              className="fa fa-exclamation-circle"
+              style={{
+                fontSize: "100px",
+                color: "var(--pcr-color-text-muted)"
+              }}
+            />
+            <PromptText>
+              Couldn't load the course catalog. Check your connection and{" "}
+              <LinkText onClick={() => refetchCatalog()}>try again</LinkText>.
+            </PromptText>
+          </SpecialPromptContainer>
+        </Container>
+      );
+    }
+
+    return (
+      <Container>
+        <BrowsingTitle>Browsing {departments.length} Subjects</BrowsingTitle>
+        <SubjectDisplayWrapper>
+          {departments
+            .slice(subjectSlice.start, subjectSlice.end)
+            .filter(dept => dept.desc)
+            .map(dept => (
+              <SubjectCard key={dept.title}>
+                <div style={{ width: "60px", flexShrink: 0 }}>
+                  <LinkText
+                    onClick={() => {
+                      dispatch({
+                        type: "SET_DEPARTMENTS",
+                        // Guard against double-adding when the same
+                        // subject card is clicked twice.
+                        payload: filters.departments.includes(dept.title)
+                          ? filters.departments
+                          : [...filters.departments, dept.title]
+                      });
+                    }}
+                  >
+                    {dept.title}
+                  </LinkText>
+                </div>
+                <DescText>{dept.desc}</DescText>
+              </SubjectCard>
+            ))}
+        </SubjectDisplayWrapper>
+        <PaginationContainer>
+          <ResponsivePagination
+            current={Math.floor(subjectSlice.start / 101) + 1}
+            total={Math.ceil(departments.length / 101)}
+            onPageChange={page => {
+              const start = (page - 1) * 101;
+              const end = start + 101;
+              setSubjectSlice({ start, end });
+            }}
+          />
+        </PaginationContainer>
+      </Container>
+    );
+  }
+
+  if (isLoading || isAuthPending) {
+    return (
+      <Container>
+        <LoadingPrompt text="Loading search results..." />
+      </Container>
+    );
+  }
+
+  if (!isAuth) {
+    return (
+      <Container>
+        <SpecialPromptContainer>
+          <FaLock size={48} color="var(--pcr-color-text-link)" />
+          <LinkText
+            onClick={redirectForAuth}
+            style={{ fontSize: "16px", fontWeight: 400, textAlign: "center" }}
+          >
+            Log in to view course reviews and ratings
+          </LinkText>
+        </SpecialPromptContainer>
+      </Container>
+    );
+  }
+
+  if (isSearchError) {
+    return (
+      <Container>
+        <BannerWrapper>
+          <InfoBanner $isError={true} style={{ justifyContent: "center" }}>
+            <i className="fa fa-exclamation-circle" />
+            <span>
+              Something went wrong while searching. Check your connection and{" "}
+              <LinkText onClick={() => refetchSearch()}>try again</LinkText>.
+            </span>
+          </InfoBanner>
+        </BannerWrapper>
+      </Container>
+    );
+  }
+
+  const resultCount = Object.keys(filteredResults).length;
+
+  if (resultCount === 0) {
+    return (
+      <Container>
+        <BannerWrapper>
+          <InfoBanner $isError={false} style={{ justifyContent: "center" }}>
+            <i className="fa fa-info-circle" />
+            <span>No results found! Try adjusting your filters.</span>
+            {filters.semester === "Next Available" && (
+              <i>
+                Matching results may exist for previous semesters (Try "Any")
+              </i>
+            )}
+          </InfoBanner>
+        </BannerWrapper>
+      </Container>
+    );
+  }
 
   return (
     <Container>
-      {filteredResults !== null || isLoading ? (
-        <>
-          {isAuth ? (
-            <>
-              {isLoading ? (
-                <SpecialPromptContainer>
-                  <i
-                    className="fa fa-spin fa-cog fa-fw"
-                    style={{
-                      fontSize: "100px",
-                      color: "var(--pcr-color-text-muted)"
-                    }}
-                  />
-                  <PromptText>Loading search results...</PromptText>
-                </SpecialPromptContainer>
-              ) : isSearchError ? (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    padding: "20px",
-                    justifyContent: "center",
-                    width: "100%"
-                  }}
-                >
-                  <InfoBanner
-                    $isError={true}
-                    style={{ justifyContent: "center" }}
-                  >
-                    <i className="fa fa-exclamation-circle" />
-                    <span>
-                      Something went wrong while searching. Check your
-                      connection and{" "}
-                      <LinkText onClick={() => refetchSearch()}>
-                        try again
-                      </LinkText>
-                      .
-                    </span>
-                  </InfoBanner>
-                </div>
-              ) : Object.entries(filteredResults).length > 0 ? (
-                <>
-                  <SearchResultsHeader>
-                    <span>
-                      Showing <b>{Object.keys(filteredResults).length}</b> of{" "}
-                      <b>{totalCount}</b> Search Results ({activeFilterCount}{" "}
-                      filter{activeFilterCount !== 1 ? "s" : ""})
-                    </span>
-                    {/* Delayed to a later release when backend API is updated to show recent ratings in aggregate form */}
-                    {/* <CustomDropdown
-                                        style={{width: '180px', selfAlign: 'center'}}
-                                        options={['Average Rating', 'Most Recent Rating']}
-                                        value={recencyOption}
-                                        onChange={(option) => {
-                                            setRecencyOption(option);
-                                            setIsAverage(option === 'Average Rating');
-                                        }}
-                                    /> */}
-                  </SearchResultsHeader>
-                  {activeSemesterFilters.length > 0 && (
-                    <InfoBanner $isError={false}>
-                      <i className="fa fa-info-circle" />
-                      <span>
-                        Filtering by{" "}
-                        {activeSemesterFilters
-                          .map(k => SEMESTER_FILTER_LABELS[k])
-                          .join(", ")}{" "}
-                        — results limited to current semester offerings.
-                      </span>
-                    </InfoBanner>
-                  )}
-                  <ResultsArea>
-                    <CourseResultsTable
-                      filteredResults={filteredResults}
-                      isAverage={true} // true until later release when backend API is updated to show recent ratings
-                      sentinelRef={sentinelRef}
-                      isLoadingMore={isLoadingMore}
-                    />
-                  </ResultsArea>
-                </>
-              ) : (
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    padding: "20px",
-                    justifyContent: "center",
-                    width: "100%"
-                  }}
-                >
-                  <InfoBanner
-                    $isError={false}
-                    style={{ justifyContent: "center" }}
-                  >
-                    <i className="fa fa-info-circle" />
-                    <span>No results found! Try adjusting your filters.</span>
-                    {filters.semester === "Next Available" && (
-                      <i>
-                        Matching results may exist for previous semesters (Try
-                        "Any")
-                      </i>
-                    )}
-                  </InfoBanner>
-                </div>
-              )}
-            </>
-          ) : (
-            <SpecialPromptContainer>
-              <FaLock size={48} color="var(--pcr-color-text-link)" />
-              <LinkText
-                onClick={redirectForAuth}
-                style={{ fontSize: "16px", fontWeight: 400 }}
-              >
-                Log in to view course reviews and ratings
-              </LinkText>
-            </SpecialPromptContainer>
-          )}
-        </>
-      ) : isCatalogPending ? (
-        <SpecialPromptContainer>
-          <i
-            className="fa fa-spin fa-cog fa-fw"
-            style={{ fontSize: "100px", color: "var(--pcr-color-text-muted)" }}
-          />
-          <PromptText>Loading course catalog...</PromptText>
-        </SpecialPromptContainer>
-      ) : isCatalogError ? (
-        <SpecialPromptContainer>
-          <i
-            className="fa fa-exclamation-circle"
-            style={{ fontSize: "100px", color: "var(--pcr-color-text-muted)" }}
-          />
-          <PromptText>
-            Couldn't load the course catalog. Check your connection and{" "}
-            <LinkText onClick={() => refetchCatalog()}>try again</LinkText>.
-          </PromptText>
-        </SpecialPromptContainer>
-      ) : (
-        <>
-          <BrowsingTitle>Browsing {departments.length} Subjects</BrowsingTitle>
-          <SubjectDisplayWrapper>
-            {departments
-              .slice(subjectSlice.start, subjectSlice.end)
-              .map((dept, index) => (
-                <React.Fragment key={index}>
-                  {dept.desc !== null && dept.desc !== "" ? (
-                    <SubjectCard key={index}>
-                      <div style={{ width: "60px", flexShrink: 0 }}>
-                        <LinkText
-                          onClick={() => {
-                            dispatch({
-                              type: "SET_DEPARTMENTS",
-                              // Guard against double-adding when the same
-                              // subject card is clicked twice.
-                              payload: filters.departments.includes(dept.title)
-                                ? filters.departments
-                                : [...filters.departments, dept.title]
-                            });
-                          }}
-                        >
-                          {dept.title}
-                        </LinkText>
-                      </div>
-                      <DescText>{dept.desc}</DescText>
-                    </SubjectCard>
-                  ) : null}
-                </React.Fragment>
-              ))}
-          </SubjectDisplayWrapper>
-          <PaginationContainer>
-            <ResponsivePagination
-              current={Math.floor(subjectSlice.start / 101) + 1}
-              total={Math.ceil(departments.length / 101)}
-              onPageChange={page => {
-                const start = (page - 1) * 101;
-                const end = start + 101;
-                setSubjectSlice({ start, end });
+      <SearchResultsHeader>
+        <span>
+          Showing <b>{resultCount}</b> of <b>{totalCount}</b> Search Results (
+          {activeFilterCount} filter{activeFilterCount !== 1 ? "s" : ""})
+        </span>
+        {/* Delayed to a later release when backend API is updated to show recent ratings in aggregate form */}
+        {/* <CustomDropdown
+              style={{width: '180px', selfAlign: 'center'}}
+              options={['Average Rating', 'Most Recent Rating']}
+              value={recencyOption}
+              onChange={(option) => {
+                  setRecencyOption(option);
+                  setIsAverage(option === 'Average Rating');
               }}
-            />
-          </PaginationContainer>
-        </>
+          /> */}
+      </SearchResultsHeader>
+      {activeSemesterFilters.length > 0 && (
+        <InfoBanner $isError={false}>
+          <i className="fa fa-info-circle" />
+          <span>
+            Filtering by{" "}
+            {activeSemesterFilters
+              .map(k => SEMESTER_FILTER_LABELS[k])
+              .join(", ")}{" "}
+            — results limited to current semester offerings.
+          </span>
+        </InfoBanner>
       )}
+      <ResultsArea>
+        <CourseResultsTable
+          filteredResults={filteredResults}
+          isAverage={true} // true until later release when backend API is updated to show recent ratings
+          sentinelRef={sentinelRef}
+          isLoadingMore={isLoadingMore}
+        />
+      </ResultsArea>
     </Container>
   );
 };

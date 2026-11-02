@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import styled, { css } from "styled-components";
 import { SlArrowDown } from "react-icons/sl";
 import { useOnClickOutside } from "../utils/hooks";
-import { interactiveTransition } from "../styles/mixins";
+import { hoverState, interactiveTransition } from "../styles/mixins";
 
 const DropdownWrapper = styled.div`
   position: relative;
@@ -27,12 +27,20 @@ const SearchSortDropdown = styled.div`
   font-weight: ${({ theme }) => theme.font.weight.light};
   ${interactiveTransition}
 
-  &:hover {
+  ${hoverState(css`
     background: ${({ theme }) => theme.color.surface.hover};
+  `)}
+
+  @media (hover: hover) {
+    &:has(.item:hover) {
+      background: ${({ theme }) => theme.color.surface.page};
+    }
   }
 
-  &:has(.item:hover) {
-    background: ${({ theme }) => theme.color.surface.page};
+  @media (hover: none) {
+    &:has(.item:active) {
+      background: ${({ theme }) => theme.color.surface.page};
+    }
   }
 
   ${props =>
