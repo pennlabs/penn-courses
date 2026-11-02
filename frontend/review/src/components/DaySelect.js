@@ -1,5 +1,6 @@
 import React from "react";
 import styled, { css } from "styled-components";
+import { hoverState } from "../styles/mixins";
 
 const Container = styled.div`
   display: flex;
@@ -31,9 +32,9 @@ const DayOption = styled.div`
       color: ${({ theme }) => theme.color.text.inverse};
     `};
 
-  &:hover {
+  ${hoverState(css`
     border-color: ${({ theme }) => theme.color.border.selected};
-  }
+  `)}
 `;
 
 const DaySelect = ({ daysOfferedList, setDaysOfferedList }) => {

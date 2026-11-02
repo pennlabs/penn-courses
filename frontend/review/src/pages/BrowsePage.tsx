@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import styled from "styled-components";
+import styled, { css } from "styled-components";
 import { useState } from "react";
 import { useHistory } from "react-router-dom";
 import FilterBox from "../components/FilterBox";
@@ -12,7 +12,7 @@ import ScrollToTop from "../components/common/ScrollToTop";
 import { useFilterState, useFilterDispatch } from "../utils/FilterContext";
 import { getFilteredURL, loadStateFromURL } from "../utils/filters";
 import { maxWidth, minWidth, isBelow } from "../styles/media";
-import { interactiveTransition } from "../styles/mixins";
+import { hoverState, interactiveTransition } from "../styles/mixins";
 
 // Browse Page is the main entrypoint for the app
 
@@ -28,12 +28,12 @@ const PageWrapper = styled.div`
   }
 `;
 
-const ContentView = styled.div`
+const ContentView = styled.div<{ $isFiltersCollapsed: boolean }>`
   margin-top: 20px;
   display: flex;
   padding: 0 40px 0 40px;
   flex-direction: row;
-  gap: 30px;
+  gap: ${({ $isFiltersCollapsed }) => ($isFiltersCollapsed ? "0px" : "30px")};
   width: 100%;
   min-height: 0;
 
@@ -74,7 +74,7 @@ const CourseResultsWrapper = styled.div`
   ${maxWidth("lg")} {
     width: 100%;
     flex: none;
-    max-height: 80dvh;
+    max-height: 70dvh;
   }
 `;
 
@@ -101,14 +101,14 @@ const FilterCollapseBox = styled.div`
   border: 1px solid ${({ theme }) => theme.color.border.default};
   border-radius: 8px;
   padding: 6px;
-  background: ${({ theme }) => theme.color.surface.page};
+  background: ${({ theme }) => theme.color.surface.card};
   margin-bottom: 12px;
 
   ${interactiveTransition}
 
-  &:hover {
+  ${hoverState(css`
     background: ${({ theme }) => theme.color.surface.subtle};
-  }
+  `)}
 
   ${maxWidth("lg")} {
     display: flex;
@@ -153,7 +153,7 @@ const BrowsePage = () => {
 
   return (
     <PageWrapper>
-      <ContentView>
+      <ContentView $isFiltersCollapsed={filtersCollapsed}>
         <SidebarWrapper>
           {/* FilterCollapseBox is mobile only */}
           <FilterCollapseBox onClick={() => setFiltersCollapsed(!filtersCollapsed)}>

@@ -2,7 +2,7 @@ import styled, { css } from "styled-components";
 import { SlArrowRight } from "react-icons/sl";
 import { useState } from "react";
 import Collapse from "./common/Collapse";
-import { interactiveTransition } from "../styles/mixins";
+import { hoverState, interactiveTransition } from "../styles/mixins";
 import SelectBox from "./SelectBox";
 import DaySelect from "./DaySelect";
 import SemesterSelect from "./SemesterSelect";
@@ -94,9 +94,9 @@ const ResetButton = styled.button`
   cursor: pointer;
   ${interactiveTransition}
 
-  &:hover {
+  ${hoverState(css`
     background: ${({ theme }) => theme.color.surface.hover};
-  }
+  `)}
 `;
 
 const FilterDropdown = ({ title, renderContent, active }) => {

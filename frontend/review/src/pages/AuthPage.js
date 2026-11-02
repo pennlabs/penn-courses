@@ -46,7 +46,9 @@ const TempAuthPage = ({ forceRedirect = false, children }) => {
       {forceRedirect ? (
         <>{authed ? children : null}</>
       ) : (
-        <AuthContext.Provider value={authed}>{children}</AuthContext.Provider>
+        <AuthContext.Provider value={authChecked ? authed : undefined}>
+          {children}
+        </AuthContext.Provider>
       )}
     </>
   );
