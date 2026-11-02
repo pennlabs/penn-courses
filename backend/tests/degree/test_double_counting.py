@@ -1,9 +1,10 @@
 from django.contrib.auth import get_user_model
 from django.db.models import Q
 from django.test import TestCase
+from django.urls import reverse
 
 from courses.util import get_or_create_course_and_section
-from degree.models import Degree, DegreePlan, Major, Rule
+from degree.models import Degree, DegreePlan, Fulfillment, Major, PDPBetaUser, Rule
 from degree.utils.degree_logic import (
     allocate_rules,
     check_legal,
@@ -11,6 +12,7 @@ from degree.utils.degree_logic import (
     prewarm_belongs_cache,
 )
 from degree.utils.double_counts import get_degree_trees, resolve_double_counts
+from tests.degree.util import set_semester
 
 
 TEST_SEMESTER = "2023C"
@@ -358,4 +360,188 @@ class ComponentPassIsolationTest(TestCase):
         self.assertIn(self.small, selected)
         self.assertIn(self.math_rule, selected)
         self.assertNotIn(self.big, selected)
+        self.assertTrue(legal)
+
+
+class NeverIllegalTest(TestCase):
+    """
+    The allocator must never select a pair of rules that may not share. When a course fits a
+    rule in each of two components whose blocks forbid sharing, one component gets the course
+    and the other is only offered it as unselected, rather than both taking it and the
+    fulfillment being flagged as illegally double counted.
+    """
+
+    def setUp(self):
+        get_or_create_course_and_section("CIS-1200-001", TEST_SEMESTER)
+        matches = repr(Q(full_code__startswith="CIS"))
+
+        self.degree = Degree.objects.create(program="EU_BSE", degree="BSE", major="CIS", year=2026)
+        self.elective = Rule.objects.create(
+            title="Technical Electives",
+            q=matches,
+            credits=6,
+            block_type="MAJOR",
+            block_value="CIS",
+            share_targets=[],
+        )
+        self.degree.rules.add(self.elective)
+
+        self.major = Major.objects.create(
+            program_code="MATH-BA-GEN", code="MATH", name="Mathematics", year=2026
+        )
+        self.math_rule = Rule.objects.create(
+            title="Mathematics Electives",
+            q=matches,
+            credits=3,
+            block_type="MAJOR",
+            block_value="MATH",
+            share_targets=[],
+        )
+        self.core = Rule.objects.create(
+            title="Core",
+            q=repr(Q(full_code="CIS-1200")),
+            num=1,
+            block_type="MAJOR",
+            block_value="MATH",
+            share_targets=[],
+        )
+        self.major.rules.add(self.math_rule, self.core)
+
+        person = get_user_model().objects.create_user(username="t", password="top_secret")
+        self.plan = DegreePlan.objects.create(name="degree plus major", person=person)
+        self.plan.degrees.add(self.degree)
+        self.plan.majors.add(self.major)
+
+    def allocate(self, rule_selected=None):
+        rules_per_degree, rule_to_degree, double_counts = map_rules_and_degrees(self.plan)
+        return allocate_rules(
+            "CIS-1200",
+            rules_per_degree,
+            rule_to_degree,
+            double_counts,
+            rule_selected=rule_selected,
+            satisfied_rules=set(),
+        )
+
+    def test_the_components_may_not_share(self):
+        _, _, double_counts = map_rules_and_degrees(self.plan)
+        self.assertNotIn(self.math_rule, double_counts.get(self.elective, set()))
+        self.assertNotIn(self.core, double_counts.get(self.elective, set()))
+
+    def test_only_one_component_takes_the_course(self):
+        selected, unselected, legal = self.allocate()
+        self.assertTrue(legal)
+        self.assertEqual({self.elective}, selected)
+        self.assertEqual({self.math_rule, self.core}, unselected)
+
+    def test_an_explicit_listing_does_not_force_an_illegal_pair(self):
+        # The core rule names CIS-1200 outright, which used to select it regardless of what
+        # the other component had already taken.
+        selected, unselected, legal = self.allocate()
+        self.assertTrue(legal)
+        self.assertNotIn(self.core, selected)
+        self.assertIn(self.core, unselected)
+
+    def test_the_dropped_on_rule_wins(self):
+        selected, unselected, legal = self.allocate(rule_selected=self.math_rule)
+        self.assertTrue(legal)
+        self.assertEqual({self.math_rule}, selected)
+        self.assertEqual({self.elective, self.core}, unselected)
+
+
+class NeverIllegalApiTest(NeverIllegalTest):
+    """
+    The write paths a student reaches by dragging also never store a pair of rules that may
+    not share. Where the student's new choice conflicts with what the course already counted
+    for, the new choice wins and the old one is offered as unselected.
+    """
+
+    def setUp(self):
+        super().setUp()
+        set_semester()
+        PDPBetaUser.objects.create(person=self.plan.person)
+        self.client.force_login(self.plan.person)
+        self.fulfillment = Fulfillment.objects.create(
+            degree_plan=self.plan, full_code="CIS-1200", semester=TEST_SEMESTER
+        )
+        self.fulfillment.rules.add(self.elective)
+        self.fulfillment.unselected_rules.add(self.math_rule, self.core)
+
+    def fulfillments_url(self):
+        return reverse("degreeplan-fulfillment-list", kwargs={"degreeplan_pk": self.plan.id})
+
+    def test_dropping_onto_a_conflicting_rule_moves_the_course(self):
+        # What the requirement panel posts: the existing rules plus the one dropped on
+        response = self.client.post(
+            self.fulfillments_url(),
+            {"full_code": "CIS-1200", "rules": [self.elective.id, self.math_rule.id]},
+        )
+        self.assertEqual(response.status_code, 200, response.json())
+        self.fulfillment.refresh_from_db()
+        self.assertEqual({self.math_rule}, set(self.fulfillment.rules.all()))
+        self.assertEqual({self.elective, self.core}, set(self.fulfillment.unselected_rules.all()))
+        self.assertTrue(self.fulfillment.legal)
+
+    def test_posting_no_rules_clears_the_flag(self):
+        self.fulfillment.legal = False
+        self.fulfillment.save()
+        response = self.client.post(
+            self.fulfillments_url(),
+            {"full_code": "CIS-1200", "rules": []},
+            content_type="application/json",
+        )
+        self.assertEqual(response.status_code, 200, response.json())
+        self.fulfillment.refresh_from_db()
+        self.assertEqual(set(), set(self.fulfillment.rules.all()))
+        self.assertTrue(self.fulfillment.legal)
+
+    def test_switching_across_components_demotes_the_conflict(self):
+        response = self.client.post(
+            reverse(
+                "degreeplan-fulfillment-switch-rule",
+                kwargs={"degreeplan_pk": self.plan.id, "full_code": "CIS-1200"},
+            ),
+            {"rule_id": self.math_rule.id},
+        )
+        self.assertEqual(response.status_code, 200, response.json())
+        self.fulfillment.refresh_from_db()
+        self.assertEqual({self.math_rule}, set(self.fulfillment.rules.all()))
+        self.assertIn(self.elective, self.fulfillment.unselected_rules.all())
+        self.assertTrue(self.fulfillment.legal)
+
+    def satisfied_rule_list(self, rule_id):
+        response = self.client.get(
+            reverse(
+                "satisfied-rule-list",
+                kwargs={
+                    "degree_plan_id": self.plan.id,
+                    "full_code": "CIS-1200",
+                    "rule_id": rule_id,
+                },
+            )
+        )
+        self.assertEqual(response.status_code, 200, response.json())
+        data = response.json()
+        return (
+            {rule["id"] for rule in data["selected_rules"]},
+            {rule["id"] for rule in data["unselected_rules"]},
+            data["legal"],
+        )
+
+    def test_the_preview_keeps_what_the_course_already_counts_for(self):
+        # Dragged into a semester from the requirement panel, under its current rule
+        selected, unselected, legal = self.satisfied_rule_list(self.elective.id)
+        self.assertEqual({self.elective.id}, selected)
+        self.assertEqual({self.math_rule.id, self.core.id}, unselected)
+        self.assertTrue(legal)
+
+        # Dragged into a semester with no rule in mind
+        selected, unselected, legal = self.satisfied_rule_list(-1)
+        self.assertEqual({self.elective.id}, selected)
+        self.assertTrue(legal)
+
+    def test_the_preview_lets_a_new_choice_displace_the_old(self):
+        selected, unselected, legal = self.satisfied_rule_list(self.math_rule.id)
+        self.assertEqual({self.math_rule.id}, selected)
+        self.assertEqual({self.elective.id, self.core.id}, unselected)
         self.assertTrue(legal)

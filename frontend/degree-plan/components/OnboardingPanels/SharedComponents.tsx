@@ -47,6 +47,14 @@ export const ErrorText = styled.p`
   min-height: 17px;
 `;
 
+export const PrivacyNote = styled.p`
+  color: #777777;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  max-width: 350px;
+  text-align: center;
+`;
+
 export const CenteredFlexContainer = styled.div`
   display: flex;
   justify-content: center;
@@ -326,5 +334,5 @@ export const schoolOptions = [
   { value: "BAS", label: "Engineering BAS" },
   { value: "BS", label: "Wharton" },
   { value: "BSN", label: "Nursing" },
-  { value: "MSE", label: "Engineering AM" },
+  { value: "MSE", label: "Engineering MSE" },
 ];

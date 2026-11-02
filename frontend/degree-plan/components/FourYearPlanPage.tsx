@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, MutableRefObject } from "react";
+import React, { useState, useEffect, useRef, useCallback, MutableRefObject } from "react";
 import ReqPanel from "./Requirements/ReqPanel";
 import PlanPanel from "./FourYearPlan/PlanPanel";
 import { SearchPanel, SearchPanelContext } from "./Search/SearchPanel";
@@ -64,6 +64,9 @@ type FourYearPlanPageProps = {
 };
 
 const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
+  // Stable identity so the account indicator's login-check effect doesn't rerun every render.
+  const logout = useCallback(() => updateUser(null), [updateUser]);
+
   // edit modals for degree and degree plan
   const [modalKey, setModalKey] = useState<ModalKey>(null);
   const [modalObject, setModalObject] = useState<DegreePlan | null>(null); // stores the which degreeplan is being updated using the modal
@@ -73,13 +76,16 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
     setActiveDegreeplan,
   ] = React.useState<DegreePlan | null>(null);
 
+  // Degree plan endpoints require login, so wait for the user before requesting them.
+  // Firing early only produced a burst of 403 toasts on every reload.
   const { data: degreeplans, isLoading: isLoadingDegreeplans } = useSWR<
     DegreePlan[]
-  >("/api/degree/degreeplans");
+  >(user ? "/api/degree/degreeplans" : null);
 
   useEffect(() => {
     // recompute the active degreeplan id on changes to the degreeplans
-    if (!isLoadingDegreeplans && !degreeplans?.length) {
+    // Only an empty list means the user has no plans; a failed request leaves data undefined.
+    if (!isLoadingDegreeplans && degreeplans && !degreeplans.length) {
       setShowOnboardingModal(true);
     }
     if (!degreeplans?.length) {
@@ -291,7 +297,7 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
               <Dock
                 user={user}
                 login={updateUser}
-                logout={() => updateUser(null)}
+                logout={logout}
                 activeDegreeplanId={
                   activeDegreeplan ? activeDegreeplan.id : null
                 }

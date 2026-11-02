@@ -12,6 +12,11 @@ import SatisfiedCheck from "../FourYearPlan/SatisfiedCheck";
 import { ExpandedCoursesPanelContext } from "@/components/ExpandedBox/ExpandedCoursesPanelTrigger";
 import { parseQJson } from "./ruleUtils";
 import { useSWRConfig } from "swr";
+import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
+
+/** Whether a dragged course sits in the AP & transfer credit semester. */
+const isTransferCredit = (course: DnDCourse) =>
+  (course?.semester ?? course?.fulfillment?.semester) === TRANSFER_CREDIT_SEMESTER_KEY;
 
 const RuleTitleWrapper = styled.div<{ $headerHeight?: number, $zIndex?: number }>`
   background-color: var(--primary-color);
@@ -518,6 +523,10 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
           return parseQJson(rule.q_json, formattedCourse);
         }
 
+        if (isTransferCredit(course) && !rule.transfer_credit_allowed) {
+          return false;
+        }
+
         // Always allow dropping from the plan — if the course doesn't match,
         // the drop handler will prompt for an override instead.
         return true;
@@ -535,7 +544,7 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
         };
       },
     },
-    [createOrUpdate, satisfied, courseMatchesRule]
+    [createOrUpdate, satisfied, courseMatchesRule, rule.transfer_credit_allowed]
   );
 
   if (type === "LEAF") {

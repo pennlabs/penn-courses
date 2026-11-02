@@ -8,6 +8,7 @@ from rest_framework import serializers
 from courses.models import Course
 from courses.util import get_current_semester
 from degree.models import (
+    TRANSFER_CREDIT_SEMESTER,
     Degree,
     DegreePlan,
     DockedCourse,
@@ -20,9 +21,18 @@ from degree.models import (
 
 
 class DegreeListSerializer(serializers.ModelSerializer):
+    """
+    A degree as the onboarding and degree pickers list it, without its rules.
+
+    The rules are a many-to-many, so listing them costs a query per degree and puts every rule
+    id of every degree on the wire. Nothing that lists degrees reads them: the requirements
+    panel takes rules from the degree plan detail, and `DegreeDetailSerializer` still carries
+    them for a single degree.
+    """
+
     class Meta:
         model = Degree
-        fields = "__all__"
+        exclude = ["rules"]
 
 
 def attribute_codes_by_full_code(full_codes):
@@ -244,15 +254,29 @@ class FulfillmentSerializer(serializers.ModelSerializer):
             full_code = self.instance.full_code
         if degree_plan is None:
             degree_plan = self.instance.degree_plan
-
-        data["rules"] = rules
+        semester = data.get("semester", self.instance.semester if self.instance else None)
+        is_transfer = semester == TRANSFER_CREDIT_SEMESTER
 
         overridden_rules = set(self.instance.overrides.all()) if self.instance else set()
+
+        def still_applies(rule):
+            return rule in overridden_rules or rule.accepts(is_transfer=is_transfer)
+
+        # A course moved into the AP & transfer semester keeps only the rules that still take it
+        if "rules" not in data:
+            rules = list(filter(still_applies, rules))
+            data["unselected_rules"] = list(filter(still_applies, unselected_rules))
+
+        data["rules"] = rules
 
         # TODO: check that rules belong to this degree plan
         for rule in rules:
             if rule in overridden_rules:
                 continue
+            if not rule.accepts(is_transfer=is_transfer):
+                raise serializers.ValidationError(
+                    f"Rule {rule.id} does not accept AP or transfer credit"
+                )
             # NOTE: we don't do any validation if the course doesn't exist in DB. In future,
             # it may be better to prompt user for manual override
             if (

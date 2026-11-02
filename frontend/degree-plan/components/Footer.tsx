@@ -14,8 +14,20 @@ const Link = styled.a`
     color: rgb(50, 115, 220);
 `
 
+const Disclaimer = styled.p`
+    color: #777777;
+    font-size: 0.7rem;
+    margin: 0 auto 0.25rem;
+    max-width: 60rem;
+    padding: 0 1rem;
+`
+
 const Footer = () => (
     <Wrapper>
+        <Disclaimer>
+            Penn Degree Plan is not an official University of Pennsylvania resource.
+            For actual degree planning, please consult your academic advisor.
+        </Disclaimer>
         Made with{" "}
         <span className="icon is-small">
             <i className="fa fa-heart" style={{ color: "red" }} />

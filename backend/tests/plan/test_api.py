@@ -6,6 +6,7 @@ from options.models import Option
 from rest_framework.test import APIClient
 
 from alert.models import AddDropPeriod
+from courses.management.commands.cache_course_reviews import cache_course_reviews
 from courses.management.commands.recompute_soft_state import recompute_precomputed_fields
 from courses.models import Instructor, PreNGSSRequirement, Section
 from courses.util import invalidate_current_semester_cache, set_meetings
@@ -252,6 +253,7 @@ class CourseReviewAverageTestCase(TestCase):
 
         self.section.instructors.add(self.instructor)
         self.section2.instructors.add(self.instructor2)
+        cache_course_reviews()
         self.client = APIClient()
         set_semester()
 
@@ -284,6 +286,7 @@ class CourseReviewAverageTestCase(TestCase):
             }
         )
         self.section2.instructors.add(instructor3)
+        cache_course_reviews()
         response = self.client.get(reverse("courses-detail", args=["current", "CIS-120"]))
         self.assertEqual(200, response.status_code)
         self.assertEqual(2, len(response.data["sections"]))

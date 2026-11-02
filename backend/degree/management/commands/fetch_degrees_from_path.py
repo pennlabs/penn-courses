@@ -111,6 +111,16 @@ class Command(BaseCommand):
                 """
             ),
         )
+        parser.add_argument(
+            "--skip-masters",
+            action="store_true",
+            help=dedent(
+                """
+                Do not fetch the masters programs submatriculants pursue alongside their
+                bachelors.
+                """
+            ),
+        )
         parser.add_argument("--deduplicate-rules", action="store_true")
 
     def handle(self, *args, **options):
@@ -141,6 +151,8 @@ class Command(BaseCommand):
             programs = [{"code": code, "title": ""} for code in self.options["program"]]
         else:
             programs = client.undergraduate_programs(srcdb)
+            if not self.options["skip_masters"]:
+                programs += client.masters_programs(srcdb)
         self.announce(f"srcdb {srcdb}: {len(programs)} programs")
 
         for program in programs:

@@ -1,13 +1,10 @@
 from django.db.models import Q
-from django.db.models.signals import post_save
 from django.test import TestCase
 from django.urls import reverse
-from options.models import Option
 from rest_framework.test import APIClient
 
-from alert.models import AddDropPeriod
 from courses.models import Course, User
-from courses.util import get_or_create_course_and_section, invalidate_current_semester_cache
+from courses.util import get_or_create_course_and_section
 from degree.models import (
     Degree,
     DegreePlan,
@@ -19,19 +16,7 @@ from degree.models import (
 )
 from degree.serializers import SimpleCourseSerializer
 from tests.courses.util import fill_course_soft_state
-
-
-TEST_SEMESTER = "2023C"
-
-
-def set_semester():
-    post_save.disconnect(
-        receiver=invalidate_current_semester_cache,
-        sender=Option,
-        dispatch_uid="invalidate_current_semester_cache",
-    )
-    Option(key="SEMESTER", value=TEST_SEMESTER, value_type="TXT").save()
-    AddDropPeriod(semester=TEST_SEMESTER).save()
+from tests.degree.util import TEST_SEMESTER, set_semester
 
 
 class DegreeViewsetTest(TestCase):
@@ -82,9 +67,7 @@ class FulfillmentViewsetTest(TestCase):
             fulfillment["unselected_rules"], [rule.id for rule in expected.unselected_rules.all()]
         )
         self.assertEqual(fulfillment["legal"], expected.legal)
-        self.assertEqual(
-            fulfillment["overrides"], [rule.id for rule in expected.overrides.all()]
-        )
+        self.assertEqual(fulfillment["overrides"], [rule.id for rule in expected.overrides.all()])
 
     def setUp(self):
         self.user = User.objects.create_user(
@@ -109,23 +92,28 @@ class FulfillmentViewsetTest(TestCase):
         fill_course_soft_state()
 
         self.degree = Degree.objects.create(program="EU_BSE", degree="BSE", major="CIS", year=2023)
+        # One block whose rules all share with each other, so a course may count for several
+        shares = dict(block_type="MAJOR", block_value="CIS", share_targets=[{"kind": "THISBLOCK"}])
         self.parent_rule = Rule.objects.create()
         self.rule1 = Rule.objects.create(
             parent=self.parent_rule,
             q=repr(Q(full_code="CIS-1200")),
             num=1,
+            **shares,
         )
         self.rule2 = Rule.objects.create(  # .5 cus / 1 course CIS-19XX classes
             parent=self.parent_rule,
             q=repr(Q(full_code__startswith="CIS-19")),
             credits=0.5,
             num=1,
+            **shares,
         )
         self.rule3_parent = Rule.objects.create()
         self.rule3 = Rule.objects.create(  # 2 CIS classes
             parent=self.rule3_parent,
             q=repr(Q(full_code__startswith="CIS")),
             num=2,
+            **shares,
         )
         self.degree.rules.add(
             self.parent_rule, self.rule1, self.rule2, self.rule3_parent, self.rule3
