@@ -1,4 +1,5 @@
 import { ArrowLeftIcon } from "@radix-ui/react-icons";
+import styled from "@emotion/styled";
 import {
   Dispatch,
   SetStateAction,
@@ -43,15 +44,85 @@ import {
 import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
 import { postFetcher, getCsrf } from "@/hooks/swrcrud";
 import {
+  CourseLevel,
   getMajorOptions,
   getSecondMajorOptions,
   MajorOptionItem,
 } from "@/utils/parseUtils";
 
+type ScrapedSemester = { sem: string; courses: string[] };
+
+const RecordHeading = styled.h3`
+  margin: 0.5rem 0 0;
+  font-size: 1.1rem;
+`;
+
+const RecordNote = styled.p`
+  margin: 0;
+  font-size: 0.85rem;
+  color: #666;
+`;
+
+const SHARED_COURSE_BACKGROUND = "#d6ebdf";
+
+const courseChipStyles = {
+  ...customSelectStylesCourses,
+  multiValue: (provided: any, { data }: any) => ({
+    ...customSelectStylesCourses.multiValue(provided),
+    ...(data.shared ? { backgroundColor: SHARED_COURSE_BACKGROUND } : {}),
+  }),
+};
+
+const semesterLabel = (sem: string) =>
+  sem === "_TRAN" ? "Transfer Credit" : sem[0].toUpperCase() + sem.slice(1);
+
+const RECORDS: { title: string; counts: (level?: CourseLevel) => boolean }[] = [
+  { title: "Bachelors", counts: (level) => level !== "GRADUATE" },
+  { title: "Masters", counts: (level) => level === "GRADUATE" || level === "SHARED" },
+];
+
+const SemesterRows = ({
+  semesters,
+  courseLevels,
+  loading,
+}: {
+  semesters: ScrapedSemester[];
+  courseLevels: { [course: string]: CourseLevel };
+  loading: boolean;
+}) => (
+  <>
+    {semesters.map((semester) => {
+      const chips = semester.courses.map((course) => ({
+        value: course.toUpperCase(),
+        label: course.toUpperCase(),
+        shared: courseLevels[course] === "SHARED",
+      }));
+      return (
+        <FieldWrapper style={{ display: "flex" }} key={semester.sem}>
+          <Label required={false}>{semesterLabel(semester.sem)}</Label>
+          <Select
+            components={{ MultiValueRemove: () => null }}
+            options={chips}
+            value={chips}
+            isMulti
+            placeholder="Courses"
+            styles={courseChipStyles}
+            isLoading={loading}
+            isDisabled
+          />
+        </FieldWrapper>
+      );
+    })}
+  </>
+);
+
 type WelcomeLayoutProps = {
   inputtedStartingYear: { value: number; label: number } | null;
   inputtedGraduationYear: { value: number; label: number } | null;
   scrapedCourses: any;
+  // Which transcript record each scraped course is on; empty unless the transcript has a
+  // masters record.
+  courseLevels?: { [course: string]: CourseLevel };
   setCurrentPage: Dispatch<SetStateAction<number>>;
   setActiveDegreeplan: (arg0: DegreePlan) => void;
   inputtedSchools: SchoolOption[];
@@ -66,6 +137,7 @@ export default function CreateWithTranscriptPanel({
   inputtedStartingYear,
   inputtedGraduationYear,
   scrapedCourses,
+  courseLevels = {},
   setCurrentPage,
   setActiveDegreeplan,
   inputtedSchools,
@@ -105,6 +177,10 @@ export default function CreateWithTranscriptPanel({
   // Will likely change in the future!
   useEffect(() => {
     if (degreeID) {
+      const toFullCode = (course: string) => course.replace(" ", "-").toUpperCase();
+      const levels = Object.fromEntries(
+        Object.entries(courseLevels).map(([course, level]) => [toFullCode(course), level])
+      );
       const courses = scrapedCourses.map((semester: any) => {
         const rawSem = semester.sem;
         let sem: string;
@@ -117,9 +193,7 @@ export default function CreateWithTranscriptPanel({
         }
         return {
           sem,
-          courses: semester.courses.map((course: string) =>
-            course.replace(" ", "-").toUpperCase()
-          ),
+          courses: semester.courses.map(toFullCode),
         };
       });
 
@@ -128,6 +202,7 @@ export default function CreateWithTranscriptPanel({
       } else {
         postFetcher(`/api/degree/onboard-from-transcript/${degreeID}`, {
           courses,
+          levels,
         }).then((r) => setShowOnboardingModal(false));
       }
     }
@@ -227,6 +302,21 @@ export default function CreateWithTranscriptPanel({
     () => getSecondMajorOptions(standaloneMajors, startingYear?.value ?? null),
     [standaloneMajors, startingYear]
   );
+
+  const levels = Object.values(courseLevels);
+  const hasMastersRecord = levels.some((level) => level !== "UNDERGRADUATE");
+  const hasSharedCourses = levels.some((level) => level === "SHARED");
+  const records: { title: string | null; semesters: ScrapedSemester[] }[] = hasMastersRecord
+    ? RECORDS.map(({ title, counts }) => ({
+        title,
+        semesters: scrapedCourses
+          .map((semester: ScrapedSemester) => ({
+            ...semester,
+            courses: semester.courses.filter((course) => counts(courseLevels[course])),
+          }))
+          .filter((semester: ScrapedSemester) => semester.courses.length > 0),
+      }))
+    : [{ title: null, semesters: scrapedCourses }];
 
 
   return (
@@ -380,38 +470,21 @@ export default function CreateWithTranscriptPanel({
               </div>
 
               <CourseContainer>
-                {scrapedCourses.map((e: any, i: number) => {
-                  const semCourses = e.courses.map(
-                    (course: any, _: any) =>
-                      [
-                        {
-                          value: course.toUpperCase(),
-                          label: course.toUpperCase(),
-                        },
-                      ][0]
-                  );
-                  return (
-                    <FieldWrapper style={{ display: "flex" }} key={i}>
-                      {e.sem === "_TRAN" ? (
-                        <Label required={false}>Transfer Credit</Label>
-                      ) : (
-                        <Label required={false}>
-                          {e.sem[0].toUpperCase() + e.sem.slice(1)}
-                        </Label>
-                      )}
-                      <Select
-                        components={{ MultiValueRemove: () => null }}
-                        options={semCourses}
-                        value={semCourses}
-                        isMulti
-                        placeholder="Courses"
-                        styles={customSelectStylesCourses}
-                        isLoading={isLoadingDegrees}
-                        isDisabled
-                      />
-                    </FieldWrapper>
-                  );
-                })}
+                {records.map(({ title, semesters }) => (
+                  <section key={title ?? "courses"} aria-label={title ?? "Your courses"}>
+                    {title && <RecordHeading>{title}</RecordHeading>}
+                    {title === "Masters" && hasSharedCourses && (
+                      <RecordNote>
+                        Highlighted courses are on both records and count toward both degrees.
+                      </RecordNote>
+                    )}
+                    <SemesterRows
+                      semesters={semesters}
+                      courseLevels={courseLevels}
+                      loading={isLoadingDegrees}
+                    />
+                  </section>
+                ))}
               </CourseContainer>
               <NextButtonContainer>
                 <NextButton

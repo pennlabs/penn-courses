@@ -36,22 +36,24 @@ ANY_BLOCK = "ANYBLOCK"
 
 def get_degree_trees(degrees):
     """
-    Maps each of the given degrees, majors or minors to all of its rules. Rules are fetched
-    one level at a time, to avoid a query per rule.
+    Maps each of the given degrees, majors or minors to all of its rules, fetched one depth at
+    a time across every owner. A rule shared by several owners appears in each of their trees.
     """
-    trees = {}
+    trees = {owner: list(owner.rules.all()) for owner in degrees}
+    owners_of = defaultdict(list)
+    for owner, rules in trees.items():
+        for rule in rules:
+            owners_of[rule.id].append(owner)
 
-    for owner in degrees:
-        # owner.rules.model is Rule; referencing it this way avoids a circular import
-        rule_model = owner.rules.model
-        rules = list(owner.rules.all())
-
-        level = rules
-        while level:
-            level = list(rule_model.objects.filter(parent__in=level))
-            rules.extend(level)
-
-        trees[owner] = rules
+    level = [rule for rules in trees.values() for rule in rules]
+    while level:
+        # Rule, reached through an instance to avoid a circular import
+        rule_model = level[0]._meta.model
+        level = list(rule_model.objects.filter(parent__in={rule.id for rule in level}))
+        for rule in level:
+            for owner in owners_of[rule.parent_id]:
+                owners_of[rule.id].append(owner)
+                trees[owner].append(rule)
 
     return trees
 
