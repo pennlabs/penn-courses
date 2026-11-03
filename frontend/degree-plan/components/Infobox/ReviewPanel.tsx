@@ -100,7 +100,7 @@ const ReviewPanelWrapper = styled.div<{ $left?: number, $right?: number, $top?: 
     height: 35vh;
     width: 20rem;
     overflow: hidden;
-    box-shadow: 0px 0px 10px 6px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--panel-shadow);
     border-radius: 10px;
     ${props => props.$left ? `left: ${props.$left}px;` : ""}
     ${props => props.$right ? `right: ${props.$right}px;` : ""}

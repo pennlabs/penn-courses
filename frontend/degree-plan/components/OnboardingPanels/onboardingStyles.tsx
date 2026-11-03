@@ -3,7 +3,7 @@ import { StylesConfig } from "react-select";
 import { inter } from "@/fonts";
 
 export const color = {
-  text: "var(--foreground-rgb)",
+  text: "var(--text-color)",
   muted: "#777777",
   subtle: "#6B7280",
   border: "#E2E5EB",

@@ -3,7 +3,7 @@ import styled from "@emotion/styled";
 import { Icon } from "../common/bulma_derived_components";
 import CourseInPlan from "../FourYearPlan/CourseInPlan";
 import { SkeletonCourse } from "../Course/Course";
-import { BaseCourseContainer } from "../Course/Course";
+import { BaseCourseContainer } from "../Course/Course.styles";
 import assert from "assert";
 import { useContext, useEffect, useRef, useState } from "react";
 import { SearchPanelContext } from "../Search/SearchPanel";
@@ -102,8 +102,8 @@ const Wrap = styled.span`
 `
 
 const DarkGrayIcon = styled(Icon)`
-    color: #575757;
-    fill: #575757;
+    color: var(--text-color);
+    fill: var(--text-color);
 `
 
 const LightGrayIcon = styled(Icon)`
@@ -293,7 +293,7 @@ const SearchCondition = ({ cu, num, ruleId, ruleQuery, fulfillments, unselectedF
 const CourseOptionsSeparator = styled.div`
     font-size: 1rem;
     text-transform: uppercase;
-    color: #575757;
+    color: var(--text-color);
     font-weight: 500;
 `;
 

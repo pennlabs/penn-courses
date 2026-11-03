@@ -29,7 +29,7 @@ export const SemesterCard = styled.div<{
     $isOver: boolean,
     $semesterComparison: number // -1 if currentSemester is less than this semester...
 }>`
-    background: ${props => props.$semesterComparison < 0 ? "#F8F8F8" : props.$semesterComparison === 0 ? "var(--primary-color)" : "#FFFFFF"};
+    background: ${props => props.$semesterComparison < 0 ? "var(--background-light-grey)" : props.$semesterComparison === 0 ? "var(--primary-color)" : "#FFFFFF"};
     color: ${props => props.$semesterComparison === 0 ? "var(--primary-color-ultra-dark)" : "inherit"};
     box-shadow: 0px 0px 4px 2px ${props => props.$isOver ? 'var(--selected-color);' : props.$isDroppable ? 'var(--primary-color-dark);' : 'rgba(0, 0, 0, 0.05);'}
     border-radius: 10px;

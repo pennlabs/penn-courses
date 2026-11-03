@@ -69,13 +69,9 @@ const AddButton = styled.div`
 const YearInput = styled.input`
   width: 9rem;
   background-color: transparent;
-  border-color: #9FB5EF;
+  border-color: var(--plus-button-color);
   color: #C1C1C1;
   box-shadow: none;
-  &:hover {
-    borderColor: "#9FB5EF";
-  }
-
   padding: .75rem;
   padding-top: .5rem;
   padding-bottom: .5rem;
@@ -92,11 +88,11 @@ const selectStyles = (topOrBottom: boolean) => ({
     ...provided,
     width: "9rem",
     backgroundColor: "transparent",
-    borderColor: "#9FB5EF",
+    borderColor: "var(--plus-button-color)",
     color: "#C1C1C1",
     boxShadow: "none",
     "&:hover": {
-      borderColor: "#9FB5EF",
+      borderColor: "var(--plus-button-color)",
     },
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
