@@ -8,8 +8,6 @@ import {
   RefObject,
 } from "react";
 import { ConnectDragSource } from "react-dnd";
-import { GrayIcon, Icon } from "@/components/common/bulma_derived_components";
-import styled from "@emotion/styled";
 import { Course, Degree, DegreePlan, DnDCourse, Fulfillment, Rule } from "@/types";
 import { ReviewPanelTrigger } from "@/components/Infobox/ReviewPanel";
 import { Draggable } from "@/components/common/DnD";
@@ -22,6 +20,30 @@ import { ItemTypes } from "@/components/Dock/dnd/constants";
 import { postFetcher } from "@/hooks/swrcrud";
 import { useSWRConfig } from "swr";
 import ToastContext from "@/components/Toast/Toast";
+import {
+  PlannedCourseContainer,
+  CloseIcon,
+  CourseBadge,
+  IconBadge,
+  InfoIconButton,
+  InfoPopoverWrapper,
+  InfoPopover,
+  PopoverSection,
+  PopoverLabel,
+  RuleList,
+  OverrideBadge,
+  LevelDot,
+  LevelDotButton,
+  LevelMenu,
+  LevelMenuHeading,
+  LevelMenuItem,
+  LevelMenuLabel,
+  LevelMenuCheck,
+  LevelMenuError,
+  SwitchRuleButton,
+  DisplacedBanner,
+  Exclamation,
+} from "./Course.styles";
 
 const DOUBLE_COUNT_ERROR_MESSAGE =
   "This course is being illegally double counted in your plan!";
@@ -152,70 +174,6 @@ const useAnchoredPopover = (
     };
   }, [open, anchorRef, popoverRef]);
 };
-const COURSE_BORDER_RADIUS = "9px";
-const HIGHLIGHT_VARIANT_COLORS = {
-  selected: "#E6F4EA",
-  unselected: "#FFF7D6",
-} as const;
-
-export const BaseCourseContainer = styled.div<{
-  $isDragging?: boolean;
-  $isUsed: boolean;
-  $isDisabled: boolean;
-  $highlightVariant?: "selected" | "unselected";
-}>`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-width: 70px;
-  min-height: 35px;
-  border-radius: ${COURSE_BORDER_RADIUS};
-  padding: 0.75rem;
-  text-wrap: nowrap;
-  cursor: ${(props) => (props.$isDisabled ? "not-allowed" : "grab")};
-  opacity: ${(props) => (props.$isDisabled || props.$isDragging ? 0.7 : 1)};
-  background-color: ${(props) =>
-    props.$isDragging
-      ? "#4B9AE7"
-      : (props.$highlightVariant &&
-          HIGHLIGHT_VARIANT_COLORS[props.$highlightVariant]) ||
-        "var(--background-grey)"};
-  box-shadow: rgba(0, 0, 0, 0.01) 0px 6px 5px 0px,
-    rgba(0, 0, 0, 0.04) 0px 0px 0px 1px;
-`;
-
-export const PlannedCourseContainer = styled(BaseCourseContainer)`
-  width: 100%;
-  position: relative;
-  opacity: ${(props) => (props.$isDragging ? 0.5 : 1)};
-
-  .close-button {
-    padding-left: 1rem;
-    padding-right: 10px;
-    margin-top: auto;
-    margin-bottom: auto;
-    height: 100%;
-    align-items: center;
-    opacity: 0.6;
-  }
-
-  .illegal-icon {
-    padding-right: 0.5rem;
-    margin-top: auto;
-    margin-bottom: auto;
-  }
-
-  &:hover {
-    .close-button {
-      opacity: unset;
-    }
-  }
-`;
-
-const CloseIcon = styled(GrayIcon)<{ $hidden: boolean }>`
-  visibility: ${(props) => (props.$hidden ? "hidden" : "visible")};
-  cursor: pointer;
-`;
 
 export const CourseXButton = ({
   onClick,
@@ -253,242 +211,13 @@ export const SkeletonCourse = () => (
   </PlannedCourseContainer>
 );
 
-const CourseBadge = styled.div`
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 0.25rem;
-`;
-
-const IconBadge = styled.div`
-  padding: 0.2rem;
-  border-radius: 5px;
-  border: 1px solid #d8d8d8;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 0.07rem;
-  background-color: transparent;
-
-  p {
-    font-size: 14px;
-    font-weight: bold;
-  }
-`;
-
-const InfoIconButton = styled.button`
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 0.2rem;
-  display: flex;
-  align-items: center;
-  color: #aaa;
-  font-size: 0.85rem;
-  margin-left: 0.25rem;
-
-  &:hover {
-    color: #555;
-  }
-`;
-
-const InfoPopoverWrapper = styled.div`
-  position: relative;
-  display: flex;
-  align-items: center;
-`;
-
-const InfoPopover = styled.div`
-  position: fixed;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
-  padding: 0.75rem 1rem;
-  z-index: 10000;
-  min-width: 220px;
-  max-width: min(350px, calc(100vw - 16px));
-  width: max-content;
-  text-align: left;
-  font-size: 0.85rem;
-  color: #333;
-  white-space: normal;
-  word-wrap: break-word;
-`;
-
-const PopoverSection = styled.div`
-  overflow: visible;
-
-  &:not(:last-child) {
-    margin-bottom: 0.5rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid #eee;
-  }
-`;
-
-const PopoverLabel = styled.div`
-  font-weight: 600;
-  font-size: 0.7rem;
-  color: #888;
-  margin-bottom: 0.25rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-`;
-
-const RuleList = styled.ul`
-  margin: 0;
-  padding-left: 1rem;
-  list-style-position: outside;
-
-  li {
-    margin-bottom: 0.15rem;
-    padding-left: 0.15rem;
-  }
-`;
-
-const OverrideBadge = styled.span`
-  display: inline-flex;
-  align-items: center;
-  gap: 0.2rem;
-  font-size: 0.7rem;
-  color: #b8860b;
-  font-weight: 600;
-`;
-
-// A Gmail-style status dot: the course's level at a glance, and the handle for changing it.
-const LevelDot = styled.span<{ $color: string | null }>`
-  display: inline-block;
-  width: 0.6rem;
-  height: 0.6rem;
-  flex-shrink: 0;
-  border-radius: 50%;
-  box-sizing: border-box;
-  background: ${({ $color }) => $color ?? "transparent"};
-  border: 2px solid ${({ $color }) => $color ?? "#b5b5b5"};
-`;
-
-const LevelDotButton = styled.button`
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.3rem;
-  margin-right: 0.1rem;
-  border: none;
-  border-radius: 50%;
-  background: none;
-  cursor: pointer;
-
-  &:hover:not(:disabled) {
-    background: rgba(0, 0, 0, 0.07);
-  }
-
-  &:disabled {
-    cursor: default;
-  }
-`;
-
-const LevelMenu = styled.div`
-  position: fixed;
-  z-index: 10000;
-  min-width: 210px;
-  padding: 0.3rem 0;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
-  text-align: left;
-  white-space: nowrap;
-`;
-
-const LevelMenuHeading = styled.div`
-  padding: 0.3rem 0.9rem 0.4rem;
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: #888;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-`;
-
-const LevelMenuItem = styled.button<{ $active: boolean }>`
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  width: 100%;
-  padding: 0.45rem 0.9rem;
-  border: none;
-  background: ${({ $active }) => ($active ? "#f1f3f4" : "none")};
-  color: #333;
-  font-size: 0.85rem;
-  text-align: left;
-  cursor: pointer;
-
-  &:hover:not(:disabled) {
-    background: #e8eaed;
-  }
-
-  &:disabled {
-    cursor: default;
-    opacity: 0.6;
-  }
-`;
-
-const LevelMenuLabel = styled.span`
-  flex-grow: 1;
-`;
-
-const LevelMenuCheck = styled.i`
-  font-size: 0.75rem;
-  color: #555;
-`;
-
-const LevelMenuError = styled.div`
-  padding: 0.3rem 0.9rem 0.4rem;
-  font-size: 0.8rem;
-  color: #a94442;
-  white-space: normal;
-`;
-
-const SwitchRuleButton = styled.button`
-  border: 1px solid #d7cc86;
-  border-radius: 6px;
-  background: #fff7d6;
-  color: #645500;
-  font-size: 0.8rem;
-  font-weight: 500;
-  padding: 0.35rem 0.55rem;
-  cursor: pointer;
-
-  &:disabled {
-    opacity: 0.7;
-    cursor: default;
-  }
-`;
-
-const DisplacedBanner = styled.div`
-  margin-top: 0.4rem;
-  padding: 0.35rem 0.55rem;
-  border-radius: 6px;
-  background: #fff3e0;
-  border: 1px solid #e0c080;
-  color: #7a4f00;
-  font-size: 0.78rem;
-  line-height: 1.35;
-`;
-
-const ExclamationIcon = ({ color }: { color: string }) => {
-  const Exclamation = styled(Icon)`
-    width: 1rem;
-    height: 1rem;
-    display: flex;
-    fill: ${color};
-  `;
-
-  return (
-    <Exclamation>
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-        <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c13.3 0 24 10.7 24 24l0 112c0 13.3-10.7 24-24 24s-24-10.7-24-24l0-112c0-13.3 10.7-24 24-24zM224 352a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z" />
-      </svg>
-    </Exclamation>
-  );
-};
+const ExclamationIcon = ({ color }: { color: string }) => (
+  <Exclamation $color={color}>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+      <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-384c13.3 0 24 10.7 24 24l0 112c0 13.3-10.7 24-24 24s-24-10.7-24-24l0-112c0-13.3 10.7-24 24-24zM224 352a32 32 0 1 1 64 0 32 32 0 1 1 -64 0z" />
+    </svg>
+  </Exclamation>
+);
 
 const SemesterIcon = ({ semester }: { semester: string | null }) => {
   if (!semester) return <div></div>;
@@ -894,7 +623,7 @@ const CourseComponent = ({
                             </SwitchRuleButton>
                           </div>
                           {switchError && (
-                            <div style={{ marginTop: "0.35rem", color: "#a94442" }}>
+                            <div style={{ marginTop: "0.35rem", color: "var(--error-color)" }}>
                               {switchError}
                             </div>
                           )}
@@ -958,7 +687,7 @@ const CourseComponent = ({
                           </SwitchRuleButton>
                         </div>
                         {switchError && (
-                          <div style={{ marginTop: "0.35rem", color: "#a94442" }}>
+                          <div style={{ marginTop: "0.35rem", color: "var(--error-color)" }}>
                             {switchError}
                           </div>
                         )}

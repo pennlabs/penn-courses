@@ -61,7 +61,7 @@ export const PanelBody = styled.div`
 
 export const PanelContainer = styled.div`
     border-radius: 10px;
-    box-shadow: 0px 0px 10px 6px rgba(0, 0, 0, 0.05);
+    box-shadow: var(--panel-shadow);
     background-color: #FFFFFF;
     display: flex;
     flex-direction: column;

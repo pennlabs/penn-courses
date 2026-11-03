@@ -10,3 +10,6 @@ export const minWidth = (w) => `@media screen and (min-width: ${w})`;
 export const maxWidth = (w) => `@media screen and (max-width: ${w})`;
 export const between = (l, h) =>
   `@media screen and (min-width: ${l}) and (max-width: ${h})`;
+
+// Timing for courses entering, leaving and reflowing in the plan and the dock.
+export const COURSE_LIST_ANIMATION = { duration: 180, easing: "ease-out" };

@@ -29,7 +29,7 @@ export const SemesterCard = styled.div<{
     $isOver: boolean,
     $semesterComparison: number // -1 if currentSemester is less than this semester...
 }>`
-    background: ${props => props.$semesterComparison < 0 ? "#F8F8F8" : props.$semesterComparison === 0 ? "var(--primary-color)" : "#FFFFFF"};
+    background: ${props => props.$semesterComparison < 0 ? "var(--background-light-grey)" : props.$semesterComparison === 0 ? "var(--primary-color)" : "#FFFFFF"};
     color: ${props => props.$semesterComparison === 0 ? "var(--primary-color-ultra-dark)" : "inherit"};
     box-shadow: 0px 0px 4px 2px ${props => props.$isOver ? 'var(--selected-color);' : props.$isDroppable ? 'var(--primary-color-dark);' : 'rgba(0, 0, 0, 0.05);'}
     border-radius: 10px;
@@ -38,6 +38,7 @@ export const SemesterCard = styled.div<{
     display: flex;
     flex-direction: column;
     flex: 1 1 11rem;
+    transition: box-shadow 150ms ease-out;
 `;
 
 const SemesterHeader = styled.div`
@@ -115,7 +116,8 @@ interface SemesterProps {
     removeSemester: (sem: string) => void;
     currentSemester?: Course["semester"];
     numSemesters: number;
-    isLoading?: boolean
+    isLoading?: boolean;
+    animateCourses?: boolean;
 }
 
 const FlexSemester = ({
@@ -129,7 +131,8 @@ const FlexSemester = ({
     removeSemester,
     currentSemester,
     numSemesters,
-    isLoading = false
+    isLoading = false,
+    animateCourses = false
 }: SemesterProps) => {
     const showToast = useContext(ToastContext);
 
@@ -248,7 +251,8 @@ const FlexSemester = ({
                 <FlexCoursesPlanned
                     semester={semester}
                     fulfillments={fulfillments}
-                    removeCourse={handleRemoveCourse} />
+                    removeCourse={handleRemoveCourse}
+                    animate={animateCourses} />
                 {showStats && <FlexStats fulfillments={fulfillments} />}
             </SemesterContent>
             <CreditsLabel>

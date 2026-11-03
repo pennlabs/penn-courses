@@ -69,13 +69,9 @@ const AddButton = styled.div`
 const YearInput = styled.input`
   width: 9rem;
   background-color: transparent;
-  border-color: #9FB5EF;
+  border-color: var(--plus-button-color);
   color: #C1C1C1;
   box-shadow: none;
-  &:hover {
-    borderColor: "#9FB5EF";
-  }
-
   padding: .75rem;
   padding-top: .5rem;
   padding-bottom: .5rem;
@@ -92,11 +88,11 @@ const selectStyles = (topOrBottom: boolean) => ({
     ...provided,
     width: "9rem",
     backgroundColor: "transparent",
-    borderColor: "#9FB5EF",
+    borderColor: "var(--plus-button-color)",
     color: "#C1C1C1",
     boxShadow: "none",
     "&:hover": {
-      borderColor: "#9FB5EF",
+      borderColor: "var(--plus-button-color)",
     },
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
@@ -226,6 +222,10 @@ const Semesters = ({
     if (!semesters[semester]) setSemesters({ ...semesters, [semester]: [] });
   };
 
+  // The plan whose courses have been grouped into `semesters`. Course lists only animate from here
+  // on, so filling them in when a plan loads doesn't fade in every course at once.
+  const [groupedPlanId, setGroupedPlanId] = useState<DegreePlan["id"] | null>(null);
+
   const numUpdates = useRef<number>(-1);
   const currNumUpdates = useRef<number>(0);
 
@@ -305,6 +305,7 @@ const Semesters = ({
         numUpdates.current = -1;
         return semesters;
       });
+      setGroupedPlanId(activeDegreeplan.id);
     } 
   }, [fulfillments, activeDegreeplan, isLoadingFulfillments]);
 
@@ -329,6 +330,7 @@ const Semesters = ({
                 setModalObject={setModalObject}
                 currentSemester={currentSemester}
                 numSemesters={Object.keys(semesters).length}
+                animateCourses={groupedPlanId === activeDegreeplan?.id}
               />
             ))}
       {editMode && (
