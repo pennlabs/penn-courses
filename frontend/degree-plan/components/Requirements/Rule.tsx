@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState, useLayoutEffect, useRef, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState, useLayoutEffect, useRef, useCallback } from "react";
 import RuleLeaf, { SkeletonRuleLeaf } from "./QObject";
 import { DnDCourse, Fulfillment } from "@/types";
 import styled from "@emotion/styled";
@@ -14,6 +14,27 @@ import { parseQJson } from "./ruleUtils";
 import { useSWRConfig } from "swr";
 import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
 
+/**
+ * Whether the fulfillments behind the rule tree have loaded. Every rule reads as 0% until they
+ * have, so the first jump to the real values is the page loading rather than the user changing
+ * something, and it shouldn't animate.
+ */
+export const FulfillmentsLoadedContext = createContext(false);
+
+/** Which of a rule's changes this render should animate. */
+const useRuleAnimation = (satisfied: boolean) => {
+  const loaded = useContext(FulfillmentsLoadedContext);
+  const previous = useRef({ loaded, satisfied });
+  const { loaded: wasLoaded, satisfied: wasSatisfied } = previous.current;
+  useEffect(() => {
+    previous.current = { loaded, satisfied };
+  });
+  return {
+    animateProgress: wasLoaded,
+    justSatisfied: wasLoaded && satisfied && !wasSatisfied,
+  };
+};
+
 /** Whether a dragged course sits in the AP & transfer credit semester. */
 const isTransferCredit = (course: DnDCourse) =>
   (course?.semester ?? course?.fulfillment?.semester) === TRANSFER_CREDIT_SEMESTER_KEY;
@@ -26,8 +47,9 @@ const RuleTitleWrapper = styled.div<{ $headerHeight?: number, $zIndex?: number }
   z-index: ${(props) => props.$zIndex || 995};
 `;
 
-const ProgressBar = styled.div<{ $progress: number }>`
+const ProgressBar = styled.div<{ $progress: number; $animate?: boolean }>`
   width: ${(props) => props.$progress * 100}%;
+  transition: ${(props) => (props.$animate ? "width 300ms ease-out" : "none")};
   height: 100%;
   position: absolute;
   background-color: var(--primary-color-dark);
@@ -61,6 +83,7 @@ const RuleLeafWrapper = styled.div<{ $isDroppable: boolean; $isOver: boolean }>`
       : props.$isDroppable
       ? "0px 0px 4px 2px var(--primary-color-dark);"
       : "rgba(0, 0, 0, 0.05);"};
+  transition: box-shadow 150ms ease-out;
 `;
 
 const CusCourses = styled.div`
@@ -342,6 +365,7 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
   const { setCourses, courses } = useContext(ExpandedCoursesPanelContext);
   const { type, activeDegreePlanId, rule, progress } = ruleTree;
   const satisfied = progress === 1;
+  const { animateProgress, justSatisfied } = useRuleAnimation(satisfied);
 
   const headerHeight = ruleTree.headerHeight;
   const zIndex = ruleTree.zIndex || -1;
@@ -600,7 +624,7 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
             activeDegreePlanId={activeDegreePlanId}
           />
           <Row>
-            {!!satisfied && <SatisfiedCheck />}
+            {!!satisfied && <SatisfiedCheck pop={justSatisfied} />}
             <Column>
               {rule.credits && (
                 <CusCourses>
@@ -642,7 +666,7 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
       <PickNWrapper>
         <PickNTitle>
           <div>Pick {num}:</div>
-          {satisfied && <SatisfiedCheck />}
+          {satisfied && <SatisfiedCheck pop={justSatisfied} />}
         </PickNTitle>
         {children.map((ruleTree) => (
           <div>
@@ -656,7 +680,7 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
   return (
     <>
       <RuleTitleWrapper $headerHeight={headerHeight} $zIndex={zIndex} onClick={() => setCollapsed(!collapsed)} ref={myHeaderRef}>
-        <ProgressBar $progress={progress}></ProgressBar>
+        <ProgressBar $progress={progress} $animate={animateProgress}></ProgressBar>
         <RuleTitle>
           <div>
             {rule.title} <DegreeYear>{(progress * 100).toFixed(0)}%</DegreeYear>

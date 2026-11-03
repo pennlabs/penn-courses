@@ -226,6 +226,10 @@ const Semesters = ({
     if (!semesters[semester]) setSemesters({ ...semesters, [semester]: [] });
   };
 
+  // The plan whose courses have been grouped into `semesters`. Course lists only animate from here
+  // on, so filling them in when a plan loads doesn't fade in every course at once.
+  const [groupedPlanId, setGroupedPlanId] = useState<DegreePlan["id"] | null>(null);
+
   const numUpdates = useRef<number>(-1);
   const currNumUpdates = useRef<number>(0);
 
@@ -305,6 +309,7 @@ const Semesters = ({
         numUpdates.current = -1;
         return semesters;
       });
+      setGroupedPlanId(activeDegreeplan.id);
     } 
   }, [fulfillments, activeDegreeplan, isLoadingFulfillments]);
 
@@ -329,6 +334,7 @@ const Semesters = ({
                 setModalObject={setModalObject}
                 currentSemester={currentSemester}
                 numSemesters={Object.keys(semesters).length}
+                animateCourses={groupedPlanId === activeDegreeplan?.id}
               />
             ))}
       {editMode && (

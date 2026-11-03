@@ -1,6 +1,6 @@
 
 import { useMemo, useState, useContext, useRef, useLayoutEffect } from 'react';
-import RuleComponent, { SkeletonRule } from './Rule';
+import RuleComponent, { FulfillmentsLoadedContext, SkeletonRule } from './Rule';
 import { Degree as DegreeType, DegreePlan, Fulfillment, Rule, Degree as DegreeD } from '@/types';
 import styled from '@emotion/styled';
 import { DarkBlueBackgroundSkeleton, PanelBody, PanelContainer, PanelHeader, PanelTopBarIconList } from "../FourYearPlan/PanelCommon";
@@ -391,6 +391,7 @@ const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: 
   }, [fulfillments, isLoadingFulfillments])
 
   return (
+    <FulfillmentsLoadedContext.Provider value={!isLoadingFulfillments && !!fulfillments}>
     <PanelContainer>
       <PanelHeader>
         <ReqPanelTitle>Requirements</ReqPanelTitle>
@@ -432,6 +433,7 @@ const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: 
           }
         </>}
     </PanelContainer>
+    </FulfillmentsLoadedContext.Provider>
   );
 }
 export default ReqPanel;

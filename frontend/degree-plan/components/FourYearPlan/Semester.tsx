@@ -38,6 +38,7 @@ export const SemesterCard = styled.div<{
     display: flex;
     flex-direction: column;
     flex: 1 1 11rem;
+    transition: box-shadow 150ms ease-out;
 `;
 
 const SemesterHeader = styled.div`
@@ -115,7 +116,8 @@ interface SemesterProps {
     removeSemester: (sem: string) => void;
     currentSemester?: Course["semester"];
     numSemesters: number;
-    isLoading?: boolean
+    isLoading?: boolean;
+    animateCourses?: boolean;
 }
 
 const FlexSemester = ({
@@ -129,7 +131,8 @@ const FlexSemester = ({
     removeSemester,
     currentSemester,
     numSemesters,
-    isLoading = false
+    isLoading = false,
+    animateCourses = false
 }: SemesterProps) => {
     const showToast = useContext(ToastContext);
 
@@ -248,7 +251,8 @@ const FlexSemester = ({
                 <FlexCoursesPlanned
                     semester={semester}
                     fulfillments={fulfillments}
-                    removeCourse={handleRemoveCourse} />
+                    removeCourse={handleRemoveCourse}
+                    animate={animateCourses} />
                 {showStats && <FlexStats fulfillments={fulfillments} />}
             </SemesterContent>
             <CreditsLabel>
