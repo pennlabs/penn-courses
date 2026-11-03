@@ -228,11 +228,14 @@ const computeRuleTree = ({activeDegreePlanId, rule, rulesToFulfillments, rulesTo
     const unselectedFulfillmentsForRule: Fulfillment[] = rulesToUnselectedFulfillments[rule.id] || [];
     const cus = fulfillmentsForRule.reduce((acc, f) => acc + (f.course?.credits || 1), 0); // default to 1 cu 
     const num = fulfillmentsForRule.length;
-    const progress = Math.min(rule.credits ? cus / rule.credits : 1, rule.num ? num / rule.num : 1);
+    const progress = Math.min(1, rule.credits ? cus / rule.credits : 1, rule.num ? num / rule.num : 1);
     return { activeDegreePlanId, type: "LEAF", progress, cus, num, rule, fulfillments: fulfillmentsForRule, unselectedFulfillments: unselectedFulfillmentsForRule }
   }
   const children = rule.rules.map((child) => computeRuleTree({ activeDegreePlanId, rule: child, rulesToFulfillments, rulesToUnselectedFulfillments, degree }))
-  const progress = children.reduce((acc, { progress }) => progress + acc, 0) / Math.min(children.length, rule.num || Infinity);
+  // A "pick N" rule is only as far along as its N furthest children: extra ones don't count.
+  const required = Math.min(children.length, rule.num || Infinity);
+  const counted = children.map((child) => child.progress).sort((a, b) => b - a).slice(0, required);
+  const progress = required ? counted.reduce((acc, childProgress) => acc + childProgress, 0) / required : 0;
   return { num: rule.num || undefined, activeDegreePlanId, type: "INTERNAL_NODE", children, progress, rule } // internal node
 }
 
