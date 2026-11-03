@@ -121,13 +121,6 @@ export default function WelcomeLayout({
               if (startingYear && startingYear?.value !== 0) setCurrentPage(1);
             }}
             disabled={PDF && transcriptDetected.current === true ? false : true}
-            style={{
-              height: "45px",
-              width: "100px",
-              borderRadius: "7px",
-              color: PDF ? "white" : "",
-              transition: "all 0.25s",
-            }}
           >
             {!waitingForPrograms && <div>Next</div>}
             <PulseLoader size={8} color={"white"} loading={waitingForPrograms} />
