@@ -68,7 +68,6 @@ const CardBody = styled(FieldGrid)`
 
 type SchoolCardProps = {
   selection: SchoolSelection;
-  startingYear: number | null;
   degrees: DegreeListing[] | undefined;
   standaloneMajors: Major[] | undefined;
   isLoadingDegrees: boolean;
@@ -77,14 +76,9 @@ type SchoolCardProps = {
   onRemove: () => void;
 };
 
-// A submatriculant starts their masters years after their undergraduate degree, so its majors
-// come from the catalog of the year they started it rather than the plan's starting year.
-const hasOwnStartYear = (school: SchoolSelection["school"]) => school.value === "MSE";
-
 // One school the student is enrolled in, with its primary and additional majors.
 export default function SchoolCard({
   selection: { school, primary, additional },
-  startingYear,
   degrees,
   standaloneMajors,
   isLoadingDegrees,
@@ -96,14 +90,6 @@ export default function SchoolCard({
   // Wharton calls its majors concentrations.
   const majorWord = school.value === "BS" ? "concentration" : "major";
 
-  const ownStartYear = hasOwnStartYear(school);
-  // The catalog years this school has degrees for, most recent first.
-  const startYearOptions = ownStartYear
-    ? [...new Set((degrees ?? []).filter((d) => d.degree === school.value).map((d) => d.year))]
-        .sort((a, b) => b - a)
-        .map((year) => ({ value: year, label: year }))
-    : [];
-
   return (
     <Card>
       <CardHeader>
@@ -114,34 +100,6 @@ export default function SchoolCard({
         </RemoveButton>
       </CardHeader>
       <CardBody $min={240}>
-        {ownStartYear && (
-          <Field>
-            <FieldLabel htmlFor={`${id}-start-year`}>
-              Starting year
-              <Required />
-            </FieldLabel>
-            <Select
-              inputId={`${id}-start-year`}
-              options={startYearOptions}
-              value={startingYear ? { value: startingYear, label: startingYear } : null}
-              // Majors are held to the year the program started, so changing it drops any that
-              // belong to a different year.
-              onChange={(selected) =>
-                selected &&
-                onChange({
-                  startYear: selected.value,
-                  primary: primary?.value.year === selected.value ? primary : null,
-                  additional: additional.filter((m) => m.value.year === selected.value),
-                })
-              }
-              formatOptionLabel={(o) => `Fall ${o.value}`}
-              placeholder="Select a year"
-              styles={selectStyles}
-              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
-              isLoading={isLoadingDegrees}
-            />
-          </Field>
-        )}
         <Field>
           <FieldLabel htmlFor={`${id}-primary`}>
             Primary {majorWord}
@@ -149,14 +107,11 @@ export default function SchoolCard({
           </FieldLabel>
           <Select
             inputId={`${id}-primary`}
-            options={getMajorOptions(degrees, school, startingYear)}
+            options={getMajorOptions(degrees, school)}
             value={primary}
             onChange={(selected) => onChange({ primary: selected })}
             isClearable
-            isDisabled={!startingYear}
-            placeholder={
-              startingYear ? `Choose a ${majorWord}` : "Select your starting year first"
-            }
+            placeholder={`Choose a ${majorWord}`}
             styles={selectStyles}
             menuPortalTarget={typeof document !== "undefined" ? document.body : null}
             isLoading={isLoadingDegrees}
@@ -170,12 +125,11 @@ export default function SchoolCard({
             </FieldLabel>
             <Select
               inputId={`${id}-additional`}
-              options={getAdditionalMajorOptions(standaloneMajors, school, startingYear)}
+              options={getAdditionalMajorOptions(standaloneMajors, school)}
               value={additional}
               onChange={(selected) => onChange({ additional: [...selected] })}
               isClearable
               isMulti
-              isDisabled={!startingYear}
               placeholder="Add another"
               styles={selectStyles}
               menuPortalTarget={typeof document !== "undefined" ? document.body : null}
