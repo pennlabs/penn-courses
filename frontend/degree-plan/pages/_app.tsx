@@ -1,5 +1,4 @@
 import "@/styles/globals.css";
-import "@/styles/SplitPane.css";
 import "@radix-ui/themes/styles.css";
 import { inter } from "@/fonts";
 import type { AppProps } from "next/app";

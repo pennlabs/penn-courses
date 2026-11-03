@@ -9,12 +9,8 @@ import { SearchPanelContext } from '../Search/SearchPanel';
 import { useSWRCrud } from '@/hooks/swrcrud';
 import useSWR from 'swr';
 import { DarkBlueBackgroundSkeleton } from "../FourYearPlan/PanelCommon";
-// TODO: Move shared components to typescript
-// @ts-ignore
-import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
 import _ from 'lodash';
 import CourseInDock from './CourseInDock';
-import { useRouter } from 'next/router';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { COURSE_LIST_ANIMATION } from '@/constants';
 
@@ -90,23 +86,17 @@ const CenteringCourseDock = styled.div`
     align-self: center;
 `
 
-const Logo = styled.img`
-    flex-shrink: 0;
-`
-
 const DockedCourseItem = styled(CourseInDock)`
     z-index: 1000;
     background: var(--background-grey);
 ` 
 
 interface DockProps {
-    login: (u: User) => void;
-    logout: () => void;
     user: User | null;
     activeDegreeplanId: DegreePlan["id"] | null;
 }
 
-const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
+const Dock = ({ user, activeDegreeplanId  }: DockProps) => {
     const { searchPanelOpen, setSearchPanelOpen, setSearchRuleQuery, setSearchRuleId } = useContext(SearchPanelContext)
     const { createOrUpdate } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
     const { data: dockedCourses = [], isLoading } = useSWR<DockedCourse[]>(user ? `/api/degree/docked` : null); 
@@ -131,22 +121,11 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
         }),
     }), []);
 
-    const { asPath } = useRouter();
     const [animatedCourses] = useAutoAnimate(COURSE_LIST_ANIMATION);
 
     return (
         <DockWrapper ref={drop} >
             <DockContainer $isDroppable={canDrop} $isOver={isOver}>
-                <AccountIndicator
-                    leftAligned={true}
-                    user={user}
-                    backgroundColor="light"
-                    nameLength={2}
-                    login={login}
-                    logout={logout}
-                    dropdownTop={true}
-                    pathname={asPath}
-                />
                 <SearchIconContainer onClick={() => {
                     setSearchRuleQuery("");
                     setSearchRuleId(null);
@@ -172,7 +151,6 @@ const Dock = ({ user, login, logout, activeDegreeplanId  }: DockProps) => {
                             )}
                         </DockedCourses>}
                 </DockedCoursesWrapper>
-                <Logo src='pdp-logo.svg' width='30' height='45'/>
             </DockContainer>
         </DockWrapper>
     )
