@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import styled from "@emotion/styled";
 import { GrayIcon } from "../common/bulma_derived_components";
 import { DBObject, DegreePlan } from "../../types";
-import { DarkBlueBackgroundSkeleton } from "./PanelCommon";
+import { PanelHeaderSkeleton } from "./PanelCommon";
 
 const ButtonContainer = styled.div<{ $isActive: boolean; }>`
     line-height: 1.5;
@@ -291,7 +291,7 @@ const SelectListDropdown = <T extends DBObject,>({
     return (
         <ScheduleDropdownContainer ref={ref} $isActive={isActive}>
             <ScheduleDropdownHeader>
-                <SelectedName>{active ? getItemName(active) : <DarkBlueBackgroundSkeleton />}</SelectedName>
+                <SelectedName>{active ? getItemName(active) : <PanelHeaderSkeleton />}</SelectedName>
                 <DropdownTrigger
                     $isActive={isActive}
                     onClick={() => {

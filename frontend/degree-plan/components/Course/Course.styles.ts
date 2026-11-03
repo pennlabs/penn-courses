@@ -46,6 +46,26 @@ export const PlannedCourseContainer = styled(BaseCourseContainer)`
   position: relative;
   opacity: ${(props) => (props.$isDragging ? 0.5 : 1)};
 
+  /* In a semester card: the code on the left, the actions on the right. */
+  &.in-semester {
+    justify-content: flex-start;
+    padding: 0.5rem 0.75rem;
+
+    .course-badge {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .course-badge > :last-child {
+      margin-left: auto;
+    }
+
+    .close-button {
+      padding-left: 0.5rem;
+      padding-right: 0.25rem;
+    }
+  }
+
   .close-button {
     padding-left: 1rem;
     padding-right: 10px;

@@ -498,7 +498,7 @@ const CourseComponent = ({
                 />
               </div>
             )}
-            <CourseBadge>
+            <CourseBadge className="course-badge">
               {showLevelDot && (
                 <InfoPopoverWrapper
                   ref={levelRef}
@@ -665,7 +665,7 @@ const CourseComponent = ({
           ref={dragRef}
           className={className}
         >
-          <CourseBadge>
+          <CourseBadge className="course-badge">
             {course.full_code.replace("-", " ")}
             {showSemesterOnCard && (
               <SemesterIcon semester={displaySemester} />
