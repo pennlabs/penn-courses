@@ -1,0 +1,100 @@
+{
+  "description": "The Wharton blocks of the Jerome Fisher Program in Management & Technology (M&T). Path@Penn's public audits are run against a plain Wharton student, so they carry the conditions that switch an M&T student onto these blocks but not the blocks themselves. These were read from Path@Penn what-if audits for programs WU_BS_MANT and WU_BS_MAT_U, which were identical across the 2024, 2025 and 2026 catalogs. Only requirement structure is kept.",
+  "sources": {
+    "audit": "Path@Penn what-if audits, programs WU_BS_MANT (FNCS, MGMT-SMGT) and WU_BS_MAT_U, catalogs 202430, 202530 and 202630",
+    "recovered": "Path drops the alternatives of a requirement the audited student has already met. Those were recovered from the public plain-Wharton audits, where the same rule appears without the MANT suffix, and the Wharton probability options from the Penn catalog's Coordinated Dual Degree Programs page."
+  },
+  "total_credits": 46,
+  "blocks": [
+    {
+      "req_value": "U-WQCS",
+      "title": "Quantitative/Computational Skills",
+      "credits": 4,
+      "note": "Replaces First-Year Foundations (U-WFYF) for M&T students. Path does not expose this block's code, so U-WQCS is our own.",
+      "share_targets": [],
+      "rules": [
+        { "title": "Calculus I", "num": 1, "courses": ["MATH-1400"] },
+        { "title": "Calculus II", "num": 1, "courses": ["MATH-1410", "MATH-1610"], "recovered": "MATH 1610 from the public CMPE-BSE audit's Calculus II" },
+        { "title": "Probability", "num": 1, "courses": ["ESE-3010", "STAT-4300"], "recovered": "STAT 4300 from the Penn catalog; the audit reports two options" },
+        { "title": "Statistical Inference", "num": 1, "courses": ["STAT-4310", "ESE-4020"] }
+      ]
+    },
+    {
+      "req_value": "U-WBUS",
+      "title": "Business Fundamentals",
+      "credits": 11.5,
+      "share_targets": [{ "kind": "MINOR" }],
+      "rules": [
+        {
+          "title": "Leadership Journey",
+          "rules": [
+            { "title": "Business and You", "credits": 0.5, "courses": ["WH-1010"] },
+            { "title": "Business Communication", "credits": 0.5, "courses": ["WH-2010", "WH-2011"], "recovered": "WH 2011 from the public ACCT-BS audit" },
+            { "title": "Teamwork and Interpersonal Influence", "credits": 0.5, "courses": ["MGMT-3010", "WH-3010"], "recovered": "WH 3010, hidden from the audit, from the public ACCT-BS audit" },
+            {
+              "title": "Engineering Senior Design Course",
+              "credits": 1,
+              "courses": ["BE-4950", "BE-4980", "CBE-4000", "CBE-4590", "CIS-4000", "CIS-4970", "CIS-4980", "ESE-4500", "EAS-4990", "MEAM-4450", "MSE-4950"]
+            }
+          ]
+        },
+        {
+          "title": "Fundamentals",
+          "rules": [
+            { "title": "Accounting and Financial Reporting", "num": 1, "courses": ["ACCT-1010"] },
+            { "title": "Strategic Cost Analysis", "num": 1, "courses": ["ACCT-1020"] },
+            { "title": "Managerial Economics", "num": 1, "courses": ["BEPP-2500", "BEPP-2508", "ECON-2100"], "recovered": "BEPP 2508 and ECON 2100 from the public ACCT-BS audit" },
+            { "title": "Corporate Finance", "num": 1, "courses": ["FNCE-1000", "FNCE-1008"], "recovered": "FNCE 1008 from the public FNCS-BS audit" },
+            { "title": "Monetary and Global Economics", "credits": 1, "courses": ["FNCE-1010", "FNCE-1018"] },
+            { "title": "Introduction to Management", "num": 1, "courses": ["MGMT-1010"] },
+            { "title": "Introduction to Marketing", "num": 1, "courses": ["MKTG-1010", "MKTG-1018"], "recovered": "MKTG 1018 from the public FNCS-BS audit" },
+            { "title": "Social Values", "num": 1, "courses": ["CIS-4230", "EAS-2030", "LGST-1000", "LGST-1008", "LGST-1010", "LGST-1018"] }
+          ]
+        },
+        { "title": "Global Economy, Business and Society", "credits": 1, "attributes": ["WUGE"], "courses": ["FNCE-2190", "HCMG-2040"] }
+      ]
+    },
+    {
+      "req_value": "U-WLAS",
+      "title": "Liberal Arts and Sciences",
+      "credits": 5,
+      "share_targets": [{ "kind": "MINOR" }],
+      "rules": [
+        { "title": "Humanities/Social Science Requirements", "credits": 2, "attributes": ["WUHM", "WUSS"] },
+        { "title": "Cross-Cultural Requirement", "credits": 2, "attributes": ["WUCN", "WUCU"] },
+        {
+          "title": "Communication Requirements",
+          "rules": [
+            { "title": "Critical Writing Seminar", "from_public": "Critical Writing Seminar" },
+            { "title": "Foreign Language Proficiency", "from_public": "Foreign Language Proficiency" }
+          ]
+        }
+      ]
+    },
+    {
+      "req_value": "U-WBBR2",
+      "title": "Business Breadth",
+      "credits": 2,
+      "note": "The audit's M&T version for a student with one concentration. An undeclared student is shown a 3 CU placeholder that cannot be fulfilled until they declare.",
+      "share_targets": [{ "kind": "OTHER", "value": "U-MT" }, { "kind": "MINOR" }],
+      "rules": [
+        {
+          "title": "Business Breadth (1 concentration)",
+          "credits": 2,
+          "departments": ["ACCT", "BEPP", "FNCE", "HCMG", "LGST", "MGMT", "MKTG", "OIDD", "REAL", "STAT", "WH"]
+        }
+      ]
+    },
+    {
+      "req_value": "U-MT",
+      "title": "Jerome Fisher Program in Management and Technology",
+      "credits": 1.5,
+      "note": "U-MT is the code Wharton's Business Breadth block names when it allows sharing with this block.",
+      "share_targets": [],
+      "rules": [
+        { "title": "M&T Program First Year Seminar", "num": 1, "courses": ["OIDD-2340", "OIDD-3990"] },
+        { "title": "Management of Technology", "num": 1, "courses": ["MGMT-2370"] }
+      ]
+    }
+  ]
+}

@@ -27,6 +27,7 @@ from courses.util import semester_suffix_map_hum, translate_semester_inv
 from degree.models import Degree, Rule
 from degree.utils.departments import ENG_DEPTS, SAS_DEPTS, WH_DEPTS
 from degree.utils.double_counts import ANY_BLOCK, THIS_BLOCK
+from degree.utils.programs import is_mt_program
 
 
 logger = logging.getLogger(__name__)
@@ -328,10 +329,29 @@ def parse_course_list(text: str) -> Q:
     )
 
 
+def compare_numbers(value: int, operator: str, right: str) -> bool:
+    other = int(right)
+    match operator:
+        case "=":
+            return value == other
+        case "<>":
+            return value != other
+        case ">":
+            return value > other
+        case ">=":
+            return value >= other
+        case "<":
+            return value < other
+        case "<=":
+            return value <= other
+        case _:
+            raise LookupError(f"Unsupported relational operator in condition: {operator}")
+
+
 def evaluate_rop(rop, degree: Degree) -> bool | None:
     """
     One `<Rop>` relational operator evaluated against the degree being parsed. None when the
-    left-hand side is something we cannot know, e.g. ALLDEGREES or NUMMAJORS.
+    left-hand side is something we cannot know, e.g. ALLDEGREES, or NUMMAJORS outside M&T.
     """
     left, operator, right = rop.get("Left"), rop.get("Operator"), rop.get("Right")
 
@@ -342,6 +362,10 @@ def evaluate_rop(rop, degree: Degree) -> bool | None:
             attribute = degree.concentration or "NONE"
         case "PROGRAM":
             attribute = degree.program
+        case "NUMMAJORS" if is_mt_program(degree.program):
+            # An M&T student always holds two majors, one per school. For anyone else the
+            # count depends on the student, so it stays unknown.
+            return compare_numbers(2, operator, right)
         case "BANNERGPA":
             return operator in (">", ">=")  # assume a sufficiently high GPA
         case "ATTRIBUTE":

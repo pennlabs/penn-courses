@@ -7,6 +7,12 @@ from django.db import transaction
 
 from degree.management.commands.deduplicate_rules import deduplicate_rules
 from degree.models import Degree, Major, Minor, program_code_to_name
+from degree.utils.mt_degrees import (
+    mt_seas_audit,
+    mt_undeclared_degree,
+    mt_variant,
+    mt_wharton_audit,
+)
 from degree.utils.parse_path_audit import find_block, parse_audit, save_component, save_parsed_audit
 from degree.utils.path_client import PathClient, split_program_code, split_program_title
 
@@ -121,12 +127,24 @@ class Command(BaseCommand):
                 """
             ),
         )
+        parser.add_argument(
+            "--skip-mt",
+            action="store_true",
+            help=dedent(
+                """
+                Do not build the M&T (Management & Technology) versions of Wharton and SEAS
+                degrees.
+                """
+            ),
+        )
         parser.add_argument("--deduplicate-rules", action="store_true")
 
     def handle(self, *args, **options):
         self.options = options
         self.verbosity = options["verbosity"]
         self.dry_run = options["dry_run"]
+        # Catalog years an undeclared M&T Wharton degree has been built for.
+        self.mt_undeclared_years = set()
 
         client = PathClient(delay=options["delay"])
         tally = Tally()
@@ -207,12 +225,27 @@ class Command(BaseCommand):
 
         degree.year = parsed.catalog_year
 
+        saved = self.save_degree(
+            code,
+            degree,
+            parsed,
+            tally,
+            save_major=lambda: self.save_major(code, degree, parsed, concentration_name),
+        )
+        if saved and not self.options["skip_mt"]:
+            self.save_mt_degrees(code, info["audit_xml"], degree, parsed, tally)
+
+    def save_degree(self, code, degree, parsed, tally, save_major=None) -> bool:
+        """
+        Saves a parsed degree in place of any stored one it replaces, and optionally its major
+        alongside. Returns whether it was saved (or would be, in a dry run).
+        """
         if self.dry_run:
             tally.saved += 1
             self.announce(
                 f"Would save {degree} ({len(parsed.rules)} rules, {parsed.degree_credits} CU)"
             )
-            return
+            return True
 
         try:
             with transaction.atomic():
@@ -224,13 +257,51 @@ class Command(BaseCommand):
                     year=degree.year,
                 ).delete()
                 save_parsed_audit(parsed, degree)
-                tally.majors += self.save_major(code, degree, parsed, concentration_name)
+                if save_major is not None:
+                    tally.majors += save_major()
         except Exception as error:
             tally.fail(code, error)
-            return
+            return False
 
         tally.saved += 1
         self.announce(f"Saved {degree} ({len(parsed.rules)} rules, {degree.credits} CU)")
+        return True
+
+    def save_mt_degrees(self, code, audit_xml, degree, parsed, tally):
+        """
+        Saves the M&T versions of a Wharton or SEAS degree, which Path@Penn does not list (see
+        degree.utils.mt_degrees). The first Wharton degree of each catalog year also yields the
+        degree of an M&T student who has not chosen a concentration.
+
+        `parsed` is the plain degree's audit, from which M&T takes the rules it shares with it.
+        """
+        variant = mt_variant(degree)
+        if variant is None:
+            return
+        variant.year = degree.year
+        is_wharton = degree.program == "WU_BS"
+        label = f"{code} (M&T)"
+
+        try:
+            as_mt = parse_audit(audit_xml, variant)
+            mt = mt_wharton_audit(as_mt, parsed) if is_wharton else mt_seas_audit(as_mt)
+        except Exception as error:
+            tally.fail(label, error)
+            return
+        self.save_degree(label, variant, mt, tally)
+
+        if not is_wharton or degree.year in self.mt_undeclared_years:
+            return
+        self.mt_undeclared_years.add(degree.year)
+        undeclared = mt_undeclared_degree()
+        undeclared.year = degree.year
+        try:
+            as_undeclared = parse_audit(audit_xml, undeclared)
+            mt = mt_wharton_audit(as_undeclared, parsed, keep_major=False)
+        except Exception as error:
+            tally.fail(f"M&T undeclared ({degree.year})", error)
+            return
+        self.save_degree(f"M&T undeclared ({degree.year})", undeclared, mt, tally)
 
     def save_major(self, code, degree, parsed, concentration_name) -> int:
         """The same audit's MAJOR block, stored on its own. Returns how many were saved."""

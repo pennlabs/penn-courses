@@ -10,6 +10,7 @@ import React, { useState, useEffect } from "react";
 import { deleteFetcher, postFetcher, useSWRCrud } from "@/hooks/swrcrud";
 import useSWR, { useSWRConfig } from "swr";
 import ModalContainer from "../common/ModalContainer";
+import { isMandTDegree } from "@/utils/programs";
 import Select from "react-select";
 import { schoolOptions } from "@/components/OnboardingPanels/SharedComponents";
 
@@ -126,7 +127,9 @@ export const createMajorLabel = (degree: DegreeListing) => {
     degree.concentration && degree.concentration !== "NONE"
       ? ` - ${degree.concentration_name}`
       : "";
-  return `${degree.major_name}${concentration} (${degree.year})`;
+  // M&T versions carry the same names as the ordinary degrees.
+  const program = isMandTDegree(degree) ? "M&T: " : "";
+  return `${program}${degree.major_name}${concentration} (${degree.year})`;
 };
 
 interface RemoveDegreeProps {
