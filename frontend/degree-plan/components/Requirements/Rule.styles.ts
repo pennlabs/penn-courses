@@ -1,12 +1,28 @@
 import styled from "@emotion/styled";
 import { HEADER_DEFAULT_BUFFER } from "./ReqPanel";
+import { ProgramKind } from "./ProgramTabs";
+
+const dropShadow = (props: { $isDroppable: boolean; $isOver: boolean }) => {
+  if (!props.$isDroppable) return "none";
+  const color = props.$isOver ? "--selected-color" : "--primary-color-dark";
+  return `0px 0px 4px 2px var(${color})`;
+};
 
 export const RuleTitleWrapper = styled.div<{
   $headerHeight?: number;
   $zIndex?: number;
+  $depth?: number;
+  $kind?: ProgramKind | null;
 }>`
-  background-color: var(--primary-color);
+  background-color: ${(props) =>
+    props.$depth === 0 ? "var(--primary-color-dark)" : "var(--primary-color)"};
+  ${(props) =>
+    props.$depth === 0 && props.$kind
+      ? `border-left: 3px solid var(--program-${props.$kind});`
+      : ""}
   position: sticky;
+  overflow: hidden; /* clips the progress fill to the rounded corners */
+  margin-bottom: 0.5rem;
   border-radius: var(--req-item-radius);
   top: ${(props) => (props.$headerHeight || 0) + HEADER_DEFAULT_BUFFER}px;
   z-index: ${(props) => props.$zIndex || 995};
@@ -15,17 +31,19 @@ export const RuleTitleWrapper = styled.div<{
 export const ProgressBar = styled.div<{
   $progress: number;
   $animate?: boolean;
+  $depth?: number;
 }>`
   width: ${(props) => props.$progress * 100}%;
   transition: ${(props) => (props.$animate ? "width 300ms ease-out" : "none")};
   height: 100%;
   position: absolute;
-  background-color: var(--primary-color-dark);
-  border-top-left-radius: 0.3rem;
-  border-bottom-left-radius: 0.3rem;
+  background-color: ${(props) =>
+    props.$depth === 0
+      ? "var(--primary-color-extra-dark)"
+      : "var(--primary-color-dark)"};
 `;
 
-export const RuleTitle = styled.div`
+export const RuleTitle = styled.div<{ $depth?: number }>`
   position: relative;
   font-size: 1rem;
   font-weight: 500;
@@ -33,9 +51,30 @@ export const RuleTitle = styled.div`
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  color: var(--text-color);
+  color: ${(props) =>
+    props.$depth === 0
+      ? "var(--primary-color-ultra-dark)"
+      : "var(--text-color)"};
   padding: 0.5rem 1.25rem;
-  margin-bottom: 0.5rem;
+`;
+
+/** A top-level rule stacks its percentage under its name; deeper rules keep them on one line. */
+export const RuleTitleText = styled.div<{ $stacked: boolean }>`
+  ${(props) =>
+    props.$stacked
+      ? `
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.05rem;
+    line-height: 1.3;
+
+    > span {
+      margin-left: 0;
+      font-size: inherit;
+    }
+  `
+      : ""}
 `;
 
 export const RuleLeafWrapper = styled.div<{
@@ -48,13 +87,29 @@ export const RuleLeafWrapper = styled.div<{
   justify-content: space-between;
   gap: 0.5rem;
   align-items: center;
-  box-shadow: ${(props) =>
-    props.$isOver && props.$isDroppable
-      ? "0px 0px 4px 2px var(--selected-color);"
-      : props.$isDroppable
-      ? "0px 0px 4px 2px var(--primary-color-dark);"
-      : "rgba(0, 0, 0, 0.05);"};
+  box-shadow: ${dropShadow};
   transition: box-shadow 150ms ease-out;
+`;
+
+/** The title, satisfied check and progress of a requirement, on one line above its courses. */
+export const LeafProgress = styled.span`
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #5a5a5a;
+  white-space: nowrap;
+
+  small {
+    margin-left: 0.2em;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+`;
+
+export const LeafStatus = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-shrink: 0;
 `;
 
 export const CusCourses = styled.div`
@@ -77,8 +132,16 @@ export const Row = styled.div`
   align-items: center;
 `;
 
-export const Indented = styled.div`
-  margin-left: 0.75rem;
+export const Indented = styled.div<{ $depth: number }>`
+  /* Only the first level draws a guide; deeper ones would use up a narrow column. */
+  ${(props) =>
+    props.$depth === 0
+      ? `
+    margin-left: 1.25rem;
+    padding-left: 0.65rem;
+    border-left: 2px solid var(--primary-color-dark);
+  `
+      : "margin-left: 0.5rem;"}
   margin-bottom: 0.5rem;
 `;
 
@@ -97,18 +160,30 @@ export const PickNWrapper = styled.div`
 
 export const PickNTitle = styled.div`
   display: flex;
-  font-weight: 500;
-  font-size: 1.05rem;
-  margin-bottom: 1rem;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #3a3a3a;
+  margin-bottom: 0.5rem;
   margin-left: 0.25rem;
-  justify-content: space-between;
 `;
 
 export const RuleLeafLabel = styled.div`
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #3a3a3a;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.4rem;
+  margin-bottom: 0.4rem;
+`;
+
+export const RuleLeafTitle = styled.span`
+  min-width: 0;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 `;
 
 export const OverrideTagWrapper = styled.div`
@@ -258,6 +333,15 @@ export const OverrideCourseName = styled.strong`
   color: #333;
 `;
 
-export const RuleLeafContainer = styled(Column)`
+export const RuleLeafContainer = styled.div<{
+  $isDroppable: boolean;
+  $isOver: boolean;
+}>`
+  display: flex;
+  flex-direction: column;
   margin-top: 0.25rem;
+  padding: 0.5rem 0.5rem 0;
+  border-radius: 8px;
+  box-shadow: ${dropShadow};
+  transition: box-shadow 150ms ease-out;
 `;

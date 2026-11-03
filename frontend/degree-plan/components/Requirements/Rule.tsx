@@ -16,7 +16,11 @@ import {
   RuleTitleWrapper,
   ProgressBar,
   RuleTitle,
+  RuleTitleText,
   RuleLeafWrapper,
+  RuleLeafTitle,
+  LeafProgress,
+  LeafStatus,
   CusCourses,
   Row,
   Indented,
@@ -40,6 +44,10 @@ import {
   OverrideCourseName,
   RuleLeafContainer,
 } from "./Rule.styles";
+import { ProgramKind } from "./ProgramTabs";
+
+/** The kind of program the rules below belong to, which colors their accents. */
+export const ProgramKindContext = createContext<ProgramKind | null>(null);
 
 /**
  * Whether the fulfillments behind the rule tree have loaded. Every rule reads as 0% until they
@@ -136,14 +144,16 @@ export const SkeletonRule: React.FC<React.PropsWithChildren> = ({
 /**
  * Recursive component to represent a rule.
  */
-const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: number }) => {
+const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: number, depth?: number }) => {
   const { setCourses, courses } = useContext(ExpandedCoursesPanelContext);
+  const programKind = useContext(ProgramKindContext);
   const { type, activeDegreePlanId, rule, progress } = ruleTree;
   const satisfied = progress === 1;
   const { animateProgress, justSatisfied } = useRuleAnimation(satisfied);
 
   const headerHeight = ruleTree.headerHeight;
   const zIndex = ruleTree.zIndex || -1;
+  const depth = ruleTree.depth ?? 0;
 
   const myHeaderRef = useRef<HTMLDivElement>(null);
   const [myHeight, setMyHeight] = useState(0);
@@ -352,7 +362,7 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
       (f) => f.overrides?.includes(rule.id)
     );
     return (
-      <RuleLeafContainer>
+      <RuleLeafContainer $isDroppable={canDrop} $isOver={isOver} ref={drop}>
         {overrideModal && (
           <OverrideModal
             fullCode={overrideModal.fullCode}
@@ -363,7 +373,17 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
           />
         )}
         <RuleLeafLabel>
-          {rule.title}
+          <RuleLeafTitle>{rule.title}</RuleLeafTitle>
+          <LeafStatus>
+            {!!satisfied && <SatisfiedCheck pop={justSatisfied} />}
+            {!!rule.credits && (
+              <LeafProgress>
+                {cus} / {rule.credits}
+                <small>{rule.credits > 1 ? "cus" : "cu"}</small>
+              </LeafProgress>
+            )}
+            {!!rule.num && <LeafProgress>{num}/{rule.num}</LeafProgress>}
+          </LeafStatus>
           {overrideFulfillments.length > 0 && (
             <OverrideTagWrapper ref={overridePopoverRef}>
               <OverrideTag onClick={() => setOverridePopoverOpen(!overridePopoverOpen)}>
@@ -389,32 +409,14 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
             </OverrideTagWrapper>
           )}
         </RuleLeafLabel>
-        <RuleLeafWrapper $isDroppable={canDrop} $isOver={isOver} ref={drop}>
-          <RuleLeaf
-            q_json={rule.q_json}
-            rule={rule}
-            fulfillmentsForRule={fulfillments}
-            unselectedFulfillmentsForRule={unselectedFulfillments}
-            satisfied={satisfied}
-            activeDegreePlanId={activeDegreePlanId}
-          />
-          <Row>
-            {!!satisfied && <SatisfiedCheck pop={justSatisfied} />}
-            <Column>
-              {rule.credits && (
-                <CusCourses>
-                  <sup>{cus}</sup>/<sub>{rule.credits}</sub>
-                  <div>{rule.credits > 1 ? "cus" : "cu"}</div>
-                </CusCourses>
-              )}{" "}
-              {rule.num && (
-                <CusCourses>
-                  <sup>{num}</sup>/<sub>{rule.num}</sub>
-                </CusCourses>
-              )}
-            </Column>
-          </Row>
-        </RuleLeafWrapper>
+        <RuleLeaf
+          q_json={rule.q_json}
+          rule={rule}
+          fulfillmentsForRule={fulfillments}
+          unselectedFulfillmentsForRule={unselectedFulfillments}
+          satisfied={satisfied}
+          activeDegreePlanId={activeDegreePlanId}
+        />
       </RuleLeafContainer>
     );
   }
@@ -444,8 +446,8 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
           {satisfied && <SatisfiedCheck pop={justSatisfied} />}
         </PickNTitle>
         {children.map((ruleTree) => (
-          <div>
-            <RuleComponent {...ruleTree} />
+          <div key={ruleTree.rule.id}>
+            <RuleComponent headerHeight={headerHeight} zIndex={zIndex - 1} depth={depth + 1} {...ruleTree} />
           </div>
         ))}
       </PickNWrapper>
@@ -454,26 +456,26 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
 
   return (
     <>
-      <RuleTitleWrapper $headerHeight={headerHeight} $zIndex={zIndex} onClick={() => setCollapsed(!collapsed)} ref={myHeaderRef}>
-        <ProgressBar $progress={progress} $animate={animateProgress}></ProgressBar>
-        <RuleTitle>
-          <div>
-            {rule.title} <DegreeYear>{(progress * 100).toFixed(0)}%</DegreeYear>
-          </div>
-          {rule.rules.length && (
+      <RuleTitleWrapper $headerHeight={headerHeight} $zIndex={zIndex} $depth={depth} $kind={programKind} onClick={() => setCollapsed(!collapsed)} ref={myHeaderRef}>
+        <ProgressBar $progress={progress} $animate={animateProgress} $depth={depth}></ProgressBar>
+        <RuleTitle $depth={depth}>
+          <RuleTitleText $stacked={depth === 0}>
+            <span>{rule.title}</span> <DegreeYear>{(progress * 100).toFixed(0)}%</DegreeYear>
+          </RuleTitleText>
+          {rule.rules.length > 0 && (
             <Icon>
-              <i className={`fas fa-chevron-${collapsed ? "up" : "down"}`}></i>
+              <i className={`fas fa-chevron-${collapsed ? "right" : "up"}`}></i>
             </Icon>
           )}
         </RuleTitle>
       </RuleTitleWrapper>
       <WhiteSpace $headerHeight={myHeight + (headerHeight ||0) + HEADER_DEFAULT_BUFFER} $zIndex={500} />
       {!collapsed && (
-        <Indented>
+        <Indented $depth={depth}>
           <Column>
             {children.map((ruleTree) => (
-              <div>
-                <RuleComponent headerHeight={myHeight + (headerHeight || 0) + HEADER_DEFAULT_BUFFER} zIndex={zIndex - 1} {...ruleTree} />
+              <div key={ruleTree.rule.id}>
+                <RuleComponent headerHeight={myHeight + (headerHeight || 0) + HEADER_DEFAULT_BUFFER} zIndex={zIndex - 1} depth={depth + 1} {...ruleTree} />
               </div>
             ))}
           </Column>

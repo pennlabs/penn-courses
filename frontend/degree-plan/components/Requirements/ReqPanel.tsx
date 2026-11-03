@@ -1,6 +1,6 @@
 
 import { useMemo, useState, useContext, useRef, useLayoutEffect } from 'react';
-import RuleComponent, { FulfillmentsLoadedContext, SkeletonRule } from './Rule';
+import RuleComponent, { FulfillmentsLoadedContext, ProgramKindContext, SkeletonRule } from './Rule';
 import { Degree as DegreeType, DegreePlan, Fulfillment, Rule, Degree as DegreeD } from '@/types';
 import styled from '@emotion/styled';
 import { DarkBlueBackgroundSkeleton, PanelBody, PanelContainer, PanelHeader, PanelTopBarIconList } from "../FourYearPlan/PanelCommon";
@@ -365,7 +365,7 @@ const Degree = ({
       )}
       <WhiteSpace $headerHeight={ruleOffset} $zIndex={999} />
       {showRules &&
-        <>
+        <ProgramKindContext.Provider value={program.kind}>
           <DegreeBody>
             {program.rules.map((rule: any) => (
               <RuleComponent
@@ -382,7 +382,7 @@ const Degree = ({
               />
             ))}
           </DegreeBody>
-        </>
+        </ProgramKindContext.Provider>
       }
     </div>
   )

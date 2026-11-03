@@ -41,7 +41,7 @@ const Tab = styled.button<{
   $isActive: boolean;
   $scrolls: boolean;
 }>`
-  flex: ${(props) => (props.$scrolls ? "0 0 auto" : "1 1 0")};
+  flex: ${(props) => (props.$scrolls ? "1 0 auto" : "1 1 0")};
   min-width: ${(props) => (props.$scrolls ? "9rem" : "0")};
   display: flex;
   align-items: center;
