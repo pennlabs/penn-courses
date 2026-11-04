@@ -409,9 +409,7 @@ const FlexSemester = ({
                             <i className={`fas fa-chevron-${expanded ? "up" : "down"}`} aria-hidden />
                         </CollapseButton>
                     )}
-                    {/* TODO: Current structure doesn't allow for last semester to be deleted.
-                        Disabling deletion when there is only one semester
-                        is a quick fix that could be addressed later. */}
+                    {/* TODO(el-agua): allow deleting the last semester. */}
                     {editMode && !isTransfer && (numSemesters > 1 ?
                         <TrashIcon role="button" onClick={handleRemoveSemester}>
                             <i className="fa fa-trash fa-md" />
