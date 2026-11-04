@@ -36,7 +36,7 @@ const CoursesPlanned = ({fulfillments, removeCourse, className, semester, isLoad
     return (
         <PlannedCoursesContainer className={className} ref={animate ? animatedList : undefined}>
             {fulfillments.map(fulfillment => 
-                <CourseInPlan key={fulfillment.full_code} semester={semester} course={fulfillment} removeCourse={removeCourse} isDisabled={false}/>
+                <CourseInPlan key={fulfillment.full_code} semester={semester} course={fulfillment} removeCourse={removeCourse} isDisabled={false} className="in-semester"/>
             )}
         </PlannedCoursesContainer>
     )

@@ -35,7 +35,7 @@ const SemestersContainer = styled.div`
 const AddSemesterContainer = styled.div`
   background: #ffffff;
   border-style: dashed;
-  border-radius: 10px;
+  border-radius: 16px;
   border-width: 2px;
   padding: 1rem;
   display: flex;
@@ -312,8 +312,8 @@ const Semesters = ({
   return (
     <SemestersContainer className={className}>
       {isLoading
-        ? Array.from(Array(8).keys()).map(() => (
-            <SkeletonSemester showStats={showStats} />
+        ? Array.from(Array(8).keys()).map((index) => (
+            <SkeletonSemester key={index} showStats={showStats} />
           ))
         : Object.keys(semesters)
             .sort((a,b) => a.localeCompare(b))

@@ -29,6 +29,10 @@ export const PanelTopBarButton = styled.button`
     font-weight: 500;
     border-radius: 5px;
     color: var(--primary-color-xxx-dark);
+
+    &:hover {
+        background-color: rgba(108, 114, 182, 0.1);
+    }
 `;
 export const DarkBlueBackgroundSkeleton: React.FC<{ width?: string; }> = (props) => (
     <Skeleton
@@ -36,11 +40,19 @@ export const DarkBlueBackgroundSkeleton: React.FC<{ width?: string; }> = (props)
         {...props} />
 );
 
+// DarkBlueBackgroundSkeleton would be invisible against the panel header's own color.
+export const PanelHeaderSkeleton: React.FC<{ width?: string; }> = (props) => (
+    <Skeleton
+        baseColor="var(--primary-color)"
+        {...props} />
+);
+
 export const PanelHeader = styled.div`
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: var(--primary-color);
+    flex-shrink: 0;
+    background-color: var(--primary-color-dark);
     color: var(--primary-color-ultra-dark);
     padding: 0.5rem 1rem;
     flex-grow: 0;
