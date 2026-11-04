@@ -53,6 +53,7 @@ COLLEGE_DEPARTMENTS = {
 SEASON_SUFFIXES = {season: suffix for suffix, season in semester_suffix_map_hum.items()}
 SEMESTER_CODE = re.compile(r"^\d{4}[ABC]$")
 WITH_CLAUSE = re.compile(r"\(With .*?\)")
+WILDCARD_WITH_ATTRIBUTE = re.compile(r"@ @ \(With\s+(?:ATTRIBUTE|DWATTR)\s*=\s*([^()]*?)\s*\)")
 
 MAX_TITLE_LENGTH = Rule._meta.get_field("title").max_length
 
@@ -289,9 +290,20 @@ def parse_course_list(text: str) -> Q:
     A discipline carries forward until a new one appears, so "NETS 1500, 2120" means NETS 1500
     and NETS 2120. `@` in place of a number means any course in that discipline, and a colon
     separates an inclusive range.
+
+    A list can also accept any course with an attribute: the College's credit requirement ends
+    "ENVS @, @ @ (With ATTRIBUTE = AU16)". Other With clauses are not read, so they don't narrow
+    the course they follow.
     """
-    full_codes, departments, codes, ranges = [], [], [], []
+    full_codes, departments, codes, ranges, attributes = [], [], [], [], []
     discipline = None
+
+    for clause in WILDCARD_WITH_ATTRIBUTE.findall(text):
+        values = [value.strip() for value in clause.split(",")]
+        if any(" " in value for value in values):
+            logger.warning(f"Ignoring compound With clause in course list: {clause!r}")
+            continue
+        attributes.extend(values)
 
     for token in WITH_CLAUSE.sub("", text).split(","):
         match token.split():
@@ -325,6 +337,7 @@ def parse_course_list(text: str) -> Q:
         + [Q(full_code__in=full_codes)] * bool(full_codes)
         + [Q(department__code__in=departments)] * bool(departments)
         + [Q(code__in=codes)] * bool(codes)
+        + [Q(attributes__code__in=attributes)] * bool(attributes)
     )
 
 

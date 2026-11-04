@@ -274,10 +274,17 @@ class Rule(models.Model):
         Check if this rule is fulfilled by the provided courses.
         """
         if self.q:
-            # Sums all courses (and corresponding credits), from full_codes,
-            # that satisfy this rule's q object.
-            total_courses, total_credits = (
+            # Sums all courses (and corresponding credits), from full_codes, that satisfy this
+            # rule's q object. A course counts once, however many semesters it was offered in or
+            # attributes the q object joined it against.
+            matching_courses = (
                 Course.objects.filter(self.get_q_object() or Q(), full_code__in=full_codes)
+                .order_by("full_code", "-semester")
+                .distinct("full_code")
+                .values("id")
+            )
+            total_courses, total_credits = (
+                Course.objects.filter(id__in=matching_courses)
                 .aggregate(
                     total_courses=Count("id"),
                     total_credits=Coalesce(

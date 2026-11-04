@@ -6,6 +6,7 @@ from django.db.models import Q
 from django.test import TestCase
 
 from degree.models import Degree
+from degree.utils.model_utils import q_object_parser
 from degree.utils.parse_path_audit import (
     ANY_BLOCK,
     ShareTarget,
@@ -202,6 +203,17 @@ class OverlayRequirementTest(TestCase):
         self.assertEqual(rule.block_type, "DEGREE")
         self.assertIn("department__code__in", rule.q)
         self.assertEqual(rule.share_targets, [{"kind": ANY_BLOCK, "value": None}])
+
+    def test_a_wildcard_with_an_attribute_keeps_the_attribute(self):
+        # "AAMW @, ..., @ @ (With ATTRIBUTE = AU16)": any course in those departments, or any
+        # course at all with AU16. Dropping the With loses the courses outside those departments.
+        biol = Degree(program="AU_BA", degree="BA", major="BIOL", concentration=None)
+        parsed = parse_audit(load_audit("BIOL-BA.xml"), biol)
+
+        rule = next(r for r in parsed.rules if r.title == "Arts and Sciences 31 CU Requirement")
+        q = q_object_parser.parse(rule.q)
+        self.assertEqual(q.connector, Q.OR)
+        self.assertIn(("attributes__code__in", ["AU16"]), q.children)
 
     def test_a_standalone_block_shares_with_everything(self):
         # The College's Foundations block carries no ShareWith, but is marked STANDALONEBLOCK:
