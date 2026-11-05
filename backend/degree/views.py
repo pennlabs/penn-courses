@@ -134,11 +134,12 @@ def update_fulfillments(degree_plan):
 
     rebalance_allocations(allocations, rule_to_degree, double_counts, credits_cache)
 
-    for fulfillment, allocation in zip(fulfillments, allocations):
-        fulfillment.rules.set(allocation.selected)
-        fulfillment.unselected_rules.set(allocation.unselected)
-        fulfillment.legal = check_legal(allocation.selected, rule_to_degree, double_counts)
-        fulfillment.save()
+    with transaction.atomic():
+        for fulfillment, allocation in zip(fulfillments, allocations):
+            fulfillment.rules.set(allocation.selected)
+            fulfillment.unselected_rules.set(allocation.unselected)
+            fulfillment.legal = check_legal(allocation.selected, rule_to_degree, double_counts)
+            fulfillment.save()
 
     degree_plan.refresh_satisfaction()
 
@@ -271,18 +272,19 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         components = getattr(degree_plan, relation)
 
         try:
-            if request.method == "POST":
+            # The foreign keys are deferred, so a missing id only raises when this block commits.
+            with transaction.atomic():
+                if request.method == "DELETE":
+                    components.remove(*ids)
+                    return Response(status=status.HTTP_204_NO_CONTENT)
                 components.add(*ids)
-            elif request.method == "DELETE":
-                components.remove(*ids)
-                return Response(status=status.HTTP_204_NO_CONTENT)
+                update_fulfillments(degree_plan)
         except IntegrityError:
             return Response(
                 data={"error": f"One or more of the {relation} does not exist."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        update_fulfillments(degree_plan)
         return Response(self.get_serializer(degree_plan).data, status=status.HTTP_200_OK)
 
 
@@ -704,21 +706,22 @@ class OnboardFromTranscript(APIView):
             credits_cache,
         )
 
-        for semester_code, allocation in allocations:
-            # Keyed on Fulfillment's actual unique constraint. Including semester and
-            # legal in the lookup means a course already stored with either one different
-            # matches nothing and is then created against a row that already exists.
-            fulfillment, _ = Fulfillment.objects.update_or_create(
-                degree_plan=degree_plan,
-                full_code=allocation.full_code,
-                defaults={
-                    "semester": semester_code,
-                    "legal": check_legal(allocation.selected, rule_to_degree, double_counts),
-                    "level": levels.get(allocation.full_code),
-                },
-            )
-            fulfillment.rules.set(allocation.selected)
-            fulfillment.unselected_rules.set(allocation.unselected)
+        with transaction.atomic():
+            for semester_code, allocation in allocations:
+                # Keyed on Fulfillment's actual unique constraint. Including semester and
+                # legal in the lookup means a course already stored with either one different
+                # matches nothing and is then created against a row that already exists.
+                fulfillment, _ = Fulfillment.objects.update_or_create(
+                    degree_plan=degree_plan,
+                    full_code=allocation.full_code,
+                    defaults={
+                        "semester": semester_code,
+                        "legal": check_legal(allocation.selected, rule_to_degree, double_counts),
+                        "level": levels.get(allocation.full_code),
+                    },
+                )
+                fulfillment.rules.set(allocation.selected)
+                fulfillment.unselected_rules.set(allocation.unselected)
 
         degree_plan.refresh_satisfaction()
         return Response({"message": "OK"}, status=status.HTTP_200_OK)
