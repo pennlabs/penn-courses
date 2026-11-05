@@ -7,25 +7,13 @@ from django.db import transaction
 
 from degree.management.commands.deduplicate_rules import deduplicate_rules
 from degree.models import Degree, Major, Minor, program_code_to_name
-from degree.utils.parse_path_audit import (
-    find_block,
-    parse_audit,
-    plans_using,
-    save_component,
-    save_parsed_audit,
-)
+from degree.utils.parse_path_audit import find_block, parse_audit, save_component, save_parsed_audit
 from degree.utils.path_client import PathClient, PathError, split_program_code, split_program_title
 
 
 # Students with degrees older than this catalog year are not supported, and their
 # degrees are not stored in the database.
 EARLIEST_CATALOG_YEAR = 2022
-
-
-def refresh_satisfaction_of_plans(*owners):
-    plans = {plan.pk: plan for owner in owners if owner for plan in plans_using(owner)}
-    for plan in plans.values():
-        plan.refresh_satisfaction()
 
 
 @dataclass
@@ -268,13 +256,8 @@ class Command(BaseCommand):
         try:
             with transaction.atomic():
                 major = Major.objects.filter(program_code=code, year=degree.year)
-                changed = save_parsed_audit(parsed, degree, shared_with=list(major))
-                major_changed, saved_major = self.save_major(
-                    code, degree, parsed, concentration_name
-                )
-                tally.majors += saved_major is not None
-                if changed or major_changed:
-                    refresh_satisfaction_of_plans(degree, saved_major)
+                save_parsed_audit(parsed, degree, shared_with=list(major))
+                tally.majors += self.save_major(code, degree, parsed, concentration_name)
         except Exception as error:
             tally.fail(code, error)
             return
@@ -282,11 +265,11 @@ class Command(BaseCommand):
         tally.saved += 1
         self.announce(f"Saved {degree} ({len(parsed.rules)} rules, {degree.credits} CU)")
 
-    def save_major(self, code, degree, parsed, concentration_name):
-        """Returns whether its rules changed, and the Major if the audit has one."""
+    def save_major(self, code, degree, parsed, concentration_name) -> int:
+        """The same audit's MAJOR block, stored on its own. Returns how many were saved."""
         block = find_block(parsed, "MAJOR")
         if block is None:
-            return False, None
+            return 0
 
         major = Major(
             program_code=code,
@@ -296,7 +279,8 @@ class Command(BaseCommand):
             concentration_name=concentration_name,
             year=degree.year,
         )
-        return save_component(major, parsed, block), major
+        save_component(major, parsed, block)
+        return 1
 
     def fetch_minors(self, client, srcdb, tally):
         programs = client.minor_programs(srcdb)
@@ -348,8 +332,7 @@ class Command(BaseCommand):
                     name=name or None,
                     year=parsed.catalog_year,
                 )
-                if save_component(minor, parsed, block):
-                    refresh_satisfaction_of_plans(minor)
+                save_component(minor, parsed, block)
         except Exception as error:
             tally.fail(code, error)
             return 0

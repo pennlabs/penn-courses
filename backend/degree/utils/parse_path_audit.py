@@ -798,6 +798,9 @@ def plans_using(owner):
 
 def move_course_assignments(moved: list[tuple[Rule, Rule]], owner) -> None:
     """A plan that still reaches an old row through another of its programs also keeps that row."""
+    if not moved:
+        return
+
     for plan in plans_using(owner):
         reachable = {
             rule.pk for component in plan_components(plan) for rule in component.rules.all()
@@ -811,13 +814,11 @@ def move_course_assignments(moved: list[tuple[Rule, Rule]], owner) -> None:
                         assigned.remove(old)
 
 
-def sync_rules(rules: list[Rule], owner, shared_with=()) -> bool:
+def sync_rules(rules: list[Rule], owner, shared_with=()) -> None:
     """
     Stored rules no longer in the audit are deleted, and a course assigned only to those stays in
     the plan, unassigned. Rules also used by something other than `owner` and `shared_with` are
     left alone, and `owner` gets its own copy.
-
-    Returns whether anything changed.
     """
     owners = [owner, *shared_with]
     stored_roots = list(owner.rules.order_by("id"))
@@ -827,7 +828,6 @@ def sync_rules(rules: list[Rule], owner, shared_with=()) -> bool:
         if has_other_owner(root, owners):
             still_in_use |= rule_tree_ids(root)
 
-    changed = False
     moved = []
     for rule in rules:
         assert (
@@ -838,16 +838,13 @@ def sync_rules(rules: list[Rule], owner, shared_with=()) -> bool:
         if rule.pk is None:
             if stored is None or stored.pk in still_in_use:
                 rule.save()
-                changed = True
             else:
                 rule.pk = stored.pk
                 if rule_differs(stored, rule):
                     rule.save()
-                    changed = True
 
         if stored is not None and stored.pk != rule.pk:
             moved.append((stored, rule))
-            changed = True
 
     owner.rules.set([rule for rule in rules if rule.parent is None])
     move_course_assignments(moved, owner)
@@ -859,9 +856,6 @@ def sync_rules(rules: list[Rule], owner, shared_with=()) -> bool:
         if unassigned:
             logger.warning(f"Deleting {rule.title!r} unassigned {unassigned} course(s) in {owner}")
         rule.delete()
-        changed = True
-
-    return changed
 
 
 def keep_existing_row(instance, **key) -> None:
@@ -870,10 +864,10 @@ def keep_existing_row(instance, **key) -> None:
         instance.pk = existing.pk
 
 
-def save_parsed_audit(parsed: ParsedAudit, degree: Degree, shared_with=()) -> bool:
+def save_parsed_audit(parsed: ParsedAudit, degree: Degree, shared_with=()) -> None:
     """
-    `shared_with` is what else legitimately uses this degree's rules. Returns whether any rule
-    changed. The caller must set `degree.year` first, since it's part of the unique constraint.
+    `shared_with` is what else legitimately uses this degree's rules. The caller must set
+    `degree.year` first, since it's part of the unique constraint.
     """
     keep_existing_row(
         degree,
@@ -885,7 +879,7 @@ def save_parsed_audit(parsed: ParsedAudit, degree: Degree, shared_with=()) -> bo
     )
     degree.credits = parsed.degree_credits
     degree.save()
-    return sync_rules(parsed.rules, degree, shared_with)
+    sync_rules(parsed.rules, degree, shared_with)
 
 
 def block_rules(parsed: ParsedAudit, block: ParsedBlock) -> list[Rule]:
@@ -911,9 +905,9 @@ def find_block(parsed: ParsedAudit, req_type: str) -> ParsedBlock | None:
     return blocks[0] if blocks else None
 
 
-def save_component(component, parsed: ParsedAudit, block: ParsedBlock) -> bool:
-    """Saves only the rules of the component's own block. Returns whether any rule changed."""
+def save_component(component, parsed: ParsedAudit, block: ParsedBlock) -> None:
+    """Saves only the rules of the component's own block."""
     keep_existing_row(component, program_code=component.program_code, year=component.year)
     component.credits = block.credits
     component.save()
-    return sync_rules(block_rules(parsed, block), component)
+    sync_rules(block_rules(parsed, block), component)

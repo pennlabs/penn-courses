@@ -6,8 +6,8 @@ from django.core.management import call_command
 from django.db.models import Q
 from django.test import TestCase
 
-from degree.models import Degree, DegreePlan, Fulfillment, Major, Minor, Rule, SatisfactionStatus
-from degree.utils.parse_path_audit import parse_audit, save_parsed_audit
+from degree.models import Degree, DegreePlan, Fulfillment, Major, Minor, Rule
+from degree.utils.parse_path_audit import move_course_assignments, parse_audit, save_parsed_audit
 from degree.utils.path_client import PathError
 
 
@@ -75,12 +75,9 @@ class ReparsingTest(TestCase):
         self.assertIn("AU16", self.credit_rule.q)
         self.assertEqual(list(self.fulfillment.rules.all()), [self.credit_rule])
 
-    def test_a_change_refreshes_plans_using_the_degree(self):
-        SatisfactionStatus.objects.filter(degree_plan=self.plan).delete()
-        Rule.objects.filter(pk=self.credit_rule.pk).update(credits=30)
-        fetch()
-
-        self.assertTrue(SatisfactionStatus.objects.filter(degree_plan=self.plan).exists())
+    def test_nothing_to_move_costs_no_queries(self):
+        with self.assertNumQueries(0):
+            move_course_assignments([], self.degree)
 
     def test_a_rule_with_a_new_title_replaces_the_old_one(self):
         with self.assertLogs("degree.utils.parse_path_audit", "WARNING") as logs:
