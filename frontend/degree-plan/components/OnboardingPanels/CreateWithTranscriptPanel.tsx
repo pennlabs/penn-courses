@@ -347,10 +347,12 @@ export default function CreateWithTranscriptPanel({
         await postFetcher(`/api/degree/degreeplans/${_new.id}/degrees`, {
           degree_ids: selections.flatMap((s) => (s.primary ? [s.primary.value.id] : [])),
         });
-        const additionalMajors = selections.flatMap((s) => s.additional);
-        if (additionalMajors.length) {
+        for (const selection of selections.filter((s) => s.additional.length)) {
+          // Each post reallocates the whole plan, so they must not overlap.
+          // eslint-disable-next-line no-await-in-loop
           await postFetcher(`/api/degree/degreeplans/${_new.id}/majors`, {
-            major_ids: additionalMajors.map((m) => m.value.id),
+            major_ids: selection.additional.map((m) => m.value.id),
+            degree_id: selection.primary?.value.id,
           });
         }
         setActiveDegreeplan(_new);

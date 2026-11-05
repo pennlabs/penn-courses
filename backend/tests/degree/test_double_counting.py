@@ -316,11 +316,12 @@ class IndependentDegreesTest(TestCase):
 
         math = Major.objects.create(program_code="MATH-BA-GEN", code="MATH", year=2026)
         self.math = self.rule(math, "MAJOR", "MATH")
-        econ = Major.objects.create(program_code="ECON-BS-GEN", code="ECON", year=2026)
-        self.econ = self.rule(econ, "MAJOR", "ECON")
+        stat = Major.objects.create(program_code="STAT-BA-GEN", code="STAT", year=2026)
+        self.stat = self.rule(stat, "MAJOR", "STAT")
 
         self.plan.degrees.add(bse, ba, mse)
-        self.plan.majors.add(math, econ)
+        self.plan.majors.add(math, through_defaults={"degree": ba})
+        self.plan.majors.add(stat)
         _, self.rule_to_degree, self.double_counts = map_rules_and_degrees(self.plan)
 
     def shares(self, a, b):
@@ -341,13 +342,13 @@ class IndependentDegreesTest(TestCase):
         self.assertFalse(self.shares(self.graduate, self.elective))
         self.assertFalse(self.shares(self.graduate, self.sector))
 
-    def test_a_major_belongs_to_the_degree_with_its_degree_code(self):
+    def test_a_major_belongs_to_the_degree_it_was_placed_under(self):
         self.assertTrue(self.shares(self.math, self.elective))
         self.assertFalse(self.shares(self.math, self.sector))
 
-    def test_a_major_with_no_matching_degree_follows_the_audits(self):
-        self.assertFalse(self.shares(self.econ, self.elective))
-        self.assertFalse(self.shares(self.econ, self.sector))
+    def test_an_unplaced_major_follows_the_audits_even_with_a_matching_degree_code(self):
+        self.assertFalse(self.shares(self.stat, self.elective))
+        self.assertFalse(self.shares(self.stat, self.sector))
 
 
 class ComponentPassIsolationTest(TestCase):

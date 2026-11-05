@@ -7,7 +7,6 @@ from django.db.models import Exists, Q
 
 from courses.models import Course
 from degree.utils.double_counts import get_degree_trees, resolve_double_counts
-from degree.utils.path_client import split_program_code
 
 
 # A submatriculant may double count at most this many CUs between their undergraduate and
@@ -667,26 +666,25 @@ def map_rules_and_degrees(degree_plan):
     return (
         rules_per_degree,
         rule_to_degree,
-        resolve_double_counts(degree_trees, undergraduate_degree_of(components)),
+        resolve_double_counts(degree_trees, undergraduate_degree_of(degree_plan, components)),
     )
 
 
-def undergraduate_degree_of(components):
+def undergraduate_degree_of(degree_plan, components):
     """
-    Maps each component to the undergraduate degree whose audit it belongs to. An additional
-    major belongs to the plan's degree with its degree code, if there is exactly one; otherwise
-    it is a double major in the plan's degree, sharing only by the audit's rules.
+    Maps each component to the undergraduate degree whose audit it belongs to: a degree to
+    itself, and a major to the degree the student placed it under, if that degree is in the plan.
     """
-    from degree.models import Degree, Major
+    from degree.models import Degree, DegreePlanMajor, Major
 
-    degrees = [c for c in components if isinstance(c, Degree) and not is_graduate(c)]
-    result = {degree: degree.pk for degree in degrees}
-    for major in (c for c in components if isinstance(c, Major)):
-        try:
-            _, degree_code, _ = split_program_code(major.program_code)
-        except ValueError:
-            continue
-        matches = [degree for degree in degrees if degree.degree == degree_code]
-        if len(matches) == 1:
-            result[major] = matches[0].pk
+    degrees = {c.pk: c for c in components if isinstance(c, Degree) and not is_graduate(c)}
+    result = {degree: pk for pk, degree in degrees.items()}
+    placed = dict(
+        DegreePlanMajor.objects.filter(
+            degree_plan=degree_plan, degree__in=list(degrees)
+        ).values_list("major_id", "degree_id")
+    )
+    for component in components:
+        if isinstance(component, Major) and component.pk in placed:
+            result[component] = placed[component.pk]
     return result

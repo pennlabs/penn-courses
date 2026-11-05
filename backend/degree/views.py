@@ -16,6 +16,7 @@ from degree.models import (
     TRANSFER_CREDIT_SEMESTER,
     Degree,
     DegreePlan,
+    DegreePlanMajor,
     DockedCourse,
     Fulfillment,
     Major,
@@ -252,7 +253,8 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     def majors(self, request, pk=None):
         """
         Add or remove majors from a degree plan. These are majors pursued beyond the one the
-        plan's degree already includes, and contribute only their own block.
+        plan's degree already includes, and contribute only their own block. An optional
+        `degree_id` names which of the plan's degrees the majors are part of.
         """
         return self.update_components(request, "majors", "major_ids")
 
@@ -271,13 +273,27 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         degree_plan = self.get_object()
         components = getattr(degree_plan, relation)
 
+        degree_id = request.data.get("degree_id") if relation == "majors" else None
+        if degree_id is not None and (
+            not isinstance(degree_id, int) or not degree_plan.degrees.filter(pk=degree_id).exists()
+        ):
+            raise ValidationError({"degree_id": "This must be one of the plan's degrees."})
+
         try:
             # The foreign keys are deferred, so a missing id only raises when this block commits.
             with transaction.atomic():
                 if request.method == "DELETE":
                     components.remove(*ids)
+                    if relation == "degrees":
+                        DegreePlanMajor.objects.filter(
+                            degree_plan=degree_plan, degree_id__in=ids
+                        ).update(degree=None)
                     return Response(status=status.HTTP_204_NO_CONTENT)
                 components.add(*ids)
+                if degree_id is not None:
+                    DegreePlanMajor.objects.filter(
+                        degree_plan=degree_plan, major_id__in=ids
+                    ).update(degree_id=degree_id)
                 update_fulfillments(degree_plan)
         except IntegrityError:
             return Response(
