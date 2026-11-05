@@ -7,13 +7,25 @@ from django.db import transaction
 
 from degree.management.commands.deduplicate_rules import deduplicate_rules
 from degree.models import Degree, Major, Minor, program_code_to_name
-from degree.utils.parse_path_audit import find_block, parse_audit, save_component, save_parsed_audit
-from degree.utils.path_client import PathClient, split_program_code, split_program_title
+from degree.utils.parse_path_audit import (
+    find_block,
+    parse_audit,
+    plans_using,
+    save_component,
+    save_parsed_audit,
+)
+from degree.utils.path_client import PathClient, PathError, split_program_code, split_program_title
 
 
 # Students with degrees older than this catalog year are not supported, and their
 # degrees are not stored in the database.
 EARLIEST_CATALOG_YEAR = 2022
+
+
+def refresh_satisfaction_of_plans(*owners):
+    plans = {plan.pk: plan for owner in owners if owner for plan in plans_using(owner)}
+    for plan in plans.values():
+        plan.refresh_satisfaction()
 
 
 @dataclass
@@ -23,6 +35,7 @@ class Tally:
     saved: int = 0
     skipped: int = 0
     outdated: int = 0
+    superseded: int = 0
     majors: int = 0
     minors: int = 0
     failures: list[tuple[str, str]] = field(default_factory=list)
@@ -41,6 +54,8 @@ class Tally:
         print(f"Saved {self.saved} degrees, skipped {self.skipped}")
         if self.outdated:
             print(f"  of those, {self.outdated} predate catalog year {EARLIEST_CATALOG_YEAR}")
+        if self.superseded:
+            print(f"  of those, {self.superseded} were already saved from a newer term")
         print(f"Saved {self.majors} majors and {self.minors} minors")
 
         if not self.failures:
@@ -63,8 +78,12 @@ class Command(BaseCommand):
         """
         Fetches, parses and stores degrees from Path@Penn.
 
-        Note: this script deletes any existing degrees in the database that overlap with the
-        degrees fetched from Path.
+        Existing degrees, majors and minors are patched in place, so plans keep their links and
+        course assignments. Rules no longer in the audit are deleted.
+
+        Several terms can serve the same catalog year, and later terms carry its later edits, so
+        pass every term in one run: terms are processed newest first, and the first version of a
+        program and year wins. Running an older term by itself writes that older version.
         """
     )
 
@@ -130,8 +149,10 @@ class Command(BaseCommand):
 
         client = PathClient(delay=options["delay"])
         tally = Tally()
+        self.seen_versions = set()
+        self.unfetched_codes = set()
 
-        for srcdb in options["srcdb"]:
+        for srcdb in sorted(options["srcdb"], reverse=True):
             self.fetch_degrees(client, srcdb, tally)
             if not options["skip_minors"] and not options["program"]:
                 self.fetch_minors(client, srcdb, tally)
@@ -145,6 +166,36 @@ class Command(BaseCommand):
     def announce(self, message, *, level=1):
         if self.verbosity >= level:
             print(message)
+
+    def fetch_program_info(self, client, code, srcdb, tally):
+        """
+        A PathError means the term has nothing for this program. Any other failure hides which
+        versions it has, so older terms may not write the program, in case they overwrite a newer
+        version. Rerun to pick it up.
+        """
+        if code in self.unfetched_codes:
+            tally.skip(code, "a newer term could not be fetched", announce=False)
+            self.announce(f"Skipping {code}: a newer term could not be fetched", level=2)
+            return None
+        try:
+            return client.program_info(code, srcdb)
+        except PathError as error:
+            tally.fail(code, error)
+            return None
+        except Exception as error:
+            self.unfetched_codes.add(code)
+            tally.fail(code, error)
+            return None
+
+    def is_superseded(self, code, year, tally):
+        """Also true if saving the newer term's copy failed."""
+        if (code, year) not in self.seen_versions:
+            self.seen_versions.add((code, year))
+            return False
+        tally.superseded += 1
+        tally.skip(code, f"catalog year {year} came from a newer term", announce=False)
+        self.announce(f"Skipping {code}: catalog year {year} came from a newer term", level=2)
+        return True
 
     def fetch_degrees(self, client, srcdb, tally):
         if self.options["program"]:
@@ -164,10 +215,8 @@ class Command(BaseCommand):
         of a different degree.
         """
         code = program["code"]
-        try:
-            info = client.program_info(code, srcdb)
-        except Exception as error:
-            tally.fail(code, error)
+        info = self.fetch_program_info(client, code, srcdb, tally)
+        if info is None:
             return
 
         sis_program = info.get("sis_prog_code")
@@ -204,6 +253,8 @@ class Command(BaseCommand):
             tally.skip(code, f"catalog year {parsed.catalog_year}", announce=False)
             self.announce(f"Skipping {code}: catalog year {parsed.catalog_year}", level=2)
             return
+        if self.is_superseded(code, parsed.catalog_year, tally):
+            return
 
         degree.year = parsed.catalog_year
 
@@ -216,15 +267,14 @@ class Command(BaseCommand):
 
         try:
             with transaction.atomic():
-                Degree.objects.filter(
-                    program=degree.program,
-                    degree=degree.degree,
-                    major=degree.major,
-                    concentration=degree.concentration,
-                    year=degree.year,
-                ).delete()
-                save_parsed_audit(parsed, degree)
-                tally.majors += self.save_major(code, degree, parsed, concentration_name)
+                major = Major.objects.filter(program_code=code, year=degree.year)
+                changed = save_parsed_audit(parsed, degree, shared_with=list(major))
+                major_changed, saved_major = self.save_major(
+                    code, degree, parsed, concentration_name
+                )
+                tally.majors += saved_major is not None
+                if changed or major_changed:
+                    refresh_satisfaction_of_plans(degree, saved_major)
         except Exception as error:
             tally.fail(code, error)
             return
@@ -232,26 +282,21 @@ class Command(BaseCommand):
         tally.saved += 1
         self.announce(f"Saved {degree} ({len(parsed.rules)} rules, {degree.credits} CU)")
 
-    def save_major(self, code, degree, parsed, concentration_name) -> int:
-        """The same audit's MAJOR block, stored on its own. Returns how many were saved."""
+    def save_major(self, code, degree, parsed, concentration_name):
+        """Returns whether its rules changed, and the Major if the audit has one."""
         block = find_block(parsed, "MAJOR")
         if block is None:
-            return 0
+            return False, None
 
-        Major.objects.filter(program_code=code, year=degree.year).delete()
-        save_component(
-            Major(
-                program_code=code,
-                code=block.req_value,
-                name=degree.major_name,
-                concentration=degree.concentration,
-                concentration_name=concentration_name,
-                year=degree.year,
-            ),
-            parsed,
-            block,
+        major = Major(
+            program_code=code,
+            code=block.req_value,
+            name=degree.major_name,
+            concentration=degree.concentration,
+            concentration_name=concentration_name,
+            year=degree.year,
         )
-        return 1
+        return save_component(major, parsed, block), major
 
     def fetch_minors(self, client, srcdb, tally):
         programs = client.minor_programs(srcdb)
@@ -266,11 +311,13 @@ class Command(BaseCommand):
         STANDALONEBLOCK so its rules double count freely with the rest of a plan.
         """
         code = program["code"]
+        info = self.fetch_program_info(client, code, srcdb, tally)
+        if info is None:
+            return 0
+        if not info:
+            tally.skip(code, "no program info")
+            return 0
         try:
-            info = client.program_info(code, srcdb)
-            if not info:
-                tally.skip(code, "no program info")
-                return 0
             placeholder = Degree(
                 program="AU_BA", degree="BA", major=info.get("majr_code") or "", year=0
             )
@@ -285,6 +332,8 @@ class Command(BaseCommand):
             return 0
         if parsed.catalog_year < EARLIEST_CATALOG_YEAR:
             return 0
+        if self.is_superseded(code, parsed.catalog_year, tally):
+            return 0
 
         name, _ = split_program_title(program["title"] or "", "MINOR")
         if self.dry_run:
@@ -293,17 +342,14 @@ class Command(BaseCommand):
 
         try:
             with transaction.atomic():
-                Minor.objects.filter(program_code=code, year=parsed.catalog_year).delete()
-                save_component(
-                    Minor(
-                        program_code=code,
-                        code=block.req_value,
-                        name=name or None,
-                        year=parsed.catalog_year,
-                    ),
-                    parsed,
-                    block,
+                minor = Minor(
+                    program_code=code,
+                    code=block.req_value,
+                    name=name or None,
+                    year=parsed.catalog_year,
                 )
+                if save_component(minor, parsed, block):
+                    refresh_satisfaction_of_plans(minor)
         except Exception as error:
             tally.fail(code, error)
             return 0

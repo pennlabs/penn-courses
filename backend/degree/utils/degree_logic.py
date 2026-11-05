@@ -1,5 +1,6 @@
 import re
 from collections import defaultdict, deque
+from dataclasses import dataclass
 from decimal import Decimal
 
 from django.db.models import Exists, Q
@@ -423,6 +424,101 @@ def allocate_rules(
     return selected_rules, unselected_rules, legal
 
 
+@dataclass(eq=False)
+class CourseAllocation:
+
+    full_code: str
+    selected: set
+    unselected: set
+
+
+def rebalance_allocations(allocations, rule_to_degree, double_counts, credits_cache=None):
+    """
+    Moves courses onto short rules when another course can take their place, without leaving any
+    rule worse off or breaking double counting limits.
+
+    Only for allocating a whole plan, since it can move any course. `allocations` must be in the
+    order the courses were taken, and is changed in place.
+    """
+    credits_cache = credits_cache or {}
+
+    def credits_of(allocation):
+        return credits_cache.get(allocation.full_code, DEFAULT_COURSE_CREDITS)
+
+    def is_short(rule, courses):
+        if rule.num and len(courses) < rule.num:
+            return True
+        return bool(rule.credits and sum(credits_of(c) for c in courses) < rule.credits)
+
+    def starts_crossing_levels(allocation, rules):
+        def crosses(selected):
+            graduate, undergraduate = split_by_level(selected, rule_to_degree)
+            return bool(graduate and undergraduate)
+
+        return crosses(rules) and not crosses(allocation.selected)
+
+    members = defaultdict(set)
+    for allocation in allocations:
+        for rule in allocation.selected:
+            members[rule].add(allocation)
+
+    def find_replacement(rule, leaving, taken):
+        options = [
+            other
+            for other in allocations
+            if other is not leaving
+            and other not in taken
+            and rule in other.unselected
+            and credits_of(other) >= credits_of(leaving)
+            and can_share(rule, other.selected, double_counts)
+            and not starts_crossing_levels(other, other.selected | {rule})
+        ]
+        return min(options, key=lambda other: bool(other.selected), default=None)
+
+    def plan_move(allocation, rule):
+        """The replacement each of this course's rules needs if it moves to `rule`, or None."""
+        conflicts = {
+            other
+            for other in allocation.selected
+            if other in rule_to_degree and not can_share(rule, {other}, double_counts)
+        }
+        if starts_crossing_levels(allocation, (allocation.selected - conflicts) | {rule}):
+            return None
+
+        replacements = {}
+        for conflict in conflicts:
+            if not is_short(conflict, members[conflict] - {allocation}):
+                continue
+            replacement = find_replacement(conflict, allocation, set(replacements.values()))
+            if replacement is None:
+                return None
+            replacements[conflict] = replacement
+        return conflicts, replacements
+
+    for rule in sorted(rule_to_degree, key=lambda rule: rule.id):
+        for allocation in allocations:
+            if not is_short(rule, members[rule]):
+                break
+            if rule not in allocation.unselected:
+                continue
+            move = plan_move(allocation, rule)
+            if move is None:
+                continue
+
+            conflicts, replacements = move
+            allocation.selected -= conflicts
+            allocation.unselected |= conflicts
+            for conflict in conflicts:
+                members[conflict].discard(allocation)
+            allocation.selected.add(rule)
+            allocation.unselected.discard(rule)
+            members[rule].add(allocation)
+            for conflict, replacement in replacements.items():
+                replacement.selected.add(conflict)
+                replacement.unselected.discard(conflict)
+                members[conflict].add(replacement)
+
+
 def assign_individual_rule(
     full_code,
     chosen_rule,
@@ -458,7 +554,8 @@ def assign_individual_rule(
         relevant_dcrs = {
             r
             for r in double_counts.get(chosen_rule, set())
-            if check_belongs(r, full_code, belongs_cache, is_transfer=is_transfer)
+            if r not in satisfied_rules
+            and check_belongs(r, full_code, belongs_cache, is_transfer=is_transfer)
             and can_share(r, prior_selected, double_counts)
         }
         relevant_dcrs.add(chosen_rule)

@@ -39,6 +39,7 @@ from degree.serializers import (
 from degree.utils.degree_logic import (
     FULFILLMENT_LEVELS,
     MIN_GRADUATE_COURSE_NUMBER,
+    CourseAllocation,
     GraduateSharing,
     allocate_rules,
     check_legal,
@@ -46,6 +47,7 @@ from degree.utils.degree_logic import (
     map_rules_and_degrees,
     prewarm_belongs_cache,
     prewarm_credits_cache,
+    rebalance_allocations,
     reconcile_rules,
     sharing_from_fulfillments,
 )
@@ -104,9 +106,10 @@ def update_fulfillments(degree_plan):
     # Fulfillments are ordered by semester above, so the allowance goes to the earliest
     # courses eligible for it.
     graduate_sharing = GraduateSharing()
+    allocations = []
 
     for fulfillment in fulfillments:
-        selected_rules, unselected_rules, legal = allocate_rules(
+        selected_rules, unselected_rules, _ = allocate_rules(
             fulfillment.full_code,
             rules_per_degree,
             rule_to_degree,
@@ -120,15 +123,22 @@ def update_fulfillments(degree_plan):
             level=fulfillment.level,
         )
 
-        fulfillment.rules.set(selected_rules)
-        fulfillment.unselected_rules.set(unselected_rules)
-        fulfillment.legal = legal
-        fulfillment.save()
+        allocations.append(
+            CourseAllocation(fulfillment.full_code, selected_rules, unselected_rules)
+        )
 
         for rule in selected_rules:
             satisfied_lookup[rule.id] += 1
             if is_satisfied(rule):
                 satisfied_rules.add(rule)
+
+    rebalance_allocations(allocations, rule_to_degree, double_counts, credits_cache)
+
+    for fulfillment, allocation in zip(fulfillments, allocations):
+        fulfillment.rules.set(allocation.selected)
+        fulfillment.unselected_rules.set(allocation.unselected)
+        fulfillment.legal = check_legal(allocation.selected, rule_to_degree, double_counts)
+        fulfillment.save()
 
     degree_plan.refresh_satisfaction()
 
@@ -659,11 +669,12 @@ class OnboardFromTranscript(APIView):
         # A transcript arrives in the order its courses were taken, so the allowance goes to
         # the earliest courses eligible for it.
         graduate_sharing = GraduateSharing()
+        allocations = []
 
         for semester in course_data:
             for full_code in semester["courses"]:
                 semester_code = semester["sem"]
-                selected_rules, unselected_rules, legal = allocate_rules(
+                selected_rules, unselected_rules, _ = allocate_rules(
                     full_code,
                     rules_per_degree,
                     rule_to_degree,
@@ -677,25 +688,37 @@ class OnboardFromTranscript(APIView):
                     level=levels.get(full_code),
                 )
 
-                # Keyed on Fulfillment's actual unique constraint. Including semester and
-                # legal in the lookup means a course already stored with either one different
-                # matches nothing and is then created against a row that already exists.
-                fulfillment, _ = Fulfillment.objects.update_or_create(
-                    degree_plan=degree_plan,
-                    full_code=full_code,
-                    defaults={
-                        "semester": semester_code,
-                        "legal": legal,
-                        "level": levels.get(full_code),
-                    },
+                allocations.append(
+                    (semester_code, CourseAllocation(full_code, selected_rules, unselected_rules))
                 )
-                fulfillment.rules.set(selected_rules)
-                fulfillment.unselected_rules.set(unselected_rules)
 
                 for rule in selected_rules:
                     satisfied_lookup[rule.id] += 1
                     if is_satisfied(rule):
                         satisfied_rules.add(rule)
+
+        rebalance_allocations(
+            [allocation for _, allocation in allocations],
+            rule_to_degree,
+            double_counts,
+            credits_cache,
+        )
+
+        for semester_code, allocation in allocations:
+            # Keyed on Fulfillment's actual unique constraint. Including semester and
+            # legal in the lookup means a course already stored with either one different
+            # matches nothing and is then created against a row that already exists.
+            fulfillment, _ = Fulfillment.objects.update_or_create(
+                degree_plan=degree_plan,
+                full_code=allocation.full_code,
+                defaults={
+                    "semester": semester_code,
+                    "legal": check_legal(allocation.selected, rule_to_degree, double_counts),
+                    "level": levels.get(allocation.full_code),
+                },
+            )
+            fulfillment.rules.set(allocation.selected)
+            fulfillment.unselected_rules.set(allocation.unselected)
 
         degree_plan.refresh_satisfaction()
         return Response({"message": "OK"}, status=status.HTTP_200_OK)
