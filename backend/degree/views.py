@@ -16,6 +16,7 @@ from degree.models import (
     TRANSFER_CREDIT_SEMESTER,
     Degree,
     DegreePlan,
+    DegreePlanMajor,
     DockedCourse,
     Fulfillment,
     Major,
@@ -39,6 +40,7 @@ from degree.serializers import (
 from degree.utils.degree_logic import (
     FULFILLMENT_LEVELS,
     MIN_GRADUATE_COURSE_NUMBER,
+    CourseAllocation,
     GraduateSharing,
     allocate_rules,
     check_legal,
@@ -46,6 +48,7 @@ from degree.utils.degree_logic import (
     map_rules_and_degrees,
     prewarm_belongs_cache,
     prewarm_credits_cache,
+    rebalance_allocations,
     reconcile_rules,
     sharing_from_fulfillments,
 )
@@ -104,9 +107,10 @@ def update_fulfillments(degree_plan):
     # Fulfillments are ordered by semester above, so the allowance goes to the earliest
     # courses eligible for it.
     graduate_sharing = GraduateSharing()
+    allocations = []
 
     for fulfillment in fulfillments:
-        selected_rules, unselected_rules, legal = allocate_rules(
+        selected_rules, unselected_rules, _ = allocate_rules(
             fulfillment.full_code,
             rules_per_degree,
             rule_to_degree,
@@ -120,15 +124,23 @@ def update_fulfillments(degree_plan):
             level=fulfillment.level,
         )
 
-        fulfillment.rules.set(selected_rules)
-        fulfillment.unselected_rules.set(unselected_rules)
-        fulfillment.legal = legal
-        fulfillment.save()
+        allocations.append(
+            CourseAllocation(fulfillment.full_code, selected_rules, unselected_rules)
+        )
 
         for rule in selected_rules:
             satisfied_lookup[rule.id] += 1
             if is_satisfied(rule):
                 satisfied_rules.add(rule)
+
+    rebalance_allocations(allocations, rule_to_degree, double_counts, credits_cache)
+
+    with transaction.atomic():
+        for fulfillment, allocation in zip(fulfillments, allocations):
+            fulfillment.rules.set(allocation.selected)
+            fulfillment.unselected_rules.set(allocation.unselected)
+            fulfillment.legal = check_legal(allocation.selected, rule_to_degree, double_counts)
+            fulfillment.save()
 
     degree_plan.refresh_satisfaction()
 
@@ -241,7 +253,8 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     def majors(self, request, pk=None):
         """
         Add or remove majors from a degree plan. These are majors pursued beyond the one the
-        plan's degree already includes, and contribute only their own block.
+        plan's degree already includes, and contribute only their own block. An optional
+        `degree_id` names which of the plan's degrees the majors are part of.
         """
         return self.update_components(request, "majors", "major_ids")
 
@@ -260,19 +273,34 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         degree_plan = self.get_object()
         components = getattr(degree_plan, relation)
 
+        degree_id = request.data.get("degree_id") if relation == "majors" else None
+        if degree_id is not None and (
+            not isinstance(degree_id, int) or not degree_plan.degrees.filter(pk=degree_id).exists()
+        ):
+            raise ValidationError({"degree_id": "This must be one of the plan's degrees."})
+
         try:
-            if request.method == "POST":
+            # The foreign keys are deferred, so a missing id only raises when this block commits.
+            with transaction.atomic():
+                if request.method == "DELETE":
+                    components.remove(*ids)
+                    if relation == "degrees":
+                        DegreePlanMajor.objects.filter(
+                            degree_plan=degree_plan, degree_id__in=ids
+                        ).update(degree=None)
+                    return Response(status=status.HTTP_204_NO_CONTENT)
                 components.add(*ids)
-            elif request.method == "DELETE":
-                components.remove(*ids)
-                return Response(status=status.HTTP_204_NO_CONTENT)
+                if degree_id is not None:
+                    DegreePlanMajor.objects.filter(
+                        degree_plan=degree_plan, major_id__in=ids
+                    ).update(degree_id=degree_id)
+                update_fulfillments(degree_plan)
         except IntegrityError:
             return Response(
                 data={"error": f"One or more of the {relation} does not exist."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        update_fulfillments(degree_plan)
         return Response(self.get_serializer(degree_plan).data, status=status.HTTP_200_OK)
 
 
@@ -659,11 +687,12 @@ class OnboardFromTranscript(APIView):
         # A transcript arrives in the order its courses were taken, so the allowance goes to
         # the earliest courses eligible for it.
         graduate_sharing = GraduateSharing()
+        allocations = []
 
         for semester in course_data:
             for full_code in semester["courses"]:
                 semester_code = semester["sem"]
-                selected_rules, unselected_rules, legal = allocate_rules(
+                selected_rules, unselected_rules, _ = allocate_rules(
                     full_code,
                     rules_per_degree,
                     rule_to_degree,
@@ -677,25 +706,38 @@ class OnboardFromTranscript(APIView):
                     level=levels.get(full_code),
                 )
 
-                # Keyed on Fulfillment's actual unique constraint. Including semester and
-                # legal in the lookup means a course already stored with either one different
-                # matches nothing and is then created against a row that already exists.
-                fulfillment, _ = Fulfillment.objects.update_or_create(
-                    degree_plan=degree_plan,
-                    full_code=full_code,
-                    defaults={
-                        "semester": semester_code,
-                        "legal": legal,
-                        "level": levels.get(full_code),
-                    },
+                allocations.append(
+                    (semester_code, CourseAllocation(full_code, selected_rules, unselected_rules))
                 )
-                fulfillment.rules.set(selected_rules)
-                fulfillment.unselected_rules.set(unselected_rules)
 
                 for rule in selected_rules:
                     satisfied_lookup[rule.id] += 1
                     if is_satisfied(rule):
                         satisfied_rules.add(rule)
+
+        rebalance_allocations(
+            [allocation for _, allocation in allocations],
+            rule_to_degree,
+            double_counts,
+            credits_cache,
+        )
+
+        with transaction.atomic():
+            for semester_code, allocation in allocations:
+                # Keyed on Fulfillment's actual unique constraint. Including semester and
+                # legal in the lookup means a course already stored with either one different
+                # matches nothing and is then created against a row that already exists.
+                fulfillment, _ = Fulfillment.objects.update_or_create(
+                    degree_plan=degree_plan,
+                    full_code=allocation.full_code,
+                    defaults={
+                        "semester": semester_code,
+                        "legal": check_legal(allocation.selected, rule_to_degree, double_counts),
+                        "level": levels.get(allocation.full_code),
+                    },
+                )
+                fulfillment.rules.set(allocation.selected)
+                fulfillment.unselected_rules.set(allocation.unselected)
 
         degree_plan.refresh_satisfaction()
         return Response({"message": "OK"}, status=status.HTTP_200_OK)
