@@ -91,15 +91,27 @@ def leaf_rules(degree_trees) -> list:
     )
 
 
-def resolve_double_counts(degree_trees):
+def resolve_double_counts(degree_trees, independent_groups=None):
     """
     Given the rule trees of some degrees (as returned by get_degree_trees), returns a mapping
     from each of their leaf rules to the set of leaf rules it is allowed to double count with.
+
+    `independent_groups` maps owners to a group, such as the undergraduate degree they belong
+    to. Each degree has its own audit, so rules of different groups share freely.
     """
     double_counts = defaultdict(set)
+    groups_of = defaultdict(set)
+    for owner, rules in degree_trees.items():
+        group = (independent_groups or {}).get(owner)
+        if group is not None:
+            for rule in rules:
+                groups_of[rule.id].add(group)
 
     for home, other in permutations(leaf_rules(degree_trees), 2):
-        if any(target_matches(target, home, other) for target in home.share_targets):
+        home_groups, other_groups = groups_of[home.id], groups_of[other.id]
+        if (home_groups and other_groups and home_groups.isdisjoint(other_groups)) or any(
+            target_matches(target, home, other) for target in home.share_targets
+        ):
             double_counts[home].add(other)
             double_counts[other].add(home)
 

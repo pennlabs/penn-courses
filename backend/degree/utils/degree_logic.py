@@ -7,6 +7,7 @@ from django.db.models import Exists, Q
 
 from courses.models import Course
 from degree.utils.double_counts import get_degree_trees, resolve_double_counts
+from degree.utils.path_client import split_program_code
 
 
 # A submatriculant may double count at most this many CUs between their undergraduate and
@@ -652,7 +653,8 @@ def map_rules_and_degrees(degree_plan):
     The "degree" in the returned mappings is whatever contributed the rule -- a Degree, a
     Major or a Minor. The names are kept for the callers that already use them.
     """
-    degree_trees = get_degree_trees(plan_components(degree_plan))
+    components = plan_components(degree_plan)
+    degree_trees = get_degree_trees(components)
 
     rules_per_degree = defaultdict(set)
     rule_to_degree = {}
@@ -662,4 +664,29 @@ def map_rules_and_degrees(degree_plan):
                 rules_per_degree[degree].add(rule)
                 rule_to_degree[rule] = degree
 
-    return rules_per_degree, rule_to_degree, resolve_double_counts(degree_trees)
+    return (
+        rules_per_degree,
+        rule_to_degree,
+        resolve_double_counts(degree_trees, undergraduate_degree_of(components)),
+    )
+
+
+def undergraduate_degree_of(components):
+    """
+    Maps each component to the undergraduate degree whose audit it belongs to. An additional
+    major belongs to the plan's degree with its degree code, if there is exactly one; otherwise
+    it is a double major in the plan's degree, sharing only by the audit's rules.
+    """
+    from degree.models import Degree, Major
+
+    degrees = [c for c in components if isinstance(c, Degree) and not is_graduate(c)]
+    result = {degree: degree.pk for degree in degrees}
+    for major in (c for c in components if isinstance(c, Major)):
+        try:
+            _, degree_code, _ = split_program_code(major.program_code)
+        except ValueError:
+            continue
+        matches = [degree for degree in degrees if degree.degree == degree_code]
+        if len(matches) == 1:
+            result[major] = matches[0].pk
+    return result
