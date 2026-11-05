@@ -274,6 +274,7 @@ const InfoBox = ({
   },
   data,
   close,
+  actions,
 }) => {
   const hasReviews = !!(
     instructor_quality ||
@@ -299,6 +300,7 @@ const InfoBox = ({
               name={name}
               notes={notes}
             />
+            {actions}
           </div>
           {hasReviews && (
             <div id="banner-score">

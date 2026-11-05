@@ -7,8 +7,9 @@ import {
   useLayoutEffect,
   RefObject,
 } from "react";
-import { ConnectDragSource } from "react-dnd";
-import { Course, Degree, DegreePlan, DnDCourse, Fulfillment, Rule } from "@/types";
+import { ConnectDragSource, useDragLayer } from "react-dnd";
+import { Course, DegreePlan, DnDCourse, Fulfillment } from "@/types";
+import { rulesByProgram, RuleInProgram } from "@/utils/programs";
 import { ReviewPanelTrigger } from "@/components/Infobox/ReviewPanel";
 import { Draggable } from "@/components/common/DnD";
 import Skeleton from "react-loading-skeleton";
@@ -31,6 +32,7 @@ import {
   PopoverSection,
   PopoverLabel,
   RuleList,
+  RuleProgram,
   OverrideBadge,
   LevelDot,
   LevelDotButton,
@@ -235,39 +237,29 @@ const SemesterIcon = ({ semester }: { semester: string | null }) => {
   );
 };
 
-const formatDegreeName = (degree: Degree): string => {
-  const {
-    degree: degreeType,
-    major,
-    concentration,
-    major_name: majorName,
-    concentration_name: concentrationName,
-  } = degree;
+const RuleNames = ({ rules }: { rules: (RuleInProgram & { isOverride?: boolean })[] }) => (
+  <RuleList>
+    {rules.map((rule, i) => (
+      <li key={i}>
+        <RuleProgram>[{rule.program.code}]</RuleProgram> {rule.title}
+        {rule.isOverride && (
+          <OverrideBadge style={{ marginLeft: "0.35rem" }}>
+            <i className="fas fa-star" /> override
+          </OverrideBadge>
+        )}
+      </li>
+    ))}
+  </RuleList>
+);
 
-  if (degreeType && major) {
-    return `${degreeType} ${major}${concentration ? ` (${concentration})` : ""}`;
-  }
-  return `${degreeType} in ${majorName}${concentration ? ` (${concentrationName})` : ""}`;
-};
-
-/** Recursively flattens a rule tree into an id→(title, degree) map */
-const flattenRules = (
-  rules: Rule[],
-  degreeName: string
-): Map<number, { title: string; degreeName: string }> => {
-  const map = new Map<number, { title: string; degreeName: string }>();
-  const traverse = (ruleList: Rule[]) => {
-    for (const rule of ruleList) {
-      if (rule.title) {
-        map.set(rule.id, { title: rule.title, degreeName });
-      }
-      if (rule.rules?.length) {
-        traverse(rule.rules);
-      }
-    }
-  };
-  traverse(rules);
-  return map;
+// Whether another card for the same course is being dragged, so this one can light up too.
+const useIsDragRelated = (fullCode: string, isDragging: boolean) => {
+  const sameCourseDragging = useDragLayer(
+    (monitor) =>
+      monitor.isDragging() &&
+      (monitor.getItem() as { full_code?: string } | null)?.full_code === fullCode
+  );
+  return sameCourseDragging && !isDragging;
 };
 
 const CourseComponent = ({
@@ -296,40 +288,25 @@ const CourseComponent = ({
       : null
   );
 
-  const unselectedRuleNames = useMemo(() => {
-    if (!fulfillment?.unselected_rules?.length || !degreePlanDetail?.degrees) return [];
-    const ruleMap = new Map<number, { title: string; degreeName: string }>();
-    for (const degree of degreePlanDetail.degrees) {
-      const degreeName = formatDegreeName(degree);
-      flattenRules(degree.rules, degreeName).forEach((ruleInfo, id) =>
-        ruleMap.set(id, ruleInfo)
-      );
-    }
-    return fulfillment.unselected_rules
-      .map(id => ruleMap.get(id))
-      .filter((t): t is { title: string; degreeName: string } => !!t);
-  }, [fulfillment?.unselected_rules, degreePlanDetail]);
-  const overrideSet = useMemo(
-    () => new Set(fulfillment?.overrides ?? []),
-    [fulfillment?.overrides]
+  const planRules = useMemo(
+    () => (degreePlanDetail ? rulesByProgram(degreePlanDetail) : new Map<number, RuleInProgram>()),
+    [degreePlanDetail]
+  );
+  const unselectedRuleNames = useMemo(
+    () =>
+      (fulfillment?.unselected_rules ?? [])
+        .map((id) => planRules.get(id))
+        .filter((rule): rule is RuleInProgram => !!rule),
+    [fulfillment?.unselected_rules, planRules]
   );
   const selectedRuleNames = useMemo(() => {
-    if (!fulfillment?.rules?.length || !degreePlanDetail?.degrees) return [];
-    const ruleMap = new Map<number, { title: string; degreeName: string }>();
-    for (const degree of degreePlanDetail.degrees) {
-      const degreeName = formatDegreeName(degree);
-      flattenRules(degree.rules, degreeName).forEach((ruleInfo, id) =>
-        ruleMap.set(id, ruleInfo)
-      );
-    }
-    return fulfillment.rules
-      .map(id => {
-        const info = ruleMap.get(id);
-        if (!info) return null;
-        return { ...info, isOverride: overrideSet.has(id) };
-      })
-      .filter((t): t is { title: string; degreeName: string; isOverride: boolean } => !!t);
-  }, [fulfillment?.rules, degreePlanDetail, overrideSet]);
+    const overrides = new Set(fulfillment?.overrides ?? []);
+    return (fulfillment?.rules ?? []).flatMap((id) => {
+      const rule = planRules.get(id);
+      return rule ? [{ ...rule, isOverride: overrides.has(id) }] : [];
+    });
+  }, [fulfillment?.rules, fulfillment?.overrides, planRules]);
+  const isDragRelated = useIsDragRelated(course.full_code, isDragging);
 
   // Only a plan with a masters degree has anything to mark a course's level against, and the
   // mark belongs to the course in the plan, not to its copies in the requirements panel.
@@ -377,8 +354,7 @@ const CourseComponent = ({
     courseType === ItemTypes.COURSE_IN_REQ && !!displaySemester;
   const shouldShowSwitchHint =
     courseType === ItemTypes.COURSE_IN_REQ && isUnselectedRule;
-  const shouldShowCouldAlsoCountFor =
-    courseType === ItemTypes.COURSE_IN_REQ && unselectedRuleNames.length > 0;
+  const shouldShowCouldAlsoCountFor = unselectedRuleNames.length > 0;
   const hasInfoContent =
     hasSemester ||
     selectedRuleNames.length > 0 ||
@@ -480,6 +456,7 @@ const CourseComponent = ({
             $isUsed={isUsed}
             $isDisabled={isDisabled}
             $highlightVariant={highlightVariant}
+            $isDragRelated={isDragRelated}
             ref={dragRef}
             className={className}
           >
@@ -586,30 +563,13 @@ const CourseComponent = ({
                       {selectedRuleNames.length > 0 && (
                         <PopoverSection>
                           <PopoverLabel>Currently counts for</PopoverLabel>
-                          <RuleList>
-                            {selectedRuleNames.map((ruleInfo, i) => (
-                              <li key={i}>
-                                [{ruleInfo.degreeName}] {ruleInfo.title}
-                                {ruleInfo.isOverride && (
-                                  <OverrideBadge style={{ marginLeft: "0.35rem" }}>
-                                    <i className="fas fa-star" /> override
-                                  </OverrideBadge>
-                                )}
-                              </li>
-                            ))}
-                          </RuleList>
+                          <RuleNames rules={selectedRuleNames} />
                         </PopoverSection>
                       )}
                       {shouldShowCouldAlsoCountFor && (
                         <PopoverSection>
                           <PopoverLabel>Could also count for</PopoverLabel>
-                          <RuleList>
-                            {unselectedRuleNames.map((ruleInfo, i) => (
-                              <li key={i}>
-                                [{ruleInfo.degreeName}] {ruleInfo.title}
-                              </li>
-                            ))}
-                          </RuleList>
+                          <RuleNames rules={unselectedRuleNames} />
                         </PopoverSection>
                       )}
                       
@@ -662,6 +622,7 @@ const CourseComponent = ({
           $isUsed={isUsed}
           $isDisabled={isDisabled}
           $highlightVariant={highlightVariant}
+          $isDragRelated={isDragRelated}
           ref={dragRef}
           className={className}
         >

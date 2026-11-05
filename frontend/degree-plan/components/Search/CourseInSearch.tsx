@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import styled from "styled-components";
 import { useDrag } from "react-dnd";
 import { ItemTypes } from "@/components/Dock/dnd/constants";
@@ -34,7 +34,34 @@ const CourseContainer = styled.div<{ $isRecCourse?: boolean }>`
 const CourseInfoContainer = styled.div<{ $isRecCourse?: boolean }>`
   display: flex;
   flex-direction: row;
-  width: ${({ $isRecCourse }) => ($isRecCourse ? "95%" : "100%")};
+  flex: 1;
+  min-width: 0;
+`;
+
+const AddButton = styled.button<{ $used: boolean }>`
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-right: 0.75rem;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: ${({ $used }) =>
+    $used ? "var(--green-color)" : "var(--primary-color-xx-dark)"};
+  color: #fff;
+  line-height: 1;
+  cursor: ${({ $used }) => ($used ? "default" : "pointer")};
+
+  &:hover {
+    background: ${({ $used }) => ($used ? "#4f9463" : "var(--primary-color-xxx-dark)")};
+  }
+
+  i {
+    font-size: 0.75rem;
+  }
 `;
 
 const CourseIdentityContainer = styled.div<{ $isRecCourse?: boolean }>`
@@ -98,12 +125,6 @@ const InfoPopup = styled.div<{ $show: boolean }>`
   box-shadow: 0 2px 3px rgba(10, 10, 10, 0.1), 0 0 0 1px rgba(10, 10, 10, 0.1);
 `;
 
-const AddButton = styled.div`
-  margin: 0.1rem 0.3rem 0.1rem;
-  color: var(--green-color);
-  cursor: pointer;
-`;
-
 export const SkeletonCourse = () => (
   // eslint-disable-next-line
   <RowSelectors>
@@ -131,19 +152,19 @@ export const SkeletonCourse = () => (
 interface CourseProps {
   course: CourseType;
   ruleId: Rule["id"] | null;
-  onClick: () => void;
+  onAdd: () => void;
   isRecCourse?: boolean;
   onClickDelete?: () => void;
-  isStar?: boolean;
+  isUsed?: boolean;
 }
 
 export default function Course({
   course,
   ruleId,
-  onClick,
+  onAdd,
   isRecCourse,
   onClickDelete,
-  isStar,
+  isUsed = false,
 }: CourseProps) {
   /** React dnd */
 
@@ -162,23 +183,14 @@ export default function Course({
     [course]
   );
 
-  const [isMouseOver, setIsMouseOver] = useState(false);
-
   return (
     <RowSelectors>
       <ReviewPanelTrigger full_code={course.id} triggerType="click">
-        <CourseContainer
-          onMouseEnter={() => setIsMouseOver(true)}
-          onMouseLeave={() => setIsMouseOver(false)}
-        >
+        <CourseContainer>
           <CourseInfoContainer>
             <CourseIdentityContainer ref={drag} className="draggable">
               <CourseIDContainer>
                 <CourseID>{course.id.replace(/-/g, " ")}</CourseID>
-                {/* {isMouseOver && 
-                                <AddButton onClick={onClick}>
-                                    <i className="fas fa-md fa-plus-circle" aria-hidden="true"></i>
-                                </AddButton>} */}
               </CourseIDContainer>
               <CourseTitle>{course.title}</CourseTitle>
             </CourseIdentityContainer>
@@ -190,6 +202,22 @@ export default function Course({
               <Badge value={course.difficulty} />
             </CourseDifficultyContainer>
           </CourseInfoContainer>
+          <AddButton
+            type="button"
+            $used={isUsed}
+            aria-label={
+              isUsed
+                ? `${course.id.replace(/-/g, " ")} is already in your plan`
+                : `Add ${course.id.replace(/-/g, " ")} to dock`
+            }
+            title={isUsed ? "Already in plan" : "Add to dock"}
+            onClick={(e) => {
+              e.stopPropagation();
+              onAdd();
+            }}
+          >
+            <i className={`fas ${isUsed ? "fa-check" : "fa-plus"}`} aria-hidden="true" />
+          </AddButton>
         </CourseContainer>
       </ReviewPanelTrigger>
     </RowSelectors>

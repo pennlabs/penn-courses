@@ -1,4 +1,6 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useContext, useEffect, useRef } from "react";
+import useSWR from "swr";
+import ToastContext from "@/components/Toast/Toast";
 import styled from '@emotion/styled';
 import Course, { SkeletonCourse } from "./CourseInSearch";
 import { Course as CourseType, DegreePlan, DockedCourse, Fulfillment, Rule } from "../../types";
@@ -88,14 +90,24 @@ const ResultsList = ({
         [loadMore]
     );
 
-    const { createOrUpdate: createOrUpdateFulfillment } = useSWRCrud<Fulfillment>(
-        `/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`,
-        { 
-            idKey: "full_code",
-            createDefaultOptimisticData: { semester: null, rules: [ruleId] }
-        }
+    const showToast = useContext(ToastContext);
+    const { data: docked = [] } = useSWR<DockedCourse[]>(`/api/degree/docked`);
+    // `fulfillments` only holds the searched rule's courses, so ask for the whole plan's.
+    const { data: planFulfillments = [] } = useSWR<Fulfillment[]>(
+        activeDegreeplanId ? `/api/degree/degreeplans/${activeDegreeplanId}/fulfillments` : null
     );
+    const inPlan = new Set(planFulfillments.map((fulfillment) => fulfillment.full_code));
     const { createOrUpdate: createOrUpdateDockedCourse } = useSWRCrud<DockedCourse>(`/api/degree/docked`, { idKey: 'full_code' });
+
+    const addToDock = (fullCode: string, isUsed: boolean) => {
+        const code = fullCode.replace(/-/g, " ");
+        if (isUsed) return showToast(`${code} is already in your plan`, false);
+        if (docked.some((course) => course.full_code === fullCode)) {
+            return showToast(`${code} is already in the dock`, false);
+        }
+        createOrUpdateDockedCourse({}, fullCode);
+        showToast(`Added ${code} to dock`, false);
+    };
 
     return (
         <CourseListContainer>
@@ -106,20 +118,18 @@ const ResultsList = ({
             </HeaderContainer>
             <CoursesContainer>
                 {!isLoading ? <>
-                    {courses.map((course) =>
-                    <Course
-                        ruleId={ruleId}
-                        key={course.id + course.semester}
-                        course={course}
-                        onClick={() => {
-                            if (ruleId) {
-                                const rules = fulfillments.find(fulfillment => fulfillment.full_code == course.id)?.rules || [];
-                                createOrUpdateFulfillment({ rules: [...rules, ruleId] }, course.id);
-                            } else createOrUpdateDockedCourse({}, course.id);
-                        }}
-                        // star means the course is a fulfillment
-                        isStar={!!fulfillments.find((fulfillment) => fulfillment.full_code == course.id)}
-                    />)}
+                    {courses.map((course) => {
+                        const isUsed = inPlan.has(course.id);
+                        return (
+                            <Course
+                                ruleId={ruleId}
+                                key={course.id + course.semester}
+                                course={course}
+                                onAdd={() => addToDock(course.id, isUsed)}
+                                isUsed={isUsed}
+                            />
+                        );
+                    })}
                     {isLoadingMore && Array.from(Array(3).keys()).map((i) => <SkeletonCourse key={`skeleton-${i}`} />)}
                     {hasMore && <li ref={sentinelRef} style={{ height: 1 }} />}
                 </> :

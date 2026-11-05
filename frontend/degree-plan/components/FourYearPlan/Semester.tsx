@@ -17,8 +17,9 @@ import { useContext } from "react";
 import ToastContext from "../Toast/Toast";
 import { DisabledTrashIcon } from "../common/DisabledTrashIcon";
 import { SearchPanelContext } from "../Search/SearchPanel";
+import useAddToSemester from "@/hooks/useAddToSemester";
 
-const translateSemester = (semester: Course["semester"]) => {
+export const translateSemester = (semester: Course["semester"]) => {
     if (semester === TRANSFER_CREDIT_SEMESTER_KEY) return "AP & Transfer Credit";
     const year = semester.slice(0, 4);
     const term = semester.slice(4);
@@ -304,6 +305,8 @@ const FlexSemester = ({
         }
     );
 
+    const addToSemester = useAddToSemester(activeDegreeplanId);
+
     const [{ isOver, canDrop }, drop] = useDrop<DnDCourse, never, { isOver: boolean, canDrop: boolean }>(() => ({
         accept: [ItemTypes.COURSE_IN_PLAN, ItemTypes.COURSE_IN_DOCK, ItemTypes.COURSE_IN_REQ, ItemTypes.COURSE_IN_SEARCH],
         drop: (course: DnDCourse, monitor) => {
@@ -311,50 +314,17 @@ const FlexSemester = ({
             setExpanded(true);
             setTransferOpen(true);
             const itemType = monitor.getItemType();
-            if (itemType === ItemTypes.COURSE_IN_PLAN) { // moved from plan or dock
-                createOrUpdate({ semester }, course.full_code);
-                return;
-            }
-            if (itemType === ItemTypes.COURSE_IN_DOCK) {
-                course.rule_id = -1;
-            }
-            fetch(`/api/degree/satisfied-rule-list/${activeDegreeplanId}/${course.full_code}/${course.rule_id}`).then((r) => {
-                r.json().then((data) => {
-                    const selectedRules = data["selected_rules"].reduce((res: any, obj: any) => {
-                        res.push(obj.id);
-                        return res;
-                    }, []);
-                    const unselectedRules = data["unselected_rules"].reduce((res: any, obj: any) => {
-                        res.push(obj.id);
-                        return res;
-                    }, []);
-                    
-                    createOrUpdate({
-                        rules: selectedRules,
-                        unselected_rules: unselectedRules,
-                        legal: data.legal,
-                        semester
-                    }, course.full_code);
-
-                    // Toast only if course has been directly dragged from search (not reqpanel!)
-                    // TODO: This doesn't work for explicitly listed courses.
-
-                    for (let obj of data["new_selected_rules"]) {
-                        if (course.rule_id === -1) {
-                            showToast(`${course.full_code} fulfilled ${obj.title}!`, false);
-                        } else if (obj.id != course.rule_id) {
-                            showToast(`${course.full_code} also fulfilled ${obj.title}!`, false);
-                        }
-                    }
-                })
-            })
+            addToSemester(course.full_code, semester, {
+                ruleId: itemType === ItemTypes.COURSE_IN_DOCK ? -1 : course.rule_id ?? -1,
+                inPlan: itemType === ItemTypes.COURSE_IN_PLAN,
+            });
             return undefined;
         },
         collect: monitor => ({
             isOver: !!monitor.isOver(),
             canDrop: !!monitor.canDrop()
         }),
-    }), [createOrUpdate, semester]);
+    }), [addToSemester, semester]);
 
     const handleRemoveCourse = async (full_code: Course["id"]) => {
         remove(full_code);

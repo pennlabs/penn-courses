@@ -18,6 +18,7 @@ import Footer from "./Footer";
 import ExpandedCoursesPanel from "@/components/ExpandedBox/ExpandedCoursesPanel";
 import { ExpandedCoursesPanelContext } from "@/components/ExpandedBox/ExpandedCoursesPanelTrigger";
 import { POPOVER_BOUNDS_ATTRIBUTE } from "@/components/Course/Course";
+import { PlanSemestersContext } from "@/components/FourYearPlan/PlanSemestersContext";
 
 const PageContainer = styled.div`
   height: 100vh;
@@ -145,12 +146,15 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
   const [searchPanelOpen, setSearchPanelOpen] = useState<boolean>(false);
   const [searchRuleId, setSearchRuleId] = useState<Rule["id"] | null>(null);
   const [searchRuleQuery, setSearchRuleQuery] = useState<string | null>(null); // a query object
+  const [planSemesters, setPlanSemesters] = useState<string[]>([]);
   const [searchFulfillments, setSearchFulfillments] = useState<Fulfillment[]>(
     []
   ); // fulfillments matching the ruleId
 
   return (
-    <>
+    <PlanSemestersContext.Provider
+      value={{ semesters: planSemesters, setSemesters: setPlanSemesters }}
+    >
       <SearchPanelContext.Provider
         value={{
           setSearchPanelOpen,
@@ -191,6 +195,7 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
             {reviewPanelFullCode && (
               <ReviewPanel
                 currentSemester={options?.SEMESTER}
+                degreePlanId={activeDegreeplan?.id}
                 full_code={reviewPanelFullCode}
                 set_full_code={setReviewPanelFullCode}
                 position={reviewPanelCoords}
@@ -318,7 +323,7 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
           </ExpandedCoursesPanelContext.Provider>
         </ReviewPanelContext.Provider>
       </SearchPanelContext.Provider>
-    </>
+    </PlanSemestersContext.Provider>
   );
 };
 
