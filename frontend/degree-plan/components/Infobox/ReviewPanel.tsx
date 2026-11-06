@@ -3,6 +3,7 @@ import Draggable from 'react-draggable';
 import useSWR from 'swr';
 import styled from '@emotion/styled';
 import InfoBox from './index'
+import AddToSemester from './AddToSemester';
 import React, { PropsWithChildren, useContext, useEffect, useRef, useState } from 'react';
 import { createContext } from 'react';
 import { RightCurriedFunction1 } from 'lodash';
@@ -92,6 +93,7 @@ export const ReviewPanelContext = createContext<ReviewPanelContextType>({
 
 interface ReviewPanelProps extends ReviewPanelContextType {
     currentSemester?: string;
+    degreePlanId?: number;
 }
 
 const ReviewPanelWrapper = styled.div<{ $left?: number, $right?: number, $top?: number, $bottom?: number }>`
@@ -119,7 +121,8 @@ const ReviewPanel = ({
     set_full_code,
     position,
     setPosition,
-    currentSemester 
+    currentSemester,
+    degreePlanId
 }: ReviewPanelProps) => {
     const { data } = useSWR(`/api/base/all/courses/${full_code}`, { refreshInterval: 0 }); // data is largely static  
     let { left, right, top, bottom } = position;
@@ -139,6 +142,14 @@ const ReviewPanel = ({
                             set_full_code(null)
                         }}
                         data={data}
+                        actions={full_code && degreePlanId && (
+                            <AddToSemester
+                                fullCode={full_code}
+                                degreePlanId={degreePlanId}
+                                currentSemester={currentSemester}
+                                onAdded={() => set_full_code(null)}
+                            />
+                        )}
                     />}
             </ReviewPanelContainer>
         </ReviewPanelWrapper>

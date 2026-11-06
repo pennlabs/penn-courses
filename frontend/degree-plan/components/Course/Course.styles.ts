@@ -20,6 +20,7 @@ export const BaseCourseContainer = styled.div<{
   $isUsed: boolean;
   $isDisabled: boolean;
   $highlightVariant?: "selected" | "unselected";
+  $isDragRelated?: boolean;
 }>`
   display: flex;
   justify-content: center;
@@ -39,6 +40,13 @@ export const BaseCourseContainer = styled.div<{
         "var(--background-grey)"};
   box-shadow: rgba(0, 0, 0, 0.01) 0px 6px 5px 0px,
     rgba(0, 0, 0, 0.04) 0px 0px 0px 1px;
+  ${(props) =>
+    props.$isDragRelated
+      ? `
+    background-color: #eaeefb;
+    box-shadow: rgba(0, 0, 0, 0.04) 0px 6px 8px, rgba(129, 154, 225, 0.55) 0px 0px 0px 1.5px;
+  `
+      : ""}
 `;
 
 export const PlannedCourseContainer = styled(BaseCourseContainer)`
@@ -141,17 +149,19 @@ export const InfoPopoverWrapper = styled.div`
 
 export const InfoPopover = styled.div`
   position: fixed;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
-  padding: 0.75rem 1rem;
   z-index: 10000;
   min-width: 220px;
-  max-width: min(350px, calc(100vw - 16px));
+  max-width: min(320px, calc(100vw - 16px));
   width: max-content;
+  padding: 0.6rem 0.8rem 0.65rem;
+  background: var(--primary-color-light);
+  border: 1.5px solid var(--primary-color-xx-dark);
+  border-radius: 4px;
+  box-shadow: 0 4px 14px rgba(61, 65, 119, 0.18);
+  cursor: default;
   text-align: left;
-  font-size: 0.85rem;
-  color: #333;
+  font-size: 0.88rem;
+  color: #3a3a3a;
   white-space: normal;
   word-wrap: break-word;
 `;
@@ -159,31 +169,39 @@ export const InfoPopover = styled.div`
 export const PopoverSection = styled.div`
   overflow: visible;
 
-  &:not(:last-child) {
-    margin-bottom: 0.5rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 1px solid #eee;
+  & + & {
+    margin-top: 0.55rem;
+    padding-top: 0.55rem;
+    border-top: 1px solid rgba(129, 154, 225, 0.45);
   }
 `;
 
 export const PopoverLabel = styled.div`
-  font-weight: 600;
-  font-size: 0.7rem;
-  color: #888;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.35rem;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  color: #7a8098;
 `;
 
 export const RuleList = styled.ul`
   margin: 0;
   padding-left: 1rem;
-  list-style-position: outside;
+  list-style: disc outside;
+  font-weight: 500;
+  line-height: 1.4;
 
   li {
-    margin-bottom: 0.15rem;
-    padding-left: 0.15rem;
+    margin: 0.15rem 0;
+    padding-left: 0.1rem;
   }
+`;
+
+export const RuleProgram = styled.span`
+  font-weight: 700;
+  color: var(--primary-color-ultra-dark);
 `;
 
 export const OverrideBadge = styled.span`

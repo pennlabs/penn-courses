@@ -7,13 +7,14 @@ import { Dispatch, MutableRefObject, SetStateAction } from "react";
 import { Document, Page } from "react-pdf";
 import { PulseLoader } from "react-spinners";
 import {
+  BackButton,
   CenteredFlexContainer,
   ChooseContainer,
   ContainerGroup,
   ErrorText,
   NextButton,
   PrivacyNote,
-  TextButton,
+  SecondaryButton,
   Upload,
 } from "./SharedComponents";
 
@@ -51,7 +52,8 @@ export default function WelcomeLayout({
     <CenteredFlexContainer>
       <ChooseContainer $maxWidth="90%" $minWidth="90%">
         {canExit && onExit && (
-          <TextButton
+          <BackButton
+            type="button"
             onClick={onExit}
             style={{
               position: "absolute",
@@ -59,9 +61,9 @@ export default function WelcomeLayout({
               top: "3%",
             }}
           >
-            <ArrowLeftIcon />
-            <p>Back</p>
-          </TextButton>
+            <ArrowLeftIcon width={16} height={16} />
+            Back
+          </BackButton>
         )}
         <div style={{ display: "none" }}>
           <Document
@@ -84,7 +86,7 @@ export default function WelcomeLayout({
           </Document>
         </div>
 
-        <h1>Welcome to Penn Degree Plan!</h1>
+        <h1 style={{ color: "var(--primary-color-ultra-dark)" }}>Welcome to Penn Degree Plan!</h1>
         <ContainerGroup>
           <label>
             <input
@@ -126,16 +128,16 @@ export default function WelcomeLayout({
             <PulseLoader size={8} color={"white"} loading={waitingForPrograms} />
           </NextButton>
         </ContainerGroup>
-        <TextButton
+        <SecondaryButton
+          type="button"
           onClick={() => {
             resetParser();
             setCurrentPage(2);
           }}
-          style={{ borderBottom: "1px solid #aaa" }}
         >
-          <p>Enter information manually</p>
+          Enter information manually
           <ArrowRightIcon />
-        </TextButton>
+        </SecondaryButton>
       </ChooseContainer>
     </CenteredFlexContainer>
   );

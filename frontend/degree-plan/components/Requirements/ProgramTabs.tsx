@@ -1,7 +1,9 @@
 import React, { forwardRef, useEffect, useRef } from "react";
 import styled from "@emotion/styled";
 
-export type ProgramKind = "degree" | "major" | "minor";
+import { ProgramKind } from "@/utils/programs";
+
+export type { ProgramKind };
 
 export interface ProgramTab {
   key: string;

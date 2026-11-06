@@ -5,6 +5,7 @@ import { useRouter } from "next/router";
 // @ts-ignore
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
 import { User } from "@/types";
+import NotificationBell from "./NotificationBell";
 
 const Bar = styled.header`
   /* Above the body's isolated stacking context, so the account menu covers it, but below modals. */
@@ -130,6 +131,7 @@ const TopBar = ({
             </ColumnToggle>
           </ColumnToggles>
         )}
+        {user && <NotificationBell />}
         <AccountIndicator
           user={user}
           backgroundColor="light"

@@ -38,7 +38,8 @@ const CardHeader = styled.div`
 
 const SchoolName = styled.span`
   font-size: 16px;
-  font-weight: 600;
+  font-weight: 700;
+  color: ${color.heading};
 `;
 
 const RemoveButton = styled.button`
@@ -57,8 +58,8 @@ const RemoveButton = styled.button`
   cursor: pointer;
 
   &:hover {
-    background: #f4f5f7;
-    color: ${color.text};
+    background: rgba(61, 65, 119, 0.08);
+    color: var(--error-color);
   }
 `;
 

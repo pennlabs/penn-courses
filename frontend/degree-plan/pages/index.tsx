@@ -2,12 +2,17 @@ import "react-toastify/dist/ReactToastify.css";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import FourYearPlanPage from "../components/FourYearPlanPage";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { type User } from "../types";
 import LoginModal from "pcx-shared-components/src/accounts/LoginModal";
 import { SWRConfig } from "swr";
 import { toast, ToastContainer } from "react-toastify";
 import ToastContext from "@/components/Toast/Toast";
+import {
+  MAX_NOTIFICATIONS,
+  Notification,
+  NotificationsContext,
+} from "@/components/Toast/Notifications";
 import styled from "@emotion/styled";
 
 const LoginModalLayer = styled.div`
@@ -31,7 +36,23 @@ export default function Home() {
     setUser(newUserVal);
   }, []);
 
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const nextNotificationId = useRef(0);
+  const markAllRead = useCallback(
+    () => setNotifications((all) => all.map((n) => (n.read ? n : { ...n, read: true }))),
+    []
+  );
+  const clearNotifications = useCallback(() => setNotifications([]), []);
+
   function showToast(text: string, error: boolean) {
+    const notification = {
+      id: (nextNotificationId.current += 1),
+      message: text,
+      error,
+      createdAt: Date.now(),
+      read: false,
+    };
+    setNotifications((all) => [notification, ...all].slice(0, MAX_NOTIFICATIONS));
     if (error) {
       toast.error(text, {
         position: toast.POSITION.BOTTOM_CENTER,
@@ -43,10 +64,16 @@ export default function Home() {
     }
   }
 
+  const notificationsValue = useMemo(
+    () => ({ notifications, markAllRead, clear: clearNotifications }),
+    [notifications, markAllRead, clearNotifications]
+  );
+
   return (
     <>
       <DndProvider backend={HTML5Backend}>
         <ToastContext.Provider value={showToast}>
+        <NotificationsContext.Provider value={notificationsValue}>
           <SWRConfig
             value={{
               // Fail on an error status rather than handing its body to the page as data. A
@@ -102,6 +129,7 @@ export default function Home() {
             )}
             <FourYearPlanPage user={user} updateUser={updateUser} />
           </SWRConfig>
+        </NotificationsContext.Provider>
         </ToastContext.Provider>
       </DndProvider>
       <ToastContainer />

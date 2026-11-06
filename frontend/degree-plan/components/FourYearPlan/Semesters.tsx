@@ -3,7 +3,8 @@ import styled from "@emotion/styled";
 import { Icon } from "../common/bulma_derived_components";
 import { Course, DegreePlan, Fulfillment } from "@/types";
 import useSWR from "swr";
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useContext } from "react";
+import { PlanSemestersContext } from "./PlanSemestersContext";
 import Select from "react-select";
 import { ModalKey } from "./DegreeModal";
 
@@ -218,6 +219,11 @@ const Semesters = ({
   const [semesters, setSemesters] = useState<{
     [semester: string]: Fulfillment[];
   }>({});
+  const { setSemesters: shareSemesters } = useContext(PlanSemestersContext);
+  const semesterKeys = Object.keys(semesters).sort().join(",");
+  useEffect(() => {
+    shareSemesters(semesterKeys ? semesterKeys.split(",") : []);
+  }, [semesterKeys, shareSemesters]);
   const addSemester = (semester: string) => {
     if (!semesters[semester]) setSemesters({ ...semesters, [semester]: [] });
   };
