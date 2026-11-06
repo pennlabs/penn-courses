@@ -272,9 +272,10 @@ const valueAfter = (line: string, label: string): string | null => {
 // A transcript names several minors under one "Minor :" label, one per line. A line that carries
 // its own label, or starts the course listing, ends the list.
 const continuedMinor = (line: string): string | null => {
-  if (/:/.test(line) || /\d/.test(line) || /^\s*(subj\b|_{5,})/.test(line)) return null;
-  const value = line.split(RUN_ON)[0].trim();
-  return value || null;
+  // The leading space lets RUN_ON also match at the start, where the listing or totals begin.
+  const value = ` ${line}`.split(RUN_ON)[0].trim();
+  if (!value || /:/.test(value) || /\d/.test(value)) return null;
+  return value;
 };
 
 // Given a transcript's records, return each program it lists with the majors and minors under it.
@@ -392,14 +393,17 @@ const getCourseToSem = (truncatedTranscript: string[]) => {
   return courseToSem;
 };
 
+const AMBIGUOUS = Symbol("ambiguous");
+
 // Returns the option whose program name is closest to the transcript's wording, or undefined
 // if no option is close enough. Ties are broken by matching concentration, then by exact wording.
-const matchOption = <T>(
+// AMBIGUOUS means the name matched but the concentration couldn't settle which version.
+const matchOptionOrAmbiguous = <T>(
   major: string,
   concentration: string,
   options: T[] | undefined,
   namesOf: (option: T) => [string, string]
-): T | undefined => {
+): T | typeof AMBIGUOUS | undefined => {
   if (!options?.length) return undefined;
 
   const target = normalize(major);
@@ -434,7 +438,7 @@ const matchOption = <T>(
     NO_CONCENTRATION.has(wanted) &&
     new Set(closest.map((candidate) => candidate.concentration)).size > 1
   ) {
-    return undefined;
+    return AMBIGUOUS;
   }
   const pool = withConcentration.length ? withConcentration : closest;
   pool.sort(
@@ -442,6 +446,16 @@ const matchOption = <T>(
   );
 
   return pool[0].option;
+};
+
+const matchOption = <T>(
+  major: string,
+  concentration: string,
+  options: T[] | undefined,
+  namesOf: (option: T) => [string, string]
+): T | undefined => {
+  const match = matchOptionOrAmbiguous(major, concentration, options, namesOf);
+  return match === AMBIGUOUS ? undefined : match;
 };
 
 // Given the programs read off a transcript, work out the student's selections. Under each school
@@ -454,8 +468,10 @@ export const detectSelections = (
   majors: Major[] | undefined,
   minors: Minor[] | undefined,
   startingYear: number | null
-): SchoolSelection[] =>
-  programs.map(({ school, majors: listed, minors: listedMinors, startYear: programStart }) => {
+): SchoolSelection[] => {
+  // A plan holds each minor once, under one degree, so a minor listed twice goes to the first.
+  const placedMinorIds = new Set<number>();
+  return programs.map(({ school, majors: listed, minors: listedMinors, startYear: programStart }) => {
     const year = programStart ?? startingYear;
     const [first, ...rest] = listed;
 
@@ -481,9 +497,14 @@ export const detectSelections = (
       degreeCodeOf(option.value.program_code) === school.value;
     rest.forEach(({ name, concentration }) => {
       // A major the school offers itself wins over one from elsewhere, however close that is.
-      const match =
-        matchOption(name, concentration, additionalOptions?.filter(isOwn), namesOf) ??
-        matchOption(name, concentration, additionalOptions, namesOf);
+      const own = matchOptionOrAmbiguous(
+        name,
+        concentration,
+        additionalOptions?.filter(isOwn),
+        namesOf
+      );
+      if (own === AMBIGUOUS) return;
+      const match = own ?? matchOption(name, concentration, additionalOptions, namesOf);
       if (match && !additional.includes(match)) additional.push(match);
     });
 
@@ -497,11 +518,15 @@ export const detectSelections = (
         (option.value.name ?? "").replace(/^minor in /i, ""),
         "",
       ]);
-      if (match && !chosenMinors.includes(match)) chosenMinors.push(match);
+      if (match && !placedMinorIds.has(match.value.id)) {
+        placedMinorIds.add(match.value.id);
+        chosenMinors.push(match);
+      }
     });
 
     return { school, primary, additional, minors: chosenMinors };
   });
+};
 
 // One academic record within a transcript. A submatriculant's transcript holds two — an
 // undergraduate record and a "professional" one for the masters — each with its own program,

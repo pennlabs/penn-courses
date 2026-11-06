@@ -62,6 +62,8 @@ type SchoolsFieldProps = {
   degrees: DegreeListing[] | undefined;
   standaloneMajors: Major[] | undefined;
   minors: Minor[] | undefined;
+  // Minors the plan already holds outside these cards.
+  unavailableMinorIds?: number[];
   isLoadingDegrees: boolean;
   isLoadingMajors: boolean;
   isLoadingMinors: boolean;
@@ -73,6 +75,7 @@ export default function SchoolsField({
   degrees,
   standaloneMajors,
   minors,
+  unavailableMinorIds = [],
   isLoadingDegrees,
   isLoadingMajors,
   isLoadingMinors,
@@ -128,7 +131,17 @@ export default function SchoolsField({
               selection={selection}
               degrees={degrees}
               standaloneMajors={standaloneMajors}
-              minors={minors}
+              minors={
+                // A plan holds each minor under one degree, so one chosen elsewhere isn't offered.
+                minors?.filter(
+                  (minor) =>
+                    !unavailableMinorIds.includes(minor.id) &&
+                    !selections.some(
+                      (s) =>
+                        s !== selection && s.minors?.some((m) => m.value.id === minor.id)
+                    )
+                )
+              }
               isLoadingDegrees={isLoadingDegrees}
               isLoadingMajors={isLoadingMajors}
               isLoadingMinors={isLoadingMinors}

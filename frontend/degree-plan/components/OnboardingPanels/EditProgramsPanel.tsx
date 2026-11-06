@@ -1,7 +1,6 @@
 import { Cross2Icon } from "@radix-ui/react-icons";
 import styled from "@emotion/styled";
 import { ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
-import Select from "react-select";
 import { PulseLoader } from "react-spinners";
 import useSWR, { useSWRConfig } from "swr";
 import { DegreeListing, DegreePlan, Fulfillment, Major, Minor, Options } from "@/types";
@@ -15,9 +14,15 @@ import {
 } from "@/components/FourYearPlan/Semesters";
 import { translateSemester } from "@/components/FourYearPlan/Semester";
 import ToastContext from "@/components/Toast/Toast";
-import { degreeCodeOf, majorOption, minorOption, SchoolSelection } from "@/utils/parseUtils";
+import {
+  degreeCodeOf,
+  majorOption,
+  minorOption,
+  SchoolSelection,
+  takesAdditionalMajors,
+} from "@/utils/parseUtils";
 import { NextButton, schoolOptions, SecondaryButton } from "./SharedComponents";
-import { color, Field, FieldGrid, FieldLabel, Required, selectStyles } from "./onboardingStyles";
+import { color, FieldLabel } from "./onboardingStyles";
 import {
   Body,
   Card,
@@ -30,6 +35,8 @@ import {
   Title,
 } from "./formLayout";
 import SchoolsField from "./SchoolsField";
+import { placePrograms } from "./placePrograms";
+import YearFields, { YearOption, yearOption, yearsInOrder } from "./YearFields";
 
 const CloseButton = styled.button`
   position: absolute;
@@ -196,10 +203,6 @@ const ModalShell = ({
   );
 };
 
-type YearOption = { value: number; label: number };
-
-const yearOption = (year: number): YearOption => ({ value: year, label: year });
-
 const readSemesterKeys = (planId: DegreePlan["id"]): string[] | null => {
   try {
     const stored = localStorage.getItem(getLocalSemestersKey(planId));
@@ -209,9 +212,10 @@ const readSemesterKeys = (planId: DegreePlan["id"]): string[] | null => {
   }
 };
 
-// Fall of the first year through spring of the last, the way onboarding lays a plan out.
+// Fall of the first year through spring of the last, the way onboarding lays a plan out. Summer
+// terms ("B") are left out: one at either end doesn't move the academic years.
 const yearsOf = (keys: string[]) => {
-  const terms = keys.filter((key) => key !== TRANSFER_CREDIT_SEMESTER_KEY).sort();
+  const terms = keys.filter((key) => /^\d{4}[AC]$/.test(key)).sort();
   if (!terms.length) return null;
   const first = terms[0];
   const last = terms[terms.length - 1];
@@ -265,7 +269,8 @@ const initialSelections = (plan: DegreePlan) => {
     const card =
       cardFor(degreeId) ??
       (degreeId == null && selections.length === 1 ? selections[0] : undefined);
-    if (card) card.minors!.push(minorOption(minor));
+    // A card without a Minors field (a masters) would hide the minor, so it stays unplaced.
+    if (card && takesAdditionalMajors(card.school)) card.minors!.push(minorOption(minor));
     else unplacedMinors.push(minor);
   });
   return { selections, unplacedMajors, unplacedMinors };
@@ -474,10 +479,7 @@ function EditProgramsForm({
     changes.editedPlacement ||
     changes.semesterKeys !== null;
   const complete =
-    selections.every((s) => s.primary) &&
-    !!startingYear &&
-    !!graduationYear &&
-    startingYear.value < graduationYear.value;
+    selections.every((s) => s.primary) && yearsInOrder(startingYear, graduationYear);
 
   const save = async () => {
     setSaving(true);
@@ -498,15 +500,7 @@ function EditProgramsForm({
         await deleteFetcher(`${base}/minors`, {
           minor_ids: changes.removedMinors.map((m) => m.id),
         });
-      // Each post reallocates the whole plan, so they must not overlap.
-      for (const { degreeId, majorIds, minorIds } of changes.placed) {
-        if (majorIds.length)
-          // eslint-disable-next-line no-await-in-loop
-          await postFetcher(`${base}/majors`, { major_ids: majorIds, degree_id: degreeId });
-        if (minorIds.length)
-          // eslint-disable-next-line no-await-in-loop
-          await postFetcher(`${base}/minors`, { minor_ids: minorIds, degree_id: degreeId });
-      }
+      await placePrograms(plan.id, changes.placed);
 
       for (const fulfillment of changes.movedToDock) {
         // eslint-disable-next-line no-await-in-loop
@@ -551,45 +545,15 @@ function EditProgramsForm({
 
             <Body>
               <Section>
-                <FieldGrid $min={200}>
-                  <Field>
-                    <FieldLabel htmlFor="edit-start-year">
-                      Starting year
-                      <Required />
-                    </FieldLabel>
-                    <Select
-                      inputId="edit-start-year"
-                      options={startYearOptions}
-                      value={startingYear}
-                      onChange={setStartingYear}
-                      formatOptionLabel={(o) => `Fall ${o.value}`}
-                      getOptionValue={(o) => String(o.value)}
-                      placeholder="Select a year"
-                      styles={selectStyles}
-                      menuPortalTarget={typeof document !== "undefined" ? document.body : null}
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="edit-grad-year">
-                      Graduation year
-                      <Required />
-                    </FieldLabel>
-                    <Select
-                      inputId="edit-grad-year"
-                      options={graduationYearOptions}
-                      value={graduationYear}
-                      onChange={setGraduationYear}
-                      formatOptionLabel={(o) => `Spring ${o.value}`}
-                      getOptionValue={(o) => String(o.value)}
-                      placeholder="Select a year"
-                      styles={selectStyles}
-                      menuPortalTarget={typeof document !== "undefined" ? document.body : null}
-                    />
-                  </Field>
-                </FieldGrid>
-                {startingYear && graduationYear && startingYear.value >= graduationYear.value && (
-                  <FieldError role="alert">Graduation must come after your starting year.</FieldError>
-                )}
+                <YearFields
+                  idPrefix="edit"
+                  startOptions={startYearOptions}
+                  graduationOptions={graduationYearOptions}
+                  startingYear={startingYear}
+                  graduationYear={graduationYear}
+                  setStartingYear={setStartingYear}
+                  setGraduationYear={setGraduationYear}
+                />
                 {changes.movedToDock.length > 0 && (
                   <Hint>
                     {changes.movedToDock.length} planned{" "}
@@ -607,6 +571,7 @@ function EditProgramsForm({
                   degrees={degrees}
                   standaloneMajors={standaloneMajors}
                   minors={minors}
+                  unavailableMinorIds={unplacedMinors.map((m) => m.id)}
                   isLoadingDegrees={isLoadingDegrees}
                   isLoadingMajors={isLoadingMajors}
                   isLoadingMinors={isLoadingMinors}

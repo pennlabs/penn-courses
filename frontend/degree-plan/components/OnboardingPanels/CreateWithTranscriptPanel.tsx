@@ -1,7 +1,6 @@
 import { ArrowLeftIcon } from "@radix-ui/react-icons";
 import { Dispatch, SetStateAction, useCallback, useEffect, useState } from "react";
 import { BackButton, NextButton } from "./SharedComponents";
-import Select from "react-select";
 import { PulseLoader } from "react-spinners";
 import { DegreeListing, DegreePlan, Major, Minor, Options } from "@/types";
 import useSWR from "swr";
@@ -12,7 +11,7 @@ import {
 import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
 import { postFetcher, getCsrf } from "@/hooks/swrcrud";
 import { CourseLevel, SchoolSelection } from "@/utils/parseUtils";
-import { Field, FieldGrid, FieldLabel, Required, selectStyles } from "./onboardingStyles";
+import { Field, FieldLabel, Required } from "./onboardingStyles";
 import {
   Body,
   Card,
@@ -28,10 +27,12 @@ import {
 } from "./formLayout";
 import SchoolsField from "./SchoolsField";
 import ImportedCourses from "./ImportedCourses";
+import { placePrograms } from "./placePrograms";
+import YearFields, { YearOption, yearOption, yearsInOrder } from "./YearFields";
 
 type WelcomeLayoutProps = {
-  inputtedStartingYear: { value: number; label: number } | null;
-  inputtedGraduationYear: { value: number; label: number } | null;
+  inputtedStartingYear: YearOption | null;
+  inputtedGraduationYear: YearOption | null;
   scrapedCourses: any;
   // Which transcript record each scraped course is on; empty unless the transcript has a
   // masters record.
@@ -56,14 +57,10 @@ export default function CreateWithTranscriptPanel({
   canExit = false,
   onExit,
 }: WelcomeLayoutProps) {
-  const [startingYear, setStartingYear] = useState<{
-    label: any;
-    value: number;
-  } | null>(inputtedStartingYear);
-  const [graduationYear, setGraduationYear] = useState<{
-    label: any;
-    value: number;
-  } | null>(inputtedGraduationYear);
+  const [startingYear, setStartingYear] = useState<YearOption | null>(inputtedStartingYear);
+  const [graduationYear, setGraduationYear] = useState<YearOption | null>(
+    inputtedGraduationYear
+  );
 
   const [selections, setSelections] =
     useState<SchoolSelection[]>(inputtedSelections);
@@ -149,21 +146,14 @@ export default function CreateWithTranscriptPanel({
         await postFetcher(`/api/degree/degreeplans/${_new.id}/degrees`, {
           degree_ids: selections.flatMap((s) => (s.primary ? [s.primary.value.id] : [])),
         });
-        for (const selection of selections.filter((s) => s.additional.length)) {
-          // Each post reallocates the whole plan, so they must not overlap.
-          // eslint-disable-next-line no-await-in-loop
-          await postFetcher(`/api/degree/degreeplans/${_new.id}/majors`, {
-            major_ids: selection.additional.map((m) => m.value.id),
-            degree_id: selection.primary?.value.id,
-          });
-        }
-        for (const selection of selections.filter((s) => s.minors?.length)) {
-          // eslint-disable-next-line no-await-in-loop
-          await postFetcher(`/api/degree/degreeplans/${_new.id}/minors`, {
-            minor_ids: selection.minors!.map((m) => m.value.id),
-            degree_id: selection.primary?.value.id,
-          });
-        }
+        await placePrograms(
+          _new.id,
+          selections.map((s) => ({
+            degreeId: s.primary?.value.id,
+            majorIds: s.additional.map((m) => m.value.id),
+            minorIds: (s.minors ?? []).map((m) => m.value.id),
+          }))
+        );
         setActiveDegreeplan(_new);
         setDegreeID(_new.id);
       } else if (res.status === 409) {
@@ -183,8 +173,7 @@ export default function CreateWithTranscriptPanel({
   };
 
   const complete =
-    startingYear !== null &&
-    graduationYear !== null &&
+    yearsInOrder(startingYear, graduationYear) &&
     selections.length > 0 &&
     selections.every((s) => s.primary) &&
     name !== "";
@@ -198,14 +187,8 @@ export default function CreateWithTranscriptPanel({
     const currentYear = Number(options.SEMESTER.substring(0, 4));
     return {
       // Up and down to 5 years
-      startYears: [...Array(5).keys()].reverse().map((i) => ({
-        value: currentYear - i,
-        label: currentYear - i,
-      })),
-      gradYears: [...Array(5).keys()].map((i) => ({
-        value: currentYear + i,
-        label: currentYear + i,
-      })),
+      startYears: [...Array(5).keys()].reverse().map((i) => yearOption(currentYear - i)),
+      gradYears: [...Array(5).keys()].map((i) => yearOption(currentYear + i)),
     };
   }, [options]);
 
@@ -248,42 +231,16 @@ export default function CreateWithTranscriptPanel({
                     </FieldError>
                   )}
                 </Field>
-                <FieldGrid $min={200}>
-                  <Field>
-                    <FieldLabel htmlFor="start-year">
-                      Starting year
-                      <Required />
-                    </FieldLabel>
-                    <Select
-                      inputId="start-year"
-                      options={startingYearOptions}
-                      value={startingYear}
-                      onChange={(selectedOption) => setStartingYear(selectedOption)}
-                      formatOptionLabel={(o) => `Fall ${o.value}`}
-                      isClearable
-                      placeholder="Select a year"
-                      styles={selectStyles}
-                      menuPortalTarget={typeof document !== "undefined" ? document.body : null}
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="grad-year">
-                      Graduation year
-                      <Required />
-                    </FieldLabel>
-                    <Select
-                      inputId="grad-year"
-                      options={graduationYearOptions}
-                      value={graduationYear}
-                      onChange={(selectedOption) => setGraduationYear(selectedOption)}
-                      formatOptionLabel={(o) => `Spring ${o.value}`}
-                      isClearable
-                      placeholder="Select a year"
-                      styles={selectStyles}
-                      menuPortalTarget={typeof document !== "undefined" ? document.body : null}
-                    />
-                  </Field>
-                </FieldGrid>
+                <YearFields
+                  idPrefix="onboarding"
+                  startOptions={startingYearOptions}
+                  graduationOptions={graduationYearOptions}
+                  startingYear={startingYear}
+                  graduationYear={graduationYear}
+                  setStartingYear={setStartingYear}
+                  setGraduationYear={setGraduationYear}
+                  isClearable
+                />
               </Section>
 
               <Section>

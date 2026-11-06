@@ -136,9 +136,11 @@ class DegreeDetailSerializer(serializers.ModelSerializer):
 
 
 class MajorListSerializer(serializers.ModelSerializer):
+    """Without its rules, for the same reason as `DegreeListSerializer`."""
+
     class Meta:
         model = Major
-        fields = "__all__"
+        exclude = ["rules"]
 
 
 class MajorDetailSerializer(serializers.ModelSerializer):
@@ -150,9 +152,11 @@ class MajorDetailSerializer(serializers.ModelSerializer):
 
 
 class MinorListSerializer(serializers.ModelSerializer):
+    """Without its rules, for the same reason as `DegreeListSerializer`."""
+
     class Meta:
         model = Minor
-        fields = "__all__"
+        exclude = ["rules"]
 
 
 class MinorDetailSerializer(serializers.ModelSerializer):
