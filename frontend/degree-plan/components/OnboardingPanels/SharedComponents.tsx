@@ -33,7 +33,7 @@ export const ContainerGroup = styled.div`
 `;
 
 export const ErrorText = styled.p`
-  color: darkred;
+  color: var(--error-color);
   min-height: 17px;
 `;
 
@@ -55,11 +55,16 @@ export const CenteredFlexContainer = styled.div`
 export const NextButton = styled(Button)<{ disabled: boolean }>`
   height: 45px;
   width: 100px;
-  border-radius: 7px;
-  transition: all 0.25s;
+  border-radius: 8px;
+  font-weight: 700;
+  transition: background-color 0.15s;
   background-color: ${({ disabled }) =>
-    disabled ? "var(--primary-color-dark)" : "#0000ff"};
+    disabled ? "var(--primary-color-dark)" : "var(--primary-color-xx-dark)"};
   color: ${({ disabled }) => (disabled ? "var(--gray-a8)" : "white")};
+
+  &:hover:not(:disabled) {
+    background-color: var(--primary-color-xxx-dark);
+  }
 
   @media (max-width: 768px) {
     width: 80%;
@@ -70,16 +75,20 @@ export const NextButton = styled(Button)<{ disabled: boolean }>`
 export const Upload = styled.div`
   width: 350px;
   height: 100px;
-  border: 1px dashed #808080;
-  border-radius: 10px;
+  border: 1.5px dashed var(--primary-color-extra-dark);
+  border-radius: 12px;
   display: flex;
   justify-content: center;
   align-items: center;
   flex-direction: column;
   gap: 10px;
-  transition: all 0.25s;
+  color: var(--primary-color-xxx-dark);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
   &:hover {
-    background-color: #f6f6f6;
+    border-color: var(--primary-color-xxx-dark);
+    background-color: var(--primary-color-light);
   }
 `;
 
@@ -88,11 +97,13 @@ export const TextButton = styled.div`
   align-items: center;
   gap: 5px;
   width: fit-content;
-  border-bottom: 1px solid #aaaaaa00;
+  color: var(--primary-color-xxx-dark);
+  font-weight: 500;
+  border-bottom: 1px solid transparent;
+  cursor: pointer;
   &:hover {
-    // text-decoration: underline;
-    border-bottom: 1px solid #aaa;
-    cursor: pointer;
+    color: var(--primary-color-ultra-dark);
+    border-bottom-color: currentColor;
   }
 `;
 

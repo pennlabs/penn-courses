@@ -99,12 +99,13 @@ const BackButton = styled.button`
   cursor: pointer;
 
   &:hover {
-    color: ${color.text};
+    color: ${color.heading};
   }
 `;
 
 const Title = styled.h1`
   margin: 0;
+  color: ${color.heading};
   font-size: 32px;
   line-height: 1.15;
   font-weight: 700;
@@ -153,7 +154,7 @@ const TextInput = styled.input`
   &:focus {
     outline: none;
     border-color: ${color.accent};
-    box-shadow: 0 0 0 3px rgba(47, 79, 216, 0.15);
+    box-shadow: ${color.focusRing};
   }
 `;
 
@@ -182,7 +183,7 @@ const SchoolsBox = styled.div`
 
 const AddSchoolButton = styled.button`
   min-height: 52px;
-  border: 1.5px dashed #c4c9d2;
+  border: 1.5px dashed var(--primary-color-extra-dark);
   border-radius: 12px;
   background: #ffffff;
   font: inherit;
@@ -197,7 +198,7 @@ const AddSchoolButton = styled.button`
 
   &:hover {
     border-color: ${color.accent};
-    background: #f5f7ff;
+    background: var(--primary-color-light);
   }
 `;
 

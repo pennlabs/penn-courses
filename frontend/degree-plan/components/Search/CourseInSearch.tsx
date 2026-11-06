@@ -34,9 +34,12 @@ const CourseContainer = styled.div<{ $isRecCourse?: boolean }>`
 const CourseInfoContainer = styled.div<{ $isRecCourse?: boolean }>`
   display: flex;
   flex-direction: row;
+  align-items: center;
   flex: 1;
   min-width: 0;
 `;
+
+export const SEARCH_ADD_BUTTON_SPACE = "2.5rem";
 
 const AddButton = styled.button<{ $used: boolean }>`
   flex: 0 0 auto;
@@ -96,13 +99,11 @@ const CourseQualityContainer = styled.div`
   margin-right: 1.5px;
   width: 20%;
   padding-left: 7px;
-  padding-top: 5px;
 `;
 
 const CourseDifficultyContainer = styled.div`
   width: 20%;
   padding-left: 7px;
-  padding-top: 5px;
 `;
 
 const InfoPopup = styled.div<{ $show: boolean }>`

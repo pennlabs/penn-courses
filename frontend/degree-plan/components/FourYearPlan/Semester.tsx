@@ -100,6 +100,40 @@ const TransferToggle = styled.button`
     i {
         font-size: .8rem;
         color: var(--primary-color-xxx-dark);
+        transition: transform 250ms ease;
+    }
+
+    &[aria-expanded="true"] i {
+        transform: rotate(180deg);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        i {
+            transition: none;
+        }
+    }
+`;
+
+const Collapse = styled.div<{ $open: boolean }>`
+    display: grid;
+    grid-template-rows: ${props => props.$open ? "1fr" : "0fr"};
+    visibility: ${props => props.$open ? "visible" : "hidden"};
+    transition: grid-template-rows 250ms ease, visibility 0s linear ${props => props.$open ? "0s" : "250ms"};
+
+    @media (prefers-reduced-motion: reduce) {
+        transition: none;
+    }
+`;
+
+// Clipping while open would cut off drop highlights and card shadows.
+const CollapseInner = styled.div<{ $open: boolean, $clipped: boolean }>`
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: ${props => props.$clipped ? "hidden" : "visible"};
+
+    @media (prefers-reduced-motion: reduce) {
+        overflow: ${props => props.$open ? "visible" : "hidden"};
     }
 `;
 
@@ -109,11 +143,17 @@ const HeaderActions = styled.div`
     gap: .25rem;
 `;
 
-const CollapsedCredits = styled.span`
+const CollapsedCredits = styled.span<{ $visible: boolean }>`
     font-size: .9rem;
     font-weight: 600;
     color: #4a4a4a;
     white-space: nowrap;
+    opacity: ${props => props.$visible ? 1 : 0};
+    transition: opacity ${props => props.$visible ? "150ms ease 150ms" : "100ms ease"};
+
+    @media (prefers-reduced-motion: reduce) {
+        transition: none;
+    }
 `;
 
 const CollapseButton = styled.button`
@@ -281,12 +321,15 @@ const FlexSemester = ({
 
     const [expanded, setExpanded] = useState(false);
     const [transferOpen, setTransferOpen] = useState(false); // transfer credit starts collapsed
+    const [transferClipped, setTransferClipped] = useState(true);
+    useEffect(() => {
+        if (!transferOpen) setTransferClipped(true);
+    }, [transferOpen]);
 
     const withinCap = coursesWithinCredits(fulfillments, COLLAPSED_CREDITS);
     const overflows = !isTransfer && withinCap.length < fulfillments.length;
     const shownCourses = overflows && !expanded ? withinCap : fulfillments;
     const hiddenCourses = fulfillments.slice(shownCourses.length);
-    const showBody = !isTransfer || transferOpen;
 
     const openSearch = () => {
         setSearchRuleQuery("");
@@ -344,6 +387,42 @@ const FlexSemester = ({
         setModalObject({ helper: removeSemesterHelper });
     }
 
+    const body = (
+        <>
+            <SemesterContent>
+                {showStats && <Stats fulfillments={fulfillments} />}
+                <CoursesArea $isOver={isOver}>
+                    {fulfillments.length === 0 ? (
+                        <EmptyCourses>
+                            <AddCourseButton type="button" onClick={openSearch}>
+                                + Add Course
+                            </AddCourseButton>
+                        </EmptyCourses>
+                    ) : (
+                        <>
+                            <CoursesPlanned
+                                semester={semester}
+                                fulfillments={shownCourses}
+                                removeCourse={handleRemoveCourse}
+                                animate={animateCourses} />
+                            {overflows && (
+                                <ShowMoreButton type="button" onClick={() => setExpanded(!expanded)}>
+                                    {expanded
+                                        ? "Show less"
+                                        : `+${hiddenCourses.length} more · ${formatCredits(totalCredits(hiddenCourses))} CUs`}
+                                </ShowMoreButton>
+                            )}
+                        </>
+                    )}
+                </CoursesArea>
+            </SemesterContent>
+            <CreditsLabel>
+                <strong>{formatCredits(credits)}</strong>
+                <span>CUs</span>
+            </CreditsLabel>
+        </>
+    );
+
     return (
         <SemesterCard
             $isDroppable={canDrop}
@@ -360,7 +439,7 @@ const FlexSemester = ({
                         onClick={() => setTransferOpen(!transferOpen)}
                     >
                         <SemesterLabel>{translateSemester(semester)}</SemesterLabel>
-                        <i className={`fas fa-chevron-${transferOpen ? "up" : "down"}`} aria-hidden />
+                        <i className="fas fa-chevron-down" aria-hidden />
                     </TransferToggle>
                 ) : (
                     <SemesterLabel $isCurrent={semesterComparison === 0}>
@@ -368,7 +447,11 @@ const FlexSemester = ({
                     </SemesterLabel>
                 )}
                 <HeaderActions>
-                    {!showBody && <CollapsedCredits>{formatCredits(credits)} CUs</CollapsedCredits>}
+                    {isTransfer && (
+                        <CollapsedCredits $visible={!transferOpen} aria-hidden={transferOpen}>
+                            {formatCredits(credits)} CUs
+                        </CollapsedCredits>
+                    )}
                     {overflows && (
                         <CollapseButton
                             type="button"
@@ -398,41 +481,18 @@ const FlexSemester = ({
                     }
                 </HeaderActions>
             </SemesterHeader>
-            {showBody && (
-                <>
-                    <SemesterContent>
-                        {showStats && <Stats fulfillments={fulfillments} />}
-                        <CoursesArea $isOver={isOver}>
-                            {fulfillments.length === 0 ? (
-                                <EmptyCourses>
-                                    <AddCourseButton type="button" onClick={openSearch}>
-                                        + Add Course
-                                    </AddCourseButton>
-                                </EmptyCourses>
-                            ) : (
-                                <>
-                                    <CoursesPlanned
-                                        semester={semester}
-                                        fulfillments={shownCourses}
-                                        removeCourse={handleRemoveCourse}
-                                        animate={animateCourses} />
-                                    {overflows && (
-                                        <ShowMoreButton type="button" onClick={() => setExpanded(!expanded)}>
-                                            {expanded
-                                                ? "Show less"
-                                                : `+${hiddenCourses.length} more · ${formatCredits(totalCredits(hiddenCourses))} CUs`}
-                                        </ShowMoreButton>
-                                    )}
-                                </>
-                            )}
-                        </CoursesArea>
-                    </SemesterContent>
-                    <CreditsLabel>
-                        <strong>{formatCredits(credits)}</strong>
-                        <span>CUs</span>
-                    </CreditsLabel>
-                </>
-            )}
+            {isTransfer ? (
+                <Collapse
+                    $open={transferOpen}
+                    onTransitionEnd={(e) => {
+                        if (e.target === e.currentTarget && transferOpen) setTransferClipped(false);
+                    }}
+                >
+                    <CollapseInner $open={transferOpen} $clipped={transferClipped}>
+                        {body}
+                    </CollapseInner>
+                </Collapse>
+            ) : body}
         </SemesterCard>
     )
 }

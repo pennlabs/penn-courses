@@ -94,10 +94,9 @@ a {
   text-decoration: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+/* The app has no dark theme, so native scrollbars and controls stay light too. */
+html {
+  color-scheme: light;
 }
 
 .tag {

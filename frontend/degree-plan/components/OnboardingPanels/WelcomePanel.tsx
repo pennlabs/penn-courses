@@ -84,7 +84,7 @@ export default function WelcomeLayout({
           </Document>
         </div>
 
-        <h1>Welcome to Penn Degree Plan!</h1>
+        <h1 style={{ color: "var(--primary-color-ultra-dark)" }}>Welcome to Penn Degree Plan!</h1>
         <ContainerGroup>
           <label>
             <input
@@ -131,7 +131,6 @@ export default function WelcomeLayout({
             resetParser();
             setCurrentPage(2);
           }}
-          style={{ borderBottom: "1px solid #aaa" }}
         >
           <p>Enter information manually</p>
           <ArrowRightIcon />

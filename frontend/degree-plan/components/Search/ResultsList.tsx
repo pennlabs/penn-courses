@@ -2,7 +2,7 @@ import React, { useCallback, useContext, useEffect, useRef } from "react";
 import useSWR from "swr";
 import ToastContext from "@/components/Toast/Toast";
 import styled from '@emotion/styled';
-import Course, { SkeletonCourse } from "./CourseInSearch";
+import Course, { SEARCH_ADD_BUTTON_SPACE, SkeletonCourse } from "./CourseInSearch";
 import { Course as CourseType, DegreePlan, DockedCourse, Fulfillment, Rule } from "../../types";
 import { useSWRCrud } from "@/hooks/swrcrud";
 
@@ -35,6 +35,18 @@ const Header = styled.div`
     padding-left: 0;
     font-weight: bold;
     overflow: hidden;
+`;
+
+// Matches the rows' 7px rating inset.
+const RatingHeader = styled(Header)`
+    padding-left: 7px;
+`;
+
+const HeaderColumns = styled.div`
+    display: flex;
+    flex: 1;
+    min-width: 0;
+    margin-right: ${SEARCH_ADD_BUTTON_SPACE};
 `;
 
 const CoursesContainer = styled.ul`
@@ -112,9 +124,11 @@ const ResultsList = ({
     return (
         <CourseListContainer>
             <HeaderContainer>
-                <Header width="60%">COURSE</Header>
-                <Header width="20%">QUAL</Header>
-                <Header width="20%">DIFF</Header>
+                <HeaderColumns>
+                    <Header width="60%">COURSE</Header>
+                    <RatingHeader width="20%">QUAL</RatingHeader>
+                    <RatingHeader width="20%">DIFF</RatingHeader>
+                </HeaderColumns>
             </HeaderContainer>
             <CoursesContainer>
                 {!isLoading ? <>
