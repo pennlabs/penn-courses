@@ -2,9 +2,9 @@
 What a plan is, once its degrees, majors and minors are taken together.
 
 Each program is still its own rule tree. This module is the second pass: it classifies the
-combination (one degree, a College double major, a cross-school dual, a coordinated program,
-a submatriculation) and decides which trees are active and which sharing rules the audits
-cannot state.
+combination (one degree, a College double major, a second major in another school or the same
+one, a coordinated program, a submatriculation) and decides which trees are active and which
+sharing rules the audits cannot state.
 """
 
 from __future__ import annotations
@@ -361,8 +361,8 @@ def _classify(components, dual) -> str:
     if len(undergraduate) >= 2 and all(component.is_college for component in undergraduate):
         return "cas_double_major"
     programs = {component.program for component in undergraduate}
-    if len(undergraduate) >= 2 and len(programs) >= 2:
-        return "cross_school_dual"
+    if len(undergraduate) >= 2:
+        return "cross_school_dual" if len(programs) >= 2 else "same_school_double_major"
     return "single"
 
 

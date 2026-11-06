@@ -106,6 +106,21 @@ class CompositionKindTest(TestCase):
         self.assertEqual(composition.kind, "cross_school_dual")
         self.assertTrue(composition.policy.cross_component_sharing)
 
+    def test_a_second_major_in_the_same_school_shares_across_components(self):
+        cis = Degree.objects.create(program="EU_BSE", degree="BSE", major="CIS", year=2026)
+        meam = Degree.objects.create(program="EU_BSE", degree="BSE", major="MEAM", year=2026)
+        cis_rule = leaf("Math", "MATH-1400", "MAJOR", "CIS")
+        meam_rule = leaf("Math", "MATH-1400", "MAJOR", "MEAM")
+        cis.rules.add(cis_rule)
+        meam.rules.add(meam_rule)
+        plan = self.plan("same school")
+        plan.degrees.add(cis, meam)
+
+        composition = compose(plan)
+        self.assertEqual(composition.kind, "same_school_double_major")
+        self.assertTrue(composition.policy.cross_component_sharing)
+        self.assertIn(meam_rule, map_rules_and_degrees(plan).double_counts[cis_rule])
+
     def test_submatriculation(self):
         bse = Degree.objects.create(program="EU_BSE", degree="BSE", major="CIS", year=2026)
         mse = Degree.objects.create(program="EM_MSE", degree="MSE", major="CIS", year=2026)
