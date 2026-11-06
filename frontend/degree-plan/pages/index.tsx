@@ -5,6 +5,7 @@ import FourYearPlanPage from "../components/FourYearPlanPage";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { type User } from "../types";
 import LoginModal from "pcx-shared-components/src/accounts/LoginModal";
+import NoAccessModal from "../components/NoAccessModal";
 import { SWRConfig } from "swr";
 import { toast, ToastContainer } from "react-toastify";
 import ToastContext from "@/components/Toast/Toast";
@@ -15,6 +16,8 @@ import {
 } from "@/components/Toast/Notifications";
 import styled from "@emotion/styled";
 
+const NOT_IN_BETA_DETAIL = "Not in the PDP beta.";
+
 const LoginModalLayer = styled.div`
   position: relative;
   z-index: 100001;
@@ -23,6 +26,7 @@ const LoginModalLayer = styled.div`
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showNoAccessModal, setShowNoAccessModal] = useState(false);
 
   // Stable identity: AccountIndicator re-runs its /accounts/me/ effect whenever these change.
   const updateUser = useCallback((newUserVal: User | null) => {
@@ -84,18 +88,27 @@ export default function Home() {
                 if (!res.ok) {
                   const error = new Error(
                     `Request to ${resource} failed with status ${res.status}`
-                  ) as Error & { status: number };
+                  ) as Error & { status: number; detail?: string };
                   error.status = res.status;
+                  error.detail = await res
+                    .json()
+                    .then((body) => body?.detail)
+                    .catch(() => undefined);
                   throw error;
                 }
                 return res.json();
               },
               provider: () => new Map(),
-              // A 401/403 means the session is gone: ask for login instead of toasting.
+              // A 403 with NOT_IN_BETA_DETAIL means the user is logged in but not in the PDP beta.
+              // A 401/403 with any other detail means the session is gone: ask for login instead of toasting.
               // Anything else is retried by SWR with backoff, which calls this each time,
               // so one toast per key rather than one per attempt.
               onError: (error, key) => {
-                const status = (error as { status?: number }).status;
+                const { status, detail } = error as { status?: number; detail?: string };
+                if (status === 403 && detail === NOT_IN_BETA_DETAIL) {
+                  setShowNoAccessModal(true);
+                  return;
+                }
                 if (status === 401 || status === 403) {
                   updateUser(null);
                   return;
@@ -124,6 +137,16 @@ export default function Home() {
                 <LoginModal
                   pathname={window.location.pathname}
                   siteName="Penn Degree Plan"
+                />
+              </LoginModalLayer>
+            )}
+            {!showLoginModal && showNoAccessModal && (
+              <LoginModalLayer>
+                <NoAccessModal
+                  onLogout={() => {
+                    setShowNoAccessModal(false);
+                    updateUser(null);
+                  }}
                 />
               </LoginModalLayer>
             )}

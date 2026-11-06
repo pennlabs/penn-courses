@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 from django_auto_prefetching import AutoPrefetchViewSetMixin
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import BasePermission, IsAuthenticated
 from rest_framework.response import Response
@@ -56,8 +56,12 @@ from PennCourses.docs_settings import PcxAutoSchema
 
 
 class InPDPBeta(BasePermission):
+    message = "Not in the PDP beta."
+
     def has_permission(self, request, view):
-        return PDPBetaUser.objects.filter(person=request.user).exists()
+        if not PDPBetaUser.objects.filter(person=request.user).exists():
+            raise PermissionDenied(self.message)
+        return True
 
 
 class DegreeViewset(viewsets.ReadOnlyModelViewSet):
