@@ -36,6 +36,27 @@ export default function Home() {
     setUser(newUserVal);
   }, []);
 
+  // A 403 can also mean a logged-in user lacks access (e.g. isn't in the beta). Logging them out
+  // for it loops: the account check logs them straight back in and the request fails again.
+  const checkingSession = useRef<Promise<void> | null>(null);
+  const handleUnauthorized = useCallback(() => {
+    checkingSession.current ??= fetch("/accounts/me/")
+      .then((response) => {
+        if (!response.ok) {
+          updateUser(null);
+          return;
+        }
+        toast.error("You don't have access to Penn Degree Plan.", {
+          position: toast.POSITION.BOTTOM_CENTER,
+          toastId: "pdp-forbidden",
+        });
+      })
+      .catch(() => updateUser(null))
+      .finally(() => {
+        checkingSession.current = null;
+      });
+  }, [updateUser]);
+
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const nextNotificationId = useRef(0);
   const markAllRead = useCallback(
@@ -91,13 +112,13 @@ export default function Home() {
                 return res.json();
               },
               provider: () => new Map(),
-              // A 401/403 means the session is gone: ask for login instead of toasting.
-              // Anything else is retried by SWR with backoff, which calls this each time,
-              // so one toast per key rather than one per attempt.
+              // A 401/403 asks for login if the session is gone. Anything else is retried by
+              // SWR with backoff, which calls this each time, so one toast per key rather
+              // than one per attempt.
               onError: (error, key) => {
                 const status = (error as { status?: number }).status;
                 if (status === 401 || status === 403) {
-                  updateUser(null);
+                  handleUnauthorized();
                   return;
                 }
                 toast.error(
