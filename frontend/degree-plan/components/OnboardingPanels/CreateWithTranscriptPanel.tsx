@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import {
+  BackButton,
   CenteredFlexContainer,
   NextButton,
   panelCard,
@@ -80,26 +81,6 @@ const Header = styled.div`
 
   @media (max-width: 600px) {
     padding: 24px 16px 0;
-  }
-`;
-
-const BackButton = styled.button`
-  align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 44px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  font: inherit;
-  font-size: 14px;
-  font-weight: 500;
-  color: ${color.muted};
-  cursor: pointer;
-
-  &:hover {
-    color: ${color.heading};
   }
 `;
 

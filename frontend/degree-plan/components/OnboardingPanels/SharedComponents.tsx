@@ -92,18 +92,43 @@ export const Upload = styled.div`
   }
 `;
 
-export const TextButton = styled.div`
-  display: flex;
+export const BackButton = styled.button`
+  align-self: flex-start;
+  display: inline-flex;
   align-items: center;
-  gap: 5px;
-  width: fit-content;
-  color: var(--primary-color-xxx-dark);
+  gap: 6px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
   font-weight: 500;
-  border-bottom: 1px solid transparent;
+  color: #777777;
   cursor: pointer;
+
   &:hover {
     color: var(--primary-color-ultra-dark);
-    border-bottom-color: currentColor;
+  }
+`;
+
+export const SecondaryButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--primary-color-light);
+  color: var(--primary-color-xxx-dark);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+
+  &:hover {
+    background: var(--primary-color-dark);
+    color: var(--primary-color-ultra-dark);
   }
 `;
 
