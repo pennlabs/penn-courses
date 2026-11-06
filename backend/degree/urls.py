@@ -6,6 +6,7 @@ from degree.views import (
     DegreePlanViewset,
     DegreeViewset,
     DockedCourseViewset,
+    DualProgramViewset,
     FulfillmentViewSet,
     MajorViewset,
     MinorViewset,
@@ -19,6 +20,7 @@ router.register(r"degreeplans", DegreePlanViewset, basename="degreeplan")
 router.register(r"degrees", DegreeViewset, basename="degree")
 router.register(r"majors", MajorViewset, basename="major")
 router.register(r"minors", MinorViewset, basename="minor")
+router.register(r"dual-programs", DualProgramViewset, basename="dual-program")
 router.register(r"docked", DockedCourseViewset)
 fulfillments_router = NestedDefaultRouter(
     router, r"degreeplans", lookup="degreeplan", trailing_slash=False
