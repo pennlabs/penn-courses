@@ -16,6 +16,7 @@ interface SatisfiedRules {
  * button. A course already in the plan only moves; anything else is allocated to rules first,
  * and leaves the dock if it was there.
  * `ruleId` is the rule the course came from, or -1 when it came from no rule.
+ * Resolves to whether the course was added; a failure is reported with a toast.
  */
 const useAddToSemester = (planId: DegreePlan["id"] | null | undefined) => {
   const showToast = useContext(ToastContext);
@@ -40,28 +41,43 @@ const useAddToSemester = (planId: DegreePlan["id"] | null | undefined) => {
     fullCode: string,
     semester: string,
     { ruleId = -1, inPlan = false }: { ruleId?: number; inPlan?: boolean } = {}
-  ) => {
-    if (!planId) return;
+  ): Promise<boolean> => {
+    if (!planId) return false;
+    const failed = () => {
+      showToast(`Couldn't add ${fullCode.replace("-", " ")}. Try again.`, true);
+      return false;
+    };
     if (inPlan) {
-      createOrUpdate({ semester }, fullCode);
-      return;
+      try {
+        await createOrUpdate({ semester }, fullCode);
+        return true;
+      } catch {
+        return failed();
+      }
     }
+
+    let data: SatisfiedRules;
+    try {
+      const response = await fetch(
+        `/api/degree/satisfied-rule-list/${planId}/${fullCode}/${ruleId}`
+      );
+      if (!response.ok) throw new Error(`satisfied-rule-list: ${response.status}`);
+      data = await response.json();
+      await createOrUpdate(
+        {
+          rules: data.selected_rules.map((rule) => rule.id),
+          unselected_rules: data.unselected_rules.map((rule) => rule.id),
+          legal: data.legal,
+          semester,
+        },
+        fullCode
+      );
+    } catch {
+      return failed();
+    }
+    // Only once it's in the plan, so a failure above leaves it in the dock.
     if (docked.some((course) => course.full_code === fullCode))
       removeFromDock(fullCode);
-
-    const response = await fetch(
-      `/api/degree/satisfied-rule-list/${planId}/${fullCode}/${ruleId}`
-    );
-    const data: SatisfiedRules = await response.json();
-    createOrUpdate(
-      {
-        rules: data.selected_rules.map((rule) => rule.id),
-        unselected_rules: data.unselected_rules.map((rule) => rule.id),
-        legal: data.legal,
-        semester,
-      },
-      fullCode
-    );
 
     // TODO: This doesn't work for explicitly listed courses.
     data.new_selected_rules.forEach((rule) => {
@@ -71,6 +87,7 @@ const useAddToSemester = (planId: DegreePlan["id"] | null | undefined) => {
         showToast(`${fullCode} also fulfilled ${rule.title}!`, false);
       }
     });
+    return true;
   };
 };
 

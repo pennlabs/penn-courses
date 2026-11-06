@@ -249,6 +249,8 @@ const SelectListDropdown = <T extends DBObject>({
                 setIsOpen(false);
               }}
               onKeyDown={(e) => {
+                // Keys pressed on the row's own buttons are theirs.
+                if (e.target !== e.currentTarget) return;
                 if (e.key === "Enter" || e.key === " ") {
                   e.preventDefault();
                   selectItem(item.id);

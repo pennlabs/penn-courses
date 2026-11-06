@@ -161,7 +161,7 @@ const AddToSemester = ({
 
   const add = async (semester: string) => {
     setMenuOpen(false);
-    await addToSemester(fullCode, semester, { inPlan: !!existing });
+    if (!(await addToSemester(fullCode, semester, { inPlan: !!existing }))) return;
     showToast(
       `${existing ? "Moved" : "Added"} ${code} to ${translateSemester(
         semester

@@ -239,11 +239,13 @@ const Dock = ({ user, activeDegreeplanId  }: DockProps) => {
             document.body.style.removeProperty("user-select");
             window.removeEventListener("pointermove", move);
             window.removeEventListener("pointerup", stop);
+            window.removeEventListener("pointercancel", stop);
         };
         document.body.style.cursor = "ns-resize";
         document.body.style.userSelect = "none";
         window.addEventListener("pointermove", move);
         window.addEventListener("pointerup", stop);
+        window.addEventListener("pointercancel", stop);
     };
 
     return (

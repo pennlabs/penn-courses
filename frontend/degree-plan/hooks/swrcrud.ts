@@ -185,7 +185,7 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
         if (!id) return;
         const updated: Partial<T> = {...data}
         updated[idKey] = id;
-        mutate(
+        return mutate(
             endpoint,
             createOrUpdateFetcher(endpoint, updated), 
             {
