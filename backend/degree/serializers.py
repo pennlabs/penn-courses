@@ -11,6 +11,8 @@ from degree.models import (
     TRANSFER_CREDIT_SEMESTER,
     Degree,
     DegreePlan,
+    DegreePlanMajor,
+    DegreePlanMinor,
     DockedCourse,
     DoubleCountRestriction,
     Fulfillment,
@@ -134,9 +136,11 @@ class DegreeDetailSerializer(serializers.ModelSerializer):
 
 
 class MajorListSerializer(serializers.ModelSerializer):
+    """Without its rules, for the same reason as `DegreeListSerializer`."""
+
     class Meta:
         model = Major
-        fields = "__all__"
+        exclude = ["rules"]
 
 
 class MajorDetailSerializer(serializers.ModelSerializer):
@@ -148,9 +152,11 @@ class MajorDetailSerializer(serializers.ModelSerializer):
 
 
 class MinorListSerializer(serializers.ModelSerializer):
+    """Without its rules, for the same reason as `DegreeListSerializer`."""
+
     class Meta:
         model = Minor
-        fields = "__all__"
+        exclude = ["rules"]
 
 
 class MinorDetailSerializer(serializers.ModelSerializer):
@@ -320,8 +326,41 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
     minors = MinorDetailSerializer(
         many=True, read_only=True, help_text="The minors belonging to this degree plan"
     )
+    major_degrees = serializers.SerializerMethodField(
+        help_text=dedent(
+            """
+        Which of the plan's degrees each of its majors was added under, as a list of
+        `{"major": id, "degree": id}`. `degree` is null for a major not placed under a degree.
+        """
+        )
+    )
+
+    minor_degrees = serializers.SerializerMethodField(
+        help_text=dedent(
+            """
+        Which of the plan's degrees each of its minors was added under, as a list of
+        `{"minor": id, "degree": id}`. `degree` is null for a minor not placed under a degree.
+        """
+        )
+    )
 
     person = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
+    def get_minor_degrees(self, obj):
+        return [
+            {"minor": minor, "degree": degree}
+            for minor, degree in DegreePlanMinor.objects.filter(degree_plan=obj).values_list(
+                "minor_id", "degree_id"
+            )
+        ]
+
+    def get_major_degrees(self, obj):
+        return [
+            {"major": major, "degree": degree}
+            for major, degree in DegreePlanMajor.objects.filter(degree_plan=obj).values_list(
+                "major_id", "degree_id"
+            )
+        ]
 
     class Meta:
         model = DegreePlan
@@ -331,6 +370,8 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
             "degrees",
             "majors",
             "minors",
+            "major_degrees",
+            "minor_degrees",
             "person",
             "created_at",
             "updated_at",

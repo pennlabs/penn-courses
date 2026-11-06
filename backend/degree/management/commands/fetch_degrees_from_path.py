@@ -13,7 +13,7 @@ from degree.utils.path_client import PathClient, PathError, split_program_code, 
 
 # Students with degrees older than this catalog year are not supported, and their
 # degrees are not stored in the database.
-EARLIEST_CATALOG_YEAR = 2022
+EARLIEST_CATALOG_YEAR = 2018
 
 
 @dataclass

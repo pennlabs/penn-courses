@@ -465,6 +465,7 @@ class DegreePlan(models.Model):  #
         Minor,
         blank=True,
         related_name="degree_plans",
+        through="DegreePlanMinor",
         help_text="The minors this degree plan is associated with.",
     )
 
@@ -613,6 +614,30 @@ class DegreePlanMajor(models.Model):
     class Meta:
         db_table = "degree_degreeplan_majors"
         unique_together = [("degree_plan", "major")]
+
+
+class DegreePlanMinor(models.Model):
+    """A minor on a plan, and which of the plan's degrees the student is pursuing it in."""
+
+    degree_plan = models.ForeignKey(DegreePlan, on_delete=models.CASCADE, db_column="degreeplan_id")
+    minor = models.ForeignKey(Minor, on_delete=models.CASCADE)
+    degree = models.ForeignKey(
+        Degree,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text=dedent(
+            """
+            The undergraduate degree the minor is part of. Each degree has its own audit, so
+            its requirements share freely with another degree's. Null for a minor the student
+            didn't place under a degree, which shares only by the audits' rules.
+            """
+        ),
+    )
+
+    class Meta:
+        db_table = "degree_degreeplan_minors"
+        unique_together = [("degree_plan", "minor")]
 
 
 class Fulfillment(models.Model):

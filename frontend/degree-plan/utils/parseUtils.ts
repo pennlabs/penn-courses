@@ -1,6 +1,6 @@
 import { createMajorLabel } from "@/components/FourYearPlan/DegreeModal";
 import { schoolOptions } from "@/components/OnboardingPanels/SharedComponents";
-import { DegreeListing, Major, SchoolOption } from "@/types";
+import { DegreeListing, Major, Minor, SchoolOption } from "@/types";
 const { distance } = require("fastest-levenshtein");
 
 // How far a transcript's wording may sit from a program's name and still be the same thing.
@@ -158,7 +158,7 @@ export type MajorOptionItem = {
 };
 
 // A Path program code reads MAJOR-DEGREE[-CONCENTRATION], e.g. CSCI-BA-GEN.
-const degreeCodeOf = (programCode: string) => programCode.split("-")[1];
+export const degreeCodeOf = (programCode: string) => programCode.split("-")[1];
 
 // A masters is a single program, so it takes no majors on top and can't be added to another degree.
 const isMasters = (degreeCode: string) => degreeCode === "MSE";
@@ -179,30 +179,52 @@ export const getAdditionalMajorOptions = (
   const isOwn = (major: Major) => degreeCodeOf(major.program_code) === school.value;
   return majors
     .filter((major) => !isMasters(degreeCodeOf(major.program_code)))
-    .map((major) => {
-      const name = major.concentration_name
-        ? `${major.name} - ${major.concentration_name}`
-        : major.name;
-      const degree = isOwn(major) ? "" : `, ${degreeCodeOf(major.program_code)}`;
-      return { value: major, label: `${name} (${major.year}${degree})` };
-    })
+    .map((major) => majorOption(major, school))
     .sort(
       (a, b) =>
         Number(isOwn(b.value)) - Number(isOwn(a.value)) || a.label.localeCompare(b.label)
     );
 };
 
+// An additional major as a school's card lists it: majors from other schools name their degree.
+export const majorOption = (major: Major, school: SchoolOption): MajorOptionItem => {
+  const name = major.concentration_name
+    ? `${major.name} - ${major.concentration_name}`
+    : major.name;
+  const own = degreeCodeOf(major.program_code) === school.value;
+  const degree = own ? "" : `, ${degreeCodeOf(major.program_code)}`;
+  return { value: major, label: `${name} (${major.year}${degree})` };
+};
+
+export type MinorOptionItem = {
+  value: Minor;
+  label: string;
+};
+
+export const minorOption = (minor: Minor): MinorOptionItem => ({
+  value: minor,
+  label: `${minor.name ?? minor.code} (${minor.year})`,
+});
+
+export const getMinorOptions = (minors: Minor[] | undefined): MinorOptionItem[] | undefined =>
+  minors?.map(minorOption).sort((a, b) => a.label.localeCompare(b.label));
+
 // A school, the major the student is enrolled in through it, and the majors they add on top.
 export type SchoolSelection = {
+  // Tells apart two cards for the same school, which a plan can hold; defaults to the school.
+  key?: string;
   school: SchoolOption;
   primary: DegreeOption | null;
   additional: MajorOptionItem[];
+  minors?: MinorOptionItem[];
 };
 
-// What a transcript says about one program: a school and the majors listed under it, in order.
+// What a transcript says about one program: a school and the majors and minors listed under it,
+// in order.
 type ParsedProgram = {
   school: SchoolOption;
   majors: { name: string; concentration: string }[];
+  minors: string[];
   // The year the program's record began, or null if its record names no semester.
   startYear: number | null;
 };
@@ -238,15 +260,27 @@ const programHeader = (textResult: string[], l: number) => {
 };
 
 // The value following "<label> :" on a line. Columns are read side by side, so a line can run
-// on into the course listing next to it, which is cut off.
+// on into the course listing or the transcript totals next to it, which are cut off.
+const RUN_ON = /\s+subj\s+no\.|\s*_{5,}|\s+[a-z]{2,5}\s\d{4}\b|\s+total\s+institution\b|\s+\d+\.\d{2}\b/;
+
 const valueAfter = (line: string, label: string): string | null => {
   const match = line.match(new RegExp(`\\b${label}\\s*:\\s*(.*)$`));
   if (!match) return null;
-  return match[1].split(/\s+subj\s+no\.|\s*_{5,}|\s+[a-z]{2,5}\s\d{4}\b/)[0].trim();
+  return match[1].split(RUN_ON)[0].trim();
 };
 
-// Given a transcript's records, return each program it lists with the majors under it. A major
-// belongs to the closest program above it, and a concentration to the major above it. Each
+// A transcript names several minors under one "Minor :" label, one per line. A line that carries
+// its own label, or starts the course listing, ends the list.
+const continuedMinor = (line: string): string | null => {
+  // The leading space lets RUN_ON also match at the start, where the listing or totals begin.
+  const value = ` ${line}`.split(RUN_ON)[0].trim();
+  if (!value || /:/.test(value) || /\d/.test(value)) return null;
+  return value;
+};
+
+// Given a transcript's records, return each program it lists with the majors and minors under it.
+// A major or minor belongs to the closest program above it, and a concentration to the major
+// above it. Each
 // program takes the start year of the record it is listed in.
 export const parsePrograms = (
   records: { lines: string[]; startYear: number | null }[]
@@ -255,13 +289,20 @@ export const parsePrograms = (
   let current: ParsedProgram | undefined;
 
   records.forEach(({ lines, startYear }) => {
+    let readingMinors = false;
     for (let l = 0; l < lines.length; l++) {
       const line = lines[l];
+
+      if (readingMinors && current) {
+        const more = continuedMinor(line);
+        if (more && !current.minors.includes(more)) current.minors.push(more);
+        if (!more) readingMinors = false;
+      }
 
       if (PROGRAM_LINE.test(line)) {
         const school = detectSchool(programHeader(lines, l));
         // A program that isn't one of our schools takes its majors with it.
-        current = school && { school, majors: [], startYear };
+        current = school && { school, majors: [], minors: [], startYear };
         if (current) {
           // A student's program is sometimes listed again, e.g. on a later page. It keeps the
           // year of its first listing, since a later page's record starts partway through.
@@ -278,6 +319,10 @@ export const parsePrograms = (
           current.majors.push({ name: major, concentration: "" });
         }
       }
+
+      const minor = valueAfter(line, "minor");
+      if (minor && current && !current.minors.includes(minor)) current.minors.push(minor);
+      if (minor !== null) readingMinors = true;
 
       const concentration = valueAfter(line, "concentration");
       if (concentration !== null && current?.majors.length) {
@@ -348,14 +393,17 @@ const getCourseToSem = (truncatedTranscript: string[]) => {
   return courseToSem;
 };
 
+const AMBIGUOUS = Symbol("ambiguous");
+
 // Returns the option whose program name is closest to the transcript's wording, or undefined
 // if no option is close enough. Ties are broken by matching concentration, then by exact wording.
-const matchOption = <T>(
+// AMBIGUOUS means the name matched but the concentration couldn't settle which version.
+const matchOptionOrAmbiguous = <T>(
   major: string,
   concentration: string,
   options: T[] | undefined,
   namesOf: (option: T) => [string, string]
-): T | undefined => {
+): T | typeof AMBIGUOUS | undefined => {
   if (!options?.length) return undefined;
 
   const target = normalize(major);
@@ -384,12 +432,30 @@ const matchOption = <T>(
           matchTolerance(candidate.concentration);
 
   const withConcentration = closest.filter(concentrationMatches);
+  // With no concentration named and every version having one, any pick would be a guess.
+  if (
+    !withConcentration.length &&
+    NO_CONCENTRATION.has(wanted) &&
+    new Set(closest.map((candidate) => candidate.concentration)).size > 1
+  ) {
+    return AMBIGUOUS;
+  }
   const pool = withConcentration.length ? withConcentration : closest;
   pool.sort(
     (a, b) => Number(b.concentration === wanted) - Number(a.concentration === wanted)
   );
 
   return pool[0].option;
+};
+
+const matchOption = <T>(
+  major: string,
+  concentration: string,
+  options: T[] | undefined,
+  namesOf: (option: T) => [string, string]
+): T | undefined => {
+  const match = matchOptionOrAmbiguous(major, concentration, options, namesOf);
+  return match === AMBIGUOUS ? undefined : match;
 };
 
 // Given the programs read off a transcript, work out the student's selections. Under each school
@@ -400,9 +466,12 @@ export const detectSelections = (
   programs: ParsedProgram[],
   degrees: DegreeListing[] | undefined,
   majors: Major[] | undefined,
+  minors: Minor[] | undefined,
   startingYear: number | null
-): SchoolSelection[] =>
-  programs.map(({ school, majors: listed, startYear: programStart }) => {
+): SchoolSelection[] => {
+  // A plan holds each minor once, under one degree, so a minor listed twice goes to the first.
+  const placedMinorIds = new Set<number>();
+  return programs.map(({ school, majors: listed, minors: listedMinors, startYear: programStart }) => {
     const year = programStart ?? startingYear;
     const [first, ...rest] = listed;
 
@@ -428,14 +497,36 @@ export const detectSelections = (
       degreeCodeOf(option.value.program_code) === school.value;
     rest.forEach(({ name, concentration }) => {
       // A major the school offers itself wins over one from elsewhere, however close that is.
-      const match =
-        matchOption(name, concentration, additionalOptions?.filter(isOwn), namesOf) ??
-        matchOption(name, concentration, additionalOptions, namesOf);
+      const own = matchOptionOrAmbiguous(
+        name,
+        concentration,
+        additionalOptions?.filter(isOwn),
+        namesOf
+      );
+      if (own === AMBIGUOUS) return;
+      const match = own ?? matchOption(name, concentration, additionalOptions, namesOf);
       if (match && !additional.includes(match)) additional.push(match);
     });
 
-    return { school, primary, additional };
+    // The minors list names each "Minor in X", where a transcript says just "X".
+    const minorOptions = takesAdditionalMajors(school)
+      ? getMinorOptions(applicableVersions(minors, (minor) => minor.program_code, year))
+      : [];
+    const chosenMinors: MinorOptionItem[] = [];
+    listedMinors.forEach((name) => {
+      const match = matchOption(name, "", minorOptions, (option) => [
+        (option.value.name ?? "").replace(/^minor in /i, ""),
+        "",
+      ]);
+      if (match && !placedMinorIds.has(match.value.id)) {
+        placedMinorIds.add(match.value.id);
+        chosenMinors.push(match);
+      }
+    });
+
+    return { school, primary, additional, minors: chosenMinors };
   });
+};
 
 // One academic record within a transcript. A submatriculant's transcript holds two — an
 // undergraduate record and a "professional" one for the masters — each with its own program,
@@ -509,7 +600,8 @@ const parseRecordCourses = (lines: string[]) => {
 export const parseTranscript = (
   textResult: string[],
   degrees: DegreeListing[] | undefined,
-  majors: Major[] | undefined
+  majors: Major[] | undefined,
+  minors: Minor[] | undefined
 ) => {
   let courseToSem: { [key: string]: string } = {};
   let startYear: number = 0;
@@ -577,6 +669,7 @@ export const parseTranscript = (
       parsePrograms(records),
       degrees,
       majors,
+      minors,
       startYear
     ),
   };

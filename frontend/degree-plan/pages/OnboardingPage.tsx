@@ -3,7 +3,7 @@ import useSWR from "swr";
 import { pdfjs } from "react-pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
-import { DegreeListing, DegreePlan, Major } from "@/types";
+import { DegreeListing, DegreePlan, Major, Minor } from "@/types";
 import { polyfillPromiseWithResolvers } from "./polyfilsResolver";
 
 import "core-js/full/promise/with-resolvers.js";
@@ -50,9 +50,11 @@ const OnboardingPage = ({
 
   const { data: degrees } = useSWR<DegreeListing[]>(`/api/degree/degrees`);
   const { data: standaloneMajors } = useSWR<Major[]>(`/api/degree/majors`);
-  // Matching a transcript's majors needs both lists. They are requested when this page mounts,
+  const { data: minors } = useSWR<Minor[]>(`/api/degree/minors`);
+  // Matching a transcript's programs needs these lists. They are requested when this page mounts,
   // but a transcript can be uploaded and read before they arrive.
-  const programsLoaded = degrees !== undefined && standaloneMajors !== undefined;
+  const programsLoaded =
+    degrees !== undefined && standaloneMajors !== undefined && minors !== undefined;
 
   // TRANSCRIPT PARSING
   const total = useRef<Record<number, ParsedText>>({});
@@ -88,7 +90,8 @@ const OnboardingPage = ({
     const { scrapedCourses, courseLevels, startYear, detectedSelections } = parseTranscript(
       all,
       degrees,
-      standaloneMajors
+      standaloneMajors,
+      minors
     );
     setScrapedCourses(scrapedCourses);
     setCourseLevels(courseLevels);
@@ -102,7 +105,7 @@ const OnboardingPage = ({
     });
     setSelections(detectedSelections);
     transcriptDetected.current = startYear ? true : false;
-  }, [pagesRead, programsLoaded, degrees, standaloneMajors]);
+  }, [pagesRead, programsLoaded, degrees, standaloneMajors, minors]);
 
   const transcriptDetected = useRef<boolean | null>(null);
 
