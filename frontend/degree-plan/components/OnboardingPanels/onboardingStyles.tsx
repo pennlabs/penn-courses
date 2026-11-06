@@ -66,7 +66,7 @@ export const selectStyles: StylesConfig<any, boolean> = {
   // Menus are portaled to <body> so they aren't clipped by the scrollable school list.
   menuPortal: (provided) => ({
     ...provided,
-    zIndex: 1000,
+    zIndex: 9100,
     fontFamily: inter.style.fontFamily,
   }),
   option: (provided, state) => ({

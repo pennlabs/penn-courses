@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from courses.util import get_or_create_course_and_section
-from degree.models import Degree, DegreePlan, Fulfillment, Major, PDPBetaUser, Rule
+from degree.models import Degree, DegreePlan, Fulfillment, Major, Minor, PDPBetaUser, Rule
 from degree.utils.degree_logic import (
     allocate_rules,
     check_legal,
@@ -319,9 +319,16 @@ class IndependentDegreesTest(TestCase):
         stat = Major.objects.create(program_code="STAT-BA-GEN", code="STAT", year=2026)
         self.stat = self.rule(stat, "MAJOR", "STAT")
 
+        econ = Minor.objects.create(program_code="ECON-MIN", code="ECON", year=2026)
+        self.econ = self.rule(econ, "MINOR", "ECON")
+        phil = Minor.objects.create(program_code="PHIL-MIN", code="PHIL", year=2026)
+        self.phil = self.rule(phil, "MINOR", "PHIL")
+
         self.plan.degrees.add(bse, ba, mse)
         self.plan.majors.add(math, through_defaults={"degree": ba})
         self.plan.majors.add(stat)
+        self.plan.minors.add(econ, through_defaults={"degree": bse})
+        self.plan.minors.add(phil)
         _, self.rule_to_degree, self.double_counts = map_rules_and_degrees(self.plan)
 
     def shares(self, a, b):
@@ -349,6 +356,14 @@ class IndependentDegreesTest(TestCase):
     def test_an_unplaced_major_follows_the_audits_even_with_a_matching_degree_code(self):
         self.assertFalse(self.shares(self.stat, self.elective))
         self.assertFalse(self.shares(self.stat, self.sector))
+
+    def test_a_minor_belongs_to_the_degree_it_was_placed_under(self):
+        self.assertTrue(self.shares(self.econ, self.sector))
+        self.assertFalse(self.shares(self.econ, self.elective))
+
+    def test_an_unplaced_minor_follows_the_audits(self):
+        self.assertFalse(self.shares(self.phil, self.sector))
+        self.assertFalse(self.shares(self.phil, self.elective))
 
 
 class ComponentPassIsolationTest(TestCase):

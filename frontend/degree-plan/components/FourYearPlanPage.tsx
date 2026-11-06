@@ -13,6 +13,7 @@ import Dock from "@/components/Dock/Dock";
 import TopBar from "@/components/TopBar";
 import useStickyState from "@/hooks/stickyState";
 import OnboardingPage from "../pages/OnboardingPage";
+import EditProgramsPanel from "@/components/OnboardingPanels/EditProgramsPanel";
 import Footer from "./Footer";
 
 import ExpandedCoursesPanel from "@/components/ExpandedBox/ExpandedCoursesPanel";
@@ -72,6 +73,7 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
   const [modalKey, setModalKey] = useState<ModalKey>(null);
   const [modalObject, setModalObject] = useState<DegreePlan | null>(null); // stores the which degreeplan is being updated using the modal
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+  const [editingPrograms, setEditingPrograms] = useState(false);
   const [
     activeDegreeplan,
     setActiveDegreeplan,
@@ -229,6 +231,12 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
                 setActiveDegreeplan={setActiveDegreeplan}
               />
             )}
+            {editingPrograms && activeDegreeplan && (
+              <EditProgramsPanel
+                degreePlanId={activeDegreeplan.id}
+                onClose={() => setEditingPrograms(false)}
+              />
+            )}
             <PageContainer>
               <TopBar
                 user={user}
@@ -284,10 +292,9 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
                           content: (
                             <PanelInteriorWrapper>
                               <ReqPanel
-                                setModalKey={setModalKey}
-                                setModalObject={setModalObject}
                                 isLoading={isLoadingDegreeplans}
                                 activeDegreeplan={activeDegreeplan}
+                                onEditPrograms={() => setEditingPrograms(true)}
                               />
                             </PanelInteriorWrapper>
                           ),

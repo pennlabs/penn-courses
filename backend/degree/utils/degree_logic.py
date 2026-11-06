@@ -673,18 +673,23 @@ def map_rules_and_degrees(degree_plan):
 def undergraduate_degree_of(degree_plan, components):
     """
     Maps each component to the undergraduate degree whose audit it belongs to: a degree to
-    itself, and a major to the degree the student placed it under, if that degree is in the plan.
+    itself, and a major or minor to the degree the student placed it under, if that degree is in
+    the plan.
     """
-    from degree.models import Degree, DegreePlanMajor, Major
+    from degree.models import Degree, DegreePlanMajor, DegreePlanMinor, Major, Minor
 
     degrees = {c.pk: c for c in components if isinstance(c, Degree) and not is_graduate(c)}
     result = {degree: pk for pk, degree in degrees.items()}
-    placed = dict(
-        DegreePlanMajor.objects.filter(
-            degree_plan=degree_plan, degree__in=list(degrees)
-        ).values_list("major_id", "degree_id")
-    )
-    for component in components:
-        if isinstance(component, Major) and component.pk in placed:
-            result[component] = placed[component.pk]
+    for model, placement, field in (
+        (Major, DegreePlanMajor, "major_id"),
+        (Minor, DegreePlanMinor, "minor_id"),
+    ):
+        placed = dict(
+            placement.objects.filter(degree_plan=degree_plan, degree__in=list(degrees)).values_list(
+                field, "degree_id"
+            )
+        )
+        for component in components:
+            if isinstance(component, model) and component.pk in placed:
+                result[component] = placed[component.pk]
     return result

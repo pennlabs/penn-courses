@@ -1,24 +1,14 @@
 import styled from "@emotion/styled";
-import type {
-  Degree,
-  DegreeListing,
-  DegreePlan,
-  MajorOption,
-  SchoolOption,
-} from "@/types";
+import type { DegreeListing, DegreePlan } from "@/types";
 import React, { useState, useEffect } from "react";
 import { deleteFetcher, postFetcher, useSWRCrud } from "@/hooks/swrcrud";
-import useSWR, { useSWRConfig } from "swr";
+import { useSWRConfig } from "swr";
 import ModalContainer from "../common/ModalContainer";
-import Select from "react-select";
-import { schoolOptions } from "@/components/OnboardingPanels/SharedComponents";
 
 export type ModalKey =
   | "plan-create"
   | "plan-rename"
   | "plan-remove"
-  | "degree-add"
-  | "degree-remove"
   | "semester-remove"
   | null; // null is closed
 
@@ -30,10 +20,6 @@ const getModalTitle = (modalState: ModalKey) => {
       return "Rename degree plan";
     case "plan-remove":
       return "Remove degree plan";
-    case "degree-add":
-      return "Add degree";
-    case "degree-remove":
-      return "Remove degree";
     case "semester-remove":
       return "Remove semester";
     case null:
@@ -104,22 +90,6 @@ const CancelButton = styled.button`
   border: none;
 `;
 
-const SelectList = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-  align-items: left;
-  width: 100%;
-`;
-
-const DegreeAddInterior = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  width: 100%;
-  padding: 1.2rem 2rem;
-`;
-
 /** Create label for major listings */
 export const createMajorLabel = (degree: DegreeListing) => {
   const concentration =
@@ -128,12 +98,6 @@ export const createMajorLabel = (degree: DegreeListing) => {
       : "";
   return `${degree.major_name}${concentration} (${degree.year})`;
 };
-
-interface RemoveDegreeProps {
-  degreeplanId: number;
-  degreeId: number;
-  relation?: "degrees" | "majors" | "minors";
-}
 
 interface RemoveSemesterProps {
   helper: () => void;
@@ -144,9 +108,7 @@ interface ModalInteriorProps {
   modalObject:
     | DegreePlan
     | null
-    | RemoveSemesterProps
-    | RemoveDegreeProps
-    | Degree;
+    | RemoveSemesterProps;
   activeDegreePlan: DegreePlan | null;
   setActiveDegreeplan: (arg0: DegreePlan | null) => void;
   close: () => void;
@@ -188,57 +150,9 @@ const ModalInterior = ({
     await mutate("/api/degree/degreeplans"); // use updated degree plan returned
   };
 
-  const [school, setSchool] = useState<SchoolOption>();
-  const [major, setMajor] = useState<MajorOption>();
   const [name, setName] = useState<string>("");
 
-  const { data: degrees, isLoading: isLoadingDegrees } = useSWR<
-    DegreeListing[]
-  >(`/api/degree/degrees`);
-
-  const getMajorOptions = React.useCallback(() => {
-    /** Filter major options based on selected schools/degrees */
-    const majorOptions =
-      degrees
-        ?.filter((d) => school?.value === d.degree)
-        .map((degree) => ({
-          value: degree,
-          label: createMajorLabel(degree),
-        })) || [];
-    return majorOptions;
-  }, [school]);
-
   if (!modalKey && !modalObject) return <div></div>;
-
-  const [isAddingDegree, setIsAddingDegree] = useState(false);
-  const add_degree = async (degreeplanId: number, degreeId: number) => {
-    setIsAddingDegree(true);
-    try {
-      const updated = await postFetcher(
-        `/api/degree/degreeplans/${degreeplanId}/degrees`,
-        { degree_ids: [degreeId] }
-      );
-      await mutate(`/api/degree/degreeplans/${degreeplanId}`); // use updated degree plan returned
-      await mutate(`/api/degree/degreeplans/${degreeplanId}/fulfillments`);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsAddingDegree(false);
-    }
-  };
-
-  const remove_degree = async (
-    degreeplanId: number,
-    degreeId: number,
-    relation: "degrees" | "majors" | "minors" = "degrees"
-  ) => {
-    // degrees -> degree_ids, majors -> major_ids, minors -> minor_ids
-    const idsField = `${relation.slice(0, -1)}_ids`;
-    await deleteFetcher(`/api/degree/degreeplans/${degreeplanId}/${relation}`, {
-      [idsField]: [degreeId],
-    });
-    await mutate(`/api/degree/degreeplans/${degreeplanId}`); // use updated degree plan returned
-  };
 
   switch (modalKey) {
     case "plan-create":
@@ -313,76 +227,6 @@ const ModalInterior = ({
               Remove
             </ModalButton>
           </ButtonRow>
-        </ModalInteriorWrapper>
-      );
-    case "degree-add":
-      return (
-        <ModalInteriorWrapper>
-          <DegreeAddInterior>
-            <SelectList>
-              <Select
-                options={schoolOptions}
-                value={school}
-                onChange={(selectedOption) =>
-                  setSchool(selectedOption || undefined)
-                }
-                isClearable
-                placeholder="Select School or Program"
-                isLoading={false}
-                styles={{ menuPortal: (base) => ({ ...base, zIndex: 999 }) }}
-                menuPortalTarget={modalRefCurrent}
-              />
-              <Select
-                options={getMajorOptions()}
-                value={major}
-                onChange={(selectedOption) =>
-                  setMajor(selectedOption || undefined)
-                }
-                styles={{ menuPortal: (base) => ({ ...base, zIndex: 999 }) }}
-                menuPortalTarget={modalRefCurrent}
-                isClearable
-                isDisabled={!school}
-                placeholder={
-                  isLoadingDegrees
-                    ? "loading programs..."
-                    : "Major - Concentration (Starting Year)"
-                }
-                isLoading={isLoadingDegrees}
-              />
-            </SelectList>
-            <ButtonRow $center={true}>
-              <ModalButton
-                disabled={isAddingDegree}
-                onClick={async () => {
-                  if (!major?.value.id) return;
-                  await add_degree((modalObject as Degree).id, major?.value.id);
-                  close();
-                }}
-              >
-                {isAddingDegree ? "Adding..." : "Add"}
-              </ModalButton>
-            </ButtonRow>
-          </DegreeAddInterior>
-        </ModalInteriorWrapper>
-      );
-    case "degree-remove":
-      return (
-        <ModalInteriorWrapper>
-          <ModalTextWrapper>
-            <ModalText>{DELETE_CONFIRMATION_MESSAGE("degree")}</ModalText>
-          </ModalTextWrapper>
-          <ModalButton
-            onClick={() => {
-              remove_degree(
-                (modalObject as RemoveDegreeProps).degreeplanId,
-                (modalObject as RemoveDegreeProps).degreeId,
-                (modalObject as RemoveDegreeProps).relation
-              );
-              close();
-            }}
-          >
-            Remove
-          </ModalButton>
         </ModalInteriorWrapper>
       );
     case "semester-remove":

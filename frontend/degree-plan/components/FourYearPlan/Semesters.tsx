@@ -170,6 +170,19 @@ const ModifySemesters = ({
   );
 };
 
+const SEMESTERS_REPLACED = "pdp-semesters-replaced";
+
+/** Sets a plan's semesters, both in storage and in a plan view that has them open. */
+export const replacePlanSemesters = (degreeplanId: DegreePlan["id"], keys: string[]) => {
+  localStorage.setItem(
+    getLocalSemestersKey(degreeplanId),
+    JSON.stringify(Object.fromEntries(keys.map((key) => [key, []])))
+  );
+  window.dispatchEvent(
+    new CustomEvent(SEMESTERS_REPLACED, { detail: { degreeplanId, keys } })
+  );
+};
+
 export const interpolateSemesters = (startingYear: number, graduationYear: number) => {
   let res = {} as { [semester: string]: Fulfillment[] };
   for (let year = startingYear; year < graduationYear; year++) {
@@ -246,6 +259,28 @@ const Semesters = ({
       setSemesters(newSems);
     }
   };
+
+  // The open plan would otherwise write its old semesters back over the new ones.
+  useEffect(() => {
+    if (!activeDegreeplan) return undefined;
+    const onReplaced = (event: Event) => {
+      const { degreeplanId, keys } = (event as CustomEvent).detail;
+      if (degreeplanId !== activeDegreeplan.id) return;
+      setSemesters((current) => {
+        const next: { [semester: string]: Fulfillment[] } = Object.fromEntries(
+          keys.map((key: string) => [key, []])
+        );
+        Object.values(current).flat().forEach((fulfillment) => {
+          if (fulfillment.semester && next[fulfillment.semester]) {
+            next[fulfillment.semester].push(fulfillment);
+          }
+        });
+        return next;
+      });
+    };
+    window.addEventListener(SEMESTERS_REPLACED, onReplaced);
+    return () => window.removeEventListener(SEMESTERS_REPLACED, onReplaced);
+  }, [activeDegreeplan]);
 
   /** Get semesters from local storage */
   useEffect(() => {

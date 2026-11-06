@@ -35,12 +35,16 @@ const Toggle = styled.button`
   &:hover {
     color: ${color.accentHover};
   }
+
+  svg {
+    transition: transform 0.15s ease;
+  }
+
+  &[aria-expanded="true"] svg {
+    transform: rotate(180deg);
+  }
 `;
 
-const Chevron = styled(ChevronDownIcon)<{ $open: boolean }>`
-  transform: rotate(${({ $open }) => ($open ? 180 : 0)}deg);
-  transition: transform 0.15s ease;
-`;
 
 const List = styled.div`
   display: flex;
@@ -146,7 +150,7 @@ export default function ImportedCourses({
           onClick={() => setOpen((o) => !o)}
         >
           {open ? "Hide courses" : "Show courses"}
-          <Chevron $open={open} width={16} height={16} />
+          <ChevronDownIcon width={16} height={16} />
         </Toggle>
       </Summary>
       {open && (

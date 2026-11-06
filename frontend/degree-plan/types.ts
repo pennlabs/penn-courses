@@ -83,6 +83,10 @@ export interface DegreePlan extends DBObject {
   /** Majors pursued beyond the one this plan's degree already includes. */
   majors: Major[]
   minors: Minor[]
+  /** Which of the plan's degrees each major was added under; null when it wasn't placed. */
+  major_degrees?: { major: Major["id"]; degree: Degree["id"] | null }[];
+  /** Which of the plan's degrees each minor was added under; null when it wasn't placed. */
+  minor_degrees?: { minor: Minor["id"]; degree: Degree["id"] | null }[];
   name: string;
   updated_at: string;
   created_at: string;

@@ -8,8 +8,6 @@ import { EditButton } from '../FourYearPlan/EditButton';
 import useSWR from 'swr';
 import { Icon } from '../common/bulma_derived_components';
 import React from 'react';
-import { ModalKey } from '../FourYearPlan/DegreeModal';
-import { LightTrashIcon } from '../common/TrashIcon';
 import useStickyState from '@/hooks/stickyState';
 import ProgramTabs, { programPanelId, programTabId } from './ProgramTabs';
 import { PlanProgram, planPrograms } from '@/utils/programs';
@@ -28,11 +26,28 @@ const EmptyPanelImage = styled.img`
     max-width: min(60%, 20rem);
 `;
 
-const EmptyPanel = () => {
+const EmptyPanelButton = styled.button`
+  margin-top: 1rem;
+  padding: .6rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--primary-color-light);
+  color: var(--primary-color-xxx-dark);
+  font: inherit;
+  font-weight: 600;
+
+  &:hover {
+    background: var(--primary-color-dark);
+    color: var(--primary-color-ultra-dark);
+  }
+`;
+
+const EmptyPanel = ({ onAdd }: { onAdd: () => void }) => {
   return (
     <EmptyPanelContainer>
       <EmptyPanelImage src="/images/empty-state-cal.svg" />
       There's nothing here so far... add a degree to get started!
+      <EmptyPanelButton type="button" onClick={onAdd}>Add a degree</EmptyPanelButton>
     </EmptyPanelContainer>
   )
 }
@@ -87,18 +102,6 @@ const DegreeTitleWrapper = styled.div`
   align-items: center;
   gap: .5rem;
 `
-const AddButton = styled.div`
-  width: 100%;
-  display: flex;
-  flex-direction: row;
-  gap: 1rem;
-  justify-content: center;
-  background-color: var(--plus-button-color);
-  padding: 1rem;
-  border-radius: var(--req-item-radius);
-  align-items: center;
-  color: white;
-`
 
 const ReqPanelBody = styled(PanelBody)<{ $hasTabs?: boolean }>`
   overflow-y: scroll;
@@ -130,10 +133,8 @@ const programKey = (program: PlanProgram) => `${program.relation}-${program.id}`
 
 interface DegreeHeaderProps {
   program: PlanProgram,
-  remove: (id: number) => void,
   setCollapsed: (status: boolean) => void,
   collapsed: boolean,
-  editMode: boolean,
   skeleton?: boolean,
   containerRef?: React.Ref<HTMLDivElement>,
   progress?: number,
@@ -141,10 +142,8 @@ interface DegreeHeaderProps {
 
 const DegreeHeader = ({
   program,
-  remove,
   setCollapsed,
   collapsed,
-  editMode,
   skeleton,
   containerRef,
   progress = 0,
@@ -152,7 +151,7 @@ const DegreeHeader = ({
   const degreeName = !skeleton ? program.title : <DarkBlueBackgroundSkeleton width="10em" />;
   return (
     <DegreeHeaderContainer ref={containerRef} onClick={() => setCollapsed(!collapsed)}>
-      <DegreeHeaderFill $progress={editMode ? 0 : progress} />
+      <DegreeHeaderFill $progress={progress} />
       <DegreeTitleWrapper>
         <div>
           {degreeName}
@@ -162,14 +161,9 @@ const DegreeHeader = ({
         </DegreeYear>
       </DegreeTitleWrapper>
       <DegreeHeaderAction>
-        {!skeleton && editMode ?
-          <LightTrashIcon role="button" onClick={() => remove(program.id)}>
-            <i className="fa fa-trash fa-md" />
-          </LightTrashIcon>
-          :
-          <Icon>
-            <i className={`fas fa-chevron-${collapsed ? "up" : "down"}`}></i>
-          </Icon>}
+        <Icon>
+          <i className={`fas fa-chevron-${collapsed ? "up" : "down"}`}></i>
+        </Icon>
       </DegreeHeaderAction>
     </DegreeHeaderContainer>
   )
@@ -233,9 +227,6 @@ const Degree = ({
   rulesToFulfillments, 
   rulesToUnselectedFulfillments, 
   activeDegreeplan, 
-  editMode, 
-  setModalKey, 
-  setModalObject,
   isLoading,
   progress,
   showHeader = true, // false when program tabs take the header's place
@@ -262,18 +253,16 @@ const Degree = ({
   }, [showHeader, isLoading]); // the header element comes and goes with these
 
   const ruleOffset = showHeader ? headerHeight : stickyOffset;
-  const showRules = !editMode && (!collapsed || !showHeader);
+  const showRules = !collapsed || !showHeader;
 
   if (isLoading) {
     return (
       <div>
         <DegreeHeader
           program={program}
-          remove={() => void {}}
           setCollapsed={setCollapsed}
           skeleton
           collapsed={collapsed}
-          editMode={false}
         />
         <DegreeBody>
           <SkeletonRule>
@@ -305,17 +294,8 @@ const Degree = ({
           containerRef={headerRef}
           program={program}
           key={program.id}
-          remove={() => {
-            setModalObject({
-              degreeplanId: activeDegreeplan.id,
-              degreeId: program.id,
-              relation: program.relation,
-            });
-            setModalKey("degree-remove");
-          }}
           setCollapsed={setCollapsed}
-          collapsed={collapsed || editMode} // Collapse degree view in edit mode
-          editMode={editMode}
+          collapsed={collapsed}
           skeleton={false}
           progress={progress}
         />
@@ -346,13 +326,11 @@ const Degree = ({
 }
 
 interface ReqPanelProps {
-  setModalKey: (arg0: ModalKey) => void;
-  setModalObject: (arg0: DegreePlan | null) => void;
   activeDegreeplan: DegreePlan | null;
   isLoading: boolean;
+  onEditPrograms: () => void;
 }
-const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: ReqPanelProps) => {
-  const [editMode, setEditMode] = React.useState(false);
+const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps) => {
   const [allRuleLeaves, setAllRuleLeaves] = React.useState(false);
 
   const { data: activeDegreeplanDetail = null, isLoading: isLoadingDegrees } = useSWR<DegreePlan>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}` : null);
@@ -391,8 +369,7 @@ const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: 
 
   const programs = activeDegreeplanDetail ? planPrograms(activeDegreeplanDetail) : [];
   const fulfillmentsLoaded = !isLoadingFulfillments && !!fulfillments;
-  // Edit mode manages programs rather than browsing them, so it lists them all.
-  const showTabs = programs.length > 1 && !editMode;
+  const showTabs = programs.length > 1;
 
   // The average of the program's top-level rules.
   const programProgress = (program: PlanProgram) => {
@@ -434,7 +411,7 @@ const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: 
       <PanelHeader>
         <ReqPanelTitle>Requirements</ReqPanelTitle>
         <PanelTopBarIconList>
-          <EditButton editMode={editMode} setEditMode={setEditMode} />
+          <EditButton editMode={false} setEditMode={onEditPrograms} />
         </PanelTopBarIconList>
       </PanelHeader>
       {!activeDegreeplan ? <ReqPanelBody><Degree isLoading={true} /></ReqPanelBody> :
@@ -442,7 +419,7 @@ const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: 
           {activeDegreeplanDetail &&
             <ReqPanelBody $hasTabs={showTabs}>
               <ReqContent>
-                {programs.length == 0 && !editMode && <EmptyPanel />}
+                {programs.length == 0 && <EmptyPanel onAdd={onEditPrograms} />}
                 {showTabs && (
                   <ProgramTabs
                     ref={setTabBar}
@@ -476,9 +453,6 @@ const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: 
                         rulesToFulfillments={rulesToFulfillments}
                         rulesToUnselectedFulfillments={rulesToUnselectedFulfillments}
                         activeDegreeplan={activeDegreeplan}
-                        editMode={editMode}
-                        setModalKey={setModalKey}
-                        setModalObject={setModalObject}
                         isLoading={isLoading}
                         progress={programProgress(program)}
                         showHeader={!showTabs}
@@ -487,15 +461,6 @@ const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: 
                     </div>
                   );
                 })}
-                {editMode && <AddButton role="button" onClick={() => {
-                  setModalObject(activeDegreeplan);
-                  setModalKey("degree-add");
-                }}>
-                  <i className="fa fa-plus" />
-                  <div>
-                    Add Degree
-                  </div>
-                </AddButton>}
               </ReqContent>
             </ReqPanelBody>
           }

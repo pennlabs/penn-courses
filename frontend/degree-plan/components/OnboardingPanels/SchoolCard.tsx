@@ -1,10 +1,11 @@
 import { TrashIcon } from "@radix-ui/react-icons";
 import styled from "@emotion/styled";
 import Select from "react-select";
-import { DegreeListing, Major } from "@/types";
+import { DegreeListing, Major, Minor } from "@/types";
 import {
   getAdditionalMajorOptions,
   getMajorOptions,
+  getMinorOptions,
   SchoolSelection,
   takesAdditionalMajors,
 } from "@/utils/parseUtils";
@@ -67,23 +68,30 @@ const CardBody = styled(FieldGrid)`
   padding: 20px;
 `;
 
+// Options are compared by id, so a value read from a saved plan matches its option.
+const optionId = <T extends { value: { id: number } }>(option: T) => String(option.value.id);
+
 type SchoolCardProps = {
   selection: SchoolSelection;
   degrees: DegreeListing[] | undefined;
   standaloneMajors: Major[] | undefined;
+  minors: Minor[] | undefined;
   isLoadingDegrees: boolean;
   isLoadingMajors: boolean;
+  isLoadingMinors: boolean;
   onChange: (changes: Partial<SchoolSelection>) => void;
   onRemove: () => void;
 };
 
-// One school the student is enrolled in, with its primary and additional majors.
+// One school the student is enrolled in, with its primary and additional majors and its minors.
 export default function SchoolCard({
-  selection: { school, primary, additional },
+  selection: { school, primary, additional, minors: chosenMinors = [] },
   degrees,
   standaloneMajors,
+  minors,
   isLoadingDegrees,
   isLoadingMajors,
+  isLoadingMinors,
   onChange,
   onRemove,
 }: SchoolCardProps) {
@@ -113,6 +121,7 @@ export default function SchoolCard({
             onChange={(selected) => onChange({ primary: selected })}
             isClearable
             placeholder={`Choose a ${majorWord}`}
+            getOptionValue={optionId}
             styles={selectStyles}
             menuPortalTarget={typeof document !== "undefined" ? document.body : null}
             isLoading={isLoadingDegrees}
@@ -132,9 +141,31 @@ export default function SchoolCard({
               isClearable
               isMulti
               placeholder="Add another"
+              getOptionValue={optionId}
               styles={selectStyles}
               menuPortalTarget={typeof document !== "undefined" ? document.body : null}
               isLoading={isLoadingMajors}
+            />
+          </Field>
+        )}
+        {takesAdditionalMajors(school) && (
+          <Field>
+            <FieldLabel htmlFor={`${id}-minors`}>
+              Minors
+              <Optional />
+            </FieldLabel>
+            <Select
+              inputId={`${id}-minors`}
+              options={getMinorOptions(minors)}
+              value={chosenMinors}
+              onChange={(selected) => onChange({ minors: [...selected] })}
+              isClearable
+              isMulti
+              placeholder="Add a minor"
+              getOptionValue={optionId}
+              styles={selectStyles}
+              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+              isLoading={isLoadingMinors}
             />
           </Field>
         )}

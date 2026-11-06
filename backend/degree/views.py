@@ -17,6 +17,7 @@ from degree.models import (
     Degree,
     DegreePlan,
     DegreePlanMajor,
+    DegreePlanMinor,
     DockedCourse,
     Fulfillment,
     Major,
@@ -261,7 +262,8 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=["post", "delete"])
     def minors(self, request, pk=None):
         """
-        Add or remove minors from a degree plan.
+        Add or remove minors from a degree plan. An optional `degree_id` names which of the
+        plan's degrees the minors are part of.
         """
         return self.update_components(request, "minors", "minor_ids")
 
@@ -273,7 +275,8 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         degree_plan = self.get_object()
         components = getattr(degree_plan, relation)
 
-        degree_id = request.data.get("degree_id") if relation == "majors" else None
+        placements = {"majors": DegreePlanMajor, "minors": DegreePlanMinor}
+        degree_id = request.data.get("degree_id") if relation in placements else None
         if degree_id is not None and (
             not isinstance(degree_id, int) or not degree_plan.degrees.filter(pk=degree_id).exists()
         ):
@@ -285,14 +288,15 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                 if request.method == "DELETE":
                     components.remove(*ids)
                     if relation == "degrees":
-                        DegreePlanMajor.objects.filter(
-                            degree_plan=degree_plan, degree_id__in=ids
-                        ).update(degree=None)
+                        for placement in placements.values():
+                            placement.objects.filter(
+                                degree_plan=degree_plan, degree_id__in=ids
+                            ).update(degree=None)
                     return Response(status=status.HTTP_204_NO_CONTENT)
                 components.add(*ids)
                 if degree_id is not None:
-                    DegreePlanMajor.objects.filter(
-                        degree_plan=degree_plan, major_id__in=ids
+                    placements[relation].objects.filter(
+                        degree_plan=degree_plan, **{f"{relation[:-1]}_id__in": ids}
                     ).update(degree_id=degree_id)
                 update_fulfillments(degree_plan)
         except IntegrityError:
