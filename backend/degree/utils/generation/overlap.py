@@ -60,47 +60,36 @@ def _eligible(rule):
     return None, []
 
 
-def _matches(rule, codes):
-    """Which of `codes` satisfy `rule`. One query."""
+def _recent_codes(rule):
+    """Course codes from recent semesters that satisfy `rule`. One query for the whole rule."""
     try:
         query = rule.get_q_object()
     except Exception:
         return []
     if not query:
         return []
-    found = Course.objects.filter(query, full_code__in=list(codes)).values_list(
-        "full_code", flat=True
-    )
-    return list(dict.fromkeys(found))
-
-
-def _both(left, right):
-    """Up to MAX_SHOW courses that satisfy both rules."""
-    try:
-        left_q = left.get_q_object()
-        right_q = right.get_q_object()
-    except Exception:
-        return []
-    if not left_q or not right_q:
-        return []
     rows = (
-        Course.objects.filter(left_q & right_q, semester__gte=_cutoff_semester())
+        Course.objects.filter(query, semester__gte=_cutoff_semester())
         .order_by("full_code")
         .distinct("full_code")
-        .values_list("full_code", flat=True)[:MAX_SHOW]
+        .values_list("full_code", flat=True)
     )
     return list(rows)
 
 
-def _intersection(left, left_kind, left_codes, right, right_kind, right_codes):
+def _shared(left_kind, left_codes, right_kind, right_codes, left_match, right_match):
+    """Up to MAX_SHOW codes in common. Match lists are already in full_code order."""
     if left_kind == "listed" and right_kind == "listed":
-        shared = [code for code in left_codes if code in set(right_codes)]
-        return shared[:MAX_SHOW]
+        right_set = set(right_codes)
+        return [code for code in left_codes if code in right_set][:MAX_SHOW]
     if left_kind == "listed":
-        return _matches(right, left_codes)[:MAX_SHOW]
+        found = set(right_match)
+        return sorted(code for code in left_codes if code in found)[:MAX_SHOW]
     if right_kind == "listed":
-        return _matches(left, right_codes)[:MAX_SHOW]
-    return _both(left, right)
+        found = set(right_codes)
+        return [code for code in left_match if code in found][:MAX_SHOW]
+    found = set(right_match)
+    return [code for code in left_match if code in found][:MAX_SHOW]
 
 
 def pair_placeholders(ghosts, plan_rules, sharing):
@@ -134,13 +123,28 @@ def pair_placeholders(ghosts, plan_rules, sharing):
             continue
         eligible.append((ghost, rule, component, kind, codes))
 
+    # One catalog read per attribute or writing rule. Pairs are intersected in memory,
+    # so the number of queries follows the number of rules rather than the number of pairs.
+    catalog = {}
+    for _ghost, rule, _component, kind, _codes in eligible:
+        if kind == "listed" or rule.id in catalog:
+            continue
+        catalog[rule.id] = _recent_codes(rule)
+
     candidates = []
     for left, right in combinations(eligible, 2):
         if left[2].key == right[2].key:
             continue
         if is_graduate(left[2]) and is_graduate(right[2]):
             continue
-        shared = _intersection(left[1], left[3], left[4], right[1], right[3], right[4])
+        shared = _shared(
+            left[3],
+            left[4],
+            right[3],
+            right[4],
+            catalog.get(left[1].id, ()),
+            catalog.get(right[1].id, ()),
+        )
         if not shared:
             continue
         specificity = (left[3] != "listed") + (right[3] != "listed")
