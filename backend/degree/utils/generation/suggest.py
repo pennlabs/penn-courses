@@ -125,7 +125,9 @@ def _credits(course, credits_cache):
     return credits_cache.get(course.full_code, course.credits or DEFAULT_COURSE_CREDITS)
 
 
-def cover_slots_with_planned_courses(slots, fulfillments, plan_rules, degree_plan):
+def cover_slots_with_planned_courses(
+    slots, fulfillments, plan_rules, degree_plan, belongs_cache=None
+):
     """
     Drop one open slot per planned course that `allocate_rules` would actually claim.
 
@@ -137,7 +139,7 @@ def cover_slots_with_planned_courses(slots, fulfillments, plan_rules, degree_pla
         return slots
     codes = [fulfillment.full_code for fulfillment in fulfillments]
     credits_cache = prewarm_credits_cache(codes)
-    belongs = prewarm_belongs_cache({slot.rule for slot in slots}, codes)
+    belongs = prewarm_belongs_cache({slot.rule for slot in slots}, codes, belongs_cache)
     sharing = sharing_from_fulfillments(fulfillments, plan_rules.rule_to_component, credits_cache)
     for fulfillment in fulfillments:
         claimed = sharing.claims.setdefault(fulfillment.full_code, set())
@@ -194,7 +196,7 @@ def _claimed_rule_ids(fulfillment):
     }
 
 
-def _unmet_coverage(slots, fulfillments, ghosts):
+def _unmet_coverage(slots, fulfillments, ghosts, belongs_cache=None):
     """
     Coverage labels still open after courses already in the degree are checked.
 
@@ -211,7 +213,11 @@ def _unmet_coverage(slots, fulfillments, ghosts):
         code = ghost.get("full_code")
         if code and code not in codes:
             codes.append(code)
-    belongs = prewarm_belongs_cache({slot.rule for slot in slots}, codes) if codes else {}
+    belongs = (
+        prewarm_belongs_cache({slot.rule for slot in slots}, codes, belongs_cache)
+        if codes
+        else belongs_cache or {}
+    )
     used = {}
     unmet = []
     for slot in slots:
@@ -302,7 +308,9 @@ def _placeholder_satisfies_floor(
     return True
 
 
-def _cu_toward_floor(rule, degree_rule_ids, fulfillments, ghosts, credits_cache, rules_by_id):
+def _cu_toward_floor(
+    rule, degree_rule_ids, fulfillments, ghosts, credits_cache, rules_by_id, belongs_cache=None
+):
     """
     Credits already on the plan or the schedule that satisfy a college CU floor.
 
@@ -323,7 +331,7 @@ def _cu_toward_floor(rule, degree_rule_ids, fulfillments, ghosts, credits_cache,
             if other is not None:
                 codes.extend(listed_course_codes(other) or [])
     unique_codes = list(dict.fromkeys(codes))
-    belongs = prewarm_belongs_cache([rule], unique_codes) if unique_codes else {}
+    belongs = prewarm_belongs_cache([rule], unique_codes, belongs_cache) if unique_codes else {}
     floor_depts = rule_departments(rule)
     total = Decimal(0)
     seen = set()
@@ -355,7 +363,13 @@ def _cu_toward_floor(rule, degree_rule_ids, fulfillments, ghosts, credits_cache,
 
 
 def _pad_to_degree_credits(
-    plan_rules, fulfillments, credits_cache, ghosts, coverage_slots=(), floor_rules=()
+    plan_rules,
+    fulfillments,
+    credits_cache,
+    ghosts,
+    coverage_slots=(),
+    floor_rules=(),
+    belongs_cache=None,
 ):
     """
     Fill each degree up to Degree.credits.
@@ -484,6 +498,7 @@ def _pad_to_degree_credits(
                 ghosts,
                 credits_cache,
                 rules_by_id,
+                belongs_cache,
             )
             remaining = max(Decimal(0), Decimal(rule.credits) - satisfied_cu)
             if remaining > floor_short:
@@ -549,7 +564,11 @@ def suggest(degree_plan):
     plan_codes = [f.full_code for f in fulfillments]
     credits_cache = prewarm_credits_cache(plan_codes)
     plan_rules = map_rules_and_degrees(degree_plan)
-    slots = cover_slots_with_planned_courses(slots, fulfillments, plan_rules, degree_plan)
+    # One cache for the whole call. Later steps only query pairs it does not have yet.
+    belongs_cache = {}
+    slots = cover_slots_with_planned_courses(
+        slots, fulfillments, plan_rules, degree_plan, belongs_cache
+    )
     # Sectors and foundational approaches are labels on courses in the degree.
     # They are scheduled only as part of the credit gap, after real courses.
     open_rule_count = len(slots)
@@ -574,7 +593,8 @@ def suggest(degree_plan):
     )
     blocked_listings.discard(None)
 
-    # One candidate query per distinct open leaf, then one belongs-cache warm-up.
+    # One candidate query per single-course leaf. The belongs cache already holds
+    # anything cover_slots asked, so this warm-up only fills what is still missing.
     rule_by_id = {}
     candidate_pool = {}
     for slot in slots:
@@ -591,9 +611,10 @@ def suggest(degree_plan):
     candidate_codes = [
         course.full_code for courses in candidate_pool.values() if courses for course in courses
     ]
-    belongs_cache = prewarm_belongs_cache(
+    prewarm_belongs_cache(
         set(plan_rules.rule_to_component),
         list(set(plan_codes) | set(candidate_codes)),
+        belongs_cache,
     )
     extra_codes = [code for code in candidate_codes if code not in credits_cache]
     credits_cache.update(prewarm_credits_cache(extra_codes))
@@ -729,7 +750,7 @@ def suggest(degree_plan):
         )
 
     ghosts = pair_placeholders(ghosts, plan_rules, sharing)
-    unmet = _unmet_coverage(coverage, fulfillments, ghosts)
+    unmet = _unmet_coverage(coverage, fulfillments, ghosts, belongs_cache)
     padding, consumed = _pad_to_degree_credits(
         plan_rules,
         fulfillments,
@@ -737,6 +758,7 @@ def suggest(degree_plan):
         ghosts,
         coverage_slots=unmet,
         floor_rules=floor_rules,
+        belongs_cache=belongs_cache,
     )
     for slot in unmet:
         if slot.slot_id in consumed:

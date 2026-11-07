@@ -8,8 +8,10 @@ rules that are only partly done.
 
 from decimal import Decimal
 
+from django.db import connection
 from django.db.models import Q
 from django.test import SimpleTestCase, TestCase
+from django.test.utils import CaptureQueriesContext
 
 from courses.models import Attribute
 from degree.models import Degree, Fulfillment, Rule
@@ -1318,6 +1320,62 @@ class PanelOptionsTests(TestCase):
     def test_an_explicit_course_list_is_left_to_the_panel(self):
         rule = leaf("Pick", Q(full_code="CIS-1100") | Q(full_code="CIS-1200"))
         self.assertIsNone(filter_panel_options(rule))
+
+
+class QueryBudgetTest(TestCase):
+    """Course lookups follow the number of restrictions, not lists or pairs."""
+
+    def setUp(self):
+        use_semester()
+
+    def test_suggest_does_not_query_once_per_list_or_pair(self):
+        attribute = _attribute("AUSO")
+        for offset in range(3):
+            course(f"SOCI-{1000 + offset}").attributes.add(attribute)
+        for code in ("ECON-0100", "ECON-0200"):
+            course(code)
+
+        def add_rules(degree, name):
+            rules = [
+                leaf(
+                    f"{name} list {index}",
+                    Q(full_code="ECON-0100") | Q(full_code="ECON-0200"),
+                    num=1,
+                )
+                for index in range(6)
+            ]
+            rules.extend(
+                leaf(f"{name} attribute {index}", Q(attributes__code__in=["AUSO"]), num=1)
+                for index in range(4)
+            )
+            degree.rules.add(*rules)
+
+        left = Degree.objects.create(
+            program="EU_BSE", degree="BSE", major="QBL", year=2026, credits=Decimal("20")
+        )
+        right = Degree.objects.create(
+            program="WU_BS", degree="BS", major="QBR", year=2026, credits=Decimal("20")
+        )
+        add_rules(left, "Engineering")
+        add_rules(right, "Wharton")
+        degree_plan = plan_for(left, username="query-budget")
+        degree_plan.degrees.add(right)
+
+        with CaptureQueriesContext(connection) as captured:
+            result = suggest(degree_plan)
+
+        course_queries = [
+            query for query in captured.captured_queries if "courses_course" in query["sql"]
+        ]
+        # Four attribute rules on each side are read once. The twelve course lists and the
+        # sixteen cross pairs do not add a query each.
+        self.assertLessEqual(len(course_queries), 14)
+        shared = [
+            row
+            for row in result["items"]
+            if row.get("overlap") and any(code.startswith("SOCI-") for code in row["alternatives"])
+        ]
+        self.assertTrue(shared)
 
 
 class OverlapAndReconcileTests(TestCase):
