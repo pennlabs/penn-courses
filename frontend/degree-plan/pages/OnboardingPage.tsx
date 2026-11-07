@@ -43,6 +43,7 @@ const OnboardingPage = ({
   const [schools, setSchools] = useState<SchoolOption[]>([]);
   const [majors, setMajors] = useState<MajorOption[]>([]);
   const [secondMajors, setSecondMajors] = useState<MajorOptionItem[]>([]);
+  const [detectedDual, setDetectedDual] = useState<string | null>(null);
 
   const [PDF, setPDF] = useState<File | null>(null);
   const [numPages, setNumPages] = useState<number | null>(null);
@@ -92,7 +93,9 @@ const OnboardingPage = ({
       scrapedSchools,
       detectedMajorsOptions,
       detectedSecondMajorOptions,
+      dualProgramCode,
     } = parseTranscript(all, degrees, standaloneMajors);
+    setDetectedDual(dualProgramCode);
     setScrapedCourses(scrapedCourses);
     setStartingYear({
       value: startYear,
@@ -118,6 +121,7 @@ const OnboardingPage = ({
     setSchools([]);
     setMajors([]);
     setSecondMajors([]);
+    setDetectedDual(null);
     setScrapedCourses([]);
     setStartingYear(null);
     setGraduationYear(null);
@@ -157,6 +161,7 @@ const OnboardingPage = ({
       inputtedSchools={schools}
       inputtedMajors={majors}
       inputtedSecondMajors={secondMajors}
+      detectedDualProgram={detectedDual}
       setShowOnboardingModal={setShowOnboardingModal}
       canExit={canExit}
       onExit={exitOnboarding}

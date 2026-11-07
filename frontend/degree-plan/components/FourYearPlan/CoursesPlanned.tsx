@@ -8,9 +8,10 @@ import { Course, Fulfillment } from "@/types";
 
 const PlannedCoursesContainer = styled.div`
     flex-grow: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: .5rem;
+    gap: .4rem;
 `;
 
 export const SkeletonCoursesPlanned = () => (
