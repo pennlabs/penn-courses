@@ -34,6 +34,7 @@ interface PlanPanelProps {
     isLoading: boolean;
     currentSemester?: string;
     setShowOnboardingModal: (arg0: boolean) => void;
+    footer?: React.ReactNode;
 }
 
 const PlanPanel = ({ 
@@ -46,6 +47,7 @@ const PlanPanel = ({
     degreeplans,
     isLoading,
     currentSemester,
+    footer,
 } : PlanPanelProps) => {
     
 
@@ -98,6 +100,7 @@ const PlanPanel = ({
                     isLoading={isLoading}
                     currentSemester={currentSemester}
                     />
+                    {footer}
                 </PanelBody>
             </PanelContainer>
     );

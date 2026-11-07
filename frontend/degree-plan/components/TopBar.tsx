@@ -19,6 +19,10 @@ const Bar = styled.header`
   padding: 0.65rem 1.5rem;
   background: #ffffff;
   border-bottom: 1px solid rgba(129, 154, 225, 0.35);
+
+  @media (max-width: 767px) {
+    padding: 0.5rem 1rem;
+  }
 `;
 
 const Brand = styled.div`

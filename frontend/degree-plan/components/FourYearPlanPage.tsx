@@ -1,10 +1,24 @@
-import React, { useState, useEffect, useRef, useCallback, MutableRefObject } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  MutableRefObject,
+} from "react";
 import ReqPanel from "./Requirements/ReqPanel";
 import PlanPanel from "./FourYearPlan/PlanPanel";
 import { SearchPanel, SearchPanelContext } from "./Search/SearchPanel";
 import styled from "@emotion/styled";
 import useSWR from "swr";
-import { Course, DegreePlan, Fulfillment, Options, Rule, User } from "@/types";
+import {
+  Course,
+  DegreePlan,
+  DockedCourse,
+  Fulfillment,
+  Options,
+  Rule,
+  User,
+} from "@/types";
 import ReviewPanel from "@/components/Infobox/ReviewPanel";
 import { ReviewPanelContext } from "@/components/Infobox/ReviewPanel";
 import DegreeModal, { ModalKey } from "@/components/FourYearPlan/DegreeModal";
@@ -15,6 +29,9 @@ import useStickyState from "@/hooks/stickyState";
 import OnboardingPage from "../pages/OnboardingPage";
 import EditProgramsPanel from "@/components/OnboardingPanels/EditProgramsPanel";
 import Footer from "./Footer";
+import PhoneTabBar, { PhoneTab } from "./PhoneTabBar";
+import DockedPanel from "@/components/Dock/DockedPanel";
+import useIsPhone from "@/hooks/useIsPhone";
 
 import ExpandedCoursesPanel from "@/components/ExpandedBox/ExpandedCoursesPanel";
 import { ExpandedCoursesPanelContext } from "@/components/ExpandedBox/ExpandedCoursesPanelTrigger";
@@ -33,6 +50,10 @@ const Row = styled.div`
   position: absolute;
   inset: 0;
   padding: 1.5rem 1.5rem 1rem; /* less padding on bottom for penn labs footer */
+
+  @media (max-width: 767px) {
+    padding: 0.5rem;
+  }
 `;
 
 const BodyContainer = styled.div`
@@ -153,6 +174,74 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
     []
   ); // fulfillments matching the ruleId
 
+  // Phones show one panel at a time. Search is a tab there, so opening it (from a requirement,
+  // say) switches to it, and closing it goes back to the tab that was open before.
+  const isPhone = useIsPhone();
+  const [phoneTab, setPhoneTab] = useState<PhoneTab>("plan");
+  const lastPhoneTab = useRef<PhoneTab>("plan");
+  useEffect(() => {
+    if (searchPanelOpen) setPhoneTab("search");
+    else setPhoneTab((tab) => (tab === "search" ? lastPhoneTab.current : tab));
+  }, [searchPanelOpen]);
+  const selectPhoneTab = (tab: PhoneTab) => {
+    if (tab === "search") {
+      setSearchRuleQuery("");
+      setSearchRuleId(null);
+      setSearchPanelOpen(true);
+      return;
+    }
+    lastPhoneTab.current = tab;
+    setSearchPanelOpen(false);
+    setPhoneTab(tab);
+  };
+  const { data: dockedCourses } = useSWR<DockedCourse[]>(
+    user ? "/api/degree/docked" : null
+  );
+
+  const planPanel = (
+    <PanelInteriorWrapper>
+      <PlanPanel
+        currentSemester={options?.SEMESTER}
+        setModalKey={setModalKey}
+        modalKey={modalKey}
+        setModalObject={setModalObject}
+        isLoading={isLoadingDegreeplans}
+        activeDegreeplan={activeDegreeplan}
+        degreeplans={degreeplans}
+        setActiveDegreeplan={setActiveDegreeplan}
+        setShowOnboardingModal={setShowOnboardingModal}
+        footer={isPhone && <Footer />}
+      />
+    </PanelInteriorWrapper>
+  );
+  const requirementsPanel = (
+    <PanelInteriorWrapper>
+      <ReqPanel
+        isLoading={isLoadingDegreeplans}
+        activeDegreeplan={activeDegreeplan}
+        onEditPrograms={() => setEditingPrograms(true)}
+      />
+    </PanelInteriorWrapper>
+  );
+  // Unmounted when closed, so that it focuses its input each time it opens.
+  const searchPanel = searchPanelOpen && (
+    <PanelInteriorWrapper>
+      <SearchPanel
+        activeDegreeplanId={activeDegreeplan ? activeDegreeplan.id : null}
+      />
+    </PanelInteriorWrapper>
+  );
+  const phonePanels: Record<PhoneTab, React.ReactNode> = {
+    plan: planPanel,
+    requirements: requirementsPanel,
+    search: searchPanel,
+    docked: (
+      <PanelInteriorWrapper>
+        <DockedPanel user={user} />
+      </PanelInteriorWrapper>
+    ),
+  };
+
   return (
     <PlanSemestersContext.Provider
       value={{ semesters: planSemesters, setSemesters: setPlanSemesters }}
@@ -246,10 +335,13 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
                 setPlanOpen={setPlanOpen}
                 requirementsOpen={requirementsOpen}
                 setRequirementsOpen={setRequirementsOpen}
-                showColumnToggles={!showOnboardingModal}
+                showColumnToggles={!showOnboardingModal && !isPhone}
               />
               {/* Course popovers keep within the body, so they never cover the footer or dock. */}
-              <BodyContainer ref={ref} {...{ [POPOVER_BOUNDS_ATTRIBUTE]: true }}>
+              <BodyContainer
+                ref={ref}
+                {...{ [POPOVER_BOUNDS_ATTRIBUTE]: true }}
+              >
                 {!!showOnboardingModal ? (
                   <OnboardingPage
                     setShowOnboardingModal={setShowOnboardingModal}
@@ -258,74 +350,57 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
                   />
                 ) : (
                   <Row>
-                    <SplitColumns
-                      storageKey="PDP-column-widths"
-                      defaultWidths={DEFAULT_COLUMN_WIDTHS}
-                      emptyState="Open Plan or Requirements from the top bar to show a column."
-                      columns={[
-                        {
-                          id: "plan",
-                          label: "plan",
-                          visible: planOpen,
-                          content: (
-                            <PanelInteriorWrapper>
-                              <PlanPanel
-                                currentSemester={options?.SEMESTER}
-                                setModalKey={setModalKey}
-                                modalKey={modalKey}
-                                setModalObject={setModalObject}
-                                isLoading={
-                                  isLoadingDegreeplans // || isLoadingActiveDegreePlan
-                                }
-                                activeDegreeplan={activeDegreeplan}
-                                degreeplans={degreeplans}
-                                setActiveDegreeplan={setActiveDegreeplan}
-                                setShowOnboardingModal={setShowOnboardingModal}
-                              />
-                            </PanelInteriorWrapper>
-                          ),
-                        },
-                        {
-                          id: "requirements",
-                          label: "requirements",
-                          visible: requirementsOpen,
-                          content: (
-                            <PanelInteriorWrapper>
-                              <ReqPanel
-                                isLoading={isLoadingDegreeplans}
-                                activeDegreeplan={activeDegreeplan}
-                                onEditPrograms={() => setEditingPrograms(true)}
-                              />
-                            </PanelInteriorWrapper>
-                          ),
-                        },
-                        {
-                          id: "search",
-                          label: "search",
-                          visible: searchPanelOpen,
-                          // Unmounted when closed, so that it focuses its input each time it opens.
-                          content: searchPanelOpen && (
-                            <PanelInteriorWrapper>
-                              <SearchPanel
-                                activeDegreeplanId={
-                                  activeDegreeplan ? activeDegreeplan.id : null
-                                }
-                              />
-                            </PanelInteriorWrapper>
-                          ),
-                        },
-                      ]}
-                    />
+                    {isPhone ? (
+                      phonePanels[phoneTab]
+                    ) : (
+                      <SplitColumns
+                        storageKey="PDP-column-widths"
+                        defaultWidths={DEFAULT_COLUMN_WIDTHS}
+                        emptyState="Open Plan or Requirements from the top bar to show a column."
+                        columns={[
+                          {
+                            id: "plan",
+                            label: "plan",
+                            visible: planOpen,
+                            content: planPanel,
+                          },
+                          {
+                            id: "requirements",
+                            label: "requirements",
+                            visible: requirementsOpen,
+                            content: requirementsPanel,
+                          },
+                          {
+                            id: "search",
+                            label: "search",
+                            visible: searchPanelOpen,
+                            content: searchPanel,
+                          },
+                        ]}
+                      />
+                    )}
                   </Row>
                 )}
               </BodyContainer>
-              <Footer />
-              <Dock
-                user={user}
-                activeDegreeplanId={
-                  activeDegreeplan ? activeDegreeplan.id : null
-                }
-              />
+              {isPhone ? (
+                !showOnboardingModal && (
+                  <PhoneTabBar
+                    active={phoneTab}
+                    onSelect={selectPhoneTab}
+                    dockedCount={dockedCourses?.length ?? 0}
+                  />
+                )
+              ) : (
+                <>
+                  <Footer />
+                  <Dock
+                    user={user}
+                    activeDegreeplanId={
+                      activeDegreeplan ? activeDegreeplan.id : null
+                    }
+                  />
+                </>
+              )}
             </PageContainer>
           </ExpandedCoursesPanelContext.Provider>
         </ReviewPanelContext.Provider>
