@@ -597,6 +597,22 @@ const parseRecordCourses = (lines: string[]) => {
 
 // Given a list of lines from the PDF and a list of possible degrees,
 // return a scraped information.
+// Coordinated programs, by how a transcript's program lines name them. M&T reads e.g.
+// "Program: School of Engineering and Applied Science - Fisher Program in Management & Technology".
+const DUAL_PROGRAM_NAMES: [string, RegExp][] = [
+  ["HUNTSMAN", /huntsman/i],
+  ["MT", /jerome fisher|management (&|and) technology/i],
+  ["LSM", /life sciences (&|and) management/i],
+  ["VIPER", /vagelos integrated|energy research/i],
+];
+
+// The code of the coordinated program a transcript names, or null. Only lines naming a program
+// are read, so a course title such as "M&T First Year Seminar" can't trigger it.
+export const detectDualProgram = (lines: string[]): string | null => {
+  const programLines = lines.filter((line) => /program/i.test(line)).join(" ");
+  return DUAL_PROGRAM_NAMES.find(([, name]) => name.test(programLines))?.[0] ?? null;
+};
+
 export const parseTranscript = (
   textResult: string[],
   degrees: DegreeListing[] | undefined,
@@ -672,5 +688,6 @@ export const parseTranscript = (
       minors,
       startYear
     ),
+    detectedDualProgram: detectDualProgram(textResult),
   };
 };

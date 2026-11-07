@@ -591,8 +591,8 @@ class DegreePlan(models.Model):  #
         related_name="degree_plans",
         help_text=dedent(
             """
-            Overrides the dual program's right-hand variant. M&T uses this to choose the
-            language-required Wharton tree instead of the default.
+            Overrides the dual program's right-hand variant, for a program whose students
+            choose between versions of it.
             """
         ),
     )

@@ -178,17 +178,15 @@ class DualPatternTest(TestCase):
         wharton.rules.add(stat)
         from degree.models import ProgramVariant
 
-        plan = self.plan_with(
-            "mt", "MT", cis, wharton, ProgramVariant.objects.get(code="WH_NOFL_MT")
-        )
+        plan = self.plan_with("mt", "MT", cis, wharton, ProgramVariant.objects.get(code="WH_MT"))
         # The dual program's default variant applies even without the override.
         plan.right_variant = None
         plan.save()
 
         rules, rule_to, _ = map_rules_and_degrees(plan)
         titles = {rule.title for rule in rule_to}
-        self.assertIn("M&T Freshman Course", titles)
-        freshman = next(rule for rule in rule_to if rule.title == "M&T Freshman Course")
+        self.assertIn("M&T Program First Year Seminar", titles)
+        freshman = next(rule for rule in rule_to if rule.title == "M&T Program First Year Seminar")
         selected, _, legal = allocate_rules(
             "OIDD-2340",
             rules,
@@ -206,8 +204,10 @@ class DualPatternTest(TestCase):
             map_rules_and_degrees(plan).double_counts,
             satisfied_rules=set(),
         )
-        # STAT-4300 is only on the Wharton rule in this fixture, so it is legal there.
-        self.assertIn(stat, selected)
+        # M&T's quantitative skills offer Probability for STAT-4300 alongside the fixture's own
+        # statistics rule; either may take it.
+        self.assertIn("Probability", titles)
+        self.assertTrue({rule.title for rule in selected} & {"Probability", "Statistics"})
         self.assertTrue(legal)
 
     def test_three_degrees_keep_two_claims(self):
@@ -244,6 +244,61 @@ class DualPatternTest(TestCase):
         self.assertTrue(unselected)
         self.assertTrue(legal)
 
+        # The second pass fills short rules from what a course was offered, and must not hand
+        # back the claim the cap just took away.
+        from degree.utils.degree_logic import (
+            CourseAllocation,
+            rebalance_allocations,
+            selection_is_legal,
+            within_policy,
+        )
+
+        policy = plan_rules.composition.policy
+        allocation = CourseAllocation("CIS-1200", set(selected), set(unselected))
+        rebalance_allocations(
+            [allocation],
+            plan_rules.rule_to_component,
+            plan_rules.double_counts,
+            allows=lambda before, after: within_policy(
+                before, after, plan_rules.rule_to_component, policy
+            ),
+        )
+        self.assertEqual(allocation.selected, selected)
+        self.assertTrue(
+            selection_is_legal(
+                allocation.selected,
+                plan_rules.rule_to_component,
+                plan_rules.double_counts,
+                policy,
+            )
+        )
+
+    def test_attaching_a_program_keeps_the_plans_other_degrees(self):
+        from rest_framework.test import APIClient
+
+        from degree.models import PDPBetaUser
+
+        cis = Degree.objects.create(program="EU_BSE", degree="BSE", major="CIS", year=2026)
+        wharton = Degree.objects.create(program="WU_BS", degree="BS", major="FNCE", year=2026)
+        masters = Degree.objects.create(program="EM_MSE", degree="MSE", major="CIS", year=2026)
+        plan = DegreePlan.objects.create(name="mt submat", person=self.person)
+        plan.degrees.add(cis, wharton, masters)
+        PDPBetaUser.objects.create(person=self.person)
+        client = APIClient()
+        client.force_login(self.person)
+
+        response = client.post(
+            f"/api/degree/degreeplans/{plan.id}/dual-program",
+            {"code": "MT", "left_id": cis.id, "right_id": wharton.id},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        plan.refresh_from_db()
+        self.assertEqual(set(plan.degrees.all()), {cis, wharton, masters})
+        self.assertEqual(plan.dual_program.code, "MT")
+        self.assertIsNone(plan.right_variant)
+
     def test_huntsman_selects_the_seminar(self):
         inst = Degree.objects.create(program="AU_BA", degree="BA", major="INST", year=2026)
         wharton = Degree.objects.create(program="WU_BS", degree="BS", major="WH", year=2026)
@@ -269,7 +324,7 @@ class DualPatternTest(TestCase):
         plan = DegreePlan.objects.create(name="uncoord", person=self.person)
         plan.degrees.add(econ, wharton)
         titles = {rule.title for rule in map_rules_and_degrees(plan).rule_to_component}
-        self.assertNotIn("M&T Freshman Course", titles)
+        self.assertNotIn("M&T Program First Year Seminar", titles)
         self.assertEqual(compose(plan).kind, "cross_school_dual")
 
     def test_lsm_and_viper_use_plain_trees(self):
@@ -282,7 +337,7 @@ class DualPatternTest(TestCase):
         for plan in (lsm, viper):
             self.assertEqual(compose(plan).kind, "coordinated")
             titles = {rule.title for rule in map_rules_and_degrees(plan).rule_to_component}
-            self.assertNotIn("M&T Freshman Course", titles)
+            self.assertNotIn("M&T Program First Year Seminar", titles)
             self.assertNotIn("Huntsman First-Year Seminar", titles)
 
     def test_m_and_t_variant_applies_once_with_a_second_wharton_concentration(self):
@@ -319,9 +374,9 @@ class DualPatternTest(TestCase):
             Rule.objects.create(title="Old", q="", block_type="VARIANT", block_value="OLD_V")
         )
         DualProgram.objects.create(code="OLD", name="Old", right_variant=old_variant)
-        mt_root = ProgramVariant.objects.get(code="WH_NOFL_MT").rules.first()
+        mt_root = ProgramVariant.objects.get(code="WH_MT").rules.first()
         renamed = Rule.objects.create(
-            title="Renamed", q="", block_type="VARIANT", block_value="WH_NOFL_MT", parent=mt_root
+            title="Renamed", q="", block_type="VARIANT", block_value="WH_MT", parent=mt_root
         )
         plan = DegreePlan.objects.create(
             name="old", person=self.person, dual_program=DualProgram.objects.get(code="OLD")

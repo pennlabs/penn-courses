@@ -122,7 +122,7 @@ class Migration(migrations.Migration):
             name="right_variant",
             field=models.ForeignKey(
                 blank=True,
-                help_text="\nOverrides the dual program's right-hand variant. M&T uses this to choose the\nlanguage-required Wharton tree instead of the default.\n",
+                help_text="\nOverrides the dual program's right-hand variant, for a program whose students\nchoose between versions of it.\n",
                 null=True,
                 on_delete=django.db.models.deletion.SET_NULL,
                 related_name="degree_plans",

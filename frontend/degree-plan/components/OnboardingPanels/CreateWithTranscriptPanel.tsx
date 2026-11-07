@@ -2,7 +2,7 @@ import { ArrowLeftIcon } from "@radix-ui/react-icons";
 import { Dispatch, SetStateAction, useCallback, useEffect, useState } from "react";
 import { BackButton, NextButton } from "./SharedComponents";
 import { PulseLoader } from "react-spinners";
-import { DegreeListing, DegreePlan, Major, Minor, Options } from "@/types";
+import { DegreeListing, DegreePlan, DualProgram, Major, Minor, Options } from "@/types";
 import useSWR from "swr";
 import {
   getLocalSemestersKey,
@@ -27,7 +27,8 @@ import {
 } from "./formLayout";
 import SchoolsField from "./SchoolsField";
 import ImportedCourses from "./ImportedCourses";
-import { placePrograms } from "./placePrograms";
+import { placePrograms, setDualProgram } from "./placePrograms";
+import DualProgramField, { programError, programSides } from "./DualProgramField";
 import YearFields, { YearOption, yearOption, yearsInOrder } from "./YearFields";
 
 type WelcomeLayoutProps = {
@@ -40,6 +41,8 @@ type WelcomeLayoutProps = {
   setCurrentPage: Dispatch<SetStateAction<number>>;
   setActiveDegreeplan: (arg0: DegreePlan) => void;
   inputtedSelections: SchoolSelection[];
+  // Code of the coordinated program the transcript names, e.g. "MT".
+  inputtedDualProgram?: string | null;
   setShowOnboardingModal: (arg0: boolean) => void;
   canExit?: boolean;
   onExit?: () => void;
@@ -53,6 +56,7 @@ export default function CreateWithTranscriptPanel({
   setCurrentPage,
   setActiveDegreeplan,
   inputtedSelections,
+  inputtedDualProgram = null,
   setShowOnboardingModal,
   canExit = false,
   onExit,
@@ -77,6 +81,10 @@ export default function CreateWithTranscriptPanel({
   const { data: standaloneMajors, isLoading: isLoadingMajors } =
     useSWR<Major[]>(`/api/degree/majors`);
   const { data: minors, isLoading: isLoadingMinors } = useSWR<Minor[]>(`/api/degree/minors`);
+  const { data: dualPrograms, isLoading: isLoadingDualPrograms } =
+    useSWR<DualProgram[]>(`/api/degree/dual-programs`);
+  const [dualProgramCode, setDualProgramCode] = useState<string | null>(inputtedDualProgram);
+  const dualProgram = dualPrograms?.find((program) => program.code === dualProgramCode);
 
   // Workaround solution to only input courses once degree has been created and degreeID exists.
   // Will likely change in the future!
@@ -146,6 +154,12 @@ export default function CreateWithTranscriptPanel({
         await postFetcher(`/api/degree/degreeplans/${_new.id}/degrees`, {
           degree_ids: selections.flatMap((s) => (s.primary ? [s.primary.value.id] : [])),
         });
+        if (dualProgram)
+          await setDualProgram(
+            _new.id,
+            dualProgram,
+            programSides(dualProgram, selections)
+          );
         await placePrograms(
           _new.id,
           selections.map((s) => ({
@@ -176,6 +190,7 @@ export default function CreateWithTranscriptPanel({
     yearsInOrder(startingYear, graduationYear) &&
     selections.length > 0 &&
     selections.every((s) => s.primary) &&
+    !programError(dualProgram, selections, degrees) &&
     name !== "";
 
   const getYearOptions = useCallback(() => {
@@ -240,6 +255,17 @@ export default function CreateWithTranscriptPanel({
                   setStartingYear={setStartingYear}
                   setGraduationYear={setGraduationYear}
                   isClearable
+                />
+              </Section>
+
+              <Section>
+                <DualProgramField
+                  programs={dualPrograms}
+                  isLoading={isLoadingDualPrograms}
+                  value={dualProgram}
+                  onChange={(program) => setDualProgramCode(program?.code ?? null)}
+                  selections={selections}
+                  degrees={degrees}
                 />
               </Section>
 

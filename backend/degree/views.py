@@ -58,6 +58,7 @@ from degree.utils.degree_logic import (
     reconcile_rules,
     selection_is_legal,
     sharing_from_fulfillments,
+    within_policy,
 )
 from PennCourses.docs_settings import PcxAutoSchema
 
@@ -157,7 +158,13 @@ def update_fulfillments(degree_plan):
             if is_satisfied(rule):
                 satisfied_rules.add(rule)
 
-    rebalance_allocations(allocations, rule_to_degree, double_counts, credits_cache)
+    rebalance_allocations(
+        allocations,
+        rule_to_degree,
+        double_counts,
+        credits_cache,
+        allows=lambda before, after: within_policy(before, after, rule_to_degree, policy),
+    )
 
     with transaction.atomic():
         for fulfillment, allocation in zip(fulfillments, allocations):
@@ -305,8 +312,8 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=["post", "delete"], url_path="dual-program")
     def set_dual_program(self, request, pk=None):
         """
-        Attach or clear a coordinated dual degree. Attaching replaces the plan's degrees
-        with the two sides and reallocates fulfillments.
+        Attach or clear a coordinated dual degree. Attaching adds the two sides to the plan's
+        degrees, keeping the rest (a submatriculant's masters, say), and reallocates fulfillments.
         """
         degree_plan = self.get_object()
         if request.method == "DELETE":
@@ -339,10 +346,11 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             except ProgramVariant.DoesNotExist:
                 raise ValidationError({"right_variant": "Unknown variant."})
 
-        degree_plan.dual_program = dual
-        degree_plan.right_variant = variant
-        degree_plan.save(update_fields=["dual_program", "right_variant"])
-        degree_plan.degrees.set([left, right])
+        with transaction.atomic():
+            degree_plan.dual_program = dual
+            degree_plan.right_variant = variant
+            degree_plan.save(update_fields=["dual_program", "right_variant"])
+            degree_plan.degrees.add(left, right)
         update_fulfillments(degree_plan)
         return Response(self.get_serializer(degree_plan).data)
 
@@ -831,6 +839,7 @@ class OnboardFromTranscript(APIView):
             rule_to_degree,
             double_counts,
             credits_cache,
+            allows=lambda before, after: within_policy(before, after, rule_to_degree, policy),
         )
 
         with transaction.atomic():

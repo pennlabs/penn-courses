@@ -599,13 +599,49 @@ class CourseAllocation:
     unselected: set
 
 
-def rebalance_allocations(allocations, rule_to_degree, double_counts, credits_cache=None):
+def within_policy(before, after, rule_to_component, policy):
+    """
+    Whether changing a course's rules from `before` to `after` keeps to the plan-level caps that
+    `apply_sharing_policy` enforces. A coordinated program's shared-CU cap was spent in the order
+    courses were taken, so a course may not newly count toward both of its sides.
+    """
+    if policy is None:
+        return True
+    if len(_cap_components(after, rule_to_component)) > policy.max_degree_claims:
+        return False
+    if policy.forbid_grad_grad:
+        graduate = {
+            rule_to_component[rule].key
+            for rule in after
+            if rule in rule_to_component and is_graduate(rule_to_component[rule])
+        }
+        if len(graduate) > 1:
+            return False
+    if policy.max_shared_cu is not None:
+
+        def sides(rules):
+            return {
+                rule_to_component[rule].side
+                for rule in rules
+                if rule in rule_to_component
+                and getattr(rule_to_component[rule], "side", None) in ("left", "right")
+            }
+
+        if sides(after) == {"left", "right"} and sides(before) != {"left", "right"}:
+            return False
+    return True
+
+
+def rebalance_allocations(
+    allocations, rule_to_degree, double_counts, credits_cache=None, allows=None
+):
     """
     Moves courses onto short rules when another course can take their place, without leaving any
     rule worse off or breaking double counting limits.
 
     Only for allocating a whole plan, since it can move any course. `allocations` must be in the
-    order the courses were taken, and is changed in place.
+    order the courses were taken, and is changed in place. `allows(before, after)` vetoes a
+    change to one course's rules, e.g. one the plan's sharing caps forbid.
     """
     credits_cache = credits_cache or {}
 
@@ -639,6 +675,7 @@ def rebalance_allocations(allocations, rule_to_degree, double_counts, credits_ca
             and credits_of(other) >= credits_of(leaving)
             and can_share(rule, other.selected, double_counts)
             and not starts_crossing_levels(other, other.selected | {rule})
+            and (allows is None or allows(other.selected, other.selected | {rule}))
         ]
         return min(options, key=lambda other: bool(other.selected), default=None)
 
@@ -649,7 +686,10 @@ def rebalance_allocations(allocations, rule_to_degree, double_counts, credits_ca
             for other in allocation.selected
             if other in rule_to_degree and not can_share(rule, {other}, double_counts)
         }
-        if starts_crossing_levels(allocation, (allocation.selected - conflicts) | {rule}):
+        moved = (allocation.selected - conflicts) | {rule}
+        if starts_crossing_levels(allocation, moved):
+            return None
+        if allows is not None and not allows(allocation.selected, moved):
             return None
 
         replacements = {}
