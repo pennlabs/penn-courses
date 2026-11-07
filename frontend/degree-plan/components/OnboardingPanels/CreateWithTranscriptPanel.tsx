@@ -1,8 +1,21 @@
 import { ArrowLeftIcon } from "@radix-ui/react-icons";
-import { Dispatch, SetStateAction, useCallback, useEffect, useState } from "react";
+import {
+  Dispatch,
+  SetStateAction,
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 import { BackButton, NextButton } from "./SharedComponents";
 import { PulseLoader } from "react-spinners";
-import { DegreeListing, DegreePlan, DualProgram, Major, Minor, Options } from "@/types";
+import {
+  DegreeListing,
+  DegreePlan,
+  DualProgram,
+  Major,
+  Minor,
+  Options,
+} from "@/types";
 import useSWR from "swr";
 import {
   getLocalSemestersKey,
@@ -28,7 +41,10 @@ import {
 import SchoolsField from "./SchoolsField";
 import ImportedCourses from "./ImportedCourses";
 import { placePrograms, setDualProgram } from "./placePrograms";
-import DualProgramField, { programError, programSides } from "./DualProgramField";
+import DualProgramField, {
+  programError,
+  programSides,
+} from "./DualProgramField";
 import YearFields, { YearOption, yearOption, yearsInOrder } from "./YearFields";
 
 type WelcomeLayoutProps = {
@@ -61,38 +77,54 @@ export default function CreateWithTranscriptPanel({
   canExit = false,
   onExit,
 }: WelcomeLayoutProps) {
-  const [startingYear, setStartingYear] = useState<YearOption | null>(inputtedStartingYear);
+  const [startingYear, setStartingYear] = useState<YearOption | null>(
+    inputtedStartingYear
+  );
   const [graduationYear, setGraduationYear] = useState<YearOption | null>(
     inputtedGraduationYear
   );
 
-  const [selections, setSelections] =
-    useState<SchoolSelection[]>(inputtedSelections);
+  const [selections, setSelections] = useState<SchoolSelection[]>(
+    inputtedSelections
+  );
   const [degreeID, setDegreeID] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState("");
 
   const [nameAlreadyExists, setNameAlreadyExists] = useState(false);
+  const [createFailed, setCreateFailed] = useState(false);
 
   const { data: options } = useSWR<Options>("/api/options");
   const { data: degrees, isLoading: isLoadingDegrees } = useSWR<
     DegreeListing[]
   >(`/api/degree/degrees`);
-  const { data: standaloneMajors, isLoading: isLoadingMajors } =
-    useSWR<Major[]>(`/api/degree/majors`);
-  const { data: minors, isLoading: isLoadingMinors } = useSWR<Minor[]>(`/api/degree/minors`);
-  const { data: dualPrograms, isLoading: isLoadingDualPrograms } =
-    useSWR<DualProgram[]>(`/api/degree/dual-programs`);
-  const [dualProgramCode, setDualProgramCode] = useState<string | null>(inputtedDualProgram);
-  const dualProgram = dualPrograms?.find((program) => program.code === dualProgramCode);
+  const { data: standaloneMajors, isLoading: isLoadingMajors } = useSWR<
+    Major[]
+  >(`/api/degree/majors`);
+  const { data: minors, isLoading: isLoadingMinors } = useSWR<Minor[]>(
+    `/api/degree/minors`
+  );
+  const { data: dualPrograms, isLoading: isLoadingDualPrograms } = useSWR<
+    DualProgram[]
+  >(`/api/degree/dual-programs`);
+  const [dualProgramCode, setDualProgramCode] = useState<string | null>(
+    inputtedDualProgram
+  );
+  const dualProgram = dualPrograms?.find(
+    (program) => program.code === dualProgramCode
+  );
 
   // Workaround solution to only input courses once degree has been created and degreeID exists.
   // Will likely change in the future!
   useEffect(() => {
     if (degreeID) {
-      const toFullCode = (course: string) => course.replace(" ", "-").toUpperCase();
+      const toFullCode = (course: string) =>
+        course.replace(" ", "-").toUpperCase();
       const levels = Object.fromEntries(
-        Object.entries(courseLevels).map(([course, level]) => [toFullCode(course), level])
+        Object.entries(courseLevels).map(([course, level]) => [
+          toFullCode(course),
+          level,
+        ])
       );
       const courses = scrapedCourses.map((semester: any) => {
         const rawSem = semester.sem;
@@ -101,7 +133,11 @@ export default function CreateWithTranscriptPanel({
           sem = "_TRAN";
         } else {
           const year = rawSem.match(/(\d+)/)[0];
-          const suffix = rawSem.includes("spring") ? "A" : rawSem.includes("summer") ? "B" : "C";
+          const suffix = rawSem.includes("spring")
+            ? "A"
+            : rawSem.includes("summer")
+            ? "B"
+            : "C";
           sem = year + suffix;
         }
         return {
@@ -123,6 +159,7 @@ export default function CreateWithTranscriptPanel({
 
   const handleAddDegrees = () => {
     setLoading(true);
+    setCreateFailed(false);
 
     const createDegreeplan = async () => {
       // Need to handle the case where degree plan of same name already exists.
@@ -133,7 +170,7 @@ export default function CreateWithTranscriptPanel({
         headers: {
           "Content-Type": "application/json",
           "X-CSRFToken": getCsrf(),
-          "Accept": "application/json",
+          Accept: "application/json",
         } as HeadersInit,
         body: JSON.stringify({ name: name }),
       });
@@ -152,7 +189,9 @@ export default function CreateWithTranscriptPanel({
           );
         }
         await postFetcher(`/api/degree/degreeplans/${_new.id}/degrees`, {
-          degree_ids: selections.flatMap((s) => (s.primary ? [s.primary.value.id] : [])),
+          degree_ids: selections.flatMap((s) =>
+            s.primary ? [s.primary.value.id] : []
+          ),
         });
         if (dualProgram)
           await setDualProgram(
@@ -179,11 +218,15 @@ export default function CreateWithTranscriptPanel({
           setNameAlreadyExists(false);
         }, 5000);
       } else {
-        console.error(await res.text());
+        throw new Error(await res.text());
       }
-    }
+    };
 
-    createDegreeplan().then(() => {});
+    createDegreeplan().catch((error) => {
+      console.error(error);
+      setLoading(false);
+      setCreateFailed(true);
+    });
   };
 
   const complete =
@@ -202,12 +245,17 @@ export default function CreateWithTranscriptPanel({
     const currentYear = Number(options.SEMESTER.substring(0, 4));
     return {
       // Up and down to 5 years
-      startYears: [...Array(5).keys()].reverse().map((i) => yearOption(currentYear - i)),
+      startYears: [...Array(5).keys()]
+        .reverse()
+        .map((i) => yearOption(currentYear - i)),
       gradYears: [...Array(5).keys()].map((i) => yearOption(currentYear + i)),
     };
   }, [options]);
 
-  const { startYears: startingYearOptions, gradYears: graduationYearOptions } = getYearOptions();
+  const {
+    startYears: startingYearOptions,
+    gradYears: graduationYearOptions,
+  } = getYearOptions();
 
   return (
     <Page>
@@ -221,7 +269,10 @@ export default function CreateWithTranscriptPanel({
               </BackButton>
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <Title>Set up your degree plan</Title>
-                <ImportedCourses scrapedCourses={scrapedCourses} courseLevels={courseLevels} />
+                <ImportedCourses
+                  scrapedCourses={scrapedCourses}
+                  courseLevels={courseLevels}
+                />
               </div>
             </Header>
 
@@ -238,11 +289,21 @@ export default function CreateWithTranscriptPanel({
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. My Degree Plan"
                     aria-invalid={nameAlreadyExists}
-                    aria-describedby={nameAlreadyExists ? "plan-name-error" : undefined}
+                    aria-describedby={
+                      nameAlreadyExists ? "plan-name-error" : undefined
+                    }
                   />
                   {nameAlreadyExists && (
                     <FieldError id="plan-name-error" role="alert">
-                      A degree plan with this name already exists. Please choose a different name.
+                      A degree plan with this name already exists. Please choose
+                      a different name.
+                    </FieldError>
+                  )}
+                  {createFailed && (
+                    <FieldError role="alert">
+                      Something went wrong setting up your plan. It may already
+                      have been created, so check your plans before trying
+                      again.
                     </FieldError>
                   )}
                 </Field>
@@ -263,7 +324,9 @@ export default function CreateWithTranscriptPanel({
                   programs={dualPrograms}
                   isLoading={isLoadingDualPrograms}
                   value={dualProgram}
-                  onChange={(program) => setDualProgramCode(program?.code ?? null)}
+                  onChange={(program) =>
+                    setDualProgramCode(program?.code ?? null)
+                  }
                   selections={selections}
                   degrees={degrees}
                 />
@@ -293,7 +356,10 @@ export default function CreateWithTranscriptPanel({
         </ScrollArea>
 
         <Footer>
-          <NextButton onClick={handleAddDegrees} disabled={!complete || loading}>
+          <NextButton
+            onClick={handleAddDegrees}
+            disabled={!complete || loading}
+          >
             {loading ? <PulseLoader size={8} color="white" /> : "Next"}
           </NextButton>
         </Footer>

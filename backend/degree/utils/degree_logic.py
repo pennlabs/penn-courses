@@ -927,14 +927,18 @@ def cas_credit_summary(composition, fulfillments, credits_cache):
 
     from degree.models import Degree
 
+    def rule_required(rule):
+        if rule.credits is not None:
+            return rule.credits
+        if rule.q:
+            return Decimal(rule.num) if rule.num is not None else Decimal(0)
+        children = sorted(rule_required(child) for child in rule.children.all())
+        if rule.num is not None:
+            children = children[: rule.num]
+        return sum(children, Decimal(0))
+
     def required(component):
-        total = Decimal(0)
-        for rule in component.rules:
-            if rule.credits is not None:
-                total += rule.credits
-            elif rule.num is not None:
-                total += Decimal(rule.num)
-        return total
+        return sum((rule_required(root) for root in component.roots), Decimal(0))
 
     majors = [component for component in composition.components if component.role == "major"]
     college = next(

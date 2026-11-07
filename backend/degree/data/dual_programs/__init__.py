@@ -5,6 +5,7 @@ M&T and Huntsman edit a base degree (extra courses, a suppressed capstone, a dif
 liberal-arts shape). LSM and VIPER are pairs of ordinary majors and carry no variant.
 """
 
+from django.db import transaction
 from django.db.models import Q
 
 from degree.data.dual_programs import huntsman, mt
@@ -101,6 +102,11 @@ def load() -> list[str]:
     listed here are deleted; plans on a deleted program fall back to an ordinary plan.
     Returns the codes of deleted variants and programs.
     """
+    with transaction.atomic():
+        return _load()
+
+
+def _load() -> list[str]:
     variants = {}
     for code, (name, rules_fn, suppressed) in VARIANTS.items():
         variant, _ = ProgramVariant.objects.update_or_create(

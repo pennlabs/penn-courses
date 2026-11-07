@@ -692,7 +692,9 @@ class DegreePlan(models.Model):  #
             return set()
 
         fulfillments = list(
-            Fulfillment.objects.filter(degree_plan=self, rules__in=rules).prefetch_related("rules")
+            Fulfillment.objects.filter(degree_plan=self, rules__in=rules)
+            .distinct()
+            .prefetch_related("rules")
         )
         by_rule = defaultdict(list)
         for fulfillment in fulfillments:
