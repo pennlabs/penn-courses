@@ -12,39 +12,55 @@ export interface PlanProgram {
   rules: Rule[];
 }
 
-export const planPrograms = (detail: DegreePlan): PlanProgram[] => [
-  ...(detail.degrees ?? []).map((degree) => ({
-    id: degree.id,
-    relation: "degrees" as const,
-    kind: "degree" as const,
-    title: `${degree.degree} in ${degree.major_name}${
-      degree.concentration ? ` (${degree.concentration_name})` : ""
-    }`,
-    code: `${degree.degree} ${degree.major}`,
-    year: degree.year,
-    rules: degree.rules,
-  })),
-  ...(detail.majors ?? []).map((major) => ({
-    id: major.id,
-    relation: "majors" as const,
-    kind: "major" as const,
-    title: `Major in ${major.name}${
-      major.concentration_name ? ` (${major.concentration_name})` : ""
-    }`,
-    code: major.code,
-    year: major.year,
-    rules: major.rules,
-  })),
-  ...(detail.minors ?? []).map((minor) => ({
-    id: minor.id,
-    relation: "minors" as const,
-    kind: "minor" as const,
-    title: `Minor in ${minor.name}`,
-    code: minor.code,
-    year: minor.year,
-    rules: minor.rules,
-  })),
-];
+// A coordinated program (e.g. M&T) adds requirements to a degree and drops others. The plan's
+// components carry each degree's requirements with those changes made.
+const withProgramChanges = (
+  detail: DegreePlan,
+  programs: PlanProgram[]
+): PlanProgram[] => {
+  if (!detail.dual_program || !detail.components) return programs;
+  return programs.map((program) => {
+    const component = detail.components!.find(
+      (c) => c.relation === program.relation && c.id === program.id
+    );
+    return component ? { ...program, rules: component.rules } : program;
+  });
+};
+
+export const planPrograms = (detail: DegreePlan): PlanProgram[] =>
+  withProgramChanges(detail, [
+    ...(detail.degrees ?? []).map((degree) => ({
+      id: degree.id,
+      relation: "degrees" as const,
+      kind: "degree" as const,
+      title: `${degree.degree} in ${degree.major_name}${
+        degree.concentration ? ` (${degree.concentration_name})` : ""
+      }`,
+      code: `${degree.degree} ${degree.major}`,
+      year: degree.year,
+      rules: degree.rules,
+    })),
+    ...(detail.majors ?? []).map((major) => ({
+      id: major.id,
+      relation: "majors" as const,
+      kind: "major" as const,
+      title: `Major in ${major.name}${
+        major.concentration_name ? ` (${major.concentration_name})` : ""
+      }`,
+      code: major.code,
+      year: major.year,
+      rules: major.rules,
+    })),
+    ...(detail.minors ?? []).map((minor) => ({
+      id: minor.id,
+      relation: "minors" as const,
+      kind: "minor" as const,
+      title: `Minor in ${minor.name}`,
+      code: minor.code,
+      year: minor.year,
+      rules: minor.rules,
+    })),
+  ]);
 
 export interface RuleInProgram {
   title: string;

@@ -41,6 +41,7 @@ const OnboardingPage = ({
     value: number;
   } | null>(null);
   const [selections, setSelections] = useState<SchoolSelection[]>([]);
+  const [dualProgram, setDualProgram] = useState<string | null>(null);
 
   const [PDF, setPDF] = useState<File | null>(null);
   const [numPages, setNumPages] = useState<number | null>(null);
@@ -87,7 +88,13 @@ const OnboardingPage = ({
       all = all.concat(flattenParsedText(pageEntry));
     });
 
-    const { scrapedCourses, courseLevels, startYear, detectedSelections } = parseTranscript(
+    const {
+      scrapedCourses,
+      courseLevels,
+      startYear,
+      detectedSelections,
+      detectedDualProgram,
+    } = parseTranscript(
       all,
       degrees,
       standaloneMajors,
@@ -104,6 +111,7 @@ const OnboardingPage = ({
       label: startYear + 4,
     });
     setSelections(detectedSelections);
+    setDualProgram(detectedDualProgram);
     transcriptDetected.current = startYear ? true : false;
   }, [pagesRead, programsLoaded, degrees, standaloneMajors, minors]);
 
@@ -115,6 +123,7 @@ const OnboardingPage = ({
     setPagesRead(false);
     transcriptDetected.current = null;
     setSelections([]);
+    setDualProgram(null);
     setScrapedCourses([]);
     setCourseLevels({});
     setStartingYear(null);
@@ -154,6 +163,7 @@ const OnboardingPage = ({
       setCurrentPage={setCurrentPage}
       setActiveDegreeplan={setActiveDegreeplan}
       inputtedSelections={selections}
+      inputtedDualProgram={dualProgram}
       setShowOnboardingModal={setShowOnboardingModal}
       canExit={canExit}
       onExit={exitOnboarding}

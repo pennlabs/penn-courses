@@ -153,13 +153,13 @@ class RebalanceTest(AllocationBase):
 def fail_on_second_call():
     calls = iter([True])
 
-    def check_legal(*args):
+    def selection_is_legal(*args):
         try:
             return next(calls)
         except StopIteration:
             raise RuntimeError("write failed")
 
-    return patch("degree.views.check_legal", side_effect=check_legal)
+    return patch("degree.views.selection_is_legal", side_effect=selection_is_legal)
 
 
 class PartialWriteTest(AllocationBase):

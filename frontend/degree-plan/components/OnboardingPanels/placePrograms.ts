@@ -1,5 +1,24 @@
-import { DegreePlan } from "@/types";
-import { postFetcher } from "@/hooks/swrcrud";
+import { DegreeListing, DegreePlan, DualProgram } from "@/types";
+import { deleteFetcher, postFetcher } from "@/hooks/swrcrud";
+
+// Attaches a coordinated program to a plan whose degrees already include both sides, or detaches
+// the plan's program when `program` is undefined.
+export const setDualProgram = async (
+  planId: DegreePlan["id"],
+  program: DualProgram | undefined,
+  sides: { left?: DegreeListing; right?: DegreeListing }
+) => {
+  const url = `/api/degree/degreeplans/${planId}/dual-program`;
+  if (!program) {
+    await deleteFetcher(url);
+    return;
+  }
+  await postFetcher(url, {
+    code: program.code,
+    left_id: sides.left?.id,
+    right_id: sides.right?.id,
+  });
+};
 
 export type Placement = {
   degreeId: number | undefined;

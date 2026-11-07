@@ -3,7 +3,15 @@ import styled from "@emotion/styled";
 import { ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { PulseLoader } from "react-spinners";
 import useSWR, { useSWRConfig } from "swr";
-import { DegreeListing, DegreePlan, Fulfillment, Major, Minor, Options } from "@/types";
+import {
+  DegreeListing,
+  DegreePlan,
+  DualProgram,
+  Fulfillment,
+  Major,
+  Minor,
+  Options,
+} from "@/types";
 import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
 import { deleteFetcher, postFetcher } from "@/hooks/swrcrud";
 import { createMajorLabel } from "@/components/FourYearPlan/DegreeModal";
@@ -35,7 +43,11 @@ import {
   Title,
 } from "./formLayout";
 import SchoolsField from "./SchoolsField";
-import { placePrograms } from "./placePrograms";
+import { placePrograms, setDualProgram } from "./placePrograms";
+import DualProgramField, {
+  programError,
+  programSides,
+} from "./DualProgramField";
 import YearFields, { YearOption, yearOption, yearsInOrder } from "./YearFields";
 
 const CloseButton = styled.button`
@@ -344,6 +356,8 @@ function EditProgramsForm({
   const { data: standaloneMajors, isLoading: isLoadingMajors } =
     useSWR<Major[]>("/api/degree/majors");
   const { data: minors, isLoading: isLoadingMinors } = useSWR<Minor[]>("/api/degree/minors");
+  const { data: dualPrograms, isLoading: isLoadingDualPrograms } =
+    useSWR<DualProgram[]>("/api/degree/dual-programs");
 
   const initial = useMemo(() => {
     const semesterKeys = readSemesterKeys(plan.id);
@@ -364,6 +378,10 @@ function EditProgramsForm({
   const [graduationYear, setGraduationYear] = useState<YearOption | null>(
     yearOption(initial.years.graduation)
   );
+  const [dualProgramCode, setDualProgramCode] = useState(plan.dual_program?.code ?? null);
+  const dualProgram =
+    dualPrograms?.find((program) => program.code === dualProgramCode) ??
+    (plan.dual_program?.code === dualProgramCode ? plan.dual_program ?? undefined : undefined);
   const [confirming, setConfirming] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -435,7 +453,18 @@ function EditProgramsForm({
       movedToDock = fulfillments.filter((f) => f.semester && !keep.has(f.semester));
     }
 
+    // Attached again when anything about it changes, including which degrees fill its sides.
+    const sides = dualProgram && programSides(dualProgram, selections);
+    const initialSides = plan.dual_program && programSides(plan.dual_program, initial.selections);
+    const programChanged =
+      dualProgramCode !== (plan.dual_program?.code ?? null) ||
+      (!!dualProgram &&
+        (sides?.left?.id !== initialSides?.left?.id ||
+          sides?.right?.id !== initialSides?.right?.id));
+
     return {
+      programChanged,
+      programSides: sides ?? {},
       removedDegrees: plan.degrees.filter((d) => !newDegrees.has(d.id)),
       addedDegrees: [...newDegrees].filter((id) => !oldDegrees.has(id)),
       editedPlacement,
@@ -466,9 +495,12 @@ function EditProgramsForm({
     startingYear,
     graduationYear,
     initial,
+    dualProgram,
+    dualProgramCode,
   ]);
 
   const removals = [
+    ...(plan.dual_program && !dualProgramCode ? [plan.dual_program.name] : []),
     ...changes.removedDegrees.map((d) => `${d.degree} in ${d.major_name}`),
     ...changes.removedMajors.map((m) => m.name ?? m.code),
     ...changes.removedMinors.map((m) => m.name ?? `${m.code} minor`),
@@ -477,9 +509,12 @@ function EditProgramsForm({
     removals.length > 0 ||
     changes.addedDegrees.length > 0 ||
     changes.editedPlacement ||
+    changes.programChanged ||
     changes.semesterKeys !== null;
   const complete =
-    selections.every((s) => s.primary) && yearsInOrder(startingYear, graduationYear);
+    selections.every((s) => s.primary) &&
+    yearsInOrder(startingYear, graduationYear) &&
+    !programError(dualProgram, selections, degrees);
 
   const save = async () => {
     setSaving(true);
@@ -492,6 +527,8 @@ function EditProgramsForm({
         });
       if (changes.addedDegrees.length)
         await postFetcher(`${base}/degrees`, { degree_ids: changes.addedDegrees });
+      if (changes.programChanged)
+        await setDualProgram(plan.id, dualProgram, changes.programSides);
       if (changes.removedMajors.length)
         await deleteFetcher(`${base}/majors`, {
           major_ids: changes.removedMajors.map((m) => m.id),
@@ -561,6 +598,17 @@ function EditProgramsForm({
                     these years and will move to your dock.
                   </Hint>
                 )}
+              </Section>
+
+              <Section>
+                <DualProgramField
+                  programs={dualPrograms}
+                  isLoading={isLoadingDualPrograms}
+                  value={dualProgram}
+                  onChange={(program) => setDualProgramCode(program?.code ?? null)}
+                  selections={selections}
+                  degrees={degrees}
+                />
               </Section>
 
               <Section>

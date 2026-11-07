@@ -87,9 +87,37 @@ export interface DegreePlan extends DBObject {
   major_degrees?: { major: Major["id"]; degree: Degree["id"] | null }[];
   /** Which of the plan's degrees each minor was added under; null when it wasn't placed. */
   minor_degrees?: { minor: Minor["id"]; degree: Degree["id"] | null }[];
+  /** The coordinated program (e.g. M&T) two of the plan's degrees make up, if any. */
+  dual_program?: DualProgram | null;
+  /** Code of the variant chosen for the program's right side, when it isn't the default. */
+  right_variant?: string | null;
+  /** Each degree, major and minor as the plan applies it, e.g. with M&T's changes made. */
+  components?: PlanComponent[];
   name: string;
   updated_at: string;
   created_at: string;
+}
+
+/** A plan's degree, major or minor with any coordinated program's changes to its rules. */
+export interface PlanComponent {
+  key: string;
+  relation: string;
+  id: number;
+  rules: Rule[];
+}
+
+/** A coordinated program pairing a degree from each of two schools, e.g. M&T. */
+export interface DualProgram {
+  code: string;
+  name: string;
+  /** Degree programs (e.g. "EU_BSE") that can fill each side. */
+  left_programs: string[];
+  right_programs: string[];
+  /** Majors a side is limited to; empty when any major may fill it. */
+  left_allowed_majors: string[];
+  right_allowed_majors: string[];
+  left_variant: string | null;
+  right_variant: string | null;
 }
 
 // TODO: this is pulled from alert, we should move it to a shared location
