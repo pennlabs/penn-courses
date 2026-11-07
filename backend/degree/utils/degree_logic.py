@@ -927,18 +927,32 @@ def cas_credit_summary(composition, fulfillments, credits_cache):
 
     from degree.models import Degree
 
-    def rule_required(rule):
+    def rule_required(rule, owned):
+        """None when no leaf under `rule` belongs to the component."""
+        if rule.q:
+            if rule.id not in owned:
+                return None
+            if rule.credits is not None:
+                return rule.credits
+            return Decimal(rule.num) if rule.num is not None else Decimal(0)
+        children = sorted(
+            value
+            for value in (rule_required(child, owned) for child in rule.children.all())
+            if value is not None
+        )
+        if not children:
+            return None
         if rule.credits is not None:
             return rule.credits
-        if rule.q:
-            return Decimal(rule.num) if rule.num is not None else Decimal(0)
-        children = sorted(rule_required(child) for child in rule.children.all())
         if rule.num is not None:
             children = children[: rule.num]
         return sum(children, Decimal(0))
 
     def required(component):
-        return sum((rule_required(root) for root in component.roots), Decimal(0))
+        # College and major components share the degree's roots but own disjoint leaves.
+        owned = {rule.id for rule in component.rules}
+        values = (rule_required(root, owned) for root in component.roots)
+        return sum((value for value in values if value is not None), Decimal(0))
 
     majors = [component for component in composition.components if component.role == "major"]
     college = next(
