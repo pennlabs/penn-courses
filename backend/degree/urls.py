@@ -11,6 +11,7 @@ from degree.views import (
     MajorViewset,
     MinorViewset,
     OnboardFromTranscript,
+    OnboardingStatusView,
     SatisfiedRuleList,
 )
 
@@ -30,6 +31,7 @@ fulfillments_router.register(r"fulfillments", FulfillmentViewSet, basename="degr
 urlpatterns = [
     path("", include(router.urls)),
     path("", include(fulfillments_router.urls)),
+    path("onboarding-status", OnboardingStatusView.as_view(), name="onboarding-status"),
     path(
         "onboard-from-transcript/<slug:degree_plan_id>",
         OnboardFromTranscript.as_view(),

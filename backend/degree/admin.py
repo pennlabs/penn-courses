@@ -10,6 +10,7 @@ from degree.models import (
     DualProgram,
     Fulfillment,
     PDPBetaUser,
+    PDPOnboardingStatus,
     ProgramVariant,
     Rule,
     SatisfactionStatus,
@@ -25,6 +26,12 @@ class RuleAdmin(admin.ModelAdmin):
 
 class PDPBetaUserAdmin(admin.ModelAdmin):
     search_fields = ("person__username", "person__id")
+    autocomplete_fields = ("person",)
+
+
+class PDPOnboardingStatusAdmin(admin.ModelAdmin):
+    search_fields = ("person__username", "person__id")
+    list_display = ("person", "has_been_onboarded", "updated_at")
     autocomplete_fields = ("person",)
 
 
@@ -77,6 +84,7 @@ admin.site.register(DualProgram)
 admin.site.register(DegreePlan)
 admin.site.register(SatisfactionStatus)
 admin.site.register(PDPBetaUser, PDPBetaUserAdmin)
+admin.site.register(PDPOnboardingStatus, PDPOnboardingStatusAdmin)
 admin.site.register(Fulfillment, FulfillmentAdmin)
 admin.site.register(DoubleCountRestriction, DoubleCountRestrictionAdmin)
 admin.site.register(Degree, DegreeAdmin)
