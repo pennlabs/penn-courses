@@ -11,7 +11,9 @@ const FLICK_SPEED = 0.4;
 const Viewport = styled.div`
   position: relative;
   height: 100%;
+  /* Clip, not hidden, so scrollIntoView in an off-screen slide can't scroll it partway over. */
   overflow: hidden;
+  overflow: clip;
 `;
 
 const Slide = styled.div`
@@ -164,7 +166,13 @@ const PhoneSwiper = <T extends string>({ tabs, active, onChange, panels }: Phone
   }, [tabs]);
 
   return (
-    <Viewport ref={viewport}>
+    <Viewport
+      ref={viewport}
+      onScroll={(e) => {
+        e.currentTarget.scrollLeft = 0;
+        e.currentTarget.scrollTop = 0;
+      }}
+    >
       {tabs.map((tab, i) => (
         <Slide
           key={tab}
