@@ -24,6 +24,12 @@ export const Card = styled.div`
   border: 1px solid ${color.border};
   display: flex;
   flex-direction: column;
+
+  @media (max-width: 767px) {
+    width: calc(100% - 16px);
+    height: calc(100% - 16px);
+    margin: 8px;
+  }
 `;
 
 export const ScrollArea = styled.div`
@@ -55,6 +61,11 @@ export const Title = styled.h1`
   font-size: 32px;
   line-height: 1.15;
   font-weight: 700;
+
+  @media (max-width: 600px) {
+    font-size: 26px;
+    padding-right: 40px; /* clear of a dialog's close button */
+  }
 `;
 
 export const Body = styled.div`
@@ -116,6 +127,12 @@ export const Footer = styled.div`
   border-radius: 0 0 10px 10px;
 
   @media (max-width: 600px) {
-    padding: 16px;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+
+    [role="alert"] {
+      flex-basis: 100%;
+    }
   }
 `;

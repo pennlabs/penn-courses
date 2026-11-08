@@ -134,6 +134,12 @@ const SaveButton = styled(NextButton)`
   width: auto;
   min-width: 100px;
   padding: 0 1.25rem;
+
+  @media (max-width: 767px) {
+    flex: 1;
+    width: auto;
+    margin: 0;
+  }
 `;
 
 const TRANSITION_MS = 200;
@@ -152,6 +158,11 @@ const Backdrop = styled.div<{ $shown: boolean }>`
   opacity: ${(props) => (props.$shown ? 1 : 0)};
   transition: opacity ${TRANSITION_MS}ms ease;
 
+  @media (max-width: 767px) {
+    align-items: flex-end;
+    padding: 0.75rem 0 0;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     transition: none;
   }
@@ -167,6 +178,15 @@ const Dialog = styled(Card)<{ $shown: boolean }>`
   outline: none;
   transform: ${(props) => (props.$shown ? "none" : "translateY(16px) scale(0.98)")};
   transition: transform ${TRANSITION_MS}ms ease;
+
+  @media (max-width: 767px) {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    border-radius: 16px 16px 0 0;
+    transform: ${(props) => (props.$shown ? "none" : "translateY(100%)")};
+    transition: transform 260ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
 
   @media (prefers-reduced-motion: reduce) {
     transition: none;
