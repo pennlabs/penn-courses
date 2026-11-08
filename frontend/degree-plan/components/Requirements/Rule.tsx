@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useLayoutEffect, useRef, useCallback } from "react";
 import RuleLeaf, { SkeletonRuleLeaf } from "./QObject";
-import { DegreePlan, DnDCourse, Fulfillment } from "@/types";
+import { DnDCourse, Fulfillment } from "@/types";
 import { Icon } from "../common/bulma_derived_components";
 import { baseFetcher, postFetcher, useSWRCrud } from "@/hooks/swrcrud";
 import { useDrop } from "react-dnd";
@@ -49,9 +49,6 @@ import {
 } from "./Rule.styles";
 import { ProgramKind } from "./ProgramTabs";
 
-// Waiver changes answer with the updated plan, which replaces the cached one.
-const deleteJsonFetcher = baseFetcher({ method: "DELETE" });
-
 /** The kind of program the rules below belong to, which colors their accents. */
 export const ProgramKindContext = createContext<ProgramKind | null>(null);
 
@@ -61,6 +58,9 @@ export const ProgramKindContext = createContext<ProgramKind | null>(null);
  * something, and it shouldn't animate.
  */
 export const FulfillmentsLoadedContext = createContext(false);
+
+/** Waives a requirement of the active plan, or lifts its waiver (see ReqPanel). */
+export const SetWaivedContext = createContext<(ruleId: number, waived: boolean) => void>(() => {});
 
 /** Which of a rule's changes this render should animate. */
 const useRuleAnimation = (satisfied: boolean) => {
@@ -229,33 +229,9 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
   }, [activeDegreePlanId, rule.id, mutate, deleteFetcher]);
 
   // A waiver (e.g. from AP exams) completes a requirement without any course or course units.
-  // The change shows at once; the server then reallocates the plan's courses, which reload after.
   const waived = type === "LEAF" && ruleTree.waived;
-  const [savingWaiver, setSavingWaiver] = useState(false);
-  const toggleWaiver = useCallback(async () => {
-    const planKey = `/api/degree/degreeplans/${activeDegreePlanId}`;
-    const waive = !waived;
-    setSavingWaiver(true);
-    mutate(
-      planKey,
-      (plan?: DegreePlan) => plan && {
-        ...plan,
-        waived_rules: waive
-          ? [...(plan.waived_rules ?? []), rule.id]
-          : (plan.waived_rules ?? []).filter((id) => id !== rule.id),
-      },
-      { revalidate: false }
-    );
-    try {
-      const updated = await (waive ? postFetcher : deleteJsonFetcher)(`${planKey}/waivers`, { rule_ids: [rule.id] });
-      mutate(planKey, updated, { revalidate: false });
-    } catch {
-      mutate(planKey); // the request failed, so show the plan as the server has it
-    } finally {
-      setSavingWaiver(false);
-    }
-    mutate(`${planKey}/fulfillments`);
-  }, [waived, activeDegreePlanId, rule.id, mutate]);
+  const setWaived = useContext(SetWaivedContext);
+  const toggleWaiver = useCallback(() => setWaived(rule.id, !waived), [setWaived, rule.id, waived]);
 
   const handleOverrideConfirm = useCallback(async () => {
     if (!overrideModal) return;
@@ -416,7 +392,6 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
                 Waived
                 <RemoveWaiverButton
                   onClick={toggleWaiver}
-                  disabled={savingWaiver}
                   title="Remove waiver"
                   aria-label={`Remove waiver for ${rule.title}`}
                 >
@@ -462,7 +437,6 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
           {!waived && (
             <WaiveButton
               onClick={toggleWaiver}
-              disabled={savingWaiver}
               title="Mark as waived, e.g. by an AP exam. It counts as complete but adds no course units."
               aria-label={`Waive ${rule.title}`}
             >

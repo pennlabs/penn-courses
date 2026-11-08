@@ -1,16 +1,20 @@
 
-import { useMemo, useState, useContext, useRef, useLayoutEffect } from 'react';
-import RuleComponent, { FulfillmentsLoadedContext, ProgramKindContext, SkeletonRule } from './Rule';
+import { useCallback, useEffect, useMemo, useState, useContext, useRef, useLayoutEffect } from 'react';
+import RuleComponent, { FulfillmentsLoadedContext, ProgramKindContext, SetWaivedContext, SkeletonRule } from './Rule';
 import { Degree as DegreeType, DegreePlan, Fulfillment, Rule, Degree as DegreeD } from '@/types';
 import styled from '@emotion/styled';
 import { DarkBlueBackgroundSkeleton, PanelBody, PanelContainer, PanelHeader, PanelTopBarIconList } from "../FourYearPlan/PanelCommon";
 import { EditButton } from '../FourYearPlan/EditButton';
-import useSWR from 'swr';
+import useSWR, { useSWRConfig } from 'swr';
+import { baseFetcher, postFetcher } from '@/hooks/swrcrud';
 import { Icon } from '../common/bulma_derived_components';
 import React from 'react';
 import useStickyState from '@/hooks/stickyState';
 import ProgramTabs, { programPanelId, programTabId } from './ProgramTabs';
 import { PlanProgram, planPrograms } from '@/utils/programs';
+
+// Waiver changes answer with the updated plan.
+const deleteFetcher = baseFetcher({ method: "DELETE" });
 
 const EmptyPanelContainer = styled.div`
   display: flex;
@@ -373,10 +377,44 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
     return rulesToCourses;
   }, [fulfillments, isLoadingFulfillments])
 
-  const waivedRules = useMemo(
-    () => new Set(activeDegreeplanDetail?.waived_rules ?? []),
-    [activeDegreeplanDetail]
-  );
+  // Waiving a requirement (e.g. by an AP exam) shows at once. A student may change their mind,
+  // or waive another requirement, before the server answers, so each requirement's latest choice
+  // is kept here until the plan reloads with it, and no answer can overwrite a newer choice.
+  // Requests go out one at a time in the order clicked.
+  const { mutate } = useSWRConfig();
+  const [pendingWaivers, setPendingWaivers] = useState<Record<number, boolean>>({});
+  const waiverQueue = useRef<Promise<unknown>>(Promise.resolve());
+  const latestWaiverChange = useRef<Record<number, number>>({});
+  const setWaived = useCallback((ruleId: number, waive: boolean) => {
+    if (!activeDegreeplan) return;
+    const planKey = `/api/degree/degreeplans/${activeDegreeplan.id}`;
+    const change = (latestWaiverChange.current[ruleId] ?? 0) + 1;
+    latestWaiverChange.current[ruleId] = change;
+    setPendingWaivers((pending) => ({ ...pending, [ruleId]: waive }));
+
+    const send = () =>
+      (waive ? postFetcher : deleteFetcher)(`${planKey}/waivers`, { rule_ids: [ruleId] });
+    const sent = waiverQueue.current.then(send, send);
+    waiverQueue.current = sent.catch(() => undefined);
+    // Saved or not, the plan reloads as the server has it; the server reallocates its courses.
+    sent.catch(() => undefined).then(async () => {
+      if (latestWaiverChange.current[ruleId] !== change) return;
+      await Promise.all([mutate(planKey), mutate(`${planKey}/fulfillments`)]);
+      if (latestWaiverChange.current[ruleId] !== change) return;
+      setPendingWaivers(({ [ruleId]: _, ...pending }) => pending);
+    });
+  }, [activeDegreeplan, mutate]);
+
+  // Choices pending for one plan don't apply to another that shares its requirements.
+  useEffect(() => setPendingWaivers({}), [activeDegreeplan?.id]);
+
+  const waivedRules = useMemo(() => {
+    const waived = new Set(activeDegreeplanDetail?.waived_rules ?? []);
+    Object.entries(pendingWaivers).forEach(([ruleId, waive]) =>
+      waive ? waived.add(Number(ruleId)) : waived.delete(Number(ruleId))
+    );
+    return waived;
+  }, [activeDegreeplanDetail, pendingWaivers]);
 
   const programs = activeDegreeplanDetail ? planPrograms(activeDegreeplanDetail) : [];
   const fulfillmentsLoaded = !isLoadingFulfillments && !!fulfillments;
@@ -419,6 +457,7 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
 
   return (
     <FulfillmentsLoadedContext.Provider value={fulfillmentsLoaded}>
+    <SetWaivedContext.Provider value={setWaived}>
     <PanelContainer>
       <PanelHeader>
         <ReqPanelTitle>Requirements</ReqPanelTitle>
@@ -479,6 +518,7 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
           }
         </>}
     </PanelContainer>
+    </SetWaivedContext.Provider>
     </FulfillmentsLoadedContext.Provider>
   );
 }
