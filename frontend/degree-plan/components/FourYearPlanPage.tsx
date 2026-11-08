@@ -230,6 +230,8 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
     <PanelInteriorWrapper>
       <SearchPanel
         activeDegreeplanId={activeDegreeplan ? activeDegreeplan.id : null}
+        // On phones focusing pops up the keyboard over the results.
+        autoFocus={!isPhone}
       />
     </PanelInteriorWrapper>
   );
