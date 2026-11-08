@@ -1,4 +1,6 @@
 import styled from "@emotion/styled";
+import { useRef } from "react";
+import useBottomOffset from "@/hooks/useBottomOffset";
 
 export type PhoneTab = "plan" | "requirements" | "search" | "docked";
 
@@ -9,12 +11,17 @@ const TABS: { id: PhoneTab; label: string; icon: string }[] = [
   { id: "docked", label: "Docked", icon: "fa-archive" },
 ];
 
+export const PHONE_TABS = TABS.map(({ id }) => id);
+
 const Bar = styled.nav`
   flex-shrink: 0;
   display: flex;
+  margin: 0 0.5rem calc(0.5rem + env(safe-area-inset-bottom));
+  padding: 0.15rem 0.25rem;
   background: #ffffff;
-  border-top: 1px solid rgba(129, 154, 225, 0.35);
-  padding-bottom: env(safe-area-inset-bottom);
+  border: 1px solid rgba(129, 154, 225, 0.35);
+  border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(30, 32, 60, 0.14);
 `;
 
 const Tab = styled.button<{ $active: boolean }>`
@@ -61,22 +68,26 @@ interface PhoneTabBarProps {
   dockedCount: number;
 }
 
-const PhoneTabBar = ({ active, onSelect, dockedCount }: PhoneTabBarProps) => (
-  <Bar aria-label="Sections">
-    {TABS.map(({ id, label, icon }) => (
-      <Tab
-        key={id}
-        type="button"
-        $active={active === id}
-        aria-current={active === id ? "page" : undefined}
-        onClick={() => onSelect(id)}
-      >
-        <i className={`fas ${icon}`} aria-hidden />
-        {label}
-        {id === "docked" && dockedCount > 0 && <Count>{dockedCount}</Count>}
-      </Tab>
-    ))}
-  </Bar>
-);
+const PhoneTabBar = ({ active, onSelect, dockedCount }: PhoneTabBarProps) => {
+  const ref = useRef<HTMLElement>(null);
+  useBottomOffset(ref);
+  return (
+    <Bar aria-label="Sections" ref={ref}>
+      {TABS.map(({ id, label, icon }) => (
+        <Tab
+          key={id}
+          type="button"
+          $active={active === id}
+          aria-current={active === id ? "page" : undefined}
+          onClick={() => onSelect(id)}
+        >
+          <i className={`fas ${icon}`} aria-hidden />
+          {label}
+          {id === "docked" && dockedCount > 0 && <Count>{dockedCount}</Count>}
+        </Tab>
+      ))}
+    </Bar>
+  );
+};
 
 export default PhoneTabBar;

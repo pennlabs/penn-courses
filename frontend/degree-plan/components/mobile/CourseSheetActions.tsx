@@ -92,7 +92,6 @@ interface CourseSheetActionsProps {
   onDone: () => void;
 }
 
-// What a phone can't do by dragging: dock, remove, and choose the requirement a course counts for.
 const CourseSheetActions = ({
   fullCode,
   degreePlanId,

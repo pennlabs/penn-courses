@@ -7,15 +7,16 @@ import { Dispatch, MutableRefObject, SetStateAction } from "react";
 import { Document, Page } from "react-pdf";
 import { PulseLoader } from "react-spinners";
 import {
-  BackButton,
   CenteredFlexContainer,
   ChooseContainer,
   ContainerGroup,
   ErrorText,
+  ExitButton,
   NextButton,
   PrivacyNote,
   SecondaryButton,
   Upload,
+  WelcomeTitle,
 } from "./SharedComponents";
 
 type WelcomeLayoutProps = {
@@ -52,18 +53,10 @@ export default function WelcomeLayout({
     <CenteredFlexContainer>
       <ChooseContainer $maxWidth="90%" $minWidth="90%">
         {canExit && onExit && (
-          <BackButton
-            type="button"
-            onClick={onExit}
-            style={{
-              position: "absolute",
-              left: "2.5%",
-              top: "3%",
-            }}
-          >
+          <ExitButton type="button" onClick={onExit}>
             <ArrowLeftIcon width={16} height={16} />
             Back
-          </BackButton>
+          </ExitButton>
         )}
         <div style={{ display: "none" }}>
           <Document
@@ -86,7 +79,7 @@ export default function WelcomeLayout({
           </Document>
         </div>
 
-        <h1 style={{ color: "var(--primary-color-ultra-dark)" }}>Welcome to Penn Degree Plan!</h1>
+        <WelcomeTitle>Welcome to Penn Degree Plan!</WelcomeTitle>
         <ContainerGroup>
           <label>
             <input

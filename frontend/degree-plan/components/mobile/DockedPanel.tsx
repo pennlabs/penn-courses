@@ -2,7 +2,7 @@ import styled from "@emotion/styled";
 import useSWR from "swr";
 import { DockedCourse, User } from "@/types";
 import { PanelBody, PanelContainer, PanelHeader } from "../FourYearPlan/PanelCommon";
-import CourseInDock from "./CourseInDock";
+import CourseInDock from "../Dock/CourseInDock";
 
 const Title = styled.h2`
   margin: 0;
@@ -24,7 +24,6 @@ const Empty = styled.p`
   color: var(--primary-color-extra-dark);
 `;
 
-// The dock as a full panel, for phones, where the pinned dock doesn't fit.
 const DockedPanel = ({ user }: { user: User | null }) => {
   const { data: dockedCourses = [] } = useSWR<DockedCourse[]>(
     user ? `/api/degree/docked` : null

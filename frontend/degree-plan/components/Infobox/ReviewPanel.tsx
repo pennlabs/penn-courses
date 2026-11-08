@@ -4,7 +4,7 @@ import styled from '@emotion/styled';
 import { keyframes } from '@emotion/react';
 import InfoBox from './index'
 import AddToSemester from './AddToSemester';
-import CourseSheetActions from './CourseSheetActions';
+import CourseSheetActions from '../mobile/CourseSheetActions';
 import useIsPhone from '@/hooks/useIsPhone';
 import React, { PropsWithChildren, useContext, useEffect, useRef, useState } from 'react';
 import { createContext } from 'react';
@@ -189,7 +189,6 @@ const ReviewPanel = ({
     bottom = top === undefined ? bottom : undefined;
     const wrapperRef = useRef(null);
     const isPhone = useIsPhone();
-    // On phones the sheet slides away before it unmounts.
     const [closing, setClosing] = useState(false);
     const close = () => {
         if (!isPhone || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {

@@ -23,6 +23,14 @@ export const ChooseContainer = styled.div<{ $maxWidth: string; $minWidth: string
   flex-direction: column;
   align-items: center;
   gap: 40px;
+
+  @media (max-width: 767px) {
+    min-width: calc(100% - 16px);
+    max-width: calc(100% - 16px);
+    margin: 8px;
+    padding: 16px 16px 24px;
+    gap: 24px;
+  }
 `;
 
 export const ContainerGroup = styled.div`
@@ -74,6 +82,8 @@ export const NextButton = styled(Button)<{ disabled: boolean }>`
 
 export const Upload = styled.div`
   width: 350px;
+  max-width: 100%;
+  box-sizing: border-box;
   height: 100px;
   border: 1.5px dashed var(--primary-color-extra-dark);
   border-radius: 12px;
@@ -109,6 +119,28 @@ export const BackButton = styled.button`
 
   &:hover {
     color: var(--primary-color-ultra-dark);
+  }
+`;
+
+export const ExitButton = styled(BackButton)`
+  position: absolute;
+  left: 2.5%;
+  top: 3%;
+
+  @media (max-width: 767px) {
+    position: static;
+    margin-bottom: -16px;
+  }
+`;
+
+export const WelcomeTitle = styled.h1`
+  text-align: center;
+  color: var(--primary-color-ultra-dark);
+
+  @media (max-width: 767px) {
+    margin: 0;
+    font-size: 1.6rem;
+    line-height: 1.2;
   }
 `;
 

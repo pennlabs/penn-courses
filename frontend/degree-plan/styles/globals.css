@@ -178,3 +178,23 @@ body.is-resizing-columns * {
     transition: none !important;
   }
 }
+
+/* On phones, toasts sit above the tab bar (see hooks/useBottomOffset.ts). */
+body .Toastify__toast-container--bottom-center,
+body .Toastify__toast-container--bottom-left,
+body .Toastify__toast-container--bottom-right {
+  bottom: calc(var(--bottom-chrome-offset, 0.25rem) + 0.75rem);
+  transition: bottom 150ms ease;
+}
+
+@media only screen and (max-width: 480px) {
+  body .Toastify__toast-container--bottom-center {
+    padding: 0 0.5rem;
+    box-sizing: border-box;
+  }
+
+  body .Toastify__toast-container .Toastify__toast {
+    margin-bottom: 0.5rem;
+    border-radius: 10px;
+  }
+}

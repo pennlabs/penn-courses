@@ -29,8 +29,9 @@ import useStickyState from "@/hooks/stickyState";
 import OnboardingPage from "../pages/OnboardingPage";
 import EditProgramsPanel from "@/components/OnboardingPanels/EditProgramsPanel";
 import Footer from "./Footer";
-import PhoneTabBar, { PhoneTab } from "./PhoneTabBar";
-import DockedPanel from "@/components/Dock/DockedPanel";
+import PhoneTabBar, { PHONE_TABS, PhoneTab } from "./mobile/PhoneTabBar";
+import PhoneSwiper from "./mobile/PhoneSwiper";
+import DockedPanel from "./mobile/DockedPanel";
 import useIsPhone from "@/hooks/useIsPhone";
 
 import ExpandedCoursesPanel from "@/components/ExpandedBox/ExpandedCoursesPanel";
@@ -51,8 +52,9 @@ const Row = styled.div`
   inset: 0;
   padding: 1.5rem 1.5rem 1rem; /* less padding on bottom for penn labs footer */
 
+  /* PhoneSwiper pads each slide instead. */
   @media (max-width: 767px) {
-    padding: 0.5rem;
+    padding: 0;
   }
 `;
 
@@ -174,8 +176,6 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
     []
   ); // fulfillments matching the ruleId
 
-  // Phones show one panel at a time. Search is a tab there, so opening it (from a requirement,
-  // say) switches to it, and closing it goes back to the tab that was open before.
   const isPhone = useIsPhone();
   const [phoneTab, setPhoneTab] = useState<PhoneTab>("plan");
   const lastPhoneTab = useRef<PhoneTab>("plan");
@@ -351,7 +351,12 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
                 ) : (
                   <Row>
                     {isPhone ? (
-                      phonePanels[phoneTab]
+                      <PhoneSwiper
+                        tabs={PHONE_TABS}
+                        active={phoneTab}
+                        onChange={selectPhoneTab}
+                        panels={phonePanels}
+                      />
                     ) : (
                       <SplitColumns
                         storageKey="PDP-column-widths"
