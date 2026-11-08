@@ -140,6 +140,7 @@ const ReviewPanelWrapper = styled.div<{ $left?: number, $right?: number, $top?: 
         width: 100%;
         height: auto;
         max-height: 80vh;
+        max-height: 80dvh;
         border-radius: 16px 16px 0 0;
         padding-bottom: env(safe-area-inset-bottom);
         background: white;
@@ -170,6 +171,7 @@ const ReviewPanelContainer = styled.div`
 
     @media (max-width: 767px) {
         max-height: 80vh;
+        max-height: 80dvh;
     }
 `
 
