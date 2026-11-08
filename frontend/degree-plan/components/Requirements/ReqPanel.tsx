@@ -176,11 +176,10 @@ interface RuleTreeBaseNode {
   rule: Rule;
   activeDegreePlanId: DegreePlan["id"];
   progress: number; // a number between 0 and 1
-  // "self" when the student is waived from this rule, "parent" when from a rule above it
-  waiver: "self" | "parent" | null;
 }
 interface RuleTreeLeaf extends RuleTreeBaseNode {
   type: "LEAF";
+  waived: boolean; // the student is waived from this requirement, e.g. by an AP exam
   cus: number;
   num: number;
   fulfillments: Fulfillment[]; // The fulfillments for the rule
@@ -203,28 +202,26 @@ interface RuleProps {
   rulesToUnselectedFulfillments: { [ruleId: string]: Fulfillment[] };
   activeDegreePlanId: number;
   degree: DegreeD;
-  waivedRules: Set<number>; // the plan's waived rules
-  underWaiver?: boolean; // whether a rule above this one is waived
+  waivedRules: Set<number>; // the plan's waived requirements, which are always leaves
 }
 
-const computeRuleTree = ({activeDegreePlanId, rule, rulesToFulfillments, rulesToUnselectedFulfillments, degree, waivedRules, underWaiver = false }: RuleProps): RuleTree => {
-  // A waived requirement is complete without any course, and so is everything under it.
-  const waiver = waivedRules.has(rule.id) ? "self" : underWaiver ? "parent" : null;
-  const waived = waiver !== null;
+const computeRuleTree = ({activeDegreePlanId, rule, rulesToFulfillments, rulesToUnselectedFulfillments, degree, waivedRules }: RuleProps): RuleTree => {
   if (rule.q) { // Rule leaf
+    // A waived requirement is complete without any course.
+    const waived = waivedRules.has(rule.id);
     const fulfillmentsForRule: Fulfillment[] = rulesToFulfillments[rule.id] || [];
     const unselectedFulfillmentsForRule: Fulfillment[] = rulesToUnselectedFulfillments[rule.id] || [];
     const cus = fulfillmentsForRule.reduce((acc, f) => acc + (f.course?.credits || 1), 0); // default to 1 cu 
     const num = fulfillmentsForRule.length;
     const progress = waived ? 1 : Math.min(1, rule.credits ? cus / rule.credits : 1, rule.num ? num / rule.num : 1);
-    return { activeDegreePlanId, type: "LEAF", progress, waiver, cus, num, rule, fulfillments: fulfillmentsForRule, unselectedFulfillments: unselectedFulfillmentsForRule }
+    return { activeDegreePlanId, type: "LEAF", progress, waived, cus, num, rule, fulfillments: fulfillmentsForRule, unselectedFulfillments: unselectedFulfillmentsForRule }
   }
-  const children = rule.rules.map((child) => computeRuleTree({ activeDegreePlanId, rule: child, rulesToFulfillments, rulesToUnselectedFulfillments, degree, waivedRules, underWaiver: waived }))
+  const children = rule.rules.map((child) => computeRuleTree({ activeDegreePlanId, rule: child, rulesToFulfillments, rulesToUnselectedFulfillments, degree, waivedRules }))
   // A "pick N" rule is only as far along as its N furthest children: extra ones don't count.
   const required = Math.min(children.length, rule.num || Infinity);
   const counted = children.map((child) => child.progress).sort((a, b) => b - a).slice(0, required);
-  const progress = waived ? 1 : required ? counted.reduce((acc, childProgress) => acc + childProgress, 0) / required : 0;
-  return { num: rule.num || undefined, activeDegreePlanId, type: "INTERNAL_NODE", children, progress, waiver, rule } // internal node
+  const progress = required ? counted.reduce((acc, childProgress) => acc + childProgress, 0) / required : 0;
+  return { num: rule.num || undefined, activeDegreePlanId, type: "INTERNAL_NODE", children, progress, rule } // internal node
 }
 
 

@@ -346,42 +346,65 @@ export const RuleLeafContainer = styled.div<{
   transition: box-shadow 150ms ease-out;
 `;
 
-/** Marks a requirement the student is waived from, e.g. by an AP exam. */
+/** Marks a requirement the student is waived from, e.g. by an AP exam, with a control to undo it. */
 export const WaivedTag = styled.span`
   display: inline-flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.15rem;
   font-size: 0.7rem;
   font-weight: 600;
-  color: var(--primary-color-xx-dark);
-  background: var(--primary-color-extra-light);
+  color: var(--primary-color-ultra-dark);
+  background: var(--primary-color);
+  border: 1px solid var(--primary-color-dark);
   border-radius: 4px;
-  padding: 0.1rem 0.4rem;
+  padding: 0.1rem 0.15rem 0.1rem 0.4rem;
   white-space: nowrap;
 `;
 
-/** Waives a requirement, or lifts its waiver. Muted until the requirement is hovered. */
-export const WaiveButton = styled.button`
-  font-size: 0.7rem;
-  font-weight: 500;
-  color: var(--text-color);
+export const RemoveWaiverButton = styled.button`
+  display: inline-flex;
+  align-items: center;
   background: none;
   border: none;
+  color: var(--primary-color-xxx-dark);
+  font-size: 0.65rem;
   padding: 0.1rem 0.25rem;
+  border-radius: 3px;
   cursor: pointer;
-  opacity: 0.45;
-  white-space: nowrap;
 
-  *:hover > &,
+  &:hover {
+    background: var(--primary-color-dark);
+  }
+`;
+
+/**
+ * Waives a requirement. Shown while its requirement is hovered (always on touch screens), so the
+ * panel isn't covered in buttons.
+ */
+export const WaiveButton = styled.button`
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--primary-color-xxx-dark);
+  background: transparent;
+  border: 1px dashed var(--primary-color-extra-dark);
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+  white-space: nowrap;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+
+  .rule-leaf:hover &,
   &:focus-visible {
     opacity: 1;
   }
 
-  &:hover {
-    text-decoration: underline;
+  @media (hover: none) {
+    opacity: 1;
   }
 
-  &:disabled {
-    cursor: wait;
+  &:hover {
+    background: var(--primary-color-light);
+    border-style: solid;
   }
 `;

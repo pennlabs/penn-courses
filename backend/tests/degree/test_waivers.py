@@ -129,16 +129,18 @@ class WaiverTest(TestCase):
         self.assertEqual(response.data["waived_rules"], [])
         self.assertFalse(self.foundations_satisfied())
 
-    def test_waiving_a_block_waives_every_requirement_in_it(self):
-        self.add_course("BEPP-1000")
-        self.waive(self.foundations)
+    def test_a_whole_block_cannot_be_waived(self):
+        response = self.waive(self.foundations)
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(self.plan.waived_rules.exists())
 
+    def test_waiving_every_requirement_in_a_block_satisfies_it(self):
+        self.waive(self.intro_econ, self.writing)
         self.assertTrue(self.foundations_satisfied())
         self.assertEqual(
             self.plan.check_rules_already_satisfied({self.intro_econ, self.writing}),
             {self.intro_econ, self.writing},
         )
-        self.assertEqual(self.rules_of("BEPP-1000"), {self.breadth_elective})
 
     def test_onboarding_skips_waived_requirements(self):
         self.waive(self.intro_econ)

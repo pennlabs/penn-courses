@@ -109,7 +109,7 @@ def update_fulfillments(degree_plan):
     counts = defaultdict(int)
     cus = defaultdict(lambda: Decimal(0))
     # A waived requirement needs no courses, so none are allocated to it.
-    waived = degree_plan.waived_rule_tree()
+    waived = set(degree_plan.waived_rules.all())
     satisfied_rules = set(waived)
 
     def is_satisfied(rule):
@@ -362,7 +362,8 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
     @action(detail=True, methods=["post", "delete"])
     def waivers(self, request, pk=None):
         """
-        Waive requirements of a degree plan, or lift waivers, by `rule_ids`. A waived rule is
+        Waive requirements of a degree plan, or lift waivers, by `rule_ids`. Only individual
+        requirements (leaf rules) can be waived, not whole blocks or groups. A waived rule is
         satisfied without courses and adds no course units; the plan's courses are reallocated
         to the requirements that remain.
         """
@@ -374,10 +375,15 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         top_level_rules = [
             rule for component in plan_components(degree_plan) for rule in component.rules.all()
         ]
-        plan_rule_ids = {rule.id for rule in rule_subtrees(top_level_rules)}
-        unknown = set(ids) - plan_rule_ids
+        plan_rules = {rule.id: rule for rule in rule_subtrees(top_level_rules)}
+        unknown = set(ids) - set(plan_rules)
         if unknown:
             raise ValidationError({"rule_ids": f"Not requirements of this plan: {sorted(unknown)}"})
+        groups = {i for i in ids if not plan_rules[i].q}
+        if request.method == "POST" and groups:
+            raise ValidationError(
+                {"rule_ids": f"Only individual requirements can be waived: {sorted(groups)}"}
+            )
 
         with transaction.atomic():
             if request.method == "DELETE":
@@ -823,7 +829,7 @@ class OnboardFromTranscript(APIView):
         double_counts = plan_rules.double_counts
         policy = plan_rules.composition.policy
         # A waived requirement needs no courses, so none are allocated to it.
-        waived = degree_plan.waived_rule_tree()
+        waived = set(degree_plan.waived_rules.all())
         satisfied_rules = set(waived)
 
         # Every course is known up front, so check them against the rules in bulk

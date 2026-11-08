@@ -12,12 +12,7 @@ from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from courses.models import Course
-from degree.utils.degree_logic import (
-    FULFILLMENT_LEVELS,
-    aggregate_rule_leaves,
-    plan_components,
-    rule_subtrees,
-)
+from degree.utils.degree_logic import FULFILLMENT_LEVELS, aggregate_rule_leaves, plan_components
 from degree.utils.model_utils import json_parser, q_object_parser
 
 
@@ -627,9 +622,10 @@ class DegreePlan(models.Model):  #
             """
             Requirements the student has been waived from, e.g. Wharton's Introductory
             Economics after AP Microeconomics and Macroeconomics, or a language requirement
-            met by a placement exam. A waived rule, and every rule under it, is satisfied
-            without any course, so it adds no course units and takes none of the plan's
-            courses. Path audits grant these from exam scores, which a plan does not have.
+            met by a placement exam. Each is a single requirement (a leaf rule), never a
+            whole block. A waived rule is satisfied without any course, so it adds no course
+            units and takes none of the plan's courses. Path audits grant these from exam
+            scores, which a plan does not have.
             """
         ),
     )
@@ -647,13 +643,6 @@ class DegreePlan(models.Model):  #
         constraints = [
             models.UniqueConstraint(fields=["name", "person"], name="degreeplan_name_person")
         ]
-
-    def waived_rule_tree(self) -> set[Rule]:
-        """
-        The plan's waived rules and every rule beneath them. Allocation treats these as already
-        satisfied, so no course is assigned to a leaf of a waived requirement.
-        """
-        return rule_subtrees(self.waived_rules.all())
 
     def get_rule_fulfillments(self, rule: Rule) -> set[Rule]:
         """
@@ -732,12 +721,12 @@ class DegreePlan(models.Model):  #
         """
         A rule is already satisfied when the courses assigned to it meet its count, its CU
         total, or both. CU is the sum of those courses' credits, not the number of courses.
-        A waived rule, or one under a waived rule, is satisfied regardless.
+        A waived rule is satisfied regardless.
         """
         rules = list(rules)
         if not rules:
             return set()
-        waived = self.waived_rule_tree()
+        waived = set(self.waived_rules.all())
 
         fulfillments = list(
             Fulfillment.objects.filter(degree_plan=self, rules__in=rules)

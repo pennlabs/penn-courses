@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
             name="waived_rules",
             field=models.ManyToManyField(
                 blank=True,
-                help_text="\nRequirements the student has been waived from, e.g. Wharton's Introductory\nEconomics after AP Microeconomics and Macroeconomics, or a language requirement\nmet by a placement exam. A waived rule, and every rule under it, is satisfied\nwithout any course, so it adds no course units and takes none of the plan's\ncourses. Path audits grant these from exam scores, which a plan does not have.\n",
+                help_text="\nRequirements the student has been waived from, e.g. Wharton's Introductory\nEconomics after AP Microeconomics and Macroeconomics, or a language requirement\nmet by a placement exam. Each is a single requirement (a leaf rule), never a\nwhole block. A waived rule is satisfied without any course, so it adds no course\nunits and takes none of the plan's courses. Path audits grant these from exam\nscores, which a plan does not have.\n",
                 related_name="waived_in_plans",
                 to="degree.rule",
             ),

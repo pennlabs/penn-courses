@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useLayoutEffect, useRef, useCallback } from "react";
 import RuleLeaf, { SkeletonRuleLeaf } from "./QObject";
-import { DnDCourse, Fulfillment } from "@/types";
+import { DegreePlan, DnDCourse, Fulfillment } from "@/types";
 import { Icon } from "../common/bulma_derived_components";
 import { baseFetcher, postFetcher, useSWRCrud } from "@/hooks/swrcrud";
 import { useDrop } from "react-dnd";
@@ -44,9 +44,13 @@ import {
   OverrideCourseName,
   RuleLeafContainer,
   WaivedTag,
+  RemoveWaiverButton,
   WaiveButton,
 } from "./Rule.styles";
 import { ProgramKind } from "./ProgramTabs";
+
+// Waiver changes answer with the updated plan, which replaces the cached one.
+const deleteJsonFetcher = baseFetcher({ method: "DELETE" });
 
 /** The kind of program the rules below belong to, which colors their accents. */
 export const ProgramKindContext = createContext<ProgramKind | null>(null);
@@ -149,7 +153,7 @@ export const SkeletonRule: React.FC<React.PropsWithChildren> = ({
 const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: number, depth?: number }) => {
   const { setCourses, courses } = useContext(ExpandedCoursesPanelContext);
   const programKind = useContext(ProgramKindContext);
-  const { type, activeDegreePlanId, rule, progress, waiver } = ruleTree;
+  const { type, activeDegreePlanId, rule, progress } = ruleTree;
   const satisfied = progress === 1;
   const { animateProgress, justSatisfied } = useRuleAnimation(satisfied);
 
@@ -224,38 +228,34 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
     }
   }, [activeDegreePlanId, rule.id, mutate, deleteFetcher]);
 
-  // A waiver (e.g. from AP exams) completes the requirement without any course or course units.
-  // Changing one reallocates the plan's courses, so both the plan and its fulfillments reload.
+  // A waiver (e.g. from AP exams) completes a requirement without any course or course units.
+  // The change shows at once; the server then reallocates the plan's courses, which reload after.
+  const waived = type === "LEAF" && ruleTree.waived;
   const [savingWaiver, setSavingWaiver] = useState(false);
-  const toggleWaiver = useCallback(async (e: React.MouseEvent) => {
-    e.stopPropagation(); // a rule's header also collapses it
+  const toggleWaiver = useCallback(async () => {
+    const planKey = `/api/degree/degreeplans/${activeDegreePlanId}`;
+    const waive = !waived;
     setSavingWaiver(true);
+    mutate(
+      planKey,
+      (plan?: DegreePlan) => plan && {
+        ...plan,
+        waived_rules: waive
+          ? [...(plan.waived_rules ?? []), rule.id]
+          : (plan.waived_rules ?? []).filter((id) => id !== rule.id),
+      },
+      { revalidate: false }
+    );
     try {
-      const fetcher = waiver === "self" ? deleteFetcher : postFetcher;
-      await fetcher(`/api/degree/degreeplans/${activeDegreePlanId}/waivers`, { rule_ids: [rule.id] });
-      await Promise.all([
-        mutate(`/api/degree/degreeplans/${activeDegreePlanId}`),
-        mutate(`/api/degree/degreeplans/${activeDegreePlanId}/fulfillments`),
-      ]);
+      const updated = await (waive ? postFetcher : deleteJsonFetcher)(`${planKey}/waivers`, { rule_ids: [rule.id] });
+      mutate(planKey, updated, { revalidate: false });
+    } catch {
+      mutate(planKey); // the request failed, so show the plan as the server has it
     } finally {
       setSavingWaiver(false);
     }
-  }, [waiver, activeDegreePlanId, rule.id, mutate, deleteFetcher]);
-
-  // A rule under a waived one can't be waived or restored on its own.
-  const waiverButton = waiver !== "parent" && (
-    <WaiveButton
-      onClick={toggleWaiver}
-      disabled={savingWaiver}
-      title={
-        waiver === "self"
-          ? "Count this requirement again"
-          : "Mark this requirement as waived, e.g. by an AP exam. It counts as complete but adds no course units."
-      }
-    >
-      {waiver === "self" ? "Remove waiver" : "Waive"}
-    </WaiveButton>
-  );
+    mutate(`${planKey}/fulfillments`);
+  }, [waived, activeDegreePlanId, rule.id, mutate]);
 
   const handleOverrideConfirm = useCallback(async () => {
     if (!overrideModal) return;
@@ -397,7 +397,7 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
       (f) => f.overrides?.includes(rule.id)
     );
     return (
-      <RuleLeafContainer $isDroppable={canDrop} $isOver={isOver} ref={drop}>
+      <RuleLeafContainer $isDroppable={canDrop} $isOver={isOver} ref={drop} className="rule-leaf">
         {overrideModal && (
           <OverrideModal
             fullCode={overrideModal.fullCode}
@@ -411,8 +411,18 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
           <RuleLeafTitle>{rule.title}</RuleLeafTitle>
           <LeafStatus>
             {!!satisfied && <SatisfiedCheck pop={justSatisfied} />}
-            {waiver ? (
-              <WaivedTag>Waived</WaivedTag>
+            {waived ? (
+              <WaivedTag title="Waived, e.g. by an AP exam: complete, with no course units">
+                Waived
+                <RemoveWaiverButton
+                  onClick={toggleWaiver}
+                  disabled={savingWaiver}
+                  title="Remove waiver"
+                  aria-label={`Remove waiver for ${rule.title}`}
+                >
+                  <i className="fas fa-times" />
+                </RemoveWaiverButton>
+              </WaivedTag>
             ) : (
               <>
                 {!!rule.credits && (
@@ -425,7 +435,6 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
               </>
             )}
           </LeafStatus>
-          {waiverButton}
           {overrideFulfillments.length > 0 && (
             <OverrideTagWrapper ref={overridePopoverRef}>
               <OverrideTag onClick={() => setOverridePopoverOpen(!overridePopoverOpen)}>
@@ -449,6 +458,16 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
                 </OverridePopover>
               )}
             </OverrideTagWrapper>
+          )}
+          {!waived && (
+            <WaiveButton
+              onClick={toggleWaiver}
+              disabled={savingWaiver}
+              title="Mark as waived, e.g. by an AP exam. It counts as complete but adds no course units."
+              aria-label={`Waive ${rule.title}`}
+            >
+              Waive
+            </WaiveButton>
           )}
         </RuleLeafLabel>
         <RuleLeaf
@@ -502,10 +521,8 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
         <ProgressBar $progress={progress} $animate={animateProgress} $depth={depth}></ProgressBar>
         <RuleTitle $depth={depth}>
           <RuleTitleText $stacked={depth === 0}>
-            <span>{rule.title}</span>{" "}
-            {waiver ? <WaivedTag>Waived</WaivedTag> : <DegreeYear>{(progress * 100).toFixed(0)}%</DegreeYear>}
+            <span>{rule.title}</span> <DegreeYear>{(progress * 100).toFixed(0)}%</DegreeYear>
           </RuleTitleText>
-          {waiverButton}
           {rule.rules.length > 0 && (
             <Icon>
               <i className={`fas fa-chevron-${collapsed ? "right" : "up"}`}></i>
