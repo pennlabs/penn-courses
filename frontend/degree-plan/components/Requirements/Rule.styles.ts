@@ -345,3 +345,43 @@ export const RuleLeafContainer = styled.div<{
   box-shadow: ${dropShadow};
   transition: box-shadow 150ms ease-out;
 `;
+
+/** Marks a requirement the student is waived from, e.g. by an AP exam. */
+export const WaivedTag = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--primary-color-xx-dark);
+  background: var(--primary-color-extra-light);
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+  white-space: nowrap;
+`;
+
+/** Waives a requirement, or lifts its waiver. Muted until the requirement is hovered. */
+export const WaiveButton = styled.button`
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--text-color);
+  background: none;
+  border: none;
+  padding: 0.1rem 0.25rem;
+  cursor: pointer;
+  opacity: 0.45;
+  white-space: nowrap;
+
+  *:hover > &,
+  &:focus-visible {
+    opacity: 1;
+  }
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &:disabled {
+    cursor: wait;
+  }
+`;

@@ -51,6 +51,18 @@ def aggregate_rule_leaves(rules, f):
                 bfs_queue.append(child)
 
 
+def rule_subtrees(rules) -> set:
+    """The given rules and every rule beneath them, fetched a level at a time."""
+    from degree.models import Rule
+
+    found = set()
+    frontier = set(rules)
+    while frontier:
+        found |= frontier
+        frontier = set(Rule.objects.filter(parent__in=frontier)) - found
+    return found
+
+
 def check_dept(q, dept):
     pattern = r"\('([^']*)',\s*'([^']*)'\)"
     matches = re.findall(pattern, q)
@@ -636,7 +648,12 @@ def within_policy(before, after, rule_to_component, policy):
 
 
 def rebalance_allocations(
-    allocations, rule_to_degree, double_counts, credits_cache=None, allows=None
+    allocations,
+    rule_to_degree,
+    double_counts,
+    credits_cache=None,
+    allows=None,
+    exempt=frozenset(),
 ):
     """
     Moves courses onto short rules when another course can take their place, without leaving any
@@ -644,7 +661,8 @@ def rebalance_allocations(
 
     Only for allocating a whole plan, since it can move any course. `allocations` must be in the
     order the courses were taken, and is changed in place. `allows(before, after)` vetoes a
-    change to one course's rules, e.g. one the plan's sharing caps forbid.
+    change to one course's rules, e.g. one the plan's sharing caps forbid. Rules in `exempt`,
+    such as waived ones, need no courses and are never short.
     """
     credits_cache = credits_cache or {}
 
@@ -652,6 +670,8 @@ def rebalance_allocations(
         return credits_cache.get(allocation.full_code, DEFAULT_COURSE_CREDITS)
 
     def is_short(rule, courses):
+        if rule in exempt:
+            return False
         if rule.num and len(courses) < rule.num:
             return True
         return bool(rule.credits and sum(credits_of(c) for c in courses) < rule.credits)

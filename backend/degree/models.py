@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from decimal import Decimal
 from textwrap import dedent
-from typing import Iterable
+from typing import Collection, Iterable
 
 from django.contrib.auth import get_user_model
 from django.db import models
@@ -12,7 +12,12 @@ from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from courses.models import Course
-from degree.utils.degree_logic import FULFILLMENT_LEVELS, aggregate_rule_leaves, plan_components
+from degree.utils.degree_logic import (
+    FULFILLMENT_LEVELS,
+    aggregate_rule_leaves,
+    plan_components,
+    rule_subtrees,
+)
 from degree.utils.model_utils import json_parser, q_object_parser
 
 
@@ -309,10 +314,13 @@ class Rule(models.Model):
         """
         return self.transfer_credit_allowed or not is_transfer
 
-    def evaluate(self, full_codes: Iterable[str]) -> bool:
+    def evaluate(self, full_codes: Iterable[str], waived: Collection[int] = frozenset()) -> bool:
         """
-        Check if this rule is fulfilled by the provided courses.
+        Check if this rule is fulfilled by the provided courses. `waived` holds the ids of rules
+        the student has been waived from, which are fulfilled without any course.
         """
+        if self.id in waived:
+            return True
         if self.q:
             # Sums all courses (and corresponding credits), from full_codes, that satisfy this
             # rule's q object. A course counts once, however many semesters it was offered in or
@@ -347,7 +355,7 @@ class Rule(models.Model):
         else:
             count = 0
             for child in self.children.all():
-                if not child.evaluate(full_codes):
+                if not child.evaluate(full_codes, waived):
                     if self.num is None:
                         return False
                 else:
@@ -611,6 +619,21 @@ class DegreePlan(models.Model):  #
         ),
     )
 
+    waived_rules = models.ManyToManyField(
+        Rule,
+        blank=True,
+        related_name="waived_in_plans",
+        help_text=dedent(
+            """
+            Requirements the student has been waived from, e.g. Wharton's Introductory
+            Economics after AP Microeconomics and Macroeconomics, or a language requirement
+            met by a placement exam. A waived rule, and every rule under it, is satisfied
+            without any course, so it adds no course units and takes none of the plan's
+            courses. Path audits grant these from exam scores, which a plan does not have.
+            """
+        ),
+    )
+
     person = models.ForeignKey(
         get_user_model(),
         on_delete=models.CASCADE,
@@ -624,6 +647,13 @@ class DegreePlan(models.Model):  #
         constraints = [
             models.UniqueConstraint(fields=["name", "person"], name="degreeplan_name_person")
         ]
+
+    def waived_rule_tree(self) -> set[Rule]:
+        """
+        The plan's waived rules and every rule beneath them. Allocation treats these as already
+        satisfied, so no course is assigned to a leaf of a waived requirement.
+        """
+        return rule_subtrees(self.waived_rules.all())
 
     def get_rule_fulfillments(self, rule: Rule) -> set[Rule]:
         """
@@ -658,11 +688,12 @@ class DegreePlan(models.Model):  #
             return
 
         full_codes = list(self.fulfillments.values_list("full_code", flat=True))
+        waived = set(self.waived_rules.values_list("id", flat=True))
         stored = {
             status.rule_id: status for status in self.satisfactions.filter(rule__in=top_level_rules)
         }
         for rule in top_level_rules:
-            satisfied = rule.evaluate(full_codes)
+            satisfied = rule.evaluate(full_codes, waived=waived)
             status = stored.get(rule.id)
             if status is None:
                 SatisfactionStatus.objects.create(degree_plan=self, rule=rule, satisfied=satisfied)
@@ -688,10 +719,11 @@ class DegreePlan(models.Model):  #
             if dcr.is_double_count_violated(self):
                 violated_dcrs.add(dcr)
 
+        waived = set(self.waived_rules.values_list("id", flat=True))
         for rule in rules:
             rule_fulfillments = self.get_rule_fulfillments(rule)
             full_codes = [fulfillment.full_code for fulfillment in rule_fulfillments]
-            if rule.evaluate(full_codes):
+            if rule.evaluate(full_codes, waived=waived):
                 satisfied_rules.add(rule)
 
         return (satisfied_rules, violated_dcrs)
@@ -700,10 +732,12 @@ class DegreePlan(models.Model):  #
         """
         A rule is already satisfied when the courses assigned to it meet its count, its CU
         total, or both. CU is the sum of those courses' credits, not the number of courses.
+        A waived rule, or one under a waived rule, is satisfied regardless.
         """
         rules = list(rules)
         if not rules:
             return set()
+        waived = self.waived_rule_tree()
 
         fulfillments = list(
             Fulfillment.objects.filter(degree_plan=self, rules__in=rules)
@@ -724,7 +758,7 @@ class DegreePlan(models.Model):  #
             .values_list("full_code", "credits")
         }
 
-        satisfied_rules = set()
+        satisfied_rules = waived.intersection(rules)
         for rule in rules:
             assigned = by_rule.get(rule.id, [])
             count = len(assigned)
@@ -753,6 +787,7 @@ class DegreePlan(models.Model):  #
             new_degree_plan.majors.add(major)
         for minor in self.minors.all():
             new_degree_plan.minors.add(minor)
+        new_degree_plan.waived_rules.set(self.waived_rules.all())
 
         for fulfillment in self.fulfillments.all():
             rules = fulfillment.rules.all()

@@ -176,6 +176,8 @@ interface RuleTreeBaseNode {
   rule: Rule;
   activeDegreePlanId: DegreePlan["id"];
   progress: number; // a number between 0 and 1
+  // "self" when the student is waived from this rule, "parent" when from a rule above it
+  waiver: "self" | "parent" | null;
 }
 interface RuleTreeLeaf extends RuleTreeBaseNode {
   type: "LEAF";
@@ -201,23 +203,28 @@ interface RuleProps {
   rulesToUnselectedFulfillments: { [ruleId: string]: Fulfillment[] };
   activeDegreePlanId: number;
   degree: DegreeD;
+  waivedRules: Set<number>; // the plan's waived rules
+  underWaiver?: boolean; // whether a rule above this one is waived
 }
 
-const computeRuleTree = ({activeDegreePlanId, rule, rulesToFulfillments, rulesToUnselectedFulfillments, degree }: RuleProps): RuleTree => {
+const computeRuleTree = ({activeDegreePlanId, rule, rulesToFulfillments, rulesToUnselectedFulfillments, degree, waivedRules, underWaiver = false }: RuleProps): RuleTree => {
+  // A waived requirement is complete without any course, and so is everything under it.
+  const waiver = waivedRules.has(rule.id) ? "self" : underWaiver ? "parent" : null;
+  const waived = waiver !== null;
   if (rule.q) { // Rule leaf
     const fulfillmentsForRule: Fulfillment[] = rulesToFulfillments[rule.id] || [];
     const unselectedFulfillmentsForRule: Fulfillment[] = rulesToUnselectedFulfillments[rule.id] || [];
     const cus = fulfillmentsForRule.reduce((acc, f) => acc + (f.course?.credits || 1), 0); // default to 1 cu 
     const num = fulfillmentsForRule.length;
-    const progress = Math.min(1, rule.credits ? cus / rule.credits : 1, rule.num ? num / rule.num : 1);
-    return { activeDegreePlanId, type: "LEAF", progress, cus, num, rule, fulfillments: fulfillmentsForRule, unselectedFulfillments: unselectedFulfillmentsForRule }
+    const progress = waived ? 1 : Math.min(1, rule.credits ? cus / rule.credits : 1, rule.num ? num / rule.num : 1);
+    return { activeDegreePlanId, type: "LEAF", progress, waiver, cus, num, rule, fulfillments: fulfillmentsForRule, unselectedFulfillments: unselectedFulfillmentsForRule }
   }
-  const children = rule.rules.map((child) => computeRuleTree({ activeDegreePlanId, rule: child, rulesToFulfillments, rulesToUnselectedFulfillments, degree }))
+  const children = rule.rules.map((child) => computeRuleTree({ activeDegreePlanId, rule: child, rulesToFulfillments, rulesToUnselectedFulfillments, degree, waivedRules, underWaiver: waived }))
   // A "pick N" rule is only as far along as its N furthest children: extra ones don't count.
   const required = Math.min(children.length, rule.num || Infinity);
   const counted = children.map((child) => child.progress).sort((a, b) => b - a).slice(0, required);
-  const progress = required ? counted.reduce((acc, childProgress) => acc + childProgress, 0) / required : 0;
-  return { num: rule.num || undefined, activeDegreePlanId, type: "INTERNAL_NODE", children, progress, rule } // internal node
+  const progress = waived ? 1 : required ? counted.reduce((acc, childProgress) => acc + childProgress, 0) / required : 0;
+  return { num: rule.num || undefined, activeDegreePlanId, type: "INTERNAL_NODE", children, progress, waiver, rule } // internal node
 }
 
 
@@ -227,6 +234,7 @@ const Degree = ({
   rulesToFulfillments, 
   rulesToUnselectedFulfillments, 
   activeDegreeplan, 
+  waivedRules,
   isLoading,
   progress,
   showHeader = true, // false when program tabs take the header's place
@@ -315,6 +323,7 @@ const Degree = ({
                   rulesToFulfillments,
                   rulesToUnselectedFulfillments,
                   degree: program,
+                  waivedRules,
                 })}
               />
             ))}
@@ -367,6 +376,11 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
     return rulesToCourses;
   }, [fulfillments, isLoadingFulfillments])
 
+  const waivedRules = useMemo(
+    () => new Set(activeDegreeplanDetail?.waived_rules ?? []),
+    [activeDegreeplanDetail]
+  );
+
   const programs = activeDegreeplanDetail ? planPrograms(activeDegreeplanDetail) : [];
   const fulfillmentsLoaded = !isLoadingFulfillments && !!fulfillments;
   const showTabs = programs.length > 1;
@@ -380,6 +394,7 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
       rulesToFulfillments,
       rulesToUnselectedFulfillments,
       degree: program as unknown as DegreeD,
+      waivedRules,
     }).progress, 0);
     return total / program.rules.length;
   };
@@ -453,6 +468,7 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
                         rulesToFulfillments={rulesToFulfillments}
                         rulesToUnselectedFulfillments={rulesToUnselectedFulfillments}
                         activeDegreeplan={activeDegreeplan}
+                        waivedRules={waivedRules}
                         isLoading={isLoading}
                         progress={programProgress(program)}
                         showHeader={!showTabs}
