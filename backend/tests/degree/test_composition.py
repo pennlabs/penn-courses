@@ -392,6 +392,107 @@ class DualPatternTest(TestCase):
         self.assertEqual(load(), [])
 
 
+class MTVariantParityTest(TestCase):
+    """The M&T variant's blocks against Path's M&T audit (program WU_BS_MANT)."""
+
+    # The CU each block requires in the audit, for the blocks whose rules take 1 CU courses and
+    # share nothing among themselves. The M&T block's 1.5 CU is OIDD 2340 (0.5 CU) and MGMT 2370;
+    # Liberal Arts and Sciences is checked on its own below.
+    PATH_BLOCK_CREDITS = {
+        "U-WQCS": Decimal("4"),
+        "U-WBUS": Decimal("11.5"),
+        "U-WBBR2": Decimal("2"),
+        "U-MT": Decimal("2"),
+    }
+
+    def setUp(self):
+        load()
+        from degree.models import ProgramVariant
+
+        self.variant = ProgramVariant.objects.get(code="WH_MT")
+
+    def leaves(self):
+        pending = list(self.variant.rules.all())
+        leaves = []
+        while pending:
+            rule = pending.pop()
+            if rule.q:
+                leaves.append(rule)
+            pending.extend(rule.children.all())
+        return leaves
+
+    @staticmethod
+    def cu(rule):
+        # A `num` rule here is that many courses.
+        return Decimal(rule.credits) if rule.credits is not None else Decimal(rule.num)
+
+    def by_block(self):
+        blocks = {}
+        for rule in self.leaves():
+            blocks.setdefault(rule.block_value.split(":", 1)[1], []).append(rule)
+        return blocks
+
+    def test_block_totals_match_path(self):
+        blocks = self.by_block()
+        totals = {
+            block: sum((self.cu(rule) for rule in blocks[block]), Decimal(0))
+            for block in self.PATH_BLOCK_CREDITS
+        }
+        self.assertEqual(totals, self.PATH_BLOCK_CREDITS)
+
+    def test_liberal_arts_shares_within_the_block(self):
+        # Path asks 5 CU of rules that add up to 6, so a course can count twice within the
+        # block. Plain Wharton lets Cross-Cultural and Foreign Language share with the rest of
+        # the block, and M&T keeps that.
+        rules = self.by_block()["U-WLAS"]
+        sharing = {
+            rule.title
+            for rule in rules
+            if {"kind": "THISBLOCK", "value": None} in rule.share_targets
+        }
+        self.assertEqual(sharing, {"Cross-Cultural Requirement", "Foreign Language Proficiency"})
+        exclusive = sum((self.cu(rule) for rule in rules if rule.title not in sharing), Decimal(0))
+        total = sum((self.cu(rule) for rule in rules), Decimal(0))
+        self.assertLessEqual(exclusive, Decimal(5))
+        self.assertGreater(total, Decimal(5))
+
+    def test_a_language_course_counts_for_cross_cultural_and_language(self):
+        course("SPAN-2100", attributes=["WUCN", "WUFL"])
+        person = get_user_model().objects.create_user(username="m", password="x")
+        cis = Degree.objects.create(program="EU_BSE", degree="BSE", major="CIS", year=2026)
+        wharton = Degree.objects.create(program="WU_BS", degree="BS", major="FNCE", year=2026)
+        plan = DegreePlan.objects.create(
+            name="mt", person=person, dual_program=DualProgram.objects.get(code="MT")
+        )
+        plan.degrees.add(cis, wharton)
+
+        plan_rules = map_rules_and_degrees(plan)
+        selected, _, legal = allocate_rules(
+            "SPAN-2100",
+            plan_rules.rules_per_component,
+            plan_rules.rule_to_component,
+            plan_rules.double_counts,
+            satisfied_rules=set(),
+            policy=plan_rules.composition.policy,
+        )
+        self.assertEqual(
+            {rule.title for rule in selected},
+            {"Cross-Cultural Requirement", "Foreign Language Proficiency"},
+        )
+        self.assertTrue(legal)
+
+    def test_no_rules_path_does_not_have_for_m_and_t(self):
+        titles = {rule.title for rule in self.leaves()}
+        self.assertNotIn("Introductory Economics", titles)
+        self.assertNotIn("Technology, Innovation, and Analytics", titles)
+
+    def test_plain_wharton_blocks_are_suppressed(self):
+        self.assertEqual(
+            {matcher.get("block_value") for matcher in self.variant.suppressed_rules} - {None},
+            {"U-WFYF", "U-WBUS", "U-WLAS", "U-WBBR2"},
+        )
+
+
 class CollegeCreditSummaryTest(TestCase):
     def test_a_shared_major_course_counts_once(self):
         course("ECON-0100")

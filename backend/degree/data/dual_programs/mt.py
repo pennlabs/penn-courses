@@ -8,7 +8,7 @@ Each Path block becomes a group of the same title. Its rules live in the VARIANT
 Breadth does with the M&T block.
 """
 
-from degree.data.dual_programs.helpers import group, leaf, q_any, q_attr, q_course
+from degree.data.dual_programs.helpers import THIS_BLOCK, group, leaf, q_any, q_attr, q_course
 
 
 # The single-degree blocks M&T replaces. U-WFYF (First-Year Foundations) becomes Quantitative/
@@ -49,17 +49,10 @@ SENIOR_DESIGN = [
     "MSE-4950",
 ]
 
-# The plain-Wharton rules Path reuses for M&T. Introductory Economics and Technology, Innovation,
-# and Analytics aren't in Path's M&T blocks, but the M&T curriculum page lists both
-# (https://fisher.wharton.upenn.edu/learn/dual-degree/); MGMT 2370 fulfills the latter.
-INTRODUCTORY_ECONOMICS = (
-    "<Q: (OR: ('full_code', 'BEPP-1000'), ('full_code', 'ECON-0110'), "
-    "(AND: ('department__code', 'ECON'), ('semester__lt', '2022B')))>"
-)
-TECHNOLOGY_INNOVATION = (
-    "<Q: (OR: ('attributes__code__in', ['WUTI']), ('full_code', 'OIDD-4770'), "
-    "('full_code', 'STAT-4770'), ('full_code', 'MGMT-2370'))>"
-)
+# The plain-Wharton rules Path reuses for M&T. Path's M&T audit has no Introductory Economics,
+# which plain Wharton keeps in First-Year Foundations, the block M&T replaces, and no Technology,
+# Innovation, and Analytics, which plain Wharton's Business Fundamentals carries only for
+# `PROGRAM <> WU_BS_MANT`. Business Fundamentals is 11.5 CU without them.
 CRITICAL_WRITING = (
     "<Q: (AND: ('code__gte', '0000'), ('code__lte', '0991'), ('department__code', 'WRIT'), "
     "(NOT (OR: ('full_code__startswith', 'WRIT-135'), ('full_code__startswith', 'WRIT-138'))))>"
@@ -87,13 +80,16 @@ def _blocks(code: str) -> list[dict]:
     def business_leaf(title, q, **kwargs):
         return leaf(title, q, business, share_targets=[MINOR], **kwargs)
 
-    def liberal_arts_leaf(title, q, **kwargs):
-        return leaf(title, q, liberal_arts, share_targets=[MINOR], **kwargs)
+    def liberal_arts_leaf(title, q, share_within_block=False, **kwargs):
+        targets = [MINOR, *THIS_BLOCK] if share_within_block else [MINOR]
+        return leaf(title, q, liberal_arts, share_targets=targets, **kwargs)
 
     # A student exempt from the language requirement has it waived, not a different tree.
     communication = [
         liberal_arts_leaf("Critical Writing Seminar", CRITICAL_WRITING, credits=1),
-        liberal_arts_leaf("Foreign Language Proficiency", q_attr("WUFL"), credits=1),
+        liberal_arts_leaf(
+            "Foreign Language Proficiency", q_attr("WUFL"), credits=1, share_within_block=True
+        ),
     ]
 
     return [
@@ -135,7 +131,6 @@ def _blocks(code: str) -> list[dict]:
                     "Fundamentals",
                     business,
                     [
-                        business_leaf("Introductory Economics", INTRODUCTORY_ECONOMICS, credits=1),
                         business_leaf(
                             "Accounting and Financial Reporting", q_course("ACCT-1010"), num=1
                         ),
@@ -174,14 +169,6 @@ def _blocks(code: str) -> list[dict]:
                     ],
                 ),
                 business_leaf("Global Economy, Business and Society", GLOBAL_ECONOMY, credits=1),
-                # Shares with the M&T block, so MGMT 2370 also counts as Management of Technology.
-                leaf(
-                    "Technology, Innovation, and Analytics",
-                    TECHNOLOGY_INNOVATION,
-                    business,
-                    credits=1,
-                    share_targets=[MINOR, {"kind": "VARIANT", "value": program}],
-                ),
             ],
         ),
         group(
@@ -191,7 +178,14 @@ def _blocks(code: str) -> list[dict]:
                 liberal_arts_leaf(
                     "Humanities/Social Science Requirements", q_attr("WUHM", "WUSS"), credits=2
                 ),
-                liberal_arts_leaf("Cross-Cultural Requirement", q_attr("WUCN", "WUCU"), credits=2),
+                # As in plain Wharton, Cross-Cultural and Foreign Language may share with the
+                # rest of the block: Path asks 5 CU of rules that add up to 6.
+                liberal_arts_leaf(
+                    "Cross-Cultural Requirement",
+                    q_attr("WUCN", "WUCU"),
+                    credits=2,
+                    share_within_block=True,
+                ),
                 group("Communication Requirements", liberal_arts, communication),
             ],
         ),
@@ -229,12 +223,11 @@ VARIANTS = {
     "WH_MT": ("M&T", lambda: _blocks("WH_MT"), SUPPRESSED),
 }
 
-ATTRIBUTE_CODES = {"WUHM", "WUSS", "WUCN", "WUCU", "WUFL", "WUCP", "WUGE", "WUTI"}
+ATTRIBUTE_CODES = {"WUHM", "WUSS", "WUCN", "WUCU", "WUFL", "WUCP", "WUGE"}
 
 FULL_CODES = {
     "OIDD-2340",
     "MGMT-2370",
-    "BEPP-1000",
     "MATH-1400",
     "MATH-1410",
     "ESE-3010",
