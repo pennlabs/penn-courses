@@ -432,29 +432,32 @@ def reconcile_rules(rules, preferred, rule_to_degree, double_counts):
     return kept, set(ordered) - kept
 
 
+def scarcity(rule):
+    """Sorts the rules with the fewest alternative courses first. An uncounted rule goes last."""
+    return (rule.match_count is None, rule.match_count or 0)
+
+
 def get_priority_rule(rules, full_code, belongs_cache, is_transfer=False):
     """
-    Primitive method for finding the rule of highest priority given a set of applicable rules.
-    If the rule is explicitly mentioned, returns that rule. Else, returns the rule with the highest
-    required CU count.
+    The applicable rule a course should fill first: the one with the fewest alternative courses,
+    so scarce requirements are filled before catch-alls. Ties, including every rule of a plan
+    whose counts have not been refreshed yet, go to a rule naming the course, then to the rule
+    needing the most, then to the lowest id.
     """
-    priority_rule = None
-    priority_CUs = float("-inf")
 
-    for r in rules:
-        if not r.accepts(is_transfer=is_transfer):
-            continue
+    def rank(rule):
+        return (
+            scarcity(rule),
+            full_code not in rule.q,
+            -(rule.credits or rule.num or 0),
+            rule.id,
+        )
 
-        if full_code in r.q:
-            return r
-
-        if check_belongs(r, full_code, belongs_cache):
-            rule_CUs = r.credits if r.credits else r.num
-            if rule_CUs > priority_CUs:
-                priority_rule = r
-                priority_CUs = rule_CUs
-
-    return priority_rule
+    return min(
+        (r for r in rules if check_belongs(r, full_code, belongs_cache, is_transfer=is_transfer)),
+        key=rank,
+        default=None,
+    )
 
 
 def allocate_rules(
@@ -702,7 +705,7 @@ def rebalance_allocations(
             replacements[conflict] = replacement
         return conflicts, replacements
 
-    for rule in sorted(rule_to_degree, key=lambda rule: rule.id):
+    for rule in sorted(rule_to_degree, key=lambda rule: (scarcity(rule), rule.id)):
         for allocation in allocations:
             if not is_short(rule, members[rule]):
                 break
@@ -797,7 +800,7 @@ def assign_individual_rule(
     # already selected forbids sharing with it, select it too.
     existing_degrees = [rule_to_degree.get(r) for r in selected_rules]
     for rule in rules:
-        if not rule.accepts(is_transfer=is_transfer):
+        if not check_belongs(rule, full_code, belongs_cache, is_transfer=is_transfer):
             continue
         if full_code in rule.q and rule not in satisfied_rules:
             # check if this rule's degree is different from all degrees in selected_rules
@@ -808,7 +811,7 @@ def assign_individual_rule(
                 selected_rules.add(rule)
             else:
                 unselected_rules.add(rule)
-        elif check_belongs(rule, full_code, belongs_cache, is_transfer=is_transfer):
+        else:
             unselected_rules.add(rule)
 
     return selected_rules, unselected_rules

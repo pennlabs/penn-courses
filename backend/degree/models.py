@@ -262,6 +262,20 @@ class Rule(models.Model):
         ),
     )
 
+    match_count = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        editable=False,
+        help_text=dedent(
+            """
+            How many distinct courses, across all semesters, satisfy this rule's q. A course
+            goes to the eligible rule with the lowest count, since that rule has the fewest
+            alternatives. Null for non-leaf rules, and for leaf rules saved since the last
+            refresh_rule_match_counts run.
+            """
+        ),
+    )
+
     parent = models.ForeignKey(
         "self",
         null=True,
