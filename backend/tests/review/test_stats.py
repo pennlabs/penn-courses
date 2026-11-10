@@ -443,7 +443,7 @@ class TwoSemestersOneInstructorTestCase(TestCase, PCRTestMixin):
                     {
                         "title": "ESE-120",
                         "desc": [""],
-                        "url": f"/course/ESE-120/{TEST_CURRENT_SEMESTER}",
+                        "url": "/course/ESE-120",
                     }
                 ],
                 "departments": [{"title": "ESE", "desc": "", "url": "/department/ESE"}],
@@ -704,7 +704,7 @@ class OneReviewTestCase(TestCase, PCRTestMixin):
                     {
                         "title": "ESE-120",
                         "desc": [""],
-                        "url": f"/course/ESE-120/{TEST_SEMESTER}",
+                        "url": "/course/ESE-120",
                     }
                 ],
                 "departments": [{"title": "ESE", "desc": "", "url": "/department/ESE"}],
@@ -1041,7 +1041,7 @@ class TwoInstructorsOneSectionTestCase(TestCase, PCRTestMixin):
                     {
                         "title": "ESE-120",
                         "desc": [""],
-                        "url": f"/course/ESE-120/{TEST_SEMESTER}",
+                        "url": "/course/ESE-120",
                     }
                 ],
                 "departments": [{"title": "ESE", "desc": "", "url": "/department/ESE"}],
