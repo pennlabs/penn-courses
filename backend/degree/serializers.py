@@ -113,7 +113,9 @@ class RuleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Rule
-        fields = "__all__"
+        # deduplicate_rules hashes this output, and a count refreshed at a different time must
+        # not stop two identical rules from matching.
+        exclude = ["match_count"]
 
 
 # Allow recursive serialization of rules
