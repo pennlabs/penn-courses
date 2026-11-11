@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo } from "react";
 import styled from "styled-components";
 import { defaults, Scatter } from "react-chartjs-2";
+import { useQuery } from "@tanstack/react-query";
 
-import { apiFetchPCADemandChartData } from "../utils/api";
+import { apiFetchPCADemandChartData, queryKeys } from "../utils/api";
 import { toNormalizedSemester } from "../utils/helpers";
 import { EVAL_GRAPH_COLORS } from "../constants/colors";
-
-var cachedPCAChartDataResponse = null;
 
 const LoadingContainer = styled.div`
   display: flex;
@@ -328,53 +327,37 @@ const percentSectionChartOptions = {
 const GraphBox = ({ courseCode, url_semester, isAverage, setIsAverage }) => {
   const averageOrRecent = isAverage ? "average_plots" : "recent_plots";
 
-  const [chartData, setChartData] = useState(null);
-  const [loaded, setLoaded] = useState(true);
-
   defaults.global.defaultFontFamily = "Lato";
 
-  const handlePCAChartDataResponse = res => {
-    cachedPCAChartDataResponse = res;
+  const { data: pcaData, isLoading } = useQuery({
+    queryKey: queryKeys.pcaChartData(courseCode, url_semester),
+    queryFn: () => apiFetchPCADemandChartData(courseCode, url_semester),
+    enabled: Boolean(courseCode)
+  });
 
-    const pcaDemandPlot = res[averageOrRecent]["pca_demand_plot"];
+  const loaded = !isLoading;
+
+  const chartData = useMemo(() => {
+    if (!pcaData) return null;
+
+    const pcaDemandPlot = pcaData[averageOrRecent]["pca_demand_plot"];
     const demandSemester =
-      res[averageOrRecent]["pca_demand_plot_since_semester"];
-    const percentOpenPlot = res[averageOrRecent]["percent_open_plot"];
+      pcaData[averageOrRecent]["pca_demand_plot_since_semester"];
+    const percentOpenPlot = pcaData[averageOrRecent]["percent_open_plot"];
     const percentSemester =
-      res[averageOrRecent]["percent_open_plot_since_semester"];
-    setChartData({
+      pcaData[averageOrRecent]["percent_open_plot_since_semester"];
+    return {
       demandSemester: demandSemester && toNormalizedSemester(demandSemester),
-      demandNumSemesters: res[averageOrRecent]["pca_demand_plot_num_semesters"],
+      demandNumSemesters:
+        pcaData[averageOrRecent]["pca_demand_plot_num_semesters"],
       pcaDemandChartData: pcaDemandPlot && genDemandChartData(pcaDemandPlot),
       percentSemester: percentSemester && toNormalizedSemester(percentSemester),
       percentNumSemesters:
-        res[averageOrRecent]["percent_open_plot_num_semesters"],
+        pcaData[averageOrRecent]["percent_open_plot_num_semesters"],
       percentSectionsChartData:
         percentOpenPlot && genPercentChartData(percentOpenPlot)
-    });
-  };
-
-  useEffect(() => {
-    if (!courseCode) {
-      setLoaded(true);
-      setChartData(null);
-      return;
-    }
-
-    if (
-      cachedPCAChartDataResponse &&
-      cachedPCAChartDataResponse.code === courseCode
-    ) {
-      handlePCAChartDataResponse(cachedPCAChartDataResponse);
-    } else {
-      setLoaded(false);
-      apiFetchPCADemandChartData(courseCode, url_semester)
-        .then(handlePCAChartDataResponse)
-        .finally(() => {
-          setLoaded(true);
-        });
-    }
-  }, [courseCode, averageOrRecent, handlePCAChartDataResponse, url_semester]);
+    };
+  }, [pcaData, averageOrRecent]);
 
   const showPcaDemandPlotContainer =
     (chartData && chartData.pcaDemandChartData) || !loaded;

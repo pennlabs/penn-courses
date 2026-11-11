@@ -1,29 +1,32 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import { ReviewPage } from "./ReviewPage";
 import { ErrorBox } from "../components/common";
-import { redirectForAuth, apiCheckAuth } from "../utils/api";
+import { apiCheckAuth, redirectForAuth, queryKeys } from "../utils/api";
 
 /**
  * A wrapper around a review page that performs Shibboleth authentication.
  */
 
 export const AuthPage = props => {
-  const [authed, setAuthed] = useState(false);
-  const [authFailed, setAuthFailed] = useState(false);
+  const {
+    data: authed = false,
+    isSuccess: authChecked,
+    isError: authFailed
+  } = useQuery({
+    queryKey: queryKeys.checkAuth,
+    queryFn: apiCheckAuth,
+    staleTime: 1000 * 60 * 5 // 5 minutes
+  });
 
   useEffect(() => {
-    apiCheckAuth()
-      .then(isAuthed => {
-        if (!isAuthed) {
-          redirectForAuth();
-        }
-        setAuthed(isAuthed);
-      })
-      .catch(() => setAuthFailed(true));
-  }, []);
+    if (authChecked && !authed) {
+      redirectForAuth();
+    }
+  }, [authChecked, authed]);
 
   if (authFailed) {
     return (
