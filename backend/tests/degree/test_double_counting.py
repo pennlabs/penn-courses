@@ -204,8 +204,7 @@ class DoubleCountingTest(TestCase):
 
 class CrossDegreeDoubleCountingTest(TestCase):
     """
-    Sharing between two degrees in a plan. ShareWith targets like (MAJOR) are statements about
-    other programs, so they are only meaningful across degrees.
+    Sharing between a degree and a major outside it, which follows the audits' ShareWith policy.
     """
 
     def setUp(self):
@@ -227,8 +226,8 @@ class CrossDegreeDoubleCountingTest(TestCase):
         )
         self.cis_degree.rules.add(self.cis_rule)
 
-        self.math_degree = Degree.objects.create(
-            program="AU_BA", degree="BA", major="MATH", year=2026
+        self.math_major = Major.objects.create(
+            program_code="MATH-BA-GEN", code="MATH", name="Mathematics", year=2026
         )
         self.math_rule = Rule.objects.create(
             title="Major in Mathematics",
@@ -238,9 +237,10 @@ class CrossDegreeDoubleCountingTest(TestCase):
             block_value="MATH",
             share_targets=ANY_MAJOR,
         )
-        self.math_degree.rules.add(self.math_rule)
+        self.math_major.rules.add(self.math_rule)
 
-        self.degree_plan.degrees.add(self.cis_degree, self.math_degree)
+        self.degree_plan.degrees.add(self.cis_degree)
+        self.degree_plan.majors.add(self.math_major)
 
     def test_majors_that_permit_sharing_are_legal_together(self):
         _, rule_to_degree, double_counts = map_rules_and_degrees(self.degree_plan)
@@ -286,6 +286,85 @@ class CrossDegreeDoubleCountingTest(TestCase):
 
         _, _, double_counts = map_rules_and_degrees(self.degree_plan)
         self.assertIn(self.math_rule, double_counts[self.cis_rule])
+
+
+class IndependentDegreesTest(TestCase):
+    def rule(self, owner, block_type, block_value):
+        rule = Rule.objects.create(
+            title=f"{block_type} {block_value}",
+            q=repr(Q(full_code__startswith="CIS")),
+            num=1,
+            block_type=block_type,
+            block_value=block_value,
+        )
+        owner.rules.add(rule)
+        return rule
+
+    def setUp(self):
+        person = get_user_model().objects.create_user(username="t", password="top_secret")
+        self.plan = DegreePlan.objects.create(name="dual", person=person)
+
+        bse = Degree.objects.create(program="EU_BSE", degree="BSE", major="CSCI", year=2026)
+        self.elective = self.rule(bse, "MAJOR", "CSCI")
+        self.writing = self.rule(bse, "OTHER", "U-SEAS-WREE")
+
+        ba = Degree.objects.create(program="AU_BA", degree="BA", major="PHYS", year=2026)
+        self.sector = self.rule(ba, "OTHER", "U-GE-SCTR")
+        self.physics = self.rule(ba, "MAJOR", "PHYS")
+
+        mse = Degree.objects.create(program="EM_MSE", degree="MSE", major="CIS", year=2026)
+        self.graduate = self.rule(mse, "MAJOR", "CIS")
+
+        math = Major.objects.create(program_code="MATH-BA-GEN", code="MATH", year=2026)
+        self.math = self.rule(math, "MAJOR", "MATH")
+        stat = Major.objects.create(program_code="STAT-BA-GEN", code="STAT", year=2026)
+        self.stat = self.rule(stat, "MAJOR", "STAT")
+
+        econ = Minor.objects.create(program_code="ECON-MIN", code="ECON", year=2026)
+        self.econ = self.rule(econ, "MINOR", "ECON")
+        phil = Minor.objects.create(program_code="PHIL-MIN", code="PHIL", year=2026)
+        self.phil = self.rule(phil, "MINOR", "PHIL")
+
+        self.plan.degrees.add(bse, ba, mse)
+        self.plan.majors.add(math, through_defaults={"degree": ba})
+        self.plan.majors.add(stat)
+        self.plan.minors.add(econ, through_defaults={"degree": bse})
+        self.plan.minors.add(phil)
+        _, self.rule_to_degree, self.double_counts = map_rules_and_degrees(self.plan)
+
+    def shares(self, a, b):
+        return b in self.double_counts.get(a, set())
+
+    def test_undergraduate_degrees_share_freely(self):
+        self.assertTrue(self.shares(self.sector, self.elective))
+        self.assertTrue(self.shares(self.physics, self.writing))
+        self.assertTrue(
+            check_legal({self.sector, self.elective}, self.rule_to_degree, self.double_counts)
+        )
+
+    def test_a_degree_still_follows_its_own_audit(self):
+        self.assertFalse(self.shares(self.elective, self.writing))
+        self.assertFalse(self.shares(self.sector, self.physics))
+
+    def test_a_graduate_degree_follows_the_audits(self):
+        self.assertFalse(self.shares(self.graduate, self.elective))
+        self.assertFalse(self.shares(self.graduate, self.sector))
+
+    def test_a_major_belongs_to_the_degree_it_was_placed_under(self):
+        self.assertTrue(self.shares(self.math, self.elective))
+        self.assertFalse(self.shares(self.math, self.sector))
+
+    def test_an_unplaced_major_follows_the_audits_even_with_a_matching_degree_code(self):
+        self.assertFalse(self.shares(self.stat, self.elective))
+        self.assertFalse(self.shares(self.stat, self.sector))
+
+    def test_a_minor_belongs_to_the_degree_it_was_placed_under(self):
+        self.assertTrue(self.shares(self.econ, self.sector))
+        self.assertFalse(self.shares(self.econ, self.elective))
+
+    def test_an_unplaced_minor_follows_the_audits(self):
+        self.assertFalse(self.shares(self.phil, self.sector))
+        self.assertFalse(self.shares(self.phil, self.elective))
 
 
 class ComponentPassIsolationTest(TestCase):

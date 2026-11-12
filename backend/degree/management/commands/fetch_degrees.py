@@ -6,6 +6,7 @@ from django.db import transaction
 
 from courses.util import get_current_semester
 from degree.management.commands.deduplicate_rules import deduplicate_rules
+from degree.management.commands.refresh_rule_match_counts import refresh_rule_match_counts
 from degree.models import Degree, program_code_to_name
 from degree.utils.degreeworks_client import DegreeworksClient
 from degree.utils.parse_degreeworks import parse_and_save_degreeworks
@@ -108,3 +109,7 @@ class Command(BaseCommand):
             if kwargs["verbosity"]:
                 print("Deduplicating rules...")
             deduplicate_rules(verbose=kwargs["verbosity"])
+
+        if kwargs["verbosity"]:
+            print("Refreshing rule match counts...")
+        refresh_rule_match_counts(verbose=kwargs["verbosity"])

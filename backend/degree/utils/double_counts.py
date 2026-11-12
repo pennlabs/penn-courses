@@ -36,22 +36,24 @@ ANY_BLOCK = "ANYBLOCK"
 
 def get_degree_trees(degrees):
     """
-    Maps each of the given degrees, majors or minors to all of its rules. Rules are fetched
-    one level at a time, to avoid a query per rule.
+    Maps each of the given degrees, majors or minors to all of its rules, fetched one depth at
+    a time across every owner. A rule shared by several owners appears in each of their trees.
     """
-    trees = {}
+    trees = {owner: list(owner.rules.all()) for owner in degrees}
+    owners_of = defaultdict(list)
+    for owner, rules in trees.items():
+        for rule in rules:
+            owners_of[rule.id].append(owner)
 
-    for owner in degrees:
-        # owner.rules.model is Rule; referencing it this way avoids a circular import
-        rule_model = owner.rules.model
-        rules = list(owner.rules.all())
-
-        level = rules
-        while level:
-            level = list(rule_model.objects.filter(parent__in=level))
-            rules.extend(level)
-
-        trees[owner] = rules
+    level = [rule for rules in trees.values() for rule in rules]
+    while level:
+        # Rule, reached through an instance to avoid a circular import
+        rule_model = level[0]._meta.model
+        level = list(rule_model.objects.filter(parent__in={rule.id for rule in level}))
+        for rule in level:
+            for owner in owners_of[rule.parent_id]:
+                owners_of[rule.id].append(owner)
+                trees[owner].append(rule)
 
     return trees
 
@@ -89,40 +91,27 @@ def leaf_rules(degree_trees) -> list:
     )
 
 
-def _owner_key(owner):
-    key = getattr(owner, "key", None)
-    if key is not None:
-        return key
-    return (type(owner).__name__, getattr(owner, "pk", id(owner)))
-
-
-def resolve_double_counts(degree_trees, policy=None):
+def resolve_double_counts(degree_trees, independent_groups=None):
     """
     Given the rule trees of some degrees (as returned by get_degree_trees), returns a mapping
     from each of their leaf rules to the set of leaf rules it is allowed to double count with.
 
-    ShareWith applies inside one component. Across components, sharing is allowed only when
-    the plan's policy says so (`cross_component_sharing`): a dual degree, a College double
-    major, a second major, or a submatriculation. A `(MAJOR)` target no longer matches a
-    major block that belongs to a different program by accident.
+    `independent_groups` maps owners to a group, such as the undergraduate degree they belong
+    to. Each degree has its own audit, so rules of different groups share freely.
     """
-    leaf_to_key = {}
-    for owner, rules in degree_trees.items():
-        key = _owner_key(owner)
-        for rule in rules:
-            if rule.q:
-                leaf_to_key[rule.id] = key
-
     double_counts = defaultdict(set)
-    cross = bool(policy and policy.cross_component_sharing)
-    leaves = leaf_rules(degree_trees)
+    groups_of = defaultdict(set)
+    for owner, rules in degree_trees.items():
+        group = (independent_groups or {}).get(owner)
+        if group is not None:
+            for rule in rules:
+                groups_of[rule.id].add(group)
 
-    for home, other in permutations(leaves, 2):
-        if leaf_to_key.get(home.id) == leaf_to_key.get(other.id):
-            if any(target_matches(target, home, other) for target in home.share_targets or []):
-                double_counts[home].add(other)
-                double_counts[other].add(home)
-        elif cross:
+    for home, other in permutations(leaf_rules(degree_trees), 2):
+        home_groups, other_groups = groups_of[home.id], groups_of[other.id]
+        if (home_groups and other_groups and home_groups.isdisjoint(other_groups)) or any(
+            target_matches(target, home, other) for target in home.share_targets
+        ):
             double_counts[home].add(other)
             double_counts[other].add(home)
 

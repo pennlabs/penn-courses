@@ -2,6 +2,7 @@ from django.db.models import Q
 from django.test import TestCase
 from lark.exceptions import LarkError
 
+from courses.models import Attribute
 from courses.util import get_or_create_course_and_section
 from degree.models import Degree, Rule
 from degree.utils.model_utils import q_object_parser
@@ -127,6 +128,25 @@ class RuleEvaluationTest(TestCase):
 
     def test_satisfied_rule(self):
         self.assertTrue(self.rule1.evaluate([self.cis_1200.full_code]))
+
+    def test_attributes_do_not_inflate_totals(self):
+        # An OR across attributes joins one row per attribute a course has.
+        for code in ["AU16", "AUFR", "AUNM"]:
+            Attribute.objects.create(code=code, school="SAS", description=code).courses.add(
+                self.cis_1200
+            )
+        q = Q(department__code__in=["CIS"]) | Q(attributes__code__in=["AU16"])
+
+        self.assertFalse(Rule(q=repr(q), num=2).evaluate(["CIS-1200"]))
+        self.assertFalse(Rule(q=repr(q), credits=2).evaluate(["CIS-1200"]))
+        self.assertTrue(Rule(q=repr(q), num=1, credits=1).evaluate(["CIS-1200"]))
+
+    def test_other_semesters_do_not_inflate_totals(self):
+        # Every semester a course was offered has its own row, but a plan takes it once.
+        get_or_create_course_and_section("CIS-1200-001", "2024A", course_defaults={"credits": 1})
+
+        self.assertFalse(Rule(q=repr(Q(full_code="CIS-1200")), num=2).evaluate(["CIS-1200"]))
+        self.assertFalse(Rule(q=repr(Q(full_code="CIS-1200")), credits=2).evaluate(["CIS-1200"]))
 
     def test_satisfied_multiple_courses(self):
         self.assertTrue(self.rule4.evaluate([self.cis_1600.full_code, self.cis_1200.full_code]))

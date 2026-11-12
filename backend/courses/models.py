@@ -128,27 +128,18 @@ def course_reviews(queryset, prefix=""):
     )
 
 
-def cache_or_compute_course_reviews(queryset):
-    """
-    A helper function which takes a Course queryset and annotates it with review averages, either by
-    using cached precompute fields if the annotations have not expired or by computing the averages
-    from the reviews if they have expired or are missing.
-    """
-    if queryset.filter(annotation_expiration__lt=timezone.now()).exists():
-        return course_reviews(queryset).order_by("full_code", "semester")
-
+def annotate_cached_reviews(queryset):
     return queryset.annotate(
         course_quality=F("precompute_course_quality"),
         instructor_quality=F("precompute_instructor_quality"),
         difficulty=F("precompute_difficulty"),
         work_required=F("precompute_work_required"),
-    ).order_by("full_code", "semester")
+    )
 
 
 class CourseManager(models.Manager):
     def get_queryset(self):
-        queryset = super().get_queryset()
-        return cache_or_compute_course_reviews(queryset)
+        return annotate_cached_reviews(super().get_queryset()).order_by("full_code", "semester")
 
 
 class Course(models.Model):
@@ -599,27 +590,9 @@ class NGSSRestriction(models.Model):
         return f"{self.code} - {self.restriction_type} - {self.description}"
 
 
-def cache_or_compute_section_reviews(queryset):
-    """
-    A helper function which takes a Section queryset and annotates it with review averages, either
-    by using cached precompute fields if the annotations have not expired or by computing the
-    averages if they have expired or are missing.
-    """
-    if queryset.filter(annotation_expiration__lt=timezone.now()).exists():
-        return sections_with_reviews(queryset).order_by("full_code")
-
-    return queryset.annotate(
-        course_quality=F("precompute_course_quality"),
-        instructor_quality=F("precompute_instructor_quality"),
-        difficulty=F("precompute_difficulty"),
-        work_required=F("precompute_work_required"),
-    ).order_by("full_code")
-
-
 class SectionManager(models.Manager):
     def get_queryset(self):
-        queryset = super().get_queryset()
-        return cache_or_compute_section_reviews(queryset)
+        return annotate_cached_reviews(super().get_queryset()).order_by("full_code")
 
 
 class PreNGSSRestriction(models.Model):

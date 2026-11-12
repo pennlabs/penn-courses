@@ -11,6 +11,8 @@ from degree.models import (
     TRANSFER_CREDIT_SEMESTER,
     Degree,
     DegreePlan,
+    DegreePlanMajor,
+    DegreePlanMinor,
     DockedCourse,
     DoubleCountRestriction,
     DualProgram,
@@ -111,7 +113,9 @@ class RuleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Rule
-        fields = "__all__"
+        # deduplicate_rules hashes this output, and a count refreshed at a different time must
+        # not stop two identical rules from matching.
+        exclude = ["match_count"]
 
 
 # Allow recursive serialization of rules
@@ -136,9 +140,11 @@ class DegreeDetailSerializer(serializers.ModelSerializer):
 
 
 class MajorListSerializer(serializers.ModelSerializer):
+    """Without its rules, for the same reason as `DegreeListSerializer`."""
+
     class Meta:
         model = Major
-        fields = "__all__"
+        exclude = ["rules"]
 
 
 class MajorDetailSerializer(serializers.ModelSerializer):
@@ -150,9 +156,11 @@ class MajorDetailSerializer(serializers.ModelSerializer):
 
 
 class MinorListSerializer(serializers.ModelSerializer):
+    """Without its rules, for the same reason as `DegreeListSerializer`."""
+
     class Meta:
         model = Minor
-        fields = "__all__"
+        exclude = ["rules"]
 
 
 class MinorDetailSerializer(serializers.ModelSerializer):
@@ -231,6 +239,7 @@ class FulfillmentSerializer(serializers.ModelSerializer):
             "rules",
             "unselected_rules",
             "legal",
+            "level",
             "overrides",
             "from_transcript",
         ]
@@ -388,10 +397,44 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
     right_variant = serializers.SlugRelatedField(slug_field="code", read_only=True)
     components = serializers.SerializerMethodField()
 
+    major_degrees = serializers.SerializerMethodField(
+        help_text=dedent(
+            """
+        Which of the plan's degrees each of its majors was added under, as a list of
+        `{"major": id, "degree": id}`. `degree` is null for a major not placed under a degree.
+        """
+        )
+    )
+
+    minor_degrees = serializers.SerializerMethodField(
+        help_text=dedent(
+            """
+        Which of the plan's degrees each of its minors was added under, as a list of
+        `{"minor": id, "degree": id}`. `degree` is null for a minor not placed under a degree.
+        """
+        )
+    )
+
     person = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     def get_components(self, obj):
         return [serialize_component(component) for component in compose(obj).components]
+
+    def get_minor_degrees(self, obj):
+        return [
+            {"minor": minor, "degree": degree}
+            for minor, degree in DegreePlanMinor.objects.filter(degree_plan=obj).values_list(
+                "minor_id", "degree_id"
+            )
+        ]
+
+    def get_major_degrees(self, obj):
+        return [
+            {"major": major, "degree": degree}
+            for major, degree in DegreePlanMajor.objects.filter(degree_plan=obj).values_list(
+                "major_id", "degree_id"
+            )
+        ]
 
     class Meta:
         model = DegreePlan
@@ -401,6 +444,8 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
             "degrees",
             "majors",
             "minors",
+            "major_degrees",
+            "minor_degrees",
             "dual_program",
             "right_variant",
             "components",

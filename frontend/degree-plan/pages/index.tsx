@@ -2,13 +2,21 @@ import "react-toastify/dist/ReactToastify.css";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import FourYearPlanPage from "../components/FourYearPlanPage";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { type User } from "../types";
 import LoginModal from "pcx-shared-components/src/accounts/LoginModal";
+import NoAccessModal from "../components/NoAccessModal";
 import { SWRConfig } from "swr";
 import { toast, ToastContainer } from "react-toastify";
 import ToastContext from "@/components/Toast/Toast";
+import {
+  MAX_NOTIFICATIONS,
+  Notification,
+  NotificationsContext,
+} from "@/components/Toast/Notifications";
 import styled from "@emotion/styled";
+
+const NOT_IN_BETA_DETAIL = "Not in the PDP beta.";
 
 const LoginModalLayer = styled.div`
   position: relative;
@@ -18,6 +26,7 @@ const LoginModalLayer = styled.div`
 export default function Home() {
   const [user, setUser] = useState<User | null>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showNoAccessModal, setShowNoAccessModal] = useState(false);
 
   // Stable identity: AccountIndicator re-runs its /accounts/me/ effect whenever these change.
   const updateUser = useCallback((newUserVal: User | null) => {
@@ -31,7 +40,23 @@ export default function Home() {
     setUser(newUserVal);
   }, []);
 
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const nextNotificationId = useRef(0);
+  const markAllRead = useCallback(
+    () => setNotifications((all) => all.map((n) => (n.read ? n : { ...n, read: true }))),
+    []
+  );
+  const clearNotifications = useCallback(() => setNotifications([]), []);
+
   function showToast(text: string, error: boolean) {
+    const notification = {
+      id: (nextNotificationId.current += 1),
+      message: text,
+      error,
+      createdAt: Date.now(),
+      read: false,
+    };
+    setNotifications((all) => [notification, ...all].slice(0, MAX_NOTIFICATIONS));
     if (error) {
       toast.error(text, {
         position: toast.POSITION.BOTTOM_CENTER,
@@ -43,10 +68,16 @@ export default function Home() {
     }
   }
 
+  const notificationsValue = useMemo(
+    () => ({ notifications, markAllRead, clear: clearNotifications }),
+    [notifications, markAllRead, clearNotifications]
+  );
+
   return (
     <>
       <DndProvider backend={HTML5Backend}>
         <ToastContext.Provider value={showToast}>
+        <NotificationsContext.Provider value={notificationsValue}>
           <SWRConfig
             value={{
               // Fail on an error status rather than handing its body to the page as data. A
@@ -57,18 +88,27 @@ export default function Home() {
                 if (!res.ok) {
                   const error = new Error(
                     `Request to ${resource} failed with status ${res.status}`
-                  ) as Error & { status: number };
+                  ) as Error & { status: number; detail?: string };
                   error.status = res.status;
+                  error.detail = await res
+                    .json()
+                    .then((body) => body?.detail)
+                    .catch(() => undefined);
                   throw error;
                 }
                 return res.json();
               },
               provider: () => new Map(),
-              // A 401/403 means the session is gone: ask for login instead of toasting.
+              // A 403 with NOT_IN_BETA_DETAIL means the user is logged in but not in the PDP beta.
+              // A 401/403 with any other detail means the session is gone: ask for login instead of toasting.
               // Anything else is retried by SWR with backoff, which calls this each time,
               // so one toast per key rather than one per attempt.
               onError: (error, key) => {
-                const status = (error as { status?: number }).status;
+                const { status, detail } = error as { status?: number; detail?: string };
+                if (status === 403 && detail === NOT_IN_BETA_DETAIL) {
+                  setShowNoAccessModal(true);
+                  return;
+                }
                 if (status === 401 || status === 403) {
                   updateUser(null);
                   return;
@@ -100,8 +140,19 @@ export default function Home() {
                 />
               </LoginModalLayer>
             )}
+            {!showLoginModal && showNoAccessModal && (
+              <LoginModalLayer>
+                <NoAccessModal
+                  onLogout={() => {
+                    setShowNoAccessModal(false);
+                    updateUser(null);
+                  }}
+                />
+              </LoginModalLayer>
+            )}
             <FourYearPlanPage user={user} updateUser={updateUser} />
           </SWRConfig>
+        </NotificationsContext.Provider>
         </ToastContext.Provider>
       </DndProvider>
       <ToastContainer />

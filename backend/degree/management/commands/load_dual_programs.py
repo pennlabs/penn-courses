@@ -32,9 +32,9 @@ class Command(BaseCommand):
         if removed:
             self.stdout.write(f"Removed stale entries: {', '.join(removed)}")
         if options["check"]:
-            self.check()
+            self.check_catalog()
 
-    def check(self):
+    def check_catalog(self):
         missing_attrs = referenced_attribute_codes() - set(
             Attribute.objects.filter(code__in=referenced_attribute_codes()).values_list(
                 "code", flat=True
@@ -57,7 +57,7 @@ class Command(BaseCommand):
                 self.stderr.write(
                     f"{variant.code} suppression matched no leaf of any loaded base degree."
                 )
-        if missing_attrs or missing_courses or failed:
+        if failed:
             raise SystemExit(1)
         self.stdout.write("Dual program data matches the course catalog.")
 

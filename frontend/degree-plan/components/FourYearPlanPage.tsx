@@ -1,62 +1,89 @@
-import React, { useState, useEffect, useRef, useCallback, MutableRefObject } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  MutableRefObject,
+} from "react";
 import ReqPanel from "./Requirements/ReqPanel";
 import PlanPanel from "./FourYearPlan/PlanPanel";
 import { SearchPanel, SearchPanelContext } from "./Search/SearchPanel";
 import styled from "@emotion/styled";
 import useSWR from "swr";
-import { Course, DegreePlan, Fulfillment, Options, Rule, User } from "@/types";
+import {
+  Course,
+  DegreePlan,
+  DockedCourse,
+  Fulfillment,
+  Options,
+  Rule,
+  User,
+} from "@/types";
 import ReviewPanel from "@/components/Infobox/ReviewPanel";
 import { ReviewPanelContext } from "@/components/Infobox/ReviewPanel";
 import DegreeModal, { ModalKey } from "@/components/FourYearPlan/DegreeModal";
-import SplitPane, { Pane } from "react-split-pane";
+import SplitColumns from "@/components/common/SplitColumns";
 import Dock from "@/components/Dock/Dock";
-import useWindowDimensions from "@/hooks/window";
+import TopBar from "@/components/TopBar";
+import useStickyState from "@/hooks/stickyState";
 import OnboardingPage from "../pages/OnboardingPage";
+import EditProgramsPanel from "@/components/OnboardingPanels/EditProgramsPanel";
 import Footer from "./Footer";
+import PhoneTabBar, { PHONE_TABS, PhoneTab } from "./mobile/PhoneTabBar";
+import PhoneSwiper from "./mobile/PhoneSwiper";
+import DockedPanel from "./mobile/DockedPanel";
+import useIsPhone from "@/hooks/useIsPhone";
 
 import ExpandedCoursesPanel from "@/components/ExpandedBox/ExpandedCoursesPanel";
 import { ExpandedCoursesPanelContext } from "@/components/ExpandedBox/ExpandedCoursesPanelTrigger";
+import { POPOVER_BOUNDS_ATTRIBUTE } from "@/components/Course/Course";
+import { PlanSemestersContext } from "@/components/FourYearPlan/PlanSemestersContext";
 
 const PageContainer = styled.div`
   height: 100vh;
+  /* iOS Safari's 100vh includes the space under its toolbars. */
+  height: 100dvh;
   width: 100vw;
   display: flex;
   flex-direction: column;
 `;
 
+// Absolutely positioned so that the columns scroll inside the body instead of sizing it.
 const Row = styled.div`
-  position: relative;
-  height: 100%;
-  width: 100%;
+  position: absolute;
+  inset: 0;
+  padding: 1.5rem 1.5rem 1rem; /* less padding on bottom for penn labs footer */
+
+  /* PhoneSwiper pads each slide instead. */
+  @media (max-width: 767px) {
+    padding: 0;
+  }
 `;
 
 const BodyContainer = styled.div`
   background-color: var(--background-light-grey);
   width: 100%;
   flex-grow: 1;
+  position: relative;
+  /* Keeps the panels' sticky headers and popovers from stacking over the top bar's account menu. */
+  isolation: isolate;
 `;
 
-const PanelWrapper = styled(Pane)`
-  padding: 5px;
-  height: 100%;
-  display: flex;
-  flex-direction: row;
-  gap: 1rem;
-`;
-
-const PanelInteriorWrapper = styled.div<{
-  $maxWidth?: string;
-  $minWidth?: string;
-}>`
+const PanelInteriorWrapper = styled.div`
   border-radius: 10px;
   box-shadow: 0px 0px 5px 1px #00000026;
   overflow: hidden; /* Hide scrollbars */
-  width: ${(props) => props.$maxWidth || "100%"};
-  max-width: ${(props) => (props.$maxWidth ? props.$maxWidth : "auto")};
-  min-width: ${(props) => (props.$minWidth ? props.$minWidth : "auto")};
+  width: 100%;
   position: relative;
   height: 100%;
 `;
+
+const DEFAULT_COLUMN_WIDTHS = {
+  "plan+requirements": [62, 38],
+  "plan+search": [70, 30],
+  "requirements+search": [72, 28],
+  "plan+requirements+search": [48, 26, 26],
+};
 
 type FourYearPlanPageProps = {
   updateUser: (newUserVal: User | null) => void;
@@ -71,6 +98,7 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
   const [modalKey, setModalKey] = useState<ModalKey>(null);
   const [modalObject, setModalObject] = useState<DegreePlan | null>(null); // stores the which degreeplan is being updated using the modal
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+  const [editingPrograms, setEditingPrograms] = useState(false);
   const [
     activeDegreeplan,
     setActiveDegreeplan,
@@ -101,7 +129,11 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
     }
   }, [degreeplans, isLoadingDegreeplans]);
 
-  const windowWidth = useWindowDimensions()["width"];
+  const [planOpen, setPlanOpen] = useStickyState("PDP-plan-column-open", true);
+  const [requirementsOpen, setRequirementsOpen] = useStickyState(
+    "PDP-requirements-column-open",
+    true
+  );
 
   // review panel
   const { data: options } = useSWR<Options>("/api/options");
@@ -141,12 +173,83 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
   const [searchPanelOpen, setSearchPanelOpen] = useState<boolean>(false);
   const [searchRuleId, setSearchRuleId] = useState<Rule["id"] | null>(null);
   const [searchRuleQuery, setSearchRuleQuery] = useState<string | null>(null); // a query object
+  const [planSemesters, setPlanSemesters] = useState<string[]>([]);
   const [searchFulfillments, setSearchFulfillments] = useState<Fulfillment[]>(
     []
   ); // fulfillments matching the ruleId
 
+  const isPhone = useIsPhone();
+  const [phoneTab, setPhoneTab] = useState<PhoneTab>("plan");
+  const lastPhoneTab = useRef<PhoneTab>("plan");
+  useEffect(() => {
+    if (searchPanelOpen) setPhoneTab("search");
+    else setPhoneTab((tab) => (tab === "search" ? lastPhoneTab.current : tab));
+  }, [searchPanelOpen]);
+  const selectPhoneTab = (tab: PhoneTab) => {
+    if (tab === "search") {
+      setSearchRuleQuery("");
+      setSearchRuleId(null);
+      setSearchPanelOpen(true);
+      return;
+    }
+    lastPhoneTab.current = tab;
+    setSearchPanelOpen(false);
+    setPhoneTab(tab);
+  };
+  const { data: dockedCourses } = useSWR<DockedCourse[]>(
+    user ? "/api/degree/docked" : null
+  );
+
+  const planPanel = (
+    <PanelInteriorWrapper>
+      <PlanPanel
+        currentSemester={options?.SEMESTER}
+        setModalKey={setModalKey}
+        modalKey={modalKey}
+        setModalObject={setModalObject}
+        isLoading={isLoadingDegreeplans}
+        activeDegreeplan={activeDegreeplan}
+        degreeplans={degreeplans}
+        setActiveDegreeplan={setActiveDegreeplan}
+        setShowOnboardingModal={setShowOnboardingModal}
+        footer={isPhone && <Footer />}
+      />
+    </PanelInteriorWrapper>
+  );
+  const requirementsPanel = (
+    <PanelInteriorWrapper>
+      <ReqPanel
+        isLoading={isLoadingDegreeplans}
+        activeDegreeplan={activeDegreeplan}
+        onEditPrograms={() => setEditingPrograms(true)}
+      />
+    </PanelInteriorWrapper>
+  );
+  // Unmounted when closed, so that it focuses its input each time it opens.
+  const searchPanel = searchPanelOpen && (
+    <PanelInteriorWrapper>
+      <SearchPanel
+        activeDegreeplanId={activeDegreeplan ? activeDegreeplan.id : null}
+        // On phones focusing pops up the keyboard over the results.
+        autoFocus={!isPhone}
+      />
+    </PanelInteriorWrapper>
+  );
+  const phonePanels: Record<PhoneTab, React.ReactNode> = {
+    plan: planPanel,
+    requirements: requirementsPanel,
+    search: searchPanel,
+    docked: (
+      <PanelInteriorWrapper>
+        <DockedPanel user={user} />
+      </PanelInteriorWrapper>
+    ),
+  };
+
   return (
-    <>
+    <PlanSemestersContext.Provider
+      value={{ semesters: planSemesters, setSemesters: setPlanSemesters }}
+    >
       <SearchPanelContext.Provider
         value={{
           setSearchPanelOpen,
@@ -187,6 +290,7 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
             {reviewPanelFullCode && (
               <ReviewPanel
                 currentSemester={options?.SEMESTER}
+                degreePlanId={activeDegreeplan?.id}
                 full_code={reviewPanelFullCode}
                 set_full_code={setReviewPanelFullCode}
                 position={reviewPanelCoords}
@@ -220,8 +324,28 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
                 setActiveDegreeplan={setActiveDegreeplan}
               />
             )}
+            {editingPrograms && activeDegreeplan && (
+              <EditProgramsPanel
+                degreePlanId={activeDegreeplan.id}
+                onClose={() => setEditingPrograms(false)}
+              />
+            )}
             <PageContainer>
-              <BodyContainer ref={ref}>
+              <TopBar
+                user={user}
+                login={updateUser}
+                logout={logout}
+                planOpen={planOpen}
+                setPlanOpen={setPlanOpen}
+                requirementsOpen={requirementsOpen}
+                setRequirementsOpen={setRequirementsOpen}
+                showColumnToggles={!showOnboardingModal && !isPhone}
+              />
+              {/* Course popovers keep within the body, so they never cover the footer or dock. */}
+              <BodyContainer
+                ref={ref}
+                {...{ [POPOVER_BOUNDS_ATTRIBUTE]: true }}
+              >
                 {!!showOnboardingModal ? (
                   <OnboardingPage
                     setShowOnboardingModal={setShowOnboardingModal}
@@ -230,83 +354,67 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
                   />
                 ) : (
                   <Row>
-                    {/*
-                // @ts-ignore */}
-                    <SplitPane
-                      split="vertical"
-                      maxSize={
-                        searchPanelOpen
-                          ? (windowWidth ? windowWidth : 1000) * 0.5
-                          : (windowWidth ? windowWidth : 1000) * 0.66
-                      }
-                      minSize={(windowWidth ? windowWidth : 400) * 0.33}
-                      defaultSize="50%"
-                      style={{
-                        padding: "1.5rem",
-                        paddingBottom: "1rem", // less padding on bottom for penn labs footer
-                      }}
-                    >
-                      {/*
-                  // @ts-ignore */}
-                      <PanelWrapper>
-                        <PanelInteriorWrapper>
-                          <PlanPanel
-                            currentSemester={options?.SEMESTER}
-                            setModalKey={setModalKey}
-                            modalKey={modalKey}
-                            setModalObject={setModalObject}
-                            isLoading={
-                              isLoadingDegreeplans // || isLoadingActiveDegreePlan
-                            }
-                            activeDegreeplan={activeDegreeplan}
-                            degreeplans={degreeplans}
-                            setActiveDegreeplan={setActiveDegreeplan}
-                            setShowOnboardingModal={setShowOnboardingModal}
-                          />
-                        </PanelInteriorWrapper>
-                      </PanelWrapper>
-                      {/*
-                  // @ts-ignore */}
-                      <PanelWrapper>
-                        <PanelInteriorWrapper>
-                          <ReqPanel
-                            setModalKey={setModalKey}
-                            setModalObject={setModalObject}
-                            isLoading={isLoadingDegreeplans}
-                            activeDegreeplan={activeDegreeplan}
-                          />
-                        </PanelInteriorWrapper>
-                        {searchPanelOpen && (
-                          <PanelInteriorWrapper
-                            $minWidth={"48%"}
-                            $maxWidth={"48%"}
-                          >
-                            <SearchPanel
-                              activeDegreeplanId={
-                                activeDegreeplan ? activeDegreeplan.id : null
-                              }
-                            />
-                          </PanelInteriorWrapper>
-                        )}
-                      </PanelWrapper>
-                    </SplitPane>
+                    {isPhone ? (
+                      <PhoneSwiper
+                        tabs={PHONE_TABS}
+                        active={phoneTab}
+                        onChange={selectPhoneTab}
+                        panels={phonePanels}
+                      />
+                    ) : (
+                      <SplitColumns
+                        storageKey="PDP-column-widths"
+                        defaultWidths={DEFAULT_COLUMN_WIDTHS}
+                        emptyState="Open Plan or Requirements from the top bar to show a column."
+                        columns={[
+                          {
+                            id: "plan",
+                            label: "plan",
+                            visible: planOpen,
+                            content: planPanel,
+                          },
+                          {
+                            id: "requirements",
+                            label: "requirements",
+                            visible: requirementsOpen,
+                            content: requirementsPanel,
+                          },
+                          {
+                            id: "search",
+                            label: "search",
+                            visible: searchPanelOpen,
+                            content: searchPanel,
+                          },
+                        ]}
+                      />
+                    )}
                   </Row>
                 )}
               </BodyContainer>
-              <Footer />
-              <Dock
-                user={user}
-                login={updateUser}
-                logout={logout}
-                activeDegreeplanId={
-                  activeDegreeplan ? activeDegreeplan.id : null
-                }
-              />
+              {isPhone ? (
+                !showOnboardingModal && (
+                  <PhoneTabBar
+                    active={phoneTab}
+                    onSelect={selectPhoneTab}
+                    dockedCount={dockedCourses?.length ?? 0}
+                  />
+                )
+              ) : (
+                <>
+                  <Footer />
+                  <Dock
+                    user={user}
+                    activeDegreeplanId={
+                      activeDegreeplan ? activeDegreeplan.id : null
+                    }
+                  />
+                </>
+              )}
             </PageContainer>
           </ExpandedCoursesPanelContext.Provider>
         </ReviewPanelContext.Provider>
       </SearchPanelContext.Provider>
-    </>
+    </PlanSemestersContext.Provider>
   );
 };
 

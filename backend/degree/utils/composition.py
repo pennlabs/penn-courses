@@ -16,6 +16,7 @@ from decimal import Decimal
 from degree.models import (
     Degree,
     DegreePlan,
+    DegreePlanMajor,
     graduate_programs,
     is_college,
     program_from_program_code,
@@ -227,7 +228,7 @@ def _side_owners(degree_plan, dual) -> dict[str, str]:
             program_from_program_code(row.major.program_code),
             row.major.code,
         )
-        for row in DegreePlan.majors.through.objects.filter(degreeplan=degree_plan)
+        for row in DegreePlanMajor.objects.filter(degree_plan=degree_plan)
         .select_related("major")
         .order_by("id")
     ]

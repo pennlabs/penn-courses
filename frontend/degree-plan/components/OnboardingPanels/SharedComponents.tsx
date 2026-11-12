@@ -1,27 +1,17 @@
 import styled from "@emotion/styled";
 import { Button } from "@radix-ui/themes";
 
-export const PanelContainer = styled.div<{ $maxWidth: string; $minWidth: string }>`
-  border-radius: 10px;
-  box-shadow: 0px 0px 10px 6px rgba(0, 0, 0, 0.05);
+// The white card each onboarding step sits in (WelcomeLayout, CreateWithTranscriptPanel).
+export const panelCard = `
   background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: var(--panel-shadow);
   margin: 1rem;
-  min-height: 85%;
-  // overflow: hidden; /* Hide scrollbars */
-  width: ${(props) => (props.$maxWidth || props.$maxWidth ? "auto" : "100%")};
-  max-width: ${(props) => (props.$maxWidth ? props.$maxWidth : "auto")};
-  min-width: ${(props) => (props.$minWidth ? props.$minWidth : "auto")};
-  position: relative;
-  padding-bottom: "5%";
-  z-index: 100000;
 `;
 
 export const ChooseContainer = styled.div<{ $maxWidth: string; $minWidth: string }>`
+  ${panelCard}
   padding-top: 5%;
-  border-radius: 10px;
-  box-shadow: 0px 0px 10px 6px rgba(0, 0, 0, 0.05);
-  background-color: #ffffff;
-  margin: 1rem;
   min-height: 85%;
   overflow: hidden; /* Hide scrollbars */
   width: ${(props) => (props.$maxWidth || props.$maxWidth ? "auto" : "100%")};
@@ -33,6 +23,14 @@ export const ChooseContainer = styled.div<{ $maxWidth: string; $minWidth: string
   flex-direction: column;
   align-items: center;
   gap: 40px;
+
+  @media (max-width: 767px) {
+    min-width: calc(100% - 16px);
+    max-width: calc(100% - 16px);
+    margin: 8px;
+    padding: 16px 16px 24px;
+    gap: 24px;
+  }
 `;
 
 export const ContainerGroup = styled.div`
@@ -43,7 +41,7 @@ export const ContainerGroup = styled.div`
 `;
 
 export const ErrorText = styled.p`
-  color: darkred;
+  color: var(--error-color);
   min-height: 17px;
 `;
 
@@ -62,93 +60,19 @@ export const CenteredFlexContainer = styled.div`
   height: 100%;
 `;
 
-export const ColumnsContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  padding-top: 1%;
-  padding-left: 5%;
-  padding-right: 5%;
-  gap: 20px;
-  min-height: 100%;
-  padding-bottom: 5%;
-
-  @media (max-width: 768px) {
-    flex-direction: column;
-    padding-bottom: 5%;
-  }
-`;
-
-export const CourseContainer = styled.div`
-  max-height: 48vh;
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  gap: 1rem;
-  padding-right: 2%;
-  padding-bottom: 2rem;
-
-  // Scroll shadow credits: https://css-tricks.com/books/greatest-css-tricks/scroll-shadows/
-  overflow: auto;
-  -webkit-overflow-scrolling: touch;
-  overflow-scrolling: touch;
-
-  background:
-    /* Shadow Cover TOP */
-    linear-gradient(
-      white 30%,
-      rgba(255, 255, 255, 0)
-    ) center top,
-    
-    /* Shadow Cover BOTTOM */
-    linear-gradient(
-      rgba(255, 255, 255, 0), 
-      white 70%
-    ) center bottom,
-    
-    /* Shadow TOP */
-    radial-gradient(
-      farthest-side at 50% 0,
-      rgba(0, 0, 0, 0.4),
-      rgba(0, 0, 0, 0)
-    ) center top,
-    
-    /* Shadow BOTTOM */
-    radial-gradient(
-      farthest-side at 50% 100%,
-      rgba(0, 0, 0, 0.3),
-      rgba(0, 0, 0, 0)
-    ) center bottom;
-  
-  background-repeat: no-repeat;
-  background-size: 100% 40px, 100% 40px, 100% 14px, 100% 14px;
-  background-attachment: local, local, scroll, scroll;
-}
-`;
-
-export const Column = styled.div`
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  gap: 1rem;
-`;
-
-export const NextButtonContainer = styled.div`
-  padding-top: 5%;
-  // padding-right: 15%;
-  display: flex;
-  flex-direction: row;
-  justify-content: end;
-
-  @media (max-width: 768px) {
-    padding-right: 5%;
-    width: 100%;
-    justify-content: center;
-  }
-`;
-
 export const NextButton = styled(Button)<{ disabled: boolean }>`
+  height: 45px;
+  width: 100px;
+  border-radius: 8px;
+  font-weight: 700;
+  transition: background-color 0.15s;
   background-color: ${({ disabled }) =>
-    disabled ? "var(--primary-color-dark)" : "#0000ff"};
+    disabled ? "var(--primary-color-dark)" : "var(--primary-color-xx-dark)"};
+  color: ${({ disabled }) => (disabled ? "var(--gray-a8)" : "white")};
+
+  &:hover:not(:disabled) {
+    background-color: var(--primary-color-xxx-dark);
+  }
 
   @media (max-width: 768px) {
     width: 80%;
@@ -158,175 +82,87 @@ export const NextButton = styled(Button)<{ disabled: boolean }>`
 
 export const Upload = styled.div`
   width: 350px;
+  max-width: 100%;
+  box-sizing: border-box;
   height: 100px;
-  border: 1px dashed #808080;
-  border-radius: 10px;
+  border: 1.5px dashed var(--primary-color-extra-dark);
+  border-radius: 12px;
   display: flex;
   justify-content: center;
   align-items: center;
   flex-direction: column;
   gap: 10px;
-  transition: all 0.25s;
+  color: var(--primary-color-xxx-dark);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
   &:hover {
-    background-color: #f6f6f6;
+    border-color: var(--primary-color-xxx-dark);
+    background-color: var(--primary-color-light);
   }
 `;
 
-export const Label = styled.h5<{ required: boolean }>`
-  padding-top: 3%;
-  font-size: 1rem;
-  &:after {
-    content: "*";
-    color: red;
-    display: ${({ required }) => (required ? "inline" : "none")};
-  }
-`;
-
-export const TextButton = styled.div`
-  display: flex;
+export const BackButton = styled.button`
+  align-self: flex-start;
+  display: inline-flex;
   align-items: center;
-  gap: 5px;
-  width: fit-content;
-  border-bottom: 1px solid #aaaaaa00;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  color: #777777;
+  cursor: pointer;
+
   &:hover {
-    // text-decoration: underline;
-    border-bottom: 1px solid #aaa;
-    cursor: pointer;
+    color: var(--primary-color-ultra-dark);
   }
 `;
 
-export const FieldWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  align-items: left;
+export const ExitButton = styled(BackButton)`
+  position: absolute;
+  left: 2.5%;
+  top: 3%;
+
+  @media (max-width: 767px) {
+    position: static;
+    margin-bottom: -16px;
+  }
 `;
 
-export const TextInput = styled.input`
-  font-size: 1rem;
-  padding: 2px 6px;
-  width: 65%;
-  height: 2.2rem;
-  border-radius: 4px;
-  border: 1px solid rgb(204, 204, 204);
+export const WelcomeTitle = styled.h1`
+  text-align: center;
+  color: var(--primary-color-ultra-dark);
+
+  @media (max-width: 767px) {
+    margin: 0;
+    font-size: 1.6rem;
+    line-height: 1.2;
+  }
 `;
 
-export const customSelectStylesLeft = {
-  control: (provided: any) => ({
-    ...provided,
-    width: 250,
-    minHeight: "35px",
-    height: "35px",
-  }),
-  menu: (provided: any) => ({
-    ...provided,
-    width: 250,
-    maxHeight: 200,
-  }),
-  valueContainer: (provided: any) => ({
-    ...provided,
-    height: "35px",
-    padding: "0 6px",
-  }),
-  input: (provided: any) => ({
-    ...provided,
-    margin: "0px",
-  }),
-  indicatorsContainer: (provided: any) => ({
-    ...provided,
-    height: "35px",
-  }),
-};
+export const SecondaryButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.6rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--primary-color-light);
+  color: var(--primary-color-xxx-dark);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
 
-export const customSelectStylesRight = {
-  control: (provided: any) => ({
-    ...provided,
-    width: "80%",
-    minHeight: "35px",
-    height: "35px",
-  }),
-  menu: (provided: any) => ({
-    ...provided,
-    width: 500,
-    maxHeight: "85rem",
-  }),
-  valueContainer: (provided: any) => ({
-    ...provided,
-    height: "35px",
-    padding: "0 6px",
-  }),
-  input: (provided: any) => ({
-    ...provided,
-    margin: "0px",
-  }),
-  indicatorsContainer: (provided: any) => ({
-    ...provided,
-    height: "35px",
-  }),
-  multiValue: (provided: any) => ({
-    ...provided,
-    borderRadius: "8px",
-    maxWidth: "200px",
-  }),
-  multiValueLabel: (provided: any) => ({
-    ...provided,
-    borderRadius: "8px",
-    // maxWidth: "90px",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-  }),
-  loadingIndicator: (provided: any) => ({
-    ...provided,
-    color: "gray",
-  }),
-};
-
-export const customSelectStylesCourses = {
-  control: (provided: any) => ({
-    ...provided,
-    width: "100%",
-    minHeight: "35px",
-    zIndex: -1,
-  }),
-  menu: (provided: any) => ({
-    ...provided,
-    width: 500,
-    maxHeight: "85rem",
-  }),
-  valueContainer: (provided: any) => ({
-    ...provided,
-    zIndex: -1,
-  }),
-  input: (provided: any) => ({
-    ...provided,
-    margin: "0px",
-  }),
-  indicatorsContainer: (provided: any) => ({
-    ...provided,
-    display: "none",
-  }),
-  multiValue: (provided: any) => ({
-    ...provided,
-    borderRadius: "8px",
-    maxWidth: "200px",
-    paddingRight: 4,
-    marginRight: 3,
-  }),
-  multiValueLabel: (provided: any) => ({
-    ...provided,
-    borderRadius: "8px",
-    maxWidth: "90px",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-  }),
-  loadingIndicator: (provided: any) => ({
-    ...provided,
-    color: "gray",
-  }),
-};
-
+  &:hover {
+    background: var(--primary-color-dark);
+    color: var(--primary-color-ultra-dark);
+  }
+`;
 
 export const schoolOptions = [
   { value: "BA", label: "Arts & Sciences" },

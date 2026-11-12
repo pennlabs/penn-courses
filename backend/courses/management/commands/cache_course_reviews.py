@@ -18,54 +18,33 @@ PREFIX = "precompute_"
 fields_to_update = [f"{PREFIX}{field}" for field in REVIEW_FIELDS] + ["annotation_expiration"]
 
 
+def _cache_reviews(queryset, model, desc, verbose):
+    to_update = []
+    expiration = timezone.now() + timezone.timedelta(days=30)
+    for obj in tqdm(queryset, desc=desc, disable=not verbose):
+        for field in REVIEW_FIELDS:
+            setattr(obj, f"{PREFIX}{field}", getattr(obj, field))
+        obj.annotation_expiration = expiration
+        to_update.append(obj)
+
+    with transaction.atomic():
+        model.objects.bulk_update(to_update, fields_to_update, batch_size=500)
+
+
+def cache_course_reviews(verbose=False):
+    if verbose:
+        print("Calculating Course review averages...")
+    _cache_reviews(course_reviews(Course.objects.all()), Course, "Updating Courses", verbose)
+    if verbose:
+        print("Calculating Section review averages...")
+    _cache_reviews(
+        sections_with_reviews(Section.objects.all()), Section, "Updating Sections", verbose
+    )
+
+
 class Command(BaseCommand):
     help = "Calculates and persists review averages for Course and Section."
 
     def handle(self, *args, **options):
-        self.stdout.write("Calculating Course review averages...")
-        self.update_courses()
-        self.stdout.write(self.style.SUCCESS("Finished calculating Course review averages."))
-
-        self.stdout.write("Calculating Section review averages...")
-        self.update_sections()
-        self.stdout.write(self.style.SUCCESS("Finished calculating Section review averages."))
-
-    def update_courses(self):
-        queryset = course_reviews(
-            Course.objects.all(),
-        )
-
-        courses_to_update = []
-
-        for course in tqdm(queryset, desc="Updating Courses", file=self.stdout):
-            for field in REVIEW_FIELDS:
-                setattr(course, f"{PREFIX}{field}", getattr(course, field))
-            course.annotation_expiration = timezone.now() + timezone.timedelta(days=30)
-            courses_to_update.append(course)
-
-        with transaction.atomic():
-            Course.objects.bulk_update(
-                courses_to_update,
-                fields_to_update,
-                batch_size=500,
-            )
-
-    def update_sections(self):
-        queryset = sections_with_reviews(
-            Section.objects.all(),
-        )
-
-        sections_to_update = []
-
-        for section in tqdm(queryset, desc="Updating Sections", file=self.stdout):
-            for field in REVIEW_FIELDS:
-                setattr(section, f"{PREFIX}{field}", getattr(section, field))
-            section.annotation_expiration = timezone.now() + timezone.timedelta(days=30)
-            sections_to_update.append(section)
-
-        with transaction.atomic():
-            Section.objects.bulk_update(
-                sections_to_update,
-                fields_to_update,
-                batch_size=500,
-            )
+        cache_course_reviews(verbose=True)
+        self.stdout.write(self.style.SUCCESS("Finished caching review averages."))
