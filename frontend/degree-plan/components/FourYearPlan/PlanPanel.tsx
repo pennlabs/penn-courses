@@ -58,6 +58,7 @@ interface PlanPanelProps {
     isLoading: boolean;
     currentSemester?: string;
     setShowOnboardingModal: (arg0: boolean) => void;
+    footer?: React.ReactNode;
 }
 
 const PlanPanel = ({ 
@@ -70,6 +71,7 @@ const PlanPanel = ({
     degreeplans,
     isLoading,
     currentSemester,
+    footer,
 } : PlanPanelProps) => {
     
 
@@ -222,6 +224,7 @@ const PlanPanel = ({
                     pinnedSlots={genConfig?.pinnedSlots}
                     showSummer={Boolean(genConfig?.allowSummer)}
                     />
+                    {footer}
                 </PanelBody>
             </PanelContainer>
     );

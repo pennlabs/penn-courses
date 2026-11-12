@@ -7,14 +7,19 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("degree", "0009_rule_transfer_credit_allowed"),
+        ("degree", "0012_degreeplanminor"),
     ]
 
     operations = [
         migrations.CreateModel(
             name="ProgramVariant",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
                 ("code", models.CharField(max_length=32, unique=True)),
                 ("name", models.CharField(max_length=128)),
                 (
@@ -22,7 +27,7 @@ class Migration(migrations.Migration):
                     models.JSONField(
                         blank=True,
                         default=list,
-                        help_text="\nLeaves of the base audit to drop, as {\"block_type\", \"block_value\", \"q_contains\"}\nobjects. A leaf is suppressed when every field that is set matches. Titles are\nnot used: Path rewords them.\n",
+                        help_text='\nLeaves of the base audit to drop, as {"block_type", "block_value", "q_contains"}\nobjects. A leaf is suppressed when every field that is set matches. Titles are\nnot used: Path rewords them.\n',
                     ),
                 ),
                 (
@@ -39,7 +44,12 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="DualProgram",
             fields=[
-                ("id", models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name="ID")),
+                (
+                    "id",
+                    models.AutoField(
+                        auto_created=True, primary_key=True, serialize=False, verbose_name="ID"
+                    ),
+                ),
                 ("code", models.CharField(max_length=32, unique=True)),
                 ("name", models.CharField(max_length=128)),
                 (
@@ -59,7 +69,10 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ("right_allowed_majors", models.JSONField(blank=True, default=list)),
-                ("cu_floor", models.DecimalField(blank=True, decimal_places=2, max_digits=4, null=True)),
+                (
+                    "cu_floor",
+                    models.DecimalField(blank=True, decimal_places=2, max_digits=4, null=True),
+                ),
                 (
                     "max_shared_cu",
                     models.DecimalField(
@@ -109,7 +122,7 @@ class Migration(migrations.Migration):
             name="right_variant",
             field=models.ForeignKey(
                 blank=True,
-                help_text="\nOverrides the dual program's right-hand variant. M&T uses this to choose the\nlanguage-required Wharton tree instead of the default.\n",
+                help_text="\nOverrides the dual program's right-hand variant, for a program whose students\nchoose between versions of it.\n",
                 null=True,
                 on_delete=django.db.models.deletion.SET_NULL,
                 related_name="degree_plans",

@@ -10,7 +10,7 @@ def mark_existing_as_transcript(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("degree", "0010_programvariant_dualprogram"),
+        ("degree", "0013_programvariant_dualprogram"),
     ]
 
     operations = [

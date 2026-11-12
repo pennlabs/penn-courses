@@ -3,7 +3,7 @@ import useSWRInfinite from "swr/infinite";
 import ResultsList from "./ResultsList";
 import styled from "@emotion/styled";
 import { DegreePlan, Rule, Fulfillment } from "@/types";
-import { PanelHeader } from "../FourYearPlan/PanelCommon";
+import { PanelContainer, PanelHeader } from "../FourYearPlan/PanelCommon";
 import { GrayIcon } from "../common/bulma_derived_components";
 
 interface SearchPanelContextType {
@@ -59,16 +59,6 @@ const SearchField = styled.input`
     font: inherit;
 `;
 
-const PanelContainer = styled.div`
-    border-radius: 10px;
-    box-shadow: 0px 0px 10px 6px rgba(0, 0, 0, 0.05);
-    background-color: #FFFFFF;
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    height: 100%;
-`;
-
 const PanelTitle = styled.div`
     font-weight: 700;
 `
@@ -81,9 +71,10 @@ const SearchPanelHeader = styled(PanelHeader)`
 
 interface SearchPanelProp {
     activeDegreeplanId: DegreePlan["id"] | null;
+    autoFocus?: boolean;
 }
 
-export const SearchPanel = ({ activeDegreeplanId }: SearchPanelProp) => {
+export const SearchPanel = ({ activeDegreeplanId, autoFocus = true }: SearchPanelProp) => {
     const { 
         setSearchPanelOpen, 
         searchRuleId: ruleId, 
@@ -123,7 +114,7 @@ export const SearchPanel = ({ activeDegreeplanId }: SearchPanelProp) => {
                     </GrayIcon>
                     <SearchField
                         aria-label="search for a course"
-                        autoFocus
+                        autoFocus={autoFocus}
                         type="text"
                         value={queryString}
                         onChange={(e) => {setQueryString(e.target.value)}}

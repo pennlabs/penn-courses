@@ -3,7 +3,8 @@ import styled from "@emotion/styled";
 import { Icon } from "../common/bulma_derived_components";
 import { Course, DegreePlan, Fulfillment, GeneratedPlacement, SemesterGenConfig } from "@/types";
 import useSWR from "swr";
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback, useContext } from "react";
+import { PlanSemestersContext } from "./PlanSemestersContext";
 import Select from "react-select";
 import { ModalKey } from "./DegreeModal";
 import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
@@ -121,7 +122,7 @@ const EmptyTerm = styled.button`
 const AddSemesterContainer = styled.div`
   background: #ffffff;
   border-style: dashed;
-  border-radius: 10px;
+  border-radius: 16px;
   border-width: 2px;
   padding: 1rem;
   display: flex;
@@ -155,13 +156,9 @@ const AddButton = styled.div`
 const YearInput = styled.input`
   width: 9rem;
   background-color: transparent;
-  border-color: #9FB5EF;
+  border-color: var(--plus-button-color);
   color: #C1C1C1;
   box-shadow: none;
-  &:hover {
-    borderColor: "#9FB5EF";
-  }
-
   padding: .75rem;
   padding-top: .5rem;
   padding-bottom: .5rem;
@@ -178,11 +175,11 @@ const selectStyles = (topOrBottom: boolean) => ({
     ...provided,
     width: "9rem",
     backgroundColor: "transparent",
-    borderColor: "#9FB5EF",
+    borderColor: "var(--plus-button-color)",
     color: "#C1C1C1",
     boxShadow: "none",
     "&:hover": {
-      borderColor: "#9FB5EF",
+      borderColor: "var(--plus-button-color)",
     },
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
@@ -259,6 +256,19 @@ const ModifySemesters = ({
   );
 };
 
+const SEMESTERS_REPLACED = "pdp-semesters-replaced";
+
+/** Sets a plan's semesters, both in storage and in a plan view that has them open. */
+export const replacePlanSemesters = (degreeplanId: DegreePlan["id"], keys: string[]) => {
+  localStorage.setItem(
+    getLocalSemestersKey(degreeplanId),
+    JSON.stringify(Object.fromEntries(keys.map((key) => [key, []])))
+  );
+  window.dispatchEvent(
+    new CustomEvent(SEMESTERS_REPLACED, { detail: { degreeplanId, keys } })
+  );
+};
+
 export const interpolateSemesters = (startingYear: number, graduationYear: number) => {
   let res = {} as { [semester: string]: Fulfillment[] };
   for (let year = startingYear; year < graduationYear; year++) {
@@ -327,9 +337,18 @@ const Semesters = ({
   const [semesters, setSemesters] = useState<{
     [semester: string]: Fulfillment[];
   }>({});
+  const { setSemesters: shareSemesters } = useContext(PlanSemestersContext);
+  const semesterKeys = Object.keys(semesters).sort().join(",");
+  useEffect(() => {
+    shareSemesters(semesterKeys ? semesterKeys.split(",") : []);
+  }, [semesterKeys, shareSemesters]);
   const addSemester = (semester: string) => {
     if (!semesters[semester]) setSemesters({ ...semesters, [semester]: [] });
   };
+
+  // The plan whose courses have been grouped into `semesters`. Course lists only animate from here
+  // on, so filling them in when a plan loads doesn't fade in every course at once.
+  const [groupedPlanId, setGroupedPlanId] = useState<DegreePlan["id"] | null>(null);
 
   const numUpdates = useRef<number>(-1);
   const currNumUpdates = useRef<number>(0);
@@ -345,6 +364,28 @@ const Semesters = ({
       setSemesters(newSems);
     }
   };
+
+  // The open plan would otherwise write its old semesters back over the new ones.
+  useEffect(() => {
+    if (!activeDegreeplan) return undefined;
+    const onReplaced = (event: Event) => {
+      const { degreeplanId, keys } = (event as CustomEvent).detail;
+      if (degreeplanId !== activeDegreeplan.id) return;
+      setSemesters((current) => {
+        const next: { [semester: string]: Fulfillment[] } = Object.fromEntries(
+          keys.map((key: string) => [key, []])
+        );
+        Object.values(current).flat().forEach((fulfillment) => {
+          if (fulfillment.semester && next[fulfillment.semester]) {
+            next[fulfillment.semester].push(fulfillment);
+          }
+        });
+        return next;
+      });
+    };
+    window.addEventListener(SEMESTERS_REPLACED, onReplaced);
+    return () => window.removeEventListener(SEMESTERS_REPLACED, onReplaced);
+  }, [activeDegreeplan]);
 
   /** Get semesters from local storage */
   useEffect(() => {
@@ -445,6 +486,7 @@ const Semesters = ({
         numUpdates.current = -1;
         return semesters;
       });
+      setGroupedPlanId(activeDegreeplan.id);
     } 
   }, [fulfillments, activeDegreeplan, isLoadingFulfillments]);
 

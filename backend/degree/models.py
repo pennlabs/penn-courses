@@ -9,11 +9,10 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models import Count, DecimalField, Q, Sum
 from django.db.models.functions import Coalesce
-from django.db.models.signals import m2m_changed
 from django.utils import timezone
 
 from courses.models import Course
-from degree.utils.degree_logic import aggregate_rule_leaves
+from degree.utils.degree_logic import FULFILLMENT_LEVELS, aggregate_rule_leaves, plan_components
 from degree.utils.model_utils import json_parser, q_object_parser
 
 
@@ -263,6 +262,20 @@ class Rule(models.Model):
         ),
     )
 
+    match_count = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        editable=False,
+        help_text=dedent(
+            """
+            How many distinct courses, across all semesters, satisfy this rule's q. A course
+            goes to the eligible rule with the lowest count, since that rule has the fewest
+            alternatives. Null for non-leaf rules, and for leaf rules saved since the last
+            refresh_rule_match_counts run.
+            """
+        ),
+    )
+
     parent = models.ForeignKey(
         "self",
         null=True,
@@ -301,10 +314,17 @@ class Rule(models.Model):
         Check if this rule is fulfilled by the provided courses.
         """
         if self.q:
-            # Sums all courses (and corresponding credits), from full_codes,
-            # that satisfy this rule's q object.
-            total_courses, total_credits = (
+            # Sums all courses (and corresponding credits), from full_codes, that satisfy this
+            # rule's q object. A course counts once, however many semesters it was offered in or
+            # attributes the q object joined it against.
+            matching_courses = (
                 Course.objects.filter(self.get_q_object() or Q(), full_code__in=full_codes)
+                .order_by("full_code", "-semester")
+                .distinct("full_code")
+                .values("id")
+            )
+            total_courses, total_credits = (
+                Course.objects.filter(id__in=matching_courses)
                 .aggregate(
                     total_courses=Count("id"),
                     total_credits=Coalesce(
@@ -551,6 +571,7 @@ class DegreePlan(models.Model):  #
         Major,
         blank=True,
         related_name="degree_plans",
+        through="DegreePlanMajor",
         help_text=dedent(
             """
             Majors beyond the one the plan's degree already includes. Each contributes only
@@ -563,6 +584,7 @@ class DegreePlan(models.Model):  #
         Minor,
         blank=True,
         related_name="degree_plans",
+        through="DegreePlanMinor",
         help_text="The minors this degree plan is associated with.",
     )
 
@@ -583,8 +605,8 @@ class DegreePlan(models.Model):  #
         related_name="degree_plans",
         help_text=dedent(
             """
-            Overrides the dual program's right-hand variant. M&T uses this to choose the
-            language-required Wharton tree instead of the default.
+            Overrides the dual program's right-hand variant, for a program whose students
+            choose between versions of it.
             """
         ),
     )
@@ -627,6 +649,27 @@ class DegreePlan(models.Model):  #
                 return False
         return True
 
+    def refresh_satisfaction(self):
+        """Whether each top-level rule is satisfied depends only on which courses the plan holds."""
+        top_level_rules = {
+            rule for component in plan_components(self) for rule in component.rules.all()
+        }
+        if not top_level_rules:
+            return
+
+        full_codes = list(self.fulfillments.values_list("full_code", flat=True))
+        stored = {
+            status.rule_id: status for status in self.satisfactions.filter(rule__in=top_level_rules)
+        }
+        for rule in top_level_rules:
+            satisfied = rule.evaluate(full_codes)
+            status = stored.get(rule.id)
+            if status is None:
+                SatisfactionStatus.objects.create(degree_plan=self, rule=rule, satisfied=satisfied)
+            elif status.satisfied != satisfied:
+                status.satisfied = satisfied
+                status.save(update_fields=["satisfied", "last_updated"])
+
     def evaluate_rules(self, rules: list[Rule]) -> tuple[set[Rule], set[DoubleCountRestriction]]:
         """
         Evaluates this DegreePlan with respect to the given Rules. Returns a set of satisfied Rules
@@ -663,7 +706,9 @@ class DegreePlan(models.Model):  #
             return set()
 
         fulfillments = list(
-            Fulfillment.objects.filter(degree_plan=self, rules__in=rules).prefetch_related("rules")
+            Fulfillment.objects.filter(degree_plan=self, rules__in=rules)
+            .distinct()
+            .prefetch_related("rules")
         )
         by_rule = defaultdict(list)
         for fulfillment in fulfillments:
@@ -709,8 +754,6 @@ class DegreePlan(models.Model):  #
         for minor in self.minors.all():
             new_degree_plan.minors.add(minor)
 
-        # this also handles updating satisfaction statuses
-
         for fulfillment in self.fulfillments.all():
             rules = fulfillment.rules.all()
             unselected_rules = fulfillment.unselected_rules.all()
@@ -723,7 +766,56 @@ class DegreePlan(models.Model):  #
             fulfillment.unselected_rules.set(unselected_rules)
             fulfillment.overrides.set(overrides)
 
+        new_degree_plan.refresh_satisfaction()
         return new_degree_plan
+
+
+class DegreePlanMajor(models.Model):
+    """A major on a plan, and which of the plan's degrees the student is pursuing it in."""
+
+    degree_plan = models.ForeignKey(DegreePlan, on_delete=models.CASCADE, db_column="degreeplan_id")
+    major = models.ForeignKey(Major, on_delete=models.CASCADE)
+    degree = models.ForeignKey(
+        Degree,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text=dedent(
+            """
+            The undergraduate degree the major is part of. Each degree has its own audit, so
+            its requirements share freely with another degree's. Null for a major the student
+            didn't place under a degree, which shares only by the audits' rules.
+            """
+        ),
+    )
+
+    class Meta:
+        db_table = "degree_degreeplan_majors"
+        unique_together = [("degree_plan", "major")]
+
+
+class DegreePlanMinor(models.Model):
+    """A minor on a plan, and which of the plan's degrees the student is pursuing it in."""
+
+    degree_plan = models.ForeignKey(DegreePlan, on_delete=models.CASCADE, db_column="degreeplan_id")
+    minor = models.ForeignKey(Minor, on_delete=models.CASCADE)
+    degree = models.ForeignKey(
+        Degree,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text=dedent(
+            """
+            The undergraduate degree the minor is part of. Each degree has its own audit, so
+            its requirements share freely with another degree's. Null for a minor the student
+            didn't place under a degree, which shares only by the audits' rules.
+            """
+        ),
+    )
+
+    class Meta:
+        db_table = "degree_degreeplan_minors"
+        unique_together = [("degree_plan", "minor")]
 
 
 class Fulfillment(models.Model):
@@ -785,6 +877,20 @@ class Fulfillment(models.Model):
             """
         ),
     )
+    level = models.CharField(
+        max_length=16,
+        null=True,
+        blank=True,
+        choices=FULFILLMENT_LEVELS,
+        help_text=dedent(
+            """
+            For a submatriculant, which of their transcript's records list this course: the
+            undergraduate one, the graduate one, or both (a double counted course). A course on
+            one record only counts toward that level's degree. Null when unknown, e.g. a course
+            the student added by hand, which may count toward either.
+            """
+        ),
+    )
     from_transcript = models.BooleanField(
         default=False,
         help_text=dedent(
@@ -814,30 +920,6 @@ class Fulfillment(models.Model):
 
     class Meta:
         unique_together = ("degree_plan", "full_code")
-
-
-def update_satisfaction_statuses(sender, instance, action, pk_set, **kwargs):
-    """
-    This function updates the SatisfactionStatuses associated with a DegreePlan when the rules
-    associated with a Fulfillment change.
-    """
-    if action == "pre_clear" or action == "pre_remove":
-        instance.degree_plan.satisfactions.filter(rule__in=pk_set).delete()
-        return
-
-    if action == "post_add" or action == "post_remove" or action == "post_clear":
-        degree_plan = instance.degree_plan
-        full_codes = Fulfillment.objects.filter(degree_plan=degree_plan).values_list(
-            "full_code", flat=True
-        )
-
-        for rule in Rule.objects.filter(degrees__in=degree_plan.degrees.all()):
-            status, _ = SatisfactionStatus.objects.get_or_create(degree_plan=degree_plan, rule=rule)
-            status.satisfied = rule.evaluate(full_codes)
-            status.save()
-
-
-m2m_changed.connect(update_satisfaction_statuses, sender=Fulfillment.rules.through)
 
 
 class SatisfactionStatus(models.Model):

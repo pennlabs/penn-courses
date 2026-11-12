@@ -1,8 +1,9 @@
 import re
 from collections import defaultdict, deque
+from dataclasses import dataclass
 from decimal import Decimal
 
-from django.db.models import Q
+from django.db.models import Exists, Q
 
 from courses.models import Course
 from degree.utils.double_counts import resolve_double_counts
@@ -21,6 +22,18 @@ MAX_SHARED_GRADUATE_CREDITS = Decimal(3)
 MIN_GRADUATE_COURSE_NUMBER = 5000
 
 DEFAULT_COURSE_CREDITS = Decimal(1)
+
+# Which of a submatriculant's degrees a course is on the books for. A transcript lists a course
+# under its undergraduate record, its graduate record, or both; only a course on both records
+# is double counted, and the rest may only count toward the degree whose record names them.
+UNDERGRADUATE_LEVEL = "UNDERGRADUATE"
+GRADUATE_LEVEL = "GRADUATE"
+SHARED_LEVEL = "SHARED"
+FULFILLMENT_LEVELS = [
+    (UNDERGRADUATE_LEVEL, "Undergraduate only"),
+    (GRADUATE_LEVEL, "Graduate only"),
+    (SHARED_LEVEL, "Shared between both"),
+]
 
 
 def aggregate_rule_leaves(rules, f):
@@ -80,6 +93,28 @@ def prewarm_belongs_cache(rules, full_codes):
     return belongs_cache
 
 
+def prewarm_belongs_cache_for_course(rules, full_code):
+    """A belongs_cache for one course, filled by a single query instead of one per rule."""
+    rules = [rule for rule in rules if rule.q]
+    if not rules:
+        return {}
+
+    columns = {f"rule_{rule.id}": rule for rule in rules}
+    matched = (
+        Course.objects.filter(full_code=full_code)
+        .annotate(
+            **{
+                column: Exists(Course.objects.filter(rule.get_q_object(), full_code=full_code))
+                for column, rule in columns.items()
+            }
+        )
+        .values(*columns)
+        .first()
+    ) or {}
+
+    return {(rule.id, full_code): matched.get(column, False) for column, rule in columns.items()}
+
+
 def prewarm_credits_cache(full_codes):
     """
     Returns the CU of each of the given courses, for weighing against the sharing allowance.
@@ -110,10 +145,34 @@ def is_graduate(component) -> bool:
     return getattr(component, "program", None) in graduate_programs
 
 
+def level_allows(level, component) -> bool:
+    """
+    Whether a course of the given level may count toward a plan component. A level of None
+    (a course not read off a transcript) and SHARED allow every component.
+    """
+    if level == GRADUATE_LEVEL:
+        return is_graduate(component)
+    if level == UNDERGRADUATE_LEVEL:
+        return not is_graduate(component)
+    return True
+
+
 def course_number(full_code: str):
     """The numeric part of a course code, e.g. 5200 for CIS-5200. None if there is not one."""
     match = re.search(r"-(\d+)", full_code or "")
     return int(match.group(1)) if match else None
+
+
+def is_graduate_coursework(full_code: str) -> bool:
+    number = course_number(full_code)
+    return number is not None and number >= MIN_GRADUATE_COURSE_NUMBER
+
+
+def level_for_course(full_code: str, level):
+    """A course numbered below graduate coursework can only be on the undergraduate record."""
+    if level in (GRADUATE_LEVEL, SHARED_LEVEL) and not is_graduate_coursework(full_code):
+        return UNDERGRADUATE_LEVEL
+    return level
 
 
 class GraduateSharing:
@@ -176,8 +235,7 @@ def apply_graduate_sharing(
         # Counts toward only one level, so no allowance is spent.
         return selected_rules, unselected_rules
 
-    number = course_number(full_code)
-    if number is not None and number >= MIN_GRADUATE_COURSE_NUMBER and sharing.allows(credits):
+    if is_graduate_coursework(full_code) and sharing.allows(credits):
         sharing.take(credits)
         return selected_rules, unselected_rules
 
@@ -374,29 +432,32 @@ def reconcile_rules(rules, preferred, rule_to_degree, double_counts):
     return kept, set(ordered) - kept
 
 
+def scarcity(rule):
+    """Sorts the rules with the fewest alternative courses first. An uncounted rule goes last."""
+    return (rule.match_count is None, rule.match_count or 0)
+
+
 def get_priority_rule(rules, full_code, belongs_cache, is_transfer=False):
     """
-    Primitive method for finding the rule of highest priority given a set of applicable rules.
-    If the rule is explicitly mentioned, returns that rule. Else, returns the rule with the highest
-    required CU count.
+    The applicable rule a course should fill first: the one with the fewest alternative courses,
+    so scarce requirements are filled before catch-alls. Ties, including every rule of a plan
+    whose counts have not been refreshed yet, go to a rule naming the course, then to the rule
+    needing the most, then to the lowest id.
     """
-    priority_rule = None
-    priority_CUs = float("-inf")
 
-    for r in rules:
-        if not r.accepts(is_transfer=is_transfer):
-            continue
+    def rank(rule):
+        return (
+            scarcity(rule),
+            full_code not in rule.q,
+            -(rule.credits or rule.num or 0),
+            rule.id,
+        )
 
-        if full_code in r.q:
-            return r
-
-        if check_belongs(r, full_code, belongs_cache):
-            rule_CUs = r.credits if r.credits else r.num
-            if rule_CUs > priority_CUs:
-                priority_rule = r
-                priority_CUs = rule_CUs
-
-    return priority_rule
+    return min(
+        (r for r in rules if check_belongs(r, full_code, belongs_cache, is_transfer=is_transfer)),
+        key=rank,
+        default=None,
+    )
 
 
 def allocate_rules(
@@ -414,6 +475,7 @@ def allocate_rules(
     policy=None,
     canonical=None,
     prior_selected=None,
+    level=None,
 ):
     """
     Given a course (full_code), rule, degree and double count mappings, and optionally a selected
@@ -424,6 +486,10 @@ def allocate_rules(
     `is_transfer` says the course is AP or transfer credit, which keeps it off every rule that
     does not accept such credit.
 
+    `level` is which of a submatriculant's records the course is on (see FULFILLMENT_LEVELS).
+    A course on only one record counts toward only that level's components; the other level's
+    rules are not offered at all, because the registrar does not let the course count there.
+
     `prior_selected` is what the course already counts for, when it is already in the plan.
     Those choices are kept, except where they conflict with `rule_selected`, and the
     allocation only adds what may share with them.
@@ -431,10 +497,17 @@ def allocate_rules(
     selected_rules = set()
     unselected_rules = set()
     if belongs_cache is None:
-        belongs_cache = {}
+        belongs_cache = prewarm_belongs_cache_for_course(rule_to_degree, full_code)
+    rules_per_degree = {
+        degree: rules for degree, rules in rules_per_degree.items() if level_allows(level, degree)
+    }
     if prior_selected:
-        seed = {rule for rule in prior_selected if rule in rule_to_degree}
-        preferred = {rule_selected} if rule_selected in rule_to_degree else set()
+
+        def allowed(rule):
+            return rule in rule_to_degree and level_allows(level, rule_to_degree[rule])
+
+        seed = {rule for rule in prior_selected if allowed(rule)}
+        preferred = {rule_selected} if allowed(rule_selected) else set()
         selected_rules, _ = reconcile_rules(
             seed | preferred, preferred, rule_to_degree, double_counts
         )
@@ -521,6 +594,141 @@ def allocate_rules(
     return selected_rules, unselected_rules, legal
 
 
+@dataclass(eq=False)
+class CourseAllocation:
+
+    full_code: str
+    selected: set
+    unselected: set
+
+
+def within_policy(before, after, rule_to_component, policy):
+    """
+    Whether changing a course's rules from `before` to `after` keeps to the plan-level caps that
+    `apply_sharing_policy` enforces. A coordinated program's shared-CU cap was spent in the order
+    courses were taken, so a course may not newly count toward both of its sides.
+    """
+    if policy is None:
+        return True
+    if len(_cap_components(after, rule_to_component)) > policy.max_degree_claims:
+        return False
+    if policy.forbid_grad_grad:
+        graduate = {
+            rule_to_component[rule].key
+            for rule in after
+            if rule in rule_to_component and is_graduate(rule_to_component[rule])
+        }
+        if len(graduate) > 1:
+            return False
+    if policy.max_shared_cu is not None:
+
+        def sides(rules):
+            return {
+                rule_to_component[rule].side
+                for rule in rules
+                if rule in rule_to_component
+                and getattr(rule_to_component[rule], "side", None) in ("left", "right")
+            }
+
+        if sides(after) == {"left", "right"} and sides(before) != {"left", "right"}:
+            return False
+    return True
+
+
+def rebalance_allocations(
+    allocations, rule_to_degree, double_counts, credits_cache=None, allows=None
+):
+    """
+    Moves courses onto short rules when another course can take their place, without leaving any
+    rule worse off or breaking double counting limits.
+
+    Only for allocating a whole plan, since it can move any course. `allocations` must be in the
+    order the courses were taken, and is changed in place. `allows(before, after)` vetoes a
+    change to one course's rules, e.g. one the plan's sharing caps forbid.
+    """
+    credits_cache = credits_cache or {}
+
+    def credits_of(allocation):
+        return credits_cache.get(allocation.full_code, DEFAULT_COURSE_CREDITS)
+
+    def is_short(rule, courses):
+        if rule.num and len(courses) < rule.num:
+            return True
+        return bool(rule.credits and sum(credits_of(c) for c in courses) < rule.credits)
+
+    def starts_crossing_levels(allocation, rules):
+        def crosses(selected):
+            graduate, undergraduate = split_by_level(selected, rule_to_degree)
+            return bool(graduate and undergraduate)
+
+        return crosses(rules) and not crosses(allocation.selected)
+
+    members = defaultdict(set)
+    for allocation in allocations:
+        for rule in allocation.selected:
+            members[rule].add(allocation)
+
+    def find_replacement(rule, leaving, taken):
+        options = [
+            other
+            for other in allocations
+            if other is not leaving
+            and other not in taken
+            and rule in other.unselected
+            and credits_of(other) >= credits_of(leaving)
+            and can_share(rule, other.selected, double_counts)
+            and not starts_crossing_levels(other, other.selected | {rule})
+            and (allows is None or allows(other.selected, other.selected | {rule}))
+        ]
+        return min(options, key=lambda other: bool(other.selected), default=None)
+
+    def plan_move(allocation, rule):
+        """The replacement each of this course's rules needs if it moves to `rule`, or None."""
+        conflicts = {
+            other
+            for other in allocation.selected
+            if other in rule_to_degree and not can_share(rule, {other}, double_counts)
+        }
+        moved = (allocation.selected - conflicts) | {rule}
+        if starts_crossing_levels(allocation, moved):
+            return None
+        if allows is not None and not allows(allocation.selected, moved):
+            return None
+
+        replacements = {}
+        for conflict in conflicts:
+            if not is_short(conflict, members[conflict] - {allocation}):
+                continue
+            replacement = find_replacement(conflict, allocation, set(replacements.values()))
+            if replacement is None:
+                return None
+            replacements[conflict] = replacement
+        return conflicts, replacements
+
+    for rule in sorted(rule_to_degree, key=lambda rule: (scarcity(rule), rule.id)):
+        for allocation in allocations:
+            if not is_short(rule, members[rule]):
+                break
+            if rule not in allocation.unselected:
+                continue
+            move = plan_move(allocation, rule)
+            if move is None:
+                continue
+
+            conflicts, replacements = move
+            allocation.selected -= conflicts
+            allocation.unselected |= conflicts
+            for conflict in conflicts:
+                members[conflict].discard(allocation)
+            allocation.selected.add(rule)
+            allocation.unselected.discard(rule)
+            members[rule].add(allocation)
+            for conflict, replacement in replacements.items():
+                replacement.selected.add(conflict)
+                replacement.unselected.discard(conflict)
+                members[conflict].add(replacement)
+
+
 def assign_individual_rule(
     full_code,
     chosen_rule,
@@ -556,7 +764,8 @@ def assign_individual_rule(
         relevant_dcrs = {
             r
             for r in double_counts.get(chosen_rule, set())
-            if check_belongs(r, full_code, belongs_cache, is_transfer=is_transfer)
+            if r not in satisfied_rules
+            and check_belongs(r, full_code, belongs_cache, is_transfer=is_transfer)
             and can_share(r, prior_selected, double_counts)
         }
         relevant_dcrs.add(chosen_rule)
@@ -591,7 +800,7 @@ def assign_individual_rule(
     # already selected forbids sharing with it, select it too.
     existing_degrees = [rule_to_degree.get(r) for r in selected_rules]
     for rule in rules:
-        if not rule.accepts(is_transfer=is_transfer):
+        if not check_belongs(rule, full_code, belongs_cache, is_transfer=is_transfer):
             continue
         if full_code in rule.q and rule not in satisfied_rules:
             # check if this rule's degree is different from all degrees in selected_rules
@@ -602,7 +811,7 @@ def assign_individual_rule(
                 selected_rules.add(rule)
             else:
                 unselected_rules.add(rule)
-        elif check_belongs(rule, full_code, belongs_cache, is_transfer=is_transfer):
+        else:
             unselected_rules.add(rule)
 
     return selected_rules, unselected_rules
@@ -669,9 +878,46 @@ def map_rules_and_degrees(degree_plan):
     return PlanRules(
         rules_per_degree,
         rule_to_degree,
-        resolve_double_counts(trees, composition.policy),
+        resolve_double_counts(trees, undergraduate_degree_of(degree_plan, composition.components)),
         composition,
     )
+
+
+# Components that stand for a degree's own audit: the degree itself, or, for a College double
+# major, its general education and its major block.
+DEGREE_RELATIONS = {"degrees", "college", "degree-major"}
+
+
+def undergraduate_degree_of(degree_plan, components):
+    """
+    Maps each component to the undergraduate degree whose audit it belongs to: a degree to
+    itself, and a major or minor to the degree the student placed it under, if that degree is in
+    the plan.
+    """
+    from degree.models import DegreePlanMajor, DegreePlanMinor
+
+    degree_ids = {
+        c.owner_id for c in components if c.relation in DEGREE_RELATIONS and not c.is_graduate
+    }
+    placed = {
+        relation: dict(
+            placement.objects.filter(degree_plan=degree_plan, degree_id__in=degree_ids).values_list(
+                field, "degree_id"
+            )
+        )
+        for relation, placement, field in (
+            ("majors", DegreePlanMajor, "major_id"),
+            ("minors", DegreePlanMinor, "minor_id"),
+        )
+    }
+    result = {}
+    for component in components:
+        if component.relation in DEGREE_RELATIONS:
+            if component.owner_id in degree_ids:
+                result[component] = component.owner_id
+        elif component.owner_id in placed.get(component.relation, {}):
+            result[component] = placed[component.relation][component.owner_id]
+    return result
 
 
 def cas_credit_summary(composition, fulfillments, credits_cache):
@@ -684,14 +930,32 @@ def cas_credit_summary(composition, fulfillments, credits_cache):
 
     from degree.models import Degree
 
-    def required(component):
-        total = Decimal(0)
-        for rule in component.rules:
+    def rule_required(rule, owned):
+        """None when no leaf under `rule` belongs to the component."""
+        if rule.q:
+            if rule.id not in owned:
+                return None
             if rule.credits is not None:
-                total += rule.credits
-            elif rule.num is not None:
-                total += Decimal(rule.num)
-        return total
+                return rule.credits
+            return Decimal(rule.num) if rule.num is not None else Decimal(0)
+        children = sorted(
+            value
+            for value in (rule_required(child, owned) for child in rule.children.all())
+            if value is not None
+        )
+        if not children:
+            return None
+        if rule.credits is not None:
+            return rule.credits
+        if rule.num is not None:
+            children = children[: rule.num]
+        return sum(children, Decimal(0))
+
+    def required(component):
+        # College and major components share the degree's roots but own disjoint leaves.
+        owned = {rule.id for rule in component.rules}
+        values = (rule_required(root, owned) for root in component.roots)
+        return sum((value for value in values if value is not None), Decimal(0))
 
     majors = [component for component in composition.components if component.role == "major"]
     college = next(

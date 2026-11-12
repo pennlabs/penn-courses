@@ -18,7 +18,7 @@ import ToastContext from "../Toast/Toast";
 import { DisabledTrashIcon } from "../common/DisabledTrashIcon";
 import GhostCourse from "./GhostCourse";
 
-const translateSemester = (semester: Course["semester"]) => {
+export const translateSemester = (semester: Course["semester"]) => {
     if (semester === TRANSFER_CREDIT_SEMESTER_KEY) return "AP & Transfer Credit";
     const year = semester.slice(0, 4);
     const term = semester.slice(4);

@@ -18,14 +18,24 @@ const getColor = (num: number, reverse: boolean) => {
     return reverse ? "#ffc107" : "#76bf96";
 };
 
-const ScoreCircle = styled(CircularProgressbar)`
-    aspect-ratio: 1;
-    min-width: 1.7rem;
+const Score = styled.div`
+    display: flex;
+    align-items: center;
+    gap: .45rem;
+    min-width: 0;
+`;
+
+const ScoreCircle = styled.div`
+    flex: 0 0 auto;
+    width: 2.35rem;
+    height: 2.35rem;
 `;
 
 const ScoreLabel = styled.div`
-    font-size: .75rem;
-    line-height: 125%;
+    font-size: .72rem;
+    line-height: 1.2;
+    color: #8a8a8a;
+    min-width: 0;
 `;
 interface ScoreRowProps { 
     score: number;
@@ -35,31 +45,32 @@ interface ScoreRowProps {
 const ScoreRow = ({ score, label, reverse = false }: ScoreRowProps) => {
     const color = getColor(score, reverse);
     return (
-        <>
-            <ScoreCircle
-            value={isNaN(score) ? 0 : score * 25}
-            strokeWidth={12}
-            text={isNaN(score) ? "N/A" : score.toFixed(1)}
-            styles={{
-                path: { stroke: color },
-                text: {
-                    fontSize: "2rem",
-                    fill: color,
-                    fontWeight: 700
-                }
-            }}
-            />
+        <Score>
+            <ScoreCircle>
+                <CircularProgressbar
+                value={isNaN(score) ? 0 : score * 25}
+                strokeWidth={12}
+                text={isNaN(score) ? "N/A" : score.toFixed(1)}
+                styles={{
+                    path: { stroke: color },
+                    text: {
+                        fontSize: "2rem",
+                        fill: color,
+                        fontWeight: 700
+                    }
+                }}
+                />
+            </ScoreCircle>
             <ScoreLabel>{label}</ScoreLabel>
-        </>
+        </Score>
     )
 }
 const Stack = styled.div`
     display: grid;
-    grid-template-columns: 2fr 3fr;
-    gap: 1rem .75rem;
-    justify-items: left;
+    grid-template-columns: 1fr 1fr;
+    gap: .65rem .75rem;
+    width: 100%;
     align-items: center;
-
 `;
 
 type StatsType = "course_quality" | "instructor_quality" | "difficulty" | "work_required";

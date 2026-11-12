@@ -2,8 +2,11 @@ import React from "react";
 import "react-app-polyfill/ie11";
 import "react-app-polyfill/stable";
 
+import "./styles/tokens.css";
+
 import { createRoot } from "react-dom/client";
 import { Route, Switch, BrowserRouter as Router } from "react-router-dom";
+import { ThemeProvider } from "styled-components";
 import {
   AboutPage,
   AuthPage,
@@ -13,6 +16,7 @@ import {
   ReviewPage
 } from "./pages";
 import { GoogleAnalytics } from "./components/common";
+import theme from "./styles/theme";
 
 if (window.location.hostname !== "localhost") {
   window.Raven.config(
@@ -23,18 +27,20 @@ if (window.location.hostname !== "localhost") {
 const container = document.getElementById("root");
 const root = createRoot(container);
 root.render(
-  <Router>
-    <Switch>
-      <Route exact path="/" component={ReviewPage} />
-      <Route exact path="/about" component={AboutPage} />
-      <Route exact path="/faq" component={FAQPage} />
-      <Route exact path="/cart" component={CartPage} />
-      <Route
-        path="/:type(course|department|instructor)/:code/:semester?"
-        component={AuthPage}
-      />
-      <Route component={ErrorPage} />
-    </Switch>
-    <GoogleAnalytics />
-  </Router>
+  <ThemeProvider theme={theme}>
+    <Router>
+      <Switch>
+        <Route exact path="/" component={ReviewPage} />
+        <Route exact path="/about" component={AboutPage} />
+        <Route exact path="/faq" component={FAQPage} />
+        <Route exact path="/cart" component={CartPage} />
+        <Route
+          path="/:type(course|department|instructor)/:code/:semester?"
+          component={AuthPage}
+        />
+        <Route component={ErrorPage} />
+      </Switch>
+      <GoogleAnalytics />
+    </Router>
+  </ThemeProvider>
 );

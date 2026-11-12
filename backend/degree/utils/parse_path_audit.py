@@ -16,6 +16,7 @@ the same way and can be diffed against each other. The XML is strictly richer th
 import logging
 import re
 import xml.etree.ElementTree as ET
+from collections import defaultdict
 from dataclasses import dataclass, field
 from decimal import Decimal
 from functools import reduce
@@ -24,7 +25,8 @@ from operator import and_, or_
 from django.db.models import Q
 
 from courses.util import semester_suffix_map_hum, translate_semester_inv
-from degree.models import Degree, Rule
+from degree.models import Degree, DegreePlan, Fulfillment, Major, Minor, Rule
+from degree.utils.degree_logic import plan_components
 from degree.utils.departments import ENG_DEPTS, SAS_DEPTS, WH_DEPTS
 from degree.utils.double_counts import ANY_BLOCK, THIS_BLOCK
 
@@ -53,6 +55,7 @@ COLLEGE_DEPARTMENTS = {
 SEASON_SUFFIXES = {season: suffix for suffix, season in semester_suffix_map_hum.items()}
 SEMESTER_CODE = re.compile(r"^\d{4}[ABC]$")
 WITH_CLAUSE = re.compile(r"\(With .*?\)")
+WILDCARD_WITH_ATTRIBUTE = re.compile(r"@ @ \(With\s+(?:ATTRIBUTE|DWATTR)\s*=\s*([^()]*?)\s*\)")
 
 MAX_TITLE_LENGTH = Rule._meta.get_field("title").max_length
 
@@ -289,9 +292,20 @@ def parse_course_list(text: str) -> Q:
     A discipline carries forward until a new one appears, so "NETS 1500, 2120" means NETS 1500
     and NETS 2120. `@` in place of a number means any course in that discipline, and a colon
     separates an inclusive range.
+
+    A list can also accept any course with an attribute: the College's credit requirement ends
+    "ENVS @, @ @ (With ATTRIBUTE = AU16)". Other With clauses are not read, so they don't narrow
+    the course they follow.
     """
-    full_codes, departments, codes, ranges = [], [], [], []
+    full_codes, departments, codes, ranges, attributes = [], [], [], [], []
     discipline = None
+
+    for clause in WILDCARD_WITH_ATTRIBUTE.findall(text):
+        values = [value.strip() for value in clause.split(",")]
+        if any(" " in value for value in values):
+            logger.warning(f"Ignoring compound With clause in course list: {clause!r}")
+            continue
+        attributes.extend(values)
 
     for token in WITH_CLAUSE.sub("", text).split(","):
         match token.split():
@@ -325,6 +339,7 @@ def parse_course_list(text: str) -> Q:
         + [Q(full_code__in=full_codes)] * bool(full_codes)
         + [Q(department__code__in=departments)] * bool(departments)
         + [Q(code__in=codes)] * bool(codes)
+        + [Q(attributes__code__in=attributes)] * bool(attributes)
     )
 
 
@@ -693,35 +708,178 @@ def parse_audit(audit_xml: str, degree: Degree) -> ParsedAudit | None:
     )
 
 
-def save_rules(rules: list[Rule], owner) -> None:
+def pair_rules(rules: list[Rule], stored_roots: list[Rule]) -> tuple[dict[int, Rule], list[Rule]]:
     """
-    Saves rules and attaches the top-level ones to `owner.rules`, which may be a Degree, a
-    Major or a Minor. Rules are built parent-first, so saving in order gives every child a
-    saved parent.
+    Pairs parsed rules with stored rows by tree position, since audits give rules no key. Among
+    siblings: the same row, then the same title and content, then the same title in order. A rule
+    whose parent is unpaired is unpaired too.
+
+    Returns the pairs, keyed by `id(rule)` since an unsaved Rule is unhashable, and the unpaired
+    stored rules.
     """
+    pairs, unpaired = {}, []
+    children = defaultdict(list)
+    for rule in rules:
+        children[id(rule.parent) if rule.parent else None].append(rule)
+
+    def row(rule):
+        return rule.pk
+
+    def content(rule):
+        return (rule.title, rule.q, rule.block_type, rule.block_value)
+
+    def title(rule):
+        return rule.title
+
+    def pair_siblings(parsed: list[Rule], stored: list[Rule]) -> None:
+        remaining = list(stored)
+        for key in (row, content, title):
+            for rule in parsed:
+                if id(rule) in pairs or key(rule) is None:
+                    continue
+                match = next((other for other in remaining if key(other) == key(rule)), None)
+                if match is not None:
+                    remaining.remove(match)
+                    pairs[id(rule)] = match
+        unpaired.extend(remaining)
+
+        for rule in parsed:
+            match = pairs.get(id(rule))
+            stored_children = list(match.children.order_by("id")) if match else []
+            pair_siblings(children[id(rule)], stored_children)
+
+    pair_siblings(children[None], stored_roots)
+    return pairs, unpaired
+
+
+def rule_differs(stored: Rule, parsed: Rule) -> bool:
+    if any(
+        getattr(stored, name) != getattr(parsed, name)
+        for name in (
+            "title",
+            "num",
+            "q",
+            "block_type",
+            "block_value",
+            "share_targets",
+            "transfer_credit_allowed",
+        )
+    ):
+        return True
+    if stored.credits is None or parsed.credits is None:
+        return stored.credits is not parsed.credits
+    return Decimal(str(stored.credits)) != Decimal(str(parsed.credits))
+
+
+def has_other_owner(root: Rule, owners: list) -> bool:
+    """`deduplicate_rules` can leave one row used by several owners."""
+    users = [*root.degrees.all(), *root.major_set.all(), *root.minor_set.all()]
+    return any(user not in owners for user in users)
+
+
+def rule_tree_ids(root: Rule) -> set[int]:
+    ids, frontier = {root.pk}, {root.pk}
+    while frontier:
+        frontier = set(Rule.objects.filter(parent_id__in=frontier).values_list("id", flat=True))
+        ids |= frontier
+    return ids
+
+
+def top_level_rule(rule: Rule) -> Rule:
+    while rule.parent is not None:
+        rule = rule.parent
+    return rule
+
+
+def plans_using(owner):
+    relation = {Degree: "degrees", Major: "majors", Minor: "minors"}[type(owner)]
+    return DegreePlan.objects.filter(**{relation: owner})
+
+
+def move_course_assignments(moved: list[tuple[Rule, Rule]], owner) -> None:
+    """A plan that still reaches an old row through another of its programs also keeps that row."""
+    if not moved:
+        return
+
+    for plan in plans_using(owner):
+        reachable = {
+            rule.pk for component in plan_components(plan) for rule in component.rules.all()
+        }
+        for old, new in moved:
+            for relation in ("rules", "unselected_rules", "overrides"):
+                for fulfillment in plan.fulfillments.filter(**{relation: old}):
+                    assigned = getattr(fulfillment, relation)
+                    assigned.add(new)
+                    if top_level_rule(old).pk not in reachable:
+                        assigned.remove(old)
+
+
+def sync_rules(rules: list[Rule], owner, shared_with=()) -> None:
+    """
+    Stored rules no longer in the audit are deleted, and a course assigned only to those stays in
+    the plan, unassigned. Rules also used by something other than `owner` and `shared_with` are
+    left alone, and `owner` gets its own copy.
+    """
+    owners = [owner, *shared_with]
+    stored_roots = list(owner.rules.order_by("id"))
+    pairs, unpaired = pair_rules(rules, stored_roots)
+    still_in_use = set()
+    for root in stored_roots:
+        if has_other_owner(root, owners):
+            still_in_use |= rule_tree_ids(root)
+
+    moved = []
     for rule in rules:
         assert (
             not rule.q or rule.num is not None or rule.credits is not None
         ), f"Rule {rule.title!r} has a query but no num or credits"
-        rule.save()
 
-    for rule in rules:
-        if rule.parent is None:
-            rule.refresh_from_db()
-            owner.rules.add(rule)
+        stored = pairs.get(id(rule))
+        if rule.pk is None:
+            if stored is None or stored.pk in still_in_use:
+                rule.save()
+            else:
+                rule.pk = stored.pk
+                if rule_differs(stored, rule):
+                    rule.save()
+
+        if stored is not None and stored.pk != rule.pk:
+            moved.append((stored, rule))
+
+    owner.rules.set([rule for rule in rules if rule.parent is None])
+    move_course_assignments(moved, owner)
+
+    for rule in unpaired:
+        if rule.pk in still_in_use or (rule.parent_id is None and has_other_owner(rule, owners)):
+            continue
+        unassigned = Fulfillment.objects.filter(rules__in=rule_tree_ids(rule)).distinct().count()
+        if unassigned:
+            logger.warning(f"Deleting {rule.title!r} unassigned {unassigned} course(s) in {owner}")
+        rule.delete()
 
 
-def save_parsed_audit(parsed: ParsedAudit, degree: Degree) -> None:
+def keep_existing_row(instance, **key) -> None:
+    existing = type(instance).objects.filter(**key).order_by("id").first()
+    if existing is not None:
+        instance.pk = existing.pk
+
+
+def save_parsed_audit(parsed: ParsedAudit, degree: Degree, shared_with=()) -> None:
     """
-    Saves a degree and the rules parsed from its audit.
-
-    The caller sets `degree.year` from `parsed.catalog_year` first, since the year is part of
-    the Degree's unique constraint and so has to be known before the rows this replaces can be
-    deleted. Mirrors `parse_degreeworks.parse_and_save_degreeworks`.
+    `shared_with` is what else legitimately uses this degree's rules. The caller must set
+    `degree.year` first, since it's part of the unique constraint.
     """
+    keep_existing_row(
+        degree,
+        program=degree.program,
+        degree=degree.degree,
+        major=degree.major,
+        concentration=degree.concentration,
+        year=degree.year,
+    )
     degree.credits = parsed.degree_credits
     degree.save()
-    save_rules(parsed.rules, degree)
+    sync_rules(parsed.rules, degree, shared_with)
 
 
 def block_rules(parsed: ParsedAudit, block: ParsedBlock) -> list[Rule]:
@@ -748,10 +906,8 @@ def find_block(parsed: ParsedAudit, req_type: str) -> ParsedBlock | None:
 
 
 def save_component(component, parsed: ParsedAudit, block: ParsedBlock) -> None:
-    """
-    Saves a Major or Minor and only the rules of its own block. The rest of the audit is the
-    degree that program sits under, which the student is not necessarily pursuing.
-    """
+    """Saves only the rules of the component's own block."""
+    keep_existing_row(component, program_code=component.program_code, year=component.year)
     component.credits = block.credits
     component.save()
-    save_rules(block_rules(parsed, block), component)
+    sync_rules(block_rules(parsed, block), component)

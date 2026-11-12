@@ -11,10 +11,12 @@ import {
   ChooseContainer,
   ContainerGroup,
   ErrorText,
+  ExitButton,
   NextButton,
   PrivacyNote,
-  TextButton,
+  SecondaryButton,
   Upload,
+  WelcomeTitle,
 } from "./SharedComponents";
 
 type WelcomeLayoutProps = {
@@ -51,17 +53,10 @@ export default function WelcomeLayout({
     <CenteredFlexContainer>
       <ChooseContainer $maxWidth="90%" $minWidth="90%">
         {canExit && onExit && (
-          <TextButton
-            onClick={onExit}
-            style={{
-              position: "absolute",
-              left: "2.5%",
-              top: "3%",
-            }}
-          >
-            <ArrowLeftIcon />
-            <p>Back</p>
-          </TextButton>
+          <ExitButton type="button" onClick={onExit}>
+            <ArrowLeftIcon width={16} height={16} />
+            Back
+          </ExitButton>
         )}
         <div style={{ display: "none" }}>
           <Document
@@ -84,7 +79,7 @@ export default function WelcomeLayout({
           </Document>
         </div>
 
-        <h1>Welcome to Penn Degree Plan!</h1>
+        <WelcomeTitle>Welcome to Penn Degree Plan!</WelcomeTitle>
         <ContainerGroup>
           <label>
             <input
@@ -121,28 +116,21 @@ export default function WelcomeLayout({
               if (startingYear && startingYear?.value !== 0) setCurrentPage(1);
             }}
             disabled={PDF && transcriptDetected.current === true ? false : true}
-            style={{
-              height: "45px",
-              width: "100px",
-              borderRadius: "7px",
-              color: PDF ? "white" : "",
-              transition: "all 0.25s",
-            }}
           >
             {!waitingForPrograms && <div>Next</div>}
             <PulseLoader size={8} color={"white"} loading={waitingForPrograms} />
           </NextButton>
         </ContainerGroup>
-        <TextButton
+        <SecondaryButton
+          type="button"
           onClick={() => {
             resetParser();
             setCurrentPage(2);
           }}
-          style={{ borderBottom: "1px solid #aaa" }}
         >
-          <p>Enter information manually</p>
+          Enter information manually
           <ArrowRightIcon />
-        </TextButton>
+        </SecondaryButton>
       </ChooseContainer>
     </CenteredFlexContainer>
   );

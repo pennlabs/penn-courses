@@ -1,10 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
-import styled from "@emotion/styled";
 import useSWR from "swr";
 import { pdfjs } from "react-pdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import "react-pdf/dist/esm/Page/TextLayer.css";
-import { DegreeListing, DegreePlan, Major, MajorOption, SchoolOption } from "@/types";
+import { DegreeListing, DegreePlan, Major, Minor } from "@/types";
 import { polyfillPromiseWithResolvers } from "./polyfilsResolver";
 
 import "core-js/full/promise/with-resolvers.js";
@@ -14,7 +13,8 @@ import {
   parseTranscript,
   ParsedText,
   flattenParsedText,
-  MajorOptionItem,
+  SchoolSelection,
+  CourseLevel,
 } from "../utils/parseUtils";
 import WelcomeLayout from "@/components/OnboardingPanels/WelcomePanel";
 import CreateWithTranscriptPanel from "@/components/OnboardingPanels/CreateWithTranscriptPanel";
@@ -40,21 +40,22 @@ const OnboardingPage = ({
     label: any;
     value: number;
   } | null>(null);
-  const [schools, setSchools] = useState<SchoolOption[]>([]);
-  const [majors, setMajors] = useState<MajorOption[]>([]);
-  const [secondMajors, setSecondMajors] = useState<MajorOptionItem[]>([]);
-  const [detectedDual, setDetectedDual] = useState<string | null>(null);
+  const [selections, setSelections] = useState<SchoolSelection[]>([]);
+  const [dualProgram, setDualProgram] = useState<string | null>(null);
 
   const [PDF, setPDF] = useState<File | null>(null);
   const [numPages, setNumPages] = useState<number | null>(null);
   const [scrapedCourses, setScrapedCourses] = useState<any>([]);
+  const [courseLevels, setCourseLevels] = useState<{ [course: string]: CourseLevel }>({});
   const [currentPage, setCurrentPage] = useState<number>(0);
 
   const { data: degrees } = useSWR<DegreeListing[]>(`/api/degree/degrees`);
   const { data: standaloneMajors } = useSWR<Major[]>(`/api/degree/majors`);
-  // Matching a transcript's majors needs both lists. They are requested when this page mounts,
+  const { data: minors } = useSWR<Minor[]>(`/api/degree/minors`);
+  // Matching a transcript's programs needs these lists. They are requested when this page mounts,
   // but a transcript can be uploaded and read before they arrive.
-  const programsLoaded = degrees !== undefined && standaloneMajors !== undefined;
+  const programsLoaded =
+    degrees !== undefined && standaloneMajors !== undefined && minors !== undefined;
 
   // TRANSCRIPT PARSING
   const total = useRef<Record<number, ParsedText>>({});
@@ -89,14 +90,18 @@ const OnboardingPage = ({
 
     const {
       scrapedCourses,
+      courseLevels,
       startYear,
-      scrapedSchools,
-      detectedMajorsOptions,
-      detectedSecondMajorOptions,
-      dualProgramCode,
-    } = parseTranscript(all, degrees, standaloneMajors);
-    setDetectedDual(dualProgramCode);
+      detectedSelections,
+      detectedDualProgram,
+    } = parseTranscript(
+      all,
+      degrees,
+      standaloneMajors,
+      minors
+    );
     setScrapedCourses(scrapedCourses);
+    setCourseLevels(courseLevels);
     setStartingYear({
       value: startYear,
       label: startYear,
@@ -105,11 +110,10 @@ const OnboardingPage = ({
       value: startYear + 4,
       label: startYear + 4,
     });
-    setSchools(scrapedSchools);
-    setMajors(detectedMajorsOptions);
-    setSecondMajors(detectedSecondMajorOptions);
+    setSelections(detectedSelections);
+    setDualProgram(detectedDualProgram);
     transcriptDetected.current = startYear ? true : false;
-  }, [pagesRead, programsLoaded, degrees, standaloneMajors]);
+  }, [pagesRead, programsLoaded, degrees, standaloneMajors, minors]);
 
   const transcriptDetected = useRef<boolean | null>(null);
 
@@ -118,11 +122,10 @@ const OnboardingPage = ({
     parsed.current = false;
     setPagesRead(false);
     transcriptDetected.current = null;
-    setSchools([]);
-    setMajors([]);
-    setSecondMajors([]);
-    setDetectedDual(null);
+    setSelections([]);
+    setDualProgram(null);
     setScrapedCourses([]);
+    setCourseLevels({});
     setStartingYear(null);
     setGraduationYear(null);
   };
@@ -156,12 +159,11 @@ const OnboardingPage = ({
       inputtedStartingYear={startingYear}
       inputtedGraduationYear={graduationYear}
       scrapedCourses={scrapedCourses}
+      courseLevels={courseLevels}
       setCurrentPage={setCurrentPage}
       setActiveDegreeplan={setActiveDegreeplan}
-      inputtedSchools={schools}
-      inputtedMajors={majors}
-      inputtedSecondMajors={secondMajors}
-      detectedDualProgram={detectedDual}
+      inputtedSelections={selections}
+      inputtedDualProgram={dualProgram}
       setShowOnboardingModal={setShowOnboardingModal}
       canExit={canExit}
       onExit={exitOnboarding}

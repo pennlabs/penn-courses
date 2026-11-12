@@ -29,11 +29,17 @@ const EmptyPanelImage = styled.img`
     max-width: min(60%, 20rem);
 `;
 
-const EmptyPanel = () => {
+const EmptyPanel = ({ onAdd }: { onAdd?: () => void }) => {
   return (
     <EmptyPanelContainer>
       <EmptyPanelImage src="/images/empty-state-cal.svg" />
       There's nothing here so far... add a degree to get started!
+      {onAdd && (
+        <AddButton role="button" onClick={onAdd}>
+          <i className="fa fa-plus" />
+          <div>Add a degree</div>
+        </AddButton>
+      )}
     </EmptyPanelContainer>
   )
 }
@@ -452,12 +458,13 @@ const Degree = ({
 }
 
 interface ReqPanelProps {
-  setModalKey: (arg0: ModalKey) => void;
-  setModalObject: (arg0: DegreePlan | null) => void;
+  setModalKey?: (arg0: ModalKey) => void;
+  setModalObject?: (arg0: DegreePlan | null) => void;
+  onEditPrograms?: () => void;
   activeDegreeplan: DegreePlan | null;
   isLoading: boolean;
 }
-const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: ReqPanelProps) => {
+const ReqPanel = ({ setModalKey, setModalObject, onEditPrograms, activeDegreeplan, isLoading }: ReqPanelProps) => {
   const [editMode, setEditMode] = React.useState(false);
   const [allRuleLeaves, setAllRuleLeaves] = React.useState(false);
   const [activeProgramKey, setActiveProgramKey] = React.useState<string | null>(null);
@@ -518,7 +525,10 @@ const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: 
       <PanelHeader>
         <ReqPanelTitle>Requirements</ReqPanelTitle>
         <PanelTopBarIconList>
-          <EditButton editMode={editMode} setEditMode={setEditMode} />
+          <EditButton
+            editMode={onEditPrograms ? false : editMode}
+            setEditMode={onEditPrograms ? () => onEditPrograms() : setEditMode}
+          />
         </PanelTopBarIconList>
       </PanelHeader>
       {!activeDegreeplan ? <ReqPanelBody><Degree isLoading={true} /></ReqPanelBody> :
@@ -526,7 +536,7 @@ const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: 
           {activeDegreeplanDetail &&
             <ReqPanelBody>
               <ReqContent id="requirements-scroll">
-                {programs.length == 0 && !editMode && <EmptyPanel />}
+                {programs.length == 0 && !editMode && <EmptyPanel onAdd={onEditPrograms} />}
                 <PlanSummaryBar degreePlanId={activeDegreeplan.id} />
                 {programs.length > 1 && (
                   <TabRow>
@@ -555,13 +565,13 @@ const ReqPanel = ({ setModalKey, setModalObject, activeDegreeplan, isLoading }: 
                     rulesToUnselectedFulfillments={rulesToUnselectedFulfillments}
                     activeDegreeplan={activeDegreeplan}
                     editMode={editMode}
-                    setModalKey={setModalKey}
-                    setModalObject={setModalObject}
+                    setModalKey={setModalKey ?? (() => {})}
+                    setModalObject={setModalObject ?? (() => {})}
                     isLoading={isLoading}
                     showHeader={programs.length < 2 || editMode}
                   />
                 ))}
-                {editMode && <AddButton role="button" onClick={() => {
+                {editMode && setModalKey && setModalObject && <AddButton role="button" onClick={() => {
                   setModalObject(activeDegreeplan);
                   setModalKey("degree-add");
                 }}>

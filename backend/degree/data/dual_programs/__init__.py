@@ -5,6 +5,9 @@ M&T and Huntsman edit a base degree (extra courses, a suppressed capstone, a dif
 liberal-arts shape). LSM and VIPER are pairs of ordinary majors and carry no variant.
 """
 
+from django.db import transaction
+from django.db.models import Q
+
 from degree.data.dual_programs import huntsman, mt
 from degree.models import DualProgram, ProgramVariant, Rule
 
@@ -21,8 +24,8 @@ PROGRAMS = [
         "left_allowed_majors": [],
         "right_allowed_majors": [],
         "left_variant": None,
-        "right_variant": "WH_NOFL_MT",
-        "cu_floor": None,
+        "right_variant": "WH_MT",
+        "cu_floor": 46,
         "max_shared_cu": None,
     },
     {
@@ -84,6 +87,14 @@ def _save_tree(spec: dict, parent: Rule | None, saved: set[int]) -> Rule:
     return rule
 
 
+def variant_blocks(codes) -> Q:
+    """A variant's rules: its own block, or a block named `<variant>:<block>` (see mt.py)."""
+    query = Q()
+    for code in codes:
+        query |= Q(block_value=code) | Q(block_value__startswith=f"{code}:")
+    return Q(block_type="VARIANT") & query
+
+
 def load() -> list[str]:
     """
     Make the database match VARIANTS and PROGRAMS. Safe to run more than once: rules are
@@ -91,6 +102,11 @@ def load() -> list[str]:
     listed here are deleted; plans on a deleted program fall back to an ordinary plan.
     Returns the codes of deleted variants and programs.
     """
+    with transaction.atomic():
+        return _load()
+
+
+def _load() -> list[str]:
     variants = {}
     for code, (name, rules_fn, suppressed) in VARIANTS.items():
         variant, _ = ProgramVariant.objects.update_or_create(
@@ -98,7 +114,7 @@ def load() -> list[str]:
         )
         saved = set()
         variant.rules.set([_save_tree(spec, None, saved) for spec in rules_fn()])
-        Rule.objects.filter(block_type="VARIANT", block_value=code).exclude(id__in=saved).delete()
+        Rule.objects.filter(variant_blocks([code])).exclude(id__in=saved).delete()
         variants[code] = variant
 
     for spec in PROGRAMS:
@@ -117,7 +133,8 @@ def load() -> list[str]:
     )
     DualProgram.objects.filter(code__in=stale_programs).delete()
     ProgramVariant.objects.filter(code__in=stale_variants).delete()
-    Rule.objects.filter(block_type="VARIANT", block_value__in=stale_variants).delete()
+    if stale_variants:
+        Rule.objects.filter(variant_blocks(stale_variants)).delete()
     return stale_programs + stale_variants
 
 
