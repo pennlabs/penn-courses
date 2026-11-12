@@ -1348,7 +1348,7 @@ class OverlapAndReconcileTests(TestCase):
         self.assertEqual(len(overlaps[0]["rules"]), 2)
         self.assertEqual(overlaps[0]["cu"], 1.0)
 
-    def test_department_electives_stay_separate(self):
+    def test_department_electives_on_two_degrees_become_one_card(self):
         for offset in range(3):
             course(f"CIS-{2000 + offset}")
         result = self._pair(
@@ -1357,7 +1357,10 @@ class OverlapAndReconcileTests(TestCase):
             "Engineering elective",
             "Wharton elective",
         )
-        self.assertFalse(any(row.get("overlap") for row in result["placements"]))
+        overlaps = [row for row in result["placements"] if row.get("overlap")]
+        self.assertEqual(len(overlaps), 1)
+        self.assertCountEqual(overlaps[0]["alternatives"], ["CIS-2000", "CIS-2001", "CIS-2002"])
+        self.assertEqual(len(overlaps[0]["rules"]), 2)
 
     def test_a_second_spelling_is_removed_and_claims_cover_both_programs(self):
         primary = course("ACCT-2110")

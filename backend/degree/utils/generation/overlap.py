@@ -1,9 +1,8 @@
 """
 Pair two open slots, one on each program, when one course could fill both.
 
-The card stays a slot. It does not pick a winner. Ordinary department electives
-are left as two cards. Writing, attribute rules, and named lists of at most 40
-courses can pair.
+The card stays a slot. It does not pick a winner. Writing, attribute rules,
+department electives, and named lists of at most 40 courses can pair.
 """
 
 from __future__ import annotations
@@ -41,7 +40,7 @@ def _parts(rule):
 
 
 def _eligible(rule):
-    """writing, attribute, or a short named list. A department elective is not."""
+    """writing, attribute, a department elective, or a short named list."""
     codes = listed_course_codes(rule)
     if codes is not None:
         if 1 < len(codes) <= MAX_LIST:
@@ -54,7 +53,7 @@ def _eligible(rule):
     if writing:
         return "writing", []
     if departments:
-        return None, []
+        return "department", []
     if parts["attrs"]:
         return "attribute", []
     return None, []
