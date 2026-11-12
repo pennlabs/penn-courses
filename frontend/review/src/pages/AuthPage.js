@@ -1,17 +1,17 @@
-import React, { useEffect } from "react";
+import React, { useEffect, createContext } from "react";
 import { useQuery } from "@tanstack/react-query";
 
-import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
-import { ReviewPage } from "./ReviewPage";
 import { ErrorBox } from "../components/common";
 import { apiCheckAuth, redirectForAuth, queryKeys } from "../utils/api";
 
 /**
- * A wrapper around a review page that performs Shibboleth authentication.
+ * A wrapper around a Browse Page that performs Shibboleth authentication.
  */
 
-export const AuthPage = props => {
+export const AuthContext = createContext();
+
+const TempAuthPage = ({ forceRedirect = false, children }) => {
   const {
     data: authed = false,
     isSuccess: authChecked,
@@ -23,15 +23,14 @@ export const AuthPage = props => {
   });
 
   useEffect(() => {
-    if (authChecked && !authed) {
+    if (authChecked && !authed && forceRedirect) {
       redirectForAuth();
     }
-  }, [authChecked, authed]);
+  }, [authChecked, authed, forceRedirect]);
 
   if (authFailed) {
     return (
       <>
-        <Navbar />
         <ErrorBox>
           Could not perform Platform authentication.
           <br />
@@ -41,6 +40,18 @@ export const AuthPage = props => {
       </>
     );
   }
-  // TODO: Add loading spinner instead of null
-  return authed ? <ReviewPage {...props} /> : null;
+
+  return (
+    <>
+      {forceRedirect ? (
+        <>{authed ? children : null}</>
+      ) : (
+        <AuthContext.Provider value={authChecked ? authed : undefined}>
+          {children}
+        </AuthContext.Provider>
+      )}
+    </>
+  );
 };
+
+export default TempAuthPage;

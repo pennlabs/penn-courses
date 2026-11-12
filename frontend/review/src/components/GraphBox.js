@@ -25,7 +25,7 @@ const ChartTitle = styled.h3`
 const ChartDescription = styled.p`
   font-size: 15px;
   font-weight: normal;
-  color: #b2b2b2;
+  color: ${({ theme }) => theme.color.text.subtle};
   margin-bottom: 8px;
 `;
 
@@ -54,8 +54,9 @@ const GraphRow = styled.div`
 
 const GraphContainer = styled.div`
   padding: 35px;
-  background-color: #ffffff;
-  box-shadow: 0 0 14px 0 rgba(0, 0, 0, 0.07);
+  background-color: ${({ theme }) => theme.color.surface.page};
+  border: 1px solid ${({ theme }) => theme.color.border.default};
+  border-radius: ${({ theme }) => theme.radius.lg};
   margin-bottom: 30px;
   min-height: 500px;
   flex: 1;
@@ -327,7 +328,9 @@ const percentSectionChartOptions = {
 const GraphBox = ({ courseCode, url_semester, isAverage, setIsAverage }) => {
   const averageOrRecent = isAverage ? "average_plots" : "recent_plots";
 
-  defaults.global.defaultFontFamily = "Lato";
+  defaults.global.defaultFontFamily = getComputedStyle(document.documentElement)
+    .getPropertyValue("--pcr-font-family-sans")
+    .trim();
 
   const { data: pcaData, isLoading } = useQuery({
     queryKey: queryKeys.pcaChartData(courseCode, url_semester),
@@ -421,7 +424,10 @@ const GraphBox = ({ courseCode, url_semester, isAverage, setIsAverage }) => {
                       <LoadingContainer>
                         <i
                           className="fa fa-spin fa-cog fa-fw"
-                          style={{ fontSize: "150px", color: "#aaa" }}
+                          style={{
+                            fontSize: "150px",
+                            color: "var(--pcr-color-text-muted)"
+                          }}
                         />
                         <h1 style={{ fontSize: "2em", marginTop: 15 }}>
                           Loading...
@@ -485,7 +491,10 @@ const GraphBox = ({ courseCode, url_semester, isAverage, setIsAverage }) => {
                       <LoadingContainer>
                         <i
                           className="fa fa-spin fa-cog fa-fw"
-                          style={{ fontSize: "150px", color: "#aaa" }}
+                          style={{
+                            fontSize: "150px",
+                            color: "var(--pcr-color-text-muted)"
+                          }}
                         />
                         <h1 style={{ fontSize: "2em", marginTop: 15 }}>
                           Loading...

@@ -271,7 +271,7 @@ class ScoreBox extends Component {
               to={`/instructor/${key}`}
               title={`Go to ${value}`}
               className="mr-1"
-              style={{ color: "rgb(102, 146, 161)" }}
+              style={{ color: "var(--pcr-color-text-link)" }}
             >
               <i className="instructor-link far fa-user" />
             </Link>
@@ -455,13 +455,12 @@ class ScoreBox extends Component {
           </div>
         </div>
         <ScoreTable
-          multi={type === "department"}
+          style={{ maxHeight: 400 }}
           sorted={[{ id: isCourse ? "name" : "code", desc: false }]}
           filtered={filtered}
           data={data}
           columns={columns}
           onSelect={this.handleSelect}
-          ignoreSelect={type === "department" && isCourseEval}
           noun={isCourse ? "instructor" : "course"}
           isAverage={isAverage}
           isCourseEval={isCourseEval}

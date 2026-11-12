@@ -5,6 +5,7 @@
   "dependencies": {
     "@tanstack/query-async-storage-persister": "^5",
     "@tanstack/react-query": "^5",
+    "@tanstack/react-query-devtools": "^5.101.4",
     "@tanstack/react-query-persist-client": "^5",
     "@types/node": "^18.19.0",
     "@types/react": "^18.2.0",
@@ -20,6 +21,9 @@
     "react-app-rewired": "^2.2.1",
     "react-chartjs-2": "^2.8.0",
     "react-dom": "^18.2.0",
+    "react-icons": "^5.6.0",
+    "react-range-slider-input": "^3.3.2",
+    "react-responsive-pagination": "^2.13.0",
     "react-router-dom": "^5.1.2",
     "react-scripts": "^5.0.1",
     "react-select": "^2.4.4",
