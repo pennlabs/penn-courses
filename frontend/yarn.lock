@@ -4286,6 +4286,40 @@
   dependencies:
     tslib "^2.4.0"
 
+"@tanstack/query-async-storage-persister@^5":
+  version "5.103.2"
+  resolved "https://registry.yarnpkg.com/@tanstack/query-async-storage-persister/-/query-async-storage-persister-5.103.2.tgz#9cecee601441b903c9216914b0db2332565afcc9"
+  integrity sha512-vg+/hyVZfwDE1s0eylmYIMXjNDIGMqtt1MBBm+8a5vkXjQrm09t/p+gbJCRsmP3xZcSEclGvki401JiNc2cRVw==
+  dependencies:
+    "@tanstack/query-core" "5.103.2"
+    "@tanstack/query-persist-client-core" "5.103.2"
+
+"@tanstack/query-core@5.103.2":
+  version "5.103.2"
+  resolved "https://registry.yarnpkg.com/@tanstack/query-core/-/query-core-5.103.2.tgz#9dd1792b42046808c1e8e997807b83137012dedd"
+  integrity sha512-I8DkFXls5jXLqtm8+QpOhEmG07hIblhSZFzafg9wHsMSEvMzULy9hK17wU1T/ahfhMbtITJhbxutwwCoihkR7A==
+
+"@tanstack/query-persist-client-core@5.103.2":
+  version "5.103.2"
+  resolved "https://registry.yarnpkg.com/@tanstack/query-persist-client-core/-/query-persist-client-core-5.103.2.tgz#a59d088816204c09fca0ff3bb4d51636537060c5"
+  integrity sha512-yd//zcQILITjto5G1Rq0lTCd1AgXgwdmeCgqh3sTIqIdALPj8Ry7ilELfzEltMvHcoB612TLxPnF/6Yy9HoJ8Q==
+  dependencies:
+    "@tanstack/query-core" "5.103.2"
+
+"@tanstack/react-query-persist-client@^5":
+  version "5.103.2"
+  resolved "https://registry.yarnpkg.com/@tanstack/react-query-persist-client/-/react-query-persist-client-5.103.2.tgz#965093e872dd02798d5476f4fa4e69453522da88"
+  integrity sha512-OZHmFm1Z8+TuqvY/ZucGJ4aGSsfcU2WZKy3WT2XiAitrwypZ37B/LYXyI22QkKt8zvlGFcFbxfJxNzOWf9/K1g==
+  dependencies:
+    "@tanstack/query-persist-client-core" "5.103.2"
+
+"@tanstack/react-query@^5":
+  version "5.103.2"
+  resolved "https://registry.yarnpkg.com/@tanstack/react-query/-/react-query-5.103.2.tgz#1d063909424ecf259fd88f974a4ecafe32edcfed"
+  integrity sha512-B+fWiYZBc+0uUD5zDZAeLw9dKj7XEsdnuu6zRZ+no6LNKpeE3P3bJ+N6HINjcIlWR6fW3vUoTneEaGa2V6ehqw==
+  dependencies:
+    "@tanstack/query-core" "5.103.2"
+
 "@testing-library/dom@*":
   version "7.18.1"
   resolved "https://registry.npmjs.org/@testing-library/dom/-/dom-7.18.1.tgz"

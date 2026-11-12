@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 
 import Ratings from "./InfoRatings";
 import { CourseDescription, CourseHeader } from "./CourseInfo";
 import InstructorInfo from "./InstructorInfo";
 import { DepartmentHeader, DepartmentGraphs } from "./DepartmentInfo";
-import { apiContact } from "../../utils/api";
+import { apiContact, queryKeys } from "../../utils/api";
 
 import styled from "styled-components";
 
@@ -55,7 +56,6 @@ const InfoBox = ({
   isCourseEval,
   setIsCourseEval
 }) => {
-  const [contact, setContact] = useState(null);
   const [inCourseCart, setInCourseCart] = useState(
     Boolean(localStorage.getItem(code))
   );
@@ -81,9 +81,11 @@ const InfoBox = ({
   const isInstructor = type === "instructor";
   const isDepartment = type === "department";
 
-  useEffect(() => {
-    if (isInstructor) apiContact(name).then(setContact);
-  }, [name, isInstructor]);
+  const { data: contact = null } = useQuery({
+    queryKey: queryKeys.contact(name),
+    queryFn: () => apiContact(name),
+    enabled: isInstructor && Boolean(name)
+  });
 
   const handleCartAdd = key => {
     let instructor = "Average Professor";
