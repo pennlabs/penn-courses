@@ -71,24 +71,42 @@ def check_belongs(rule, full_code, belongs_cache, is_transfer=False):
     return belongs_cache[key]
 
 
-def prewarm_belongs_cache(rules, full_codes):
+def prewarm_belongs_cache(rules, full_codes, belongs_cache=None):
     """
-    Returns a belongs_cache (see check_belongs) filled in for every combination of the given
-    leaf rules and courses, using one query per rule rather than one per rule/course pair.
-    Worth doing when every course is known up front, e.g. when allocating a whole transcript.
+    Fill a belongs_cache (see check_belongs) for every combination of these rules and courses.
+
+    A rule that only names course codes is a set lookup and does not query. Every other rule
+    is one query, and only for courses not already in `belongs_cache`. Pass the same dict
+    through a request so a later call does not repeat those queries.
     """
-    belongs_cache = {}
+    if belongs_cache is None:
+        belongs_cache = {}
+    codes = list(dict.fromkeys(full_codes))
+    if not codes:
+        return belongs_cache
+
+    # Imported here: open_rules already imports this module.
+    from degree.utils.generation.open_rules import listed_course_codes
 
     for rule in rules:
         if not rule.q:
             continue
+        missing = [code for code in codes if (rule.id, code) not in belongs_cache]
+        if not missing:
+            continue
+        listed = listed_course_codes(rule)
+        if listed is not None:
+            named = set(listed)
+            for code in missing:
+                belongs_cache[(rule.id, code)] = code in named
+            continue
         matched = set(
-            Course.objects.filter(rule.get_q_object() or Q(), full_code__in=full_codes).values_list(
+            Course.objects.filter(rule.get_q_object() or Q(), full_code__in=missing).values_list(
                 "full_code", flat=True
             )
         )
-        for full_code in full_codes:
-            belongs_cache[(rule.id, full_code)] = full_code in matched
+        for code in missing:
+            belongs_cache[(rule.id, code)] = code in matched
 
     return belongs_cache
 

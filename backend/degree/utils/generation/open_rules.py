@@ -118,18 +118,20 @@ def filter_panel_options(rule):
         return {"count": 0, "courses": []}
     if not query:
         return {"count": 0, "courses": []}
+    from django.db.models import Count
+
     from courses.models import Course
 
-    rows = (
-        Course.objects.filter(query)
-        .exclude(credits=None)
-        .order_by("full_code")
-        .distinct("full_code")
-    )
-    codes = list(rows.values_list("full_code", flat=True)[: SHORT_LIST_MAX + 1])
-    if len(codes) <= SHORT_LIST_MAX:
-        return {"count": len(codes), "courses": codes}
-    return {"count": rows.count()}
+    matched = Course.objects.filter(query).exclude(credits=None)
+    count = matched.aggregate(n=Count("full_code", distinct=True))["n"] or 0
+    if not count:
+        return {"count": 0, "courses": []}
+    if count <= SHORT_LIST_MAX:
+        codes = list(
+            matched.order_by("full_code").distinct("full_code").values_list("full_code", flat=True)
+        )
+        return {"count": count, "courses": codes}
+    return {"count": count}
 
 
 def sole_listed_code(rule) -> str | None:
