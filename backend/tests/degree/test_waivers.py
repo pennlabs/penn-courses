@@ -122,6 +122,15 @@ class WaiverTest(TestCase):
         self.add_course("BEPP-1000")
         self.assertEqual(self.rules_of("BEPP-1000"), {self.breadth_elective})
 
+    def test_waiving_a_requirement_no_course_is_on_leaves_the_courses_where_they_are(self):
+        self.add_course("BEPP-1000")
+        # as the student moved it there; reallocating would put it back on Introductory Economics
+        self.plan.fulfillments.get(full_code="BEPP-1000").rules.set([self.breadth_elective])
+
+        response = self.waive(self.writing)
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(self.rules_of("BEPP-1000"), {self.breadth_elective})
+
     def test_lifting_a_waiver_restores_the_requirement(self):
         self.add_course("WRIT-0370")
         self.waive(self.intro_econ)
