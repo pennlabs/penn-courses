@@ -1,6 +1,6 @@
 
 import { useCallback, useEffect, useMemo, useState, useContext, useRef, useLayoutEffect } from 'react';
-import RuleComponent, { FulfillmentsLoadedContext, ProgramKindContext, SetWaivedContext, SkeletonRule } from './Rule';
+import RuleComponent, { FulfillmentsLoadedContext, ProgramKindContext, SkeletonRule, WaiversContext } from './Rule';
 import { Degree as DegreeType, DegreePlan, Fulfillment, Rule, Degree as DegreeD } from '@/types';
 import styled from '@emotion/styled';
 import { DarkBlueBackgroundSkeleton, PanelBody, PanelContainer, PanelHeader, PanelTopBarIconList } from "../FourYearPlan/PanelCommon";
@@ -385,16 +385,14 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
   const [pendingWaivers, setPendingWaivers] = useState<Record<number, boolean>>({});
   const waiverQueue = useRef<Promise<unknown>>(Promise.resolve());
   const latestWaiverChange = useRef<Record<number, number>>({});
-  const setWaived = useCallback((ruleId: number, waive: boolean) => {
+  const queueWaiverChange = useCallback((ruleId: number, waived: boolean, save: () => Promise<unknown>) => {
     if (!activeDegreeplan) return;
     const planKey = `/api/degree/degreeplans/${activeDegreeplan.id}`;
     const change = (latestWaiverChange.current[ruleId] ?? 0) + 1;
     latestWaiverChange.current[ruleId] = change;
-    setPendingWaivers((pending) => ({ ...pending, [ruleId]: waive }));
+    setPendingWaivers((pending) => ({ ...pending, [ruleId]: waived }));
 
-    const send = () =>
-      (waive ? postFetcher : deleteFetcher)(`${planKey}/waivers`, { rule_ids: [ruleId] });
-    const sent = waiverQueue.current.then(send, send);
+    const sent = waiverQueue.current.then(save, save);
     waiverQueue.current = sent.catch(() => undefined);
     // Saved or not, the plan reloads as the server has it; the server reallocates its courses.
     sent.catch(() => undefined).then(async () => {
@@ -405,16 +403,55 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
     });
   }, [activeDegreeplan, mutate]);
 
+  const waivers = useMemo(() => ({
+    setWaived: (ruleId: number, waive: boolean) => {
+      if (!activeDegreeplan) return;
+      const planKey = `/api/degree/degreeplans/${activeDegreeplan.id}`;
+      if (waive) {
+        // The server takes a waived requirement's courses and overrides off it, which can take
+        // seconds on a full plan, so they come off here first.
+        mutate<Fulfillment[]>(
+          `${planKey}/fulfillments`,
+          (fulfillments) => fulfillments?.map((fulfillment) => ({
+            ...fulfillment,
+            rules: fulfillment.rules.filter((id) => id !== ruleId),
+            overrides: fulfillment.overrides?.filter((id) => id !== ruleId),
+          })),
+          { revalidate: false }
+        );
+      }
+      queueWaiverChange(ruleId, waive, () =>
+        (waive ? postFetcher : deleteFetcher)(`${planKey}/waivers`, { rule_ids: [ruleId] })
+      );
+    },
+    liftWaiver: (ruleId: number, save: () => Promise<unknown>) =>
+      queueWaiverChange(ruleId, false, save),
+  }), [activeDegreeplan, mutate, queueWaiverChange]);
+
   // Choices pending for one plan don't apply to another that shares its requirements.
   useEffect(() => setPendingWaivers({}), [activeDegreeplan?.id]);
 
+  // The server lifts a waiver when the student puts a course on its requirement, whichever way
+  // they do it (dropping, switching, overriding). The plan is reloaded to pick that up, and
+  // until it has, a requirement holding a course doesn't show as waived.
+  const savedWaivers = activeDegreeplanDetail?.waived_rules;
+  const liftedWaivers = useMemo(
+    () => (savedWaivers ?? []).filter((ruleId) => rulesToFulfillments[ruleId]?.length),
+    [savedWaivers, rulesToFulfillments]
+  );
+  const hasLiftedWaivers = liftedWaivers.length > 0;
+  useEffect(() => {
+    if (hasLiftedWaivers && activeDegreeplan) mutate(`/api/degree/degreeplans/${activeDegreeplan.id}`);
+  }, [hasLiftedWaivers, activeDegreeplan?.id, mutate]);
+
   const waivedRules = useMemo(() => {
-    const waived = new Set(activeDegreeplanDetail?.waived_rules ?? []);
+    const waived = new Set(savedWaivers ?? []);
+    liftedWaivers.forEach((ruleId) => waived.delete(ruleId));
     Object.entries(pendingWaivers).forEach(([ruleId, waive]) =>
       waive ? waived.add(Number(ruleId)) : waived.delete(Number(ruleId))
     );
     return waived;
-  }, [activeDegreeplanDetail, pendingWaivers]);
+  }, [savedWaivers, liftedWaivers, pendingWaivers]);
 
   const programs = activeDegreeplanDetail ? planPrograms(activeDegreeplanDetail) : [];
   const fulfillmentsLoaded = !isLoadingFulfillments && !!fulfillments;
@@ -457,7 +494,7 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
 
   return (
     <FulfillmentsLoadedContext.Provider value={fulfillmentsLoaded}>
-    <SetWaivedContext.Provider value={setWaived}>
+    <WaiversContext.Provider value={waivers}>
     <PanelContainer>
       <PanelHeader>
         <ReqPanelTitle>Requirements</ReqPanelTitle>
@@ -518,7 +555,7 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
           }
         </>}
     </PanelContainer>
-    </SetWaivedContext.Provider>
+    </WaiversContext.Provider>
     </FulfillmentsLoadedContext.Provider>
   );
 }

@@ -59,8 +59,12 @@ export const ProgramKindContext = createContext<ProgramKind | null>(null);
  */
 export const FulfillmentsLoadedContext = createContext(false);
 
-/** Waives a requirement of the active plan, or lifts its waiver (see ReqPanel). */
-export const SetWaivedContext = createContext<(ruleId: number, waived: boolean) => void>(() => {});
+/** Changes to the active plan's waivers, saved in the order they are made (see ReqPanel). */
+export const WaiversContext = createContext<{
+  setWaived: (ruleId: number, waived: boolean) => void;
+  /** Lifts a requirement's waiver by saving a course onto it, which `save` does. */
+  liftWaiver: (ruleId: number, save: () => Promise<unknown>) => void;
+}>({ setWaived: () => {}, liftWaiver: () => {} });
 
 /** Which of a rule's changes this render should animate. */
 const useRuleAnimation = (satisfied: boolean) => {
@@ -83,12 +87,12 @@ const isTransferCredit = (course: DnDCourse) =>
 interface OverrideModalProps {
   fullCode: string;
   ruleTitle: string;
+  waived: boolean;
   onConfirm: () => void;
   onCancel: () => void;
-  isLoading: boolean;
 }
 
-const OverrideModal = ({ fullCode, ruleTitle, onConfirm, onCancel, isLoading }: OverrideModalProps) => (
+const OverrideModal = ({ fullCode, ruleTitle, waived, onConfirm, onCancel }: OverrideModalProps) => (
   <OverrideModalOverlay onClick={onCancel}>
     <OverrideModalCard onClick={(e) => e.stopPropagation()}>
       <OverrideModalTitle>Override Requirement?</OverrideModalTitle>
@@ -97,12 +101,16 @@ const OverrideModal = ({ fullCode, ruleTitle, onConfirm, onCancel, isLoading }: 
         normally satisfy <OverrideCourseName>{ruleTitle || "this requirement"}</OverrideCourseName>.
         <br /><br />
         Do you want to manually override this and count it anyway?
+        {waived && (
+          <>
+            <br /><br />
+            This requirement is currently waived. Counting a course for it removes the waiver.
+          </>
+        )}
       </OverrideModalBody>
       <OverrideModalActions>
-        <OverrideModalButton onClick={onCancel} disabled={isLoading}>Cancel</OverrideModalButton>
-        <OverrideModalButton $primary onClick={onConfirm} disabled={isLoading}>
-          {isLoading ? "Overriding..." : "Override"}
-        </OverrideModalButton>
+        <OverrideModalButton onClick={onCancel}>Cancel</OverrideModalButton>
+        <OverrideModalButton $primary onClick={onConfirm}>Override</OverrideModalButton>
       </OverrideModalActions>
     </OverrideModalCard>
   </OverrideModalOverlay>
@@ -196,7 +204,6 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
 
   // Override modal state (for adding overrides via drag)
   const [overrideModal, setOverrideModal] = useState<{ fullCode: string; rules?: number[] } | null>(null);
-  const [overrideLoading, setOverrideLoading] = useState(false);
 
   // Override popover state (for viewing/removing overrides)
   const [overridePopoverOpen, setOverridePopoverOpen] = useState(false);
@@ -230,33 +237,63 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
 
   // A waiver (e.g. from AP exams) completes a requirement without any course or course units.
   const waived = type === "LEAF" && ruleTree.waived;
-  const setWaived = useContext(SetWaivedContext);
+  const { setWaived, liftWaiver } = useContext(WaiversContext);
   const toggleWaiver = useCallback(() => setWaived(rule.id, !waived), [setWaived, rule.id, waived]);
 
-  const handleOverrideConfirm = useCallback(async () => {
-    if (!overrideModal) return;
-    setOverrideLoading(true);
-    try {
-      // Create the fulfillment first so it exists before adding the override
-      await createOrUpdate(
-        {
-          rules: overrideModal.rules !== undefined
-            ? overrideModal.rules
-            : [],
+  const fulfillmentsKey = `/api/degree/degreeplans/${activeDegreePlanId}/fulfillments`;
+
+  const showOnRule = useCallback(
+    (fullCode: string, changes: (existing?: Fulfillment) => Partial<Fulfillment>) =>
+      mutate<Fulfillment[]>(
+        fulfillmentsKey,
+        (fulfillments = []) => {
+          const existing = fulfillments.find((f) => f.full_code === fullCode);
+          const shown = {
+            semester: null,
+            rules: [],
+            unselected_rules: [],
+            overrides: [],
+            ...existing,
+            ...changes(existing),
+            full_code: fullCode,
+          } as Fulfillment;
+          return [...fulfillments.filter((f) => f.full_code !== fullCode), shown];
         },
-        overrideModal.fullCode
-      );
-      // Then add the override (which also adds the rule to the fulfillment)
-      await postFetcher(
-        `/api/degree/degreeplans/${activeDegreePlanId}/fulfillments/${overrideModal.fullCode}/override`,
-        { rule_id: rule.id }
-      );
-      await mutate(`/api/degree/degreeplans/${activeDegreePlanId}/fulfillments`);
-    } finally {
-      setOverrideLoading(false);
-      setOverrideModal(null);
-    }
-  }, [overrideModal, rule.id, activeDegreePlanId, createOrUpdate, mutate]);
+        { revalidate: false }
+      ),
+    [mutate, fulfillmentsKey]
+  );
+
+  // Counting a course for a waived rule lifts the waiver, so it is saved behind any waiver
+  // changes still on their way: the server has to see them in the order they were made.
+  const countCourse = useCallback(
+    (fullCode: string, data: Partial<Fulfillment>) => {
+      if (!waived) {
+        createOrUpdate(data, fullCode);
+        return;
+      }
+      showOnRule(fullCode, () => data);
+      liftWaiver(rule.id, () => postFetcher(fulfillmentsKey, { ...data, full_code: fullCode }));
+    },
+    [waived, createOrUpdate, showOnRule, liftWaiver, rule.id, fulfillmentsKey]
+  );
+
+  const handleOverrideConfirm = useCallback(() => {
+    if (!overrideModal) return;
+    const { fullCode, rules = [] } = overrideModal;
+    setOverrideModal(null);
+    showOnRule(fullCode, (existing) => ({
+      rules: Array.from(new Set([...rules, rule.id])),
+      overrides: Array.from(new Set([...(existing?.overrides ?? []), rule.id])),
+    }));
+    // Saved in turn with waiver changes whether or not the rule is waived now, so that waiving
+    // it straight afterwards can't reach the server first.
+    liftWaiver(rule.id, async () => {
+      // The fulfillment has to exist before it can be overridden onto the rule.
+      await postFetcher(fulfillmentsKey, { full_code: fullCode, rules });
+      await postFetcher(`${fulfillmentsKey}/${fullCode}/override`, { rule_id: rule.id });
+    });
+  }, [overrideModal, rule.id, fulfillmentsKey, showOnRule, liftWaiver]);
 
   /** Returns true if the course natively satisfies this rule (no override needed) */
   const courseMatchesRule = useCallback((course: DnDCourse) => {
@@ -285,19 +322,16 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
             course.unselected_rules?.indexOf(rule.id),
             1
           );
-          createOrUpdate(
-            {
-              rules:
-                course.rules !== undefined
-                  ? [...course.rules, rule.id]
-                  : [rule.id],
-              unselected_rules:
-                course.unselected_rules !== undefined
-                  ? course.unselected_rules
-                  : [],
-            },
-            course.full_code
-          );
+          countCourse(course.full_code, {
+            rules:
+              course.rules !== undefined
+                ? [...course.rules, rule.id]
+                : [rule.id],
+            unselected_rules:
+              course.unselected_rules !== undefined
+                ? course.unselected_rules
+                : [],
+          });
 
           let new_courses = courses?.filter((fulfillment) => {
             if (fulfillment.full_code !== course.full_code) {
@@ -310,15 +344,12 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
           // Course doesn't match rule — show override confirmation modal
           setOverrideModal({ fullCode: course.full_code, rules: course.rules });
         } else {
-          createOrUpdate(
-            {
-              rules:
-                course.rules !== undefined
-                  ? [...course.rules, rule.id]
-                  : [rule.id],
-            },
-            course.full_code
-          );
+          countCourse(course.full_code, {
+            rules:
+              course.rules !== undefined
+                ? [...course.rules, rule.id]
+                : [rule.id],
+          });
         }
         return undefined;
       }, // TODO: this doesn't handle fulfillments that already have a rule
@@ -364,7 +395,7 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
         };
       },
     },
-    [createOrUpdate, satisfied, courseMatchesRule, rule.transfer_credit_allowed]
+    [countCourse, satisfied, courseMatchesRule, rule.transfer_credit_allowed]
   );
 
   if (type === "LEAF") {
@@ -378,9 +409,9 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
           <OverrideModal
             fullCode={overrideModal.fullCode}
             ruleTitle={rule.title}
+            waived={waived}
             onConfirm={handleOverrideConfirm}
             onCancel={() => setOverrideModal(null)}
-            isLoading={overrideLoading}
           />
         )}
         <RuleLeafLabel>

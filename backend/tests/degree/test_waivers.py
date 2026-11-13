@@ -129,6 +129,97 @@ class WaiverTest(TestCase):
         self.assertEqual(response.data["waived_rules"], [])
         self.assertFalse(self.foundations_satisfied())
 
+    def test_overriding_a_course_onto_a_waived_requirement_lifts_the_waiver(self):
+        self.add_course("WRIT-0370")
+        self.add_course("MGMT-1010")
+        self.waive(self.intro_econ)
+        self.assertTrue(self.foundations_satisfied())
+
+        def override(rule):
+            return self.client.post(
+                reverse(
+                    "degreeplan-fulfillment-add-override",
+                    kwargs={"degreeplan_pk": self.plan.id, "full_code": "MGMT-1010"},
+                ),
+                {"rule_id": rule.id},
+                format="json",
+            )
+
+        response = override(self.intro_econ)
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertFalse(self.plan.waived_rules.exists())
+        self.assertIn(self.intro_econ, self.rules_of("MGMT-1010"))
+        self.assertFalse(self.foundations_satisfied())
+
+        self.waive(self.intro_econ)
+        override(self.writing)
+        self.assertEqual(list(self.plan.waived_rules.all()), [self.intro_econ])
+
+    def test_counting_a_course_for_a_waived_requirement_lifts_the_waiver(self):
+        self.add_course("WRIT-0370")
+        self.add_course("BEPP-1000")
+        self.waive(self.intro_econ)
+        self.assertEqual(self.rules_of("BEPP-1000"), {self.breadth_elective})
+
+        response = self.client.post(
+            reverse("degreeplan-fulfillment-list", kwargs={"degreeplan_pk": self.plan.id}),
+            {"full_code": "BEPP-1000", "rules": [self.breadth_elective.id, self.intro_econ.id]},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertIn(self.intro_econ, self.rules_of("BEPP-1000"))
+        self.assertFalse(self.plan.waived_rules.exists())
+        self.assertTrue(self.foundations_satisfied())
+
+        self.waive(self.writing)
+        self.client.post(
+            reverse("degreeplan-fulfillment-list", kwargs={"degreeplan_pk": self.plan.id}),
+            {"full_code": "BEPP-1000", "rules": [rule.id for rule in self.rules_of("BEPP-1000")]},
+            format="json",
+        )
+        self.assertEqual(list(self.plan.waived_rules.all()), [self.writing])
+
+    def test_switching_a_course_to_a_waived_requirement_lifts_the_waiver(self):
+        self.add_course("BEPP-1000")
+        self.waive(self.intro_econ)
+
+        response = self.client.post(
+            reverse(
+                "degreeplan-fulfillment-switch-rule",
+                kwargs={"degreeplan_pk": self.plan.id, "full_code": "BEPP-1000"},
+            ),
+            {"rule_id": self.intro_econ.id},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertIn(self.intro_econ, self.rules_of("BEPP-1000"))
+        self.assertFalse(self.plan.waived_rules.exists())
+
+    def test_waiving_a_requirement_removes_overrides_onto_it(self):
+        self.add_course("MGMT-1010")
+        self.add_course("BEPP-1000")
+
+        def override(rule):
+            return self.client.post(
+                reverse(
+                    "degreeplan-fulfillment-add-override",
+                    kwargs={"degreeplan_pk": self.plan.id, "full_code": "MGMT-1010"},
+                ),
+                {"rule_id": rule.id},
+                format="json",
+            )
+
+        override(self.intro_econ)
+        override(self.writing)
+        mgmt = Fulfillment.objects.get(degree_plan=self.plan, full_code="MGMT-1010")
+        self.assertEqual(set(mgmt.overrides.all()), {self.intro_econ, self.writing})
+
+        self.waive(self.intro_econ)
+        self.assertEqual(list(mgmt.overrides.all()), [self.writing])
+        self.assertNotIn(self.intro_econ, self.rules_of("MGMT-1010"))
+        self.assertNotIn(self.intro_econ, mgmt.unselected_rules.all())
+        self.assertEqual(list(self.plan.waived_rules.all()), [self.intro_econ])
+
     def test_a_whole_block_cannot_be_waived(self):
         response = self.waive(self.foundations)
         self.assertEqual(response.status_code, 400)
