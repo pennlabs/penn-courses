@@ -327,18 +327,56 @@ class DualPatternTest(TestCase):
         self.assertNotIn("M&T Program First Year Seminar", titles)
         self.assertEqual(compose(plan).kind, "cross_school_dual")
 
-    def test_lsm_and_viper_use_plain_trees(self):
-        biol = Degree.objects.create(program="AU_BA", degree="BA", major="BIOL", year=2026)
-        wharton = Degree.objects.create(program="WU_BS", degree="BS", major="WH", year=2026)
+    def test_viper_uses_plain_trees(self):
         phys = Degree.objects.create(program="AU_BA", degree="BA", major="PHYS", year=2026)
         meam = Degree.objects.create(program="EU_BSE", degree="BSE", major="MEAM", year=2026)
-        lsm = self.plan_with("lsm", "LSM", biol, wharton)
-        viper = self.plan_with("viper", "VIPER", phys, meam)
-        for plan in (lsm, viper):
-            self.assertEqual(compose(plan).kind, "coordinated")
-            titles = {rule.title for rule in map_rules_and_degrees(plan).rule_to_component}
-            self.assertNotIn("M&T Program First Year Seminar", titles)
-            self.assertNotIn("Huntsman First-Year Seminar", titles)
+        plan = self.plan_with("viper", "VIPER", phys, meam)
+        self.assertEqual(compose(plan).kind, "coordinated")
+        titles = {rule.title for rule in map_rules_and_degrees(plan).rule_to_component}
+        self.assertNotIn("M&T Program First Year Seminar", titles)
+        self.assertNotIn("Huntsman First-Year Seminar", titles)
+        self.assertNotIn("LSM Proseminar", titles)
+
+    def test_lsm_replaces_what_its_proseminar_and_capstone_cover(self):
+        biol = Degree.objects.create(program="AU_BA", degree="BA", major="BIOL", year=2026)
+        wharton = Degree.objects.create(program="WU_BS", degree="BS", major="WH", year=2026)
+        society = Rule.objects.create(
+            title="Sector 1: Society",
+            q=repr(Q(attributes__code__in=["AUSO"])),
+            num=1,
+            block_type="OTHER",
+            block_value="U-GE-SCTR",
+        )
+        humanities = Rule.objects.create(
+            title="Humanities",
+            q=repr(Q(attributes__code__in=["WUHM"])),
+            credits=1,
+            block_type="OTHER",
+            block_value="U-WLAS",
+        )
+        teamwork = leaf("Teamwork", "MGMT-3010", "OTHER", "U-WBUS")
+        biol.rules.add(society)
+        wharton.rules.add(humanities, teamwork)
+        plan = self.plan_with("lsm", "LSM", biol, wharton)
+
+        plan_rules = map_rules_and_degrees(plan)
+        titles = {rule.title for rule in plan_rules.rule_to_component}
+        self.assertTrue({"LSM Proseminar", "LSM Capstone", "Business Breadth"} <= titles)
+        self.assertFalse({society, humanities, teamwork} & set(plan_rules.rule_to_component))
+
+        course("LSMP-1210")
+        selected, _, legal = allocate_rules(
+            "LSMP-1210",
+            plan_rules.rules_per_component,
+            plan_rules.rule_to_component,
+            plan_rules.double_counts,
+            satisfied_rules=set(),
+        )
+        self.assertEqual(
+            {rule.title for rule in selected},
+            {"LSM Proseminar", "Business Breadth", "Sector 7: Natural Science Across Disciplines"},
+        )
+        self.assertTrue(legal)
 
     def test_m_and_t_variant_applies_once_with_a_second_wharton_concentration(self):
         cis = Degree.objects.create(program="EU_BSE", degree="BSE", major="CIS", year=2026)

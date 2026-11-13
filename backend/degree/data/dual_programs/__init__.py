@@ -1,18 +1,18 @@
 """
 Coordinated-program deltas that Path audits do not state on their own.
 
-M&T and Huntsman edit a base degree (extra courses, a suppressed capstone, a different
-liberal-arts shape). LSM and VIPER are pairs of ordinary majors and carry no variant.
+M&T, Huntsman and LSM edit a base degree (extra courses, a suppressed capstone, a different
+liberal-arts shape). VIPER is a pair of ordinary majors and carries no variant.
 """
 
 from django.db import transaction
 from django.db.models import Q
 
-from degree.data.dual_programs import huntsman, mt
+from degree.data.dual_programs import huntsman, lsm, mt
 from degree.models import DualProgram, ProgramVariant, Rule
 
 
-VARIANTS = {**mt.VARIANTS, **huntsman.VARIANTS}
+VARIANTS = {**mt.VARIANTS, **huntsman.VARIANTS, **lsm.VARIANTS}
 
 # Variants are named by code and resolved when loading.
 PROGRAMS = [
@@ -45,11 +45,11 @@ PROGRAMS = [
         "name": "Roy and Diana Vagelos Program in Life Sciences and Management",
         "left_programs": ["AU_BA"],
         "right_programs": ["WU_BS"],
-        "left_allowed_majors": ["BIOL", "BIOC"],
+        "left_allowed_majors": ["BIOL", "BCHE", "BIOP", "CHEM", "NRSC"],
         "right_allowed_majors": [],
-        "left_variant": None,
-        "right_variant": None,
-        "cu_floor": None,
+        "left_variant": "AU_LSM",
+        "right_variant": "WH_LSM",
+        "cu_floor": 43,
         "max_shared_cu": None,
     },
     {
@@ -139,8 +139,8 @@ def _load() -> list[str]:
 
 
 def referenced_attribute_codes() -> set[str]:
-    return mt.ATTRIBUTE_CODES | huntsman.ATTRIBUTE_CODES
+    return mt.ATTRIBUTE_CODES | huntsman.ATTRIBUTE_CODES | lsm.ATTRIBUTE_CODES
 
 
 def referenced_full_codes() -> set[str]:
-    return mt.FULL_CODES | huntsman.FULL_CODES
+    return mt.FULL_CODES | huntsman.FULL_CODES | lsm.FULL_CODES
