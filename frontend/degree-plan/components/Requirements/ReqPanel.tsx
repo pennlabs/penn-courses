@@ -11,6 +11,7 @@ import { Icon } from '../common/bulma_derived_components';
 import React from 'react';
 import useStickyState from '@/hooks/stickyState';
 import ProgramTabs, { programPanelId, programTabId } from './ProgramTabs';
+import { tourTarget } from '@/components/Tour/OnboardingTour';
 import { PlanProgram, planPrograms } from '@/utils/programs';
 
 // Waiver changes answer with the updated plan.
@@ -495,10 +496,11 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
   return (
     <FulfillmentsLoadedContext.Provider value={fulfillmentsLoaded}>
     <WaiversContext.Provider value={waivers}>
-    <PanelContainer>
+    <PanelContainer {...tourTarget("requirements-panel")}>
+
       <PanelHeader>
         <ReqPanelTitle>Requirements</ReqPanelTitle>
-        <PanelTopBarIconList>
+        <PanelTopBarIconList {...tourTarget("edit-programs")}>
           <EditButton editMode={false} setEditMode={onEditPrograms} />
         </PanelTopBarIconList>
       </PanelHeader>

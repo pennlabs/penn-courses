@@ -1084,3 +1084,26 @@ class PDPBetaUser(models.Model):
         help_text="The user who has access to the PDP beta",
     )
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class PDPOnboardingStatus(models.Model):
+    """
+    Whether a user has finished the PDP onboarding tour. Kept in its own table instead of on
+    the user profile, so adding it doesn't rewrite a row for every user. A user with no row
+    hasn't been onboarded.
+    """
+
+    person = models.OneToOneField(
+        get_user_model(),
+        on_delete=models.CASCADE,
+        related_name="pdp_onboarding_status",
+        help_text="The user this onboarding status belongs to.",
+    )
+    has_been_onboarded = models.BooleanField(
+        default=False,
+        help_text="Defaults to False, set to True once the user completes the PDP onboarding tour.",
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.person}: {'onboarded' if self.has_been_onboarded else 'not onboarded'}"

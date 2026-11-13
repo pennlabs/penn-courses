@@ -25,6 +25,7 @@ from degree.models import (
     Major,
     Minor,
     PDPBetaUser,
+    PDPOnboardingStatus,
     ProgramVariant,
 )
 from degree.serializers import (
@@ -826,6 +827,30 @@ class DockedCourseViewset(viewsets.ModelViewSet):
             return self.partial_update(request, *args, **kwargs)
         except Http404:
             return super().create(request, *args, **kwargs)
+
+
+class OnboardingStatusView(APIView):
+    """
+    Get or set whether the user has finished the PDP onboarding tour.
+    """
+
+    # After beta: remove InPDPBeta
+    permission_classes = [IsAuthenticated & InPDPBeta]
+
+    def get(self, request):
+        onboarded = PDPOnboardingStatus.objects.filter(
+            person=request.user, has_been_onboarded=True
+        ).exists()
+        return Response({"has_been_onboarded": onboarded})
+
+    def put(self, request):
+        onboarded = request.data.get("has_been_onboarded")
+        if not isinstance(onboarded, bool):
+            raise ValidationError({"has_been_onboarded": "Must be true or false."})
+        PDPOnboardingStatus.objects.update_or_create(
+            person=request.user, defaults={"has_been_onboarded": onboarded}
+        )
+        return Response({"has_been_onboarded": onboarded})
 
 
 class OnboardFromTranscript(APIView):
