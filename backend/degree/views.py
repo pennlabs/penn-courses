@@ -42,6 +42,7 @@ from degree.serializers import (
     Rule,
     RuleSerializer,
 )
+from degree.utils.composition import compose
 from degree.utils.degree_logic import (
     DEFAULT_COURSE_CREDITS,
     FULFILLMENT_LEVELS,
@@ -51,7 +52,6 @@ from degree.utils.degree_logic import (
     allocate_rules,
     level_for_course,
     map_rules_and_degrees,
-    plan_components,
     prewarm_belongs_cache,
     prewarm_canonical_cache,
     prewarm_credits_cache,
@@ -380,14 +380,24 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             raise ValidationError({"rule_ids": "This field must be a list of rule ids."})
 
         degree_plan = self.get_object()
-        top_level_rules = [
-            rule for component in plan_components(degree_plan) for rule in component.rules.all()
+        # The plan's requirements as it applies them: a program like M&T replaces some of a
+        # degree's requirements with its own, which are different rules.
+        components = compose(degree_plan).components
+        applied = {rule.id for component in components for rule in component.rules}
+        roots = [
+            rule for component in components for rule in (*component.roots, *component.extra_rules)
         ]
-        plan_rules = {rule.id: rule for rule in rule_subtrees(top_level_rules)}
-        unknown = set(ids) - set(plan_rules)
+        plan_rules = {rule.id: rule for rule in rule_subtrees(roots)}
+        if request.method == "POST":
+            unknown = {
+                i for i in ids if i not in plan_rules or (plan_rules[i].q and i not in applied)
+            }
+        else:
+            waived = set(degree_plan.waived_rules.values_list("id", flat=True))
+            unknown = set(ids) - set(plan_rules) - waived
         if unknown:
             raise ValidationError({"rule_ids": f"Not requirements of this plan: {sorted(unknown)}"})
-        groups = {i for i in ids if not plan_rules[i].q}
+        groups = {i for i in ids if i in plan_rules and not plan_rules[i].q}
         if request.method == "POST" and groups:
             raise ValidationError(
                 {"rule_ids": f"Only individual requirements can be waived: {sorted(groups)}"}
