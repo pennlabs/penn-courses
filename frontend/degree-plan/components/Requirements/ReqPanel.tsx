@@ -1,16 +1,20 @@
 
-import { useMemo, useState, useContext, useRef, useLayoutEffect } from 'react';
-import RuleComponent, { FulfillmentsLoadedContext, ProgramKindContext, SkeletonRule } from './Rule';
+import { useCallback, useEffect, useMemo, useState, useContext, useRef, useLayoutEffect } from 'react';
+import RuleComponent, { FulfillmentsLoadedContext, ProgramKindContext, SkeletonRule, WaiversContext } from './Rule';
 import { Degree as DegreeType, DegreePlan, Fulfillment, Rule, Degree as DegreeD } from '@/types';
 import styled from '@emotion/styled';
 import { DarkBlueBackgroundSkeleton, PanelBody, PanelContainer, PanelHeader, PanelTopBarIconList } from "../FourYearPlan/PanelCommon";
 import { EditButton } from '../FourYearPlan/EditButton';
-import useSWR from 'swr';
+import useSWR, { useSWRConfig } from 'swr';
+import { baseFetcher, postFetcher } from '@/hooks/swrcrud';
 import { Icon } from '../common/bulma_derived_components';
 import React from 'react';
 import useStickyState from '@/hooks/stickyState';
 import ProgramTabs, { programPanelId, programTabId } from './ProgramTabs';
 import { PlanProgram, planPrograms } from '@/utils/programs';
+
+// Waiver changes answer with the updated plan.
+const deleteFetcher = baseFetcher({ method: "DELETE" });
 
 const EmptyPanelContainer = styled.div`
   display: flex;
@@ -179,6 +183,7 @@ interface RuleTreeBaseNode {
 }
 interface RuleTreeLeaf extends RuleTreeBaseNode {
   type: "LEAF";
+  waived: boolean; // the student is waived from this requirement, e.g. by an AP exam
   cus: number;
   num: number;
   fulfillments: Fulfillment[]; // The fulfillments for the rule
@@ -201,18 +206,21 @@ interface RuleProps {
   rulesToUnselectedFulfillments: { [ruleId: string]: Fulfillment[] };
   activeDegreePlanId: number;
   degree: DegreeD;
+  waivedRules: Set<number>; // the plan's waived requirements, which are always leaves
 }
 
-const computeRuleTree = ({activeDegreePlanId, rule, rulesToFulfillments, rulesToUnselectedFulfillments, degree }: RuleProps): RuleTree => {
+const computeRuleTree = ({activeDegreePlanId, rule, rulesToFulfillments, rulesToUnselectedFulfillments, degree, waivedRules }: RuleProps): RuleTree => {
   if (rule.q) { // Rule leaf
+    // A waived requirement is complete without any course.
+    const waived = waivedRules.has(rule.id);
     const fulfillmentsForRule: Fulfillment[] = rulesToFulfillments[rule.id] || [];
     const unselectedFulfillmentsForRule: Fulfillment[] = rulesToUnselectedFulfillments[rule.id] || [];
     const cus = fulfillmentsForRule.reduce((acc, f) => acc + (f.course?.credits || 1), 0); // default to 1 cu 
     const num = fulfillmentsForRule.length;
-    const progress = Math.min(1, rule.credits ? cus / rule.credits : 1, rule.num ? num / rule.num : 1);
-    return { activeDegreePlanId, type: "LEAF", progress, cus, num, rule, fulfillments: fulfillmentsForRule, unselectedFulfillments: unselectedFulfillmentsForRule }
+    const progress = waived ? 1 : Math.min(1, rule.credits ? cus / rule.credits : 1, rule.num ? num / rule.num : 1);
+    return { activeDegreePlanId, type: "LEAF", progress, waived, cus, num, rule, fulfillments: fulfillmentsForRule, unselectedFulfillments: unselectedFulfillmentsForRule }
   }
-  const children = rule.rules.map((child) => computeRuleTree({ activeDegreePlanId, rule: child, rulesToFulfillments, rulesToUnselectedFulfillments, degree }))
+  const children = rule.rules.map((child) => computeRuleTree({ activeDegreePlanId, rule: child, rulesToFulfillments, rulesToUnselectedFulfillments, degree, waivedRules }))
   // A "pick N" rule is only as far along as its N furthest children: extra ones don't count.
   const required = Math.min(children.length, rule.num || Infinity);
   const counted = children.map((child) => child.progress).sort((a, b) => b - a).slice(0, required);
@@ -227,6 +235,7 @@ const Degree = ({
   rulesToFulfillments, 
   rulesToUnselectedFulfillments, 
   activeDegreeplan, 
+  waivedRules,
   isLoading,
   progress,
   showHeader = true, // false when program tabs take the header's place
@@ -315,6 +324,7 @@ const Degree = ({
                   rulesToFulfillments,
                   rulesToUnselectedFulfillments,
                   degree: program,
+                  waivedRules,
                 })}
               />
             ))}
@@ -367,6 +377,82 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
     return rulesToCourses;
   }, [fulfillments, isLoadingFulfillments])
 
+  // Waiving a requirement (e.g. by an AP exam) shows at once. A student may change their mind,
+  // or waive another requirement, before the server answers, so each requirement's latest choice
+  // is kept here until the plan reloads with it, and no answer can overwrite a newer choice.
+  // Requests go out one at a time in the order clicked.
+  const { mutate } = useSWRConfig();
+  const [pendingWaivers, setPendingWaivers] = useState<Record<number, boolean>>({});
+  const waiverQueue = useRef<Promise<unknown>>(Promise.resolve());
+  const latestWaiverChange = useRef<Record<number, number>>({});
+  const queueWaiverChange = useCallback((ruleId: number, waived: boolean, save: () => Promise<unknown>) => {
+    if (!activeDegreeplan) return;
+    const planKey = `/api/degree/degreeplans/${activeDegreeplan.id}`;
+    const change = (latestWaiverChange.current[ruleId] ?? 0) + 1;
+    latestWaiverChange.current[ruleId] = change;
+    setPendingWaivers((pending) => ({ ...pending, [ruleId]: waived }));
+
+    const sent = waiverQueue.current.then(save, save);
+    waiverQueue.current = sent.catch(() => undefined);
+    // Saved or not, the plan reloads as the server has it; the server reallocates its courses.
+    sent.catch(() => undefined).then(async () => {
+      if (latestWaiverChange.current[ruleId] !== change) return;
+      await Promise.all([mutate(planKey), mutate(`${planKey}/fulfillments`)]);
+      if (latestWaiverChange.current[ruleId] !== change) return;
+      setPendingWaivers(({ [ruleId]: _, ...pending }) => pending);
+    });
+  }, [activeDegreeplan, mutate]);
+
+  const waivers = useMemo(() => ({
+    setWaived: (ruleId: number, waive: boolean) => {
+      if (!activeDegreeplan) return;
+      const planKey = `/api/degree/degreeplans/${activeDegreeplan.id}`;
+      if (waive) {
+        // The server takes a waived requirement's courses and overrides off it, which can take
+        // seconds on a full plan, so they come off here first.
+        mutate<Fulfillment[]>(
+          `${planKey}/fulfillments`,
+          (fulfillments) => fulfillments?.map((fulfillment) => ({
+            ...fulfillment,
+            rules: fulfillment.rules.filter((id) => id !== ruleId),
+            overrides: fulfillment.overrides?.filter((id) => id !== ruleId),
+          })),
+          { revalidate: false }
+        );
+      }
+      queueWaiverChange(ruleId, waive, () =>
+        (waive ? postFetcher : deleteFetcher)(`${planKey}/waivers`, { rule_ids: [ruleId] })
+      );
+    },
+    liftWaiver: (ruleId: number, save: () => Promise<unknown>) =>
+      queueWaiverChange(ruleId, false, save),
+  }), [activeDegreeplan, mutate, queueWaiverChange]);
+
+  // Choices pending for one plan don't apply to another that shares its requirements.
+  useEffect(() => setPendingWaivers({}), [activeDegreeplan?.id]);
+
+  // The server lifts a waiver when the student puts a course on its requirement, whichever way
+  // they do it (dropping, switching, overriding). The plan is reloaded to pick that up, and
+  // until it has, a requirement holding a course doesn't show as waived.
+  const savedWaivers = activeDegreeplanDetail?.waived_rules;
+  const liftedWaivers = useMemo(
+    () => (savedWaivers ?? []).filter((ruleId) => rulesToFulfillments[ruleId]?.length),
+    [savedWaivers, rulesToFulfillments]
+  );
+  const hasLiftedWaivers = liftedWaivers.length > 0;
+  useEffect(() => {
+    if (hasLiftedWaivers && activeDegreeplan) mutate(`/api/degree/degreeplans/${activeDegreeplan.id}`);
+  }, [hasLiftedWaivers, activeDegreeplan?.id, mutate]);
+
+  const waivedRules = useMemo(() => {
+    const waived = new Set(savedWaivers ?? []);
+    liftedWaivers.forEach((ruleId) => waived.delete(ruleId));
+    Object.entries(pendingWaivers).forEach(([ruleId, waive]) =>
+      waive ? waived.add(Number(ruleId)) : waived.delete(Number(ruleId))
+    );
+    return waived;
+  }, [savedWaivers, liftedWaivers, pendingWaivers]);
+
   const programs = activeDegreeplanDetail ? planPrograms(activeDegreeplanDetail) : [];
   const fulfillmentsLoaded = !isLoadingFulfillments && !!fulfillments;
   const showTabs = programs.length > 1;
@@ -380,6 +466,7 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
       rulesToFulfillments,
       rulesToUnselectedFulfillments,
       degree: program as unknown as DegreeD,
+      waivedRules,
     }).progress, 0);
     return total / program.rules.length;
   };
@@ -407,6 +494,7 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
 
   return (
     <FulfillmentsLoadedContext.Provider value={fulfillmentsLoaded}>
+    <WaiversContext.Provider value={waivers}>
     <PanelContainer>
       <PanelHeader>
         <ReqPanelTitle>Requirements</ReqPanelTitle>
@@ -453,6 +541,7 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
                         rulesToFulfillments={rulesToFulfillments}
                         rulesToUnselectedFulfillments={rulesToUnselectedFulfillments}
                         activeDegreeplan={activeDegreeplan}
+                        waivedRules={waivedRules}
                         isLoading={isLoading}
                         progress={programProgress(program)}
                         showHeader={!showTabs}
@@ -466,6 +555,7 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
           }
         </>}
     </PanelContainer>
+    </WaiversContext.Provider>
     </FulfillmentsLoadedContext.Provider>
   );
 }
