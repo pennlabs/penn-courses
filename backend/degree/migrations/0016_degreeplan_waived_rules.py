@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("degree", "0014_fulfillment_from_transcript"),
+        ("degree", "0015_rule_match_count"),
     ]
 
     operations = [
