@@ -113,7 +113,9 @@ class RuleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Rule
-        fields = "__all__"
+        # deduplicate_rules hashes this output, and a count refreshed at a different time must
+        # not stop two identical rules from matching.
+        exclude = ["match_count"]
 
 
 # Allow recursive serialization of rules
@@ -413,6 +415,15 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
         )
     )
 
+    waived_rules = serializers.PrimaryKeyRelatedField(
+        many=True,
+        read_only=True,
+        help_text=(
+            "Ids of the requirements this plan is waived from. Change them through the "
+            "`waivers` route."
+        ),
+    )
+
     person = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     def get_components(self, obj):
@@ -447,6 +458,7 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
             "dual_program",
             "right_variant",
             "components",
+            "waived_rules",
             "person",
             "created_at",
             "updated_at",

@@ -8,7 +8,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("degree", "0014_fulfillment_from_transcript"),
+        ("degree", "0016_degreeplan_waived_rules"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 

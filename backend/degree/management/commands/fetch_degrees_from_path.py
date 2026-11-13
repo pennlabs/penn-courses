@@ -6,6 +6,7 @@ from django.core.management.base import BaseCommand
 from django.db import transaction
 
 from degree.management.commands.deduplicate_rules import deduplicate_rules
+from degree.management.commands.refresh_rule_match_counts import refresh_rule_match_counts
 from degree.models import Degree, Major, Minor, program_code_to_name
 from degree.utils.parse_path_audit import find_block, parse_audit, save_component, save_parsed_audit
 from degree.utils.path_client import PathClient, PathError, split_program_code, split_program_title
@@ -150,6 +151,10 @@ class Command(BaseCommand):
         if options["deduplicate_rules"] and not self.dry_run:
             self.announce("Deduplicating rules...")
             deduplicate_rules(verbose=self.verbosity)
+
+        if not self.dry_run:
+            self.announce("Refreshing rule match counts...")
+            refresh_rule_match_counts(verbose=self.verbosity)
 
     def announce(self, message, *, level=1):
         if self.verbosity >= level:

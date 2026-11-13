@@ -52,11 +52,13 @@ from degree.utils.degree_logic import (
     allocate_rules,
     level_for_course,
     map_rules_and_degrees,
+    plan_components,
     prewarm_belongs_cache,
     prewarm_canonical_cache,
     prewarm_credits_cache,
     rebalance_allocations,
     reconcile_rules,
+    rule_subtrees,
     selection_is_legal,
     sharing_from_fulfillments,
     within_policy,
@@ -93,6 +95,14 @@ class DegreeViewset(viewsets.ReadOnlyModelViewSet):
         return DegreeDetailSerializer
 
 
+def lift_waivers(degree_plan, rules):
+    """A course the student puts on a waived requirement fulfills it, so its waiver is lifted."""
+    lifted = list(degree_plan.waived_rules.filter(id__in=[rule.id for rule in rules]))
+    if lifted:
+        degree_plan.waived_rules.remove(*lifted)
+        degree_plan.refresh_satisfaction()
+
+
 def update_fulfillments(degree_plan):
     """
     Reallocates every fulfillment of a plan, which has to happen whenever the plan gains or
@@ -107,7 +117,9 @@ def update_fulfillments(degree_plan):
     # Count and CU are tracked separately: a credit rule is satisfied by the sum of CUs.
     counts = defaultdict(int)
     cus = defaultdict(lambda: Decimal(0))
-    satisfied_rules = set()
+    # A waived requirement needs no courses, so none are allocated to it.
+    waived = set(degree_plan.waived_rules.all())
+    satisfied_rules = set(waived)
 
     def is_satisfied(rule):
         num_ok = rule.num is None or counts[rule.id] >= rule.num
@@ -165,6 +177,7 @@ def update_fulfillments(degree_plan):
         double_counts,
         credits_cache,
         allows=lambda before, after: within_policy(before, after, rule_to_degree, policy),
+        exempt=waived,
     )
 
     with transaction.atomic():
@@ -355,6 +368,42 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         update_fulfillments(degree_plan)
         return Response(self.get_serializer(degree_plan).data)
 
+    @action(detail=True, methods=["post", "delete"])
+    def waivers(self, request, pk=None):
+        """
+        Waive requirements of a degree plan, or lift waivers, by `rule_ids`. Only individual
+        requirements (leaf rules) can be waived, not whole blocks or groups. A waived rule is
+        satisfied without courses and adds no course units; the plan's courses are reallocated
+        to the requirements that remain, and overrides onto a waived rule are removed.
+        """
+        ids = request.data.get("rule_ids")
+        if not isinstance(ids, list) or not all(isinstance(i, int) for i in ids):
+            raise ValidationError({"rule_ids": "This field must be a list of rule ids."})
+
+        degree_plan = self.get_object()
+        top_level_rules = [
+            rule for component in plan_components(degree_plan) for rule in component.rules.all()
+        ]
+        plan_rules = {rule.id: rule for rule in rule_subtrees(top_level_rules)}
+        unknown = set(ids) - set(plan_rules)
+        if unknown:
+            raise ValidationError({"rule_ids": f"Not requirements of this plan: {sorted(unknown)}"})
+        groups = {i for i in ids if not plan_rules[i].q}
+        if request.method == "POST" and groups:
+            raise ValidationError(
+                {"rule_ids": f"Only individual requirements can be waived: {sorted(groups)}"}
+            )
+
+        with transaction.atomic():
+            if request.method == "DELETE":
+                degree_plan.waived_rules.remove(*ids)
+            else:
+                degree_plan.waived_rules.add(*ids)
+                for fulfillment in degree_plan.fulfillments.filter(overrides__in=ids).distinct():
+                    fulfillment.overrides.remove(*ids)
+            update_fulfillments(degree_plan)
+        return Response(self.get_serializer(degree_plan).data, status=status.HTTP_200_OK)
+
     def _check_side(self, programs, majors, degree, field):
         if programs and degree.program not in programs:
             raise ValidationError({field: f"{degree.program} is not a side of this program."})
@@ -457,6 +506,7 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
         # one to what the course already counted for. Rules that may not share are resolved
         # here, in favour of the ones just added, so what gets stored is always legal.
         request_rules = list_field(request.data, "rules")
+        added = set()
         if request_rules is not None:
             degree_plan = get_object_or_404(
                 DegreePlan, id=self.get_degree_plan_id(), person=request.user
@@ -479,6 +529,7 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
                 rule_to_degree,
                 double_counts,
             )
+            added = set(kept) - stored
 
             request_unselected = list_field(request.data, "unselected_rules")
             if request_unselected is None:
@@ -498,10 +549,14 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
                 kept, rule_to_degree, double_counts, plan_rules.composition.policy
             )
 
-        try:
-            return self.partial_update(request, *args, **kwargs)
-        except Http404:
-            return super().create(request, *args, **kwargs)
+        with transaction.atomic():
+            try:
+                response = self.partial_update(request, *args, **kwargs)
+            except Http404:
+                response = super().create(request, *args, **kwargs)
+            if added:
+                lift_waivers(degree_plan, added)
+        return response
 
     def perform_create(self, serializer):
         serializer.save().degree_plan.refresh_satisfaction()
@@ -593,6 +648,7 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
                 selected_rules, rule_to_degree, double_counts, policy
             )
             fulfillment.save()
+            lift_waivers(degree_plan, [target_rule])
 
             other_fulfillments = (
                 Fulfillment.objects.filter(
@@ -707,9 +763,12 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
         if rule not in plan_rules.rule_to_component:
             raise ValidationError({"rule_id": "Rule does not belong to this degree plan."})
 
-        fulfillment.overrides.add(rule)
-        if rule not in fulfillment.rules.all():
-            fulfillment.rules.add(rule)
+        degree_plan = fulfillment.degree_plan
+        with transaction.atomic():
+            fulfillment.overrides.add(rule)
+            if rule not in fulfillment.rules.all():
+                fulfillment.rules.add(rule)
+            lift_waivers(degree_plan, [rule])
 
         return Response(self.get_serializer(fulfillment).data, status=status.HTTP_200_OK)
 
@@ -814,7 +873,9 @@ class OnboardFromTranscript(APIView):
         rule_to_degree = plan_rules.rule_to_component
         double_counts = plan_rules.double_counts
         policy = plan_rules.composition.policy
-        satisfied_rules = set()
+        # A waived requirement needs no courses, so none are allocated to it.
+        waived = set(degree_plan.waived_rules.all())
+        satisfied_rules = set(waived)
 
         # Every course is known up front, so check them against the rules in bulk
         belongs_cache = prewarm_belongs_cache(
@@ -865,6 +926,7 @@ class OnboardFromTranscript(APIView):
             double_counts,
             credits_cache,
             allows=lambda before, after: within_policy(before, after, rule_to_degree, policy),
+            exempt=waived,
         )
 
         with transaction.atomic():
