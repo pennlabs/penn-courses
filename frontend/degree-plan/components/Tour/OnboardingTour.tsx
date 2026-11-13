@@ -223,6 +223,10 @@ const Card = styled.div`
   position: fixed;
   z-index: ${Z_INDEX + 1};
   width: min(360px, calc(100vw - ${2 * VIEWPORT_MARGIN}px));
+  /* Scrolls on short screens so the buttons stay reachable. dvh excludes mobile browser chrome. */
+  max-height: calc(100vh - ${2 * VIEWPORT_MARGIN}px);
+  max-height: calc(100dvh - ${2 * VIEWPORT_MARGIN}px);
+  overflow-y: auto;
   box-sizing: border-box;
   padding: 1.25rem 1.25rem 1rem;
   border-radius: 12px;
@@ -312,15 +316,16 @@ interface OnboardingTourProps {
 
 const OnboardingTour = ({ isPhone, onFinish }: OnboardingTourProps) => {
   // Chosen once the page has rendered with the tour open (it may have just reopened a column),
-  // then fixed, so the step count doesn't shift underneath the reader.
+  // then fixed so the step count doesn't shift underneath the reader. Crossing the phone
+  // breakpoint swaps the whole layout, so that starts the tour over with the other steps.
   const [steps, setSteps] = useState<TourStep[]>([]);
+  const [index, setIndex] = useState(0);
   useLayoutEffect(() => {
     setSteps(
       (isPhone ? PHONE_STEPS : DESKTOP_STEPS).filter((step) => !step.target || findTarget(step))
     );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  const [index, setIndex] = useState(0);
+    setIndex(0);
+  }, [isPhone]);
   const step: TourStep | undefined = steps[index];
   const isFirst = index === 0;
   const isLast = index === steps.length - 1;
@@ -376,8 +381,36 @@ const OnboardingTour = ({ isPhone, onFinish }: OnboardingTourProps) => {
     primaryButtonRef.current?.focus();
   }, [index, steps]);
 
+  // Read during the first render, before the tour moves focus, and given back when it closes.
+  const [returnFocusTo] = useState(() => document.activeElement);
+  useEffect(
+    () => () => {
+      if (returnFocusTo instanceof HTMLElement && returnFocusTo.isConnected) returnFocusTo.focus();
+    },
+    [returnFocusTo]
+  );
+
   useEffect(() => {
+    // Keeps Tab and Shift+Tab inside the card, as the page behind it can't be used.
+    const trapTab = (e: KeyboardEvent) => {
+      const focusable = Array.from(
+        cardRef.current?.querySelectorAll<HTMLElement>("button:not([disabled])") ?? []
+      );
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+      const inside = !!active && cardRef.current!.contains(active);
+      if (e.shiftKey && (active === first || !inside)) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (active === last || !inside)) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
     const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Tab") return trapTab(e);
       if (e.key === "Escape") onFinish();
       else if (e.key === "ArrowRight") next();
       else if (e.key === "ArrowLeft") back();
