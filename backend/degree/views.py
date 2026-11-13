@@ -407,11 +407,16 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         with transaction.atomic():
             if request.method == "DELETE":
                 degree_plan.waived_rules.remove(*ids)
+                update_fulfillments(degree_plan)
             else:
                 degree_plan.waived_rules.add(*ids)
                 for fulfillment in degree_plan.fulfillments.filter(overrides__in=ids).distinct():
                     fulfillment.overrides.remove(*ids)
-            update_fulfillments(degree_plan)
+                # Reallocating can move any course, so only do it when courses must leave
+                if degree_plan.fulfillments.filter(rules__in=ids).exists():
+                    update_fulfillments(degree_plan)
+                else:
+                    degree_plan.refresh_satisfaction()
         return Response(self.get_serializer(degree_plan).data, status=status.HTTP_200_OK)
 
     def _check_side(self, programs, majors, degree, field):

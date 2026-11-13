@@ -69,6 +69,47 @@ def check_dept(q, dept):
     return any([match for match in matches if dept in match[1] and match[0] != "full_code"])
 
 
+_LOOKUPS = {
+    "exact": lambda value, arg: value == arg,
+    "in": lambda value, arg: value in arg,
+    "startswith": lambda value, arg: value.startswith(arg),
+    "gt": lambda value, arg: value > arg,
+    "gte": lambda value, arg: value >= arg,
+    "lt": lambda value, arg: value < arg,
+    "lte": lambda value, arg: value <= arg,
+}
+
+
+def matches_without_record(q, full_code):
+    """
+    Whether a course with no Course record, such as an AP credit code that is never scheduled,
+    satisfies `q`. Its code is all that is known of it, so it has no attributes, semesters or
+    anything else a q can ask about.
+    """
+    department, _, code = full_code.partition("-")
+    fields = {"full_code": full_code, "department__code": department, "code": code}
+
+    def leaf(lookup, arg):
+        for field, value in fields.items():
+            if lookup == field:
+                return value == arg
+            operator = lookup.removeprefix(f"{field}__")
+            if operator != lookup and operator in _LOOKUPS:
+                return _LOOKUPS[operator](value, arg)
+        return False
+
+    def node(q):
+        results = (node(child) if isinstance(child, Q) else leaf(*child) for child in q.children)
+        matched = all(results) if q.connector == Q.AND else any(results)
+        return matched != q.negated
+
+    return node(q)
+
+
+def recorded_full_codes(full_codes):
+    return set(Course.objects.filter(full_code__in=full_codes).values_list("full_code", flat=True))
+
+
 def check_belongs(rule, full_code, belongs_cache, is_transfer=False):
     """
     Rule.check_belongs, memoized in the given dict. Each rule is asked about the same course
@@ -90,15 +131,16 @@ def prewarm_belongs_cache(rules, full_codes):
     Worth doing when every course is known up front, e.g. when allocating a whole transcript.
     """
     belongs_cache = {}
+    unrecorded = set(full_codes) - recorded_full_codes(full_codes)
 
     for rule in rules:
         if not rule.q:
             continue
+        q = rule.get_q_object() or Q()
         matched = set(
-            Course.objects.filter(rule.get_q_object() or Q(), full_code__in=full_codes).values_list(
-                "full_code", flat=True
-            )
+            Course.objects.filter(q, full_code__in=full_codes).values_list("full_code", flat=True)
         )
+        matched |= {full_code for full_code in unrecorded if matches_without_record(q, full_code)}
         for full_code in full_codes:
             belongs_cache[(rule.id, full_code)] = full_code in matched
 
@@ -122,7 +164,12 @@ def prewarm_belongs_cache_for_course(rules, full_code):
         )
         .values(*columns)
         .first()
-    ) or {}
+    )
+    if matched is None:
+        return {
+            (rule.id, full_code): matches_without_record(rule.get_q_object(), full_code)
+            for rule in rules
+        }
 
     return {(rule.id, full_code): matched.get(column, False) for column, rule in columns.items()}
 
