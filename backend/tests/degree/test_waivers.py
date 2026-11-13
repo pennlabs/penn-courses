@@ -9,8 +9,10 @@ from degree.models import (
     TRANSFER_CREDIT_SEMESTER,
     Degree,
     DegreePlan,
+    DualProgram,
     Fulfillment,
     PDPBetaUser,
+    ProgramVariant,
     Rule,
     SatisfactionStatus,
 )
@@ -219,6 +221,42 @@ class WaiverTest(TestCase):
         self.assertNotIn(self.intro_econ, self.rules_of("MGMT-1010"))
         self.assertNotIn(self.intro_econ, mgmt.unselected_rules.all())
         self.assertEqual(list(self.plan.waived_rules.all()), [self.intro_econ])
+
+    def test_a_requirement_a_dual_program_puts_in_place_of_the_degrees_can_be_waived(self):
+        variant = ProgramVariant.objects.create(
+            code="TEST_DUAL",
+            name="Test dual",
+            suppressed_rules=[{"block_value": "U-WFYF", "q_contains": "BEPP-1000"}],
+        )
+        fundamentals = Rule.objects.create(
+            title="Fundamentals", block_type="OTHER", block_value="U-DUAL"
+        )
+        dual_econ = self.leaf("Introductory Economics", ["BEPP-1000"], fundamentals)
+        variant.rules.add(fundamentals)
+        engineering = Degree.objects.create(program="EU_BSE", degree="BSE", major="CIS", year=2026)
+        self.plan.dual_program = DualProgram.objects.create(
+            code="TEST_DUAL",
+            name="Test dual",
+            left_programs=["EU_BSE"],
+            right_programs=["WU_BS"],
+            right_variant=variant,
+        )
+        self.plan.save()
+        self.plan.degrees.add(engineering)
+
+        response = self.waive(dual_econ)
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(response.data["waived_rules"], [dual_econ.id])
+
+        self.assertEqual(self.waive(self.intro_econ).status_code, 400)
+
+    def test_a_waiver_on_a_requirement_the_plan_no_longer_has_can_be_lifted(self):
+        self.waive(self.intro_econ)
+        self.degree.rules.remove(self.foundations)
+
+        response = self.waive(self.intro_econ, method="delete")
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertFalse(self.plan.waived_rules.exists())
 
     def test_a_whole_block_cannot_be_waived(self):
         response = self.waive(self.foundations)
