@@ -12,7 +12,14 @@ from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from courses.models import Course
-from degree.utils.degree_logic import FULFILLMENT_LEVELS, aggregate_rule_leaves, plan_components
+from degree.utils.degree_logic import (
+    DEFAULT_COURSE_CREDITS,
+    FULFILLMENT_LEVELS,
+    aggregate_rule_leaves,
+    matches_without_record,
+    plan_components,
+    recorded_full_codes,
+)
 from degree.utils.model_utils import json_parser, q_object_parser
 
 
@@ -320,8 +327,10 @@ class Rule(models.Model):
             # Sums all courses (and corresponding credits), from full_codes, that satisfy this
             # rule's q object. A course counts once, however many semesters it was offered in or
             # attributes the q object joined it against.
+            q = self.get_q_object() or Q()
+            full_codes = set(full_codes)
             matching_courses = (
-                Course.objects.filter(self.get_q_object() or Q(), full_code__in=full_codes)
+                Course.objects.filter(q, full_code__in=full_codes)
                 .order_by("full_code", "-semester")
                 .distinct("full_code")
                 .values("id")
@@ -338,6 +347,13 @@ class Rule(models.Model):
                 )
                 .values()
             )
+            unrecorded = [
+                full_code
+                for full_code in full_codes - recorded_full_codes(full_codes)
+                if matches_without_record(q, full_code)
+            ]
+            total_courses += len(unrecorded)
+            total_credits += len(unrecorded) * DEFAULT_COURSE_CREDITS
 
             assert self.num is not None or self.credits is not None
             if self.num is not None and total_courses < self.num:
@@ -365,7 +381,10 @@ class Rule(models.Model):
         """
         if self.q:
             assert self.num is not None or self.credits is not None
-            return Course.objects.filter(self.get_q_object() or Q(), full_code=full_code).exists()
+            q = self.get_q_object() or Q()
+            if not Course.objects.filter(full_code=full_code).exists():
+                return matches_without_record(q, full_code)
+            return Course.objects.filter(q, full_code=full_code).exists()
         else:
             count = 0
             for child in self.children.all():
