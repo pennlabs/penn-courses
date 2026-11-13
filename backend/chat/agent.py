@@ -14,6 +14,7 @@ course exists or that a schedule contains something it doesn't.
 import json
 import logging
 import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import anthropic
 import requests
@@ -99,7 +100,22 @@ def _completed_turn(reply_parts, tool_calls, previews, *, truncated):
     }
 
 
-def stream_chat_turn(messages, *, semester, user, client=None, model=None, conversation_id=None):
+def _run_one_tool(name, tool_input, *, semester, user):
+    """Execute a single tool call, returning (value, error_str)."""
+    try:
+        value = run_tool(name, tool_input, semester=semester, user=user)
+        return value, None
+    except ToolError as e:
+        return None, str(e)
+    except Exception:
+        logger.exception("chat tool %s failed", name)
+        return None, "This lookup failed unexpectedly."
+
+
+def stream_chat_turn(
+    messages, *, semester, user,
+    client=None, model=None, conversation_id=None
+):
     """Dispatch a turn to the selected provider while preserving one event protocol."""
     model = model or ChatModel(
         id=f"anthropic/{settings.ANTHROPIC_CHAT_DEFAULT_MODEL}",
@@ -118,49 +134,28 @@ def stream_chat_turn(messages, *, semester, user, client=None, model=None, conve
         )
         return
     yield from _stream_anthropic_chat_turn(
-        messages, semester=semester, user=user, client=client, model=model
+        messages,
+        semester=semester,
+        user=user,
+        client=client,
+        model=model,
     )
 
 
-def _stream_anthropic_chat_turn(messages, *, semester, user, client=None, model=None):
-    """
-    Run one turn of the conversation, yielding events as they happen.
-
-    `messages` is the full history as `[{"role": "user"|"assistant", "content": str}]`,
-    ending with the student's new message. `user` is the authenticated student, and is
-    the only identity any tool can act on.
-
-    Yields `(kind, payload)` pairs:
-
-    - `("text", str)` — a fragment of the reply, as the model writes it
-    - `("tool_call", dict)` — a lookup that just ran, so the trace fills in live
-    - `("done", dict)` — the assembled `reply`, `tool_calls`, `courses`, `truncated`
-
-    Raises `ChatUnavailable` if the turn cannot be completed at all. Callers that want
-    the whole turn at once should use `run_chat_turn`.
-    """
+def _stream_anthropic_chat_turn(
+    messages, *, semester, user, client=None, model=None
+):
+    """Run one turn against Anthropic, yielding events as they happen."""
     client = client or get_client()
-    model = model or ChatModel(
-        id=f"anthropic/{settings.ANTHROPIC_CHAT_DEFAULT_MODEL}",
-        api_model=settings.ANTHROPIC_CHAT_DEFAULT_MODEL,
-        label=settings.ANTHROPIC_CHAT_DEFAULT_MODEL,
-        provider="Anthropic",
-    )
 
     conversation = [dict(message) for message in messages]
     tool_calls = []
-    # Course blurbs seen this turn, keyed by full code. Later, more detailed lookups
-    # fill in fields the earlier ones left empty rather than replacing the record.
     previews = {}
-
     reply_parts = []
 
     for _ in range(settings.CHAT_MAX_TOOL_TURNS):
         wrote_this_pass = False
         try:
-            # Streaming matters for more than presentation: a turn with several tool
-            # calls can outlast an intermediate proxy's idle timeout, and bytes on the
-            # wire keep the connection alive.
             with client.messages.stream(
                 model=model.api_model,
                 max_tokens=settings.CHAT_MAX_TOKENS,
@@ -169,9 +164,6 @@ def _stream_anthropic_chat_turn(messages, *, semester, user, client=None, model=
                     {
                         "type": "text",
                         "text": SYSTEM_PROMPT.format(semester=semester),
-                        # The system prompt and tool definitions are identical across
-                        # every turn of every conversation in a semester, and they are
-                        # resent on each hop of the tool loop.
                         "cache_control": {"type": "ephemeral"},
                     }
                 ],
@@ -179,10 +171,6 @@ def _stream_anthropic_chat_turn(messages, *, semester, user, client=None, model=
                 messages=conversation,
             ) as stream:
                 for fragment in stream.text_stream:
-                    # The model often says what it is about to do before each batch of
-                    # tool calls. Those preambles are separate paragraphs, not a
-                    # continuation of the last one — without this they run together as
-                    # "...schedule first.Let me find...".
                     if reply_parts and not wrote_this_pass:
                         reply_parts.append("\n\n")
                         yield "text", "\n\n"
@@ -216,55 +204,82 @@ def _stream_anthropic_chat_turn(messages, *, semester, user, client=None, model=
 
         conversation.append({"role": "assistant", "content": response.content})
 
-        results = []
-        for block in response.content:
-            if block.type != "tool_use":
-                continue
-            try:
-                value = run_tool(block.name, block.input, semester=semester, user=user)
-                results.append(_tool_result(block.id, value))
-                call = {"name": block.name, "input": block.input, "ok": True}
+        # --- Parallel tool dispatch ---
+        tool_blocks = [b for b in response.content if b.type == "tool_use"]
+        n = len(tool_blocks)
+
+        if n == 0:
+            results = []
+        elif n == 1:
+            b = tool_blocks[0]
+            value, err = _run_one_tool(
+                b.name, b.input, semester=semester, user=user
+            )
+            if err is None:
+                results = [_tool_result(b.id, value)]
+                call = {"name": b.name, "input": b.input, "ok": True}
                 tool_calls.append(call)
                 yield "tool_call", call
-                for preview in collect_previews(block.name, value):
+                for preview in collect_previews(b.name, value):
                     record = previews.setdefault(preview["course_code"], preview)
                     record.update({k: v for k, v in preview.items() if v is not None})
-            except ToolError as e:
-                # Hand the failure back to the model rather than aborting the turn:
-                # a wrong course code is something it can recover from by searching.
-                results.append(_tool_result(block.id, {"error": str(e)}, is_error=True))
-                call = {"name": block.name, "input": block.input, "ok": False}
+            else:
+                results = [_tool_result(b.id, {"error": err}, is_error=True)]
+                call = {"name": b.name, "input": b.input, "ok": False}
                 tool_calls.append(call)
                 yield "tool_call", call
-            except Exception:
-                logger.exception("chat tool %s failed", block.name)
-                results.append(
-                    _tool_result(
-                        block.id,
-                        {"error": "This lookup failed unexpectedly."},
-                        is_error=True,
-                    )
-                )
-                call = {"name": block.name, "input": block.input, "ok": False}
-                tool_calls.append(call)
-                yield "tool_call", call
+        else:
+            # Run all tool calls in parallel, preserving submission order.
+            with ThreadPoolExecutor(max_workers=n) as ex:
+                futures = {
+                    ex.submit(
+                        _run_one_tool,
+                        b.name, b.input,
+                        semester=semester, user=user,
+                    ): b
+                    for b in tool_blocks
+                }
+                outcomes = {}
+                for future in as_completed(futures):
+                    b = futures[future]
+                    outcomes[b.id] = future.result()
+
+            results = []
+            for b in tool_blocks:
+                value, err = outcomes[b.id]
+                if err is None:
+                    results.append(_tool_result(b.id, value))
+                    call = {"name": b.name, "input": b.input, "ok": True}
+                    tool_calls.append(call)
+                    yield "tool_call", call
+                    for preview in collect_previews(b.name, value):
+                        record = previews.setdefault(preview["course_code"], preview)
+                        record.update({k: v for k, v in preview.items() if v is not None})
+                else:
+                    results.append(_tool_result(b.id, {"error": err}, is_error=True))
+                    call = {"name": b.name, "input": b.input, "ok": False}
+                    tool_calls.append(call)
+                    yield "tool_call", call
 
         conversation.append({"role": "user", "content": results})
 
-    # The loop ran out of turns with the model still calling tools. Rather than return
-    # a half-finished answer, say so — a student acting on a truncated recommendation
-    # is worse than one who retries.
     logger.warning("chat hit the tool turn limit (semester=%s)", semester)
     raise ChatUnavailable(
         "That question took too many lookups to answer. Try asking something narrower."
     )
 
 
-def _stream_opencode_chat_turn(messages, *, semester, user, client, model, conversation_id):
+def _stream_opencode_chat_turn(
+    messages, *, semester, user,
+    client, model, conversation_id
+):
     """Run the same tool loop against OpenCode Go's Chat Completions endpoint."""
     client = client or get_opencode_client(conversation_id)
     conversation = [
-        {"role": "system", "content": SYSTEM_PROMPT.format(semester=semester)},
+        {
+            "role": "system",
+            "content": SYSTEM_PROMPT.format(semester=semester),
+        },
         *[dict(message) for message in messages],
     ]
     tool_calls = []
@@ -319,11 +334,7 @@ def _stream_opencode_chat_turn(messages, *, semester, user, client, model, conve
                         index = call.get("index", 0)
                         pending = pending_calls.setdefault(
                             index,
-                            {
-                                "id": None,
-                                "name": None,
-                                "arguments": "",
-                            },
+                            {"id": None, "name": None, "arguments": ""},
                         )
                         pending["id"] = call.get("id") or pending["id"]
                         function = call.get("function") or {}
@@ -411,7 +422,10 @@ def _stream_opencode_chat_turn(messages, *, semester, user, client, model, conve
     )
 
 
-def run_chat_turn(messages, *, semester, user, client=None, model=None, conversation_id=None):
+def run_chat_turn(
+    messages, *, semester, user,
+    client=None, model=None, conversation_id=None
+):
     """
     Run one turn and return it whole: `reply`, `tool_calls`, `courses`, `truncated`.
 
@@ -428,5 +442,4 @@ def run_chat_turn(messages, *, semester, user, client=None, model=None, conversa
     ):
         if kind == "done":
             return payload
-    # stream_chat_turn either yields "done" or raises; this is unreachable.
     raise ChatUnavailable("The assistant did not finish its reply.")

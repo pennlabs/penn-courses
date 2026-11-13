@@ -32,6 +32,12 @@ SYSTEM_PROMPT = dedent(
     built one. When they have not, say so plainly instead of guessing at their
     requirements from their major.
 
+    ## Batch independent lookups
+
+    Whenever two or more lookups do not depend on each other's results, call them all
+    in the same response — do not wait for one to finish before starting the next.
+    This cuts round-trips and makes answers arrive faster.
+
     # Do not recommend what they have already done
 
     Search results mark a course `already_taken` or `already_planned` when the student

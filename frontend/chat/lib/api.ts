@@ -85,7 +85,7 @@ const messageBody = (
     content: string,
     model: string,
     conversationId: string,
-    semester?: string
+    semester?: string,
 ) => ({
     messages: [
         ...history.map(({ role, content: text }) => ({ role, content: text })),
@@ -133,7 +133,7 @@ export const sendMessage = async (
     content: string,
     model: string,
     conversationId: string,
-    semester?: string
+    semester?: string,
 ): Promise<ChatReply> => {
     const response = await fetch("/api/chat/", {
         method: "POST",
@@ -193,7 +193,7 @@ export const streamMessage = async (
     content: string,
     model: string,
     conversationId: string,
-    handlers: StreamHandlers
+    handlers: StreamHandlers,
 ): Promise<ChatReply> => {
     const response = await fetch("/api/chat/stream/", {
         method: "POST",
