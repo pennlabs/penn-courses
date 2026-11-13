@@ -8,6 +8,14 @@ import { EditButton } from './EditButton';
 import { PanelTopBarButton, PanelTopBarIcon } from "./PanelCommon";
 import { PanelContainer, PanelHeader, PanelTopBarIconList, PanelBody } from "./PanelCommon";
 import { ModalKey } from "./DegreeModal";
+import { tourTarget } from "@/components/Tour/OnboardingTour";
+
+// Matches SelectListDropdown's own flex sizing, so wrapping it doesn't change the header layout.
+const PlanSelectWrapper = styled.div`
+    display: flex;
+    flex: 1 1 auto;
+    min-width: 0;
+`;
 
 const ShowStatsText = styled.div`
     min-width: 6rem;
@@ -56,8 +64,9 @@ const PlanPanel = ({
     const [editMode, setEditMode] = useState(false);
 
     return (
-            <PanelContainer>
+            <PanelContainer {...tourTarget("plan-panel")}>
                 <PanelHeader>
+                    <PlanSelectWrapper {...tourTarget("plan-select")}>
                     <SelectListDropdown
                         itemType="degree plan" 
                         active={activeDegreeplan || undefined}
@@ -83,7 +92,8 @@ const PlanPanel = ({
                         }}
                         isLoading={isLoading} 
                     />
-                    <PanelTopBarIconList>
+                    </PlanSelectWrapper>
+                    <PanelTopBarIconList {...tourTarget("plan-actions")}>
                         <ShowStatsButton showStats={showStats} setShowStats={setShowStats} />
                         <EditButton editMode={editMode} setEditMode={setEditMode} />
                     </PanelTopBarIconList>

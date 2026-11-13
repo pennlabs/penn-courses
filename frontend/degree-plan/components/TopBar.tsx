@@ -6,6 +6,7 @@ import { useRouter } from "next/router";
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
 import { User } from "@/types";
 import NotificationBell from "./NotificationBell";
+import { tourTarget } from "./Tour/OnboardingTour";
 
 const Bar = styled.header`
   /* Above the body's isolated stacking context, so the account menu covers it, but below modals. */
@@ -82,6 +83,25 @@ const ColumnToggle = styled.button<{ $isOpen: boolean }>`
   }
 `;
 
+const TourButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 1.1rem;
+  color: var(--primary-color-ultra-dark);
+  cursor: pointer;
+
+  &:hover {
+    background: var(--primary-color-light);
+  }
+`;
+
 interface TopBarProps {
   user: User | null;
   login: (u: User) => void;
@@ -91,6 +111,7 @@ interface TopBarProps {
   requirementsOpen: boolean;
   setRequirementsOpen: (open: boolean) => void;
   showColumnToggles: boolean; // the columns don't exist during onboarding
+  onStartTour?: () => void; // the tour has nothing to show during onboarding
 }
 
 const TopBar = ({
@@ -102,6 +123,7 @@ const TopBar = ({
   requirementsOpen,
   setRequirementsOpen,
   showColumnToggles,
+  onStartTour,
 }: TopBarProps) => {
   const { asPath } = useRouter();
 
@@ -113,7 +135,7 @@ const TopBar = ({
       </Brand>
       <Actions>
         {showColumnToggles && (
-          <ColumnToggles role="group" aria-label="Toggle columns">
+          <ColumnToggles role="group" aria-label="Toggle columns" {...tourTarget("column-toggles")}>
             <ColumnToggle
               type="button"
               $isOpen={planOpen}
@@ -134,6 +156,17 @@ const TopBar = ({
               <span>Requirements</span>
             </ColumnToggle>
           </ColumnToggles>
+        )}
+        {onStartTour && (
+          <TourButton
+            type="button"
+            aria-label="Take the tour"
+            title="Take the tour"
+            onClick={onStartTour}
+            {...tourTarget("replay-tour")}
+          >
+            <i className="far fa-question-circle" aria-hidden />
+          </TourButton>
         )}
         {user && <NotificationBell />}
         <AccountIndicator

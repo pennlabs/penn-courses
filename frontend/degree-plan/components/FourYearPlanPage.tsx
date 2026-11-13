@@ -33,6 +33,8 @@ import PhoneTabBar, { PHONE_TABS, PhoneTab } from "./mobile/PhoneTabBar";
 import PhoneSwiper from "./mobile/PhoneSwiper";
 import DockedPanel from "./mobile/DockedPanel";
 import useIsPhone from "@/hooks/useIsPhone";
+import OnboardingTour from "./Tour/OnboardingTour";
+import { getCsrf } from "@/hooks/swrcrud";
 
 import ExpandedCoursesPanel from "@/components/ExpandedBox/ExpandedCoursesPanel";
 import { ExpandedCoursesPanelContext } from "@/components/ExpandedBox/ExpandedCoursesPanelTrigger";
@@ -198,6 +200,46 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
     user ? "/api/degree/docked" : null
   );
 
+  // The tour needs a plan on screen to point at, so it waits until onboarding has created one.
+  const [tourOpen, setTourOpen] = useState(false);
+  const canShowTour = !!user && !showOnboardingModal && !!activeDegreeplan;
+  const { data: onboardingStatus, mutate: mutateOnboardingStatus } = useSWR<{
+    has_been_onboarded: boolean;
+  }>(user ? "/api/degree/onboarding-status" : null);
+  const startTour = useCallback(() => {
+    setPlanOpen(true);
+    setRequirementsOpen(true);
+    setTourOpen(true);
+  }, [setPlanOpen, setRequirementsOpen]);
+  const autoStartedTour = useRef(false);
+  useEffect(() => {
+    // Only once the status has loaded: a failed request shouldn't show the tour.
+    if (canShowTour && onboardingStatus?.has_been_onboarded === false && !autoStartedTour.current) {
+      autoStartedTour.current = true;
+      startTour();
+    }
+  }, [canShowTour, onboardingStatus, startTour]);
+  const finishTour = useCallback(() => {
+    setTourOpen(false);
+    if (onboardingStatus?.has_been_onboarded !== false) return;
+    const onboarded = { has_been_onboarded: true };
+    mutateOnboardingStatus(
+      fetch("/api/degree/onboarding-status", {
+        method: "PUT",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCsrf() as string,
+        },
+        body: JSON.stringify(onboarded),
+      }).then((res) => {
+        if (!res.ok) throw new Error(`status ${res.status}`);
+        return res.json();
+      }),
+      { optimisticData: onboarded, rollbackOnError: false }
+    ).catch((err) => console.error("Couldn't save that the tour was seen:", err));
+  }, [onboardingStatus, mutateOnboardingStatus]);
+
   const planPanel = (
     <PanelInteriorWrapper>
       <PlanPanel
@@ -320,6 +362,9 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
                 setActiveDegreeplan={setActiveDegreeplan}
               />
             )}
+            {tourOpen && canShowTour && (
+              <OnboardingTour isPhone={isPhone} onFinish={finishTour} />
+            )}
             {editingPrograms && activeDegreeplan && (
               <EditProgramsPanel
                 degreePlanId={activeDegreeplan.id}
@@ -336,6 +381,7 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
                 requirementsOpen={requirementsOpen}
                 setRequirementsOpen={setRequirementsOpen}
                 showColumnToggles={!showOnboardingModal && !isPhone}
+                onStartTour={canShowTour ? startTour : undefined}
               />
               {/* Course popovers keep within the body, so they never cover the footer or dock. */}
               <BodyContainer
