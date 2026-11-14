@@ -201,6 +201,42 @@ class TermOrderTest(TestCase):
         self.assertTrue(Rule.objects.filter(title=self.NEW_TITLE).exists())
         self.assertFalse(Rule.objects.filter(title=self.OLD_TITLE).exists())
 
+    def open_ended_version(self):
+        """Requirements for every catalog year, the way Path lists ROBO-MSE."""
+        audit = load_audit("BIOL-BA.xml")
+        for year in ("2025", "2027"):
+            audit = audit.replace(f'Cat_yr_start="{year}"', 'Cat_yr_start="0000"')
+        return audit
+
+    def years(self):
+        return (
+            sorted(Degree.objects.filter(major="BIOL").values_list("year", flat=True)),
+            sorted(Major.objects.filter(program_code="BIOL-BA").values_list("year", flat=True)),
+        )
+
+    def test_requirements_for_every_catalog_year_are_saved_once_under_year_0(self):
+        self.fetch_terms(
+            {self.NEW_TERM: self.open_ended_version(), self.OLD_TERM: self.open_ended_version()}
+        )
+
+        self.assertEqual(self.years(), ([0], [0]))
+
+    def test_a_later_run_updates_the_year_0_row_instead_of_adding_one(self):
+        self.fetch_terms({self.NEW_TERM: self.open_ended_version()}, srcdb=[self.NEW_TERM])
+        degree = Degree.objects.get(major="BIOL")
+
+        self.fetch_terms({"202830": self.open_ended_version()}, srcdb=["202830"])
+
+        self.assertEqual(self.years(), ([0], [0]))
+        self.assertEqual(Degree.objects.get(major="BIOL").pk, degree.pk)
+
+    def test_requirements_for_every_year_sit_alongside_a_dated_version(self):
+        self.fetch_terms(
+            {self.NEW_TERM: load_audit("BIOL-BA.xml"), self.OLD_TERM: self.open_ended_version()}
+        )
+
+        self.assertEqual(self.years(), ([0, 2027], [0, 2027]))
+
     def test_a_term_without_the_program_does_not_block_older_terms(self):
         self.fetch_terms(
             {self.NEW_TERM: PathError("No audit_xml"), self.OLD_TERM: self.older_version()}
@@ -224,3 +260,24 @@ class DirectSaveTest(TestCase):
         self.assertEqual(first.pk, second.pk)
         self.assertEqual(Rule.objects.count(), count)
         self.assertEqual(Minor.objects.count(), 0)
+
+
+class OpenEndedMinorTest(TestCase):
+    def test_a_minor_for_every_catalog_year_is_saved_under_year_0(self):
+        audit = load_audit("CSCI-MINOR.xml").replace('Cat_yr_start="2027"', 'Cat_yr_start="0000"')
+        with patch(f"{COMMAND}.PathClient") as client:
+            client.return_value.undergraduate_programs.return_value = []
+            client.return_value.masters_programs.return_value = []
+            client.return_value.minor_programs.return_value = [
+                {"code": "CSCI-MINOR", "title": "Computer Science Minor"}
+            ]
+            client.return_value.program_info.return_value = {
+                "majr_code": "CSCI",
+                "audit_xml": audit,
+            }
+            call_command("fetch_degrees_from_path", srcdb=["202530", "202630"], verbosity=0)
+
+        self.assertEqual(
+            list(Minor.objects.filter(program_code="CSCI-MINOR").values_list("year", flat=True)),
+            [0],
+        )

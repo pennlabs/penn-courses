@@ -12,7 +12,7 @@ import React from 'react';
 import useStickyState from '@/hooks/stickyState';
 import ProgramTabs, { programPanelId, programTabId } from './ProgramTabs';
 import { tourTarget } from '@/components/Tour/OnboardingTour';
-import { PlanProgram, planPrograms } from '@/utils/programs';
+import { PlanProgram, planPrograms, programYear } from "@/utils/programs";
 
 // Waiver changes answer with the updated plan.
 const deleteFetcher = baseFetcher({ method: "DELETE" });
@@ -161,9 +161,15 @@ const DegreeHeader = ({
         <div>
           {degreeName}
         </div>
-        <DegreeYear>
-          {!skeleton ? program.year : <DarkBlueBackgroundSkeleton width="4em" />}
-        </DegreeYear>
+        {skeleton ? (
+          <DegreeYear>
+            <DarkBlueBackgroundSkeleton width="4em" />
+          </DegreeYear>
+        ) : (
+          programYear(program.year) && (
+            <DegreeYear>{programYear(program.year)}</DegreeYear>
+          )
+        )}
       </DegreeTitleWrapper>
       <DegreeHeaderAction>
         <Icon>

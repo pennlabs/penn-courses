@@ -3,6 +3,7 @@ import type { DegreeListing, DegreePlan } from "@/types";
 import React, { useState, useEffect } from "react";
 import { deleteFetcher, postFetcher, useSWRCrud } from "@/hooks/swrcrud";
 import { useSWRConfig } from "swr";
+import { programYear } from "@/utils/programs";
 import ModalContainer from "../common/ModalContainer";
 
 export type ModalKey =
@@ -96,7 +97,8 @@ export const createMajorLabel = (degree: DegreeListing) => {
     degree.concentration && degree.concentration !== "NONE"
       ? ` - ${degree.concentration_name}`
       : "";
-  return `${degree.major_name}${concentration} (${degree.year})`;
+  const year = programYear(degree.year);
+  return `${degree.major_name}${concentration}${year ? ` (${year})` : ""}`;
 };
 
 interface RemoveSemesterProps {

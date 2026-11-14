@@ -2,7 +2,7 @@ import React, { forwardRef, useEffect, useRef, useState } from "react";
 import styled from "@emotion/styled";
 import { useDragLayer } from "react-dnd";
 
-import { ProgramKind } from "@/utils/programs";
+import { ProgramKind, programYear } from "@/utils/programs";
 
 export type { ProgramKind };
 
@@ -242,6 +242,9 @@ const ProgramTabs = forwardRef<HTMLDivElement, ProgramTabsProps>(
         {tabs.map((tab) => {
           const isActive = tab.key === activeKey;
           const percent = Math.round(tab.progress * 100);
+          const year = programYear(tab.year);
+          const describe = (separator: string, progress: string) =>
+            [tab.title, year, progress].filter(Boolean).join(separator);
           return (
             <Tab
               key={tab.key}
@@ -251,9 +254,9 @@ const ProgramTabs = forwardRef<HTMLDivElement, ProgramTabsProps>(
               role="tab"
               aria-selected={isActive}
               aria-controls={programPanelId(tab.key)}
-              aria-label={`${tab.title}, ${tab.year}, ${percent}% complete`}
+              aria-label={describe(", ", `${percent}% complete`)}
               tabIndex={isActive ? 0 : -1}
-              title={`${tab.title} · ${tab.year} · ${percent}%`}
+              title={describe(" · ", `${percent}%`)}
               $kind={tab.kind}
               $isActive={isActive}
               $scrolls={scrolls}
@@ -270,9 +273,11 @@ const ProgramTabs = forwardRef<HTMLDivElement, ProgramTabsProps>(
                 <TabName $isActive={isActive}>
                   {scrolls ? tab.code : tab.title}
                 </TabName>
-                <TabYear $kind={tab.kind} $isActive={isActive}>
-                  {tab.year}
-                </TabYear>
+                {year && (
+                  <TabYear $kind={tab.kind} $isActive={isActive}>
+                    {year}
+                  </TabYear>
+                )}
               </TabCopy>
               <ProgressRing
                 percent={percent}
