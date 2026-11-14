@@ -1,6 +1,6 @@
 
 import { useCallback, useEffect, useMemo, useState, useContext, useRef, useLayoutEffect } from 'react';
-import RuleComponent, { FulfillmentsLoadedContext, ProgramKindContext, SkeletonRule, WaiversContext } from './Rule';
+import RuleComponent, { FulfillmentsLoadedContext, ProgramKindContext, WaiversContext } from './Rule';
 import { Degree as DegreeType, DegreePlan, Fulfillment, Rule, Degree as DegreeD } from '@/types';
 import styled from '@emotion/styled';
 import { DarkBlueBackgroundSkeleton, PanelBody, PanelContainer, PanelHeader, PanelTopBarIconList } from "../FourYearPlan/PanelCommon";
@@ -14,6 +14,14 @@ import ProgramTabs, { programPanelId, programTabId } from './ProgramTabs';
 import { tourTarget } from '@/components/Tour/OnboardingTour';
 import { PlanProgram, planPrograms } from '@/utils/programs';
 import Collapse, { Chevron } from './Collapse';
+import PorcupineLoader from '../common/PorcupineLoader';
+
+const REQUIREMENT_LOADING_MESSAGES = [
+  "Fetching your requirements…",
+  "Counting credits…",
+  "Checking the fine print…",
+  "Sharpening quills…",
+];
 
 // Waiver changes answer with the updated plan.
 const deleteFetcher = baseFetcher({ method: "DELETE" });
@@ -116,7 +124,13 @@ const ReqPanelBody = styled(PanelBody)<{ $hasTabs?: boolean }>`
 `
 
 // pr, mr for scroll bar
-const ReqContent = styled.div`
+// Fades by opacity only: a transform would make it the containing block for the sticky rule headers.
+const ReqContent = styled.div<{ $shown: boolean }>`
+  opacity: ${(props) => (props.$shown ? 1 : 0)};
+  transition: opacity .4s ease-out;
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
   padding: 0;
   padding-right: 12px;
   margin-right: -12px;
@@ -238,7 +252,6 @@ const Degree = ({
   rulesToUnselectedFulfillments, 
   activeDegreeplan, 
   waivedRules,
-  isLoading,
   progress,
   showHeader = true, // false when program tabs take the header's place
   stickyOffset = 0, // the height of whatever replaces the header, for sticky rule headers
@@ -261,42 +274,10 @@ const Degree = ({
     return () => {
       resizeObserver.disconnect();
     }
-  }, [showHeader, isLoading]); // the header element comes and goes with these
+  }, [showHeader]); // the header element comes and goes with it
 
   const ruleOffset = showHeader ? headerHeight : stickyOffset;
   const showRules = !collapsed || !showHeader;
-
-  if (isLoading) {
-    return (
-      <div>
-        <DegreeHeader
-          program={program}
-          setCollapsed={setCollapsed}
-          skeleton
-          collapsed={collapsed}
-        />
-        <DegreeBody>
-          <SkeletonRule>
-            <SkeletonRule>
-              <SkeletonRule />
-              <SkeletonRule />
-              {/* <SkeletonRule /> */}
-            </SkeletonRule>
-            <SkeletonRule>
-              <SkeletonRule />
-              {/* <SkeletonRule />
-              <SkeletonRule /> */}
-            </SkeletonRule>
-          </SkeletonRule>
-          <SkeletonRule>
-            <SkeletonRule />
-            <SkeletonRule />
-            <SkeletonRule />
-          </SkeletonRule>
-        </DegreeBody>
-      </div>
-    )
-  }
 
   return (
     <div>
@@ -336,6 +317,19 @@ const Degree = ({
     </div>
   )
 }
+
+// A fade started in the same frame as a large render would be part way through by the time
+// anything shows, so it waits for the content to paint.
+const FadingContent = ({ children }: { children: React.ReactNode }) => {
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => setShown(true));
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
+  return <ReqContent $shown={shown}>{children}</ReqContent>;
+};
 
 interface ReqPanelProps {
   activeDegreeplan: DegreePlan | null;
@@ -457,6 +451,9 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
 
   const programs = activeDegreeplanDetail ? planPrograms(activeDegreeplanDetail) : [];
   const fulfillmentsLoaded = !isLoadingFulfillments && !!fulfillments;
+  // The requirements wait for the plan's courses too, so they appear once, already filled in.
+  const loading =
+    isLoading || (!activeDegreeplanDetail && isLoadingDegrees) || (!fulfillments && isLoadingFulfillments);
   const showTabs = programs.length > 1;
 
   // The average of the program's top-level rules.
@@ -505,11 +502,12 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
           <EditButton editMode={false} setEditMode={onEditPrograms} />
         </PanelTopBarIconList>
       </PanelHeader>
-      {!activeDegreeplan ? <ReqPanelBody><Degree isLoading={true} /></ReqPanelBody> :
+      {loading || !activeDegreeplan ?
+        <ReqPanelBody><PorcupineLoader src="/porcupine-six-seven.svg" messages={REQUIREMENT_LOADING_MESSAGES} /></ReqPanelBody> :
         <>
           {activeDegreeplanDetail &&
             <ReqPanelBody $hasTabs={showTabs}>
-              <ReqContent>
+              <FadingContent>
                 {programs.length == 0 && <EmptyPanel onAdd={onEditPrograms} />}
                 {showTabs && (
                   <ProgramTabs
@@ -545,7 +543,6 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
                         rulesToUnselectedFulfillments={rulesToUnselectedFulfillments}
                         activeDegreeplan={activeDegreeplan}
                         waivedRules={waivedRules}
-                        isLoading={isLoading}
                         progress={programProgress(program)}
                         showHeader={!showTabs}
                         stickyOffset={tabBarHeight}
@@ -553,7 +550,7 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
                     </div>
                   );
                 })}
-              </ReqContent>
+              </FadingContent>
             </ReqPanelBody>
           }
         </>}
