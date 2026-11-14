@@ -200,3 +200,48 @@ class TransferCreditTest(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertIn("transfer credit", str(response.json()))
         self.assertEqual(set(fulfillment.rules.all()), {self.calculus})
+
+    def add_to_semester(self, semester, rule=None):
+        """What the planner sends to add a course: an allocation preview, then a save of it."""
+        rule_id = rule.id if rule else -1
+        preview = self.client.get(
+            reverse(
+                "satisfied-rule-list",
+                kwargs={
+                    "degree_plan_id": self.plan.id,
+                    "full_code": "MATH-1400",
+                    "rule_id": rule_id,
+                },
+            ),
+            {"semester": semester},
+        )
+        self.assertEqual(preview.status_code, 200, preview.content)
+        return self.client.post(
+            self.fulfillments_url(),
+            {
+                "full_code": "MATH-1400",
+                "semester": semester,
+                "rules": [rule["id"] for rule in preview.data["selected_rules"]],
+                "unselected_rules": [rule["id"] for rule in preview.data["unselected_rules"]],
+            },
+            format="json",
+        )
+
+    def test_adding_transfer_credit_allocates_around_the_foundation(self):
+        response = self.add_to_semester(TRANSFER_CREDIT_SEMESTER)
+        self.assertEqual(response.status_code, 201, response.content)
+        fulfillment = Fulfillment.objects.get(degree_plan=self.plan, full_code="MATH-1400")
+        self.assertEqual(set(fulfillment.rules.all()), {self.calculus})
+        self.assertNotIn(self.formal_reasoning, fulfillment.unselected_rules.all())
+
+    def test_adding_transfer_credit_from_the_foundation_still_adds_it(self):
+        response = self.add_to_semester(TRANSFER_CREDIT_SEMESTER, rule=self.formal_reasoning)
+        self.assertEqual(response.status_code, 201, response.content)
+        fulfillment = Fulfillment.objects.get(degree_plan=self.plan, full_code="MATH-1400")
+        self.assertNotIn(self.formal_reasoning, fulfillment.rules.all())
+
+    def test_adding_a_course_at_penn_still_counts_for_both(self):
+        response = self.add_to_semester(TEST_SEMESTER)
+        self.assertEqual(response.status_code, 201, response.content)
+        fulfillment = Fulfillment.objects.get(degree_plan=self.plan, full_code="MATH-1400")
+        self.assertEqual(set(fulfillment.rules.all()), {self.formal_reasoning, self.calculus})
