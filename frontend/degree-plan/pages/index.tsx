@@ -2,6 +2,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import DragAutoScroll from "@/components/DragAutoScroll";
+import CourseDragLayer from "@/components/common/CourseDragPreview";
 import FourYearPlanPage from "../components/FourYearPlanPage";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { type User } from "../types";
@@ -78,6 +79,7 @@ export default function Home() {
     <>
       <DndProvider backend={HTML5Backend}>
         <DragAutoScroll />
+        <CourseDragLayer />
         <ToastContext.Provider value={showToast}>
         <NotificationsContext.Provider value={notificationsValue}>
           <SWRConfig

@@ -1,4 +1,5 @@
 import React from "react";
+import { useCourseDragPreview } from "@/components/common/CourseDragPreview";
 import styled from "styled-components";
 import { useDrag } from "react-dnd";
 import { ItemTypes } from "@/components/Dock/dnd/constants";
@@ -169,7 +170,7 @@ export default function Course({
 }: CourseProps) {
   /** React dnd */
 
-  const [{ isDragging }, drag] = useDrag<
+  const [{ isDragging }, drag, preview] = useDrag<
     DnDCourse,
     never,
     { isDragging: boolean }
@@ -183,6 +184,7 @@ export default function Course({
     }),
     [course]
   );
+  useCourseDragPreview(preview);
 
   return (
     <RowSelectors>
