@@ -8,13 +8,32 @@ from django.db import transaction
 from degree.management.commands.deduplicate_rules import deduplicate_rules
 from degree.management.commands.refresh_rule_match_counts import refresh_rule_match_counts
 from degree.models import Degree, Major, Minor, program_code_to_name
-from degree.utils.parse_path_audit import find_block, parse_audit, save_component, save_parsed_audit
+from degree.utils.parse_path_audit import (
+    ParsedAudit,
+    find_block,
+    parse_audit,
+    save_component,
+    save_parsed_audit,
+)
 from degree.utils.path_client import PathClient, PathError, split_program_code, split_program_title
 
 
 # Students with degrees older than this catalog year are not supported, and their
 # degrees are not stored in the database.
 EARLIEST_CATALOG_YEAR = 2018
+
+
+# Path marks requirements that apply to every catalog year with Cat_yr_start="0000" (e.g. ROBO MSE)
+OPEN_ENDED_YEAR = 0
+
+
+def stored_year(parsed: ParsedAudit) -> int:
+    """The year to store an audit under: its catalog year, or 0 if it applies to every year."""
+    return OPEN_ENDED_YEAR if parsed.catalog_year is None else parsed.catalog_year
+
+
+def is_outdated(year: int) -> bool:
+    return year != OPEN_ENDED_YEAR and year < EARLIEST_CATALOG_YEAR
 
 
 @dataclass
@@ -238,18 +257,19 @@ class Command(BaseCommand):
             tally.fail(code, error)
             return
 
-        if parsed is None or parsed.catalog_year is None:
-            tally.skip(code, "no DEGREE block or no catalog year")
+        if parsed is None:
+            tally.skip(code, "no rules a course can fulfill")
             return
-        if parsed.catalog_year < EARLIEST_CATALOG_YEAR:
+        year = stored_year(parsed)
+        if is_outdated(year):
             tally.outdated += 1
-            tally.skip(code, f"catalog year {parsed.catalog_year}", announce=False)
-            self.announce(f"Skipping {code}: catalog year {parsed.catalog_year}", level=2)
+            tally.skip(code, f"catalog year {year}", announce=False)
+            self.announce(f"Skipping {code}: catalog year {year}", level=2)
             return
-        if self.is_superseded(code, parsed.catalog_year, tally):
+        if self.is_superseded(code, year, tally):
             return
 
-        degree.year = parsed.catalog_year
+        degree.year = year
 
         if self.dry_run:
             tally.saved += 1
@@ -316,12 +336,13 @@ class Command(BaseCommand):
             return 0
 
         block = find_block(parsed, "MINOR") if parsed else None
-        if block is None or parsed.catalog_year is None:
-            tally.skip(code, "no MINOR block or no catalog year")
+        if parsed is None or block is None:
+            tally.skip(code, "no MINOR block")
             return 0
-        if parsed.catalog_year < EARLIEST_CATALOG_YEAR:
+        year = stored_year(parsed)
+        if is_outdated(year):
             return 0
-        if self.is_superseded(code, parsed.catalog_year, tally):
+        if self.is_superseded(code, year, tally):
             return 0
 
         name, _ = split_program_title(program["title"] or "", "MINOR")
@@ -335,7 +356,7 @@ class Command(BaseCommand):
                     program_code=code,
                     code=block.req_value,
                     name=name or None,
-                    year=parsed.catalog_year,
+                    year=year,
                 )
                 save_component(minor, parsed, block)
         except Exception as error:
