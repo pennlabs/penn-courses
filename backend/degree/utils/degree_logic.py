@@ -763,6 +763,7 @@ def rebalance_allocations(
     credits_cache=None,
     allows=None,
     exempt=frozenset(),
+    pick_groups=None,
 ):
     """
     Moves courses onto short rules when another course can take their place, without leaving any
@@ -771,19 +772,22 @@ def rebalance_allocations(
     Only for allocating a whole plan, since it can move any course. `allocations` must be in the
     order the courses were taken, and is changed in place. `allows(before, after)` vetoes a
     change to one course's rules, e.g. one the plan's sharing caps forbid. Rules in `exempt`,
-    such as waived ones, need no courses and are never short.
+    such as waived ones, need no courses and are never short. Neither are the other options of
+    a satisfied group in `pick_groups`, which is rechecked after every move, since a move can
+    satisfy a group.
     """
     credits_cache = credits_cache or {}
 
     def credits_of(allocation):
         return credits_cache.get(allocation.full_code, DEFAULT_COURSE_CREDITS)
 
-    def is_short(rule, courses):
-        if rule in exempt:
-            return False
+    def lacks(rule, courses):
         if rule.num and len(courses) < rule.num:
             return True
         return bool(rule.credits and sum(credits_of(c) for c in courses) < rule.credits)
+
+    def is_short(rule, courses):
+        return rule not in exempt and rule not in closed and lacks(rule, courses)
 
     def starts_crossing_levels(allocation, rules):
         def crosses(selected):
@@ -796,6 +800,22 @@ def rebalance_allocations(
     for allocation in allocations:
         for rule in allocation.selected:
             members[rule].add(allocation)
+
+    def find_closed():
+        if pick_groups is None:
+            return set()
+        satisfied = {
+            rule
+            for rule in rule_to_degree
+            if rule in exempt
+            or (
+                (rule.num is not None or rule.credits is not None)
+                and not lacks(rule, members[rule])
+            )
+        }
+        return pick_groups.closed(satisfied)
+
+    closed = find_closed()
 
     def find_replacement(rule, leaving, taken):
         options = [
@@ -856,6 +876,7 @@ def rebalance_allocations(
                 replacement.selected.add(conflict)
                 replacement.unselected.discard(conflict)
                 members[conflict].add(replacement)
+            closed = find_closed()
 
 
 def assign_individual_rule(

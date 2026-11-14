@@ -6,7 +6,13 @@ from rest_framework.test import APIClient
 
 from courses.util import get_or_create_course_and_section
 from degree.models import Degree, DegreePlan, Fulfillment, PDPBetaUser, Rule
-from degree.utils.degree_logic import PickGroups, allocate_rules, map_rules_and_degrees
+from degree.utils.degree_logic import (
+    CourseAllocation,
+    PickGroups,
+    allocate_rules,
+    map_rules_and_degrees,
+    rebalance_allocations,
+)
 from degree.views import update_fulfillments
 from tests.degree.util import TEST_SEMESTER, set_semester
 
@@ -118,6 +124,28 @@ class PickGroupTest(TestCase):
         )
         self.assertEqual(selected, {self.elective})
         self.assertIn(self.lecture, unselected)
+
+    def test_rebalancing_fills_only_one_option(self):
+        concentration = self.group("Concentration", None, num=1)
+        option_a = self.leaf("Option A", Q(full_code="BIOL-2001"), concentration)
+        option_b = self.leaf("Option B", Q(full_code="BIOL-2002"), concentration)
+        two_courses = self.leaf("Two Courses", Q(department__code="BIOL"), None)
+        two_courses.num = 2
+        rule_to_degree = {rule: self.degree for rule in [option_a, option_b, two_courses]}
+        allocations = [
+            CourseAllocation("BIOL-2001", {two_courses}, {option_a}),
+            CourseAllocation("BIOL-2002", {two_courses}, {option_b}),
+            CourseAllocation("BIOL-2003", set(), {two_courses}),
+            CourseAllocation("BIOL-2004", set(), {two_courses}),
+        ]
+
+        rebalance_allocations(
+            allocations, rule_to_degree, {}, pick_groups=PickGroups(set(rule_to_degree))
+        )
+
+        moved = [allocation for allocation in allocations if allocation.selected - {two_courses}]
+        self.assertEqual(len(moved), 1)
+        self.assertEqual(sum(two_courses in a.selected for a in allocations), 2)
 
     def test_a_track_half_done_still_takes_its_other_course(self):
         self.take("BIOL-1121", "2024A")

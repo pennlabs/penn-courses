@@ -182,7 +182,8 @@ def update_fulfillments(degree_plan):
         double_counts,
         credits_cache,
         allows=lambda before, after: within_policy(before, after, rule_to_degree, policy),
-        exempt=waived | closed,
+        exempt=waived,
+        pick_groups=pick_groups,
     )
 
     with transaction.atomic():
@@ -949,7 +950,8 @@ class OnboardFromTranscript(APIView):
             double_counts,
             credits_cache,
             allows=lambda before, after: within_policy(before, after, rule_to_degree, policy),
-            exempt=waived | closed,
+            exempt=waived,
+            pick_groups=pick_groups,
         )
 
         with transaction.atomic():
