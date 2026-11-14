@@ -553,6 +553,8 @@ def allocate_rules(
     Those choices are kept, except where they conflict with `rule_selected`, and the
     allocation only adds what may share with them.
     """
+    if rule_selected is not None and not rule_selected.accepts(is_transfer=is_transfer):
+        rule_selected = None
     selected_rules = set()
     unselected_rules = set()
     if belongs_cache is None:
@@ -563,7 +565,11 @@ def allocate_rules(
     if prior_selected:
 
         def allowed(rule):
-            return rule in rule_to_degree and level_allows(level, rule_to_degree[rule])
+            return (
+                rule in rule_to_degree
+                and level_allows(level, rule_to_degree[rule])
+                and rule.accepts(is_transfer=is_transfer)
+            )
 
         seed = {rule for rule in prior_selected if allowed(rule)}
         preferred = {rule_selected} if allowed(rule_selected) else set()

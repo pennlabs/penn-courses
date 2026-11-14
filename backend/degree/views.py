@@ -972,6 +972,9 @@ class SatisfiedRuleList(APIView):
     """
     Provided a degree plan and a course code, retrieve a sublist
     of the degrees' rules that are satisfied by the course.
+
+    The optional `semester` query parameter is where the course is going. In the AP & transfer
+    semester, rules that take no such credit are left out rather than offered.
     """
 
     schema = PcxAutoSchema(
@@ -1017,6 +1020,13 @@ class SatisfiedRuleList(APIView):
                 f"{degree_plan_id}, {full_code}, {rule_selected}"
             )
 
+        semester = request.query_params.get("semester")
+        is_transfer = (
+            semester == TRANSFER_CREDIT_SEMESTER
+            if semester is not None
+            else bool(fulfillment and fulfillment.is_transfer_credit)
+        )
+
         plan_rules = map_rules_and_degrees(degree_plan)
         rules_per_degree = plan_rules.rules_per_component
         rule_to_degree = plan_rules.rule_to_component
@@ -1042,6 +1052,7 @@ class SatisfiedRuleList(APIView):
             credits_cache=credits_cache,
             policy=policy,
             canonical=canonical_cache.get(full_code),
+            is_transfer=is_transfer,
             # A course already in the plan keeps what it counts for, so the preview adds to
             # the student's choices rather than replacing or conflicting with them.
             prior_selected=set(fulfillment.rules.all()) if fulfillment else None,

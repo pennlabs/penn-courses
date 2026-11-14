@@ -59,7 +59,7 @@ const useAddToSemester = (planId: DegreePlan["id"] | null | undefined) => {
     let data: SatisfiedRules;
     try {
       const response = await fetch(
-        `/api/degree/satisfied-rule-list/${planId}/${fullCode}/${ruleId}`
+        `/api/degree/satisfied-rule-list/${planId}/${fullCode}/${ruleId}?semester=${encodeURIComponent(semester)}`
       );
       if (!response.ok) throw new Error(`satisfied-rule-list: ${response.status}`);
       data = await response.json();
