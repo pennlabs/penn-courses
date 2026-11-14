@@ -63,6 +63,62 @@ def rule_subtrees(rules) -> set:
     return found
 
 
+class PickGroups:
+    """
+    The groups above some leaf rules that ask for only some of their children, like "one of
+    these tracks". Once such a group has enough satisfied children, its other leaves need no
+    more courses.
+    """
+
+    def __init__(self, leaves):
+        from degree.models import Rule
+
+        nodes = {rule.id: rule for rule in leaves}
+        frontier = {rule.parent_id for rule in leaves if rule.parent_id} - set(nodes)
+        while frontier:
+            fetched = list(Rule.objects.filter(id__in=frontier))
+            nodes.update((rule.id, rule) for rule in fetched)
+            frontier = {rule.parent_id for rule in fetched if rule.parent_id} - set(nodes)
+
+        self.children = defaultdict(list)
+        for rule in nodes.values():
+            if rule.parent_id in nodes:
+                self.children[rule.parent_id].append(rule)
+        self.groups = [
+            rule
+            for rule in nodes.values()
+            if not rule.q and rule.num is not None and len(self.children[rule.id]) > rule.num
+        ]
+
+    def _leaves(self, rule):
+        if rule.q:
+            return [rule]
+        return [leaf for child in self.children[rule.id] for leaf in self._leaves(child)]
+
+    def closed(self, satisfied):
+        """The leaves left unsatisfied under a group that is satisfied without them."""
+        memo = {}
+
+        def is_satisfied(rule):
+            if rule.id not in memo:
+                if rule.q:
+                    memo[rule.id] = rule in satisfied
+                else:
+                    children = self.children[rule.id]
+                    done = sum(is_satisfied(child) for child in children)
+                    needed = len(children) if rule.num is None else rule.num
+                    memo[rule.id] = bool(children) and done >= needed
+            return memo[rule.id]
+
+        return {
+            leaf
+            for group in self.groups
+            if is_satisfied(group)
+            for leaf in self._leaves(group)
+            if leaf not in satisfied
+        }
+
+
 def check_dept(q, dept):
     pattern = r"\('([^']*)',\s*'([^']*)'\)"
     matches = re.findall(pattern, q)
@@ -707,6 +763,7 @@ def rebalance_allocations(
     credits_cache=None,
     allows=None,
     exempt=frozenset(),
+    pick_groups=None,
 ):
     """
     Moves courses onto short rules when another course can take their place, without leaving any
@@ -715,19 +772,22 @@ def rebalance_allocations(
     Only for allocating a whole plan, since it can move any course. `allocations` must be in the
     order the courses were taken, and is changed in place. `allows(before, after)` vetoes a
     change to one course's rules, e.g. one the plan's sharing caps forbid. Rules in `exempt`,
-    such as waived ones, need no courses and are never short.
+    such as waived ones, need no courses and are never short. Neither are the other options of
+    a satisfied group in `pick_groups`, which is rechecked after every move, since a move can
+    satisfy a group.
     """
     credits_cache = credits_cache or {}
 
     def credits_of(allocation):
         return credits_cache.get(allocation.full_code, DEFAULT_COURSE_CREDITS)
 
-    def is_short(rule, courses):
-        if rule in exempt:
-            return False
+    def lacks(rule, courses):
         if rule.num and len(courses) < rule.num:
             return True
         return bool(rule.credits and sum(credits_of(c) for c in courses) < rule.credits)
+
+    def is_short(rule, courses):
+        return rule not in exempt and rule not in closed and lacks(rule, courses)
 
     def starts_crossing_levels(allocation, rules):
         def crosses(selected):
@@ -740,6 +800,22 @@ def rebalance_allocations(
     for allocation in allocations:
         for rule in allocation.selected:
             members[rule].add(allocation)
+
+    def find_closed():
+        if pick_groups is None:
+            return set()
+        satisfied = {
+            rule
+            for rule in rule_to_degree
+            if rule in exempt
+            or (
+                (rule.num is not None or rule.credits is not None)
+                and not lacks(rule, members[rule])
+            )
+        }
+        return pick_groups.closed(satisfied)
+
+    closed = find_closed()
 
     def find_replacement(rule, leaving, taken):
         options = [
@@ -800,6 +876,7 @@ def rebalance_allocations(
                 replacement.selected.add(conflict)
                 replacement.unselected.discard(conflict)
                 members[conflict].add(replacement)
+            closed = find_closed()
 
 
 def assign_individual_rule(
