@@ -13,6 +13,7 @@ import useStickyState from '@/hooks/stickyState';
 import ProgramTabs, { programPanelId, programTabId } from './ProgramTabs';
 import { tourTarget } from '@/components/Tour/OnboardingTour';
 import { PlanProgram, planPrograms } from '@/utils/programs';
+import Collapse, { Chevron } from './Collapse';
 
 // Waiver changes answer with the updated plan.
 const deleteFetcher = baseFetcher({ method: "DELETE" });
@@ -167,7 +168,7 @@ const DegreeHeader = ({
       </DegreeTitleWrapper>
       <DegreeHeaderAction>
         <Icon>
-          <i className={`fas fa-chevron-${collapsed ? "up" : "down"}`}></i>
+          <Chevron className="fas fa-chevron-down" $degrees={collapsed ? 180 : 0} />
         </Icon>
       </DegreeHeaderAction>
     </DegreeHeaderContainer>
@@ -311,7 +312,7 @@ const Degree = ({
         />
       )}
       <WhiteSpace $headerHeight={ruleOffset} $zIndex={999} />
-      {showRules &&
+      <Collapse open={showRules}>
         <ProgramKindContext.Provider value={program.kind}>
           <DegreeBody>
             {program.rules.map((rule: any) => (
@@ -331,7 +332,7 @@ const Degree = ({
             ))}
           </DegreeBody>
         </ProgramKindContext.Provider>
-      }
+      </Collapse>
     </div>
   )
 }

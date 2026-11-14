@@ -48,6 +48,7 @@ import {
   WaiveButton,
 } from "./Rule.styles";
 import { ProgramKind } from "./ProgramTabs";
+import Collapse, { Chevron } from "./Collapse";
 
 /** The kind of program the rules below belong to, which colors their accents. */
 export const ProgramKindContext = createContext<ProgramKind | null>(null);
@@ -530,13 +531,13 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
           </RuleTitleText>
           {rule.rules.length > 0 && (
             <Icon>
-              <i className={`fas fa-chevron-${collapsed ? "right" : "up"}`}></i>
+              <Chevron className="fas fa-chevron-up" $degrees={collapsed ? 90 : 0} />
             </Icon>
           )}
         </RuleTitle>
       </RuleTitleWrapper>
       <WhiteSpace $headerHeight={myHeight + (headerHeight ||0) + HEADER_DEFAULT_BUFFER} $zIndex={500} />
-      {!collapsed && (
+      <Collapse open={!collapsed}>
         <Indented $depth={depth}>
           <Column>
             {children.map((ruleTree) => (
@@ -546,7 +547,7 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
             ))}
           </Column>
         </Indented>
-      )}
+      </Collapse>
     </>
   );
 };
