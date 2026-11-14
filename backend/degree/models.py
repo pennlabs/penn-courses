@@ -15,6 +15,7 @@ from courses.models import Course
 from degree.utils.degree_logic import (
     DEFAULT_COURSE_CREDITS,
     FULFILLMENT_LEVELS,
+    PickGroups,
     aggregate_rule_leaves,
     matches_without_record,
     plan_components,
@@ -775,7 +776,7 @@ class DegreePlan(models.Model):  #
             cu_ok = rule.credits is None or cu >= rule.credits
             if (rule.num is not None or rule.credits is not None) and num_ok and cu_ok:
                 satisfied_rules.add(rule)
-        return satisfied_rules
+        return satisfied_rules | PickGroups(rules).closed(satisfied_rules)
 
     def copy(self, new_name: str) -> DegreePlan:
         """

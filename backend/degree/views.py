@@ -50,6 +50,7 @@ from degree.utils.degree_logic import (
     MIN_GRADUATE_COURSE_NUMBER,
     CourseAllocation,
     GraduateSharing,
+    PickGroups,
     allocate_rules,
     level_for_course,
     map_rules_and_degrees,
@@ -117,7 +118,8 @@ def update_fulfillments(degree_plan):
     # Count and CU are tracked separately: a credit rule is satisfied by the sum of CUs.
     counts = defaultdict(int)
     cus = defaultdict(lambda: Decimal(0))
-    # A waived requirement needs no courses, so none are allocated to it.
+    # A waived requirement needs no courses, so none are allocated to it, and neither are the
+    # other options of a "pick N" group once N of them are satisfied (see PickGroups).
     waived = set(degree_plan.waived_rules.all())
     satisfied_rules = set(waived)
 
@@ -134,6 +136,8 @@ def update_fulfillments(degree_plan):
         {rule for rules in rules_per_degree.values() for rule in rules},
         [fulfillment.full_code for fulfillment in fulfillments],
     )
+    pick_groups = PickGroups({rule for rules in rules_per_degree.values() for rule in rules})
+    closed = pick_groups.closed(satisfied_rules)
     credits_cache = prewarm_credits_cache([fulfillment.full_code for fulfillment in fulfillments])
     canonical_cache = prewarm_canonical_cache(
         [fulfillment.full_code for fulfillment in fulfillments]
@@ -150,7 +154,7 @@ def update_fulfillments(degree_plan):
             rule_to_degree,
             double_counts,
             degree_plan=degree_plan,
-            satisfied_rules=satisfied_rules,
+            satisfied_rules=satisfied_rules | closed,
             belongs_cache=belongs_cache,
             is_transfer=fulfillment.is_transfer_credit,
             graduate_sharing=graduate_sharing,
@@ -170,6 +174,7 @@ def update_fulfillments(degree_plan):
             cus[rule.id] += credits
             if is_satisfied(rule):
                 satisfied_rules.add(rule)
+        closed = pick_groups.closed(satisfied_rules)
 
     rebalance_allocations(
         allocations,
@@ -177,7 +182,7 @@ def update_fulfillments(degree_plan):
         double_counts,
         credits_cache,
         allows=lambda before, after: within_policy(before, after, rule_to_degree, policy),
-        exempt=waived,
+        exempt=waived | closed,
     )
 
     with transaction.atomic():
@@ -897,6 +902,8 @@ class OnboardFromTranscript(APIView):
             {rule for rules in rules_per_degree.values() for rule in rules},
             [full_code for semester in course_data for full_code in semester["courses"]],
         )
+        pick_groups = PickGroups({rule for rules in rules_per_degree.values() for rule in rules})
+        closed = pick_groups.closed(satisfied_rules)
         full_codes = [full_code for semester in course_data for full_code in semester["courses"]]
         credits_cache = prewarm_credits_cache(full_codes)
         canonical_cache = prewarm_canonical_cache(full_codes)
@@ -914,7 +921,7 @@ class OnboardFromTranscript(APIView):
                     rule_to_degree,
                     double_counts,
                     degree_plan=degree_plan,
-                    satisfied_rules=satisfied_rules,
+                    satisfied_rules=satisfied_rules | closed,
                     belongs_cache=belongs_cache,
                     is_transfer=semester_code == TRANSFER_CREDIT_SEMESTER,
                     graduate_sharing=graduate_sharing,
@@ -934,6 +941,7 @@ class OnboardFromTranscript(APIView):
                     cus[rule.id] += credits
                     if is_satisfied(rule):
                         satisfied_rules.add(rule)
+                closed = pick_groups.closed(satisfied_rules)
 
         rebalance_allocations(
             [allocation for _, allocation in allocations],
@@ -941,7 +949,7 @@ class OnboardFromTranscript(APIView):
             double_counts,
             credits_cache,
             allows=lambda before, after: within_policy(before, after, rule_to_degree, policy),
-            exempt=waived,
+            exempt=waived | closed,
         )
 
         with transaction.atomic():

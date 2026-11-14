@@ -63,6 +63,62 @@ def rule_subtrees(rules) -> set:
     return found
 
 
+class PickGroups:
+    """
+    The groups above some leaf rules that ask for only some of their children, like "one of
+    these tracks". Once such a group has enough satisfied children, its other leaves need no
+    more courses.
+    """
+
+    def __init__(self, leaves):
+        from degree.models import Rule
+
+        nodes = {rule.id: rule for rule in leaves}
+        frontier = {rule.parent_id for rule in leaves if rule.parent_id} - set(nodes)
+        while frontier:
+            fetched = list(Rule.objects.filter(id__in=frontier))
+            nodes.update((rule.id, rule) for rule in fetched)
+            frontier = {rule.parent_id for rule in fetched if rule.parent_id} - set(nodes)
+
+        self.children = defaultdict(list)
+        for rule in nodes.values():
+            if rule.parent_id in nodes:
+                self.children[rule.parent_id].append(rule)
+        self.groups = [
+            rule
+            for rule in nodes.values()
+            if not rule.q and rule.num is not None and len(self.children[rule.id]) > rule.num
+        ]
+
+    def _leaves(self, rule):
+        if rule.q:
+            return [rule]
+        return [leaf for child in self.children[rule.id] for leaf in self._leaves(child)]
+
+    def closed(self, satisfied):
+        """The leaves left unsatisfied under a group that is satisfied without them."""
+        memo = {}
+
+        def is_satisfied(rule):
+            if rule.id not in memo:
+                if rule.q:
+                    memo[rule.id] = rule in satisfied
+                else:
+                    children = self.children[rule.id]
+                    done = sum(is_satisfied(child) for child in children)
+                    needed = len(children) if rule.num is None else rule.num
+                    memo[rule.id] = bool(children) and done >= needed
+            return memo[rule.id]
+
+        return {
+            leaf
+            for group in self.groups
+            if is_satisfied(group)
+            for leaf in self._leaves(group)
+            if leaf not in satisfied
+        }
+
+
 def check_dept(q, dept):
     pattern = r"\('([^']*)',\s*'([^']*)'\)"
     matches = re.findall(pattern, q)
