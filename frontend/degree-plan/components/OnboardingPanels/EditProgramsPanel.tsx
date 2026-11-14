@@ -29,6 +29,7 @@ import {
   SchoolSelection,
   takesAdditionalMajors,
 } from "@/utils/parseUtils";
+import { programYear } from "@/utils/programs";
 import { NextButton, schoolOptions, SecondaryButton } from "./SharedComponents";
 import { color, FieldLabel } from "./onboardingStyles";
 import {
@@ -242,6 +243,12 @@ const readSemesterKeys = (planId: DegreePlan["id"]): string[] | null => {
   } catch {
     return null;
   }
+};
+
+// e.g. "Robotics (2027, MSE)". A major for every catalog year shows no year.
+const unplacedMajorLabel = (major: Major) => {
+  const details = [programYear(major.year), degreeCodeOf(major.program_code)];
+  return `${major.name ?? major.code} (${details.filter(Boolean).join(", ")})`;
 };
 
 // Fall of the first year through spring of the last, the way onboarding lays a plan out. Summer
@@ -657,9 +664,7 @@ function EditProgramsForm({
                   <Chips>
                     {unplacedMajors.map((major) => (
                       <Chip key={`major-${major.id}`}>
-                        {`${major.name ?? major.code} (${major.year}, ${degreeCodeOf(
-                          major.program_code
-                        )})`}
+                        {unplacedMajorLabel(major)}
                         <button
                           type="button"
                           aria-label={`Remove ${major.name ?? major.code}`}

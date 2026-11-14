@@ -2,6 +2,13 @@ import { DegreePlan, Rule } from "@/types";
 
 export type ProgramKind = "degree" | "major" | "minor";
 
+// Requirements Path applies to every catalog year (e.g. the Robotics MSE) are stored under
+// year 0. They have no year worth showing, so every label leaves it out.
+export const OPEN_ENDED_YEAR = 0;
+
+export const programYear = (year: number): string | null =>
+  year === OPEN_ENDED_YEAR ? null : String(year);
+
 export interface PlanProgram {
   id: number;
   relation: "degrees" | "majors" | "minors";
