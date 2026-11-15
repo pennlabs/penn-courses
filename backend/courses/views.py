@@ -47,8 +47,12 @@ SEMESTER_PARAM_DESCRIPTION = (
     "can just pass 'current' for the current semester. Finally, you can pass 'all' "
     "to always return the most recent course for each full_code, no matter which "
     "semester it is from. The 'all' option can be significantly more expensive, so use "
-    "only where needed. "
+    "only where needed. 'all_degree_plan' is 'all' without the three-digit course codes "
+    "used before 2022B, for Penn Degree Plan. "
 )
+
+ALL_DEGREE_PLAN = "all_degree_plan"
+OLD_COURSE_CODE = r"^\d{3}$"
 
 
 class Health(APIView):
@@ -63,6 +67,8 @@ class BaseCourseMixin(AutoPrefetchViewSetMixin, generics.GenericAPIView):
 
     def get_semester(self):
         semester = self.kwargs.get("semester", "current")
+        if semester == ALL_DEGREE_PLAN:
+            return "all"
         if semester == "current":
             semester = get_current_semester(allow_not_found=True)
             semester = semester if semester is not None else "all"
@@ -81,6 +87,8 @@ class BaseCourseMixin(AutoPrefetchViewSetMixin, generics.GenericAPIView):
                 .order_by("full_code", "-semester")
                 .distinct("full_code")
             )
+            if self.kwargs.get("semester") == ALL_DEGREE_PLAN:
+                queryset = queryset.exclude(code__regex=OLD_COURSE_CODE)
         return queryset
 
     def get_queryset(self):
@@ -216,7 +224,25 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
             )
         )
         queryset = self.filter_by_semester(queryset)
+        if self.get_semester() == "all" and self.request.query_params.get(
+            "offered_this_semester"
+        ) in ("true", "1"):
+            queryset = self.offered_this_semester(queryset)
         return queryset
+
+    @staticmethod
+    def offered_this_semester(queryset):
+        """
+        Courses with an open or closed section in the current semester. Each still comes as
+        its latest offering, which may be a later semester already loaded for registration.
+        """
+        current = get_current_semester(allow_not_found=True)
+        if current is None:
+            return queryset.none()
+        offered = Course.objects.filter(
+            semester=current, sections__status__in=["O", "C"]
+        ).values("full_code")
+        return queryset.filter(full_code__in=offered)
 
 
 class CourseListSearch(CourseList):

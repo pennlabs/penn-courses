@@ -67,7 +67,7 @@ PROGRAMS = [
 ]
 
 
-def _save_tree(spec: dict, parent: Rule | None, saved: set[int]) -> Rule:
+def _save_tree(spec: dict, parent: Rule | None, saved: set[int], position: int) -> Rule:
     rule, _ = Rule.objects.update_or_create(
         title=spec["title"],
         block_type=spec["block_type"],
@@ -79,11 +79,12 @@ def _save_tree(spec: dict, parent: Rule | None, saved: set[int]) -> Rule:
             "credits": spec["credits"],
             "share_targets": spec["share_targets"],
             "transfer_credit_allowed": True,
+            "position": position,
         },
     )
     saved.add(rule.id)
-    for child in spec["children"]:
-        _save_tree(child, rule, saved)
+    for child_position, child in enumerate(spec["children"]):
+        _save_tree(child, rule, saved, child_position)
     return rule
 
 
@@ -113,7 +114,9 @@ def _load() -> list[str]:
             code=code, defaults={"name": name, "suppressed_rules": suppressed}
         )
         saved = set()
-        variant.rules.set([_save_tree(spec, None, saved) for spec in rules_fn()])
+        variant.rules.set(
+            [_save_tree(spec, None, saved, position) for position, spec in enumerate(rules_fn())]
+        )
         Rule.objects.filter(variant_blocks([code])).exclude(id__in=saved).delete()
         variants[code] = variant
 

@@ -297,6 +297,21 @@ class Rule(models.Model):
         related_name="children",
     )
 
+    position = models.PositiveIntegerField(
+        default=0,
+        db_default=0,
+        help_text=dedent(
+            """
+            Where this rule comes among its siblings in its audit, from 0. Ids can't stand in
+            for it: reloading an audit keeps each rule's id, so a reordered or new rule would
+            sort wrongly.
+            """
+        ),
+    )
+
+    class Meta:
+        ordering = ["position", "id"]
+
     def __str__(self) -> str:
         rules_str = ", ".join([str(rule) for rule in self.children.all()])
         return (

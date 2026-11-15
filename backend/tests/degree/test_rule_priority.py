@@ -70,6 +70,25 @@ class RefreshRuleMatchCountsTest(TestCase):
 
         self.assertEqual(Rule.objects.filter(title="Same").count(), 1)
 
+    def test_rules_in_different_places_do_not_deduplicate(self):
+        def degree_with(first, second, concentration):
+            degree = Degree.objects.create(
+                program="EU_BSE", degree="BSE", major="CSCI", concentration=concentration, year=2025
+            )
+            degree.rules.add(
+                rule(first, Q(full_code=f"{first}-1000"), position=0),
+                rule(second, Q(full_code=f"{second}-1000"), position=1),
+            )
+            return degree
+
+        forward = degree_with("CIS", "MATH", "X")
+        backward = degree_with("MATH", "CIS", "Y")
+
+        deduplicate_rules()
+
+        self.assertEqual([r.title for r in forward.rules.all()], ["CIS", "MATH"])
+        self.assertEqual([r.title for r in backward.rules.all()], ["MATH", "CIS"])
+
 
 class ImportRefreshesCountsTest(TestCase):
     def leaves(self):

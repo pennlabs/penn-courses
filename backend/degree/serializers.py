@@ -113,8 +113,9 @@ class RuleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Rule
-        # deduplicate_rules hashes this output, and a count refreshed at a different time must
-        # not stop two identical rules from matching.
+        # deduplicate_rules hashes this output. A count refreshed at a different time must not
+        # stop two identical rules from matching, but position must: merged rules share one row,
+        # and so one position, which would misorder whichever degree had it elsewhere.
         exclude = ["match_count"]
 
 
