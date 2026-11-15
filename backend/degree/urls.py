@@ -4,6 +4,7 @@ from rest_framework_nested.routers import NestedDefaultRouter
 
 from degree.views import (
     BetaAccessView,
+    BetaRequestViewset,
     DegreePlanViewset,
     DegreeViewset,
     DockedCourseViewset,
@@ -24,6 +25,7 @@ router.register(r"majors", MajorViewset, basename="major")
 router.register(r"minors", MinorViewset, basename="minor")
 router.register(r"dual-programs", DualProgramViewset, basename="dual-program")
 router.register(r"docked", DockedCourseViewset)
+router.register(r"beta-requests", BetaRequestViewset, basename="beta-request")
 fulfillments_router = NestedDefaultRouter(
     router, r"degreeplans", lookup="degreeplan", trailing_slash=False
 )

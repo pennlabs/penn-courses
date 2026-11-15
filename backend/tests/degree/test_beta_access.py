@@ -111,3 +111,62 @@ class BetaAccessAdminTest(TestCase):
         response = client.get(reverse("admin:degree_pdpbetauser_changelist"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "pending")
+
+
+class BetaRequestApiTest(TestCase):
+    def setUp(self):
+        users = get_user_model().objects
+        self.staff = users.create_user(username="staff", password="x", is_staff=True)
+        self.member = PDPBetaUser.objects.create(person=users.create_user(username="member"))
+        self.pending = PDPBetaUser.objects.create(
+            person=users.create_user(username="pending", email="p@upenn.edu"),
+            status=Status.REQUESTED,
+        )
+        users.create_user(username="newcomer")
+        self.client = APIClient()
+        self.client.force_login(self.staff)
+
+    def detail(self, beta):
+        return reverse("beta-request-detail", kwargs={"pk": beta.pk})
+
+    def test_only_staff_can_use_it(self):
+        student = get_user_model().objects.create_user(username="student")
+        self.client.force_login(student)
+        self.assertEqual(self.client.get(reverse("beta-request-list")).status_code, 403)
+        response = self.client.patch(self.detail(self.pending), {"status": "APPROVED"})
+        self.assertEqual(response.status_code, 403)
+
+    def test_lists_pending_requests_first(self):
+        response = self.client.get(reverse("beta-request-list"))
+        self.assertEqual([row["username"] for row in response.data], ["pending", "member"])
+        self.assertEqual(response.data[0]["email"], "p@upenn.edu")
+
+    def test_filters_by_status(self):
+        response = self.client.get(reverse("beta-request-list"), {"status": "REQUESTED"})
+        self.assertEqual([row["username"] for row in response.data], ["pending"])
+
+    def test_approving_a_request_lets_the_user_in(self):
+        response = self.client.patch(self.detail(self.pending), {"status": "APPROVED"})
+
+        self.assertEqual(response.status_code, 200, response.data)
+        self.pending.refresh_from_db()
+        self.assertEqual(self.pending.status, Status.APPROVED)
+        self.assertIsNotNone(self.pending.decided_at)
+
+    def test_granting_access_by_pennkey(self):
+        response = self.client.post(reverse("beta-request-list"), {"username": "newcomer"})
+
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(response.data["status"], Status.APPROVED)
+        self.assertTrue(
+            PDPBetaUser.objects.filter(person__username="newcomer", status=Status.APPROVED).exists()
+        )
+
+    def test_granting_an_unknown_pennkey_fails(self):
+        response = self.client.post(reverse("beta-request-list"), {"username": "nobody"})
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("username", response.data)
+
+    def test_the_user_endpoint_says_who_is_staff(self):
+        response = self.client.get(reverse("user-view"))
+        self.assertTrue(response.data["is_staff"])
