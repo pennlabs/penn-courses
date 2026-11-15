@@ -128,6 +128,25 @@ class CourseListTestCase(TestCase):
         response = self.client.get(url, {"days": "M"})
         self.assertEqual(response.status_code, 400, response.data)
 
+    def test_offered_this_semester(self):
+        create_mock_data("CIS-1600-001", "2018C")
+        _, cancelled = create_mock_data("CIS-2400-001", TEST_SEMESTER)
+        cancelled.status = "X"
+        cancelled.save()
+        create_mock_data("MATH-1140-001", "2019C")
+        url = reverse("courses-search", kwargs={"semester": "all_degree_plan"})
+
+        response = self.client.get(url, {"offered_this_semester": "true"})
+        self.assertEqual(
+            {(d["id"], d["semester"]) for d in response.data},
+            {("CIS-1200", TEST_SEMESTER), ("MATH-1140", "2019C")},
+        )
+
+        response = self.client.get(url)
+        self.assertEqual(
+            {d["id"] for d in response.data}, {"CIS-1200", "CIS-1600", "CIS-2400", "MATH-1140"}
+        )
+
 
 class CourseDetailTestCase(TestCase):
     def setUp(self):

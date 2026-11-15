@@ -224,7 +224,25 @@ class CourseList(generics.ListAPIView, BaseCourseMixin):
             )
         )
         queryset = self.filter_by_semester(queryset)
+        if self.get_semester() == "all" and self.request.query_params.get(
+            "offered_this_semester"
+        ) in ("true", "1"):
+            queryset = self.offered_this_semester(queryset)
         return queryset
+
+    @staticmethod
+    def offered_this_semester(queryset):
+        """
+        Courses with an open or closed section in the current semester. Each still comes as
+        its latest offering, which may be a later semester already loaded for registration.
+        """
+        current = get_current_semester(allow_not_found=True)
+        if current is None:
+            return queryset.none()
+        offered = Course.objects.filter(
+            semester=current, sections__status__in=["O", "C"]
+        ).values("full_code")
+        return queryset.filter(full_code__in=offered)
 
 
 class CourseListSearch(CourseList):
