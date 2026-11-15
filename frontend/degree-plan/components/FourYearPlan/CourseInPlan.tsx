@@ -1,4 +1,5 @@
 import { useDrag } from "react-dnd";
+import { useCourseDragPreview } from "@/components/common/CourseDragPreview";
 import { ItemTypes } from "../Dock/dnd/constants";
 import { Course, DnDCourse, Fulfillment } from "@/types";
 import 'react-loading-skeleton/dist/skeleton.css'
@@ -16,13 +17,14 @@ interface CoursePlannedProps {
 const CourseInPlan = (props : CoursePlannedProps) => {
   const { course } = props;
   
-  const [{ isDragging }, drag] = useDrag<DnDCourse, never, { isDragging: boolean }>(() => ({
+  const [{ isDragging }, drag, preview] = useDrag<DnDCourse, never, { isDragging: boolean }>(() => ({
     type: ItemTypes.COURSE_IN_PLAN,
     item: course,
     collect: (monitor) => ({
       isDragging: !!monitor.isDragging()
     })
   }), [course])
+  useCourseDragPreview(preview);
 
   return (
     <CourseComponent courseType={ItemTypes.COURSE_IN_PLAN} fulfillment={course as Fulfillment} dragRef={drag} isDragging={isDragging} isUsed {...props} />
