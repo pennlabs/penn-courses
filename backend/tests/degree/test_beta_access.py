@@ -1,12 +1,17 @@
+from smtplib import SMTPRecipientsRefused
+from unittest.mock import patch
+
 from django.contrib.admin.sites import AdminSite
 from django.contrib.auth import get_user_model
 from django.contrib.messages.storage.fallback import FallbackStorage
-from django.test import RequestFactory, TestCase
+from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework.test import APIClient
 
 from degree.admin import PDPBetaUserAdmin
 from degree.models import PDPBetaUser
+from degree.tasks import send_beta_approval_email
 
 
 Status = PDPBetaUser.Status
@@ -170,3 +175,118 @@ class BetaRequestApiTest(TestCase):
     def test_the_user_endpoint_says_who_is_staff(self):
         response = self.client.get(reverse("user-view"))
         self.assertTrue(response.data["is_staff"])
+
+
+QUEUE = "degree.tasks.send_beta_approval_email.delay"
+
+
+class ApprovalEmailQueuedTest(TestCase):
+    def setUp(self):
+        users = get_user_model().objects
+        self.staff = users.create_superuser(username="staff", password="x")
+        self.pending = PDPBetaUser.objects.create(
+            person=users.create_user(username="pending"), status=Status.REQUESTED
+        )
+        users.create_user(username="newcomer")
+        self.client = APIClient()
+        self.client.force_login(self.staff)
+
+    def queued_for(self, action):
+        with patch(QUEUE) as queue, self.captureOnCommitCallbacks(execute=True):
+            action()
+        return [call.args[0] for call in queue.call_args_list]
+
+    def test_approving_from_the_dashboard_queues_one_email(self):
+        url = reverse("beta-request-detail", kwargs={"pk": self.pending.pk})
+        queued = self.queued_for(lambda: self.client.patch(url, {"status": "APPROVED"}))
+        self.assertEqual(queued, [self.pending.pk])
+
+    def test_granting_by_pennkey_queues_one_email(self):
+        queued = self.queued_for(
+            lambda: self.client.post(reverse("beta-request-list"), {"username": "newcomer"})
+        )
+        self.assertEqual(queued, [PDPBetaUser.objects.get(person__username="newcomer").pk])
+
+    def test_the_admin_action_queues_one_email_each(self):
+        model_admin = PDPBetaUserAdmin(PDPBetaUser, AdminSite())
+        request = RequestFactory().get("/")
+        request.user = self.staff
+        request.session = {}
+        request._messages = FallbackStorage(request)
+        queued = self.queued_for(
+            lambda: model_admin.approve(request, PDPBetaUser.objects.filter(pk=self.pending.pk))
+        )
+        self.assertEqual(queued, [self.pending.pk])
+
+    def test_adding_someone_in_the_admin_emails_them(self):
+        newcomer = get_user_model().objects.get(username="newcomer")
+        queued = self.queued_for(
+            lambda: self.client.post(
+                reverse("admin:degree_pdpbetauser_add"),
+                {"person": newcomer.pk, "status": "APPROVED"},
+            )
+        )
+        self.assertEqual(queued, [PDPBetaUser.objects.get(person=newcomer).pk])
+
+    def test_denying_sends_nothing(self):
+        url = reverse("beta-request-detail", kwargs={"pk": self.pending.pk})
+        self.assertEqual(self.queued_for(lambda: self.client.patch(url, {"status": "DENIED"})), [])
+
+    def test_someone_already_emailed_is_not_emailed_again(self):
+        self.pending.notified_at = timezone.now()
+        self.pending.save()
+        url = reverse("beta-request-detail", kwargs={"pk": self.pending.pk})
+        self.assertEqual(
+            self.queued_for(lambda: self.client.patch(url, {"status": "APPROVED"})), []
+        )
+
+
+@override_settings(SMTP_HOST="smtp.example.com")
+class ApprovalEmailTaskTest(TestCase):
+    def setUp(self):
+        person = get_user_model().objects.create_user(
+            username="quaker", first_name="Ben", email="ben@upenn.edu"
+        )
+        self.beta = PDPBetaUser.objects.create(person=person, status=Status.APPROVED)
+
+    def test_sends_from_penn_course_alert_and_records_it(self):
+        with patch("degree.tasks.send_email") as send:
+            result = send_beta_approval_email(self.beta.pk)
+
+        self.assertEqual(result["result"], "sent")
+        kwargs = send.call_args.kwargs
+        self.assertEqual(kwargs["to"], "ben@upenn.edu")
+        self.assertIn("Penn Course Alert", kwargs["from_"])
+        self.assertIn("Hi Ben", kwargs["html"])
+        self.beta.refresh_from_db()
+        self.assertIsNotNone(self.beta.notified_at)
+
+    def test_never_sends_twice(self):
+        with patch("degree.tasks.send_email") as send:
+            send_beta_approval_email(self.beta.pk)
+            send_beta_approval_email(self.beta.pk)
+        self.assertEqual(send.call_count, 1)
+
+    def test_falls_back_to_the_pennkey_address(self):
+        self.beta.person.email = ""
+        self.beta.person.save()
+        with patch("degree.tasks.send_email") as send:
+            send_beta_approval_email(self.beta.pk)
+        self.assertEqual(send.call_args.kwargs["to"], "quaker@upenn.edu")
+
+    @override_settings(SMTP_HOST="")
+    def test_does_nothing_without_smtp(self):
+        with patch("degree.tasks.send_email") as send:
+            result = send_beta_approval_email(self.beta.pk)
+        self.assertEqual(result["result"], "not configured")
+        send.assert_not_called()
+        self.beta.refresh_from_db()
+        self.assertIsNone(self.beta.notified_at)
+
+    def test_a_refused_address_is_not_marked_sent(self):
+        refused = SMTPRecipientsRefused({"ben@upenn.edu": (550, b"no")})
+        with patch("degree.tasks.send_email", side_effect=refused):
+            result = send_beta_approval_email(self.beta.pk)
+        self.assertEqual(result["result"], "refused")
+        self.beta.refresh_from_db()
+        self.assertIsNone(self.beta.notified_at)

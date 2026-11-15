@@ -24,6 +24,7 @@ PLATFORM_ACCOUNTS = {"ADMIN_PERMISSION": "penn_courses_admin"}
 
 # TODO: This is a BAD HACK. We shouldn't hardcode the base URL into the shortener
 PCA_URL = "https://penncoursealert.com"
+PDP_URL = "https://penndegreeplan.com"
 
 CACHES = {
     "default": {

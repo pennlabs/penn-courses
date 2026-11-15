@@ -6,7 +6,7 @@ from textwrap import dedent
 from typing import Collection, Iterable
 
 from django.contrib.auth import get_user_model
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Case, Count, DecimalField, Q, Sum, Value, When
 from django.db.models.functions import Coalesce
 from django.utils import timezone
@@ -1142,15 +1142,28 @@ class PDPBetaUser(models.Model):
         blank=True,
         help_text="When an admin approved or denied the request. Null while it's pending.",
     )
+    notified_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When the user was emailed that they're in. Null if they haven't been.",
+    )
 
     def __str__(self) -> str:
         return f"{self.person} ({self.get_status_display()})"
 
     def decide(self, status):
-        """Every change of status goes through here, so each records when it was decided."""
+        """
+        Every change of status goes through here, so an approval always sends its email: once
+        the change is saved, and only to someone who hasn't been emailed before.
+        """
         self.status = status
         self.decided_at = None if status == self.Status.REQUESTED else timezone.now()
         self.save()
+        if status == self.Status.APPROVED and self.notified_at is None:
+            from degree.tasks import send_beta_approval_email
+
+            beta_id = self.id
+            transaction.on_commit(lambda: send_beta_approval_email.delay(beta_id))
 
     @classmethod
     def pending_first(cls, queryset):
