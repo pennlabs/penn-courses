@@ -47,8 +47,12 @@ SEMESTER_PARAM_DESCRIPTION = (
     "can just pass 'current' for the current semester. Finally, you can pass 'all' "
     "to always return the most recent course for each full_code, no matter which "
     "semester it is from. The 'all' option can be significantly more expensive, so use "
-    "only where needed. "
+    "only where needed. 'all_degree_plan' is 'all' without the three-digit course codes "
+    "used before 2022B, for Penn Degree Plan. "
 )
+
+ALL_DEGREE_PLAN = "all_degree_plan"
+OLD_COURSE_CODE = r"^\d{3}$"
 
 
 class Health(APIView):
@@ -63,6 +67,8 @@ class BaseCourseMixin(AutoPrefetchViewSetMixin, generics.GenericAPIView):
 
     def get_semester(self):
         semester = self.kwargs.get("semester", "current")
+        if semester == ALL_DEGREE_PLAN:
+            return "all"
         if semester == "current":
             semester = get_current_semester(allow_not_found=True)
             semester = semester if semester is not None else "all"
@@ -81,6 +87,8 @@ class BaseCourseMixin(AutoPrefetchViewSetMixin, generics.GenericAPIView):
                 .order_by("full_code", "-semester")
                 .distinct("full_code")
             )
+            if self.kwargs.get("semester") == ALL_DEGREE_PLAN:
+                queryset = queryset.exclude(code__regex=OLD_COURSE_CODE)
         return queryset
 
     def get_queryset(self):
