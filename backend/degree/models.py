@@ -7,7 +7,7 @@ from typing import Collection, Iterable
 
 from django.contrib.auth import get_user_model
 from django.db import models
-from django.db.models import Count, DecimalField, Q, Sum
+from django.db.models import Case, Count, DecimalField, Q, Sum, Value, When
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
@@ -1111,14 +1111,52 @@ class DockedCourse(models.Model):
         ]
 
 
-# After beta: delete this (and remove the DegreeWaitlist permission class)
+# After beta: delete this (and remove the InPDPBeta permission class)
 class PDPBetaUser(models.Model):
-    person = models.ForeignKey(
+    """
+    A user's place in the PDP beta: a request to join, or access an admin granted. Only
+    approved users get in.
+    """
+
+    class Status(models.TextChoices):
+        REQUESTED = "REQUESTED", "Requested"
+        APPROVED = "APPROVED", "Approved"
+        DENIED = "DENIED", "Denied"
+
+    person = models.OneToOneField(
         get_user_model(),
         on_delete=models.CASCADE,
-        help_text="The user who has access to the PDP beta",
+        related_name="pdp_beta",
+        help_text="The user this beta access belongs to.",
+    )
+    status = models.CharField(
+        max_length=16,
+        choices=Status.choices,
+        # A row an admin adds by hand is a grant; requests from the site say so explicitly.
+        default=Status.APPROVED,
+        help_text="Whether the user has asked to join, been let in, or been turned down.",
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    decided_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When an admin approved or denied the request. Null while it's pending.",
+    )
+
+    def __str__(self) -> str:
+        return f"{self.person} ({self.get_status_display()})"
+
+    def decide(self, status):
+        """Every change of status goes through here, so each records when it was decided."""
+        self.status = status
+        self.decided_at = None if status == self.Status.REQUESTED else timezone.now()
+        self.save()
+
+    @classmethod
+    def pending_first(cls, queryset):
+        """Requests still waiting on a decision, then everyone else, newest first."""
+        waiting = Case(When(status=cls.Status.REQUESTED, then=Value(0)), default=Value(1))
+        return queryset.annotate(waiting=waiting).order_by("waiting", "-created_at")
 
 
 class PDPOnboardingStatus(models.Model):

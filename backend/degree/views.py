@@ -71,7 +71,10 @@ class InPDPBeta(BasePermission):
     message = "Not in the PDP beta."
 
     def has_permission(self, request, view):
-        if not PDPBetaUser.objects.filter(person=request.user).exists():
+        approved = PDPBetaUser.objects.filter(
+            person=request.user, status=PDPBetaUser.Status.APPROVED
+        ).exists()
+        if not approved:
             raise PermissionDenied(self.message)
         return True
 
@@ -862,6 +865,29 @@ class OnboardingStatusView(APIView):
             person=request.user, defaults={"has_been_onboarded": onboarded}
         )
         return Response({"has_been_onboarded": onboarded})
+
+
+class BetaAccessView(APIView):
+    """
+    Get the user's place in the PDP beta, or ask to join it. Status is one of NONE, REQUESTED,
+    APPROVED or DENIED.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        beta = PDPBetaUser.objects.filter(person=request.user).first()
+        return Response({"status": beta.status if beta else "NONE"})
+
+    def post(self, request):
+        # Asking again changes nothing, so a denied user can't re-file by clicking again.
+        beta, created = PDPBetaUser.objects.get_or_create(
+            person=request.user, defaults={"status": PDPBetaUser.Status.REQUESTED}
+        )
+        return Response(
+            {"status": beta.status},
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
 
 
 class OnboardFromTranscript(APIView):

@@ -25,8 +25,40 @@ class RuleAdmin(admin.ModelAdmin):
 
 
 class PDPBetaUserAdmin(admin.ModelAdmin):
-    search_fields = ("person__username", "person__id")
+    search_fields = ("person__username", "person__id", "person__email")
     autocomplete_fields = ("person",)
+    list_display = ("person", "email", "status", "created_at", "decided_at")
+    list_filter = ("status",)
+    readonly_fields = ("created_at", "decided_at")
+    actions = ["approve", "deny"]
+
+    def get_queryset(self, request):
+        return PDPBetaUser.pending_first(super().get_queryset(request).select_related("person"))
+
+    @admin.display(ordering="person__email")
+    def email(self, obj):
+        return obj.person.email
+
+    def decide(self, request, queryset, status):
+        changed = list(queryset.exclude(status=status))
+        for beta in changed:
+            beta.decide(status)
+        self.message_user(request, f"{len(changed)} user(s) {status.label.lower()}.")
+
+    @admin.action(description="Approve selected users")
+    def approve(self, request, queryset):
+        self.decide(request, queryset, PDPBetaUser.Status.APPROVED)
+
+    @admin.action(description="Deny selected users")
+    def deny(self, request, queryset):
+        self.decide(request, queryset, PDPBetaUser.Status.DENIED)
+
+    def save_model(self, request, obj, form, change):
+        # A new row is a decision too: adding someone approved should email them.
+        if not change or "status" in form.changed_data:
+            obj.decide(obj.status)
+        else:
+            super().save_model(request, obj, form, change)
 
 
 class PDPOnboardingStatusAdmin(admin.ModelAdmin):

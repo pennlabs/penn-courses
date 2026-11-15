@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_nested.routers import NestedDefaultRouter
 
 from degree.views import (
+    BetaAccessView,
     DegreePlanViewset,
     DegreeViewset,
     DockedCourseViewset,
@@ -32,6 +33,7 @@ urlpatterns = [
     path("", include(router.urls)),
     path("", include(fulfillments_router.urls)),
     path("onboarding-status", OnboardingStatusView.as_view(), name="onboarding-status"),
+    path("beta-access", BetaAccessView.as_view(), name="beta-access"),
     path(
         "onboard-from-transcript/<slug:degree_plan_id>",
         OnboardFromTranscript.as_view(),
