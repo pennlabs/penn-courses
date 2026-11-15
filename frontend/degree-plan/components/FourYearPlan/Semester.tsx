@@ -390,7 +390,7 @@ const FlexSemester = ({
     const body = (
         <>
             <SemesterContent>
-                {showStats && <Stats fulfillments={fulfillments} />}
+                {showStats && !isTransfer && <Stats fulfillments={fulfillments} />}
                 <CoursesArea $isOver={isOver}>
                     {fulfillments.length === 0 ? (
                         <EmptyCourses>
