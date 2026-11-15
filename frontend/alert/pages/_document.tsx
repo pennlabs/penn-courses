@@ -40,7 +40,11 @@ export default class MyDocument extends Document {
                         href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
                     />
                     <link rel="icon" href="/favicon.ico" />
-                    <script src="https://status.pennlabs.org/banner.js" defer />
+                    <script
+                        src="https://status.pennlabs.org/banner.js"
+                        data-product="penn-courses"
+                        defer
+                    />
                 </Head>
                 <body>
                     <Main />
