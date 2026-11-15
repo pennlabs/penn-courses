@@ -54,21 +54,21 @@ class HealthTestCase(TestCase):
 class CourseListTestCase(TestCase):
     def setUp(self):
         set_semester()
-        self.course, self.section = create_mock_data("CIS-120-001", TEST_SEMESTER)
-        self.math, self.math1 = create_mock_data("MATH-114-001", TEST_SEMESTER)
+        self.course, self.section = create_mock_data("CIS-1200-001", TEST_SEMESTER)
+        self.math, self.math1 = create_mock_data("MATH-1140-001", TEST_SEMESTER)
         self.client = APIClient()
 
     def test_get_courses(self):
         response = self.client.get(reverse("courses-list", kwargs={"semester": "all"}))
         self.assertEqual(len(response.data), 2)
         course_codes = [d["id"] for d in response.data]
-        self.assertTrue("CIS-120" in course_codes and "MATH-114" in course_codes)
+        self.assertTrue("CIS-1200" in course_codes and "MATH-1140" in course_codes)
         self.assertTrue(1, response.data[0]["num_sections"])
         self.assertTrue(1, response.data[1]["num_sections"])
 
     def test_semester_setting(self):
         new_sem = TEST_SEMESTER[:-1] + "Z"
-        create_mock_data("MATH-104-001", new_sem)
+        create_mock_data("MATH-1040-001", new_sem)
 
         response = self.client.get(reverse("courses-list", kwargs={"semester": TEST_SEMESTER}))
         self.assertEqual(len(response.data), 2)
@@ -82,7 +82,7 @@ class CourseListTestCase(TestCase):
     def test_current_semester(self):
         new_sem = TEST_SEMESTER[:-1] + "Z"
         response = self.client.get(reverse("courses-list", kwargs={"semester": "current"}))
-        create_mock_data("MATH-104-001", new_sem)
+        create_mock_data("MATH-1040-001", new_sem)
         self.assertEqual(len(response.data), 2)
 
     def test_all_semester_with_semester_specific_params_is_error(self):
@@ -107,6 +107,26 @@ class CourseListTestCase(TestCase):
         self.math1.save()
         response = self.client.get(reverse("courses-list", kwargs={"semester": "all"}))
         self.assertEqual(response.data[1]["num_sections"], 0, response.data)
+
+    def test_degree_plan_leaves_out_old_three_digit_codes(self):
+        create_mock_data("CIS-120-001", "2018C")
+        response = self.client.get(reverse("courses-list", kwargs={"semester": "all_degree_plan"}))
+        self.assertEqual({d["id"] for d in response.data}, {"CIS-1200", "MATH-1140"})
+
+        response = self.client.get(reverse("courses-list", kwargs={"semester": "all"}))
+        self.assertEqual({d["id"] for d in response.data}, {"CIS-1200", "MATH-1140", "CIS-120"})
+
+    def test_degree_plan_search_leaves_out_old_three_digit_codes(self):
+        create_mock_data("CIS-120-001", "2018C")
+        response = self.client.get(
+            reverse("courses-search", kwargs={"semester": "all_degree_plan"}), {"search": "CIS"}
+        )
+        self.assertEqual([d["id"] for d in response.data], ["CIS-1200"])
+
+    def test_degree_plan_rejects_semester_specific_params_like_all(self):
+        url = reverse("courses-list", kwargs={"semester": "all_degree_plan"})
+        response = self.client.get(url, {"days": "M"})
+        self.assertEqual(response.status_code, 400, response.data)
 
 
 class CourseDetailTestCase(TestCase):

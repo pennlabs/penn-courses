@@ -152,7 +152,7 @@ const buildSearchKey = (ruleId: Rule["id"] | null, query: string) =>
         // Stop fetching if we got fewer results than a full page
         if (previousPageData && !previousPageData.next) return null;
         const page = pageIndex + 1; // DRF pages are 1-indexed
-        return `api/base/all/search/courses?search=${query}${ruleId ? `&rule_ids=${ruleId}` : ""}&page=${page}&page_size=${PAGE_SIZE}`;
+        return `api/base/all_degree_plan/search/courses?search=${query}${ruleId ? `&rule_ids=${ruleId}` : ""}&page=${page}&page_size=${PAGE_SIZE}`;
     }
 
 interface SearchResultsProps {
