@@ -113,9 +113,10 @@ class RuleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Rule
-        # deduplicate_rules hashes this output, and a count refreshed at a different time must
-        # not stop two identical rules from matching.
-        exclude = ["match_count"]
+        # deduplicate_rules hashes this output, and neither a count refreshed at a different
+        # time nor a different place among siblings may stop two identical rules from matching.
+        # Children are serialized in position order, so the position itself isn't needed.
+        exclude = ["match_count", "position"]
 
 
 # Allow recursive serialization of rules

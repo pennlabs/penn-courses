@@ -763,6 +763,7 @@ def rule_differs(stored: Rule, parsed: Rule) -> bool:
             "block_value",
             "share_targets",
             "transfer_credit_allowed",
+            "position",
         )
     ):
         return True
@@ -814,12 +815,22 @@ def move_course_assignments(moved: list[tuple[Rule, Rule]], owner) -> None:
                         assigned.remove(old)
 
 
+def number_siblings(rules: list[Rule]) -> None:
+    """Sets each rule's position among its siblings, from the order `rules` lists them in."""
+    taken = defaultdict(int)
+    for rule in rules:
+        key = id(rule.parent) if rule.parent is not None else None
+        rule.position = taken[key]
+        taken[key] += 1
+
+
 def sync_rules(rules: list[Rule], owner, shared_with=()) -> None:
     """
     Stored rules no longer in the audit are deleted, and a course assigned only to those stays in
     the plan, unassigned. Rules also used by something other than `owner` and `shared_with` are
     left alone, and `owner` gets its own copy.
     """
+    number_siblings(rules)
     owners = [owner, *shared_with]
     stored_roots = list(owner.rules.order_by("id"))
     pairs, unpaired = pair_rules(rules, stored_roots)
