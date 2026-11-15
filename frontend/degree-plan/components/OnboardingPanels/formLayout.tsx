@@ -18,7 +18,7 @@ const contentWidth = `
 export const Card = styled.div`
   ${panelCard}
   width: 90%;
-  height: 85%;
+  height: 95%;
   overflow: hidden;
   box-sizing: border-box;
   border: 1px solid ${color.border};
