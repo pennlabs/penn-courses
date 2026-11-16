@@ -516,8 +516,8 @@ class Minor(ProgramComponent):
 class ProgramVariant(models.Model):
     """
     A delta on a Path degree: rules a coordinated program adds, and leaves of the base
-    audit it suppresses. M&T's Wharton side and Huntsman's College side are variants;
-    LSM and VIPER are not, because they use the ordinary audits.
+    audit it suppresses. M&T's Wharton side and both sides of LSM are variants. VIPER uses
+    the ordinary audits, and Huntsman's College degree is built whole (see huntsman.py).
     """
 
     code = models.CharField(max_length=32, unique=True)
@@ -585,6 +585,17 @@ class DualProgram(models.Model):
         blank=True,
         help_text=(
             "Cap on CUs counted toward both sides. Null means only the two-claim cap applies."
+        ),
+    )
+    unshared_rules = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=dedent(
+            """
+            Pairs of leaves that may not count the same course, though their degrees otherwise
+            share freely, as {"left": matcher, "right": matcher} objects. A matcher has the
+            fields of a variant's suppressed_rules and matches leaves of that side's programs.
+            """
         ),
     )
 

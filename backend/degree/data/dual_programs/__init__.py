@@ -1,8 +1,9 @@
 """
 Coordinated-program deltas that Path audits do not state on their own.
 
-M&T, Huntsman and LSM edit a base degree (extra courses, a suppressed capstone, a different
-liberal-arts shape). VIPER is a pair of ordinary majors and carries no variant.
+M&T, LSM and Huntsman's Wharton side edit a base degree (extra courses, a suppressed capstone, a
+different liberal-arts shape). Huntsman's College degree has no Path audit at all, so huntsman.py
+builds the whole degree. VIPER is a pair of ordinary majors and carries no variant.
 """
 
 from django.db import transaction
@@ -33,12 +34,13 @@ PROGRAMS = [
         "name": "Huntsman Program in International Studies and Business",
         "left_programs": ["AU_BA"],
         "right_programs": ["WU_BS"],
-        "left_allowed_majors": ["INST"],
+        "left_allowed_majors": [huntsman.MAJOR],
         "right_allowed_majors": [],
-        "left_variant": "INST_HUNTSMAN",
-        "right_variant": None,
+        "left_variant": None,
+        "right_variant": "WH_HUNTSMAN",
         "cu_floor": None,
         "max_shared_cu": None,
+        "unshared_rules": huntsman.UNSHARED_RULES,
     },
     {
         "code": "LSM",
@@ -98,7 +100,8 @@ def variant_blocks(codes) -> Q:
 
 def load() -> list[str]:
     """
-    Make the database match VARIANTS and PROGRAMS. Safe to run more than once: rules are
+    Make the database match VARIANTS and PROGRAMS, and build Huntsman's International Studies
+    degree for each catalog year that has College degrees. Safe to run more than once: rules are
     keyed by title, block and parent. Variants, programs and variant rules no longer
     listed here are deleted; plans on a deleted program fall back to an ordinary plan.
     Returns the codes of deleted variants and programs.
@@ -108,6 +111,7 @@ def load() -> list[str]:
 
 
 def _load() -> list[str]:
+    huntsman.load_degrees()
     variants = {}
     for code, (name, rules_fn, suppressed) in VARIANTS.items():
         variant, _ = ProgramVariant.objects.update_or_create(
@@ -121,7 +125,8 @@ def _load() -> list[str]:
         variants[code] = variant
 
     for spec in PROGRAMS:
-        defaults = {key: value for key, value in spec.items() if key != "code"}
+        defaults = {"unshared_rules": []}
+        defaults.update({key: value for key, value in spec.items() if key != "code"})
         for side in ("left_variant", "right_variant"):
             defaults[side] = variants[spec[side]] if spec[side] else None
         DualProgram.objects.update_or_create(code=spec["code"], defaults=defaults)

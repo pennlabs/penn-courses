@@ -300,7 +300,9 @@ class DualPatternTest(TestCase):
         self.assertIsNone(plan.right_variant)
 
     def test_huntsman_selects_the_seminar(self):
-        inst = Degree.objects.create(program="AU_BA", degree="BA", major="INST", year=2026)
+        Degree.objects.create(program="AU_BA", degree="BA", major="ECON", year=2026)
+        load()
+        inst = Degree.objects.get(program="AU_BA", major="INST", year=2026)
         wharton = Degree.objects.create(program="WU_BS", degree="BS", major="WH", year=2026)
         plan = self.plan_with("hunt", "HUNTSMAN", inst, wharton)
         plan_rules = map_rules_and_degrees(plan)

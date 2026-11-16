@@ -121,7 +121,7 @@ def _leaves(rules):
     return leaves
 
 
-def _matcher_hits(rule, matcher) -> bool:
+def matcher_hits(rule, matcher) -> bool:
     block_type = matcher.get("block_type")
     block_value = matcher.get("block_value")
     needle = matcher.get("q_contains")
@@ -145,18 +145,39 @@ def apply_variant(leaves, variant):
     suppressed = []
     kept = []
     for rule in leaves:
-        if any(_matcher_hits(rule, matcher) for matcher in variant.suppressed_rules):
+        if any(matcher_hits(rule, matcher) for matcher in variant.suppressed_rules):
             suppressed.append(rule)
         else:
             kept.append(rule)
     matched = {rule.id for rule in suppressed}
     for matcher in variant.suppressed_rules:
-        if not any(_matcher_hits(rule, matcher) for rule in leaves):
+        if not any(matcher_hits(rule, matcher) for rule in leaves):
             logger.warning("Variant %s matcher %s suppressed no rule.", variant.code, matcher)
 
     extra_roots = tuple(variant.rules.all())
     kept.extend(_leaves(extra_roots))
     return kept, frozenset(matched), extra_roots
+
+
+def unshared_pairs(dual, rule_to_component) -> list[tuple]:
+    """Leaf pairs a coordinated program forbids from counting the same course."""
+    if dual is None or not dual.unshared_rules:
+        return []
+    programs = {"left": dual.left_programs or [], "right": dual.right_programs or []}
+
+    def matching(side, matcher):
+        return [
+            rule
+            for rule, component in rule_to_component.items()
+            if component.program in programs[side] and matcher_hits(rule, matcher)
+        ]
+
+    return [
+        (left, right)
+        for ban in dual.unshared_rules
+        for left in matching("left", ban["left"])
+        for right in matching("right", ban["right"])
+    ]
 
 
 def _degree_title(degree) -> str:
