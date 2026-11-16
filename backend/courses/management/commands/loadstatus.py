@@ -31,7 +31,12 @@ def set_all_status(semester=None, add_status_update=False, verbose=False):
     status_updates_out_of_sync = []
 
     department_codes = get_department_codes()
-    path_course_to_status = asyncio.run(get_all_course_status_path(semester, department_codes))
+    path_course_to_status, failed_departments = asyncio.run(
+        get_all_course_status_path(semester, department_codes)
+    )
+    if failed_departments:
+        # Sections in these departments fall back to the registrar's status.
+        logging.error(f"Path requests failed for departments: {failed_departments}")
 
     for status in tqdm(statuses):
         section_code = status.get("section_id_normalized")
