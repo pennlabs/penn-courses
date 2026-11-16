@@ -13,6 +13,7 @@ import useStickyState from '@/hooks/stickyState';
 import ProgramTabs, { programPanelId, programTabId } from './ProgramTabs';
 import { tourTarget } from '@/components/Tour/OnboardingTour';
 import { PlanProgram, planPrograms } from '@/utils/programs';
+import { containsRule, subscribeRuleNav } from '@/hooks/requirementNav';
 import Collapse, { Chevron } from './Collapse';
 import PorcupineLoader from '../common/PorcupineLoader';
 
@@ -478,6 +479,14 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
   const activeTabKey = programs.some((program) => programKey(program) === storedTabKey)
     ? storedTabKey as string
     : programs.length ? programKey(programs[0]) : "";
+
+  useEffect(() => subscribeRuleNav((ruleId) => {
+    const program = programs.find((item) => containsRule(item.rules, ruleId));
+    if (program && programs.length > 1) setStoredTabKey(programKey(program));
+    window.setTimeout(() => {
+      document.getElementById(`rule-${ruleId}`)?.scrollIntoView({ block: "center", inline: "nearest" });
+    }, 60);
+  }), [programs, setStoredTabKey]);
 
   // Sticky rule headers sit below the tab bar, which grows if a tab's title wraps.
   const [tabBar, setTabBar] = useState<HTMLDivElement | null>(null);

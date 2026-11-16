@@ -8,6 +8,15 @@ const HIGHLIGHT_VARIANT_COLORS = {
   unselected: "var(--warning-bg)",
 } as const;
 
+export const CuLabel = styled.span`
+  margin-left: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+  white-space: nowrap;
+  flex-shrink: 0;
+`;
+
 export const Exclamation = styled(Icon)<{ $color: string }>`
   width: 1rem;
   height: 1rem;

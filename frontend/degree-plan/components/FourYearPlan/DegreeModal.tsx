@@ -1,14 +1,26 @@
 import styled from "@emotion/styled";
-import type { DegreeListing, DegreePlan } from "@/types";
+import type {
+  Degree,
+  DegreeListing,
+  DegreePlan,
+  DualProgram,
+  Major,
+  MajorOption,
+  SchoolOption,
+} from "@/types";
 import React, { useState, useEffect } from "react";
 import { deleteFetcher, postFetcher, useSWRCrud } from "@/hooks/swrcrud";
-import { useSWRConfig } from "swr";
+import useSWR, { useSWRConfig } from "swr";
 import ModalContainer from "../common/ModalContainer";
+import Select from "react-select";
+import { schoolOptions } from "@/components/OnboardingPanels/SharedComponents";
 
 export type ModalKey =
   | "plan-create"
   | "plan-rename"
   | "plan-remove"
+  | "degree-add"
+  | "degree-remove"
   | "semester-remove"
   | null; // null is closed
 
@@ -20,6 +32,10 @@ const getModalTitle = (modalState: ModalKey) => {
       return "Rename degree plan";
     case "plan-remove":
       return "Remove degree plan";
+    case "degree-add":
+      return "Add degree";
+    case "degree-remove":
+      return "Remove degree";
     case "semester-remove":
       return "Remove semester";
     case null:
@@ -53,7 +69,7 @@ const ModalTextWrapper = styled.div`
 
 const ModalText = styled.div`
   color: var(--modal-text-color);
-  font-size: 0.87rem;
+  font-size: var(--type-body);
 `;
 
 const ModalButton = styled.button`
@@ -90,6 +106,22 @@ const CancelButton = styled.button`
   border: none;
 `;
 
+const SelectList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  align-items: left;
+  width: 100%;
+`;
+
+const DegreeAddInterior = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  width: 100%;
+  padding: 1.2rem 2rem;
+`;
+
 /** Create label for major listings */
 export const createMajorLabel = (degree: DegreeListing) => {
   const concentration =
@@ -98,6 +130,12 @@ export const createMajorLabel = (degree: DegreeListing) => {
       : "";
   return `${degree.major_name}${concentration} (${degree.year})`;
 };
+
+interface RemoveDegreeProps {
+  degreeplanId: number;
+  degreeId: number;
+  relation?: "degrees" | "majors" | "minors" | "dual";
+}
 
 interface RemoveSemesterProps {
   helper: () => void;
@@ -108,7 +146,9 @@ interface ModalInteriorProps {
   modalObject:
     | DegreePlan
     | null
-    | RemoveSemesterProps;
+    | RemoveSemesterProps
+    | RemoveDegreeProps
+    | Degree;
   activeDegreePlan: DegreePlan | null;
   setActiveDegreeplan: (arg0: DegreePlan | null) => void;
   close: () => void;
@@ -150,9 +190,73 @@ const ModalInterior = ({
     await mutate("/api/degree/degreeplans"); // use updated degree plan returned
   };
 
+  const [school, setSchool] = useState<SchoolOption>();
+  const [major, setMajor] = useState<MajorOption>();
   const [name, setName] = useState<string>("");
+  const [addMode, setAddMode] = useState<"degree" | "major" | "dual">("degree");
+  const [secondMajor, setSecondMajor] = useState<Major | null>(null);
+  const [dualChoice, setDualChoice] = useState<DualProgram | null>(null);
+  const [dualLeft, setDualLeft] = useState<DegreeListing | null>(null);
+  const [dualRight, setDualRight] = useState<DegreeListing | null>(null);
+
+  const { data: degrees, isLoading: isLoadingDegrees } = useSWR<
+    DegreeListing[]
+  >(`/api/degree/degrees`);
+  const { data: standaloneMajors } = useSWR<Major[]>(`/api/degree/majors`);
+  const { data: dualPrograms } = useSWR<DualProgram[]>(`/api/degree/dual-programs`);
+
+  const getMajorOptions = React.useCallback(() => {
+    /** Filter major options based on selected schools/degrees */
+    const majorOptions =
+      degrees
+        ?.filter((d) => school?.value === d.degree)
+        .map((degree) => ({
+          value: degree,
+          label: createMajorLabel(degree),
+        })) || [];
+    return majorOptions;
+  }, [school]);
 
   if (!modalKey && !modalObject) return <div></div>;
+
+  const [isAddingDegree, setIsAddingDegree] = useState(false);
+  const add_degree = async (degreeplanId: number, degreeId: number) => {
+    setIsAddingDegree(true);
+    try {
+      const updated = await postFetcher(
+        `/api/degree/degreeplans/${degreeplanId}/degrees`,
+        { degree_ids: [degreeId] }
+      );
+      await mutate(`/api/degree/degreeplans/${degreeplanId}`); // use updated degree plan returned
+      await mutate(`/api/degree/degreeplans/${degreeplanId}/fulfillments`);
+      await mutate(`/api/degree/degreeplans/${degreeplanId}/summary`);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsAddingDegree(false);
+    }
+  };
+
+  const remove_degree = async (
+    degreeplanId: number,
+    degreeId: number,
+    relation: "degrees" | "majors" | "minors" | "dual" = "degrees"
+  ) => {
+    // degrees -> degree_ids, majors -> major_ids, minors -> minor_ids
+    const idsField = `${relation.slice(0, -1)}_ids`;
+    const endpoint =
+      relation === "dual"
+        ? `/api/degree/degreeplans/${degreeplanId}/dual-program`
+        : `/api/degree/degreeplans/${degreeplanId}/${relation}`;
+    if (relation === "dual") {
+      await deleteFetcher(endpoint);
+    } else {
+      await deleteFetcher(endpoint, { [idsField]: [degreeId] });
+    }
+    await mutate(`/api/degree/degreeplans/${degreeplanId}`);
+    await mutate(`/api/degree/degreeplans/${degreeplanId}/fulfillments`);
+    await mutate(`/api/degree/degreeplans/${degreeplanId}/summary`);
+  };
 
   switch (modalKey) {
     case "plan-create":
@@ -227,6 +331,185 @@ const ModalInterior = ({
               Remove
             </ModalButton>
           </ButtonRow>
+        </ModalInteriorWrapper>
+      );
+    case "degree-add":
+      return (
+        <ModalInteriorWrapper>
+          <DegreeAddInterior>
+            <SelectList>
+              <Select
+                options={[
+                  { value: "degree" as const, label: "Add a degree" },
+                  { value: "major" as const, label: "Add a second major" },
+                  { value: "dual" as const, label: "Set a dual-degree program" },
+                ]}
+                value={{
+                  value: addMode,
+                  label:
+                    addMode === "major"
+                      ? "Add a second major"
+                      : addMode === "dual"
+                      ? "Set a dual-degree program"
+                      : "Add a degree",
+                }}
+                onChange={(selected) => selected && setAddMode(selected.value)}
+                styles={{ menuPortal: (base) => ({ ...base, zIndex: 999 }) }}
+                menuPortalTarget={modalRefCurrent}
+              />
+              {addMode === "major" && (
+                <Select
+                  options={(standaloneMajors ?? []).map((item) => ({
+                    value: item,
+                    label: `${item.name ?? item.code} (${item.year})`,
+                  }))}
+                  onChange={(selected) => setSecondMajor(selected?.value ?? null)}
+                  placeholder="Second major"
+                  styles={{ menuPortal: (base) => ({ ...base, zIndex: 999 }) }}
+                  menuPortalTarget={modalRefCurrent}
+                />
+              )}
+              {addMode === "dual" && (
+                <>
+                  <Select
+                    options={(dualPrograms ?? []).map((program) => ({
+                      value: program,
+                      label: program.name,
+                    }))}
+                    onChange={(selected) => {
+                      setDualChoice(selected?.value ?? null);
+                      setDualLeft(null);
+                      setDualRight(null);
+                    }}
+                    placeholder="M&T, Huntsman, LSM, VIPER"
+                    styles={{ menuPortal: (base) => ({ ...base, zIndex: 999 }) }}
+                    menuPortalTarget={modalRefCurrent}
+                  />
+                  {dualChoice && (
+                    <>
+                      <Select
+                        options={(degrees ?? [])
+                          .filter(
+                            (degree) =>
+                              dualChoice.left_programs.includes(degree.program) &&
+                              (dualChoice.left_allowed_majors.length === 0 ||
+                                dualChoice.left_allowed_majors.includes(degree.major))
+                          )
+                          .map((degree) => ({
+                            value: degree,
+                            label: `${degree.major_name || degree.major} (${degree.year})`,
+                          }))}
+                        onChange={(selected) => setDualLeft(selected?.value ?? null)}
+                        placeholder="First degree"
+                        styles={{ menuPortal: (base) => ({ ...base, zIndex: 999 }) }}
+                        menuPortalTarget={modalRefCurrent}
+                      />
+                      <Select
+                        options={(degrees ?? [])
+                          .filter(
+                            (degree) =>
+                              dualChoice.right_programs.includes(degree.program) &&
+                              (dualChoice.right_allowed_majors.length === 0 ||
+                                dualChoice.right_allowed_majors.includes(degree.major))
+                          )
+                          .map((degree) => ({
+                            value: degree,
+                            label: `${degree.major_name || degree.major} (${degree.year})`,
+                          }))}
+                        onChange={(selected) => setDualRight(selected?.value ?? null)}
+                        placeholder="Second degree"
+                        styles={{ menuPortal: (base) => ({ ...base, zIndex: 999 }) }}
+                        menuPortalTarget={modalRefCurrent}
+                      />
+                    </>
+                  )}
+                </>
+              )}
+              {addMode === "degree" && (
+              <>
+              <Select
+                options={schoolOptions}
+                value={school}
+                onChange={(selectedOption) =>
+                  setSchool(selectedOption || undefined)
+                }
+                isClearable
+                placeholder="Select School or Program"
+                isLoading={false}
+                styles={{ menuPortal: (base) => ({ ...base, zIndex: 999 }) }}
+                menuPortalTarget={modalRefCurrent}
+              />
+              <Select
+                options={getMajorOptions()}
+                value={major}
+                onChange={(selectedOption) =>
+                  setMajor(selectedOption || undefined)
+                }
+                styles={{ menuPortal: (base) => ({ ...base, zIndex: 999 }) }}
+                menuPortalTarget={modalRefCurrent}
+                isClearable
+                isDisabled={!school}
+                placeholder={
+                  isLoadingDegrees
+                    ? "loading programs..."
+                    : "Major - Concentration (Starting Year)"
+                }
+                isLoading={isLoadingDegrees}
+              />
+              </>
+              )}
+            </SelectList>
+            <ButtonRow $center={true}>
+              <ModalButton
+                disabled={isAddingDegree}
+                onClick={async () => {
+                  const planId = (modalObject as DegreePlan).id;
+                  if (addMode === "major" && secondMajor) {
+                    await postFetcher(`/api/degree/degreeplans/${planId}/majors`, {
+                      major_ids: [secondMajor.id],
+                    });
+                    await mutate(`/api/degree/degreeplans/${planId}`);
+                    await mutate(`/api/degree/degreeplans/${planId}/fulfillments`);
+                    await mutate(`/api/degree/degreeplans/${planId}/summary`);
+                  } else if (addMode === "dual" && dualChoice && dualLeft && dualRight) {
+                    await postFetcher(`/api/degree/degreeplans/${planId}/dual-program`, {
+                      code: dualChoice.code,
+                      left_id: dualLeft.id,
+                      right_id: dualRight.id,
+                    });
+                    await mutate(`/api/degree/degreeplans/${planId}`);
+                    await mutate(`/api/degree/degreeplans/${planId}/fulfillments`);
+                    await mutate(`/api/degree/degreeplans/${planId}/summary`);
+                  } else if (major?.value.id) {
+                    await add_degree(planId, major.value.id);
+                  }
+                  close();
+                }}
+              >
+                {isAddingDegree ? "Adding..." : "Add"}
+              </ModalButton>
+            </ButtonRow>
+          </DegreeAddInterior>
+        </ModalInteriorWrapper>
+      );
+    case "degree-remove":
+      return (
+        <ModalInteriorWrapper>
+          <ModalTextWrapper>
+            <ModalText>{DELETE_CONFIRMATION_MESSAGE("degree")}</ModalText>
+          </ModalTextWrapper>
+          <ModalButton
+            onClick={() => {
+              remove_degree(
+                (modalObject as RemoveDegreeProps).degreeplanId,
+                (modalObject as RemoveDegreeProps).degreeId,
+                (modalObject as RemoveDegreeProps).relation
+              );
+              close();
+            }}
+          >
+            Remove
+          </ModalButton>
         </ModalInteriorWrapper>
       );
     case "semester-remove":

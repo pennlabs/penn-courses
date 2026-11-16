@@ -45,7 +45,10 @@ import {
   SwitchRuleButton,
   DisplacedBanner,
   Exclamation,
+  CuLabel,
 } from "./Course.styles";
+
+export { CuLabel };
 
 const DOUBLE_COUNT_ERROR_MESSAGE =
   "This course is being illegally double counted in your plan!";

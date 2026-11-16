@@ -10,9 +10,10 @@ import { COURSE_LIST_ANIMATION } from "@/constants";
 
 const PlannedCoursesContainer = styled.div`
     flex-grow: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: .5rem;
+    gap: .4rem;
 `;
 
 export const SkeletonCoursesPlanned = () => (

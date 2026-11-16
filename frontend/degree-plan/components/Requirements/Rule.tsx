@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useEffect, useState, useLayoutEffect, useRef, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState, useLayoutEffect, useRef, useCallback, useSyncExternalStore } from "react";
+import styled from "@emotion/styled";
 import RuleLeaf, { SkeletonRuleLeaf } from "./QObject";
 import { DnDCourse, Fulfillment } from "@/types";
 import { Icon } from "../common/bulma_derived_components";
@@ -49,6 +50,43 @@ import {
 } from "./Rule.styles";
 import { ProgramKind } from "./ProgramTabs";
 import Collapse, { Chevron } from "./Collapse";
+import { currentProposal, subscribeProposal } from "@/hooks/generateConfig";
+import { scrollToPlacement } from "@/hooks/requirementNav";
+import { fitsOnCard } from "@/utils/scheduleLabel";
+
+const SuggestionChips = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  min-width: 0;
+  max-width: 100%;
+  align-items: center;
+`;
+
+const SuggestionChip = styled.button<{ $dashed?: boolean }>`
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font: inherit;
+  font-size: var(--type-body);
+  font-weight: 600;
+  padding: 0.35rem 0.65rem;
+  min-height: 28px;
+  border-radius: 9px;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px ${(props) => (props.$dashed ? "dashed" : "solid")} rgba(0, 0, 0, 0.18);
+  background: #fff;
+  color: #4b5563;
+
+  &:hover {
+    border-color: rgba(15, 118, 110, 0.55);
+  }
+`;
+
+const sameText = (left: string, right: string) =>
+  left.replace(/-/g, " ").replace(/\s+/g, " ").trim().toLowerCase()
+  === right.replace(/-/g, " ").replace(/\s+/g, " ").trim().toLowerCase();
 
 /** The kind of program the rules below belong to, which colors their accents. */
 export const ProgramKindContext = createContext<ProgramKind | null>(null);
@@ -162,6 +200,7 @@ export const SkeletonRule: React.FC<React.PropsWithChildren> = ({
 const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: number, depth?: number }) => {
   const { setCourses, courses } = useContext(ExpandedCoursesPanelContext);
   const programKind = useContext(ProgramKindContext);
+  const proposal = useSyncExternalStore(subscribeProposal, currentProposal, () => null);
   const { type, activeDegreePlanId, rule, progress } = ruleTree;
   const satisfied = progress === 1;
   const { animateProgress, justSatisfied } = useRuleAnimation(satisfied);
@@ -404,8 +443,19 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
     const overrideFulfillments = fulfillments.filter(
       (f) => f.overrides?.includes(rule.id)
     );
+    const suggestions = (proposal?.placements || []).filter((row) =>
+      row.rules.includes(rule.id) && !(row.slot_ids?.[0] || "").startsWith("slot:free:")
+    );
+    const chipText = (row: { short_label?: string; full_code?: string | null; label?: string }) =>
+      row.short_label || row.full_code || row.label || "";
+    const showsSearch = suggestions.some((row) => !fitsOnCard(chipText(row)));
+    const visibleSuggestions = suggestions.filter((row) => {
+      if (!fitsOnCard(chipText(row))) return false;
+      if (showsSearch && rule.title && sameText(chipText(row), rule.title)) return false;
+      return true;
+    });
     return (
-      <RuleLeafContainer $isDroppable={canDrop} $isOver={isOver} ref={drop} className="rule-leaf">
+      <RuleLeafContainer id={`rule-${rule.id}`} $isDroppable={canDrop} $isOver={isOver} ref={drop} className="rule-leaf">
         {overrideModal && (
           <OverrideModal
             fullCode={overrideModal.fullCode}
@@ -484,6 +534,21 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
           satisfied={satisfied}
           activeDegreePlanId={activeDegreePlanId}
         />
+        {visibleSuggestions.length > 0 && (
+          <SuggestionChips>
+            {visibleSuggestions.map((row) => (
+              <SuggestionChip
+                key={row.slot_ids[0] || row.full_code || row.label}
+                type="button"
+                $dashed={row.kind !== "placement"}
+                title={row.semester ? "Show on the schedule" : undefined}
+                onClick={() => scrollToPlacement(row)}
+              >
+                {chipText(row).replace(/-/g, " ")}
+              </SuggestionChip>
+            ))}
+          </SuggestionChips>
+        )}
       </RuleLeafContainer>
     );
   }
