@@ -2,10 +2,12 @@ import asyncio
 import base64
 import json
 import logging
+import ssl
 from typing import Dict, List, Tuple
 from urllib.parse import quote
 
 import aiohttp
+import certifi
 import requests
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -18,6 +20,13 @@ from courses.util import get_current_semester, translate_semester
 auth = base64.standard_b64encode(
     f"{settings.WEBHOOK_USERNAME}:{settings.WEBHOOK_PASSWORD}".encode("ascii")
 )
+
+# The base image's system CA store predates some roots Path now uses (e.g. SSL.com 2022).
+SSL_CONTEXT = ssl.create_default_context(cafile=certifi.where())
+
+
+def make_session() -> aiohttp.ClientSession:
+    return aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=SSL_CONTEXT))
 
 
 def map_path_to_opendata(course_status: str) -> str:
@@ -88,7 +97,7 @@ async def send_webhook_requests(
     path_course_to_status: Dict[str, str],
 ) -> None:
     webhook_semaphore = asyncio.Semaphore(25)  # Limit concurrent webhook requests
-    async with aiohttp.ClientSession() as async_session:
+    async with make_session() as async_session:
         tasks = [
             asyncio.create_task(
                 coro=send_webhook_request(
@@ -152,6 +161,8 @@ async def get_department_path_status(
                 ("-".join(result["code"].split(" ")) + "-" + result["no"]): result["stat"]
                 for result in response_json["results"]
             }
+        logging.warning(f"Path returned {response.status} for department {department}")
+        return {}
 
 
 def get_all_course_status_db(semester: str) -> Dict[str, str]:
@@ -170,7 +181,7 @@ def get_department_codes() -> List[str]:
 
 async def get_all_course_status_path(semester: str, department_codes: List[str]) -> Dict[str, str]:
     path_semaphore = asyncio.Semaphore(25)  # Limit concurrent Path requests
-    async with aiohttp.ClientSession() as async_session:
+    async with make_session() as async_session:
         tasks = [
             asyncio.create_task(
                 coro=get_department_path_status(async_session, semester, dept_code, path_semaphore)
