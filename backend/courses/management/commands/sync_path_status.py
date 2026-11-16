@@ -3,7 +3,7 @@ import base64
 import json
 import logging
 import ssl
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 from urllib.parse import quote
 
 import aiohttp
@@ -27,6 +27,10 @@ SSL_CONTEXT = ssl.create_default_context(cafile=certifi.where())
 
 def make_session() -> aiohttp.ClientSession:
     return aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=SSL_CONTEXT))
+
+
+class PathStatusFetchError(Exception):
+    pass
 
 
 def map_path_to_opendata(course_status: str) -> str:
@@ -120,7 +124,7 @@ async def get_department_path_status(
     semester: str,
     department: str,
     path_semaphore: asyncio.Semaphore,
-) -> Tuple[str, str]:
+) -> Optional[Dict[str, str]]:
     headers = {
         "accept": "application/json, text/javascript, */*; q=0.01",
         "accept-language": "en-US,en;q=0.9",
@@ -162,7 +166,7 @@ async def get_department_path_status(
                 for result in response_json["results"]
             }
         logging.warning(f"Path returned {response.status} for department {department}")
-        return {}
+        return None
 
 
 def get_all_course_status_db(semester: str) -> Dict[str, str]:
@@ -179,7 +183,12 @@ def get_department_codes() -> List[str]:
     return list(departments.values_list("code", flat=True))
 
 
-async def get_all_course_status_path(semester: str, department_codes: List[str]) -> Dict[str, str]:
+async def get_all_course_status_path(
+    semester: str, department_codes: List[str]
+) -> Tuple[Dict[str, str], List[str]]:
+    """
+    Returns (section code -> status, department codes whose Path request failed).
+    """
     path_semaphore = asyncio.Semaphore(25)  # Limit concurrent Path requests
     async with make_session() as async_session:
         tasks = [
@@ -190,11 +199,16 @@ async def get_all_course_status_path(semester: str, department_codes: List[str])
         ]
         responses = await asyncio.gather(*tasks, return_exceptions=False)
 
-    return {
+    failed_departments = [
+        dept_code for dept_code, response in zip(department_codes, responses) if response is None
+    ]
+    course_to_status = {
         course: map_path_to_opendata(status)
         for response in responses
+        if response is not None
         for course, status in response.items()
     }
+    return course_to_status, failed_departments
 
 
 def resolve_path_differences(send_data_to_slack=False, verbose=False):
@@ -207,9 +221,13 @@ def resolve_path_differences(send_data_to_slack=False, verbose=False):
         print(f"{len(db_course_to_status)} section statuses fetched from db.")
 
     department_codes = get_department_codes()
-    path_course_to_status = asyncio.run(get_all_course_status_path(semester, department_codes))
+    path_course_to_status, failed_departments = asyncio.run(
+        get_all_course_status_path(semester, department_codes)
+    )
     if verbose:
         print(f"{len(path_course_to_status)} section statuses fetched from Path.")
+        if failed_departments:
+            print(f"Path requests failed for departments: {failed_departments}")
 
     inconsistent_courses = []
     for course, db_status in db_course_to_status.items():
@@ -239,6 +257,12 @@ def resolve_path_differences(send_data_to_slack=False, verbose=False):
         )
         if verbose:
             print("Sent data to Slack.")
+
+    if failed_departments:
+        raise PathStatusFetchError(
+            f"Path requests failed for {len(failed_departments)} of {len(department_codes)} "
+            f"departments; their sections were not reconciled: {failed_departments}"
+        )
 
 
 class Command(BaseCommand):
