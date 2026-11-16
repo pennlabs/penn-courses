@@ -35,7 +35,10 @@ export const ScoreTable = props => {
       ? {
           style: alternating
             ? {
-                backgroundColor: row._viewIndex % 2 ? "#F5F8F8" : "white"
+                backgroundColor:
+                  row._viewIndex % 2
+                    ? "var(--pcr-color-surface-subtle)"
+                    : "white"
               }
             : {},
           onClick: () => {
@@ -92,7 +95,7 @@ export const ScoreTable = props => {
           <span data-tip data-for="final-enrollment">
             <i
               className="fa fa-question-circle"
-              style={{ color: "#c6c6c6", fontSize: "13px" }}
+              style={{ color: "var(--pcr-color-text-faint)", fontSize: "13px" }}
             />
           </span>
           <ReactTooltip
@@ -101,8 +104,8 @@ export const ScoreTable = props => {
             type="light"
             effect="solid"
             border={true}
-            borderColor="#ededed"
-            textColor="#4a4a4a"
+            borderColor="var(--pcr-color-border-divider)"
+            textColor="var(--pcr-color-text-legacy)"
           >
             <span className="tooltip-text">The average final enrollment.</span>
           </ReactTooltip>
@@ -115,7 +118,7 @@ export const ScoreTable = props => {
           <a data-tip data-for="num-openings">
             <i
               className="fa fa-question-circle"
-              style={{ color: "#c6c6c6", fontSize: "13px" }}
+              style={{ color: "var(--pcr-color-text-faint)", fontSize: "13px" }}
             />
           </a>
           <ReactTooltip
@@ -124,8 +127,8 @@ export const ScoreTable = props => {
             type="light"
             effect="solid"
             border={true}
-            borderColor="#ededed"
-            textColor="#4a4a4a"
+            borderColor="var(--pcr-color-border-divider)"
+            textColor="var(--pcr-color-text-legacy)"
           >
             <span className="tooltip-text">
               Averaged across all sections,
@@ -144,7 +147,7 @@ export const ScoreTable = props => {
           <a data-tip data-for="percent-open">
             <i
               className="fa fa-question-circle"
-              style={{ color: "#c6c6c6", fontSize: "13px" }}
+              style={{ color: "var(--pcr-color-text-faint)", fontSize: "13px" }}
             />
           </a>
           <ReactTooltip
@@ -153,8 +156,8 @@ export const ScoreTable = props => {
             type="light"
             effect="solid"
             border={true}
-            borderColor="#ededed"
-            textColor="#4a4a4a"
+            borderColor="var(--pcr-color-border-divider)"
+            textColor="var(--pcr-color-text-legacy)"
           >
             <span className="tooltip-text">
               Averaged across all sections,
@@ -173,7 +176,7 @@ export const ScoreTable = props => {
           <a data-tip data-for="filled-in-adv-reg">
             <i
               className="fa fa-question-circle"
-              style={{ color: "#c6c6c6", fontSize: "13px" }}
+              style={{ color: "var(--pcr-color-text-faint)", fontSize: "13px" }}
             />
           </a>
           <ReactTooltip
@@ -182,8 +185,8 @@ export const ScoreTable = props => {
             type="light"
             effect="solid"
             border={true}
-            borderColor="#ededed"
-            textColor="#4a4a4a"
+            borderColor="var(--pcr-color-border-divider)"
+            textColor="var(--pcr-color-text-legacy)"
           >
             <span className="tooltip-text">
               The percentage of sections that were
@@ -202,7 +205,6 @@ export const ScoreTable = props => {
         {...props}
         showPagination={false}
         resizable={true}
-        style={{ maxHeight: 400 }}
         getTrProps={getTrProps}
         minRows={0}
         pageSize={data.length}

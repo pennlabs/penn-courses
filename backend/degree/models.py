@@ -3,16 +3,24 @@ from __future__ import annotations
 from collections import defaultdict
 from decimal import Decimal
 from textwrap import dedent
-from typing import Iterable
+from typing import Collection, Iterable
 
 from django.contrib.auth import get_user_model
-from django.db import models
-from django.db.models import Count, DecimalField, Q, Sum
+from django.db import models, transaction
+from django.db.models import Case, Count, DecimalField, Q, Sum, Value, When
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from courses.models import Course
-from degree.utils.degree_logic import FULFILLMENT_LEVELS, aggregate_rule_leaves, plan_components
+from degree.utils.degree_logic import (
+    DEFAULT_COURSE_CREDITS,
+    FULFILLMENT_LEVELS,
+    PickGroups,
+    aggregate_rule_leaves,
+    matches_without_record,
+    plan_components,
+    recorded_full_codes,
+)
 from degree.utils.model_utils import json_parser, q_object_parser
 
 
@@ -289,6 +297,21 @@ class Rule(models.Model):
         related_name="children",
     )
 
+    position = models.PositiveIntegerField(
+        default=0,
+        db_default=0,
+        help_text=dedent(
+            """
+            Where this rule comes among its siblings in its audit, from 0. Ids can't stand in
+            for it: reloading an audit keeps each rule's id, so a reordered or new rule would
+            sort wrongly.
+            """
+        ),
+    )
+
+    class Meta:
+        ordering = ["position", "id"]
+
     def __str__(self) -> str:
         rules_str = ", ".join([str(rule) for rule in self.children.all()])
         return (
@@ -309,16 +332,21 @@ class Rule(models.Model):
         """
         return self.transfer_credit_allowed or not is_transfer
 
-    def evaluate(self, full_codes: Iterable[str]) -> bool:
+    def evaluate(self, full_codes: Iterable[str], waived: Collection[int] = frozenset()) -> bool:
         """
-        Check if this rule is fulfilled by the provided courses.
+        Check if this rule is fulfilled by the provided courses. `waived` holds the ids of rules
+        the student has been waived from, which are fulfilled without any course.
         """
+        if self.id in waived:
+            return True
         if self.q:
             # Sums all courses (and corresponding credits), from full_codes, that satisfy this
             # rule's q object. A course counts once, however many semesters it was offered in or
             # attributes the q object joined it against.
+            q = self.get_q_object() or Q()
+            full_codes = set(full_codes)
             matching_courses = (
-                Course.objects.filter(self.get_q_object() or Q(), full_code__in=full_codes)
+                Course.objects.filter(q, full_code__in=full_codes)
                 .order_by("full_code", "-semester")
                 .distinct("full_code")
                 .values("id")
@@ -335,6 +363,13 @@ class Rule(models.Model):
                 )
                 .values()
             )
+            unrecorded = [
+                full_code
+                for full_code in full_codes - recorded_full_codes(full_codes)
+                if matches_without_record(q, full_code)
+            ]
+            total_courses += len(unrecorded)
+            total_credits += len(unrecorded) * DEFAULT_COURSE_CREDITS
 
             assert self.num is not None or self.credits is not None
             if self.num is not None and total_courses < self.num:
@@ -347,7 +382,7 @@ class Rule(models.Model):
         else:
             count = 0
             for child in self.children.all():
-                if not child.evaluate(full_codes):
+                if not child.evaluate(full_codes, waived):
                     if self.num is None:
                         return False
                 else:
@@ -362,7 +397,10 @@ class Rule(models.Model):
         """
         if self.q:
             assert self.num is not None or self.credits is not None
-            return Course.objects.filter(self.get_q_object() or Q(), full_code=full_code).exists()
+            q = self.get_q_object() or Q()
+            if not Course.objects.filter(full_code=full_code).exists():
+                return matches_without_record(q, full_code)
+            return Course.objects.filter(q, full_code=full_code).exists()
         else:
             count = 0
             for child in self.children.all():
@@ -611,6 +649,22 @@ class DegreePlan(models.Model):  #
         ),
     )
 
+    waived_rules = models.ManyToManyField(
+        Rule,
+        blank=True,
+        related_name="waived_in_plans",
+        help_text=dedent(
+            """
+            Requirements the student has been waived from, e.g. Wharton's Introductory
+            Economics after AP Microeconomics and Macroeconomics, or a language requirement
+            met by a placement exam. Each is a single requirement (a leaf rule), never a
+            whole block. A waived rule is satisfied without any course, so it adds no course
+            units and takes none of the plan's courses. Path audits grant these from exam
+            scores, which a plan does not have.
+            """
+        ),
+    )
+
     person = models.ForeignKey(
         get_user_model(),
         on_delete=models.CASCADE,
@@ -658,11 +712,12 @@ class DegreePlan(models.Model):  #
             return
 
         full_codes = list(self.fulfillments.values_list("full_code", flat=True))
+        waived = set(self.waived_rules.values_list("id", flat=True))
         stored = {
             status.rule_id: status for status in self.satisfactions.filter(rule__in=top_level_rules)
         }
         for rule in top_level_rules:
-            satisfied = rule.evaluate(full_codes)
+            satisfied = rule.evaluate(full_codes, waived=waived)
             status = stored.get(rule.id)
             if status is None:
                 SatisfactionStatus.objects.create(degree_plan=self, rule=rule, satisfied=satisfied)
@@ -688,10 +743,11 @@ class DegreePlan(models.Model):  #
             if dcr.is_double_count_violated(self):
                 violated_dcrs.add(dcr)
 
+        waived = set(self.waived_rules.values_list("id", flat=True))
         for rule in rules:
             rule_fulfillments = self.get_rule_fulfillments(rule)
             full_codes = [fulfillment.full_code for fulfillment in rule_fulfillments]
-            if rule.evaluate(full_codes):
+            if rule.evaluate(full_codes, waived=waived):
                 satisfied_rules.add(rule)
 
         return (satisfied_rules, violated_dcrs)
@@ -700,10 +756,12 @@ class DegreePlan(models.Model):  #
         """
         A rule is already satisfied when the courses assigned to it meet its count, its CU
         total, or both. CU is the sum of those courses' credits, not the number of courses.
+        A waived rule is satisfied regardless.
         """
         rules = list(rules)
         if not rules:
             return set()
+        waived = set(self.waived_rules.all())
 
         fulfillments = list(
             Fulfillment.objects.filter(degree_plan=self, rules__in=rules)
@@ -724,7 +782,7 @@ class DegreePlan(models.Model):  #
             .values_list("full_code", "credits")
         }
 
-        satisfied_rules = set()
+        satisfied_rules = waived.intersection(rules)
         for rule in rules:
             assigned = by_rule.get(rule.id, [])
             count = len(assigned)
@@ -733,7 +791,7 @@ class DegreePlan(models.Model):  #
             cu_ok = rule.credits is None or cu >= rule.credits
             if (rule.num is not None or rule.credits is not None) and num_ok and cu_ok:
                 satisfied_rules.add(rule)
-        return satisfied_rules
+        return satisfied_rules | PickGroups(rules).closed(satisfied_rules)
 
     def copy(self, new_name: str) -> DegreePlan:
         """
@@ -753,6 +811,7 @@ class DegreePlan(models.Model):  #
             new_degree_plan.majors.add(major)
         for minor in self.minors.all():
             new_degree_plan.minors.add(minor)
+        new_degree_plan.waived_rules.set(self.waived_rules.all())
 
         for fulfillment in self.fulfillments.all():
             rules = fulfillment.rules.all()
@@ -1052,11 +1111,85 @@ class DockedCourse(models.Model):
         ]
 
 
-# After beta: delete this (and remove the DegreeWaitlist permission class)
+# After beta: delete this (and remove the InPDPBeta permission class)
 class PDPBetaUser(models.Model):
-    person = models.ForeignKey(
+    """
+    A user's place in the PDP beta: a request to join, or access an admin granted. Only
+    approved users get in.
+    """
+
+    class Status(models.TextChoices):
+        REQUESTED = "REQUESTED", "Requested"
+        APPROVED = "APPROVED", "Approved"
+        DENIED = "DENIED", "Denied"
+
+    person = models.OneToOneField(
         get_user_model(),
         on_delete=models.CASCADE,
-        help_text="The user who has access to the PDP beta",
+        related_name="pdp_beta",
+        help_text="The user this beta access belongs to.",
+    )
+    status = models.CharField(
+        max_length=16,
+        choices=Status.choices,
+        # A row an admin adds by hand is a grant; requests from the site say so explicitly.
+        default=Status.APPROVED,
+        help_text="Whether the user has asked to join, been let in, or been turned down.",
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    decided_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When an admin approved or denied the request. Null while it's pending.",
+    )
+    notified_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When the user was emailed that they're in. Null if they haven't been.",
+    )
+
+    def __str__(self) -> str:
+        return f"{self.person} ({self.get_status_display()})"
+
+    def decide(self, status):
+        """
+        Every change of status goes through here, so an approval always sends its email: once
+        the change is saved, and only to someone who hasn't been emailed before.
+        """
+        self.status = status
+        self.decided_at = None if status == self.Status.REQUESTED else timezone.now()
+        self.save()
+        if status == self.Status.APPROVED and self.notified_at is None:
+            from degree.tasks import send_beta_approval_email
+
+            beta_id = self.id
+            transaction.on_commit(lambda: send_beta_approval_email.delay(beta_id))
+
+    @classmethod
+    def pending_first(cls, queryset):
+        """Requests still waiting on a decision, then everyone else, newest first."""
+        waiting = Case(When(status=cls.Status.REQUESTED, then=Value(0)), default=Value(1))
+        return queryset.annotate(waiting=waiting).order_by("waiting", "-created_at")
+
+
+class PDPOnboardingStatus(models.Model):
+    """
+    Whether a user has finished the PDP onboarding tour. Kept in its own table instead of on
+    the user profile, so adding it doesn't rewrite a row for every user. A user with no row
+    hasn't been onboarded.
+    """
+
+    person = models.OneToOneField(
+        get_user_model(),
+        on_delete=models.CASCADE,
+        related_name="pdp_onboarding_status",
+        help_text="The user this onboarding status belongs to.",
+    )
+    has_been_onboarded = models.BooleanField(
+        default=False,
+        help_text="Defaults to False, set to True once the user completes the PDP onboarding tour.",
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.person}: {'onboarded' if self.has_been_onboarded else 'not onboarded'}"

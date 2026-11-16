@@ -51,7 +51,7 @@ export const CourseDetails = ({ data = {} }) => {
     <li>
       {id}
       <i className={`ml-2 fa fa-fw fa-${isOpen ? "check" : "times"}`} />
-      <span className="ml-2" style={{ color: "#aaa" }}>
+      <span className="ml-2" style={{ color: "var(--pcr-color-text-muted)" }}>
         {getTimeString(meetings)}
       </span>
     </li>

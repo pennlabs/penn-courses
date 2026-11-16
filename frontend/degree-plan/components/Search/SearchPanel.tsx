@@ -5,6 +5,7 @@ import styled from "@emotion/styled";
 import { DegreePlan, Rule, Fulfillment } from "@/types";
 import { PanelContainer, PanelHeader } from "../FourYearPlan/PanelCommon";
 import { GrayIcon } from "../common/bulma_derived_components";
+import useStickyState from "@/hooks/stickyState";
 
 interface SearchPanelContextType {
     setSearchPanelOpen: (arg0: boolean) => void;
@@ -59,6 +60,22 @@ const SearchField = styled.input`
     font: inherit;
 `;
 
+const OfferedToggle = styled.label`
+    display: flex;
+    align-items: center;
+    gap: .4rem;
+    margin: .5rem .25rem 0;
+    font-size: .85rem;
+    color: #575757;
+    cursor: pointer;
+    user-select: none;
+
+    input {
+        accent-color: var(--primary-color-xxx-dark);
+        cursor: pointer;
+    }
+`
+
 const PanelTitle = styled.div`
     font-weight: 700;
 `
@@ -87,6 +104,7 @@ export const SearchPanel = ({ activeDegreeplanId, autoFocus = true }: SearchPane
     // queryString and searchRuleQuery are different (queryString is the actual query e.g., "World Civ",
     // and searchRuleQuery is a q object)
     const [queryString, setQueryString] = React.useState<string>("");
+    const [offeredOnly, setOfferedOnly] = useStickyState<boolean>("PDP-search-offered-this-semester", false);
 
     React.useEffect(() => {
         setQueryString("");
@@ -122,7 +140,15 @@ export const SearchPanel = ({ activeDegreeplanId, autoFocus = true }: SearchPane
                         placeholder={!ruleId ? "Search for a course!" : `Filtering for a requirement`}
                     />
                 </SearchContainer>
-                <SearchResults ruleId={ruleId} query={queryString} activeDegreeplanId={activeDegreeplanId} fulfillments={fulfillments}/> 
+                <OfferedToggle>
+                    <input
+                        type="checkbox"
+                        checked={offeredOnly}
+                        onChange={(e) => setOfferedOnly(e.target.checked)}
+                    />
+                    Offered this semester
+                </OfferedToggle>
+                <SearchResults ruleId={ruleId} query={queryString} offeredOnly={offeredOnly} activeDegreeplanId={activeDegreeplanId} fulfillments={fulfillments}/> 
             </SearchPanelBody>
         </PanelContainer>
     )
@@ -146,26 +172,27 @@ export const useDebounce = (value: any, delay: number) => {
 
 const PAGE_SIZE = 50;
 
-const buildSearchKey = (ruleId: Rule["id"] | null, query: string) =>
+const buildSearchKey = (ruleId: Rule["id"] | null, query: string, offeredOnly: boolean) =>
     (pageIndex: number, previousPageData: any): string | null => {
         if (!(query.length >= 3 || ruleId)) return null;
         // Stop fetching if we got fewer results than a full page
         if (previousPageData && !previousPageData.next) return null;
         const page = pageIndex + 1; // DRF pages are 1-indexed
-        return `api/base/all/search/courses?search=${query}${ruleId ? `&rule_ids=${ruleId}` : ""}&page=${page}&page_size=${PAGE_SIZE}`;
+        return `api/base/all_degree_plan/search/courses?search=${query}${ruleId ? `&rule_ids=${ruleId}` : ""}${offeredOnly ? "&offered_this_semester=true" : ""}&page=${page}&page_size=${PAGE_SIZE}`;
     }
 
 interface SearchResultsProps {
     ruleId: Rule["id"] | null,
     query: string,
+    offeredOnly: boolean,
     activeDegreeplanId: DegreePlan["id"] | null,
     fulfillments: Fulfillment[]
 }
-const SearchResults = ({ ruleId, query, activeDegreeplanId, fulfillments }: SearchResultsProps) => {
+const SearchResults = ({ ruleId, query, offeredOnly, activeDegreeplanId, fulfillments }: SearchResultsProps) => {
     const DISABLE_SEARCH = false
     const debouncedQuery = useDebounce(query, 400)
     const { data, size, setSize, isLoading: isLoadingCourses, isValidating } = useSWRInfinite(
-        DISABLE_SEARCH ? () => null : buildSearchKey(ruleId, debouncedQuery),
+        DISABLE_SEARCH ? () => null : buildSearchKey(ruleId, debouncedQuery, offeredOnly),
         { revalidateFirstPage: false }
     );
 

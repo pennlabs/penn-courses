@@ -183,7 +183,16 @@ const ReviewPanel = ({
     currentSemester,
     degreePlanId
 }: ReviewPanelProps) => {
-    const { data } = useSWR(`/api/base/all/courses/${full_code}`, { refreshInterval: 0 }); // data is largely static  
+    // A course we can't load just has no details to show, so it's not worth a toast or retries.
+    const { data: course, error } = useSWR(`/api/base/all/courses/${full_code}`, {
+        refreshInterval: 0, // data is largely static
+        shouldRetryOnError: false,
+        onError: () => {},
+    });
+    const data = course ?? (error && full_code ? {
+        id: full_code,
+        description: "We don't have a description for this course.",
+    } : undefined);
     let { left, right, top, bottom } = position;
     if (!left && !right) left = 0;
     if (!top && !bottom) right = 0;

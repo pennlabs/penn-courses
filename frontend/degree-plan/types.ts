@@ -139,6 +139,8 @@ export interface DegreePlan extends DBObject {
   right_variant?: string | null;
   /** Each degree, major and minor as the plan applies it, e.g. with M&T's changes made. */
   components?: PlanComponent[];
+  /** Requirements the student is waived from, e.g. by AP exams; done without any course. */
+  waived_rules?: Rule["id"][];
   name: string;
   updated_at: string;
   created_at: string;
@@ -169,6 +171,7 @@ export interface User {
     first_name: string;
     last_name: string;
     profile: Profile;
+    is_staff?: boolean;
 }
 
 export interface Options {

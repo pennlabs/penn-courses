@@ -1,4 +1,5 @@
 import { useDrag } from "react-dnd";
+import { useCourseDragPreview } from "@/components/common/CourseDragPreview";
 import { ItemTypes } from "@/components/Dock/dnd/constants";
 import { DnDCourse, DockedCourse, Fulfillment } from "@/types";
 import CourseComponent from "@/components/Course/Course";
@@ -38,13 +39,14 @@ const CourseInExpanded = ( { course, isDisabled, rule_id, fulfillment, activeDeg
         createOrUpdate({"full_code": full_code}, full_code); 
     }
 
-    const [{ isDragging }, drag] = useDrag<DnDCourse, never, { isDragging: boolean }>(() => ({
+    const [{ isDragging }, drag, preview] = useDrag<DnDCourse, never, { isDragging: boolean }>(() => ({
       type: ItemTypes.COURSE_IN_EXPAND,
       item: {...course, rule_id: rule_id},
       collect: (monitor) => ({
         isDragging: !!monitor.isDragging()
       })
     }), [course])
+    useCourseDragPreview(preview);
   
     return (
       <CourseComponentContainer>

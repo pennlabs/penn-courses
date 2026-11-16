@@ -19,6 +19,7 @@ from degree.models import (
     Fulfillment,
     Major,
     Minor,
+    PDPBetaUser,
     Rule,
 )
 from degree.utils.composition import compose
@@ -108,13 +109,35 @@ class SimpleCourseSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class BetaRequestSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source="person.username", read_only=True)
+    first_name = serializers.CharField(source="person.first_name", read_only=True)
+    last_name = serializers.CharField(source="person.last_name", read_only=True)
+    email = serializers.CharField(source="person.email", read_only=True)
+
+    class Meta:
+        model = PDPBetaUser
+        fields = [
+            "id",
+            "username",
+            "first_name",
+            "last_name",
+            "email",
+            "status",
+            "created_at",
+            "decided_at",
+        ]
+        read_only_fields = ["created_at", "decided_at"]
+
+
 class RuleSerializer(serializers.ModelSerializer):
     q_json = serializers.ReadOnlyField(help_text="JSON representation of the q object")
 
     class Meta:
         model = Rule
-        # deduplicate_rules hashes this output, and a count refreshed at a different time must
-        # not stop two identical rules from matching.
+        # deduplicate_rules hashes this output. A count refreshed at a different time must not
+        # stop two identical rules from matching, but position must: merged rules share one row,
+        # and so one position, which would misorder whichever degree had it elsewhere.
         exclude = ["match_count"]
 
 
@@ -415,6 +438,15 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
         )
     )
 
+    waived_rules = serializers.PrimaryKeyRelatedField(
+        many=True,
+        read_only=True,
+        help_text=(
+            "Ids of the requirements this plan is waived from. Change them through the "
+            "`waivers` route."
+        ),
+    )
+
     person = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     def get_components(self, obj):
@@ -449,6 +481,7 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
             "dual_program",
             "right_variant",
             "components",
+            "waived_rules",
             "person",
             "created_at",
             "updated_at",

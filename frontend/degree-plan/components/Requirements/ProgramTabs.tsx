@@ -1,5 +1,6 @@
-import React, { forwardRef, useEffect, useRef } from "react";
+import React, { forwardRef, useEffect, useRef, useState } from "react";
 import styled from "@emotion/styled";
+import { useDragLayer } from "react-dnd";
 
 import { ProgramKind } from "@/utils/programs";
 
@@ -16,6 +17,8 @@ export interface ProgramTab {
 
 // Full names fit side by side up to this many programs; beyond that tabs show codes and scroll.
 const MAX_TABS_WITH_FULL_NAMES = 2;
+
+const DRAG_OPEN_DELAY_MS = 400;
 
 const RING_SIZE = 28;
 const RING_STROKE = 2.5;
@@ -41,6 +44,7 @@ const TabList = styled.div`
 const Tab = styled.button<{
   $kind: ProgramKind;
   $isActive: boolean;
+  $isDragTarget: boolean;
   $scrolls: boolean;
 }>`
   flex: ${(props) => (props.$scrolls ? "1 0 auto" : "1 1 0")};
@@ -55,7 +59,8 @@ const Tab = styled.button<{
     ${(props) =>
       props.$isActive ? `var(--program-${props.$kind})` : "transparent"};
   border-radius: 0;
-  background: transparent;
+  background: ${(props) =>
+    props.$isDragTarget ? "rgba(197, 210, 246, 0.55)" : "transparent"};
   text-align: left;
   color: ${(props) =>
     props.$isActive ? "var(--primary-color-ultra-dark)" : "#6b7190"};
@@ -193,6 +198,17 @@ const ProgramTabs = forwardRef<HTMLDivElement, ProgramTabsProps>(
       wasLoaded.current = loaded;
     });
 
+    const isDragging = useDragLayer((monitor) => monitor.isDragging());
+    const [dragTarget, setDragTarget] = useState<string | null>(null);
+    useEffect(() => {
+      if (!isDragging) setDragTarget(null);
+    }, [isDragging]);
+    useEffect(() => {
+      if (!dragTarget || dragTarget === activeKey) return;
+      const timer = setTimeout(() => onSelect(dragTarget), DRAG_OPEN_DELAY_MS);
+      return () => clearTimeout(timer);
+    }, [dragTarget, activeKey, onSelect]);
+
     const activeTabRef = useRef<HTMLButtonElement>(null);
     useEffect(() => {
       activeTabRef.current?.scrollIntoView({
@@ -241,7 +257,14 @@ const ProgramTabs = forwardRef<HTMLDivElement, ProgramTabsProps>(
               $kind={tab.kind}
               $isActive={isActive}
               $scrolls={scrolls}
+              $isDragTarget={dragTarget === tab.key && !isActive}
               onClick={() => onSelect(tab.key)}
+              onDragEnter={() => isDragging && setDragTarget(tab.key)}
+              onDragLeave={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+                  setDragTarget((key) => (key === tab.key ? null : key));
+                }
+              }}
             >
               <TabCopy>
                 <TabName $isActive={isActive}>

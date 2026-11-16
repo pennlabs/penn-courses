@@ -10,6 +10,7 @@ import useSWR from 'swr';
 import { DarkBlueBackgroundSkeleton } from "../FourYearPlan/PanelCommon";
 import _ from 'lodash';
 import CourseInDock from './CourseInDock';
+import { tourTarget } from '@/components/Tour/OnboardingTour';
 import { useAutoAnimate } from '@formkit/auto-animate/react';
 import { COURSE_LIST_ANIMATION } from '@/constants';
 
@@ -251,6 +252,7 @@ const Dock = ({ user, activeDegreeplanId  }: DockProps) => {
     return (
         <DockWrapper ref={drop} >
             <DockContainer
+                {...tourTarget("dock")}
                 $isDroppable={canDrop}
                 $isOver={isOver}
                 $isExpanded={isExpanded}
@@ -265,7 +267,7 @@ const Dock = ({ user, activeDegreeplanId  }: DockProps) => {
                         onPointerDown={startResize}
                     />
                 )}
-                <AddCourseButton type="button" onClick={() => {
+                <AddCourseButton type="button" {...tourTarget("add-course")} onClick={() => {
                     setSearchRuleQuery("");
                     setSearchRuleId(null);
                     setSearchPanelOpen(!searchPanelOpen);

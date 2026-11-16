@@ -1,19 +1,31 @@
 
-import { useMemo, useState, useContext, useRef, useLayoutEffect, useEffect } from 'react';
-import RuleComponent, { SkeletonRule } from './Rule';
+import { useCallback, useEffect, useMemo, useState, useContext, useRef, useLayoutEffect } from 'react';
+import RuleComponent, { FulfillmentsLoadedContext, ProgramKindContext, WaiversContext } from './Rule';
 import { Degree as DegreeType, DegreePlan, Fulfillment, Rule, Degree as DegreeD } from '@/types';
 import styled from '@emotion/styled';
 import { DarkBlueBackgroundSkeleton, PanelBody, PanelContainer, PanelHeader, PanelTopBarIconList } from "../FourYearPlan/PanelCommon";
 import { EditButton } from '../FourYearPlan/EditButton';
-import useSWR from 'swr';
+import useSWR, { useSWRConfig } from 'swr';
+import { baseFetcher, postFetcher } from '@/hooks/swrcrud';
 import { Icon } from '../common/bulma_derived_components';
 import React from 'react';
-import { ModalKey } from '../FourYearPlan/DegreeModal';
-import { LightTrashIcon } from '../common/TrashIcon';
-import PlanSummaryBar from './PlanSummaryBar';
-import { centerInRequirements, containsRule, subscribeRuleNav } from '@/hooks/requirementNav';
-import { PanelOption, PanelOptionsContext } from './QObject';
-import { programColor } from '../FourYearPlan/programColor';
+import useStickyState from '@/hooks/stickyState';
+import ProgramTabs, { programPanelId, programTabId } from './ProgramTabs';
+import { tourTarget } from '@/components/Tour/OnboardingTour';
+import { PlanProgram, planPrograms } from '@/utils/programs';
+import { containsRule, subscribeRuleNav } from '@/hooks/requirementNav';
+import Collapse, { Chevron } from './Collapse';
+import PorcupineLoader from '../common/PorcupineLoader';
+
+const REQUIREMENT_LOADING_MESSAGES = [
+  "Fetching your requirements…",
+  "Counting credits…",
+  "Checking the fine print…",
+  "Sharpening quills…",
+];
+
+// Waiver changes answer with the updated plan.
+const deleteFetcher = baseFetcher({ method: "DELETE" });
 
 const EmptyPanelContainer = styled.div`
   display: flex;
@@ -29,17 +41,28 @@ const EmptyPanelImage = styled.img`
     max-width: min(60%, 20rem);
 `;
 
-const EmptyPanel = ({ onAdd }: { onAdd?: () => void }) => {
+const EmptyPanelButton = styled.button`
+  margin-top: 1rem;
+  padding: .6rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: var(--primary-color-light);
+  color: var(--primary-color-xxx-dark);
+  font: inherit;
+  font-weight: 600;
+
+  &:hover {
+    background: var(--primary-color-dark);
+    color: var(--primary-color-ultra-dark);
+  }
+`;
+
+const EmptyPanel = ({ onAdd }: { onAdd: () => void }) => {
   return (
     <EmptyPanelContainer>
       <EmptyPanelImage src="/images/empty-state-cal.svg" />
       There's nothing here so far... add a degree to get started!
-      {onAdd && (
-        <AddButton role="button" onClick={onAdd}>
-          <i className="fa fa-plus" />
-          <div>Add a degree</div>
-        </AddButton>
-      )}
+      <EmptyPanelButton type="button" onClick={onAdd}>Add a degree</EmptyPanelButton>
     </EmptyPanelContainer>
   )
 }
@@ -48,120 +71,77 @@ const DegreeHeaderContainer = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 8px;
-  font-size: var(--type-body);
-  font-weight: 700;
-  line-height: 1.25;
-  background-color: var(--primary-color-xx-dark);
+  font-size: 1rem;
+  font-weight: 500;
+  background-color: var(--primary-color-ultra-dark);
   color: #FFF;
-  padding: 6px 10px;
-  border-radius: 6px;
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--req-item-radius);
   position: sticky;
   top: 0;
   z-index: 1000;
+  overflow: hidden;
+  gap: .5rem;
+`
+
+const DegreeHeaderFill = styled.div<{ $progress: number }>`
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: ${(props) => props.$progress * 100}%;
+  background: rgba(255, 255, 255, 0.16);
+  pointer-events: none;
+`
+
+const DegreeHeaderAction = styled.span`
+  position: relative;
 `
 
 const ReqPanelTitle = styled.div`
-  font-size: var(--type-title);
+  font-size: 1.25rem;
   font-weight: 700; 
 `
 
 const DegreeBody = styled.div`
-  min-width: 0;
-  max-width: 100%;
-  overflow-x: clip;
+  overflow-y: none;
 `
-
-const TabRow = styled.div`
-  display: flex;
-  width: 100%;
-  position: sticky;
-  top: 0;
-  z-index: 1001;
-  background: #fff;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-`;
-
-const Tab = styled.button<{ $active: boolean }>`
-  flex: 1 1 0;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 1px;
-  margin: 0;
-  padding: 8px 10px;
-  border: none;
-  border-bottom: 3px solid ${(props) => (props.$active ? "var(--primary-color-xx-dark)" : "transparent")};
-  background: ${(props) => (props.$active ? "rgba(98, 116, 241, 0.12)" : "transparent")};
-  color: inherit;
-  font: inherit;
-  font-weight: 700;
-  text-align: left;
-  cursor: pointer;
-
-  span {
-    width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-`;
 
 export const DegreeYear = styled.span`
   margin-left: .25rem;
-  font-size: var(--type-body);
+  font-size: .9rem;
   font-weight: 500;
 `
 const DegreeTitleWrapper = styled.div`
+  position: relative;
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: .5rem;
 `
-const AddButton = styled.div`
-  width: 100%;
-  display: flex;
-  flex-direction: row;
-  gap: 1rem;
-  justify-content: center;
-  background-color: var(--plus-button-color);
-  padding: 1rem;
-  border-radius: var(--req-item-radius);
-  align-items: center;
-  color: white;
-`
 
-const ReqPanelShell = styled(PanelContainer)`
-  min-width: 0;
-  max-width: 100%;
-  overflow: hidden;
-`
-
-const ReqPanelBody = styled(PanelBody)`
-  min-width: 0;
-  max-width: 100%;
-  overflow-x: hidden;
+const ReqPanelBody = styled(PanelBody)<{ $hasTabs?: boolean }>`
   overflow-y: scroll;
-  padding: 0.55rem 0.65rem;
+  padding: ${(props) => (props.$hasTabs ? ".85rem 1.5rem 1.5rem" : "1.5rem")};
   gap: 0;
 `
 
 // pr, mr for scroll bar
-const ReqContent = styled.div`
-  min-width: 0;
-  max-width: 100%;
+// Fades by opacity only: a transform would make it the containing block for the sticky rule headers.
+const ReqContent = styled.div<{ $shown: boolean }>`
+  opacity: ${(props) => (props.$shown ? 1 : 0)};
+  transition: opacity .4s ease-out;
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
   padding: 0;
   padding-right: 12px;
   margin-right: -12px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  overflow-x: hidden;
+  gap: .5rem;
   overflow-y: scroll;
 `
 
-export const HEADER_DEFAULT_BUFFER = 2;
+export const HEADER_DEFAULT_BUFFER = 8;
 export const WhiteSpace = styled.div<{ $headerHeight: number, $zIndex: number }>`
   height: ${HEADER_DEFAULT_BUFFER}px;
   background-color: white;
@@ -170,122 +150,42 @@ export const WhiteSpace = styled.div<{ $headerHeight: number, $zIndex: number }>
   top: ${(props) => props.$headerHeight}px;
 `
 
-export interface PlanProgram {
-  id: number | null;
-  key: string;
-  relation: "degrees" | "majors" | "minors" | "college" | "degree-major";
-  role: string;
-  title: string;
-  year: number | null;
-  removable: boolean;
-  rules: Rule[];
-}
-
-const ROLE_LABELS: { [role: string]: string } = {
-  primary_degree: "Primary degree",
-  second_degree: "Second degree",
-  second_major: "Second major",
-  major: "Major",
-  minor: "Minor",
-  college: "College",
-};
-
-const planPrograms = (detail: DegreePlan): PlanProgram[] => {
-  if (detail.components?.length) {
-    return detail.components.map((component) => ({
-      id: component.id,
-      key: component.key,
-      relation: component.relation,
-      role: component.role,
-      title: component.title,
-      year: component.year,
-      removable: component.removable,
-      rules: component.rules,
-    }));
-  }
-  return [
-    ...(detail.degrees ?? []).map((degree) => ({
-      id: degree.id,
-      key: `degree:${degree.id}`,
-      relation: "degrees" as const,
-      role: "primary_degree",
-      title: `${degree.degree} in ${degree.major_name}${
-        degree.concentration ? ` (${degree.concentration_name})` : ""
-      }`,
-      year: degree.year,
-      removable: true,
-      rules: degree.rules,
-    })),
-    ...(detail.majors ?? []).map((major) => ({
-      id: major.id,
-      key: `major:${major.id}`,
-      relation: "majors" as const,
-      role: "second_major",
-      title: `Major in ${major.name}${
-        major.concentration_name ? ` (${major.concentration_name})` : ""
-      }`,
-      year: major.year,
-      removable: true,
-      rules: major.rules,
-    })),
-    ...(detail.minors ?? []).map((minor) => ({
-      id: minor.id,
-      key: `minor:${minor.id}`,
-      relation: "minors" as const,
-      role: "minor",
-      title: `Minor in ${minor.name}`,
-      year: minor.year,
-      removable: true,
-      rules: minor.rules,
-    })),
-  ];
-};
+const programKey = (program: PlanProgram) => `${program.relation}-${program.id}`;
 
 interface DegreeHeaderProps {
   program: PlanProgram,
-  remove: (id: number) => void,
   setCollapsed: (status: boolean) => void,
   collapsed: boolean,
-  editMode: boolean,
   skeleton?: boolean,
-  containerRef?: React.Ref<HTMLDivElement>
+  containerRef?: React.Ref<HTMLDivElement>,
+  progress?: number,
 }
 
-const DegreeHeader = ({ 
-  program, 
-  remove, 
-  setCollapsed, 
-  collapsed, 
-  editMode, 
+const DegreeHeader = ({
+  program,
+  setCollapsed,
+  collapsed,
   skeleton,
-  containerRef
+  containerRef,
+  progress = 0,
 }: DegreeHeaderProps) => {
   const degreeName = !skeleton ? program.title : <DarkBlueBackgroundSkeleton width="10em" />;
   return (
     <DegreeHeaderContainer ref={containerRef} onClick={() => setCollapsed(!collapsed)}>
+      <DegreeHeaderFill $progress={progress} />
       <DegreeTitleWrapper>
         <div>
           {degreeName}
-          {!skeleton && ROLE_LABELS[program.role] && (
-            <span style={{ marginLeft: "0.6em", fontSize: "var(--type-body)", opacity: 0.8 }}>
-              {ROLE_LABELS[program.role]}
-            </span>
-          )}
         </div>
         <DegreeYear>
-          {!skeleton && program.year ? program.year : skeleton ? <DarkBlueBackgroundSkeleton width="4em" /> : null}
+          {!skeleton ? program.year : <DarkBlueBackgroundSkeleton width="4em" />}
         </DegreeYear>
       </DegreeTitleWrapper>
-      <span>
-        {!skeleton && editMode && program.removable ?
-          <LightTrashIcon role="button" onClick={() => program.id != null && remove(program.id)}>
-            <i className="fa fa-trash fa-md" />
-          </LightTrashIcon>
-          :
-          <Icon>
-            <i className={`fas fa-chevron-${collapsed ? "up" : "down"}`}></i>
-          </Icon>}
-      </span>
+      <DegreeHeaderAction>
+        <Icon>
+          <Chevron className="fas fa-chevron-down" $degrees={collapsed ? 180 : 0} />
+        </Icon>
+      </DegreeHeaderAction>
     </DegreeHeaderContainer>
   )
 }
@@ -300,6 +200,7 @@ interface RuleTreeBaseNode {
 }
 interface RuleTreeLeaf extends RuleTreeBaseNode {
   type: "LEAF";
+  waived: boolean; // the student is waived from this requirement, e.g. by an AP exam
   cus: number;
   num: number;
   fulfillments: Fulfillment[]; // The fulfillments for the rule
@@ -322,19 +223,25 @@ interface RuleProps {
   rulesToUnselectedFulfillments: { [ruleId: string]: Fulfillment[] };
   activeDegreePlanId: number;
   degree: DegreeD;
+  waivedRules: Set<number>; // the plan's waived requirements, which are always leaves
 }
 
-const computeRuleTree = ({activeDegreePlanId, rule, rulesToFulfillments, rulesToUnselectedFulfillments, degree }: RuleProps): RuleTree => {
+const computeRuleTree = ({activeDegreePlanId, rule, rulesToFulfillments, rulesToUnselectedFulfillments, degree, waivedRules }: RuleProps): RuleTree => {
   if (rule.q) { // Rule leaf
+    // A waived requirement is complete without any course.
+    const waived = waivedRules.has(rule.id);
     const fulfillmentsForRule: Fulfillment[] = rulesToFulfillments[rule.id] || [];
     const unselectedFulfillmentsForRule: Fulfillment[] = rulesToUnselectedFulfillments[rule.id] || [];
     const cus = fulfillmentsForRule.reduce((acc, f) => acc + (f.course?.credits || 1), 0); // default to 1 cu 
     const num = fulfillmentsForRule.length;
-    const progress = Math.min(rule.credits ? cus / rule.credits : 1, rule.num ? num / rule.num : 1);
-    return { activeDegreePlanId, type: "LEAF", progress, cus, num, rule, fulfillments: fulfillmentsForRule, unselectedFulfillments: unselectedFulfillmentsForRule }
+    const progress = waived ? 1 : Math.min(1, rule.credits ? cus / rule.credits : 1, rule.num ? num / rule.num : 1);
+    return { activeDegreePlanId, type: "LEAF", progress, waived, cus, num, rule, fulfillments: fulfillmentsForRule, unselectedFulfillments: unselectedFulfillmentsForRule }
   }
-  const children = rule.rules.map((child) => computeRuleTree({ activeDegreePlanId, rule: child, rulesToFulfillments, rulesToUnselectedFulfillments, degree }))
-  const progress = children.reduce((acc, { progress }) => progress + acc, 0) / Math.min(children.length, rule.num || Infinity);
+  const children = rule.rules.map((child) => computeRuleTree({ activeDegreePlanId, rule: child, rulesToFulfillments, rulesToUnselectedFulfillments, degree, waivedRules }))
+  // A "pick N" rule is only as far along as its N furthest children: extra ones don't count.
+  const required = Math.min(children.length, rule.num || Infinity);
+  const counted = children.map((child) => child.progress).sort((a, b) => b - a).slice(0, required);
+  const progress = required ? counted.reduce((acc, childProgress) => acc + childProgress, 0) / required : 0;
   return { num: rule.num || undefined, activeDegreePlanId, type: "INTERNAL_NODE", children, progress, rule } // internal node
 }
 
@@ -345,11 +252,10 @@ const Degree = ({
   rulesToFulfillments, 
   rulesToUnselectedFulfillments, 
   activeDegreeplan, 
-  editMode, 
-  setModalKey, 
-  setModalObject, 
-  isLoading,
-  showHeader = true,
+  waivedRules,
+  progress,
+  showHeader = true, // false when program tabs take the header's place
+  stickyOffset = 0, // the height of whatever replaces the header, for sticky rule headers
 }: any) => {
   const [collapsed, setCollapsed] = useState(false);
 
@@ -369,77 +275,32 @@ const Degree = ({
     return () => {
       resizeObserver.disconnect();
     }
-  }, []);
+  }, [showHeader]); // the header element comes and goes with it
 
-  if (isLoading) {
-    return (
-      <div>
-        <DegreeHeader
-          program={program}
-          remove={() => void {}}
-          setCollapsed={setCollapsed}
-          skeleton
-          collapsed={collapsed}
-          editMode={false}
-        />
-        <DegreeBody>
-          <SkeletonRule>
-            <SkeletonRule>
-              <SkeletonRule />
-              <SkeletonRule />
-              {/* <SkeletonRule /> */}
-            </SkeletonRule>
-            <SkeletonRule>
-              <SkeletonRule />
-              {/* <SkeletonRule />
-              <SkeletonRule /> */}
-            </SkeletonRule>
-          </SkeletonRule>
-          <SkeletonRule>
-            <SkeletonRule />
-            <SkeletonRule />
-            <SkeletonRule />
-          </SkeletonRule>
-        </DegreeBody>
-      </div>
-    )
-  }
+  const ruleOffset = showHeader ? headerHeight : stickyOffset;
+  const showRules = !collapsed || !showHeader;
 
   return (
     <div>
       {showHeader && (
-        <>
-          <DegreeHeader
-            containerRef={headerRef}
-            program={program}
-            key={program.id}
-            remove={() => {
-              if (!program.removable || program.id == null) return;
-              // A College double major's major block is removed by removing that degree.
-              const relation = program.relation === "degree-major" ? "degrees" : program.relation;
-              setModalObject({
-                degreeplanId: activeDegreeplan.id,
-                degreeId: program.id,
-                relation,
-              });
-              setModalKey("degree-remove");
-            }}
-            setCollapsed={setCollapsed}
-            collapsed={collapsed || editMode} // Collapse degree view in edit mode
-            editMode={editMode}
-            skeleton={false}
-          />
-          <WhiteSpace $headerHeight={headerHeight} $zIndex={999} />
-        </>
+        <DegreeHeader
+          containerRef={headerRef}
+          program={program}
+          key={program.id}
+          setCollapsed={setCollapsed}
+          collapsed={collapsed}
+          skeleton={false}
+          progress={progress}
+        />
       )}
-      {!collapsed && !editMode &&
-        <>
+      <WhiteSpace $headerHeight={ruleOffset} $zIndex={999} />
+      <Collapse open={showRules}>
+        <ProgramKindContext.Provider value={program.kind}>
           <DegreeBody>
-            {program.rules.map((rule: any, index: number) => (
+            {program.rules.map((rule: any) => (
               <RuleComponent
                 key={rule.id}
-                flushTop={index === 0}
-                headerHeight={headerHeight}
+                headerHeight={ruleOffset}
                 zIndex={999}
                 {...computeRuleTree({
                   activeDegreePlanId: activeDegreeplan.id,
@@ -447,31 +308,39 @@ const Degree = ({
                   rulesToFulfillments,
                   rulesToUnselectedFulfillments,
                   degree: program,
+                  waivedRules,
                 })}
               />
             ))}
           </DegreeBody>
-        </>
-      }
+        </ProgramKindContext.Provider>
+      </Collapse>
     </div>
   )
 }
 
+// A fade started in the same frame as a large render would be part way through by the time
+// anything shows, so it waits for the content to paint.
+const FadingContent = ({ children }: { children: React.ReactNode }) => {
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => setShown(true));
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
+  return <ReqContent $shown={shown}>{children}</ReqContent>;
+};
+
 interface ReqPanelProps {
-  setModalKey?: (arg0: ModalKey) => void;
-  setModalObject?: (arg0: DegreePlan | null) => void;
-  onEditPrograms?: () => void;
   activeDegreeplan: DegreePlan | null;
   isLoading: boolean;
+  onEditPrograms: () => void;
 }
-const ReqPanel = ({ setModalKey, setModalObject, onEditPrograms, activeDegreeplan, isLoading }: ReqPanelProps) => {
-  const [editMode, setEditMode] = React.useState(false);
+const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps) => {
   const [allRuleLeaves, setAllRuleLeaves] = React.useState(false);
-  const [activeProgramKey, setActiveProgramKey] = React.useState<string | null>(null);
-  const [focusRule, setFocusRule] = React.useState<{ id: number; nonce: number } | null>(null);
 
   const { data: activeDegreeplanDetail = null, isLoading: isLoadingDegrees } = useSWR<DegreePlan>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}` : null);
-  const { data: panelOptions = {} } = useSWR<Record<string, PanelOption>>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/panel-options` : null);
   const { data: fulfillments, isLoading: isLoadingFulfillments } = useSWR<Fulfillment[]>(activeDegreeplan ? `/api/degree/degreeplans/${activeDegreeplan.id}/fulfillments` : null);
 
   const rulesToFulfillments = useMemo(() => {
@@ -505,87 +374,198 @@ const ReqPanel = ({ setModalKey, setModalObject, onEditPrograms, activeDegreepla
     return rulesToCourses;
   }, [fulfillments, isLoadingFulfillments])
 
+  // Waiving a requirement (e.g. by an AP exam) shows at once. A student may change their mind,
+  // or waive another requirement, before the server answers, so each requirement's latest choice
+  // is kept here until the plan reloads with it, and no answer can overwrite a newer choice.
+  // Requests go out one at a time in the order clicked.
+  const { mutate } = useSWRConfig();
+  const [pendingWaivers, setPendingWaivers] = useState<Record<number, boolean>>({});
+  const waiverQueue = useRef<Promise<unknown>>(Promise.resolve());
+  const latestWaiverChange = useRef<Record<number, number>>({});
+  const queueWaiverChange = useCallback((ruleId: number, waived: boolean, save: () => Promise<unknown>) => {
+    if (!activeDegreeplan) return;
+    const planKey = `/api/degree/degreeplans/${activeDegreeplan.id}`;
+    const change = (latestWaiverChange.current[ruleId] ?? 0) + 1;
+    latestWaiverChange.current[ruleId] = change;
+    setPendingWaivers((pending) => ({ ...pending, [ruleId]: waived }));
+
+    const sent = waiverQueue.current.then(save, save);
+    waiverQueue.current = sent.catch(() => undefined);
+    // Saved or not, the plan reloads as the server has it; the server reallocates its courses.
+    sent.catch(() => undefined).then(async () => {
+      if (latestWaiverChange.current[ruleId] !== change) return;
+      await Promise.all([mutate(planKey), mutate(`${planKey}/fulfillments`)]);
+      if (latestWaiverChange.current[ruleId] !== change) return;
+      setPendingWaivers(({ [ruleId]: _, ...pending }) => pending);
+    });
+  }, [activeDegreeplan, mutate]);
+
+  const waivers = useMemo(() => ({
+    setWaived: (ruleId: number, waive: boolean) => {
+      if (!activeDegreeplan) return;
+      const planKey = `/api/degree/degreeplans/${activeDegreeplan.id}`;
+      if (waive) {
+        // The server takes a waived requirement's courses and overrides off it, which can take
+        // seconds on a full plan, so they come off here first.
+        mutate<Fulfillment[]>(
+          `${planKey}/fulfillments`,
+          (fulfillments) => fulfillments?.map((fulfillment) => ({
+            ...fulfillment,
+            rules: fulfillment.rules.filter((id) => id !== ruleId),
+            overrides: fulfillment.overrides?.filter((id) => id !== ruleId),
+          })),
+          { revalidate: false }
+        );
+      }
+      queueWaiverChange(ruleId, waive, () =>
+        (waive ? postFetcher : deleteFetcher)(`${planKey}/waivers`, { rule_ids: [ruleId] })
+      );
+    },
+    liftWaiver: (ruleId: number, save: () => Promise<unknown>) =>
+      queueWaiverChange(ruleId, false, save),
+  }), [activeDegreeplan, mutate, queueWaiverChange]);
+
+  // Choices pending for one plan don't apply to another that shares its requirements.
+  useEffect(() => setPendingWaivers({}), [activeDegreeplan?.id]);
+
+  // The server lifts a waiver when the student puts a course on its requirement, whichever way
+  // they do it (dropping, switching, overriding). The plan is reloaded to pick that up, and
+  // until it has, a requirement holding a course doesn't show as waived.
+  const savedWaivers = activeDegreeplanDetail?.waived_rules;
+  const liftedWaivers = useMemo(
+    () => (savedWaivers ?? []).filter((ruleId) => rulesToFulfillments[ruleId]?.length),
+    [savedWaivers, rulesToFulfillments]
+  );
+  const hasLiftedWaivers = liftedWaivers.length > 0;
+  useEffect(() => {
+    if (hasLiftedWaivers && activeDegreeplan) mutate(`/api/degree/degreeplans/${activeDegreeplan.id}`);
+  }, [hasLiftedWaivers, activeDegreeplan?.id, mutate]);
+
+  const waivedRules = useMemo(() => {
+    const waived = new Set(savedWaivers ?? []);
+    liftedWaivers.forEach((ruleId) => waived.delete(ruleId));
+    Object.entries(pendingWaivers).forEach(([ruleId, waive]) =>
+      waive ? waived.add(Number(ruleId)) : waived.delete(Number(ruleId))
+    );
+    return waived;
+  }, [savedWaivers, liftedWaivers, pendingWaivers]);
+
   const programs = activeDegreeplanDetail ? planPrograms(activeDegreeplanDetail) : [];
+  const fulfillmentsLoaded = !isLoadingFulfillments && !!fulfillments;
+  // The requirements wait for the plan's courses too, so they appear once, already filled in.
+  const loading =
+    isLoading || (!activeDegreeplanDetail && isLoadingDegrees) || (!fulfillments && isLoadingFulfillments);
+  const showTabs = programs.length > 1;
+
+  // The average of the program's top-level rules.
+  const programProgress = (program: PlanProgram) => {
+    if (!program.rules.length) return 0;
+    const total = program.rules.reduce((acc, rule) => acc + computeRuleTree({
+      activeDegreePlanId: activeDegreeplan?.id as number,
+      rule,
+      rulesToFulfillments,
+      rulesToUnselectedFulfillments,
+      degree: program as unknown as DegreeD,
+      waivedRules,
+    }).progress, 0);
+    return total / program.rules.length;
+  };
+
+  const [storedTabKey, setStoredTabKey] = useStickyState<string | null>(
+    `PDP-${activeDegreeplan?.id}-requirements-tab`,
+    null
+  );
+  // A remembered program may have since been removed from the plan.
+  const activeTabKey = programs.some((program) => programKey(program) === storedTabKey)
+    ? storedTabKey as string
+    : programs.length ? programKey(programs[0]) : "";
 
   useEffect(() => subscribeRuleNav((ruleId) => {
     const program = programs.find((item) => containsRule(item.rules, ruleId));
-    if (program && programs.length > 1) setActiveProgramKey(program.key);
-    setFocusRule({ id: ruleId, nonce: Date.now() });
-  }), [programs]);
+    if (program && programs.length > 1) setStoredTabKey(programKey(program));
+    window.setTimeout(() => {
+      document.getElementById(`rule-${ruleId}`)?.scrollIntoView({ block: "center", inline: "nearest" });
+    }, 60);
+  }), [programs, setStoredTabKey]);
 
-  useEffect(() => {
-    if (focusRule == null) return undefined;
-    const timer = window.setTimeout(() => centerInRequirements(focusRule.id), 60);
-    return () => window.clearTimeout(timer);
-  }, [focusRule, activeProgramKey]);
+  // Sticky rule headers sit below the tab bar, which grows if a tab's title wraps.
+  const [tabBar, setTabBar] = useState<HTMLDivElement | null>(null);
+  const [tabBarHeight, setTabBarHeight] = useState(0);
+  useLayoutEffect(() => {
+    if (!tabBar) return;
+    const resizeObserver = new ResizeObserver(() => {
+      setTabBarHeight(tabBar.getBoundingClientRect().height);
+    });
+    resizeObserver.observe(tabBar);
+    return () => resizeObserver.disconnect();
+  }, [tabBar]);
 
   return (
-    <PanelOptionsContext.Provider value={panelOptions}>
-    <ReqPanelShell>
+    <FulfillmentsLoadedContext.Provider value={fulfillmentsLoaded}>
+    <WaiversContext.Provider value={waivers}>
+    <PanelContainer {...tourTarget("requirements-panel")}>
+
       <PanelHeader>
         <ReqPanelTitle>Requirements</ReqPanelTitle>
-        <PanelTopBarIconList>
-          <EditButton
-            editMode={onEditPrograms ? false : editMode}
-            setEditMode={onEditPrograms ? () => onEditPrograms() : setEditMode}
-          />
+        <PanelTopBarIconList {...tourTarget("edit-programs")}>
+          <EditButton editMode={false} setEditMode={onEditPrograms} />
         </PanelTopBarIconList>
       </PanelHeader>
-      {!activeDegreeplan ? <ReqPanelBody><Degree isLoading={true} /></ReqPanelBody> :
+      {loading || !activeDegreeplan ?
+        <ReqPanelBody><PorcupineLoader src="/porcupine-six-seven.svg" messages={REQUIREMENT_LOADING_MESSAGES} /></ReqPanelBody> :
         <>
           {activeDegreeplanDetail &&
-            <ReqPanelBody>
-              <ReqContent id="requirements-scroll">
-                {programs.length == 0 && !editMode && <EmptyPanel onAdd={onEditPrograms} />}
-                <PlanSummaryBar degreePlanId={activeDegreeplan.id} />
-                {programs.length > 1 && (
-                  <TabRow>
-                    {programs.map((program, index) => (
-                      <Tab
-                        key={program.key}
-                        type="button"
-                        $active={program.key === (activeProgramKey || programs[0].key)}
-                        onClick={() => setActiveProgramKey(program.key)}
-                        style={{ boxShadow: `inset 4px 0 0 ${programColor(index)}` }}
-                      >
-                        <span>{program.title}</span>
-                        {program.year && <span style={{ fontWeight: 500, opacity: 0.75 }}>{program.year}</span>}
-                      </Tab>
-                    ))}
-                  </TabRow>
-                )}
-                {programs
-                  .filter((program) => programs.length < 2 || program.key === (activeProgramKey || programs[0].key))
-                  .map(program => (
-                  <Degree
-                    key={program.key}
-                    allRuleLeaves={allRuleLeaves}
-                    program={program}
-                    rulesToFulfillments={rulesToFulfillments}
-                    rulesToUnselectedFulfillments={rulesToUnselectedFulfillments}
-                    activeDegreeplan={activeDegreeplan}
-                    editMode={editMode}
-                    setModalKey={setModalKey ?? (() => {})}
-                    setModalObject={setModalObject ?? (() => {})}
-                    isLoading={isLoading}
-                    showHeader={programs.length < 2 || editMode}
+            <ReqPanelBody $hasTabs={showTabs}>
+              <FadingContent>
+                {programs.length == 0 && <EmptyPanel onAdd={onEditPrograms} />}
+                {showTabs && (
+                  <ProgramTabs
+                    ref={setTabBar}
+                    tabs={programs.map((program) => ({
+                      key: programKey(program),
+                      kind: program.kind,
+                      title: program.title,
+                      code: program.code,
+                      year: program.year,
+                      progress: programProgress(program),
+                    }))}
+                    activeKey={activeTabKey}
+                    onSelect={setStoredTabKey}
+                    loaded={fulfillmentsLoaded}
                   />
-                ))}
-                {editMode && setModalKey && setModalObject && <AddButton role="button" onClick={() => {
-                  setModalObject(activeDegreeplan);
-                  setModalKey("degree-add");
-                }}>
-                  <i className="fa fa-plus" />
-                  <div>
-                    Add Degree
-                  </div>
-                </AddButton>}
-              </ReqContent>
+                )}
+                {programs.map((program) => {
+                  const key = programKey(program);
+                  return (
+                    // Other tabs stay mounted, so their collapsed rules survive switching back.
+                    <div
+                      key={key}
+                      id={showTabs ? programPanelId(key) : undefined}
+                      role={showTabs ? "tabpanel" : undefined}
+                      aria-labelledby={showTabs ? programTabId(key) : undefined}
+                      style={showTabs && key !== activeTabKey ? { display: "none" } : undefined}
+                    >
+                      <Degree
+                        allRuleLeaves={allRuleLeaves}
+                        program={program}
+                        rulesToFulfillments={rulesToFulfillments}
+                        rulesToUnselectedFulfillments={rulesToUnselectedFulfillments}
+                        activeDegreeplan={activeDegreeplan}
+                        waivedRules={waivedRules}
+                        progress={programProgress(program)}
+                        showHeader={!showTabs}
+                        stickyOffset={tabBarHeight}
+                      />
+                    </div>
+                  );
+                })}
+              </FadingContent>
             </ReqPanelBody>
           }
         </>}
-    </ReqPanelShell>
-    </PanelOptionsContext.Provider>
+    </PanelContainer>
+    </WaiversContext.Provider>
+    </FulfillmentsLoadedContext.Provider>
   );
 }
 export default ReqPanel;

@@ -1,6 +1,7 @@
 import styled from "@emotion/styled";
 import { useRef } from "react";
 import useBottomOffset from "@/hooks/useBottomOffset";
+import { tourTarget } from "@/components/Tour/OnboardingTour";
 
 export type PhoneTab = "plan" | "requirements" | "search" | "docked";
 
@@ -77,6 +78,7 @@ const PhoneTabBar = ({ active, onSelect, dockedCount }: PhoneTabBarProps) => {
         <Tab
           key={id}
           type="button"
+          {...tourTarget(`phone-tab-${id}`)}
           $active={active === id}
           aria-current={active === id ? "page" : undefined}
           onClick={() => onSelect(id)}
