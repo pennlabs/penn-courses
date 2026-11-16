@@ -4,6 +4,7 @@ import {
   SetStateAction,
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from "react";
 import { BackButton, NextButton } from "./SharedComponents";
@@ -46,6 +47,8 @@ import DualProgramField, {
   programSides,
 } from "./DualProgramField";
 import YearFields, { YearOption, yearOption, yearsInOrder } from "./YearFields";
+import { useDualProgramChoice } from "@/hooks/useDualProgramChoice";
+import { degreeSpan } from "@/utils/coordinatedProgram";
 
 type WelcomeLayoutProps = {
   inputtedStartingYear: YearOption | null;
@@ -107,12 +110,26 @@ export default function CreateWithTranscriptPanel({
   const { data: dualPrograms, isLoading: isLoadingDualPrograms } = useSWR<
     DualProgram[]
   >(`/api/degree/dual-programs`);
-  const [dualProgramCode, setDualProgramCode] = useState<string | null>(
+  const { code: dualProgramCode, onChange: onDualProgram, matches } = useDualProgramChoice(
+    dualPrograms,
+    selections,
     inputtedDualProgram
   );
   const dualProgram = dualPrograms?.find(
     (program) => program.code === dualProgramCode
   );
+  const listedPrograms =
+    dualProgram && !matches.some((program) => program.code === dualProgram.code)
+      ? [dualProgram, ...matches]
+      : matches;
+  const graduationTouched = useRef(false);
+  useEffect(() => {
+    if (!startingYear || graduationTouched.current) return;
+    const next = startingYear.value + degreeSpan(Boolean(dualProgramCode));
+    setGraduationYear((current) =>
+      current?.value === next ? current : { value: next, label: next }
+    );
+  }, [startingYear, dualProgramCode]);
 
   // Workaround solution to only input courses once degree has been created and degreeID exists.
   // Will likely change in the future!
@@ -248,7 +265,7 @@ export default function CreateWithTranscriptPanel({
       startYears: [...Array(5).keys()]
         .reverse()
         .map((i) => yearOption(currentYear - i)),
-      gradYears: [...Array(5).keys()].map((i) => yearOption(currentYear + i)),
+      gradYears: [...Array(6).keys()].map((i) => yearOption(currentYear + i)),
     };
   }, [options]);
 
@@ -314,19 +331,20 @@ export default function CreateWithTranscriptPanel({
                   startingYear={startingYear}
                   graduationYear={graduationYear}
                   setStartingYear={setStartingYear}
-                  setGraduationYear={setGraduationYear}
+                  setGraduationYear={(year) => {
+                    graduationTouched.current = true;
+                    setGraduationYear(year);
+                  }}
                   isClearable
                 />
               </Section>
 
               <Section>
                 <DualProgramField
-                  programs={dualPrograms}
+                  programs={listedPrograms}
                   isLoading={isLoadingDualPrograms}
                   value={dualProgram}
-                  onChange={(program) =>
-                    setDualProgramCode(program?.code ?? null)
-                  }
+                  onChange={onDualProgram}
                   selections={selections}
                   degrees={degrees}
                 />
@@ -349,6 +367,7 @@ export default function CreateWithTranscriptPanel({
                   isLoadingDegrees={isLoadingDegrees}
                   isLoadingMajors={isLoadingMajors}
                   isLoadingMinors={isLoadingMinors}
+                  startYear={startingYear?.value ?? null}
                 />
               </Section>
             </Body>

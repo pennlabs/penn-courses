@@ -106,9 +106,10 @@ const OnboardingPage = ({
       value: startYear,
       label: startYear,
     });
+    const span = detectedDualProgram ? 5 : 4;
     setGraduationYear({
-      value: startYear + 4,
-      label: startYear + 4,
+      value: startYear + span,
+      label: startYear + span,
     });
     setSelections(detectedSelections);
     setDualProgram(detectedDualProgram);

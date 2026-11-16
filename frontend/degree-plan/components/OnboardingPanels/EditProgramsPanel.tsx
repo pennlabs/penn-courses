@@ -48,6 +48,8 @@ import DualProgramField, {
   programError,
   programSides,
 } from "./DualProgramField";
+import { useDualProgramChoice } from "@/hooks/useDualProgramChoice";
+import { degreeSpan } from "@/utils/coordinatedProgram";
 import YearFields, { YearOption, yearOption, yearsInOrder } from "./YearFields";
 
 const CloseButton = styled.button`
@@ -381,10 +383,10 @@ function EditProgramsForm({
 
   const initial = useMemo(() => {
     const semesterKeys = readSemesterKeys(plan.id);
-    // With nothing stored, the plan view shows four years from now.
+    // With nothing stored, a single school shows four years and a coordinated program five.
     const years = (semesterKeys && yearsOf(semesterKeys)) ?? {
       start: currentYear,
-      graduation: currentYear + 4,
+      graduation: currentYear + degreeSpan(Boolean(plan.dual_program)),
     };
     return { ...initialSelections(plan), semesterKeys, years };
   }, [plan, currentYear]);
@@ -398,10 +400,24 @@ function EditProgramsForm({
   const [graduationYear, setGraduationYear] = useState<YearOption | null>(
     yearOption(initial.years.graduation)
   );
-  const [dualProgramCode, setDualProgramCode] = useState(plan.dual_program?.code ?? null);
+  const { code: dualProgramCode, onChange: onDualProgram, matches } = useDualProgramChoice(
+    dualPrograms,
+    selections,
+    plan.dual_program?.code ?? null
+  );
   const dualProgram =
     dualPrograms?.find((program) => program.code === dualProgramCode) ??
     (plan.dual_program?.code === dualProgramCode ? plan.dual_program ?? undefined : undefined);
+  const listedPrograms =
+    dualProgram && !matches.some((program) => program.code === dualProgram.code)
+      ? [dualProgram, ...matches]
+      : matches;
+  const graduationTouched = useRef(false);
+  useEffect(() => {
+    if (initial.semesterKeys || !startingYear || graduationTouched.current) return;
+    const next = startingYear.value + degreeSpan(Boolean(dualProgramCode));
+    setGraduationYear((current) => (current?.value === next ? current : yearOption(next)));
+  }, [initial.semesterKeys, startingYear, dualProgramCode]);
   const [confirming, setConfirming] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -413,7 +429,7 @@ function EditProgramsForm({
     initial.years.start
   );
   const graduationYearOptions = yearChoices(
-    [...Array(5).keys()].map((i) => currentYear + i),
+    [...Array(6).keys()].map((i) => currentYear + i),
     initial.years.graduation
   );
 
@@ -609,7 +625,10 @@ function EditProgramsForm({
                   startingYear={startingYear}
                   graduationYear={graduationYear}
                   setStartingYear={setStartingYear}
-                  setGraduationYear={setGraduationYear}
+                  setGraduationYear={(year) => {
+                    graduationTouched.current = true;
+                    setGraduationYear(year);
+                  }}
                 />
                 {changes.movedToDock.length > 0 && (
                   <Hint>
@@ -622,10 +641,10 @@ function EditProgramsForm({
 
               <Section>
                 <DualProgramField
-                  programs={dualPrograms}
+                  programs={listedPrograms}
                   isLoading={isLoadingDualPrograms}
                   value={dualProgram}
-                  onChange={(program) => setDualProgramCode(program?.code ?? null)}
+                  onChange={onDualProgram}
                   selections={selections}
                   degrees={degrees}
                 />
@@ -643,6 +662,7 @@ function EditProgramsForm({
                   isLoadingDegrees={isLoadingDegrees}
                   isLoadingMajors={isLoadingMajors}
                   isLoadingMinors={isLoadingMinors}
+                  startYear={startingYear?.value ?? null}
                 />
               </Section>
 

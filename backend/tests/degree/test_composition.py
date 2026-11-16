@@ -318,6 +318,101 @@ class DualPatternTest(TestCase):
         )
         self.assertIn(seminar, selected)
 
+    def test_huntsman_replaces_the_inst_major_and_locks_the_language(self):
+        inst = Degree.objects.create(
+            program="AU_BA",
+            degree="BA",
+            major="INST",
+            concentration="SPAN",
+            concentration_name="Spanish",
+            year=2026,
+        )
+        old = leaf("Old INST requirement", "INST-9999", "MAJOR", "INST")
+        inst.rules.add(old)
+        wharton = Degree.objects.create(program="WU_BS", degree="BS", major="WH", year=2026)
+        plan = self.plan_with("hunt-span", "HUNTSMAN", inst, wharton)
+        plan_rules = map_rules_and_degrees(plan)
+        titles = {rule.title for rule in plan_rules.rule_to_component}
+        self.assertNotIn("Old INST requirement", titles)
+        self.assertIn("SPAN language", titles)
+        self.assertNotIn("FREN language", titles)
+
+        course("SPAN-1200")
+        course("FREN-1200")
+        spanish, _, _ = allocate_rules(
+            "SPAN-1200",
+            plan_rules.rules_per_component,
+            plan_rules.rule_to_component,
+            plan_rules.double_counts,
+            satisfied_rules=set(),
+        )
+        french, _, _ = allocate_rules(
+            "FREN-1200",
+            plan_rules.rules_per_component,
+            plan_rules.rule_to_component,
+            plan_rules.double_counts,
+            satisfied_rules=set(),
+        )
+        self.assertIn("SPAN language", {rule.title for rule in spanish})
+        self.assertFalse({rule.title for rule in french} & {"SPAN language", "FREN language"})
+
+    def test_huntsman_capstone_alternatives(self):
+        inst = Degree.objects.create(program="AU_BA", degree="BA", major="INST", year=2026)
+        wharton = Degree.objects.create(program="WU_BS", degree="BS", major="WH", year=2026)
+        plan = self.plan_with("hunt-cap", "HUNTSMAN", inst, wharton)
+        plan_rules = map_rules_and_degrees(plan)
+        for code, title in (
+            ("INSP-4998", "INSP 4998"),
+            ("INSP-4999", "INSP 4999"),
+            ("MGMT-4090", "MGMT 4090"),
+            ("INSP-4997", "INSP 4997"),
+        ):
+            course(code)
+            selected, _, _ = allocate_rules(
+                code,
+                plan_rules.rules_per_component,
+                plan_rules.rule_to_component,
+                plan_rules.double_counts,
+                satisfied_rules=set(),
+            )
+            self.assertIn(title, {rule.title for rule in selected})
+
+    def test_huntsman_cannot_waive_wharton_language(self):
+        from rest_framework.test import APIClient
+
+        from degree.models import PDPBetaUser
+
+        inst = Degree.objects.create(program="AU_BA", degree="BA", major="INST", year=2026)
+        wharton = Degree.objects.create(program="WU_BS", degree="BS", major="WH", year=2026)
+        language = Rule.objects.create(
+            title="Foreign Language",
+            q=repr(Q(attributes__code__in=["WUFL"])),
+            credits=1,
+            block_type="OTHER",
+            block_value="U-WLAS",
+        )
+        wharton.rules.add(language)
+        plan = self.plan_with("hunt-waive", "HUNTSMAN", inst, wharton)
+        PDPBetaUser.objects.create(person=self.person)
+        client = APIClient()
+        client.force_login(self.person)
+        response = client.post(
+            f"/api/degree/degreeplans/{plan.id}/waivers",
+            {"rule_ids": [language.id]},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(plan.waived_rules.filter(id=language.id).exists())
+
+    def test_viper_math_and_cis_stay_plain(self):
+        math = Degree.objects.create(program="AU_BA", degree="BA", major="MATH", year=2026)
+        cis = Degree.objects.create(program="EU_BSE", degree="BSE", major="CIS", year=2026)
+        plan = self.plan_with("viper-math", "VIPER", math, cis)
+        titles = {rule.title for rule in map_rules_and_degrees(plan).rule_to_component}
+        self.assertNotIn("Huntsman First-Year Seminar", titles)
+        self.assertNotIn("LSM Proseminar", titles)
+        self.assertNotIn("M&T Program First Year Seminar", titles)
+
     def test_uncoordinated_dual_does_not_add_m_and_t_courses(self):
         econ = Degree.objects.create(program="AU_BA", degree="BA", major="ECON", year=2026)
         wharton = Degree.objects.create(program="WU_BS", degree="BS", major="WH", year=2026)

@@ -364,7 +364,9 @@ def serialize_component(component):
         if kept is not None:
             rules.append(kept)
     for extra in component.extra_rules:
-        rules.append(RuleSerializer(extra).data)
+        kept = serialize_kept_rule(extra, component.keep_ids)
+        if kept is not None:
+            rules.append(kept)
     return {
         "key": component.key,
         "relation": component.relation,
