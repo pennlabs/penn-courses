@@ -67,6 +67,7 @@ type SchoolsFieldProps = {
   isLoadingDegrees: boolean;
   isLoadingMajors: boolean;
   isLoadingMinors: boolean;
+  startYear?: number | null;
 };
 
 export default function SchoolsField({
@@ -79,6 +80,7 @@ export default function SchoolsField({
   isLoadingDegrees,
   isLoadingMajors,
   isLoadingMinors,
+  startYear = null,
 }: SchoolsFieldProps) {
   const [addingSchool, setAddingSchool] = useState(false);
 
@@ -145,6 +147,7 @@ export default function SchoolsField({
               isLoadingDegrees={isLoadingDegrees}
               isLoadingMajors={isLoadingMajors}
               isLoadingMinors={isLoadingMinors}
+              startYear={startYear}
               onChange={(changes) =>
                 setSelections((current) =>
                   current.map((s) =>

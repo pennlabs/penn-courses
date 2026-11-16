@@ -414,6 +414,18 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             raise ValidationError(
                 {"rule_ids": f"Only individual requirements can be waived: {sorted(groups)}"}
             )
+        # Huntsman's Wharton degree is the language-required path. The Path audit carries
+        # that requirement, and a waiver is how any other Wharton student leaves it.
+        if (
+            request.method == "POST"
+            and degree_plan.dual_program is not None
+            and degree_plan.dual_program.code == "HUNTSMAN"
+        ):
+            language = [i for i in ids if "WUFL" in (plan_rules[i].q or "")]
+            if language:
+                raise ValidationError(
+                    {"rule_ids": "Huntsman keeps the Wharton language requirement."}
+                )
 
         with transaction.atomic():
             if request.method == "DELETE":

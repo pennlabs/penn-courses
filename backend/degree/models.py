@@ -516,8 +516,8 @@ class Minor(ProgramComponent):
 class ProgramVariant(models.Model):
     """
     A delta on a Path degree: rules a coordinated program adds, and leaves of the base
-    audit it suppresses. M&T's Wharton side and Huntsman's College side are variants;
-    LSM and VIPER are not, because they use the ordinary audits.
+    audit it suppresses. M&T's Wharton side, Huntsman's College side, and both of LSM's
+    sides are variants. VIPER is not, because it uses the ordinary audits.
     """
 
     code = models.CharField(max_length=32, unique=True)

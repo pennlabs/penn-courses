@@ -280,7 +280,26 @@ def _with_variant(component: Component, variant) -> Component:
     if variant is None:
         return component
     rules, _, extra = apply_variant(component.rules, variant)
-    return replace(component, rules=rules, extra_rules=extra)
+    component = replace(component, rules=rules, extra_rules=extra)
+    return _restrict_huntsman_language(component, variant)
+
+
+def _restrict_huntsman_language(component: Component, variant) -> Component:
+    """Keep the 4 CU of the language the INST degree names, when it names one."""
+    if variant.code != "INST_HUNTSMAN" or component.owner_id is None:
+        return component
+    from degree.data.dual_programs.huntsman import is_other_language, language_department
+
+    degree = Degree.objects.filter(id=component.owner_id).first()
+    if degree is None:
+        return component
+    department = language_department(degree.concentration, degree.concentration_name)
+    if department is None:
+        return component
+    rules = [
+        rule for rule in component.rules if not is_other_language(rule.title, rule.q, department)
+    ]
+    return replace(component, rules=rules)
 
 
 def _apply_variants(components, dual, override) -> list[Component]:

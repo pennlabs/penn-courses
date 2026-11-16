@@ -1,11 +1,12 @@
-import { TrashIcon } from "@radix-ui/react-icons";
+import { Cross2Icon, TrashIcon } from "@radix-ui/react-icons";
 import styled from "@emotion/styled";
 import Select from "react-select";
 import { DegreeListing, Major, Minor } from "@/types";
+import { CatalogRow } from "@/utils/degreeChoice";
 import {
-  getAdditionalMajorOptions,
-  getMajorOptions,
+  degreeCodeOf,
   getMinorOptions,
+  majorOption,
   SchoolSelection,
   takesAdditionalMajors,
 } from "@/utils/parseUtils";
@@ -15,9 +16,9 @@ import {
   FieldGrid,
   FieldLabel,
   Optional,
-  Required,
   selectStyles,
 } from "./onboardingStyles";
+import DegreeSteps from "./DegreeSteps";
 
 const Card = styled.div`
   border: 1px solid ${color.border};
@@ -71,6 +72,32 @@ const CardBody = styled(FieldGrid)`
 // Options are compared by id, so a value read from a saved plan matches its option.
 const optionId = <T extends { value: { id: number } }>(option: T) => String(option.value.id);
 
+const Chosen = styled.ul`
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+`;
+
+const ChosenRow = styled.li`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14px;
+`;
+
+const RemoveChoice = styled.button`
+  border: 0;
+  background: transparent;
+  color: ${color.muted};
+  cursor: pointer;
+  display: flex;
+  padding: 4px;
+`;
+
 type SchoolCardProps = {
   selection: SchoolSelection;
   degrees: DegreeListing[] | undefined;
@@ -79,6 +106,7 @@ type SchoolCardProps = {
   isLoadingDegrees: boolean;
   isLoadingMajors: boolean;
   isLoadingMinors: boolean;
+  startYear: number | null;
   onChange: (changes: Partial<SchoolSelection>) => void;
   onRemove: () => void;
 };
@@ -92,12 +120,25 @@ export default function SchoolCard({
   isLoadingDegrees,
   isLoadingMajors,
   isLoadingMinors,
+  startYear,
   onChange,
   onRemove,
 }: SchoolCardProps) {
   const id = school.value.toLowerCase();
-  // Wharton calls its majors concentrations.
-  const majorWord = school.value === "BS" ? "concentration" : "major";
+  const degreeRows = (degrees ?? []).filter((degree) => degree.degree === school.value);
+  const majorRows = (standaloneMajors ?? [])
+    .filter((major) => degreeCodeOf(major.program_code) !== "MSE")
+    .map((major) => {
+      const own = degreeCodeOf(major.program_code) === school.value;
+      return {
+        ...major,
+        major: major.code,
+        major_name: own
+          ? major.name || major.code
+          : `${major.name || major.code}, ${degreeCodeOf(major.program_code)}`,
+        choiceKey: major.program_code,
+      };
+    });
 
   return (
     <Card>
@@ -109,42 +150,66 @@ export default function SchoolCard({
         </RemoveButton>
       </CardHeader>
       <CardBody $min={240}>
-        <Field>
-          <FieldLabel htmlFor={`${id}-primary`}>
-            Primary {majorWord}
-            <Required />
-          </FieldLabel>
-          <Select
-            inputId={`${id}-primary`}
-            options={getMajorOptions(degrees, school)}
-            value={primary}
-            onChange={(selected) => onChange({ primary: selected })}
-            isClearable
-            placeholder={`Choose a ${majorWord}`}
-            getOptionValue={optionId}
-            styles={selectStyles}
-            menuPortalTarget={typeof document !== "undefined" ? document.body : null}
-            isLoading={isLoadingDegrees}
-          />
-        </Field>
+        <DegreeSteps
+          id={`${id}-primary`}
+          rows={degreeRows}
+          value={primary?.value ?? null}
+          startYear={startYear}
+          isLoading={isLoadingDegrees}
+          required
+          onChange={(row) =>
+            onChange({
+              primary: row
+                ? {
+                    value: row as DegreeListing,
+                    label: `${row.major_name || row.major} (${row.year})`,
+                  }
+                : null,
+            })
+          }
+        />
         {takesAdditionalMajors(school) && (
           <Field>
-            <FieldLabel htmlFor={`${id}-additional`}>
-              Additional {majorWord}s
+            <FieldLabel>
+              Additional majors
               <Optional />
             </FieldLabel>
-            <Select
-              inputId={`${id}-additional`}
-              options={getAdditionalMajorOptions(standaloneMajors, school)}
-              value={additional}
-              onChange={(selected) => onChange({ additional: [...selected] })}
-              isClearable
-              isMulti
-              placeholder="Add another"
-              getOptionValue={optionId}
-              styles={selectStyles}
-              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+            {additional.length > 0 && (
+              <Chosen>
+                {additional.map((major) => (
+                  <ChosenRow key={major.value.id}>
+                    <span>{major.label}</span>
+                    <RemoveChoice
+                      type="button"
+                      aria-label={`Remove ${major.label}`}
+                      onClick={() =>
+                        onChange({
+                          additional: additional.filter((item) => item.value.id !== major.value.id),
+                        })
+                      }
+                    >
+                      <Cross2Icon />
+                    </RemoveChoice>
+                  </ChosenRow>
+                ))}
+              </Chosen>
+            )}
+            <DegreeSteps
+              key={additional.map((major) => major.value.id).join("-") || "none"}
+              id={`${id}-additional`}
+              rows={majorRows.filter(
+                (major) => !additional.some((item) => item.value.id === major.id)
+              )}
+              value={null}
+              startYear={startYear}
               isLoading={isLoadingMajors}
+              onChange={(row) => {
+                const major = row && majorRows.find((item) => item.id === row.id);
+                if (!major) return;
+                onChange({
+                  additional: [...additional, majorOption(major, school)],
+                });
+              }}
             />
           </Field>
         )}

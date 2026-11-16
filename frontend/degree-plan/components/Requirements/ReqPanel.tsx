@@ -117,6 +117,13 @@ const DegreeTitleWrapper = styled.div`
   gap: .5rem;
 `
 
+const ProgramHeading = styled.h2`
+  margin: 0 0 0.4rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--primary-color-ultra-dark);
+`;
+
 const ReqPanelBody = styled(PanelBody)<{ $hasTabs?: boolean }>`
   overflow-y: scroll;
   padding: ${(props) => (props.$hasTabs ? ".85rem 1.5rem 1.5rem" : "1.5rem")};
@@ -454,7 +461,7 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
   // The requirements wait for the plan's courses too, so they appear once, already filled in.
   const loading =
     isLoading || (!activeDegreeplanDetail && isLoadingDegrees) || (!fulfillments && isLoadingFulfillments);
-  const showTabs = programs.length > 1;
+  const showTabs = programs.length > 0;
 
   // The average of the program's top-level rules.
   const programProgress = (program: PlanProgram) => {
@@ -499,7 +506,7 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
       <PanelHeader>
         <ReqPanelTitle>Requirements</ReqPanelTitle>
         <PanelTopBarIconList {...tourTarget("edit-programs")}>
-          <EditButton editMode={false} setEditMode={onEditPrograms} />
+          <EditButton editMode={false} setEditMode={onEditPrograms} label="Edit degrees" />
         </PanelTopBarIconList>
       </PanelHeader>
       {loading || !activeDegreeplan ?
@@ -509,6 +516,9 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
             <ReqPanelBody $hasTabs={showTabs}>
               <FadingContent>
                 {programs.length == 0 && <EmptyPanel onAdd={onEditPrograms} />}
+                {activeDegreeplanDetail.dual_program && (
+                  <ProgramHeading>{activeDegreeplanDetail.dual_program.name}</ProgramHeading>
+                )}
                 {showTabs && (
                   <ProgramTabs
                     ref={setTabBar}

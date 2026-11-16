@@ -1,6 +1,12 @@
 """
-Huntsman adds language, area-studies and international coursework to the College INST
-degree. Follows penn-degree-planner's `inst_major_requirements`.
+Huntsman's College side is the International Studies major from penn-degree-planner's
+`inst_major_requirements`. Those rules replace the base INST major block. A chosen
+language concentration limits the 4 CU to that department; with none chosen, any one of
+the eleven languages fulfills it.
+
+The Wharton side stays the Path audit. Path already carries the language requirement and
+treats an exemption as a waiver, so Huntsman does not add a second liberal-arts tree.
+A Huntsman plan cannot waive that requirement.
 """
 
 from degree.data.dual_programs.helpers import (
@@ -26,6 +32,35 @@ LANGUAGES = [
     "RUSS",
     "SPAN",
 ]
+
+LANGUAGE_NAMES = {
+    "arabic": "ARAB",
+    "chinese": "CHIN",
+    "french": "FREN",
+    "german": "GRMN",
+    "hindi": "HIND",
+    "italian": "ITAL",
+    "japanese": "JPAN",
+    "korean": "KORN",
+    "portuguese": "PRTG",
+    "russian": "RUSS",
+    "spanish": "SPAN",
+}
+
+
+def language_department(concentration: str | None, concentration_name: str | None) -> str | None:
+    """The target-language department a Huntsman concentration names, or None."""
+    code = (concentration or "").strip().upper()
+    if code in LANGUAGES:
+        return code
+    return LANGUAGE_NAMES.get((concentration_name or "").strip().lower())
+
+
+def is_other_language(title: str, q: str | None, department: str) -> bool:
+    """A target-language leaf for a department other than the one the student chose."""
+    if not title.endswith(" language"):
+        return False
+    return f"'{department}'" not in (q or "")
 
 
 def _rules(block_value: str) -> list[dict]:
@@ -66,11 +101,14 @@ def _rules(block_value: str) -> list[dict]:
 
 
 # code -> (name, rules, suppressed matchers)
+# The Path INST major, whatever it contains, is replaced by the rules above.
+SUPPRESSED = [{"block_type": "MAJOR", "block_value": "INST"}]
+
 VARIANTS = {
     "INST_HUNTSMAN": (
         "Huntsman International Studies",
         lambda: _rules("INST_HUNTSMAN"),
-        [],
+        SUPPRESSED,
     ),
 }
 

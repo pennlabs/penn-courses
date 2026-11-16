@@ -267,9 +267,7 @@ const ProgramTabs = forwardRef<HTMLDivElement, ProgramTabsProps>(
               }}
             >
               <TabCopy>
-                <TabName $isActive={isActive}>
-                  {scrolls ? tab.code : tab.title}
-                </TabName>
+                <TabName $isActive={isActive}>{tab.title}</TabName>
                 <TabYear $kind={tab.kind} $isActive={isActive}>
                   {tab.year}
                 </TabYear>
