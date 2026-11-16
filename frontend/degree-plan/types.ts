@@ -133,6 +133,7 @@ export interface User {
     first_name: string;
     last_name: string;
     profile: Profile;
+    is_staff?: boolean;
 }
 
 export interface Options {

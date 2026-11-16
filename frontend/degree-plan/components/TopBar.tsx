@@ -1,6 +1,7 @@
 import React from "react";
 import styled from "@emotion/styled";
 import { useRouter } from "next/router";
+import Link from "next/link";
 // TODO: Move shared components to typescript
 // @ts-ignore
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
@@ -130,7 +131,7 @@ const TopBar = ({
   return (
     <Bar>
       <Brand>
-        <Logo src="pdp-logo.svg" alt="" width="30" height="45" />
+        <Logo src="/pdp-logo.svg" alt="" width="30" height="45" />
         <Title>Penn Degree Plan</Title>
       </Brand>
       <Actions>
@@ -167,6 +168,13 @@ const TopBar = ({
           >
             <i className="far fa-question-circle" aria-hidden />
           </TourButton>
+        )}
+        {user?.is_staff && (
+          <Link href="/admin-dashboard" passHref legacyBehavior>
+            <TourButton as="a" aria-label="Admin dashboard" title="Admin dashboard">
+              <i className="fas fa-user-check" aria-hidden />
+            </TourButton>
+          </Link>
         )}
         {user && <NotificationBell />}
         <AccountIndicator

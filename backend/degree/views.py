@@ -1,15 +1,16 @@
 from collections import defaultdict
 from decimal import Decimal
 
+from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django_auto_prefetching import AutoPrefetchViewSetMixin
-from rest_framework import status, viewsets
+from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.filters import SearchFilter
-from rest_framework.permissions import BasePermission, IsAuthenticated
+from rest_framework.permissions import BasePermission, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -29,6 +30,7 @@ from degree.models import (
     ProgramVariant,
 )
 from degree.serializers import (
+    BetaRequestSerializer,
     DegreeDetailSerializer,
     DegreeListSerializer,
     DegreePlanDetailSerializer,
@@ -71,7 +73,10 @@ class InPDPBeta(BasePermission):
     message = "Not in the PDP beta."
 
     def has_permission(self, request, view):
-        if not PDPBetaUser.objects.filter(person=request.user).exists():
+        approved = PDPBetaUser.objects.filter(
+            person=request.user, status=PDPBetaUser.Status.APPROVED
+        ).exists()
+        if not approved:
             raise PermissionDenied(self.message)
         return True
 
@@ -862,6 +867,64 @@ class OnboardingStatusView(APIView):
             person=request.user, defaults={"has_been_onboarded": onboarded}
         )
         return Response({"has_been_onboarded": onboarded})
+
+
+class BetaAccessView(APIView):
+    """
+    Get the user's place in the PDP beta, or ask to join it. Status is one of NONE, REQUESTED,
+    APPROVED or DENIED.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        beta = PDPBetaUser.objects.filter(person=request.user).first()
+        return Response({"status": beta.status if beta else "NONE"})
+
+    def post(self, request):
+        # Asking again changes nothing, so a denied user can't re-file by clicking again.
+        beta, created = PDPBetaUser.objects.get_or_create(
+            person=request.user, defaults={"status": PDPBetaUser.Status.REQUESTED}
+        )
+        return Response(
+            {"status": beta.status},
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
+
+
+class BetaRequestViewset(mixins.ListModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
+    """
+    Staff only: list the PDP beta's requests and members (filter with `?status=`), approve or
+    deny one by setting its `status`, or grant a user access outright by POSTing `username`.
+    """
+
+    serializer_class = BetaRequestSerializer
+    permission_classes = [IsAdminUser]
+    http_method_names = ["get", "post", "patch"]
+
+    def get_queryset(self):
+        queryset = PDPBetaUser.objects.select_related("person")
+        status_filter = self.request.query_params.get("status")
+        if status_filter:
+            queryset = queryset.filter(status=status_filter)
+        return PDPBetaUser.pending_first(queryset)
+
+    def perform_update(self, serializer):
+        new_status = serializer.validated_data.get("status")
+        if new_status is not None and new_status != serializer.instance.status:
+            serializer.instance.decide(new_status)
+
+    def create(self, request):
+        username = (request.data.get("username") or "").strip()
+        person = get_user_model().objects.filter(username=username).first()
+        if person is None:
+            raise ValidationError(
+                {"username": "No one with that PennKey has logged in to Penn Courses yet."}
+            )
+        beta = PDPBetaUser.objects.filter(person=person).first() or PDPBetaUser(person=person)
+        if beta.pk is None or beta.status != PDPBetaUser.Status.APPROVED:
+            beta.decide(PDPBetaUser.Status.APPROVED)
+        return Response(BetaRequestSerializer(beta).data, status=status.HTTP_201_CREATED)
 
 
 class OnboardFromTranscript(APIView):

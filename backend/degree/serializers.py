@@ -19,6 +19,7 @@ from degree.models import (
     Fulfillment,
     Major,
     Minor,
+    PDPBetaUser,
     Rule,
 )
 from degree.utils.composition import compose
@@ -106,6 +107,27 @@ class SimpleCourseSerializer(serializers.ModelSerializer):
             "attribute_codes",
         ]
         read_only_fields = fields
+
+
+class BetaRequestSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source="person.username", read_only=True)
+    first_name = serializers.CharField(source="person.first_name", read_only=True)
+    last_name = serializers.CharField(source="person.last_name", read_only=True)
+    email = serializers.CharField(source="person.email", read_only=True)
+
+    class Meta:
+        model = PDPBetaUser
+        fields = [
+            "id",
+            "username",
+            "first_name",
+            "last_name",
+            "email",
+            "status",
+            "created_at",
+            "decided_at",
+        ]
+        read_only_fields = ["created_at", "decided_at"]
 
 
 class RuleSerializer(serializers.ModelSerializer):
