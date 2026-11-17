@@ -764,6 +764,7 @@ def rebalance_allocations(
     allows=None,
     exempt=frozenset(),
     pick_groups=None,
+    pinned=None,
 ):
     """
     Moves courses onto short rules when another course can take their place, without leaving any
@@ -774,9 +775,11 @@ def rebalance_allocations(
     change to one course's rules, e.g. one the plan's sharing caps forbid. Rules in `exempt`,
     such as waived ones, need no courses and are never short. Neither are the other options of
     a satisfied group in `pick_groups`, which is rechecked after every move, since a move can
-    satisfy a group.
+    satisfy a group. `pinned` maps an allocation to rules it must keep, such as the student's
+    own choices; a move that would take one away is not made.
     """
     credits_cache = credits_cache or {}
+    pinned = pinned or {}
 
     def credits_of(allocation):
         return credits_cache.get(allocation.full_code, DEFAULT_COURSE_CREDITS)
@@ -838,6 +841,8 @@ def rebalance_allocations(
             for other in allocation.selected
             if other in rule_to_degree and not can_share(rule, {other}, double_counts)
         }
+        if conflicts & pinned.get(allocation, set()):
+            return None
         moved = (allocation.selected - conflicts) | {rule}
         if starts_crossing_levels(allocation, moved):
             return None
