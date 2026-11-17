@@ -65,12 +65,14 @@ const useAddToSemester = (planId: DegreePlan["id"] | null | undefined) => {
       legal: true,
       level: null,
     } as unknown) as Fulfillment;
-    mutate(
+    // A course dragged from search or a requirement can already be in the plan.
+    let replaced: Fulfillment | undefined;
+    await mutate(
       fulfillmentsKey,
-      (list: Fulfillment[] = []) => [
-        ...list.filter((f) => f.full_code !== fullCode),
-        placeholder,
-      ],
+      (list: Fulfillment[] = []) => {
+        replaced = list.find((f) => f.full_code === fullCode);
+        return [...list.filter((f) => f.full_code !== fullCode), placeholder];
+      },
       { revalidate: false }
     );
     // Hidden from the dock straight away too, but only deleted from it once the course is saved.
@@ -103,10 +105,14 @@ const useAddToSemester = (planId: DegreePlan["id"] | null | undefined) => {
         fullCode
       );
     } catch {
+      // Only undo our placeholder, not a later change to the same course.
       mutate(
         fulfillmentsKey,
-        (list: Fulfillment[] = []) =>
-          list.filter((f) => f.full_code !== fullCode),
+        (list: Fulfillment[] = []) => {
+          if (!list.includes(placeholder)) return list;
+          const rest = list.filter((f) => f !== placeholder);
+          return replaced ? [...rest, replaced] : rest;
+        },
         { revalidate: false }
       );
       if (wasDocked) mutate("/api/degree/docked");
