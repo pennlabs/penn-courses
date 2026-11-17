@@ -122,7 +122,12 @@ class SectionList(generics.ListAPIView, BaseCourseMixin):
     search_fields = ["^full_code"]
 
     def get_queryset(self):
-        queryset = Section.with_reviews.all().exclude(activity="")
+        queryset = (
+            Section.with_reviews.all()
+            .exclude(activity="")
+            .select_related("course")
+            .prefetch_related("instructors")
+        )
         return self.filter_by_semester(queryset)
 
     @staticmethod
@@ -527,17 +532,6 @@ class StatusUpdateView(generics.ListAPIView):
             section__course__semester=get_current_semester(),
             in_add_drop_period=True,
         ).order_by("created_at")
-
-
-def get_accepted_friends(user):
-    """Return user's accepted friends"""
-    return User.objects.filter(
-        received_friendships__sender=user,
-        received_friendships__status=Friendship.Status.ACCEPTED,
-    ) | User.objects.filter(
-        sent_friendships__recipient=user,
-        sent_friendships__status=Friendship.Status.ACCEPTED,
-    )
 
 
 class FriendshipView(generics.ListAPIView):

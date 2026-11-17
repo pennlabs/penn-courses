@@ -4,7 +4,7 @@ import arrow
 from accounts.authentication import PlatformAuthentication
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import IntegrityError
-from django.db.models import Prefetch, Q, Subquery
+from django.db.models import Prefetch, Q
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
 from django_auto_prefetching import AutoPrefetchViewSetMixin
@@ -18,7 +18,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from courses.models import Course, Meeting, Section
+from courses.models import Course, Friendship, Meeting, Section
 from courses.serializers import CourseListSerializer
 from courses.util import (
     get_course_and_section,
@@ -26,7 +26,6 @@ from courses.util import (
     normalize_semester,
     set_meetings,
 )
-from courses.views import get_accepted_friends
 from PennCourses.docs_settings import PcxAutoSchema
 from PennCourses.settings.base import PATH_REGISTRATION_SCHEDULE_NAME
 from plan.management.commands.recommendcourses import (
@@ -219,15 +218,20 @@ class PrimaryScheduleViewSet(viewsets.ModelViewSet):
         return context
 
     def get_queryset(self):
+        user = self.request.user
+        accepted = Friendship.objects.filter(status=Friendship.Status.ACCEPTED)
         return PrimarySchedule.objects.filter(
-            Q(user=self.request.user)
-            | Q(user_id__in=Subquery(get_accepted_friends(self.request.user).values("id")))
+            Q(user=user)
+            | Q(user_id__in=accepted.filter(sender=user).values("recipient_id"))
+            | Q(user_id__in=accepted.filter(recipient=user).values("sender_id"))
         ).prefetch_related(
-            Prefetch("schedule__sections", Section.with_reviews.all()),
+            Prefetch(
+                "schedule__sections", Section.with_reviews.select_related("course")
+            ),
             "schedule__sections__associated_sections",
             "schedule__sections__instructors",
             "schedule__sections__meetings",
-            "schedule__sections__meetings__room",
+            "schedule__sections__meetings__room__building",
         )
 
     schema = PcxAutoSchema(
@@ -647,14 +651,14 @@ class ScheduleViewSet(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             semester = get_current_semester()
         queryset = Schedule.objects.filter(person=self.request.user, semester=semester)
         queryset = queryset.prefetch_related(
-            Prefetch("sections", Section.with_reviews.all()),
+            Prefetch("sections", Section.with_reviews.select_related("course")),
             "sections__associated_sections",
             "sections__instructors",
             "sections__meetings",
-            "sections__meetings__room",
+            "sections__meetings__room__building",
             Prefetch("breaks", Break.objects.all()),
             "breaks__meetings",
-            "breaks__meetings__room",
+            "breaks__meetings__room__building",
         )
         return queryset
 
