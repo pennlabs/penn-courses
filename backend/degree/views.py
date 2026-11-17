@@ -1,8 +1,11 @@
+import re
 from collections import defaultdict
 from decimal import Decimal
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
+from django.db.models import Case, Value, When
 from django.http import Http404
 from django.shortcuts import get_object_or_404
 from django_auto_prefetching import AutoPrefetchViewSetMixin
@@ -25,6 +28,7 @@ from degree.models import (
     Fulfillment,
     Major,
     Minor,
+    PDPBetaReferral,
     PDPBetaUser,
     PDPOnboardingStatus,
     ProgramVariant,
@@ -38,10 +42,12 @@ from degree.serializers import (
     DockedCourseSerializer,
     DualProgramSerializer,
     FulfillmentSerializer,
+    InviteSerializer,
     MajorDetailSerializer,
     MajorListSerializer,
     MinorDetailSerializer,
     MinorListSerializer,
+    ReferralSerializer,
     Rule,
     RuleSerializer,
 )
@@ -69,6 +75,9 @@ from degree.utils.degree_logic import (
 from PennCourses.docs_settings import PcxAutoSchema
 
 
+PENNKEY = re.compile(r"[a-z0-9]{2,16}")
+
+
 class InPDPBeta(BasePermission):
     message = "Not in the PDP beta."
 
@@ -76,7 +85,7 @@ class InPDPBeta(BasePermission):
         approved = PDPBetaUser.objects.filter(
             person=request.user, status=PDPBetaUser.Status.APPROVED
         ).exists()
-        if not approved:
+        if not approved and not PDPBetaReferral.redeem(request.user):
             raise PermissionDenied(self.message)
         return True
 
@@ -872,16 +881,27 @@ class OnboardingStatusView(APIView):
 class BetaAccessView(APIView):
     """
     Get the user's place in the PDP beta, or ask to join it. Status is one of NONE, REQUESTED,
-    APPROVED or DENIED.
+    APPROVED or DENIED. While PDP_BETA_REQUESTS_OPEN is off, new requests are refused.
     """
 
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        PDPBetaReferral.redeem(request.user)
         beta = PDPBetaUser.objects.filter(person=request.user).first()
-        return Response({"status": beta.status if beta else "NONE"})
+        return Response(
+            {
+                "status": beta.status if beta else "NONE",
+                "requests_open": settings.PDP_BETA_REQUESTS_OPEN,
+            }
+        )
 
     def post(self, request):
+        if not settings.PDP_BETA_REQUESTS_OPEN:
+            beta = PDPBetaUser.objects.filter(person=request.user).first()
+            if beta is None:
+                raise PermissionDenied("Penn Degree Plan is invite-only right now.")
+            return Response({"status": beta.status})
         # Asking again changes nothing, so a denied user can't re-file by clicking again.
         beta, created = PDPBetaUser.objects.get_or_create(
             person=request.user, defaults={"status": PDPBetaUser.Status.REQUESTED}
@@ -909,6 +929,14 @@ class BetaRequestViewset(mixins.ListModelMixin, mixins.UpdateModelMixin, viewset
             queryset = queryset.filter(status=status_filter)
         return PDPBetaUser.pending_first(queryset)
 
+    def get_serializer_context(self):
+        referrers_by_pennkey = defaultdict(list)
+        for pennkey, username in PDPBetaReferral.objects.values_list(
+            "pennkey", "referrer__username"
+        ):
+            referrers_by_pennkey[pennkey].append(username)
+        return {**super().get_serializer_context(), "referrers_by_pennkey": referrers_by_pennkey}
+
     def perform_update(self, serializer):
         new_status = serializer.validated_data.get("status")
         if new_status is not None and new_status != serializer.instance.status:
@@ -925,6 +953,87 @@ class BetaRequestViewset(mixins.ListModelMixin, mixins.UpdateModelMixin, viewset
         if beta.pk is None or beta.status != PDPBetaUser.Status.APPROVED:
             beta.decide(PDPBetaUser.Status.APPROVED)
         return Response(BetaRequestSerializer(beta).data, status=status.HTTP_201_CREATED)
+
+
+class InviteView(APIView):
+    """
+    List the friends a beta user has invited to PDP, or invite more by POSTing `friends`, a
+    list of PennKeys. Each user can invite up to three. An admin approves each invitation
+    before the friend is let in and emailed.
+    """
+
+    permission_classes = [IsAuthenticated & InPDPBeta]
+
+    def invites(self, request):
+        sent = request.user.pdp_referrals.order_by("created_at")
+        return {
+            "invites": InviteSerializer(sent, many=True).data,
+            "remaining": max(PDPBetaReferral.MAX_PER_USER - len(sent), 0),
+        }
+
+    def get(self, request):
+        return Response(self.invites(request))
+
+    def post(self, request):
+        friends = request.data.get("friends")
+        if not isinstance(friends, list) or not all(isinstance(f, str) for f in friends):
+            raise ValidationError({"friends": "Send a list of PennKeys."})
+        pennkeys = list(dict.fromkeys(f.strip().lower() for f in friends if f.strip()))
+        if not pennkeys:
+            raise ValidationError({"friends": "Enter at least one PennKey."})
+        for pennkey in pennkeys:
+            if not PENNKEY.fullmatch(pennkey):
+                raise ValidationError({"friends": f"{pennkey} isn't a PennKey."})
+        if request.user.username.lower() in pennkeys:
+            raise ValidationError({"friends": "You can't invite yourself."})
+
+        with transaction.atomic():
+            # Locks the inviter's row, so two submissions at once can't pass the limit together.
+            get_user_model().objects.select_for_update().get(pk=request.user.pk)
+            already = set(request.user.pdp_referrals.values_list("pennkey", flat=True))
+            new = [pennkey for pennkey in pennkeys if pennkey not in already]
+            if len(already) + len(new) > PDPBetaReferral.MAX_PER_USER:
+                left = max(PDPBetaReferral.MAX_PER_USER - len(already), 0)
+                raise ValidationError(
+                    {"friends": f"You can invite {left} more friend{'' if left == 1 else 's'}."}
+                )
+            PDPBetaReferral.objects.bulk_create(
+                [PDPBetaReferral(referrer=request.user, pennkey=pennkey) for pennkey in new]
+            )
+
+        return Response(self.invites(request), status=status.HTTP_201_CREATED)
+
+
+class ReferralViewset(mixins.ListModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
+    """
+    Staff only: every friend beta users have invited, pending first, with who invited them and
+    the friend's beta request if they've made one. Approve or deny one by setting its `status`;
+    approving lets the friend in and emails them.
+    """
+
+    serializer_class = ReferralSerializer
+    permission_classes = [IsAdminUser]
+    pagination_class = None
+    http_method_names = ["get", "patch"]
+
+    def get_queryset(self):
+        waiting = Case(When(status=PDPBetaReferral.Status.PENDING, then=Value(0)), default=Value(1))
+        return (
+            PDPBetaReferral.objects.select_related("referrer")
+            .annotate(waiting=waiting)
+            .order_by("waiting", "-created_at")
+        )
+
+    def perform_update(self, serializer):
+        new_status = serializer.validated_data.get("status")
+        if new_status is not None and new_status != serializer.instance.status:
+            serializer.instance.decide(new_status)
+
+    def get_serializer_context(self):
+        pennkeys = set(PDPBetaReferral.objects.values_list("pennkey", flat=True))
+        betas = PDPBetaUser.objects.select_related("person").filter(person__username__in=pennkeys)
+        betas_by_pennkey = {beta.person.username: beta for beta in betas}
+        return {**super().get_serializer_context(), "betas_by_pennkey": betas_by_pennkey}
 
 
 class OnboardFromTranscript(APIView):

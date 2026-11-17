@@ -113,6 +113,7 @@ interface TopBarProps {
   setRequirementsOpen: (open: boolean) => void;
   showColumnToggles: boolean; // the columns don't exist during onboarding
   onStartTour?: () => void; // the tour has nothing to show during onboarding
+  onInviteFriends?: () => void;
 }
 
 const TopBar = ({
@@ -125,6 +126,7 @@ const TopBar = ({
   setRequirementsOpen,
   showColumnToggles,
   onStartTour,
+  onInviteFriends,
 }: TopBarProps) => {
   const { asPath } = useRouter();
 
@@ -167,6 +169,16 @@ const TopBar = ({
             {...tourTarget("replay-tour")}
           >
             <i className="far fa-question-circle" aria-hidden />
+          </TourButton>
+        )}
+        {onInviteFriends && (
+          <TourButton
+            type="button"
+            aria-label="Invite friends"
+            title="Invite friends"
+            onClick={onInviteFriends}
+          >
+            <i className="fas fa-user-plus" aria-hidden />
           </TourButton>
         )}
         {user?.is_staff && (

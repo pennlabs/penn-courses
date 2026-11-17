@@ -1183,6 +1183,123 @@ class PDPBetaUser(models.Model):
         return queryset.annotate(waiting=waiting).order_by("waiting", "-created_at")
 
 
+def penn_address(person):
+    # Penn Labs accounts usually carry the student's email; a PennKey is always an address.
+    return (person.email or f"{person.username}@upenn.edu").lower()
+
+
+class PDPBetaReferral(models.Model):
+    """
+    A beta user's invitation of a friend, by PennKey. Nothing happens until an admin approves
+    it: then the PennKey is let into the beta and the friend gets an email that doesn't say
+    who invited them.
+    """
+
+    MAX_PER_USER = 3
+
+    class Status(models.TextChoices):
+        PENDING = "PENDING", "Pending"
+        APPROVED = "APPROVED", "Approved"
+        DENIED = "DENIED", "Denied"
+
+    referrer = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.CASCADE,
+        related_name="pdp_referrals",
+        help_text="The beta user who sent the invitation.",
+    )
+    pennkey = models.CharField(max_length=16, help_text="The friend's PennKey, lowercased.")
+    status = models.CharField(
+        max_length=16,
+        choices=Status.choices,
+        default=Status.PENDING,
+        help_text="Whether an admin has let the friend in, turned them down, or not decided.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    decided_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When an admin approved or denied the referral. Null while it's pending.",
+    )
+    emailed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When the friend was emailed their invitation. Null if they haven't been.",
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["referrer", "pennkey"], name="unique_pdp_referral")
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.referrer} invited {self.pennkey} ({self.get_status_display()})"
+
+    @property
+    def email(self) -> str:
+        return f"{self.pennkey}@upenn.edu"
+
+    def decide(self, status):
+        """
+        Every change of status goes through here. Approving lets the friend in, or marks them
+        to be let in when they first log in, and emails them once per PennKey.
+        """
+        now = timezone.now()
+        with transaction.atomic():
+            self.status = status
+            self.decided_at = None if status == self.Status.PENDING else now
+            self.save()
+            if status != self.Status.APPROVED:
+                return
+
+            same_friend = PDPBetaReferral.objects.filter(pennkey=self.pennkey)
+            # One approval answers everyone who invited this friend.
+            same_friend.filter(status=self.Status.PENDING).update(
+                status=self.Status.APPROVED, decided_at=now
+            )
+            person = get_user_model().objects.filter(username__iexact=self.pennkey).first()
+            if person is not None:
+                beta = PDPBetaUser.objects.filter(person=person).first()
+                if beta is not None and beta.status == PDPBetaUser.Status.APPROVED:
+                    return  # already in; nothing to tell them
+                beta = beta or PDPBetaUser(person=person)
+                beta.status = PDPBetaUser.Status.APPROVED
+                beta.decided_at = now
+                # The invitation is their welcome, so they don't also get the approval email.
+                beta.notified_at = now
+                beta.save()
+            if same_friend.filter(emailed_at__isnull=False).exists():
+                return
+
+            from degree.tasks import send_referral_email
+
+            referral_id = self.id
+            transaction.on_commit(lambda: send_referral_email.delay(referral_id))
+
+    @classmethod
+    def redeem(cls, person):
+        """
+        Let in someone a referral approved before they'd ever logged in. Only for someone with
+        no beta row yet, so an admin's later revoke or deny stands.
+        """
+        if PDPBetaUser.objects.filter(person=person).exists():
+            return False
+        if not cls.objects.filter(
+            pennkey=person.username.lower(), status=cls.Status.APPROVED
+        ).exists():
+            return False
+        now = timezone.now()
+        PDPBetaUser.objects.get_or_create(
+            person=person,
+            defaults={
+                "status": PDPBetaUser.Status.APPROVED,
+                "decided_at": now,
+                "notified_at": now,
+            },
+        )
+        return True
+
+
 class PDPOnboardingStatus(models.Model):
     """
     Whether a user has finished the PDP onboarding tour. Kept in its own table instead of on

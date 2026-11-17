@@ -2,7 +2,7 @@ import React, { useCallback, useState } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import styled from "@emotion/styled";
-import useSWR from "swr";
+import useSWR, { useSWRConfig } from "swr";
 import TopBar from "@/components/TopBar";
 import {
   PanelContainer,
@@ -13,6 +13,7 @@ import { getFetcher, patchFetcher, postFetcher } from "@/hooks/swrcrud";
 import { User } from "@/types";
 
 const REQUESTS_URL = "/api/degree/beta-requests";
+const REFERRALS_URL = "/api/degree/beta-referrals";
 
 type Status = "REQUESTED" | "APPROVED" | "DENIED";
 
@@ -25,6 +26,26 @@ interface BetaRequest {
   status: Status;
   created_at: string;
   decided_at: string | null;
+  referred_by: string[];
+}
+
+type ReferralStatus = "PENDING" | "APPROVED" | "DENIED";
+
+const REFERRAL_STATUS_LABELS: Record<ReferralStatus, string> = {
+  PENDING: "Pending",
+  APPROVED: "Approved",
+  DENIED: "Denied",
+};
+
+interface Referral {
+  id: number;
+  pennkey: string;
+  referrer_username: string;
+  referrer_name: string;
+  status: ReferralStatus;
+  created_at: string;
+  emailed_at: string | null;
+  invitee: { id: number; username: string; status: Status } | null;
 }
 
 const FILTERS: { label: string; status: Status | null }[] = [
@@ -197,7 +218,7 @@ const Meta = styled.div`
   white-space: nowrap;
 `;
 
-const Badge = styled.span<{ $status: Status }>`
+const Badge = styled.span<{ $status: Status | ReferralStatus }>`
   font-size: 0.75rem;
   font-weight: 600;
   padding: 0.2rem 0.6rem;
@@ -210,6 +231,12 @@ const Badge = styled.span<{ $status: Status }>`
       : "var(--warning-text)"};
   background: ${({ $status }) =>
     $status === "APPROVED" ? "#E6F4EA" : $status === "DENIED" ? "#fbeaea" : "var(--warning-bg)"};
+`;
+
+const Referred = styled.div`
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--primary-color-xx-dark);
 `;
 
 const Actions = styled.div`
@@ -289,6 +316,9 @@ const BetaRequests = () => {
             </Person>
             <Meta className="wide" title={request.email}>
               {request.email || "No email"} · requested {formatDate(request.created_at)}
+              {!!request.referred_by.length && (
+                <Referred>Referred by {request.referred_by.join(", ")}</Referred>
+              )}
             </Meta>
             <Badge className="wide" $status={request.status}>
               {STATUS_LABELS[request.status]}
@@ -365,6 +395,95 @@ const BetaRequests = () => {
   );
 };
 
+const Referrals = () => {
+  const { data: referrals, error, mutate } = useSWR<Referral[]>(REFERRALS_URL, getFetcher);
+  const { mutate: mutateAll } = useSWRConfig();
+  const [busyId, setBusyId] = useState<number | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const decide = async (referral: Referral, status: ReferralStatus) => {
+    setBusyId(referral.id);
+    setActionError(null);
+    try {
+      await patchFetcher(`${REFERRALS_URL}/${referral.id}`, { status });
+      // Approving may have approved the friend's own request too.
+      mutateAll((key) => typeof key === "string" && key.startsWith(REQUESTS_URL));
+      await mutate();
+    } catch (e) {
+      setActionError(errorMessage(e));
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const friendState = (referral: Referral) => {
+    if (referral.emailed_at) return "invite emailed";
+    if (!referral.invitee) return "hasn't logged in";
+    return `own request ${STATUS_LABELS[referral.invitee.status].toLowerCase()}`;
+  };
+
+  let list: React.ReactNode;
+  if (error) list = <Note>{errorMessage(error)}</Note>;
+  else if (!referrals) list = <Note>Loading…</Note>;
+  else if (!referrals.length) list = <Note>No one has invited a friend yet.</Note>;
+  else
+    list = (
+      <Rows>
+        {referrals.map((referral) => (
+          <Row key={referral.id}>
+            <Person>
+              <div>{referral.pennkey}</div>
+              <div>
+                invited by {referral.referrer_name || referral.referrer_username} (
+                {referral.referrer_username})
+              </div>
+            </Person>
+            <Meta className="wide">
+              {formatDate(referral.created_at)} · {friendState(referral)}
+            </Meta>
+            <Badge className="wide" $status={referral.status}>
+              {REFERRAL_STATUS_LABELS[referral.status]}
+            </Badge>
+            <Actions>
+              {referral.status !== "APPROVED" && (
+                <Button
+                  type="button"
+                  disabled={busyId === referral.id}
+                  title="Lets them into the beta and emails them, without saying who invited them"
+                  onClick={() => decide(referral, "APPROVED")}
+                >
+                  Approve
+                </Button>
+              )}
+              {referral.status === "PENDING" && (
+                <Button
+                  type="button"
+                  $tone="deny"
+                  disabled={busyId === referral.id}
+                  onClick={() => decide(referral, "DENIED")}
+                >
+                  Deny
+                </Button>
+              )}
+            </Actions>
+          </Row>
+        ))}
+      </Rows>
+    );
+
+  return (
+    <Section>
+      <PanelHeader>
+        <SectionTitle>Referrals</SectionTitle>
+      </PanelHeader>
+      <SectionBody>
+        {actionError && <ErrorText>{actionError}</ErrorText>}
+        {list}
+      </SectionBody>
+    </Section>
+  );
+};
+
 const AdminDashboardPage = () => {
   const { data: user, error: userError, isLoading, mutate } = useSWR<User>(
     "/accounts/me/",
@@ -378,7 +497,13 @@ const AdminDashboardPage = () => {
   if (isLoading) content = <Note>Loading…</Note>;
   else if (!signedIn) content = <Note>Log in to Penn Degree Plan to use the admin dashboard.</Note>;
   else if (!user.is_staff) content = <Note>The admin dashboard is only for Penn Labs staff.</Note>;
-  else content = <BetaRequests />;
+  else
+    content = (
+      <>
+        <BetaRequests />
+        <Referrals />
+      </>
+    );
 
   return (
     <PageContainer>
