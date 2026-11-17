@@ -41,12 +41,12 @@ urlpatterns = [
     path("beta-access", BetaAccessView.as_view(), name="beta-access"),
     path("beta-invites", InviteView.as_view(), name="beta-invites"),
     path(
-        "onboard-from-transcript/<slug:degree_plan_id>",
+        "onboard-from-transcript/<int:degree_plan_id>",
         OnboardFromTranscript.as_view(),
         name="onboard-from-transcript",
     ),
     path(
-        "satisfied-rule-list/<slug:degree_plan_id>/<slug:full_code>/<slug:rule_id>",
+        "satisfied-rule-list/<int:degree_plan_id>/<slug:full_code>/<slug:rule_id>",
         SatisfiedRuleList.as_view(),
         name="satisfied-rule-list",
     ),
