@@ -1071,7 +1071,9 @@ class OnboardFromTranscript(APIView):
     of courses to degree rules and creates relevant Fulfillment objects.
     """
 
-    @action(detail=True, methods=["post"])
+    # After Beta: remove InPDPBeta
+    permission_classes = [IsAuthenticated & InPDPBeta]
+
     def post(self, request, degree_plan_id):
         counts = defaultdict(int)
         cus = defaultdict(lambda: Decimal(0))
@@ -1081,7 +1083,7 @@ class OnboardFromTranscript(APIView):
             cu_ok = rule.credits is None or cus[rule.id] >= rule.credits
             return (rule.num is not None or rule.credits is not None) and num_ok and cu_ok
 
-        degree_plan = DegreePlan.objects.get(id=degree_plan_id)
+        degree_plan = get_object_or_404(DegreePlan, id=degree_plan_id, person=request.user)
         course_data = request.data["courses"]
         # Which transcript record each course was read off, keyed by full code. Absent for a
         # transcript with a single record, whose courses may count toward any degree.
@@ -1188,6 +1190,9 @@ class SatisfiedRuleList(APIView):
     semester, rules that take no such credit are left out rather than offered.
     """
 
+    # After Beta: remove InPDPBeta
+    permission_classes = [IsAuthenticated & InPDPBeta]
+
     schema = PcxAutoSchema(
         response_codes={
             "satisfied-rule-list": {
@@ -1214,11 +1219,11 @@ class SatisfiedRuleList(APIView):
     def get(self, request, *args, **kwargs):
         degree_plan_id = kwargs["degree_plan_id"]
         full_code = kwargs["full_code"]
+        degree_plan = get_object_or_404(DegreePlan, id=degree_plan_id, person=request.user)
         rule_selected = (
-            None if kwargs["rule_id"] == "-1" else Rule.objects.get(id=kwargs["rule_id"])
+            None if kwargs["rule_id"] == "-1" else get_object_or_404(Rule, id=kwargs["rule_id"])
         )
 
-        degree_plan = DegreePlan.objects.get(id=degree_plan_id)
         try:
             fulfillment = Fulfillment.objects.get(degree_plan=degree_plan, full_code=full_code)
         except Fulfillment.DoesNotExist:
