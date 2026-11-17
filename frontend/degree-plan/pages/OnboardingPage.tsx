@@ -16,10 +16,17 @@ import {
   SchoolSelection,
   CourseLevel,
 } from "../utils/parseUtils";
+import ChooseMethodPanel from "@/components/OnboardingPanels/ChooseMethodPanel";
 import WelcomeLayout from "@/components/OnboardingPanels/WelcomePanel";
 import CreateWithTranscriptPanel from "@/components/OnboardingPanels/CreateWithTranscriptPanel";
 
 polyfillPromiseWithResolvers();
+
+// WelcomeLayout moves on to FROM_TRANSCRIPT, which it knows as page 1.
+const CHOOSE = 0;
+const FROM_TRANSCRIPT = 1;
+const MANUAL = 2;
+const UPLOAD = 3;
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/legacy/build/pdf.worker.min.mjs`;
 
@@ -132,11 +139,27 @@ const OnboardingPage = ({
 
   const exitOnboarding = () => {
     resetParser();
-    setCurrentPage(0);
+    setCurrentPage(CHOOSE);
     setShowOnboardingModal(false);
   };
 
-  if (currentPage === 0)
+  const startManually = () => {
+    resetParser();
+    setPDF(null);
+    setCurrentPage(MANUAL);
+  };
+
+  if (currentPage === CHOOSE)
+    return (
+      <ChooseMethodPanel
+        onTranscript={() => setCurrentPage(UPLOAD)}
+        onManual={startManually}
+        canExit={canExit}
+        onExit={exitOnboarding}
+      />
+    );
+
+  if (currentPage === UPLOAD)
     return (
       <WelcomeLayout
         resetParser={resetParser}
@@ -149,8 +172,8 @@ const OnboardingPage = ({
         waitingForPrograms={pagesRead && !programsLoaded}
         startingYear={startingYear}
         setCurrentPage={setCurrentPage}
-        canExit={canExit}
-        onExit={exitOnboarding}
+        onBack={() => setCurrentPage(CHOOSE)}
+        onManual={startManually}
       />
     );
 
@@ -160,7 +183,9 @@ const OnboardingPage = ({
       inputtedGraduationYear={graduationYear}
       scrapedCourses={scrapedCourses}
       courseLevels={courseLevels}
-      setCurrentPage={setCurrentPage}
+      onBack={() =>
+        setCurrentPage(currentPage === FROM_TRANSCRIPT ? UPLOAD : CHOOSE)
+      }
       setActiveDegreeplan={setActiveDegreeplan}
       inputtedSelections={selections}
       inputtedDualProgram={dualProgram}
