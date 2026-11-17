@@ -223,13 +223,14 @@ interface SearchConditionProps extends SearchConditionInnerProps {
     unselectedFulfillments: Fulfillment[]
     ruleIsSatisfied: boolean,
     ruleId: Rule["id"];
+    ruleTitle: string;
     ruleQuery: string;
     activeDegreeplanId: DegreePlan["id"];
     num: number | null;
     cu: number | null;
 }
-const SearchCondition = ({ cu, num, ruleId, ruleQuery, fulfillments, unselectedFulfillments, ruleIsSatisfied, q, activeDegreeplanId }: SearchConditionProps) => {
-    const { setSearchPanelOpen, searchRuleId, setSearchRuleQuery, setSearchRuleId, setSearchFulfillments, } = useContext(SearchPanelContext);
+const SearchCondition = ({ cu, num, ruleId, ruleTitle, ruleQuery, fulfillments, unselectedFulfillments, ruleIsSatisfied, q, activeDegreeplanId }: SearchConditionProps) => {
+    const { setSearchPanelOpen, searchRuleId, setSearchRuleQuery, setSearchRuleId, setSearchRuleTitle, setSearchFulfillments, } = useContext(SearchPanelContext);
     
     const { searchRef } = useContext(ExpandedCoursesPanelContext);
 
@@ -272,6 +273,7 @@ const SearchCondition = ({ cu, num, ruleId, ruleQuery, fulfillments, unselectedF
                     setSearchRuleId(null);
                 } else {
                     setSearchRuleId(ruleId)
+                    setSearchRuleTitle(ruleTitle)
                 }
                 setSearchPanelOpen(true);
                 setSearchFulfillments(fulfillments)
@@ -394,7 +396,7 @@ const QObject = ({ q, fulfillments, unselectedFulfillments, rule, satisfied, act
                 const courses = Array.from(fulfillmentsMap.values())
                 fulfillmentsMap.clear()
                 return (
-                    <SearchCondition cu={rule.credits} num={rule.num} fulfillments={courses} unselectedFulfillments={unselectedFulfillments} q={search.q} ruleIsSatisfied={satisfied} ruleId={rule.id} ruleQuery={rule.q} activeDegreeplanId={activeDegreePlanId} />
+                    <SearchCondition cu={rule.credits} num={rule.num} fulfillments={courses} unselectedFulfillments={unselectedFulfillments} q={search.q} ruleIsSatisfied={satisfied} ruleId={rule.id} ruleTitle={rule.title} ruleQuery={rule.q} activeDegreeplanId={activeDegreePlanId} />
                 )
             })
 
@@ -406,7 +408,7 @@ const QObject = ({ q, fulfillments, unselectedFulfillments, rule, satisfied, act
             </Row>
         case "SEARCH":
             return (
-                <SearchCondition cu={rule.credits} num={rule.num} q={q.q} ruleIsSatisfied={satisfied} fulfillments={fulfillments} unselectedFulfillments={unselectedFulfillments} ruleId={rule.id} ruleQuery={rule.q} activeDegreeplanId={activeDegreePlanId} />
+                <SearchCondition cu={rule.credits} num={rule.num} q={q.q} ruleIsSatisfied={satisfied} fulfillments={fulfillments} unselectedFulfillments={unselectedFulfillments} ruleId={rule.id} ruleTitle={rule.title} ruleQuery={rule.q} activeDegreeplanId={activeDegreePlanId} />
             );
         case "COURSE":
             const [fulfillment] = fulfillments.filter(fulfillment => fulfillment.full_code == q.full_code && (!q.semester || q.semester === fulfillment.semester))

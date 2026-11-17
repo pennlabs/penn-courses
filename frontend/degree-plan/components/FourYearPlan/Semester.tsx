@@ -370,9 +370,10 @@ const FlexSemester = ({
     }), [addToSemester, semester]);
 
     const handleRemoveCourse = async (full_code: Course["id"]) => {
-        remove(full_code);
+        const removed = remove(full_code);
         addToDock({ "full_code": full_code }, full_code);
-        await mutate(`/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`);
+        // Deleting can free up rules for the courses left behind.
+        if (await removed) mutate(`/api/degree/degreeplans/${activeDegreeplanId}/fulfillments`);
     }
 
     const removeSemesterHelper = () => {

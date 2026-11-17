@@ -191,21 +191,30 @@ export const OverrideTagWrapper = styled.div`
   display: inline-flex;
 `;
 
-export const OverrideTag = styled.span`
+export const OverrideTag = styled.button`
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
+  font: inherit;
   font-size: 0.7rem;
   font-weight: 600;
-  color: var(--warning-text);
-  background: var(--warning-bg);
-  border: 1px solid #e8d88c;
+  color: var(--primary-color-ultra-dark);
+  background: var(--primary-color-light);
+  border: 1px solid var(--primary-color-dark);
   border-radius: 4px;
   padding: 0.1rem 0.4rem;
+  white-space: nowrap;
   cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 
-  &:hover {
-    background: #fff0b3;
+  i {
+    color: var(--primary-color-xxx-dark);
+  }
+
+  &:hover,
+  &[aria-expanded="true"] {
+    background: var(--primary-color);
+    border-color: var(--primary-color-xx-dark);
   }
 `;
 
@@ -213,51 +222,58 @@ export const OverridePopover = styled.div`
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-  padding: 0.6rem 0.75rem;
   z-index: 1000;
-  min-width: 200px;
+  min-width: 210px;
+  padding: 0.6rem 0.5rem 0.4rem;
+  border: 1px solid var(--primary-color-dark);
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 8px 24px rgba(61, 65, 119, 0.14);
   font-size: 0.8rem;
 `;
 
 export const OverridePopoverTitle = styled.div`
-  font-weight: 600;
+  margin: 0 0.35rem 0.35rem;
+  color: var(--primary-color-xxx-dark);
   font-size: 0.7rem;
-  color: #888;
-  text-transform: uppercase;
+  font-weight: 600;
   letter-spacing: 0.03em;
-  margin-bottom: 0.4rem;
+  text-transform: uppercase;
 `;
 
 export const OverrideItem = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.3rem 0;
+  padding: 0.3rem 0.35rem;
+  border-radius: 8px;
 
-  &:not(:last-child) {
-    border-bottom: 1px solid #f0f0f0;
+  &:hover {
+    background: var(--primary-color-extra-light);
   }
 `;
 
 export const OverrideItemName = styled.span`
-  color: #333;
-  font-weight: 500;
+  color: var(--primary-color-ultra-dark);
+  font-weight: 600;
 `;
 
 export const RemoveOverrideButton = styled.button`
-  background: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
   border: none;
-  color: #c0392b;
-  cursor: pointer;
+  border-radius: 50%;
+  background: none;
+  color: var(--primary-color-xxx-dark);
   font-size: 0.75rem;
-  padding: 0.15rem 0.35rem;
-  border-radius: 4px;
+  cursor: pointer;
 
   &:hover {
-    background: #fdecea;
+    background: var(--primary-color-light);
   }
 
   &:disabled {
@@ -269,58 +285,91 @@ export const RemoveOverrideButton = styled.button`
 // Override modal styles
 export const OverrideModalOverlay = styled.div`
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(112, 112, 112, 0.75);
+  inset: 0;
   z-index: 1001;
   display: flex;
   align-items: center;
   justify-content: center;
+  background-color: rgba(61, 65, 119, 0.35);
 `;
 
 export const OverrideModalCard = styled.div`
-  background: white;
-  border-radius: 8px;
-  padding: 1.5rem;
-  max-width: 400px;
   width: 90%;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  max-width: 400px;
+  padding: 1.5rem;
+  border: 1px solid var(--primary-color-dark);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 12px 32px rgba(61, 65, 119, 0.2);
 `;
 
 export const OverrideModalTitle = styled.div`
-  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+  color: var(--primary-color-ultra-dark);
   font-size: 1.1rem;
-  margin-bottom: 0.75rem;
-  color: var(--modal-title-color, #333);
+  font-weight: 700;
+`;
+
+export const OverrideModalIcon = styled.span`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--primary-color-light);
+  color: var(--primary-color-xxx-dark);
+  font-size: 0.85rem;
 `;
 
 export const OverrideModalBody = styled.div`
-  font-size: 0.9rem;
-  color: #555;
   margin-bottom: 1.25rem;
-  line-height: 1.5;
+  color: var(--modal-text-color);
+  font-size: 0.9rem;
+  line-height: 1.55;
+
+  p {
+    margin: 0 0 0.6rem;
+  }
+`;
+
+export const OverrideModalNote = styled.p`
+  padding: 0.5rem 0.7rem;
+  border-radius: 8px;
+  background: var(--primary-color-extra-light);
+  color: var(--primary-color-ultra-dark);
+  font-size: 0.82rem;
 `;
 
 export const OverrideModalActions = styled.div`
   display: flex;
   justify-content: flex-end;
-  gap: 0.75rem;
+  gap: 0.5rem;
 `;
 
 export const OverrideModalButton = styled.button<{ $primary?: boolean }>`
-  padding: 0.45rem 1rem;
-  border-radius: 6px;
+  padding: 0.45rem 1.1rem;
+  border: none;
+  border-radius: 8px;
+  background: ${(props) =>
+    props.$primary ? "var(--primary-color-xx-dark)" : "transparent"};
+  color: ${(props) =>
+    props.$primary ? "#ffffff" : "var(--primary-color-xxx-dark)"};
+  font: inherit;
   font-size: 0.85rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  border: 1px solid ${(props) => (props.$primary ? "#7876f3" : "#d6d6d6")};
-  background: ${(props) => (props.$primary ? "#7876f3" : "white")};
-  color: ${(props) => (props.$primary ? "white" : "#333")};
+  transition: background-color 0.15s ease;
 
   &:hover {
-    background: ${(props) => (props.$primary ? "#6e76cd" : "#f5f5f5")};
+    background: ${(props) =>
+      props.$primary
+        ? "var(--primary-color-xxx-dark)"
+        : "var(--primary-color-light)"};
   }
 
   &:disabled {
@@ -330,7 +379,7 @@ export const OverrideModalButton = styled.button<{ $primary?: boolean }>`
 `;
 
 export const OverrideCourseName = styled.strong`
-  color: #333;
+  color: var(--primary-color-ultra-dark);
 `;
 
 export const RuleLeafContainer = styled.div<{
