@@ -60,6 +60,7 @@ from degree.utils.degree_logic import (
     GraduateSharing,
     PickGroups,
     allocate_rules,
+    is_graduate_coursework,
     level_for_course,
     map_rules_and_degrees,
     prewarm_belongs_cache,
@@ -70,6 +71,7 @@ from degree.utils.degree_logic import (
     rule_subtrees,
     selection_is_legal,
     sharing_from_fulfillments,
+    split_by_level,
     within_policy,
 )
 from PennCourses.docs_settings import PcxAutoSchema
@@ -118,11 +120,15 @@ def lift_waivers(degree_plan, rules):
         degree_plan.refresh_satisfaction()
 
 
-def update_fulfillments(degree_plan):
+def update_fulfillments(degree_plan, keep_choices=False):
     """
     Reallocates every fulfillment of a plan, which has to happen whenever the plan gains or
     loses a degree, major or minor: the rules a course can count toward, and what it may
     double count with, both change.
+
+    With `keep_choices`, each course keeps the rules it counts for, other than waived ones,
+    and only gains rules that can share with them. An override the course no longer counts for
+    stays on offer, but is not chosen for it.
     """
     plan_rules = map_rules_and_degrees(degree_plan)
     rules_per_degree = plan_rules.rules_per_component
@@ -143,8 +149,14 @@ def update_fulfillments(degree_plan):
         return (rule.num is not None or rule.credits is not None) and num_ok and cu_ok
 
     fulfillments = list(
-        Fulfillment.objects.filter(degree_plan=degree_plan).order_by("semester", "full_code")
+        Fulfillment.objects.filter(degree_plan=degree_plan)
+        .order_by("semester", "full_code")
+        .prefetch_related("rules", "overrides")
     )
+    kept_choices = {
+        fulfillment: set(fulfillment.rules.all()) - waived if keep_choices else set()
+        for fulfillment in fulfillments
+    }
     # Every course is known up front, so check them against the rules in bulk
     belongs_cache = prewarm_belongs_cache(
         {rule for rules in rules_per_degree.values() for rule in rules},
@@ -157,11 +169,19 @@ def update_fulfillments(degree_plan):
         [fulfillment.full_code for fulfillment in fulfillments]
     )
     # Fulfillments are ordered by semester above, so the allowance goes to the earliest
-    # courses eligible for it.
+    # courses eligible for it, after any a course already shares is set aside for it.
     graduate_sharing = GraduateSharing()
+    reservations = {
+        fulfillment: credits_cache.get(fulfillment.full_code, DEFAULT_COURSE_CREDITS)
+        for fulfillment, kept in kept_choices.items()
+        if is_graduate_coursework(fulfillment.full_code)
+        and all(split_by_level(kept, rule_to_degree))
+    }
+    graduate_sharing.reserved = sum(reservations.values(), Decimal(0))
     allocations = []
 
     for fulfillment in fulfillments:
+        graduate_sharing.reserved -= reservations.get(fulfillment, Decimal(0))
         selected_rules, unselected_rules, _ = allocate_rules(
             fulfillment.full_code,
             rules_per_degree,
@@ -176,6 +196,7 @@ def update_fulfillments(degree_plan):
             level=fulfillment.level,
             policy=policy,
             canonical=canonical_cache.get(fulfillment.full_code),
+            prior_selected=kept_choices[fulfillment],
         )
 
         allocations.append(
@@ -198,10 +219,17 @@ def update_fulfillments(degree_plan):
         allows=lambda before, after: within_policy(before, after, rule_to_degree, policy),
         exempt=waived,
         pick_groups=pick_groups,
+        pinned={
+            allocation: kept_choices[fulfillment] & allocation.selected
+            for fulfillment, allocation in zip(fulfillments, allocations)
+        },
     )
 
     with transaction.atomic():
         for fulfillment, allocation in zip(fulfillments, allocations):
+            if keep_choices:
+                inactive_overrides = set(fulfillment.overrides.all()) - waived - allocation.selected
+                allocation.unselected |= inactive_overrides & rule_to_degree.keys()
             fulfillment.rules.set(allocation.selected)
             fulfillment.unselected_rules.set(allocation.unselected)
             fulfillment.legal = selection_is_legal(
@@ -393,8 +421,9 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         """
         Waive requirements of a degree plan, or lift waivers, by `rule_ids`. Only individual
         requirements (leaf rules) can be waived, not whole blocks or groups. A waived rule is
-        satisfied without courses and adds no course units; the plan's courses are reallocated
-        to the requirements that remain, and overrides onto a waived rule are removed.
+        satisfied without courses and adds no course units; courses on a waived rule are
+        reallocated to the requirements that remain, and overrides onto a waived rule are
+        removed. Every other course keeps the requirements it counts for and its overrides.
         """
         ids = request.data.get("rule_ids")
         if not isinstance(ids, list) or not all(isinstance(i, int) for i in ids):
@@ -427,14 +456,14 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         with transaction.atomic():
             if request.method == "DELETE":
                 degree_plan.waived_rules.remove(*ids)
-                update_fulfillments(degree_plan)
+                update_fulfillments(degree_plan, keep_choices=True)
             else:
                 degree_plan.waived_rules.add(*ids)
                 for fulfillment in degree_plan.fulfillments.filter(overrides__in=ids).distinct():
                     fulfillment.overrides.remove(*ids)
                 # Reallocating can move any course, so only do it when courses must leave
                 if degree_plan.fulfillments.filter(rules__in=ids).exists():
-                    update_fulfillments(degree_plan)
+                    update_fulfillments(degree_plan, keep_choices=True)
                 else:
                     degree_plan.refresh_satisfaction()
         return Response(self.get_serializer(degree_plan).data, status=status.HTTP_200_OK)

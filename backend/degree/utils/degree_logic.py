@@ -298,7 +298,8 @@ class GraduateSharing:
     were taken, so an allowance goes to the earliest eligible courses. That is a default
     rather than an optimum: the student can still move a course by hand afterwards.
 
-    `used` / `allows` / `take` are the undergraduate-graduate allowance. `program_shared_cu_used`
+    `used` / `allows` / `take` are the undergraduate-graduate allowance, less anything `reserved`
+    for courses still to come that already share. `program_shared_cu_used`
     is a coordinated program's own cap. `claims` records which components already hold a course,
     keyed by the course's canonical (cross-list) code.
     """
@@ -306,11 +307,12 @@ class GraduateSharing:
     def __init__(self, limit=MAX_SHARED_GRADUATE_CREDITS):
         self.limit = limit
         self.used = Decimal(0)
+        self.reserved = Decimal(0)
         self.program_shared_cu_used = Decimal(0)
         self.claims = defaultdict(set)
 
     def allows(self, credits) -> bool:
-        return self.used + credits <= self.limit
+        return self.used + self.reserved + credits <= self.limit
 
     def take(self, credits) -> None:
         self.used += credits
@@ -764,6 +766,7 @@ def rebalance_allocations(
     allows=None,
     exempt=frozenset(),
     pick_groups=None,
+    pinned=None,
 ):
     """
     Moves courses onto short rules when another course can take their place, without leaving any
@@ -774,9 +777,11 @@ def rebalance_allocations(
     change to one course's rules, e.g. one the plan's sharing caps forbid. Rules in `exempt`,
     such as waived ones, need no courses and are never short. Neither are the other options of
     a satisfied group in `pick_groups`, which is rechecked after every move, since a move can
-    satisfy a group.
+    satisfy a group. `pinned` maps an allocation to rules it must keep, such as the student's
+    own choices; a move that would take one away is not made.
     """
     credits_cache = credits_cache or {}
+    pinned = pinned or {}
 
     def credits_of(allocation):
         return credits_cache.get(allocation.full_code, DEFAULT_COURSE_CREDITS)
@@ -838,6 +843,8 @@ def rebalance_allocations(
             for other in allocation.selected
             if other in rule_to_degree and not can_share(rule, {other}, double_counts)
         }
+        if conflicts & pinned.get(allocation, set()):
+            return None
         moved = (allocation.selected - conflicts) | {rule}
         if starts_crossing_levels(allocation, moved):
             return None
