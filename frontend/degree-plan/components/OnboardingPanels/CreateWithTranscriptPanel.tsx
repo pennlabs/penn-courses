@@ -1,11 +1,5 @@
 import { ArrowLeftIcon } from "@radix-ui/react-icons";
-import {
-  Dispatch,
-  SetStateAction,
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
+import { useCallback, useEffect, useState } from "react";
 import { BackButton, NextButton } from "./SharedComponents";
 import { PulseLoader } from "react-spinners";
 import {
@@ -54,7 +48,7 @@ type WelcomeLayoutProps = {
   // Which transcript record each scraped course is on; empty unless the transcript has a
   // masters record.
   courseLevels?: { [course: string]: CourseLevel };
-  setCurrentPage: Dispatch<SetStateAction<number>>;
+  onBack: () => void;
   setActiveDegreeplan: (arg0: DegreePlan) => void;
   inputtedSelections: SchoolSelection[];
   // Code of the coordinated program the transcript names, e.g. "MT".
@@ -69,7 +63,7 @@ export default function CreateWithTranscriptPanel({
   inputtedGraduationYear,
   scrapedCourses,
   courseLevels = {},
-  setCurrentPage,
+  onBack,
   setActiveDegreeplan,
   inputtedSelections,
   inputtedDualProgram = null,
@@ -263,7 +257,7 @@ export default function CreateWithTranscriptPanel({
         <ScrollArea>
           <ScrollContent>
             <Header>
-              <BackButton type="button" onClick={() => setCurrentPage(0)}>
+              <BackButton type="button" onClick={onBack}>
                 <ArrowLeftIcon width={16} height={16} />
                 Back
               </BackButton>
