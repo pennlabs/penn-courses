@@ -19,6 +19,7 @@ from degree.models import (
     Fulfillment,
     Major,
     Minor,
+    PDPBetaReferral,
     PDPBetaUser,
     Rule,
 )
@@ -114,6 +115,13 @@ class BetaRequestSerializer(serializers.ModelSerializer):
     first_name = serializers.CharField(source="person.first_name", read_only=True)
     last_name = serializers.CharField(source="person.last_name", read_only=True)
     email = serializers.CharField(source="person.email", read_only=True)
+    referred_by = serializers.SerializerMethodField(
+        help_text="Usernames of the beta users who invited this person."
+    )
+
+    def get_referred_by(self, beta):
+        referrers = self.context.get("referrers_by_pennkey", {})
+        return sorted(set(referrers.get(beta.person.username, ())))
 
     class Meta:
         model = PDPBetaUser
@@ -126,8 +134,48 @@ class BetaRequestSerializer(serializers.ModelSerializer):
             "status",
             "created_at",
             "decided_at",
+            "referred_by",
         ]
         read_only_fields = ["created_at", "decided_at"]
+
+
+class InviteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PDPBetaReferral
+        fields = ["pennkey", "status", "created_at"]
+        read_only_fields = fields
+
+
+class ReferralSerializer(serializers.ModelSerializer):
+    referrer_username = serializers.CharField(source="referrer.username", read_only=True)
+    referrer_name = serializers.SerializerMethodField()
+    invitee = serializers.SerializerMethodField(
+        help_text="The invited friend's beta request, or null if they haven't requested access."
+    )
+
+    def get_referrer_name(self, referral):
+        return f"{referral.referrer.first_name} {referral.referrer.last_name}".strip()
+
+    def get_invitee(self, referral):
+        beta = self.context.get("betas_by_pennkey", {}).get(referral.pennkey)
+        if beta is None:
+            return None
+        return {"id": beta.id, "username": beta.person.username, "status": beta.status}
+
+    class Meta:
+        model = PDPBetaReferral
+        fields = [
+            "id",
+            "pennkey",
+            "referrer_username",
+            "referrer_name",
+            "status",
+            "created_at",
+            "decided_at",
+            "emailed_at",
+            "invitee",
+        ]
+        read_only_fields = [field for field in fields if field != "status"]
 
 
 class RuleSerializer(serializers.ModelSerializer):

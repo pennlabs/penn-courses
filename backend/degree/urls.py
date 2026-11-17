@@ -10,10 +10,12 @@ from degree.views import (
     DockedCourseViewset,
     DualProgramViewset,
     FulfillmentViewSet,
+    InviteView,
     MajorViewset,
     MinorViewset,
     OnboardFromTranscript,
     OnboardingStatusView,
+    ReferralViewset,
     SatisfiedRuleList,
 )
 
@@ -26,6 +28,7 @@ router.register(r"minors", MinorViewset, basename="minor")
 router.register(r"dual-programs", DualProgramViewset, basename="dual-program")
 router.register(r"docked", DockedCourseViewset)
 router.register(r"beta-requests", BetaRequestViewset, basename="beta-request")
+router.register(r"beta-referrals", ReferralViewset, basename="beta-referral")
 fulfillments_router = NestedDefaultRouter(
     router, r"degreeplans", lookup="degreeplan", trailing_slash=False
 )
@@ -36,6 +39,7 @@ urlpatterns = [
     path("", include(fulfillments_router.urls)),
     path("onboarding-status", OnboardingStatusView.as_view(), name="onboarding-status"),
     path("beta-access", BetaAccessView.as_view(), name="beta-access"),
+    path("beta-invites", InviteView.as_view(), name="beta-invites"),
     path(
         "onboard-from-transcript/<slug:degree_plan_id>",
         OnboardFromTranscript.as_view(),
