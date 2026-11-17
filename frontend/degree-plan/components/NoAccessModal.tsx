@@ -49,18 +49,24 @@ const MESSAGES: Record<BetaStatus, string> = {
   DENIED: "Your request to join the beta wasn't approved this time.",
 };
 
+const INVITE_ONLY_MESSAGE = "Penn Degree Plan is invite-only right now.";
+
 interface NoAccessModalProps {
   onLogout: () => void;
 }
 
 const NoAccessModal = ({ onLogout }: NoAccessModalProps) => {
   const [status, setStatus] = useState<BetaStatus>("NONE");
+  const [requestsOpen, setRequestsOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     getFetcher(BETA_ACCESS_URL)
-      .then((data: { status: BetaStatus }) => setStatus(data.status))
+      .then((data: { status: BetaStatus; requests_open: boolean }) => {
+        setStatus(data.status);
+        setRequestsOpen(data.requests_open);
+      })
       .catch(() => undefined);
   }, []);
 
@@ -80,10 +86,14 @@ const NoAccessModal = ({ onLogout }: NoAccessModalProps) => {
 
   return (
     <Modal title="No access">
-      <Center>{MESSAGES[status]}</Center>
+      <Center>
+        {status === "NONE" && !requestsOpen
+          ? INVITE_ONLY_MESSAGE
+          : MESSAGES[status]}
+      </Center>
       {failed && <ErrorText>Couldn&apos;t send your request. Please try again.</ErrorText>}
       <ButtonRow>
-        {status === "NONE" && (
+        {status === "NONE" && requestsOpen && (
           <Button type="button" $primary disabled={sending} onClick={requestAccess}>
             {sending ? "Requesting…" : "Request beta access"}
           </Button>

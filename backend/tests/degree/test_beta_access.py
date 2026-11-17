@@ -10,13 +10,14 @@ from django.utils import timezone
 from rest_framework.test import APIClient
 
 from degree.admin import PDPBetaUserAdmin
-from degree.models import PDPBetaUser
+from degree.models import PDPBetaReferral, PDPBetaUser
 from degree.tasks import send_beta_approval_email
 
 
 Status = PDPBetaUser.Status
 
 
+@override_settings(PDP_BETA_REQUESTS_OPEN=True)
 class BetaAccessTest(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(username="s", password="x")
@@ -71,6 +72,48 @@ class BetaAccessTest(TestCase):
         self.client.logout()
         self.assertIn(self.request_access().status_code, (401, 403))
         self.assertFalse(PDPBetaUser.objects.exists())
+
+
+@override_settings(PDP_BETA_REQUESTS_OPEN=False)
+class InviteOnlyBetaAccessTest(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(username="s", password="x")
+        self.client = APIClient()
+        self.client.force_login(self.user)
+
+    def test_says_requests_are_closed(self):
+        response = self.client.get(reverse("beta-access"))
+        self.assertEqual(response.data, {"status": "NONE", "requests_open": False})
+
+    def test_a_new_user_cannot_request_access(self):
+        response = self.client.post(reverse("beta-access"))
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data["detail"], "Penn Degree Plan is invite-only right now.")
+        self.assertFalse(PDPBetaUser.objects.exists())
+
+    def test_an_existing_request_is_left_alone(self):
+        PDPBetaUser.objects.create(person=self.user, status=Status.REQUESTED)
+
+        response = self.client.post(reverse("beta-access"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["status"], Status.REQUESTED)
+        self.assertEqual(PDPBetaUser.objects.get().status, Status.REQUESTED)
+
+    def test_a_friends_invite_still_lets_a_new_user_in(self):
+        friend = get_user_model().objects.create_user(username="f", password="x")
+        PDPBetaReferral.objects.create(
+            referrer=friend, pennkey="s", status=PDPBetaReferral.Status.APPROVED
+        )
+
+        response = self.client.get(reverse("beta-access"))
+        self.assertEqual(response.data["status"], Status.APPROVED)
+        self.assertEqual(self.client.get(reverse("onboarding-status")).status_code, 200)
+
+    def test_invited_users_still_get_in(self):
+        PDPBetaUser.objects.create(person=self.user, status=Status.APPROVED)
+        self.assertEqual(self.client.get(reverse("onboarding-status")).status_code, 200)
 
 
 class BetaAccessAdminTest(TestCase):

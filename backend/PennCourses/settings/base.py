@@ -242,5 +242,8 @@ DEMAND_RECOMPUTE_DEBOUNCE_SECONDS = (
 # containing the user's active course registrations from Path.
 PATH_REGISTRATION_SCHEDULE_NAME = "Path Registration"
 
+# Whether students can ask to join the PDP beta themselves. While closed, PDP is invite-only.
+PDP_BETA_REQUESTS_OPEN = False
+
 # Manually Set Cache Prefix
 CACHE_PREFIX = "MANUAL_CACHE_"

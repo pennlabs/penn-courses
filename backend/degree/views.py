@@ -2,6 +2,7 @@ import re
 from collections import defaultdict
 from decimal import Decimal
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
 from django.db.models import Case, Value, When
@@ -880,7 +881,7 @@ class OnboardingStatusView(APIView):
 class BetaAccessView(APIView):
     """
     Get the user's place in the PDP beta, or ask to join it. Status is one of NONE, REQUESTED,
-    APPROVED or DENIED.
+    APPROVED or DENIED. While PDP_BETA_REQUESTS_OPEN is off, new requests are refused.
     """
 
     permission_classes = [IsAuthenticated]
@@ -888,9 +889,19 @@ class BetaAccessView(APIView):
     def get(self, request):
         PDPBetaReferral.redeem(request.user)
         beta = PDPBetaUser.objects.filter(person=request.user).first()
-        return Response({"status": beta.status if beta else "NONE"})
+        return Response(
+            {
+                "status": beta.status if beta else "NONE",
+                "requests_open": settings.PDP_BETA_REQUESTS_OPEN,
+            }
+        )
 
     def post(self, request):
+        if not settings.PDP_BETA_REQUESTS_OPEN:
+            beta = PDPBetaUser.objects.filter(person=request.user).first()
+            if beta is None:
+                raise PermissionDenied("Penn Degree Plan is invite-only right now.")
+            return Response({"status": beta.status})
         # Asking again changes nothing, so a denied user can't re-file by clicking again.
         beta, created = PDPBetaUser.objects.get_or_create(
             person=request.user, defaults={"status": PDPBetaUser.Status.REQUESTED}
