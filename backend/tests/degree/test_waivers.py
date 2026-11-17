@@ -275,6 +275,29 @@ class WaiverTest(TestCase):
         self.waive(self.intro_econ, method="delete")
         self.assertIn(self.writing, self.rules_of("MGMT-1010"))
 
+    def test_an_override_the_student_switched_away_from_does_not_come_back(self):
+        self.add_course("MGMT-1010")
+        self.add_course("BEPP-1000")
+        fulfillment_url = {"degreeplan_pk": self.plan.id, "full_code": "MGMT-1010"}
+        self.client.post(
+            reverse("degreeplan-fulfillment-add-override", kwargs=fulfillment_url),
+            {"rule_id": self.writing.id},
+            format="json",
+        )
+        self.client.post(
+            reverse("degreeplan-fulfillment-switch-rule", kwargs=fulfillment_url),
+            {"rule_id": self.breadth_elective.id},
+            format="json",
+        )
+        self.assertEqual(self.rules_of("MGMT-1010"), {self.breadth_elective})
+
+        # BEPP 1000 is on the waived requirement, so courses are reallocated
+        self.waive(self.intro_econ)
+        mgmt = Fulfillment.objects.get(degree_plan=self.plan, full_code="MGMT-1010")
+        self.assertEqual(set(mgmt.rules.all()), {self.breadth_elective})
+        self.assertIn(self.writing, mgmt.unselected_rules.all())
+        self.assertIn(self.writing, mgmt.overrides.all())
+
     def test_a_requirement_a_dual_program_puts_in_place_of_the_degrees_can_be_waived(self):
         variant = ProgramVariant.objects.create(
             code="TEST_DUAL",

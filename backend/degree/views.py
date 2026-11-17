@@ -54,6 +54,7 @@ from degree.utils.degree_logic import (
     GraduateSharing,
     PickGroups,
     allocate_rules,
+    is_graduate_coursework,
     level_for_course,
     map_rules_and_degrees,
     prewarm_belongs_cache,
@@ -64,6 +65,7 @@ from degree.utils.degree_logic import (
     rule_subtrees,
     selection_is_legal,
     sharing_from_fulfillments,
+    split_by_level,
     within_policy,
 )
 from PennCourses.docs_settings import PcxAutoSchema
@@ -115,8 +117,9 @@ def update_fulfillments(degree_plan, keep_choices=False):
     loses a degree, major or minor: the rules a course can count toward, and what it may
     double count with, both change.
 
-    With `keep_choices`, each course keeps the rules it counts for and its overrides, other
-    than waived ones, and only gains rules that can share with them.
+    With `keep_choices`, each course keeps the rules it counts for, other than waived ones,
+    and only gains rules that can share with them. An override the course no longer counts for
+    stays on offer, but is not chosen for it.
     """
     plan_rules = map_rules_and_degrees(degree_plan)
     rules_per_degree = plan_rules.rules_per_component
@@ -142,11 +145,7 @@ def update_fulfillments(degree_plan, keep_choices=False):
         .prefetch_related("rules", "overrides")
     )
     kept_choices = {
-        fulfillment: (
-            (set(fulfillment.rules.all()) | set(fulfillment.overrides.all())) - waived
-            if keep_choices
-            else set()
-        )
+        fulfillment: set(fulfillment.rules.all()) - waived if keep_choices else set()
         for fulfillment in fulfillments
     }
     # Every course is known up front, so check them against the rules in bulk
@@ -161,11 +160,19 @@ def update_fulfillments(degree_plan, keep_choices=False):
         [fulfillment.full_code for fulfillment in fulfillments]
     )
     # Fulfillments are ordered by semester above, so the allowance goes to the earliest
-    # courses eligible for it.
+    # courses eligible for it, after any a course already shares is set aside for it.
     graduate_sharing = GraduateSharing()
+    reservations = {
+        fulfillment: credits_cache.get(fulfillment.full_code, DEFAULT_COURSE_CREDITS)
+        for fulfillment, kept in kept_choices.items()
+        if is_graduate_coursework(fulfillment.full_code)
+        and all(split_by_level(kept, rule_to_degree))
+    }
+    graduate_sharing.reserved = sum(reservations.values(), Decimal(0))
     allocations = []
 
     for fulfillment in fulfillments:
+        graduate_sharing.reserved -= reservations.get(fulfillment, Decimal(0))
         selected_rules, unselected_rules, _ = allocate_rules(
             fulfillment.full_code,
             rules_per_degree,
@@ -211,6 +218,9 @@ def update_fulfillments(degree_plan, keep_choices=False):
 
     with transaction.atomic():
         for fulfillment, allocation in zip(fulfillments, allocations):
+            if keep_choices:
+                inactive_overrides = set(fulfillment.overrides.all()) - waived - allocation.selected
+                allocation.unselected |= inactive_overrides & rule_to_degree.keys()
             fulfillment.rules.set(allocation.selected)
             fulfillment.unselected_rules.set(allocation.unselected)
             fulfillment.legal = selection_is_legal(

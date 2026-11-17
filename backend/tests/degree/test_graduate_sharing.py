@@ -122,6 +122,27 @@ class GraduateSharingTest(TestCase):
         """Courses arrive in the order they were taken, so the first three eligible win it."""
         self.assertEqual(self.allocate(GRADUATE_COURSES, GraduateSharing()), GRADUATE_COURSES[:3])
 
+    def test_kept_choices_hold_the_allowance_against_an_earlier_course(self):
+        (bse_rule,) = self.bse.rules.all()
+        (mse_rule,) = self.mse.rules.all()
+        semesters = ["2025A", "2025C", "2026A", "2026C"]
+        for full_code, semester in zip(GRADUATE_COURSES, semesters):
+            fulfillment = Fulfillment.objects.create(
+                degree_plan=self.plan, full_code=full_code, semester=semester
+            )
+            fulfillment.rules.set([bse_rule, mse_rule])
+        # The student took the earliest course off the masters, which frees its allowance for
+        # the three later courses that already share.
+        earliest = self.plan.fulfillments.get(full_code=GRADUATE_COURSES[0])
+        earliest.rules.set([bse_rule])
+
+        update_fulfillments(self.plan, keep_choices=True)
+
+        self.assertEqual(set(earliest.rules.all()), {bse_rule})
+        for full_code in GRADUATE_COURSES[1:4]:
+            fulfillment = self.plan.fulfillments.get(full_code=full_code)
+            self.assertEqual(set(fulfillment.rules.all()), {bse_rule, mse_rule}, full_code)
+
     def test_a_capped_course_keeps_its_undergraduate_rules(self):
         """Past the allowance a course still counts toward the bachelors, just not the masters."""
         rules_per_degree, rule_to_degree, double_counts = map_rules_and_degrees(self.plan)

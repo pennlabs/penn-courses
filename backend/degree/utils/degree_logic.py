@@ -298,7 +298,8 @@ class GraduateSharing:
     were taken, so an allowance goes to the earliest eligible courses. That is a default
     rather than an optimum: the student can still move a course by hand afterwards.
 
-    `used` / `allows` / `take` are the undergraduate-graduate allowance. `program_shared_cu_used`
+    `used` / `allows` / `take` are the undergraduate-graduate allowance, less anything `reserved`
+    for courses still to come that already share. `program_shared_cu_used`
     is a coordinated program's own cap. `claims` records which components already hold a course,
     keyed by the course's canonical (cross-list) code.
     """
@@ -306,11 +307,12 @@ class GraduateSharing:
     def __init__(self, limit=MAX_SHARED_GRADUATE_CREDITS):
         self.limit = limit
         self.used = Decimal(0)
+        self.reserved = Decimal(0)
         self.program_shared_cu_used = Decimal(0)
         self.claims = defaultdict(set)
 
     def allows(self, credits) -> bool:
-        return self.used + credits <= self.limit
+        return self.used + self.reserved + credits <= self.limit
 
     def take(self, credits) -> None:
         self.used += credits
