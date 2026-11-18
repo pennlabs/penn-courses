@@ -79,6 +79,13 @@ export interface Degree extends DBObject {
 
 export interface DegreePlan extends DBObject {
   id: number;
+  /** The plan's degrees, majors and minors, as the plan list gives them. */
+  programs?: {
+    kind: "degree" | "major" | "minor";
+    code: string;
+    name: string;
+    progress: number; // 0 to 1, as the requirements panel shows it
+  }[];
   degrees: Degree[]
   /** Majors pursued beyond the one this plan's degree already includes. */
   majors: Major[]

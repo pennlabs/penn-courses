@@ -66,6 +66,7 @@ from degree.utils.degree_logic import (
     selection_is_legal,
     sharing_from_fulfillments,
 )
+from degree.utils.progress import plan_progress
 from PennCourses.docs_settings import PcxAutoSchema
 
 
@@ -280,12 +281,15 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = DegreePlan.objects.filter(person=self.request.user)
-        queryset = queryset.prefetch_related(
-            "fulfillments",
-            "degrees",
-            "degrees__rules",
-        )
-        return queryset
+        if self.action == "list":
+            return queryset.prefetch_related(
+                "degrees__rules",
+                "majors__rules",
+                "minors__rules",
+                "fulfillments__rules",
+                "waived_rules",
+            )
+        return queryset.prefetch_related("fulfillments", "degrees", "degrees__rules")
 
     def get_serializer_class(self):
         if self.action == "list":
@@ -309,6 +313,11 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
                     "Delete one to make another."
                 }
             )
+
+    def list(self, request, *args, **kwargs):
+        plans = list(self.filter_queryset(self.get_queryset()))
+        context = {**self.get_serializer_context(), "progress": plan_progress(plans)}
+        return Response(DegreePlanListSerializer(plans, many=True, context=context).data)
 
     def retrieve(self, request, *args, **kwargs):
         degree_plan = self.get_object()

@@ -1,3 +1,4 @@
+import re
 from collections import defaultdict
 from textwrap import dedent
 
@@ -8,6 +9,7 @@ from rest_framework import serializers
 from courses.models import Course
 from courses.util import get_current_semester
 from degree.models import (
+    NO_CONCENTRATION,
     TRANSFER_CREDIT_SEMESTER,
     Degree,
     DegreePlan,
@@ -447,9 +449,58 @@ class DualProgramSerializer(serializers.ModelSerializer):
 
 
 class DegreePlanListSerializer(serializers.ModelSerializer):
+    programs = serializers.SerializerMethodField(
+        help_text="The plan's degrees, majors and minors as { kind, code, name, progress }."
+    )
+
+    def get_programs(self, plan):
+        def with_concentration(name, program):
+            if program.concentration and program.concentration not in NO_CONCENTRATION:
+                return f"{name} ({program.concentration_name})"
+            return name
+
+        # Some minors' names already say "Minor in".
+        def minor_name(minor):
+            return re.sub(r"^minor in ", "", minor.name or minor.code, flags=re.IGNORECASE)
+
+        progress = self.context.get("progress", {}).get(plan.id, {})
+
+        def done(relation, program):
+            return round(progress.get((relation, program.id), 0), 3)
+
+        return [
+            *(
+                {
+                    "kind": "degree",
+                    "code": d.major,
+                    "name": with_concentration(f"{d.degree} in {d.major_name}", d),
+                    "progress": done("degrees", d),
+                }
+                for d in plan.degrees.all()
+            ),
+            *(
+                {
+                    "kind": "major",
+                    "code": m.code,
+                    "name": with_concentration(f"Major in {m.name}", m),
+                    "progress": done("majors", m),
+                }
+                for m in plan.majors.all()
+            ),
+            *(
+                {
+                    "kind": "minor",
+                    "code": m.code,
+                    "name": f"Minor in {minor_name(m)}",
+                    "progress": done("minors", m),
+                }
+                for m in plan.minors.all()
+            ),
+        ]
+
     class Meta:
         model = DegreePlan
-        fields = ["id", "name", "created_at", "updated_at"]
+        fields = ["id", "name", "created_at", "updated_at", "programs"]
 
 
 class DegreePlanDetailSerializer(serializers.ModelSerializer):

@@ -92,7 +92,11 @@ const ItemList = styled.div`
   overscroll-behavior: contain;
 `;
 
+// Room for an item's three actions (1.75rem each), which take the right end of a hovered row.
+const ACTIONS_WIDTH = "6rem";
+
 export const Item = styled.div<{ $isActive: boolean }>`
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -112,6 +116,26 @@ export const Item = styled.div<{ $isActive: boolean }>`
   &:hover .item-actions,
   &:focus-within .item-actions {
     opacity: 1;
+    pointer-events: auto;
+  }
+
+  &:hover .item-preview,
+  &:focus-within .item-preview {
+    transform: translateX(-${ACTIONS_WIDTH});
+    --preview-open: 1; /* for a preview's own parts to move with it */
+  }
+`;
+
+// Leaves a gap the width of the actions, which the preview slides into when they show.
+const Preview = styled.span`
+  display: flex;
+  flex-shrink: 0;
+  margin-left: auto;
+  padding-left: calc(${ACTIONS_WIDTH} + 0.5rem);
+  transition: transform 0.2s ease;
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
   }
 `;
 
@@ -123,12 +147,17 @@ const ItemName = styled.span`
   text-overflow: ellipsis;
 `;
 
+// Shows at the right end of a hovered row, where its preview was.
 const Actions = styled.span`
+  position: absolute;
+  top: 50%;
+  right: 0.5rem;
+  transform: translateY(-50%);
   display: flex;
-  flex-shrink: 0;
   gap: 0.1rem;
   opacity: 0;
-  transition: opacity 0.1s ease;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
 `;
 
 const ActionButton = styled.button`
@@ -215,6 +244,8 @@ interface SelectListDropdownProps<T extends DBObject> {
   };
   isLoading: boolean;
   maxItems?: number; // at the limit, nothing more can be added or copied
+  preview?: (item: T) => React.ReactNode; // shown beside each item's name
+  onOpen?: () => void;
 }
 
 const SelectListDropdown = <T extends DBObject>({
@@ -226,6 +257,8 @@ const SelectListDropdown = <T extends DBObject>({
   mutators: { copy, remove, rename, create },
   isLoading,
   maxItems,
+  preview,
+  onOpen,
 }: SelectListDropdownProps<T>) => {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -256,7 +289,10 @@ const SelectListDropdown = <T extends DBObject>({
         $isOpen={isOpen}
         aria-haspopup="menu"
         aria-expanded={isOpen}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          if (!isOpen) onOpen?.();
+          setIsOpen(!isOpen);
+        }}
       >
         <TriggerName>{getItemName(active)}</TriggerName>
         <i className="fas fa-chevron-down" aria-hidden />
@@ -287,6 +323,7 @@ const SelectListDropdown = <T extends DBObject>({
                 }}
               >
                 <ItemName title={name}>{name}</ItemName>
+                {preview && <Preview className="item-preview">{preview(item)}</Preview>}
                 <Actions className="item-actions">
                   {rename && (
                     <ActionButton
