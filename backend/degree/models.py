@@ -17,6 +17,7 @@ from degree.utils.degree_logic import (
     FULFILLMENT_LEVELS,
     PickGroups,
     aggregate_rule_leaves,
+    evaluate_rule_trees,
     matches_without_record,
     plan_components,
     recorded_full_codes,
@@ -727,14 +728,19 @@ class DegreePlan(models.Model):  #
         stored = {
             status.rule_id: status for status in self.satisfactions.filter(rule__in=top_level_rules)
         }
-        for rule in top_level_rules:
-            satisfied = rule.evaluate(full_codes, waived=waived)
+        results = evaluate_rule_trees(top_level_rules, full_codes, waived=waived)
+        created, changed = [], []
+        now = timezone.now()
+        for rule, satisfied in results.items():
             status = stored.get(rule.id)
             if status is None:
-                SatisfactionStatus.objects.create(degree_plan=self, rule=rule, satisfied=satisfied)
+                created.append(SatisfactionStatus(degree_plan=self, rule=rule, satisfied=satisfied))
             elif status.satisfied != satisfied:
                 status.satisfied = satisfied
-                status.save(update_fields=["satisfied", "last_updated"])
+                status.last_updated = now
+                changed.append(status)
+        SatisfactionStatus.objects.bulk_create(created)
+        SatisfactionStatus.objects.bulk_update(changed, ["satisfied", "last_updated"])
 
     def evaluate_rules(self, rules: list[Rule]) -> tuple[set[Rule], set[DoubleCountRestriction]]:
         """
