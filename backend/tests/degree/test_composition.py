@@ -329,15 +329,39 @@ class DualPatternTest(TestCase):
         self.assertNotIn("M&T Program First Year Seminar", titles)
         self.assertEqual(compose(plan).kind, "cross_school_dual")
 
-    def test_viper_uses_plain_trees(self):
+    def test_viper_adds_its_block_to_the_engineering_degree(self):
         phys = Degree.objects.create(program="AU_BA", degree="BA", major="PHYS", year=2026)
         meam = Degree.objects.create(program="EU_BSE", degree="BSE", major="MEAM", year=2026)
+        meam_rule = leaf("MEAM Elective", "MEAM-2500", "MAJOR", "MEAM")
+        meam.rules.add(meam_rule)
         plan = self.plan_with("viper", "VIPER", phys, meam)
         self.assertEqual(compose(plan).kind, "coordinated")
-        titles = {rule.title for rule in map_rules_and_degrees(plan).rule_to_component}
+
+        rules, rule_to, double_counts = map_rules_and_degrees(plan)
+        titles = {rule.title for rule in rule_to}
+        self.assertTrue(
+            {
+                "Introduction to Energy Research I",
+                "Introduction to Energy Research II",
+                "Energy Research and Leadership",
+                "Energy Courses",
+            }
+            <= titles
+        )
         self.assertNotIn("M&T Program First Year Seminar", titles)
-        self.assertNotIn("Huntsman First-Year Seminar", titles)
         self.assertNotIn("LSM Proseminar", titles)
+        energy = next(rule for rule in rule_to if rule.title == "Energy Courses")
+        self.assertIn(meam_rule, double_counts[energy])
+        self.assertNotIn("Thermodynamics", titles)
+
+    def test_viper_math_and_computer_science_also_take_thermodynamics(self):
+        math = Degree.objects.create(program="AU_BA", degree="BA", major="MATH", year=2026)
+        csci = Degree.objects.create(program="EU_BSE", degree="BSE", major="CSCI", year=2026)
+        plan = self.plan_with("viper", "VIPER", math, csci)
+
+        titles = {rule.title for rule in map_rules_and_degrees(plan).rule_to_component}
+        self.assertIn("Thermodynamics", titles)
+        self.assertIn("Energy Courses", titles)
 
     def test_lsm_replaces_what_its_proseminar_and_capstone_cover(self):
         biol = Degree.objects.create(program="AU_BA", degree="BA", major="BIOL", year=2026)
