@@ -12,7 +12,7 @@ export const Chevron = styled.i<{ $degrees: number }>`
   }
 `;
 
-const reducedMotion = () =>
+export const reducedMotion = () =>
   typeof window !== "undefined" &&
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -25,15 +25,14 @@ const Collapse = ({ open, children }: { open: boolean; children: React.ReactNode
   const [mounted, setMounted] = useState(open);
   const outerRef = useRef<HTMLDivElement>(null);
   const innerRef = useRef<HTMLDivElement>(null);
-  const first = useRef(true);
+  // Animates on a change, not on mounting, even when Strict Mode runs the effect twice.
+  const lastOpen = useRef(open);
 
   if (open && !mounted) setMounted(true);
 
   useLayoutEffect(() => {
-    if (first.current) {
-      first.current = false;
-      return;
-    }
+    if (lastOpen.current === open) return;
+    lastOpen.current = open;
     const outer = outerRef.current;
     const inner = innerRef.current;
     if (!outer || !inner) return;

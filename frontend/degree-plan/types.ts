@@ -95,6 +95,11 @@ export interface DegreePlan extends DBObject {
   components?: PlanComponent[];
   /** Requirements the student is waived from, e.g. by AP exams; done without any course. */
   waived_rules?: Rule["id"][];
+  /** The catalog years each degree, major and minor comes in, by its id, oldest first. */
+  catalog_years?: Record<
+    "degrees" | "majors" | "minors",
+    Record<string, { id: number; year: number }[]>
+  >;
   name: string;
   updated_at: string;
   created_at: string;

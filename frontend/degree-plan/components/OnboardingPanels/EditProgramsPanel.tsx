@@ -639,7 +639,8 @@ function EditProgramsForm({
                   degrees={degrees}
                   standaloneMajors={standaloneMajors}
                   minors={minors}
-                  unavailableMinorIds={unplacedMinors.map((m) => m.id)}
+                  startingYear={startingYear?.value ?? null}
+                  unavailableMinors={unplacedMinors}
                   isLoadingDegrees={isLoadingDegrees}
                   isLoadingMajors={isLoadingMajors}
                   isLoadingMinors={isLoadingMinors}
@@ -657,9 +658,7 @@ function EditProgramsForm({
                   <Chips>
                     {unplacedMajors.map((major) => (
                       <Chip key={`major-${major.id}`}>
-                        {`${major.name ?? major.code} (${major.year}, ${degreeCodeOf(
-                          major.program_code
-                        )})`}
+                        {`${major.name ?? major.code} (${degreeCodeOf(major.program_code)})`}
                         <button
                           type="button"
                           aria-label={`Remove ${major.name ?? major.code}`}

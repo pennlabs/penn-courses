@@ -2,6 +2,7 @@ import styled from "@emotion/styled";
 import type { DegreeListing, DegreePlan } from "@/types";
 import React, { useState, useEffect } from "react";
 import { postFetcher, useSWRCrud } from "@/hooks/swrcrud";
+import { hasConcentration } from "@/utils/programs";
 import { useSWRConfig } from "swr";
 import ModalContainer from "../common/ModalContainer";
 
@@ -93,10 +94,10 @@ const CancelButton = styled.button`
 /** Create label for major listings */
 export const createMajorLabel = (degree: DegreeListing) => {
   const concentration =
-    degree.concentration && degree.concentration !== "NONE"
+    hasConcentration(degree.concentration)
       ? ` - ${degree.concentration_name}`
       : "";
-  return `${degree.major_name}${concentration} (${degree.year})`;
+  return `${degree.major_name}${concentration}`;
 };
 
 interface RemoveSemesterProps {
