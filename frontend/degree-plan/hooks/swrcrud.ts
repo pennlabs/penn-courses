@@ -1,7 +1,5 @@
 import { DBObject, assertValueType } from "@/types";
-import { assert } from "console";
 import useSWR, { useSWRConfig } from "swr";
-import { updateDecorator } from "typescript";
 
 interface SWRCrudError extends Error {
     info: any;
@@ -52,7 +50,8 @@ export const baseFetcher = (init: RequestInit, returnJson: boolean = true) => as
     if (!res.ok) {
         const error = new Error('An error occurred while fetching the data.') as SWRCrudError;
         // Attach extra info to the error object.
-        error.info = await res.json()
+        // An error page (e.g. a 500's HTML) isn't JSON.
+        error.info = await res.json().catch(() => null)
         error.status = res.status
         // TODO: need to figure out how to catch these errors
         throw error;

@@ -10,7 +10,7 @@ from django.db import transaction
 from django.db.models import Q
 
 from degree.data.dual_programs import huntsman, lsm, mt, viper
-from degree.models import DualProgram, ProgramVariant, Rule
+from degree.models import DegreePlan, DualProgram, Fulfillment, ProgramVariant, Rule
 
 
 VARIANTS = {**mt.VARIANTS, **huntsman.VARIANTS, **lsm.VARIANTS, **viper.VARIANTS}
@@ -110,10 +110,26 @@ def load() -> list[str]:
     Returns the codes of deleted variants and programs.
     """
     with transaction.atomic():
-        return _load()
+        displaced = set()
+        removed = _load(displaced)
+        # Courses on a deleted rule lost it, so their plans are allocated again.
+        from degree.views import update_fulfillments
+
+        for plan in DegreePlan.objects.filter(id__in=displaced):
+            update_fulfillments(plan, keep_choices=True)
+        return removed
 
 
-def _load() -> list[str]:
+def _plans_on(rules) -> set[int]:
+    """The plans with a course counting, or offered to count, toward one of the rules."""
+    return set(
+        Fulfillment.objects.filter(Q(rules__in=rules) | Q(unselected_rules__in=rules)).values_list(
+            "degree_plan_id", flat=True
+        )
+    )
+
+
+def _load(displaced: set[int]) -> list[str]:
     huntsman.load_degrees()
     variants = {}
     for code, (name, rules_fn, suppressed) in VARIANTS.items():
@@ -124,7 +140,9 @@ def _load() -> list[str]:
         variant.rules.set(
             [_save_tree(spec, None, saved, position) for position, spec in enumerate(rules_fn())]
         )
-        Rule.objects.filter(variant_blocks([code])).exclude(id__in=saved).delete()
+        stale = Rule.objects.filter(variant_blocks([code])).exclude(id__in=saved)
+        displaced |= _plans_on(stale)
+        stale.delete()
         variants[code] = variant
 
     for spec in PROGRAMS:
@@ -145,7 +163,9 @@ def _load() -> list[str]:
     DualProgram.objects.filter(code__in=stale_programs).delete()
     ProgramVariant.objects.filter(code__in=stale_variants).delete()
     if stale_variants:
-        Rule.objects.filter(variant_blocks(stale_variants)).delete()
+        stale = Rule.objects.filter(variant_blocks(stale_variants))
+        displaced |= _plans_on(stale)
+        stale.delete()
     return stale_programs + stale_variants
 
 

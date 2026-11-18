@@ -7,7 +7,7 @@ from django.test import TestCase
 from courses.models import Attribute
 from courses.util import get_or_create_course_and_section
 from degree.data.dual_programs import load
-from degree.models import Degree, DegreePlan, DualProgram, Major, Rule
+from degree.models import Degree, DegreePlan, DualProgram, Fulfillment, Major, Rule
 from degree.utils.composition import compose
 from degree.utils.degree_logic import allocate_rules, map_rules_and_degrees, summarize_plan
 from degree.utils.double_counts import get_degree_trees, resolve_double_counts
@@ -156,7 +156,15 @@ class DualPatternTest(TestCase):
     def setUp(self):
         load()
         self.person = get_user_model().objects.create_user(username="d", password="x")
-        for code in ["OIDD-2340", "MGMT-2370", "INSP-1001", "STAT-4300", "CIS-1200", "MATH-1400"]:
+        for code in [
+            "OIDD-2340",
+            "MGMT-2370",
+            "OIDD-4770",
+            "INSP-1001",
+            "STAT-4300",
+            "CIS-1200",
+            "MATH-1400",
+        ]:
             course(code)
 
     def plan_with(self, name, dual_code, left, right, variant=None):
@@ -209,6 +217,64 @@ class DualPatternTest(TestCase):
         self.assertIn("Probability", titles)
         self.assertTrue({rule.title for rule in selected} & {"Probability", "Statistics"})
         self.assertTrue(legal)
+
+    def m_and_t_selection(self, full_code):
+        cis = Degree.objects.create(program="EU_BSE", degree="BSE", major="CIS", year=2026)
+        wharton = Degree.objects.create(program="WU_BS", degree="BS", major="WH", year=2026)
+        plan = self.plan_with("mt", "MT", cis, wharton)
+        plan_rules = map_rules_and_degrees(plan)
+        selected, _, legal = allocate_rules(
+            full_code,
+            plan_rules.rules_per_component,
+            plan_rules.rule_to_component,
+            plan_rules.double_counts,
+            satisfied_rules=set(),
+            policy=plan_rules.composition.policy,
+        )
+        self.assertTrue(legal)
+        return {rule.title for rule in selected}
+
+    def test_m_and_t_counts_mgmt_2370_toward_business_breadth_too(self):
+        self.assertTrue(
+            {
+                "Management of Technology (MGMT 2370)",
+                "Management of Technology",
+                "Business Breadth (1 concentration)",
+            }
+            <= self.m_and_t_selection("MGMT-2370")
+        )
+
+    def test_other_technology_courses_dont_also_count_as_business_breadth(self):
+        technology = Rule.objects.get(
+            title="Technology, Innovation, and Analytics", block_value="WH_MT:U-WBUS"
+        )
+        self.assertTrue(technology.check_belongs("OIDD-4770"))
+        selected = self.m_and_t_selection("OIDD-4770")
+        self.assertFalse(
+            {"Technology, Innovation, and Analytics", "Business Breadth (1 concentration)"}
+            <= selected
+        )
+
+    def test_reloading_reallocates_courses_on_a_rule_it_replaced(self):
+        cis = Degree.objects.create(program="EU_BSE", degree="BSE", major="CIS", year=2026)
+        wharton = Degree.objects.create(program="WU_BS", degree="BS", major="WH", year=2026)
+        plan = self.plan_with("reload", "MT", cis, wharton)
+        replaced = Rule.objects.create(
+            title="Former Management of Technology",
+            q=repr(Q(full_code="MGMT-2370")),
+            num=1,
+            block_type="VARIANT",
+            block_value="WH_MT:U-MT",
+        )
+        fulfillment = Fulfillment.objects.create(
+            degree_plan=plan, full_code="MGMT-2370", semester=TEST_SEMESTER
+        )
+        fulfillment.rules.add(replaced)
+
+        load()
+
+        self.assertFalse(Rule.objects.filter(id=replaced.id).exists())
+        self.assertIn("Management of Technology", {rule.title for rule in fulfillment.rules.all()})
 
     def test_three_degrees_keep_two_claims(self):
         from degree.utils.degree_logic import GraduateSharing

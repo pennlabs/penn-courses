@@ -235,10 +235,12 @@ def prewarm_credits_cache(full_codes):
     Returns the CU of each of the given courses, for weighing against the sharing allowance.
     A course PDP does not know is assumed to be worth DEFAULT_COURSE_CREDITS.
     """
+    # In semester order, so each course keeps its latest record's credits, as Rule.evaluate does.
     return {
         full_code: credits
         for full_code, credits in Course.objects.filter(full_code__in=full_codes)
         .exclude(credits__isnull=True)
+        .order_by("semester")
         .values_list("full_code", "credits")
     }
 
