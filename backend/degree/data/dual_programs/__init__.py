@@ -3,17 +3,17 @@ Coordinated-program deltas that Path audits do not state on their own.
 
 M&T, LSM and Huntsman's Wharton side edit a base degree (extra courses, a suppressed capstone, a
 different liberal-arts shape). Huntsman's College degree has no Path audit at all, so huntsman.py
-builds the whole degree. VIPER is a pair of ordinary majors and carries no variant.
+builds the whole degree. VIPER only adds its own block to the engineering degree.
 """
 
 from django.db import transaction
 from django.db.models import Q
 
-from degree.data.dual_programs import huntsman, lsm, mt
+from degree.data.dual_programs import huntsman, lsm, mt, viper
 from degree.models import DualProgram, ProgramVariant, Rule
 
 
-VARIANTS = {**mt.VARIANTS, **huntsman.VARIANTS, **lsm.VARIANTS}
+VARIANTS = {**mt.VARIANTS, **huntsman.VARIANTS, **lsm.VARIANTS, **viper.VARIANTS}
 
 # Variants are named by code and resolved when loading.
 PROGRAMS = [
@@ -57,13 +57,16 @@ PROGRAMS = [
     {
         "code": "VIPER",
         "name": "Vagelos Integrated Program in Energy Research",
+        # From https://www.viper.upenn.edu/academics/dual-degree-curriculum. Biology and
+        # Bioengineering are open only to the Class of 2029 and earlier.
         "left_programs": ["AU_BA"],
-        "right_programs": ["EU_BSE", "EU_BAS"],
-        "left_allowed_majors": ["PHYS", "MATH", "CHEM", "EESC"],
-        "right_allowed_majors": [],
+        "right_programs": ["EU_BSE"],
+        "left_allowed_majors": ["PHYS", "MATH", "CHEM", "EESC", "BIOL"],
+        "right_allowed_majors": ["CSCI", "CBE", "MSE", "MEAM", "EE", "CMPE", "BE"],
         "left_variant": None,
-        "right_variant": None,
-        "cu_floor": None,
+        "right_variant": "EU_VIPER",
+        "variants_by_majors": viper.VARIANTS_BY_MAJORS,
+        "cu_floor": 46,
         "max_shared_cu": None,
     },
 ]
@@ -125,7 +128,7 @@ def _load() -> list[str]:
         variants[code] = variant
 
     for spec in PROGRAMS:
-        defaults = {"unshared_rules": []}
+        defaults = {"unshared_rules": [], "variants_by_majors": []}
         defaults.update({key: value for key, value in spec.items() if key != "code"})
         for side in ("left_variant", "right_variant"):
             defaults[side] = variants[spec[side]] if spec[side] else None
@@ -147,8 +150,10 @@ def _load() -> list[str]:
 
 
 def referenced_attribute_codes() -> set[str]:
-    return mt.ATTRIBUTE_CODES | huntsman.ATTRIBUTE_CODES | lsm.ATTRIBUTE_CODES
+    return (
+        mt.ATTRIBUTE_CODES | huntsman.ATTRIBUTE_CODES | lsm.ATTRIBUTE_CODES | viper.ATTRIBUTE_CODES
+    )
 
 
 def referenced_full_codes() -> set[str]:
-    return mt.FULL_CODES | huntsman.FULL_CODES | lsm.FULL_CODES
+    return mt.FULL_CODES | huntsman.FULL_CODES | lsm.FULL_CODES | viper.FULL_CODES

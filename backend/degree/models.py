@@ -516,8 +516,8 @@ class Minor(ProgramComponent):
 class ProgramVariant(models.Model):
     """
     A delta on a Path degree: rules a coordinated program adds, and leaves of the base
-    audit it suppresses. M&T's Wharton side and both sides of LSM are variants. VIPER uses
-    the ordinary audits, and Huntsman's College degree is built whole (see huntsman.py).
+    audit it suppresses. M&T's Wharton side, both sides of LSM and VIPER's engineering side
+    are variants. Huntsman's College degree is built whole (see huntsman.py).
     """
 
     code = models.CharField(max_length=32, unique=True)
@@ -576,6 +576,17 @@ class DualProgram(models.Model):
         blank=True,
         on_delete=models.SET_NULL,
         related_name="dual_programs_right",
+    )
+    variants_by_majors = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=dedent(
+            """
+            A different right variant for a pair of majors, as {"left_major", "right_major",
+            "right_variant"} objects naming major and variant codes. A plan's own right_variant
+            still wins.
+            """
+        ),
     )
     cu_floor = models.DecimalField(decimal_places=2, max_digits=4, null=True, blank=True)
     max_shared_cu = models.DecimalField(
