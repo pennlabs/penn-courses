@@ -120,6 +120,23 @@ def lift_waivers(degree_plan, rules):
         degree_plan.refresh_satisfaction()
 
 
+def save_rule_choices(choices):
+    """
+    Stores the selected and unselected rules of many saved fulfillments in a few queries,
+    rather than the handful each `rules.set` and `unselected_rules.set` costs per course.
+    `choices` holds (fulfillment, selected, unselected) triples.
+    """
+    ids = [fulfillment.id for fulfillment, _, _ in choices]
+    for field, index in (("rules", 1), ("unselected_rules", 2)):
+        through = getattr(Fulfillment, field).through
+        through.objects.filter(fulfillment_id__in=ids).delete()
+        through.objects.bulk_create(
+            through(fulfillment_id=choice[0].id, rule_id=rule.id)
+            for choice in choices
+            for rule in choice[index]
+        )
+
+
 def update_fulfillments(degree_plan, keep_choices=False):
     """
     Reallocates every fulfillment of a plan, which has to happen whenever the plan gains or
@@ -225,17 +242,22 @@ def update_fulfillments(degree_plan, keep_choices=False):
         },
     )
 
+    for fulfillment, allocation in zip(fulfillments, allocations):
+        if keep_choices:
+            inactive_overrides = set(fulfillment.overrides.all()) - waived - allocation.selected
+            allocation.unselected |= inactive_overrides & rule_to_degree.keys()
+        fulfillment.legal = selection_is_legal(
+            allocation.selected, rule_to_degree, double_counts, policy
+        )
+
     with transaction.atomic():
-        for fulfillment, allocation in zip(fulfillments, allocations):
-            if keep_choices:
-                inactive_overrides = set(fulfillment.overrides.all()) - waived - allocation.selected
-                allocation.unselected |= inactive_overrides & rule_to_degree.keys()
-            fulfillment.rules.set(allocation.selected)
-            fulfillment.unselected_rules.set(allocation.unselected)
-            fulfillment.legal = selection_is_legal(
-                allocation.selected, rule_to_degree, double_counts, policy
-            )
-            fulfillment.save()
+        Fulfillment.objects.bulk_update(fulfillments, ["legal"])
+        save_rule_choices(
+            [
+                (fulfillment, allocation.selected, allocation.unselected)
+                for fulfillment, allocation in zip(fulfillments, allocations)
+            ]
+        )
 
     degree_plan.refresh_satisfaction()
 
@@ -1157,25 +1179,35 @@ class OnboardFromTranscript(APIView):
             pick_groups=pick_groups,
         )
 
+        # A course listed twice (e.g. retaken) is stored once, as its last listing.
+        latest = {
+            allocation.full_code: (semester, allocation) for semester, allocation in allocations
+        }
         with transaction.atomic():
-            for semester_code, allocation in allocations:
-                # Keyed on Fulfillment's actual unique constraint. Including semester and
-                # legal in the lookup means a course already stored with either one different
-                # matches nothing and is then created against a row that already exists.
-                fulfillment, _ = Fulfillment.objects.update_or_create(
-                    degree_plan=degree_plan,
-                    full_code=allocation.full_code,
-                    defaults={
-                        "semester": semester_code,
-                        "legal": selection_is_legal(
-                            allocation.selected, rule_to_degree, double_counts, policy
-                        ),
-                        "level": levels.get(allocation.full_code),
-                        "from_transcript": True,
-                    },
+            existing = {
+                fulfillment.full_code: fulfillment
+                for fulfillment in Fulfillment.objects.filter(
+                    degree_plan=degree_plan, full_code__in=latest
                 )
-                fulfillment.rules.set(allocation.selected)
-                fulfillment.unselected_rules.set(allocation.unselected)
+            }
+            choices = []
+            for full_code, (semester_code, allocation) in latest.items():
+                fulfillment = existing.get(full_code) or Fulfillment(
+                    degree_plan=degree_plan, full_code=full_code
+                )
+                fulfillment.semester = semester_code
+                fulfillment.legal = selection_is_legal(
+                    allocation.selected, rule_to_degree, double_counts, policy
+                )
+                fulfillment.level = levels.get(full_code)
+                fulfillment.from_transcript = True
+                choices.append((fulfillment, allocation.selected, allocation.unselected))
+            Fulfillment.objects.bulk_update(
+                [f for f, _, _ in choices if f.pk],
+                ["semester", "legal", "level", "from_transcript"],
+            )
+            Fulfillment.objects.bulk_create([f for f, _, _ in choices if not f.pk])
+            save_rule_choices(choices)
 
         degree_plan.refresh_satisfaction()
         return Response({"message": "OK"}, status=status.HTTP_200_OK)
