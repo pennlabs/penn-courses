@@ -1,6 +1,6 @@
 import re
 from collections import defaultdict, deque
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from decimal import Decimal
 
 from django.db.models import Exists, IntegerField, Q, Value
@@ -146,10 +146,10 @@ def matches_without_record(q, full_code):
     fields = {"full_code": full_code, "department__code": department, "code": code}
 
     def leaf(lookup, arg):
-        for field, value in fields.items():
-            if lookup == field:
+        for name, value in fields.items():
+            if lookup == name:
                 return value == arg
-            operator = lookup.removeprefix(f"{field}__")
+            operator = lookup.removeprefix(f"{name}__")
             if operator != lookup and operator in _LOOKUPS:
                 return _LOOKUPS[operator](value, arg)
         return False
@@ -796,6 +796,7 @@ class CourseAllocation:
     full_code: str
     selected: set
     unselected: set
+    legal: bool = True
 
 
 def within_policy(before, after, rule_to_component, policy):
@@ -1284,3 +1285,107 @@ def summarize_plan(degree_plan, fulfillments):
         "violations": violations,
         "cas": cas_credit_summary(composition, fulfillments, credits_cache),
     }
+
+
+@dataclass
+class PlannedCourse:
+    """
+    A course to allocate as part of a whole plan. `kept` is what it already counts for and
+    must keep, when the student's choices are being kept.
+    """
+
+    full_code: str
+    is_transfer: bool = False
+    level: str | None = None
+    kept: set = field(default_factory=set)
+
+
+def allocate_plan(degree_plan, plan_rules, courses, waived):
+    """
+    Allocates every course of a plan at once, in the order given, which should be the order
+    they were taken: each course goes to the scarcest rules still short, then courses are
+    rebalanced onto rules left short. Returns a CourseAllocation per course, in the same order.
+
+    A waived rule needs no courses, so none are allocated to it, and neither are the other
+    options of a "pick N" group once N of them are satisfied (see PickGroups).
+    """
+    rules_per_degree = plan_rules.rules_per_component
+    rule_to_degree = plan_rules.rule_to_component
+    double_counts = plan_rules.double_counts
+    policy = plan_rules.composition.policy
+    leaves = {rule for rules in rules_per_degree.values() for rule in rules}
+    full_codes = [course.full_code for course in courses]
+
+    # Every course is known up front, so check them against the rules in bulk
+    belongs_cache = prewarm_belongs_cache(leaves, full_codes)
+    credits_cache = prewarm_credits_cache(full_codes)
+    canonical_cache = prewarm_canonical_cache(full_codes)
+    pick_groups = PickGroups(leaves)
+
+    def credits_of(course):
+        return credits_cache.get(course.full_code, DEFAULT_COURSE_CREDITS)
+
+    # The allowance goes to the earliest courses eligible for it, after any a course already
+    # shares is set aside for it.
+    graduate_sharing = GraduateSharing()
+    reservations = {
+        index: credits_of(course)
+        for index, course in enumerate(courses)
+        if is_graduate_coursework(course.full_code)
+        and all(split_by_level(course.kept, rule_to_degree))
+    }
+    graduate_sharing.reserved = sum(reservations.values(), Decimal(0))
+
+    # Count and CU are tracked separately: a credit rule is satisfied by the sum of CUs.
+    counts = defaultdict(int)
+    cus = defaultdict(lambda: Decimal(0))
+    satisfied_rules = set(waived)
+    closed = pick_groups.closed(satisfied_rules)
+    allocations = []
+    for index, course in enumerate(courses):
+        graduate_sharing.reserved -= reservations.get(index, Decimal(0))
+        selected_rules, unselected_rules, _ = allocate_rules(
+            course.full_code,
+            rules_per_degree,
+            rule_to_degree,
+            double_counts,
+            degree_plan=degree_plan,
+            satisfied_rules=satisfied_rules | closed,
+            belongs_cache=belongs_cache,
+            is_transfer=course.is_transfer,
+            graduate_sharing=graduate_sharing,
+            credits_cache=credits_cache,
+            level=course.level,
+            policy=policy,
+            canonical=canonical_cache.get(course.full_code),
+            prior_selected=course.kept,
+        )
+        allocations.append(CourseAllocation(course.full_code, selected_rules, unselected_rules))
+
+        for rule in selected_rules:
+            counts[rule.id] += 1
+            cus[rule.id] += credits_of(course)
+            num_ok = rule.num is None or counts[rule.id] >= rule.num
+            cu_ok = rule.credits is None or cus[rule.id] >= rule.credits
+            if (rule.num is not None or rule.credits is not None) and num_ok and cu_ok:
+                satisfied_rules.add(rule)
+        closed = pick_groups.closed(satisfied_rules)
+
+    rebalance_allocations(
+        allocations,
+        rule_to_degree,
+        double_counts,
+        credits_cache,
+        allows=lambda before, after: within_policy(before, after, rule_to_degree, policy),
+        exempt=waived,
+        pick_groups=pick_groups,
+        pinned={
+            allocation: course.kept & allocation.selected
+            for course, allocation in zip(courses, allocations)
+        },
+    )
+    for allocation in allocations:
+        allocation.legal = selection_is_legal(
+            allocation.selected, rule_to_degree, double_counts, policy
+        )
+    return allocations
