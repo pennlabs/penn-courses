@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from collections import defaultdict
 from decimal import Decimal
 from textwrap import dedent
@@ -71,6 +72,10 @@ def program_from_program_code(program_code: str | None) -> str | None:
 # The semester the frontend files AP, IB and other transfer credit under (its
 # TRANSFER_CREDIT_SEMESTER_KEY). Such a fulfillment has no term at Penn.
 TRANSFER_CREDIT_SEMESTER = "_TRAN"
+
+# What some catalog years record a program without a concentration as, where others leave it
+# null: Path's "No Concentration" and "Non Designated".
+NO_CONCENTRATION = ("NCON", "NONE")
 
 
 class Degree(models.Model):
@@ -169,6 +174,20 @@ class Degree(models.Model):
 
     def __str__(self) -> str:
         return f"{self.program} {self.degree} in {self.major} with conc. {self.concentration} ({self.year})"  # noqa E501
+
+    def catalog_years(self):
+        """Every catalog year of this degree, this one included."""
+        concentration = (
+            Q(concentration__isnull=True) | Q(concentration__in=NO_CONCENTRATION)
+            if self.concentration is None or self.concentration in NO_CONCENTRATION
+            else Q(concentration=self.concentration)
+        )
+        return Degree.objects.filter(
+            concentration,
+            program=self.program,
+            degree=self.degree,
+            major=self.major,
+        )
 
 
 class Rule(models.Model):
@@ -479,6 +498,12 @@ class ProgramComponent(models.Model):
 
     def __str__(self) -> str:
         return f"{self.program_code} ({self.year})"
+
+    def catalog_years(self):
+        """Every catalog year of this program, this one included."""
+        base = re.sub(rf"-({'|'.join(NO_CONCENTRATION)})$", "", self.program_code)
+        codes = [base, *(f"{base}-{code}" for code in NO_CONCENTRATION)]
+        return type(self).objects.filter(program_code__in=codes)
 
 
 class Major(ProgramComponent):

@@ -54,7 +54,7 @@ const TriggerName = styled.span`
   text-overflow: ellipsis;
 `;
 
-const Menu = styled.div<{ $open: boolean }>`
+export const Menu = styled.div<{ $open: boolean }>`
   position: absolute;
   top: calc(100% + 0.35rem);
   left: -0.5rem;
@@ -92,7 +92,7 @@ const ItemList = styled.div`
   overscroll-behavior: contain;
 `;
 
-const Item = styled.div<{ $isActive: boolean }>`
+export const Item = styled.div<{ $isActive: boolean }>`
   display: flex;
   align-items: center;
   gap: 0.75rem;

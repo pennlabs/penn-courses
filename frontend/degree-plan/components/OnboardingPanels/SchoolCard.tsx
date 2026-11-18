@@ -3,9 +3,14 @@ import styled from "@emotion/styled";
 import Select from "react-select";
 import { DegreeListing, Major, Minor } from "@/types";
 import {
+  degreeProgramOf,
+  DegreeOption,
   getAdditionalMajorOptions,
   getMajorOptions,
   getMinorOptions,
+  MajorOptionItem,
+  MinorOptionItem,
+  programCodeOf,
   SchoolSelection,
   takesAdditionalMajors,
 } from "@/utils/parseUtils";
@@ -68,8 +73,11 @@ const CardBody = styled(FieldGrid)`
   padding: 20px;
 `;
 
-// Options are compared by id, so a value read from a saved plan matches its option.
-const optionId = <T extends { value: { id: number } }>(option: T) => String(option.value.id);
+// Options are compared by program rather than id, so a plan's version from another catalog year
+// still matches its program's option.
+const degreeKey = <T extends DegreeOption>(option: T) => degreeProgramOf(option.value);
+const programKey = <T extends MajorOptionItem | MinorOptionItem>(option: T) =>
+  programCodeOf(option.value);
 
 type SchoolCardProps = {
   selection: SchoolSelection;
@@ -121,7 +129,7 @@ export default function SchoolCard({
             onChange={(selected) => onChange({ primary: selected })}
             isClearable
             placeholder={`Choose a ${majorWord}`}
-            getOptionValue={optionId}
+            getOptionValue={degreeKey}
             styles={selectStyles}
             menuPortalTarget={typeof document !== "undefined" ? document.body : null}
             isLoading={isLoadingDegrees}
@@ -141,7 +149,7 @@ export default function SchoolCard({
               isClearable
               isMulti
               placeholder="Add another"
-              getOptionValue={optionId}
+              getOptionValue={programKey}
               styles={selectStyles}
               menuPortalTarget={typeof document !== "undefined" ? document.body : null}
               isLoading={isLoadingMajors}
@@ -162,7 +170,7 @@ export default function SchoolCard({
               isClearable
               isMulti
               placeholder="Add a minor"
-              getOptionValue={optionId}
+              getOptionValue={programKey}
               styles={selectStyles}
               menuPortalTarget={typeof document !== "undefined" ? document.body : null}
               isLoading={isLoadingMinors}

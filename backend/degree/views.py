@@ -84,6 +84,32 @@ class InPDPBeta(BasePermission):
         return True
 
 
+def rules_by_title_path(top_level_rules):
+    """Every rule under the given ones, keyed by the titles from its top-level rule down."""
+    rules = {rule.id: rule for rule in rule_subtrees(top_level_rules)}
+
+    def path(rule):
+        parent = rules.get(rule.parent_id)
+        return (*path(parent), rule.title) if parent else (rule.title,)
+
+    return {path(rule): rule for rule in rules.values()}
+
+
+def carry_over_waivers(degree_plan, current, replacement):
+    """
+    Waive in the replacement's requirements whatever was waived in the same place in the
+    current one's, matched by title. A waiver with nothing to match is dropped.
+    """
+    old = rules_by_title_path(current.rules.all())
+    waived_rules = set(degree_plan.waived_rules.all())
+    waived = {path for path, rule in old.items() if rule in waived_rules}
+    if not waived:
+        return
+    new = rules_by_title_path(replacement.rules.all())
+    degree_plan.waived_rules.remove(*(old[path] for path in waived))
+    degree_plan.waived_rules.add(*(new[path] for path in waived if path in new))
+
+
 class DegreeViewset(viewsets.ReadOnlyModelViewSet):
     """
     Retrieve a list of all Degree objects.
@@ -427,6 +453,48 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
             raise ValidationError({field: f"{degree.program} is not a side of this program."})
         if majors and degree.major not in majors:
             raise ValidationError({field: f"{degree.major} is not an allowed major."})
+
+    @action(detail=True, methods=["post"], url_path="catalog-year")
+    def catalog_year(self, request, pk=None):
+        """
+        Switch one of the plan's degrees, majors or minors to another of its catalog years:
+        `{"relation": "degrees" | "majors" | "minors", "from_id": id, "to_id": id}`. Majors and
+        minors stay under the same degree, and the plan's courses are allocated afresh.
+        """
+        relation = request.data.get("relation")
+        if relation not in ("degrees", "majors", "minors"):
+            raise ValidationError({"relation": "This must be degrees, majors or minors."})
+        degree_plan = self.get_object()
+        components = getattr(degree_plan, relation)
+        current = components.filter(pk=request.data.get("from_id")).first()
+        if current is None:
+            raise ValidationError({"from_id": f"This must be one of the plan's {relation}."})
+        replacement = current.catalog_years().filter(pk=request.data.get("to_id")).first()
+        if replacement is None:
+            raise ValidationError({"to_id": "This must be a catalog year of the same program."})
+        if replacement == current:
+            return Response(self.get_serializer(degree_plan).data, status=status.HTTP_200_OK)
+        if components.filter(pk=replacement.pk).exists():
+            raise ValidationError({"to_id": "The plan already has this catalog year."})
+
+        placements = {"majors": DegreePlanMajor, "minors": DegreePlanMinor}
+        with transaction.atomic():
+            carry_over_waivers(degree_plan, current, replacement)
+            if relation == "degrees":
+                degree_plan.degrees.remove(current)
+                degree_plan.degrees.add(replacement)
+                for placement in placements.values():
+                    placement.objects.filter(degree_plan=degree_plan, degree=current).update(
+                        degree=replacement
+                    )
+            else:
+                field = relation[:-1]
+                placements[relation].objects.filter(
+                    degree_plan=degree_plan, **{field: current}
+                ).update(**{field: replacement})
+            update_fulfillments(degree_plan)
+
+        return Response(self.get_serializer(degree_plan).data, status=status.HTTP_200_OK)
 
     def update_components(self, request, relation, field):
         ids = request.data.get(field)

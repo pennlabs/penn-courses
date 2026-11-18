@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState, useContext, useRef, useLayou
 import RuleComponent, { FulfillmentsLoadedContext, ProgramKindContext, WaiversContext } from './Rule';
 import { Degree as DegreeType, DegreePlan, Fulfillment, Rule, Degree as DegreeD } from '@/types';
 import styled from '@emotion/styled';
+import { keyframes } from '@emotion/react';
 import { DarkBlueBackgroundSkeleton, PanelBody, PanelContainer, PanelHeader, PanelTopBarIconList } from "../FourYearPlan/PanelCommon";
 import { EditButton } from '../FourYearPlan/EditButton';
 import useSWR, { useSWRConfig } from 'swr';
@@ -13,8 +14,10 @@ import useStickyState from '@/hooks/stickyState';
 import ProgramTabs, { programPanelId, programTabId } from './ProgramTabs';
 import { tourTarget } from '@/components/Tour/OnboardingTour';
 import { PlanProgram, planPrograms } from '@/utils/programs';
-import Collapse, { Chevron } from './Collapse';
+import Collapse, { Chevron, reducedMotion } from './Collapse';
 import PorcupineLoader from '../common/PorcupineLoader';
+import RandomStartSvg from '../common/RandomStartSvg';
+import CatalogYear from './CatalogYear';
 
 const REQUIREMENT_LOADING_MESSAGES = [
   "Fetching your requirements…",
@@ -100,8 +103,69 @@ const ReqPanelTitle = styled.div`
   font-weight: 700; 
 `
 
-const DegreeBody = styled.div`
+const appear = keyframes`
+  from { opacity: 0; }
+  to { opacity: 1; }
+`
+
+const FADE_OUT_MS = 350;
+
+// Opacity only: a transform would break the sticky rule headers inside.
+const DegreeBody = styled.div<{ $fadeIn?: boolean; $fadingOut?: boolean }>`
   overflow-y: none;
+  opacity: ${(props) => (props.$fadingOut ? 0 : 1)};
+  transition: opacity ${FADE_OUT_MS}ms ease-in;
+  animation: ${(props) => (props.$fadeIn ? appear : "none")} 0.6s ease-out backwards;
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+    animation: none;
+  }
+`
+
+const BodyWrap = styled.div`
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+`
+
+// Blurs the requirements below the tab bar while a program switches catalog years.
+const SwitchingOverlay = styled.div<{ $leaving: boolean }>`
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1001; /* over the sticky rule headers */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border-radius: 0 0 10px 10px;
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  text-align: center;
+  font-size: 0.95rem;
+  color: var(--primary-color-extra-dark);
+  /* Backwards only, so the fade-in's last frame doesn't hold off the fade-out. */
+  animation: ${appear} 0.2s ease backwards;
+  opacity: ${(props) => (props.$leaving ? 0 : 1)};
+  transition: opacity ${FADE_OUT_MS}ms ease-in;
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    transition: none;
+  }
+
+  object {
+    width: 15rem;
+    max-width: 75%;
+    aspect-ratio: 254 / 156; /* porcupine-reading.svg's */
+  }
 `
 
 export const DegreeYear = styled.span`
@@ -149,7 +213,9 @@ export const WhiteSpace = styled.div<{ $headerHeight: number, $zIndex: number }>
   top: ${(props) => props.$headerHeight}px;
 `
 
-const programKey = (program: PlanProgram) => `${program.relation}-${program.id}`;
+// The same across a program's catalog years, so switching years keeps its tab.
+const programKey = (program: PlanProgram) =>
+  `${program.relation}-${program.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
 
 interface DegreeHeaderProps {
   program: PlanProgram,
@@ -176,9 +242,6 @@ const DegreeHeader = ({
         <div>
           {degreeName}
         </div>
-        <DegreeYear>
-          {!skeleton ? program.year : <DarkBlueBackgroundSkeleton width="4em" />}
-        </DegreeYear>
       </DegreeTitleWrapper>
       <DegreeHeaderAction>
         <Icon>
@@ -255,8 +318,19 @@ const Degree = ({
   progress,
   showHeader = true, // false when program tabs take the header's place
   stickyOffset = 0, // the height of whatever replaces the header, for sticky rule headers
+  queueSave,
+  onCatalogYearSwitching,
+  onCatalogYearSwapping,
 }: any) => {
   const [collapsed, setCollapsed] = useState(false);
+  // Switching catalog years fades the old version out and the new one in.
+  const firstVersion = useRef(program.id);
+  const [fadingOutId, setFadingOutId] = useState<number | null>(null);
+  const fadeOut = () => {
+    setFadingOutId(program.id);
+    onCatalogYearSwapping();
+    return new Promise<void>((resolve) => setTimeout(resolve, reducedMotion() ? 0 : FADE_OUT_MS));
+  };
 
   const headerRef = useRef<HTMLDivElement>(null);
   const [headerHeight, setHeaderHeight] = useState<number>(0);
@@ -292,10 +366,23 @@ const Degree = ({
           progress={progress}
         />
       )}
+      {showRules && (
+        <CatalogYear
+          program={program}
+          planId={activeDegreeplan.id}
+          queueSave={queueSave}
+          onSwitching={onCatalogYearSwitching}
+          beforeSwap={fadeOut}
+        />
+      )}
       <WhiteSpace $headerHeight={ruleOffset} $zIndex={999} />
       <Collapse open={showRules}>
         <ProgramKindContext.Provider value={program.kind}>
-          <DegreeBody>
+          <DegreeBody
+            key={program.id}
+            $fadeIn={program.id !== firstVersion.current}
+            $fadingOut={fadingOutId === program.id}
+          >
             {program.rules.map((rule: any) => (
               <RuleComponent
                 key={rule.id}
@@ -399,6 +486,13 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
     });
   }, [activeDegreeplan, mutate]);
 
+  // Other changes to the plan wait their turn behind waivers, so the server sees them in order.
+  const queueSave = useCallback((save: () => Promise<unknown>) => {
+    const sent = waiverQueue.current.then(save, save);
+    waiverQueue.current = sent.catch(() => undefined);
+    return sent;
+  }, []);
+
   const waivers = useMemo(() => ({
     setWaived: (ruleId: number, waive: boolean) => {
       if (!activeDegreeplan) return;
@@ -491,6 +585,31 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
     return () => resizeObserver.disconnect();
   }, [tabBar]);
 
+  // While a program switches catalog years: who the next version is for, and whether the overlay
+  // is fading out with the old version.
+  const [switching, setSwitching] = useState<{ label: string; leaving: boolean } | null>(null);
+  const onCatalogYearSwitching = useCallback(
+    (label: string | null) => setSwitching(label ? { label, leaving: false } : null),
+    []
+  );
+  const onCatalogYearSwapping = useCallback(
+    () => setSwitching((current) => current && { ...current, leaving: true }),
+    []
+  );
+  const bodyWrapRef = useRef<HTMLDivElement>(null);
+  const [overlayTop, setOverlayTop] = useState(0);
+  // The overlay starts under the tab bar, which scrolls a little before it sticks.
+  const placeOverlay = useCallback(() => {
+    if (!tabBar || !bodyWrapRef.current) return setOverlayTop(0);
+    setOverlayTop(
+      tabBar.getBoundingClientRect().bottom - bodyWrapRef.current.getBoundingClientRect().top
+    );
+  }, [tabBar]);
+  const isSwitching = !!switching;
+  useLayoutEffect(() => {
+    if (isSwitching) placeOverlay();
+  }, [isSwitching, placeOverlay]);
+
   return (
     <FulfillmentsLoadedContext.Provider value={fulfillmentsLoaded}>
     <WaiversContext.Provider value={waivers}>
@@ -506,7 +625,14 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
         <ReqPanelBody><PorcupineLoader src="/porcupine-six-seven.svg" messages={REQUIREMENT_LOADING_MESSAGES} /></ReqPanelBody> :
         <>
           {activeDegreeplanDetail &&
-            <ReqPanelBody $hasTabs={showTabs}>
+            <BodyWrap ref={bodyWrapRef}>
+            {switching && (
+              <SwitchingOverlay role="status" $leaving={switching.leaving} style={{ top: overlayTop }}>
+                <RandomStartSvg src="/porcupine-reading.svg" loopSeconds={8} />
+                Reading the requirements for students starting {switching.label}…
+              </SwitchingOverlay>
+            )}
+            <ReqPanelBody $hasTabs={showTabs} onScroll={switching ? placeOverlay : undefined}>
               <FadingContent>
                 {programs.length == 0 && <EmptyPanel onAdd={onEditPrograms} />}
                 {showTabs && (
@@ -517,7 +643,6 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
                       kind: program.kind,
                       title: program.title,
                       code: program.code,
-                      year: program.year,
                       progress: programProgress(program),
                     }))}
                     activeKey={activeTabKey}
@@ -546,12 +671,16 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
                         progress={programProgress(program)}
                         showHeader={!showTabs}
                         stickyOffset={tabBarHeight}
+                        queueSave={queueSave}
+                        onCatalogYearSwitching={onCatalogYearSwitching}
+                        onCatalogYearSwapping={onCatalogYearSwapping}
                       />
                     </div>
                   );
                 })}
               </FadingContent>
             </ReqPanelBody>
+            </BodyWrap>
           }
         </>}
     </PanelContainer>

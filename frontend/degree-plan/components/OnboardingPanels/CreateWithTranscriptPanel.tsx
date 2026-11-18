@@ -17,7 +17,11 @@ import {
 } from "@/components/FourYearPlan/Semesters";
 import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
 import { postFetcher, getCsrf } from "@/hooks/swrcrud";
-import { CourseLevel, SchoolSelection } from "@/utils/parseUtils";
+import {
+  atStartingYear,
+  CourseLevel,
+  SchoolSelection,
+} from "@/utils/parseUtils";
 import { Field, FieldLabel, Required } from "./onboardingStyles";
 import {
   Body,
@@ -107,6 +111,20 @@ export default function CreateWithTranscriptPanel({
   const dualProgram = dualPrograms?.find(
     (program) => program.code === dualProgramCode
   );
+
+  // The programs chosen so far follow the starting year to their versions for it.
+  const changeStartingYear = (year: YearOption | null) => {
+    setStartingYear(year);
+    setSelections((current) =>
+      atStartingYear(
+        current,
+        degrees,
+        standaloneMajors,
+        minors,
+        year?.value ?? null
+      )
+    );
+  };
 
   // Workaround solution to only input courses once degree has been created and degreeID exists.
   // Will likely change in the future!
@@ -307,7 +325,7 @@ export default function CreateWithTranscriptPanel({
                   graduationOptions={graduationYearOptions}
                   startingYear={startingYear}
                   graduationYear={graduationYear}
-                  setStartingYear={setStartingYear}
+                  setStartingYear={changeStartingYear}
                   setGraduationYear={setGraduationYear}
                   isClearable
                 />
@@ -340,6 +358,7 @@ export default function CreateWithTranscriptPanel({
                   degrees={degrees}
                   standaloneMajors={standaloneMajors}
                   minors={minors}
+                  startingYear={startingYear?.value ?? null}
                   isLoadingDegrees={isLoadingDegrees}
                   isLoadingMajors={isLoadingMajors}
                   isLoadingMinors={isLoadingMinors}

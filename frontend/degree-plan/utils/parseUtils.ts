@@ -1,6 +1,7 @@
 import { createMajorLabel } from "@/components/FourYearPlan/DegreeModal";
 import { schoolOptions } from "@/components/OnboardingPanels/SharedComponents";
 import { DegreeListing, Major, Minor, SchoolOption } from "@/types";
+import { hasConcentration, NO_CONCENTRATION_CODES } from "@/utils/programs";
 const { distance } = require("fastest-levenshtein");
 
 // How far a transcript's wording may sit from a program's name and still be the same thing.
@@ -104,14 +105,15 @@ export const parseItems = (items: LineItem[]) => {
   return allText;
 };
 
+// Catalog year 2027 is the 2026-27 school year's, for students who start in fall 2026.
+const catalogYearFor = (startingYear: number) => startingYear + 1;
+
 // A program's catalog year marks when its requirements last changed, not a year it was offered,
-// so a student who started in a given year is on the latest version from at or before it. The
-// catalog doesn't reach back for every program, so one whose versions all came later takes its
+// so a student is on the latest version from at or before their own catalog year. The catalog
+// doesn't reach back for every program, so one whose versions all came later takes its
 // earliest, the closest to what the student started under.
-const isBetterVersion = (year: number, than: number, startingYear: number) =>
-  year <= startingYear
-    ? than > startingYear || year > than
-    : than > startingYear && year < than;
+const isBetterVersion = (year: number, than: number, target: number) =>
+  year <= target ? than > target || year > than : than > target && year < than;
 
 // Returns the version of each program that applies to a student who started in the given year.
 const applicableVersions = <T extends { year: number }>(
@@ -121,10 +123,11 @@ const applicableVersions = <T extends { year: number }>(
 ): T[] | undefined => {
   if (!items) return undefined;
   if (!startingYear) return [];
+  const target = catalogYearFor(startingYear);
   const versions = new Map<string, T>();
   items.forEach((item) => {
     const current = versions.get(programOf(item));
-    if (!current || isBetterVersion(item.year, current.year, startingYear)) {
+    if (!current || isBetterVersion(item.year, current.year, target)) {
       versions.set(programOf(item), item);
     }
   });
@@ -132,11 +135,27 @@ const applicableVersions = <T extends { year: number }>(
 };
 
 // What stays the same across the catalog years of a degree.
-const degreeProgramOf = (degree: DegreeListing) =>
-  [degree.program, degree.degree, degree.major, degree.concentration].join("|");
+export const degreeProgramOf = (degree: DegreeListing) =>
+  [
+    degree.program,
+    degree.degree,
+    degree.major,
+    hasConcentration(degree.concentration) ? degree.concentration : null,
+  ].join("|");
 
-// Given a list of degrees and a school, return the primary majors the school offers, in every
-// catalog year.
+// What stays the same across the catalog years of a major or minor, e.g. CSCI-BA for CSCI-BA-NCON.
+const NO_CONCENTRATION_SUFFIX = new RegExp(`-(${NO_CONCENTRATION_CODES.join("|")})$`);
+export const programCodeOf = (program: { program_code: string }) =>
+  program.program_code.replace(NO_CONCENTRATION_SUFFIX, "");
+
+// One version of each program: the one for the given starting year, or the newest without one.
+export const versionsForStart = <T extends { year: number }>(
+  items: T[] | undefined,
+  programOf: (item: T) => string,
+  startingYear: number | null
+) => applicableVersions(items, programOf, startingYear ?? Infinity);
+
+// Given a list of degrees and a school, return the primary majors the school offers.
 export const getMajorOptions = (
   degrees: DegreeListing[] | undefined,
   school: SchoolOption | null | undefined
@@ -167,8 +186,7 @@ const isMasters = (degreeCode: string) => degreeCode === "MSE";
 export const takesAdditionalMajors = (school: SchoolOption) => !isMasters(school.value);
 
 // Given the majors that can be added on top of a degree and a school, return the additional majors
-// open to a student of that school, in every catalog year. A student can add a major from any
-// school, so the school's own come first, and the rest name their degree: CSCI as a College major
+// open to a student of that school. A student can add a major from any school, so the school's own come first, and the rest name their degree: CSCI as a College major
 // is not CSCI as an Engineering major.
 export const getAdditionalMajorOptions = (
   majors: Major[] | undefined,
@@ -188,12 +206,13 @@ export const getAdditionalMajorOptions = (
 
 // An additional major as a school's card lists it: majors from other schools name their degree.
 export const majorOption = (major: Major, school: SchoolOption): MajorOptionItem => {
-  const name = major.concentration_name
-    ? `${major.name} - ${major.concentration_name}`
-    : major.name;
+  const name =
+    major.concentration_name && hasConcentration(major.concentration)
+      ? `${major.name} - ${major.concentration_name}`
+      : major.name;
   const own = degreeCodeOf(major.program_code) === school.value;
-  const degree = own ? "" : `, ${degreeCodeOf(major.program_code)}`;
-  return { value: major, label: `${name} (${major.year}${degree})` };
+  const degree = own ? "" : ` (${degreeCodeOf(major.program_code)})`;
+  return { value: major, label: `${name}${degree}` };
 };
 
 export type MinorOptionItem = {
@@ -203,7 +222,7 @@ export type MinorOptionItem = {
 
 export const minorOption = (minor: Minor): MinorOptionItem => ({
   value: minor,
-  label: `${minor.name ?? minor.code} (${minor.year})`,
+  label: minor.name ?? minor.code,
 });
 
 export const getMinorOptions = (minors: Minor[] | undefined): MinorOptionItem[] | undefined =>
@@ -217,6 +236,39 @@ export type SchoolSelection = {
   primary: DegreeOption | null;
   additional: MajorOptionItem[];
   minors?: MinorOptionItem[];
+};
+
+// The selections with each program moved to its version for the given starting year.
+export const atStartingYear = (
+  selections: SchoolSelection[],
+  degrees: DegreeListing[] | undefined,
+  majors: Major[] | undefined,
+  minors: Minor[] | undefined,
+  startingYear: number | null
+): SchoolSelection[] => {
+  const byProgram = <T extends { year: number }>(
+    items: T[] | undefined,
+    programOf: (item: T) => string
+  ) =>
+    new Map(
+      (versionsForStart(items, programOf, startingYear) ?? []).map((item) => [programOf(item), item])
+    );
+  const degreeVersions = byProgram(degrees, degreeProgramOf);
+  const majorVersions = byProgram(majors, programCodeOf);
+  const minorVersions = byProgram(minors, programCodeOf);
+  return selections.map((selection) => ({
+    ...selection,
+    primary: selection.primary && {
+      ...selection.primary,
+      value: degreeVersions.get(degreeProgramOf(selection.primary.value)) ?? selection.primary.value,
+    },
+    additional: selection.additional.map((option) =>
+      majorOption(majorVersions.get(programCodeOf(option.value)) ?? option.value, selection.school)
+    ),
+    minors: selection.minors?.map((option) =>
+      minorOption(minorVersions.get(programCodeOf(option.value)) ?? option.value)
+    ),
+  }));
 };
 
 // What a transcript says about one program: a school and the majors and minors listed under it,

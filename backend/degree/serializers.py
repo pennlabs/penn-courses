@@ -468,6 +468,16 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
     right_variant = serializers.SlugRelatedField(slug_field="code", read_only=True)
     components = serializers.SerializerMethodField()
 
+    catalog_years = serializers.SerializerMethodField(
+        help_text=dedent(
+            """
+        The catalog years each of the plan's degrees, majors and minors has, as
+        `{"degrees": {id: [{"id": id, "year": year}, ...]}, "majors": ..., "minors": ...}`, oldest
+        first. Switch between them through the `catalog-year` route.
+        """
+        )
+    )
+
     major_degrees = serializers.SerializerMethodField(
         help_text=dedent(
             """
@@ -498,7 +508,25 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
     person = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     def get_components(self, obj):
+        # Only a coordinated program (e.g. M&T) changes its programs' requirements; otherwise
+        # this would repeat the degrees, majors and minors above.
+        if obj.dual_program_id is None:
+            return []
         return [serialize_component(component) for component in compose(obj).components]
+
+    def get_catalog_years(self, obj):
+        def years_of(program):
+            # One version a year, the plan's own for its year.
+            by_year = {}
+            for version in program.catalog_years().order_by("year", "id"):
+                by_year.setdefault(version.year, version.id)
+            by_year[program.year] = program.id
+            return [{"id": id, "year": year} for year, id in sorted(by_year.items())]
+
+        return {
+            relation: {program.id: years_of(program) for program in getattr(obj, relation).all()}
+            for relation in ("degrees", "majors", "minors")
+        }
 
     def get_minor_degrees(self, obj):
         return [
@@ -529,6 +557,7 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
             "dual_program",
             "right_variant",
             "components",
+            "catalog_years",
             "waived_rules",
             "person",
             "created_at",
