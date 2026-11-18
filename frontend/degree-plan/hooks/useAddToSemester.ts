@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import useSWR from "swr";
+import useSWR, { useSWRConfig } from "swr";
 import { DegreePlan, DockedCourse, Fulfillment } from "@/types";
 import { useSWRCrud } from "@/hooks/swrcrud";
 import ToastContext from "@/components/Toast/Toast";
@@ -20,14 +20,13 @@ interface SatisfiedRules {
  */
 const useAddToSemester = (planId: DegreePlan["id"] | null | undefined) => {
   const showToast = useContext(ToastContext);
+  const { mutate } = useSWRConfig();
+  const fulfillmentsKey = `/api/degree/degreeplans/${planId}/fulfillments`;
   // The fulfillments api uses POST for updates too: it creates the row if it doesn't exist.
-  const { createOrUpdate } = useSWRCrud<Fulfillment>(
-    `/api/degree/degreeplans/${planId}/fulfillments`,
-    {
-      idKey: "full_code",
-      createDefaultOptimisticData: { semester: null, rules: [] },
-    }
-  );
+  const { createOrUpdate } = useSWRCrud<Fulfillment>(fulfillmentsKey, {
+    idKey: "full_code",
+    createDefaultOptimisticData: { semester: null, rules: [] },
+  });
 
   const { data: docked = [] } = useSWR<DockedCourse[]>("/api/degree/docked");
   const { remove: removeFromDock } = useSWRCrud<DockedCourse>(
@@ -56,12 +55,45 @@ const useAddToSemester = (planId: DegreePlan["id"] | null | undefined) => {
       }
     }
 
+    const placeholder = ({
+      full_code: fullCode,
+      semester,
+      course: null,
+      rules: [],
+      unselected_rules: [],
+      overrides: [],
+      legal: true,
+      level: null,
+    } as unknown) as Fulfillment;
+    // A course dragged from search or a requirement can already be in the plan.
+    let replaced: Fulfillment | undefined;
+    await mutate(
+      fulfillmentsKey,
+      (list: Fulfillment[] = []) => {
+        replaced = list.find((f) => f.full_code === fullCode);
+        return [...list.filter((f) => f.full_code !== fullCode), placeholder];
+      },
+      { revalidate: false }
+    );
+    // Hidden from the dock straight away too, but only deleted from it once the course is saved.
+    const wasDocked = docked.some((course) => course.full_code === fullCode);
+    if (wasDocked)
+      mutate(
+        "/api/degree/docked",
+        (list: DockedCourse[] = []) =>
+          list.filter((course) => course.full_code !== fullCode),
+        { revalidate: false }
+      );
+
     let data: SatisfiedRules;
     try {
       const response = await fetch(
-        `/api/degree/satisfied-rule-list/${planId}/${fullCode}/${ruleId}?semester=${encodeURIComponent(semester)}`
+        `/api/degree/satisfied-rule-list/${planId}/${fullCode}/${ruleId}?semester=${encodeURIComponent(
+          semester
+        )}`
       );
-      if (!response.ok) throw new Error(`satisfied-rule-list: ${response.status}`);
+      if (!response.ok)
+        throw new Error(`satisfied-rule-list: ${response.status}`);
       data = await response.json();
       await createOrUpdate(
         {
@@ -73,11 +105,20 @@ const useAddToSemester = (planId: DegreePlan["id"] | null | undefined) => {
         fullCode
       );
     } catch {
+      // Only undo our placeholder, not a later change to the same course.
+      mutate(
+        fulfillmentsKey,
+        (list: Fulfillment[] = []) => {
+          if (!list.includes(placeholder)) return list;
+          const rest = list.filter((f) => f !== placeholder);
+          return replaced ? [...rest, replaced] : rest;
+        },
+        { revalidate: false }
+      );
+      if (wasDocked) mutate("/api/degree/docked");
       return failed();
     }
-    // Only once it's in the plan, so a failure above leaves it in the dock.
-    if (docked.some((course) => course.full_code === fullCode))
-      removeFromDock(fullCode);
+    if (wasDocked) removeFromDock(fullCode);
 
     // TODO: This doesn't work for explicitly listed courses.
     data.new_selected_rules.forEach((rule) => {

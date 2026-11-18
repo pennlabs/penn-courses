@@ -240,10 +240,14 @@ const CloseButton = styled.button`
   position: absolute;
   top: 0.6rem;
   right: 0.6rem;
-  width: 2rem;
-  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
   border: none;
-  border-radius: 6px;
+  border-radius: 50%;
   background: none;
   color: var(--primary-color-ultra-dark);
   font-size: 1rem;

@@ -39,6 +39,8 @@ import {
   OverrideModalCard,
   OverrideModalTitle,
   OverrideModalBody,
+  OverrideModalIcon,
+  OverrideModalNote,
   OverrideModalActions,
   OverrideModalButton,
   OverrideCourseName,
@@ -96,17 +98,22 @@ interface OverrideModalProps {
 const OverrideModal = ({ fullCode, ruleTitle, waived, onConfirm, onCancel }: OverrideModalProps) => (
   <OverrideModalOverlay onClick={onCancel}>
     <OverrideModalCard onClick={(e) => e.stopPropagation()}>
-      <OverrideModalTitle>Override Requirement?</OverrideModalTitle>
+      <OverrideModalTitle>
+        <OverrideModalIcon>
+          <i className="fas fa-star" aria-hidden />
+        </OverrideModalIcon>
+        Count it anyway?
+      </OverrideModalTitle>
       <OverrideModalBody>
-        <OverrideCourseName>{fullCode.replace("-", " ")}</OverrideCourseName> doesn't
-        normally satisfy <OverrideCourseName>{ruleTitle || "this requirement"}</OverrideCourseName>.
-        <br /><br />
-        Do you want to manually override this and count it anyway?
+        <p>
+          <OverrideCourseName>{fullCode.replace("-", " ")}</OverrideCourseName> doesn't
+          normally satisfy <OverrideCourseName>{ruleTitle || "this requirement"}</OverrideCourseName>.
+          You can override this and count it toward the requirement anyway.
+        </p>
         {waived && (
-          <>
-            <br /><br />
-            This requirement is currently waived. Counting a course for it removes the waiver.
-          </>
+          <OverrideModalNote>
+            This requirement is waived. Counting a course for it removes the waiver.
+          </OverrideModalNote>
         )}
       </OverrideModalBody>
       <OverrideModalActions>
@@ -444,7 +451,11 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
           </LeafStatus>
           {overrideFulfillments.length > 0 && (
             <OverrideTagWrapper ref={overridePopoverRef}>
-              <OverrideTag onClick={() => setOverridePopoverOpen(!overridePopoverOpen)}>
+              <OverrideTag
+                type="button"
+                aria-expanded={overridePopoverOpen}
+                onClick={() => setOverridePopoverOpen(!overridePopoverOpen)}
+              >
                 <i className="fas fa-star" />
                 {overrideFulfillments.length} {overrideFulfillments.length === 1 ? "override" : "overrides"}
               </OverrideTag>
@@ -455,6 +466,8 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
                     <OverrideItem key={f.full_code}>
                       <OverrideItemName>{f.full_code.replace("-", " ")}</OverrideItemName>
                       <RemoveOverrideButton
+                        type="button"
+                        aria-label={`Remove override for ${f.full_code.replace("-", " ")}`}
                         onClick={() => handleRemoveOverride(f.full_code)}
                         disabled={removingOverride === f.full_code}
                       >

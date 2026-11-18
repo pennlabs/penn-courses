@@ -1,4 +1,11 @@
-import React, { ReactNode, useEffect, useRef, useState } from "react";
+import React, {
+  ReactNode,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import { keyframes } from "@emotion/react";
 import styled from "@emotion/styled";
 import useStickyState from "@/hooks/stickyState";
 
@@ -19,9 +26,34 @@ const Container = styled.div`
   height: 100%;
 `;
 
+const collapsed = `
+  flex-grow: 0;
+  opacity: 0;
+  transform: translateX(12px);
+`;
+const columnIn = keyframes`
+  from { ${collapsed} }
+`;
+const columnOut = keyframes`
+  to { ${collapsed} }
+`;
+const SLIDE = "280ms cubic-bezier(0.2, 0.8, 0.2, 1)";
+
 const Column = styled.div`
   min-width: 0;
   height: 100%;
+
+  &.column-enter,
+  &.column-leave {
+    overflow: hidden;
+  }
+  &.column-enter {
+    animation: ${columnIn} ${SLIDE};
+  }
+  &.column-leave {
+    animation: ${columnOut} ${SLIDE} forwards;
+    pointer-events: none;
+  }
 `;
 
 const Gutter = styled.div`
@@ -123,6 +155,43 @@ const SplitColumns = ({
   const [activeGutter, setActiveGutter] = useState<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // A hiding column keeps its last width and content until it has slid away.
+  const shown = useRef<Set<string> | null>(null);
+  const lastGrow = useRef<{ [id: string]: number }>({});
+  const lastContent = useRef<{ [id: string]: ReactNode }>({});
+  const [sliding, setSliding] = useState<{ [id: string]: "enter" | "leave" }>(
+    {}
+  );
+  useLayoutEffect(() => {
+    const now = new Set(visible.map((column) => column.id));
+    const previous = shown.current;
+    shown.current = now;
+    if (!previous) return;
+    const changes: { [id: string]: "enter" | "leave" } = {};
+    now.forEach((id) => {
+      if (!previous.has(id)) changes[id] = "enter";
+    });
+    previous.forEach((id) => {
+      if (!now.has(id)) changes[id] = "leave";
+    });
+    if (Object.keys(changes).length)
+      setSliding((current) => ({ ...current, ...changes }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layout]);
+  const finishSliding = (id: string) =>
+    setSliding((current) => {
+      if (!(id in current)) return current;
+      const rest = { ...current };
+      delete rest[id];
+      return rest;
+    });
+  // Also checked against the last render, so a column that was just hidden keeps its content
+  // mounted in the render before the effect above has marked it.
+  const isLeaving = (column: SplitColumn) =>
+    !column.visible &&
+    (sliding[column.id] === "leave" || !!shown.current?.has(column.id));
+  const leaving = columns.filter(isLeaving);
+
   const committedWidths =
     [storedWidths?.[layout], defaultWidths[layout]].find((candidate) =>
       isValidWidths(candidate, visible.length)
@@ -192,9 +261,28 @@ const SplitColumns = ({
   let visibleIndex = -1;
   return (
     <Container ref={containerRef}>
-      {!visible.length && <EmptyState>{emptyState}</EmptyState>}
+      {!visible.length && !leaving.length && (
+        <EmptyState>{emptyState}</EmptyState>
+      )}
       {/* A flat, keyed list: each Column keeps its identity when shown or hidden, so stays mounted. */}
       {columns.flatMap((column) => {
+        if (column.visible && column.content)
+          lastContent.current[column.id] = column.content;
+        if (isLeaving(column)) {
+          return [
+            <Column
+              key={column.id}
+              className="column-leave"
+              aria-hidden
+              style={{ flex: `${lastGrow.current[column.id] ?? 0} 1 0` }}
+              onAnimationEnd={(e) => {
+                if (e.target === e.currentTarget) finishSliding(column.id);
+              }}
+            >
+              {column.content || lastContent.current[column.id]}
+            </Column>,
+          ];
+        }
         if (!column.visible) {
           return [
             <Column key={column.id} style={{ display: "none" }}>
@@ -204,10 +292,17 @@ const SplitColumns = ({
         }
         visibleIndex += 1;
         const gutterIndex = visibleIndex - 1;
+        lastGrow.current[column.id] = widths[visibleIndex];
         const columnElement = (
           <Column
             key={column.id}
+            className={
+              sliding[column.id] === "enter" ? "column-enter" : undefined
+            }
             style={{ flex: `${widths[visibleIndex]} 1 0` }}
+            onAnimationEnd={(e) => {
+              if (e.target === e.currentTarget) finishSliding(column.id);
+            }}
           >
             {column.content}
           </Column>

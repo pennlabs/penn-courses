@@ -4,7 +4,6 @@ import ResultsList from "./ResultsList";
 import styled from "@emotion/styled";
 import { DegreePlan, Rule, Fulfillment } from "@/types";
 import { PanelContainer, PanelHeader } from "../FourYearPlan/PanelCommon";
-import { GrayIcon } from "../common/bulma_derived_components";
 import useStickyState from "@/hooks/stickyState";
 
 interface SearchPanelContextType {
@@ -12,6 +11,8 @@ interface SearchPanelContextType {
     searchPanelOpen: boolean;
     setSearchRuleId: (arg0: Rule["id"] | null) => void;
     searchRuleId: Rule["id"] | null;
+    setSearchRuleTitle: (arg0: string) => void;
+    searchRuleTitle: string;
     setSearchFulfillments: (arg0: Fulfillment[]) => void,
     searchFulfillments: Fulfillment[],
     setSearchRuleQuery: (arg0: string | null) => void;
@@ -23,6 +24,8 @@ export const SearchPanelContext = createContext<SearchPanelContextType>({
     searchPanelOpen: false,
     setSearchRuleId: (arg0) => {},
     searchRuleId: null,
+    setSearchRuleTitle: (arg0) => {},
+    searchRuleTitle: "",
     setSearchFulfillments: (arg0) => {},
     searchFulfillments: [],
     setSearchRuleQuery: (arg0) => {},
@@ -31,53 +34,141 @@ export const SearchPanelContext = createContext<SearchPanelContextType>({
 
 
 const SearchPanelBody = styled.div`
-    margin: .6rem;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    padding: .75rem .75rem 0;
+`
+
+const SearchTools = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+    padding-bottom: .75rem;
 `
 
 const SearchPanelResult = styled.div`
-    margin-top: .5rem;
+    flex: 1;
+    min-height: 0;
     overflow-x: hidden;
+    overflow-y: auto;
+    padding: 0 .1rem;
 `
 
-const SearchContainer = styled.div`
-    position: sticky;
-    top: 0;
-    padding: .5rem .75rem;
-    background-color: var(--background-grey);
-    border-radius: .75rem;
+const SearchContainer = styled.label`
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: .6rem;
+    padding: .5rem .6rem .5rem .8rem;
+    border: 1.5px solid transparent;
+    border-radius: .75rem;
+    background-color: var(--background-grey);
+    color: var(--primary-color-extra-dark);
+    cursor: text;
+    transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+
+    &:focus-within {
+        border-color: var(--primary-color-xx-dark);
+        background-color: #ffffff;
+    }
 `
 
 const SearchField = styled.input`
     flex: 1;
+    min-width: 0;
     border: none;
     outline: none;
-    color: black;
+    color: var(--primary-color-ultra-dark);
     background: none;
     font: inherit;
+    font-size: .95rem;
+
+    &::placeholder {
+        color: #9a9a9a;
+    }
 `;
 
-const OfferedToggle = styled.label`
+const ClearButton = styled.button`
     display: flex;
     align-items: center;
-    gap: .4rem;
-    margin: .5rem .25rem 0;
-    font-size: .85rem;
-    color: #575757;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: #9a9a9a;
     cursor: pointer;
-    user-select: none;
 
-    input {
-        accent-color: var(--primary-color-xxx-dark);
-        cursor: pointer;
+    &:hover {
+        background: var(--primary-color);
+        color: var(--primary-color-xxx-dark);
     }
+
+    i {
+        font-size: .7rem;
+    }
+`
+
+const Chips = styled.div`
+    display: flex;
+    flex-wrap: wrap;
+    gap: .4rem;
+`
+
+const Chip = styled.button<{ $on: boolean }>`
+    display: inline-flex;
+    align-items: center;
+    gap: .4rem;
+    padding: .2rem .65rem;
+    border: 1px solid ${({ $on }) => $on ? "var(--primary-color-xx-dark)" : "var(--primary-color-dark)"};
+    border-radius: 999px;
+    background: ${({ $on }) => $on ? "var(--primary-color-light)" : "transparent"};
+    color: ${({ $on }) => $on ? "var(--primary-color-ultra-dark)" : "#575757"};
+    font: inherit;
+    font-size: .8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+
+    &:hover {
+        border-color: var(--primary-color-xx-dark);
+    }
+
+    i {
+        font-size: .7rem;
+    }
+`
+
+const ChipLabel = styled.span`
+    max-width: 16rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 `
 
 const PanelTitle = styled.div`
     font-weight: 700;
+`
+
+const CloseButton = styled.button`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+
+    &:hover {
+        background: var(--primary-color-light);
+    }
 `
 
 const SearchPanelHeader = styled(PanelHeader)`
@@ -96,6 +187,7 @@ export const SearchPanel = ({ activeDegreeplanId, autoFocus = true }: SearchPane
         setSearchPanelOpen, 
         searchRuleId: ruleId, 
         setSearchRuleId,
+        searchRuleTitle: ruleTitle,
         searchRuleQuery: ruleQuery,
         searchFulfillments: fulfillments
     } = useContext(SearchPanelContext); 
@@ -120,35 +212,55 @@ export const SearchPanel = ({ activeDegreeplanId, autoFocus = true }: SearchPane
         <PanelContainer>
             <SearchPanelHeader>
                 <PanelTitle>Search</PanelTitle>
-                <label onClick={handleCloseSearch}>
+                <CloseButton type="button" aria-label="Close search" onClick={handleCloseSearch}>
                     <i className="fa fa-times" />
-                </label>
+                </CloseButton>
             </SearchPanelHeader>
             <SearchPanelBody>
-                <SearchContainer
-                >
-                    <GrayIcon>
-                        <i className="fas fa-search fa-lg" />
-                    </GrayIcon>
-                    <SearchField
-                        aria-label="search for a course"
-                        autoFocus={autoFocus}
-                        type="text"
-                        value={queryString}
-                        onChange={(e) => {setQueryString(e.target.value)}}
-                        autoComplete="off"
-                        placeholder={!ruleId ? "Search for a course!" : `Filtering for a requirement`}
-                    />
-                </SearchContainer>
-                <OfferedToggle>
-                    <input
-                        type="checkbox"
-                        checked={offeredOnly}
-                        onChange={(e) => setOfferedOnly(e.target.checked)}
-                    />
-                    Offered this semester
-                </OfferedToggle>
-                <SearchResults ruleId={ruleId} query={queryString} offeredOnly={offeredOnly} activeDegreeplanId={activeDegreeplanId} fulfillments={fulfillments}/> 
+                <SearchTools>
+                    <SearchContainer>
+                        <i className="fas fa-search" aria-hidden="true" />
+                        <SearchField
+                            aria-label="search for a course"
+                            autoFocus={autoFocus}
+                            type="text"
+                            value={queryString}
+                            onChange={(e) => {setQueryString(e.target.value)}}
+                            autoComplete="off"
+                            placeholder={!ruleId ? "Search by code or title" : `Search within ${ruleTitle || "this requirement"}`}
+                        />
+                        {queryString && (
+                            <ClearButton type="button" aria-label="Clear search" onClick={() => setQueryString("")}>
+                                <i className="fas fa-times" aria-hidden="true" />
+                            </ClearButton>
+                        )}
+                    </SearchContainer>
+                    <Chips>
+                        <Chip
+                            type="button"
+                            $on={offeredOnly}
+                            aria-pressed={offeredOnly}
+                            onClick={() => setOfferedOnly(!offeredOnly)}
+                        >
+                            <i className={`fas ${offeredOnly ? "fa-check" : "fa-calendar-alt"}`} aria-hidden="true" />
+                            Offered this semester
+                        </Chip>
+                        {!!ruleId && (
+                            <Chip
+                                type="button"
+                                $on
+                                title={ruleTitle || undefined}
+                                aria-label={`Stop filtering for ${ruleTitle || "this requirement"}`}
+                                onClick={() => setSearchRuleId(null)}
+                            >
+                                <i className="fas fa-filter" aria-hidden="true" />
+                                <ChipLabel>{ruleTitle || "A requirement"}</ChipLabel>
+                                <i className="fas fa-times" aria-hidden="true" />
+                            </Chip>
+                        )}
+                    </Chips>
+                </SearchTools>
+                <SearchResults ruleId={ruleId} query={queryString} offeredOnly={offeredOnly} activeDegreeplanId={activeDegreeplanId} fulfillments={fulfillments}/>
             </SearchPanelBody>
         </PanelContainer>
     )
@@ -199,6 +311,14 @@ const SearchResults = ({ ruleId, query, offeredOnly, activeDegreeplanId, fulfill
     const courses = data ? data.flatMap((page) => page.results ?? []) : [];
     const isLoadingMore = size > 1 && isValidating && data && typeof data[size - 1] === "undefined";
     const hasMore = data ? !!data[data.length - 1]?.next : false;
+    const total: number | undefined = data?.[0]?.count;
+    const hint = !ruleId && debouncedQuery.length < 3
+        ? {
+            image: "/porcupine-scientist-search.svg",
+            title: "Find a course",
+            text: "Type at least 3 letters of a course code or title, then drag a result into your plan.",
+        }
+        : null;
 
     const loadMore = useCallback(() => {
         if (!isValidating && hasMore) {
@@ -218,6 +338,8 @@ const SearchResults = ({ ruleId, query, offeredOnly, activeDegreeplanId, fulfill
                 isLoadingMore={!!isLoadingMore}
                 hasMore={hasMore}
                 loadMore={loadMore}
+                total={total}
+                hint={hint}
                 />
             </SearchPanelResult>
         </>

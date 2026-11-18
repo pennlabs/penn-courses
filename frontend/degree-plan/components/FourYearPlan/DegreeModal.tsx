@@ -1,7 +1,7 @@
 import styled from "@emotion/styled";
 import type { DegreeListing, DegreePlan } from "@/types";
 import React, { useState, useEffect } from "react";
-import { deleteFetcher, postFetcher, useSWRCrud } from "@/hooks/swrcrud";
+import { postFetcher, useSWRCrud } from "@/hooks/swrcrud";
 import { useSWRConfig } from "swr";
 import ModalContainer from "../common/ModalContainer";
 
@@ -145,10 +145,7 @@ const ModalInterior = ({
     setActiveDegreeplan(_new);
   };
 
-  const delete_degreeplan = async (id: number) => {
-    await deleteFetcher(`/api/degree/degreeplans/${id}`);
-    await mutate("/api/degree/degreeplans"); // use updated degree plan returned
-  };
+  const delete_degreeplan = (id: number) => deleteDegreeplan(id);
 
   const [name, setName] = useState<string>("");
 

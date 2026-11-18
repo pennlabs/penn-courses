@@ -2,64 +2,58 @@ import React, { useCallback, useContext, useEffect, useRef } from "react";
 import useSWR from "swr";
 import ToastContext from "@/components/Toast/Toast";
 import styled from '@emotion/styled';
-import Course, { SEARCH_ADD_BUTTON_SPACE, SkeletonCourse } from "./CourseInSearch";
+import Course, { SkeletonCourse } from "./CourseInSearch";
 import { Course as CourseType, DegreePlan, DockedCourse, Fulfillment, Rule } from "../../types";
 import { useSWRCrud } from "@/hooks/swrcrud";
 
-const goodEasy = ({ difficulty, course_quality: courseQuality }: CourseType) =>
-    !difficulty || !courseQuality
-        ? 0
-        : Math.pow(courseQuality + 0.5, 1.5) / (difficulty + 1);
-
 const CourseListContainer = styled.div`
-    box-sizing: border-box;
-    border-radius: 0.375em;
-    height: 100%;
     display: flex;
     flex-direction: column;
     min-height: 100%;
-    overflow: hidden;
 `;
 
-const HeaderContainer = styled.div`
-    display: flex;
-    flex-direction: row;
-    padding-left: 0.7em;
-    padding-top: 0.2em;
-    padding-bottom: 0.3em;
-`;
-
-const Header = styled.div`
-    width: ${({ width }: { width: string }) => width};
+const Summary = styled.div`
+    margin: 0 0.25rem 0.25rem;
     color: #a0a0a0;
-    padding-left: 0;
-    font-weight: bold;
-    overflow: hidden;
+    font-size: 0.75rem;
+    font-weight: 600;
 `;
 
-// Matches the rows' 7px rating inset.
-const RatingHeader = styled(Header)`
-    padding-left: 7px;
-`;
-
-const HeaderColumns = styled.div`
-    display: flex;
-    flex: 1;
-    min-width: 0;
-    margin-right: ${SEARCH_ADD_BUTTON_SPACE};
+const Illustration = styled.img`
+    width: min(200px, 70%);
+    aspect-ratio: 254 / 194;
+    margin-bottom: 0.25rem;
 `;
 
 const CoursesContainer = styled.ul`
-    height: 100%;
-    padding-left: 0;
-    font-size: 0.7em;
+    margin: 0;
+    padding: 0 0 0.5rem;
     list-style: none;
-
-    &::-webkit-scrollbar {
-        width: 0 !important;
-    }
 `;
 
+const Empty = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 2.5rem;
+    padding: 0 1.5rem;
+    color: #7a7a7a;
+    text-align: center;
+
+    i {
+        color: var(--primary-color-extra-dark);
+        font-size: 1.5rem;
+    }
+
+    strong {
+        color: var(--primary-color-ultra-dark);
+    }
+
+    span {
+        font-size: 0.85rem;
+    }
+`;
 
 export interface ResultListProps {
     courses: CourseType[];
@@ -70,6 +64,8 @@ export interface ResultListProps {
     isLoadingMore: boolean;
     hasMore: boolean;
     loadMore: () => void;
+    total?: number;
+    hint?: { image: string; title: string; text: string } | null;
 }
 const ResultsList = ({
     ruleId,
@@ -80,6 +76,8 @@ const ResultsList = ({
     isLoadingMore,
     hasMore,
     loadMore,
+    total,
+    hint,
 }: ResultListProps) => {
     // TODO: what if activeDegreeplan is not defined
 
@@ -121,15 +119,33 @@ const ResultsList = ({
         showToast(`Added ${code} to dock`, false);
     };
 
+    if (hint) {
+        return (
+            <Empty>
+                <Illustration src={hint.image} alt="" />
+                <strong>{hint.title}</strong>
+                <span>{hint.text}</span>
+            </Empty>
+        );
+    }
+
+    if (!isLoading && !courses.length) {
+        return (
+            <Empty>
+                <i className="fas fa-search" aria-hidden="true" />
+                <strong>No courses found</strong>
+                <span>Try a different code or title{ruleId ? ", or clear the requirement filter" : ""}.</span>
+            </Empty>
+        );
+    }
+
     return (
         <CourseListContainer>
-            <HeaderContainer>
-                <HeaderColumns>
-                    <Header width="60%">COURSE</Header>
-                    <RatingHeader width="20%">QUAL</RatingHeader>
-                    <RatingHeader width="20%">DIFF</RatingHeader>
-                </HeaderColumns>
-            </HeaderContainer>
+            {!isLoading && total !== undefined && (
+                <Summary>
+                    {total} {total === 1 ? "course" : "courses"}
+                </Summary>
+            )}
             <CoursesContainer>
                 {!isLoading ? <>
                     {courses.map((course) => {

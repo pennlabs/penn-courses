@@ -177,6 +177,7 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
   // search panel
   const [searchPanelOpen, setSearchPanelOpen] = useState<boolean>(false);
   const [searchRuleId, setSearchRuleId] = useState<Rule["id"] | null>(null);
+  const [searchRuleTitle, setSearchRuleTitle] = useState<string>("");
   const [searchRuleQuery, setSearchRuleQuery] = useState<string | null>(null); // a query object
   const [planSemesters, setPlanSemesters] = useState<string[]>([]);
   const [searchFulfillments, setSearchFulfillments] = useState<Fulfillment[]>(
@@ -314,6 +315,8 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
           searchPanelOpen,
           setSearchRuleId,
           searchRuleId,
+          setSearchRuleTitle,
+          searchRuleTitle,
           setSearchRuleQuery,
           searchRuleQuery,
           setSearchFulfillments,

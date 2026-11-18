@@ -160,25 +160,25 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
         return updated;
     }
 
-    const remove = async (id: idType) => {
-        if (!id) return;
+    // Resolves to whether the delete went through.
+    const remove = async (id: idType): Promise<boolean> => {
+        if (!id) return false;
         const key = normalizeFinalSlash(endpoint) + id;
-        const removed = await removeFetcher(key)
-        mutate(endpoint, removed, {
-            optimisticData: (list?: Array<T>) => list ? list.filter((item: T) => String(item[idKey]) !== id) : [],
-            populateCache: (_, list?: Array<T>) => {
-                if (!list) return []
-                return list.filter((item: T) => item[idKey] !== id)
-            },
-            revalidate: false
-        })
-        mutate(key, removed, {
-            optimisticData: () => undefined,
-            populateCache: () => undefined,
-            revalidate: false
-        })
-
-        return removed;
+        const without = (list?: Array<T>) =>
+            list ? list.filter((item: T) => String(item[idKey]) !== String(id)) : [];
+        try {
+            await mutate(endpoint, removeFetcher(key), {
+                optimisticData: without,
+                populateCache: (_, list?: Array<T>) => without(list),
+                rollbackOnError: true,
+                revalidate: false
+            })
+        } catch (error) {
+            console.error(`swrcrud: failed to delete ${key}`, error);
+            return false;
+        }
+        mutate(key, undefined, { revalidate: false });
+        return true;
     }
 
     const createOrUpdate = (data: Partial<T>, id: any) => {

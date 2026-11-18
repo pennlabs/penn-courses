@@ -209,7 +209,7 @@ export const OverrideBadge = styled.span`
   align-items: center;
   gap: 0.2rem;
   font-size: 0.7rem;
-  color: var(--warning-text);
+  color: var(--primary-color-xxx-dark);
   font-weight: 600;
 `;
 

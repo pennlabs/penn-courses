@@ -179,6 +179,53 @@ body.is-resizing-columns * {
   }
 }
 
+.Toastify {
+  --toastify-font-family: inherit;
+  --toastify-color-light: #ffffff;
+  --toastify-text-color-light: var(--primary-color-ultra-dark);
+  --toastify-color-success: var(--green-color);
+  --toastify-color-error: var(--error-color);
+  --toastify-toast-min-height: 0;
+  --toastify-toast-width: 340px;
+}
+
+body .Toastify__toast {
+  margin-bottom: 0.5rem;
+  padding: 10px 12px 10px 10px;
+  border: 1.5px solid var(--primary-color-dark);
+  border-radius: 18px;
+  background: linear-gradient(135deg, #ffffff 60%, var(--primary-color-light));
+  box-shadow: 0 8px 22px rgba(61, 65, 119, 0.14);
+  font-size: 0.875rem;
+  line-height: 1.35;
+}
+
+body .Toastify__toast--error {
+  border-color: #e8c4c3;
+  background: linear-gradient(135deg, #ffffff 60%, #fdf1f0);
+}
+
+body .Toastify__toast-body {
+  align-items: center;
+  margin: 0;
+  padding: 0;
+}
+
+body .Toastify__toast-icon {
+  width: auto;
+  margin-inline-end: 10px;
+}
+
+body .Toastify__close-button {
+  align-self: flex-start;
+  color: var(--primary-color-extra-dark);
+  opacity: 1;
+}
+
+body .Toastify__close-button:hover {
+  color: var(--primary-color-ultra-dark);
+}
+
 /* On phones, toasts sit above the tab bar (see hooks/useBottomOffset.ts). */
 body .Toastify__toast-container--bottom-center,
 body .Toastify__toast-container--bottom-left,

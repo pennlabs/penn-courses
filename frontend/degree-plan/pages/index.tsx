@@ -11,6 +11,7 @@ import NoAccessModal from "../components/NoAccessModal";
 import { SWRConfig } from "swr";
 import { toast, ToastContainer } from "react-toastify";
 import ToastContext from "@/components/Toast/Toast";
+import { queueToast, ToastIcon } from "@/components/Toast/queueToast";
 import {
   MAX_NOTIFICATIONS,
   Notification,
@@ -59,15 +60,7 @@ export default function Home() {
       read: false,
     };
     setNotifications((all) => [notification, ...all].slice(0, MAX_NOTIFICATIONS));
-    if (error) {
-      toast.error(text, {
-        position: toast.POSITION.BOTTOM_CENTER,
-      });
-    } else {
-      toast.success(text, {
-        position: toast.POSITION.BOTTOM_CENTER,
-      });
-    }
+    queueToast(text, error);
   }
 
   const notificationsValue = useMemo(
@@ -119,7 +112,7 @@ export default function Home() {
                 }
                 toast.error(
                   `Couldn't load ${key}${status ? ` (status ${status})` : ""}. Retrying...`,
-                  { position: toast.POSITION.BOTTOM_CENTER, toastId: key }
+                  { toastId: key }
                 );
               },
               // Retrying an unauthenticated request can't succeed until the user logs in.
@@ -159,7 +152,14 @@ export default function Home() {
         </NotificationsContext.Provider>
         </ToastContext.Provider>
       </DndProvider>
-      <ToastContainer />
+      <ToastContainer
+        position="bottom-right"
+        autoClose={3500}
+        hideProgressBar
+        newestOnTop
+        limit={3}
+        icon={ToastIcon}
+      />
 
     </>
   );
