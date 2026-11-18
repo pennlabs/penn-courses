@@ -5,6 +5,7 @@ import styled from "@emotion/styled";
 import { DegreePlan, Rule, Fulfillment } from "@/types";
 import { PanelContainer, PanelHeader } from "../FourYearPlan/PanelCommon";
 import useStickyState from "@/hooks/stickyState";
+import { tourTarget } from "@/components/Tour/OnboardingTour";
 
 interface SearchPanelContextType {
     setSearchPanelOpen: (arg0: boolean) => void;
@@ -209,7 +210,7 @@ export const SearchPanel = ({ activeDegreeplanId, autoFocus = true }: SearchPane
     }
 
     return (
-        <PanelContainer>
+        <PanelContainer {...tourTarget("search-panel")}>
             <SearchPanelHeader>
                 <PanelTitle>Search</PanelTitle>
                 <CloseButton type="button" aria-label="Close search" onClick={handleCloseSearch}>

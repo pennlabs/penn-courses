@@ -1,6 +1,10 @@
 import styled from "@emotion/styled";
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
+import OverrideDemo from "./OverrideDemo";
+import PlanDragDemo from "./PlanDragDemo";
+import SearchDragDemo from "./SearchDragDemo";
+
 /**
  * A guided tour of the degree plan page. Each step points at an element marked with
  * `data-tour="<target>"` (see `tourTarget`), so components only need an attribute, not a ref.
@@ -13,6 +17,8 @@ interface TourStep {
   target?: string; // no target: a centered card
   title: string;
   body: React.ReactNode;
+  demo?: React.ReactNode; // shown above the body
+  opensSearch?: boolean; // its target is the search panel, opened for the step
   placements?: Placement[]; // tried in order; the first that fits on screen wins
 }
 
@@ -37,6 +43,7 @@ const DESKTOP_STEPS: TourStep[] = [
   {
     target: "plan-panel",
     title: "Your plan",
+    demo: <PlanDragDemo />,
     body:
       "Each card is a semester. Past semesters are gray, the current one is blue, and future " +
       "ones are white. Drag courses between semesters, or in from your requirements and the dock.",
@@ -64,6 +71,16 @@ const DESKTOP_STEPS: TourStep[] = [
     placements: ["left", "right", "center"],
   },
   {
+    target: "requirements-panel",
+    title: "Count a course anyway",
+    demo: <OverrideDemo />,
+    body:
+      "Got approval to count a course for a requirement it doesn't normally satisfy? Drag it " +
+      "onto the requirement and confirm the override. Click a requirement's override tag to " +
+      "see or remove its overrides.",
+    placements: ["left", "right", "center"],
+  },
+  {
     target: "edit-programs",
     title: "Change your programs",
     body: "Add or remove majors, minors, and other programs here.",
@@ -83,9 +100,19 @@ const DESKTOP_STEPS: TourStep[] = [
   },
   {
     target: "add-course",
-    title: "Find courses",
-    body: "Search the whole catalog. Results open in a column beside your plan, and you can drag them anywhere.",
+    title: "Add a course",
+    body: "Click Add Course to search the whole catalog.",
     placements: ["top", "right"],
+  },
+  {
+    target: "search-panel",
+    opensSearch: true,
+    title: "Find courses",
+    demo: <SearchDragDemo />,
+    body:
+      "Results open in this column beside your plan. Drag one into a semester and it's " +
+      "counted for every requirement it can fill. You can also drop it on a requirement or the dock.",
+    placements: ["left", "right", "center"],
   },
   REPLAY,
 ];
@@ -315,10 +342,11 @@ const Button = styled.button<{ $primary?: boolean }>`
 
 interface OnboardingTourProps {
   isPhone: boolean;
+  showSearch: (shown: boolean) => void;
   onFinish: () => void; // closing early counts as finishing
 }
 
-const OnboardingTour = ({ isPhone, onFinish }: OnboardingTourProps) => {
+const OnboardingTour = ({ isPhone, showSearch, onFinish }: OnboardingTourProps) => {
   // Chosen once the page has rendered with the tour open (it may have just reopened a column),
   // then fixed so the step count doesn't shift underneath the reader. Crossing the phone
   // breakpoint swaps the whole layout, so that starts the tour over with the other steps.
@@ -326,7 +354,9 @@ const OnboardingTour = ({ isPhone, onFinish }: OnboardingTourProps) => {
   const [index, setIndex] = useState(0);
   useLayoutEffect(() => {
     setSteps(
-      (isPhone ? PHONE_STEPS : DESKTOP_STEPS).filter((step) => !step.target || findTarget(step))
+      (isPhone ? PHONE_STEPS : DESKTOP_STEPS).filter(
+        (step) => !step.target || step.opensSearch || findTarget(step)
+      )
     );
     setIndex(0);
   }, [isPhone]);
@@ -342,9 +372,31 @@ const OnboardingTour = ({ isPhone, onFinish }: OnboardingTourProps) => {
   const next = useCallback(() => (isLast ? onFinish() : setIndex((i) => i + 1)), [isLast, onFinish]);
   const back = useCallback(() => setIndex((i) => Math.max(i - 1, 0)), []);
 
+  const opensSearch = !!step?.opensSearch;
+  useEffect(() => {
+    if (!opensSearch) return;
+    showSearch(true);
+    return () => showSearch(false);
+  }, [opensSearch, showSearch]);
+
+  // A target that isn't rendered yet, like the search panel it just opened, is waited for.
+  const [target, setTarget] = useState<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    const found = step ? findTarget(step) : null;
+    setTarget(found);
+    if (found || !step?.target) return;
+    const observer = new MutationObserver(() => {
+      const appeared = findTarget(step);
+      if (!appeared) return;
+      observer.disconnect();
+      setTarget(appeared);
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [step]);
+
   // Follow the target as it scrolls, resizes, or finishes loading.
   useLayoutEffect(() => {
-    const target = step && findTarget(step);
     if (!target) {
       setTargetBox(null);
       return;
@@ -361,7 +413,7 @@ const OnboardingTour = ({ isPhone, onFinish }: OnboardingTourProps) => {
       window.removeEventListener("resize", update);
       window.removeEventListener("scroll", update, true);
     };
-  }, [step]);
+  }, [target]);
 
   // Re-placed when the card itself resizes too, e.g. once the welcome image loads.
   useLayoutEffect(() => {
@@ -445,6 +497,7 @@ const OnboardingTour = ({ isPhone, onFinish }: OnboardingTourProps) => {
         </CloseButton>
         {isFirst && <Mascot src="pdp-porcupine.svg" alt="" />}
         <Title id="onboarding-tour-title">{step.title}</Title>
+        {step.demo}
         <Body id="onboarding-tour-body">{step.body}</Body>
         <Footer>
           <Progress aria-label={`Step ${index + 1} of ${steps.length}`}>

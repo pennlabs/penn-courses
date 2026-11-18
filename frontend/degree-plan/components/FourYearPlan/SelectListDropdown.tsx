@@ -81,6 +81,17 @@ const Menu = styled.div<{ $open: boolean }>`
   }
 `;
 
+// Scrolls on its own so a long list doesn't run off the page, keeping "Add new" in view.
+const ItemList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  max-height: min(28rem, calc(100vh - 12rem));
+  max-height: min(28rem, calc(100dvh - 12rem));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+`;
+
 const Item = styled.div<{ $isActive: boolean }>`
   display: flex;
   align-items: center;
@@ -141,6 +152,18 @@ const ActionButton = styled.button`
   &.danger:hover {
     color: var(--error-color);
   }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+    background: none;
+  }
+`;
+
+const LimitNote = styled.div`
+  padding: 0 0.75rem 0.35rem;
+  font-size: 0.8rem;
+  color: var(--primary-color-extra-dark);
 `;
 
 const Divider = styled.div`
@@ -191,6 +214,7 @@ interface SelectListDropdownProps<T extends DBObject> {
     create: () => void;
   };
   isLoading: boolean;
+  maxItems?: number; // at the limit, nothing more can be added or copied
 }
 
 const SelectListDropdown = <T extends DBObject>({
@@ -201,6 +225,7 @@ const SelectListDropdown = <T extends DBObject>({
   getItemName,
   mutators: { copy, remove, rename, create },
   isLoading,
+  maxItems,
 }: SelectListDropdownProps<T>) => {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -215,6 +240,8 @@ const SelectListDropdown = <T extends DBObject>({
   }, [isOpen]);
 
   if (!active) return <PanelHeaderSkeleton />;
+
+  const atLimit = maxItems !== undefined && allItems.length >= maxItems;
 
   const action = (run: () => void) => (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -235,71 +262,76 @@ const SelectListDropdown = <T extends DBObject>({
         <i className="fas fa-chevron-down" aria-hidden />
       </Trigger>
       <Menu role="menu" $open={isOpen}>
-        {allItems.map((item) => {
-          const name = getItemName(item);
-          return (
-            <Item
-              key={String(item.id)}
-              role="menuitemradio"
-              aria-checked={item.id === active.id}
-              tabIndex={0}
-              $isActive={item.id === active.id}
-              onClick={() => {
-                selectItem(item.id);
-                setIsOpen(false);
-              }}
-              onKeyDown={(e) => {
-                // Keys pressed on the row's own buttons are theirs.
-                if (e.target !== e.currentTarget) return;
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
+        <ItemList>
+          {allItems.map((item) => {
+            const name = getItemName(item);
+            return (
+              <Item
+                key={String(item.id)}
+                role="menuitemradio"
+                aria-checked={item.id === active.id}
+                tabIndex={0}
+                $isActive={item.id === active.id}
+                onClick={() => {
                   selectItem(item.id);
                   setIsOpen(false);
-                }
-              }}
-            >
-              <ItemName title={name}>{name}</ItemName>
-              <Actions className="item-actions">
-                {rename && (
-                  <ActionButton
-                    type="button"
-                    aria-label={`Rename ${name}`}
-                    title="Rename"
-                    onClick={action(() => rename(item))}
-                  >
-                    <i className="far fa-edit" aria-hidden />
-                  </ActionButton>
-                )}
-                {copy && (
-                  <ActionButton
-                    type="button"
-                    aria-label={`Copy ${name}`}
-                    title="Copy"
-                    onClick={action(() => copy(item))}
-                  >
-                    <i className="far fa-copy" aria-hidden />
-                  </ActionButton>
-                )}
-                {remove && (
-                  <ActionButton
-                    type="button"
-                    className="danger"
-                    aria-label={`Delete ${name}`}
-                    title="Delete"
-                    onClick={action(() => remove(item))}
-                  >
-                    <i className="fas fa-trash" aria-hidden />
-                  </ActionButton>
-                )}
-              </Actions>
-            </Item>
-          );
-        })}
+                }}
+                onKeyDown={(e) => {
+                  // Keys pressed on the row's own buttons are theirs.
+                  if (e.target !== e.currentTarget) return;
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    selectItem(item.id);
+                    setIsOpen(false);
+                  }
+                }}
+              >
+                <ItemName title={name}>{name}</ItemName>
+                <Actions className="item-actions">
+                  {rename && (
+                    <ActionButton
+                      type="button"
+                      aria-label={`Rename ${name}`}
+                      title="Rename"
+                      onClick={action(() => rename(item))}
+                    >
+                      <i className="far fa-edit" aria-hidden />
+                    </ActionButton>
+                  )}
+                  {copy && (
+                    <ActionButton
+                      type="button"
+                      aria-label={`Copy ${name}`}
+                      title={
+                        atLimit ? `You can have up to ${maxItems}` : "Copy"
+                      }
+                      disabled={atLimit}
+                      onClick={action(() => copy(item))}
+                    >
+                      <i className="far fa-copy" aria-hidden />
+                    </ActionButton>
+                  )}
+                  {remove && (
+                    <ActionButton
+                      type="button"
+                      className="danger"
+                      aria-label={`Delete ${name}`}
+                      title="Delete"
+                      onClick={action(() => remove(item))}
+                    >
+                      <i className="fas fa-trash" aria-hidden />
+                    </ActionButton>
+                  )}
+                </Actions>
+              </Item>
+            );
+          })}
+        </ItemList>
         <Divider />
         <AddNew
           type="button"
           role="menuitem"
-          disabled={isLoading}
+          disabled={isLoading || atLimit}
           onClick={() => {
             setIsOpen(false);
             create();
@@ -308,6 +340,12 @@ const SelectListDropdown = <T extends DBObject>({
           <i className="fas fa-plus" aria-hidden />
           Add new {itemType}
         </AddNew>
+        {atLimit && (
+          <LimitNote>
+            You can have up to {maxItems} {itemType}s. Delete one to add
+            another.
+          </LimitNote>
+        )}
       </Menu>
     </Wrapper>
   );

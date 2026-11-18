@@ -225,6 +225,22 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
       startTour();
     }
   }, [canShowTour, onboardingStatus, startTour]);
+  // The tour opens search for its step, then leaves it as it found it.
+  const searchPanelOpenRef = useRef(searchPanelOpen);
+  searchPanelOpenRef.current = searchPanelOpen;
+  const searchOpenedForTour = useRef(false);
+  const showSearchForTour = useCallback((shown: boolean) => {
+    if (!shown) {
+      if (searchOpenedForTour.current) setSearchPanelOpen(false);
+      searchOpenedForTour.current = false;
+      return;
+    }
+    if (searchPanelOpenRef.current) return;
+    searchOpenedForTour.current = true;
+    setSearchRuleQuery("");
+    setSearchRuleId(null);
+    setSearchPanelOpen(true);
+  }, []);
   const finishTour = useCallback(() => {
     setTourOpen(false);
     if (onboardingStatus?.has_been_onboarded !== false) return;
@@ -289,8 +305,8 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
     <PanelInteriorWrapper>
       <SearchPanel
         activeDegreeplanId={activeDegreeplan ? activeDegreeplan.id : null}
-        // On phones focusing pops up the keyboard over the results.
-        autoFocus={!isPhone}
+        // On phones focusing pops up the keyboard over the results; the tour keeps its focus.
+        autoFocus={!isPhone && !tourOpen}
       />
     </PanelInteriorWrapper>
   );
@@ -386,7 +402,11 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
               />
             )}
             {tourOpen && canShowTour && (
-              <OnboardingTour isPhone={isPhone} onFinish={finishTour} />
+              <OnboardingTour
+                isPhone={isPhone}
+                showSearch={showSearchForTour}
+                onFinish={finishTour}
+              />
             )}
             {inviteOpen && <InviteFriendsModal close={() => setInviteOpen(false)} />}
             {editingPrograms && activeDegreeplan && (

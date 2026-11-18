@@ -255,6 +255,18 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         context.update({"request": self.request})  # used to get the user
         return context
 
+    def check_plan_limit(self):
+        """Call inside a transaction, before creating a plan."""
+        # Locks the user's row, so two creations at once can't pass the limit together.
+        get_user_model().objects.select_for_update().get(pk=self.request.user.pk)
+        if DegreePlan.objects.filter(person=self.request.user).count() >= DegreePlan.MAX_PER_USER:
+            raise ValidationError(
+                {
+                    "detail": f"You can have up to {DegreePlan.MAX_PER_USER} degree plans. "
+                    "Delete one to make another."
+                }
+            )
+
     def retrieve(self, request, *args, **kwargs):
         degree_plan = self.get_object()
         serializer = self.get_serializer(degree_plan)
@@ -264,13 +276,14 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         name = request.data.get("name")
         if name is None:
             raise ValidationError({"name": "This field is required."})
-        if DegreePlan.objects.filter(name=name, person=self.request.user).exists():
-            return Response(
-                {"warning": f"A degree plan with name {name} already exists."},
-                status=status.HTTP_409_CONFLICT,
-            )
-        new_degree_plan = DegreePlan(name=name, person=self.request.user)
-        new_degree_plan.save()
+        with transaction.atomic():
+            self.check_plan_limit()
+            if DegreePlan.objects.filter(name=name, person=self.request.user).exists():
+                return Response(
+                    {"warning": f"A degree plan with name {name} already exists."},
+                    status=status.HTTP_409_CONFLICT,
+                )
+            new_degree_plan = DegreePlan.objects.create(name=name, person=self.request.user)
         serializer = self.get_serializer(new_degree_plan)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -282,7 +295,9 @@ class DegreePlanViewset(AutoPrefetchViewSetMixin, viewsets.ModelViewSet):
         if request.data.get("name") is None:
             raise ValidationError({"name": "This field is required."})
         degree_plan = self.get_object()
-        new_degree_plan = degree_plan.copy(request.data["name"])
+        with transaction.atomic():
+            self.check_plan_limit()
+            new_degree_plan = degree_plan.copy(request.data["name"])
         serializer = self.get_serializer(new_degree_plan)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 

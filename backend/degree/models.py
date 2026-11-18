@@ -620,6 +620,8 @@ class DegreePlan(models.Model):  #
     Stores a users plan for an associated degree.
     """
 
+    MAX_PER_USER = 10
+
     name = models.CharField(max_length=255, help_text="The user's nickname for the degree plan.")
 
     degrees = models.ManyToManyField(

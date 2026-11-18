@@ -11,6 +11,9 @@ import { ModalKey } from "./DegreeModal";
 import { tourTarget } from "@/components/Tour/OnboardingTour";
 
 // Matches SelectListDropdown's own flex sizing, so wrapping it doesn't change the header layout.
+// The backend's DegreePlan.MAX_PER_USER.
+const MAX_DEGREE_PLANS = 10;
+
 const PlanSelectWrapper = styled.div`
     display: flex;
     flex: 1 1 auto;
@@ -68,7 +71,8 @@ const PlanPanel = ({
                 <PanelHeader>
                     <PlanSelectWrapper {...tourTarget("plan-select")}>
                     <SelectListDropdown
-                        itemType="degree plan" 
+                        itemType="degree plan"
+                        maxItems={MAX_DEGREE_PLANS}
                         active={activeDegreeplan || undefined}
                         getItemName={(item: DegreePlan) => item.name}
                         allItems={degreeplans || []} 
