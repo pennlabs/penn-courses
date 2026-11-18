@@ -1026,6 +1026,9 @@ class OnboardFromTranscript(APIView):
             for semester in request.data["courses"]
             for full_code in semester["courses"]
         ]
+        # A course listed twice (e.g. retaken) is stored once, as its last listing.
+        last = {full_code: index for index, (_, full_code) in enumerate(listed)}
+        listed = [entry for index, entry in enumerate(listed) if last[entry[1]] == index]
         # A transcript arrives in the order its courses were taken.
         allocations = allocate_plan(
             degree_plan,
@@ -1041,7 +1044,6 @@ class OnboardFromTranscript(APIView):
             set(degree_plan.waived_rules.all()),
         )
 
-        # A course listed twice (e.g. retaken) is stored once, as its last listing.
         latest = {
             full_code: (semester_code, allocation)
             for (semester_code, full_code), allocation in zip(listed, allocations)

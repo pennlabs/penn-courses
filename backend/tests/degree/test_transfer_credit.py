@@ -151,6 +151,7 @@ class TransferCreditTest(TestCase):
 
         fulfillment = Fulfillment.objects.get(degree_plan=self.plan, full_code="MATH-1400")
         self.assertEqual(fulfillment.semester, "2024C")
+        self.assertEqual(set(fulfillment.rules.all()), {self.formal_reasoning, self.calculus})
 
     def test_reallocating_a_plan_respects_transfer_credit(self):
         fulfillment = Fulfillment.objects.create(
