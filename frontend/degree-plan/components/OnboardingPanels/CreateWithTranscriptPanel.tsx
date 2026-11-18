@@ -39,6 +39,8 @@ import {
 import SchoolsField from "./SchoolsField";
 import ImportedCourses from "./ImportedCourses";
 import { placePrograms, setDualProgram } from "./placePrograms";
+import PremedField from "./PremedField";
+import { isPremed } from "@/utils/programs";
 import DualProgramField, {
   programError,
   programSides,
@@ -102,6 +104,8 @@ export default function CreateWithTranscriptPanel({
   const { data: minors, isLoading: isLoadingMinors } = useSWR<Minor[]>(
     `/api/degree/minors`
   );
+  const premedMajor = standaloneMajors?.find(isPremed);
+  const [premed, setPremed] = useState(false);
   const { data: dualPrograms, isLoading: isLoadingDualPrograms } = useSWR<
     DualProgram[]
   >(`/api/degree/dual-programs`);
@@ -219,6 +223,10 @@ export default function CreateWithTranscriptPanel({
             minorIds: (s.minors ?? []).map((m) => m.value.id),
           }))
         );
+        if (premed && premedMajor)
+          await postFetcher(`/api/degree/degreeplans/${_new.id}/majors`, {
+            major_ids: [premedMajor.id],
+          });
         setActiveDegreeplan(_new);
         setDegreeID(_new.id);
       } else if (res.status === 409) {
@@ -364,6 +372,12 @@ export default function CreateWithTranscriptPanel({
                   isLoadingMinors={isLoadingMinors}
                 />
               </Section>
+
+              {premedMajor && (
+                <Section>
+                  <PremedField checked={premed} onChange={setPremed} />
+                </Section>
+              )}
             </Body>
           </ScrollContent>
         </ScrollArea>

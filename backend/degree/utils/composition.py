@@ -14,6 +14,7 @@ from dataclasses import dataclass, field, replace
 from decimal import Decimal
 
 from degree.models import (
+    PREMED_PROGRAM_CODE,
     Degree,
     DegreePlan,
     DegreePlanMajor,
@@ -225,6 +226,8 @@ def _title(owner, relation) -> str:
     if relation == "degrees":
         return _degree_title(owner)
     if relation == "majors":
+        if owner.program_code == PREMED_PROGRAM_CODE:
+            return owner.name
         name = owner.name or owner.code
         if owner.concentration_name:
             return f"Major in {name} ({owner.concentration_name})"
@@ -280,7 +283,10 @@ def _gather(degree_plan, dual) -> list[Component]:
         components.append(_base_component(degree, "degrees", role, degree.program))
     for major in degree_plan.majors.order_by("id"):
         program = program_from_program_code(major.program_code)
-        components.append(_base_component(major, "majors", "second_major", program))
+        # Pre-med asks for courses rather than awarding a degree, so it never takes one of the
+        # degree claims a course has.
+        premed = major.program_code == PREMED_PROGRAM_CODE
+        components.append(_base_component(major, "majors", "second_major", program, cap=not premed))
     for minor in degree_plan.minors.order_by("id"):
         program = program_from_program_code(minor.program_code)
         components.append(_base_component(minor, "minors", "minor", program, cap=False))

@@ -36,6 +36,11 @@ export const startingYearsLabels = (catalogYears: number[]) =>
     return last > first ? `Fall ${first}–${last}` : `Fall ${first}`;
   });
 
+// Pre-med, which a plan holds as a major though it isn't a Penn program.
+export const PREMED_PROGRAM_CODE = "PREMED";
+export const isPremed = (program: { program_code?: string }) =>
+  program.program_code === PREMED_PROGRAM_CODE;
+
 export type ProgramKind = "degree" | "major" | "minor";
 
 export interface PlanProgram {
@@ -95,7 +100,7 @@ export const planPrograms = (detail: DegreePlan): PlanProgram[] =>
       id: major.id,
       relation: "majors" as const,
       kind: "major" as const,
-      title: `Major in ${major.name}${
+      title: isPremed(major) ? major.name ?? "Pre-Medicine" : `Major in ${major.name}${
         major.concentration_name && hasConcentration(major.concentration)
           ? ` (${major.concentration_name})`
           : ""

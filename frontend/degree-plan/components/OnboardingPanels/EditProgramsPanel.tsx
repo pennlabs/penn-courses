@@ -44,6 +44,8 @@ import {
 } from "./formLayout";
 import SchoolsField from "./SchoolsField";
 import { placePrograms, setDualProgram } from "./placePrograms";
+import PremedField from "./PremedField";
+import { isPremed } from "@/utils/programs";
 import DualProgramField, {
   programError,
   programSides,
@@ -285,6 +287,8 @@ const initialSelections = (plan: DegreePlan) => {
 
   const unplacedMajors: Major[] = [];
   plan.majors.forEach((major) => {
+    // Pre-med has its own checkbox.
+    if (isPremed(major)) return;
     const degreeId = majorPlacements.get(major.id);
     const card =
       cardFor(degreeId) ??
@@ -399,6 +403,9 @@ function EditProgramsForm({
     yearOption(initial.years.graduation)
   );
   const [dualProgramCode, setDualProgramCode] = useState(plan.dual_program?.code ?? null);
+  const planPremed = plan.majors.filter(isPremed);
+  const premedMajor = standaloneMajors?.find(isPremed);
+  const [premed, setPremed] = useState(planPremed.length > 0);
   const dualProgram =
     dualPrograms?.find((program) => program.code === dualProgramCode) ??
     (plan.dual_program?.code === dualProgramCode ? plan.dual_program ?? undefined : undefined);
@@ -428,6 +435,7 @@ function EditProgramsForm({
     const oldMinorPlacement = placementsOf(plan.minor_degrees, "minor");
     const keptMajors = new Set([
       ...unplacedMajors.map((m) => m.id),
+      ...(premed ? planPremed.map((m) => m.id) : []),
       ...selections.flatMap((s) => s.additional.map((m) => m.value.id)),
     ]);
     const keptMinors = new Set([
@@ -483,6 +491,7 @@ function EditProgramsForm({
           sides?.right?.id !== initialSides?.right?.id));
 
     return {
+      premedAdded: premed && !planPremed.length && premedMajor ? premedMajor.id : null,
       programChanged,
       programSides: sides ?? {},
       removedDegrees: plan.degrees.filter((d) => !newDegrees.has(d.id)),
@@ -517,6 +526,9 @@ function EditProgramsForm({
     initial,
     dualProgram,
     dualProgramCode,
+    premed,
+    planPremed,
+    premedMajor,
   ]);
 
   const removals = [
@@ -528,6 +540,7 @@ function EditProgramsForm({
   const changed =
     removals.length > 0 ||
     changes.addedDegrees.length > 0 ||
+    changes.premedAdded !== null ||
     changes.editedPlacement ||
     changes.programChanged ||
     changes.semesterKeys !== null;
@@ -558,6 +571,8 @@ function EditProgramsForm({
           minor_ids: changes.removedMinors.map((m) => m.id),
         });
       await placePrograms(plan.id, changes.placed);
+      if (changes.premedAdded !== null)
+        await postFetcher(`${base}/majors`, { major_ids: [changes.premedAdded] });
 
       for (const fulfillment of changes.movedToDock) {
         // eslint-disable-next-line no-await-in-loop
@@ -646,6 +661,12 @@ function EditProgramsForm({
                   isLoadingMinors={isLoadingMinors}
                 />
               </Section>
+
+              {(premedMajor || planPremed.length > 0) && (
+                <Section>
+                  <PremedField checked={premed} onChange={setPremed} disabled={saving} />
+                </Section>
+              )}
 
               {unplacedMajors.length + unplacedMinors.length > 0 && (
                 <Section>
