@@ -9,7 +9,7 @@ from rest_framework.test import APIClient
 from courses.models import Attribute
 from courses.util import get_or_create_course_and_section
 from degree.models import Degree, DegreePlan, Fulfillment, PDPBetaUser, Rule
-from degree.views import update_fulfillments
+from degree.views import save_rule_choices, update_fulfillments
 
 
 SEMESTER = "2024A"
@@ -150,16 +150,12 @@ class RebalanceTest(AllocationBase):
         self.assertEqual(self.fills(self.tech), {"CIS-5000", "CIS-5010"})
 
 
-def fail_on_second_call():
-    calls = iter([True])
+def fail_after_writing():
+    def save_then_fail(choices):
+        save_rule_choices(choices)
+        raise RuntimeError("write failed")
 
-    def selection_is_legal(*args):
-        try:
-            return next(calls)
-        except StopIteration:
-            raise RuntimeError("write failed")
-
-    return patch("degree.views.selection_is_legal", side_effect=selection_is_legal)
+    return patch("degree.views.save_rule_choices", side_effect=save_then_fail)
 
 
 class PartialWriteTest(AllocationBase):
@@ -174,13 +170,13 @@ class PartialWriteTest(AllocationBase):
 
     def test_a_failed_reallocation_saves_nothing(self):
         self.add("CIS-5000", "CIS-5010")
-        with fail_on_second_call(), self.assertRaises(RuntimeError):
+        with fail_after_writing(), self.assertRaises(RuntimeError):
             update_fulfillments(self.plan)
 
         self.assertEqual(self.fills(self.tech), set())
 
     def test_a_failed_onboarding_saves_nothing(self):
-        with fail_on_second_call(), self.assertRaises(RuntimeError):
+        with fail_after_writing(), self.assertRaises(RuntimeError):
             self.client.post(
                 reverse("onboard-from-transcript", kwargs={"degree_plan_id": self.plan.id}),
                 {"courses": [{"sem": SEMESTER, "courses": ["CIS-5000", "CIS-5010"]}]},

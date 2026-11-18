@@ -1,6 +1,5 @@
 import re
 from collections import defaultdict
-from decimal import Decimal
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -53,26 +52,19 @@ from degree.serializers import (
 )
 from degree.utils.composition import compose
 from degree.utils.degree_logic import (
-    DEFAULT_COURSE_CREDITS,
     FULFILLMENT_LEVELS,
     MIN_GRADUATE_COURSE_NUMBER,
-    CourseAllocation,
-    GraduateSharing,
-    PickGroups,
+    PlannedCourse,
+    allocate_plan,
     allocate_rules,
-    is_graduate_coursework,
     level_for_course,
     map_rules_and_degrees,
-    prewarm_belongs_cache,
     prewarm_canonical_cache,
     prewarm_credits_cache,
-    rebalance_allocations,
     reconcile_rules,
     rule_subtrees,
     selection_is_legal,
     sharing_from_fulfillments,
-    split_by_level,
-    within_policy,
 )
 from PennCourses.docs_settings import PcxAutoSchema
 
@@ -120,6 +112,23 @@ def lift_waivers(degree_plan, rules):
         degree_plan.refresh_satisfaction()
 
 
+def save_rule_choices(choices):
+    """
+    Stores the selected and unselected rules of many saved fulfillments in a few queries,
+    rather than the handful each `rules.set` and `unselected_rules.set` costs per course.
+    `choices` holds (fulfillment, selected, unselected) triples.
+    """
+    ids = [fulfillment.id for fulfillment, _, _ in choices]
+    for field, index in (("rules", 1), ("unselected_rules", 2)):
+        through = getattr(Fulfillment, field).through
+        through.objects.filter(fulfillment_id__in=ids).delete()
+        through.objects.bulk_create(
+            through(fulfillment_id=choice[0].id, rule_id=rule.id)
+            for choice in choices
+            for rule in choice[index]
+        )
+
+
 def update_fulfillments(degree_plan, keep_choices=False):
     """
     Reallocates every fulfillment of a plan, which has to happen whenever the plan gains or
@@ -131,111 +140,41 @@ def update_fulfillments(degree_plan, keep_choices=False):
     stays on offer, but is not chosen for it.
     """
     plan_rules = map_rules_and_degrees(degree_plan)
-    rules_per_degree = plan_rules.rules_per_component
-    rule_to_degree = plan_rules.rule_to_component
-    double_counts = plan_rules.double_counts
-    policy = plan_rules.composition.policy
-    # Count and CU are tracked separately: a credit rule is satisfied by the sum of CUs.
-    counts = defaultdict(int)
-    cus = defaultdict(lambda: Decimal(0))
-    # A waived requirement needs no courses, so none are allocated to it, and neither are the
-    # other options of a "pick N" group once N of them are satisfied (see PickGroups).
     waived = set(degree_plan.waived_rules.all())
-    satisfied_rules = set(waived)
-
-    def is_satisfied(rule):
-        num_ok = rule.num is None or counts[rule.id] >= rule.num
-        cu_ok = rule.credits is None or cus[rule.id] >= rule.credits
-        return (rule.num is not None or rule.credits is not None) and num_ok and cu_ok
-
     fulfillments = list(
         Fulfillment.objects.filter(degree_plan=degree_plan)
         .order_by("semester", "full_code")
         .prefetch_related("rules", "overrides")
     )
-    kept_choices = {
-        fulfillment: set(fulfillment.rules.all()) - waived if keep_choices else set()
-        for fulfillment in fulfillments
-    }
-    # Every course is known up front, so check them against the rules in bulk
-    belongs_cache = prewarm_belongs_cache(
-        {rule for rules in rules_per_degree.values() for rule in rules},
-        [fulfillment.full_code for fulfillment in fulfillments],
+    allocations = allocate_plan(
+        degree_plan,
+        plan_rules,
+        [
+            PlannedCourse(
+                fulfillment.full_code,
+                is_transfer=fulfillment.is_transfer_credit,
+                level=fulfillment.level,
+                kept=set(fulfillment.rules.all()) - waived if keep_choices else set(),
+            )
+            for fulfillment in fulfillments
+        ],
+        waived,
     )
-    pick_groups = PickGroups({rule for rules in rules_per_degree.values() for rule in rules})
-    closed = pick_groups.closed(satisfied_rules)
-    credits_cache = prewarm_credits_cache([fulfillment.full_code for fulfillment in fulfillments])
-    canonical_cache = prewarm_canonical_cache(
-        [fulfillment.full_code for fulfillment in fulfillments]
-    )
-    # Fulfillments are ordered by semester above, so the allowance goes to the earliest
-    # courses eligible for it, after any a course already shares is set aside for it.
-    graduate_sharing = GraduateSharing()
-    reservations = {
-        fulfillment: credits_cache.get(fulfillment.full_code, DEFAULT_COURSE_CREDITS)
-        for fulfillment, kept in kept_choices.items()
-        if is_graduate_coursework(fulfillment.full_code)
-        and all(split_by_level(kept, rule_to_degree))
-    }
-    graduate_sharing.reserved = sum(reservations.values(), Decimal(0))
-    allocations = []
 
-    for fulfillment in fulfillments:
-        graduate_sharing.reserved -= reservations.get(fulfillment, Decimal(0))
-        selected_rules, unselected_rules, _ = allocate_rules(
-            fulfillment.full_code,
-            rules_per_degree,
-            rule_to_degree,
-            double_counts,
-            degree_plan=degree_plan,
-            satisfied_rules=satisfied_rules | closed,
-            belongs_cache=belongs_cache,
-            is_transfer=fulfillment.is_transfer_credit,
-            graduate_sharing=graduate_sharing,
-            credits_cache=credits_cache,
-            level=fulfillment.level,
-            policy=policy,
-            canonical=canonical_cache.get(fulfillment.full_code),
-            prior_selected=kept_choices[fulfillment],
-        )
-
-        allocations.append(
-            CourseAllocation(fulfillment.full_code, selected_rules, unselected_rules)
-        )
-
-        credits = credits_cache.get(fulfillment.full_code, DEFAULT_COURSE_CREDITS)
-        for rule in selected_rules:
-            counts[rule.id] += 1
-            cus[rule.id] += credits
-            if is_satisfied(rule):
-                satisfied_rules.add(rule)
-        closed = pick_groups.closed(satisfied_rules)
-
-    rebalance_allocations(
-        allocations,
-        rule_to_degree,
-        double_counts,
-        credits_cache,
-        allows=lambda before, after: within_policy(before, after, rule_to_degree, policy),
-        exempt=waived,
-        pick_groups=pick_groups,
-        pinned={
-            allocation: kept_choices[fulfillment] & allocation.selected
-            for fulfillment, allocation in zip(fulfillments, allocations)
-        },
-    )
+    for fulfillment, allocation in zip(fulfillments, allocations):
+        if keep_choices:
+            inactive_overrides = set(fulfillment.overrides.all()) - waived - allocation.selected
+            allocation.unselected |= inactive_overrides & plan_rules.rule_to_component.keys()
+        fulfillment.legal = allocation.legal
 
     with transaction.atomic():
-        for fulfillment, allocation in zip(fulfillments, allocations):
-            if keep_choices:
-                inactive_overrides = set(fulfillment.overrides.all()) - waived - allocation.selected
-                allocation.unselected |= inactive_overrides & rule_to_degree.keys()
-            fulfillment.rules.set(allocation.selected)
-            fulfillment.unselected_rules.set(allocation.unselected)
-            fulfillment.legal = selection_is_legal(
-                allocation.selected, rule_to_degree, double_counts, policy
-            )
-            fulfillment.save()
+        Fulfillment.objects.bulk_update(fulfillments, ["legal"])
+        save_rule_choices(
+            [
+                (fulfillment, allocation.selected, allocation.unselected)
+                for fulfillment, allocation in zip(fulfillments, allocations)
+            ]
+        )
 
     degree_plan.refresh_satisfaction()
 
@@ -1075,107 +1014,63 @@ class OnboardFromTranscript(APIView):
     permission_classes = [IsAuthenticated & InPDPBeta]
 
     def post(self, request, degree_plan_id):
-        counts = defaultdict(int)
-        cus = defaultdict(lambda: Decimal(0))
-
-        def is_satisfied(rule):
-            num_ok = rule.num is None or counts[rule.id] >= rule.num
-            cu_ok = rule.credits is None or cus[rule.id] >= rule.credits
-            return (rule.num is not None or rule.credits is not None) and num_ok and cu_ok
-
         degree_plan = get_object_or_404(DegreePlan, id=degree_plan_id, person=request.user)
-        course_data = request.data["courses"]
         # Which transcript record each course was read off, keyed by full code. Absent for a
         # transcript with a single record, whose courses may count toward any degree.
         levels = {
             full_code: level_for_course(full_code, level)
             for full_code, level in (request.data.get("levels") or {}).items()
         }
-
-        plan_rules = map_rules_and_degrees(degree_plan)
-        rules_per_degree = plan_rules.rules_per_component
-        rule_to_degree = plan_rules.rule_to_component
-        double_counts = plan_rules.double_counts
-        policy = plan_rules.composition.policy
-        # A waived requirement needs no courses, so none are allocated to it.
-        waived = set(degree_plan.waived_rules.all())
-        satisfied_rules = set(waived)
-
-        # Every course is known up front, so check them against the rules in bulk
-        belongs_cache = prewarm_belongs_cache(
-            {rule for rules in rules_per_degree.values() for rule in rules},
-            [full_code for semester in course_data for full_code in semester["courses"]],
-        )
-        pick_groups = PickGroups({rule for rules in rules_per_degree.values() for rule in rules})
-        closed = pick_groups.closed(satisfied_rules)
-        full_codes = [full_code for semester in course_data for full_code in semester["courses"]]
-        credits_cache = prewarm_credits_cache(full_codes)
-        canonical_cache = prewarm_canonical_cache(full_codes)
-        # A transcript arrives in the order its courses were taken, so the allowance goes to
-        # the earliest courses eligible for it.
-        graduate_sharing = GraduateSharing()
-        allocations = []
-
-        for semester in course_data:
-            for full_code in semester["courses"]:
-                semester_code = semester["sem"]
-                selected_rules, unselected_rules, _ = allocate_rules(
+        listed = [
+            (semester["sem"], full_code)
+            for semester in request.data["courses"]
+            for full_code in semester["courses"]
+        ]
+        # A course listed twice (e.g. retaken) is stored once, as its last listing.
+        last = {full_code: index for index, (_, full_code) in enumerate(listed)}
+        listed = [entry for index, entry in enumerate(listed) if last[entry[1]] == index]
+        # A transcript arrives in the order its courses were taken.
+        allocations = allocate_plan(
+            degree_plan,
+            map_rules_and_degrees(degree_plan),
+            [
+                PlannedCourse(
                     full_code,
-                    rules_per_degree,
-                    rule_to_degree,
-                    double_counts,
-                    degree_plan=degree_plan,
-                    satisfied_rules=satisfied_rules | closed,
-                    belongs_cache=belongs_cache,
                     is_transfer=semester_code == TRANSFER_CREDIT_SEMESTER,
-                    graduate_sharing=graduate_sharing,
-                    credits_cache=credits_cache,
                     level=levels.get(full_code),
-                    policy=policy,
-                    canonical=canonical_cache.get(full_code),
                 )
-
-                allocations.append(
-                    (semester_code, CourseAllocation(full_code, selected_rules, unselected_rules))
-                )
-
-                credits = credits_cache.get(full_code, DEFAULT_COURSE_CREDITS)
-                for rule in selected_rules:
-                    counts[rule.id] += 1
-                    cus[rule.id] += credits
-                    if is_satisfied(rule):
-                        satisfied_rules.add(rule)
-                closed = pick_groups.closed(satisfied_rules)
-
-        rebalance_allocations(
-            [allocation for _, allocation in allocations],
-            rule_to_degree,
-            double_counts,
-            credits_cache,
-            allows=lambda before, after: within_policy(before, after, rule_to_degree, policy),
-            exempt=waived,
-            pick_groups=pick_groups,
+                for semester_code, full_code in listed
+            ],
+            set(degree_plan.waived_rules.all()),
         )
 
+        latest = {
+            full_code: (semester_code, allocation)
+            for (semester_code, full_code), allocation in zip(listed, allocations)
+        }
         with transaction.atomic():
-            for semester_code, allocation in allocations:
-                # Keyed on Fulfillment's actual unique constraint. Including semester and
-                # legal in the lookup means a course already stored with either one different
-                # matches nothing and is then created against a row that already exists.
-                fulfillment, _ = Fulfillment.objects.update_or_create(
-                    degree_plan=degree_plan,
-                    full_code=allocation.full_code,
-                    defaults={
-                        "semester": semester_code,
-                        "legal": selection_is_legal(
-                            allocation.selected, rule_to_degree, double_counts, policy
-                        ),
-                        "level": levels.get(allocation.full_code),
-                        "from_transcript": True,
-                    },
+            existing = {
+                fulfillment.full_code: fulfillment
+                for fulfillment in Fulfillment.objects.filter(
+                    degree_plan=degree_plan, full_code__in=latest
                 )
-                fulfillment.rules.set(allocation.selected)
-                fulfillment.unselected_rules.set(allocation.unselected)
+            }
+            choices = []
+            for full_code, (semester_code, allocation) in latest.items():
+                fulfillment = existing.get(full_code) or Fulfillment(
+                    degree_plan=degree_plan, full_code=full_code
+                )
+                fulfillment.semester = semester_code
+                fulfillment.legal = allocation.legal
+                fulfillment.level = levels.get(full_code)
+                fulfillment.from_transcript = True
+                choices.append((fulfillment, allocation.selected, allocation.unselected))
+            Fulfillment.objects.bulk_update(
+                [f for f, _, _ in choices if f.pk],
+                ["semester", "legal", "level", "from_transcript"],
+            )
+            Fulfillment.objects.bulk_create([f for f, _, _ in choices if not f.pk])
+            save_rule_choices(choices)
 
         degree_plan.refresh_satisfaction()
         return Response({"message": "OK"}, status=status.HTTP_200_OK)
