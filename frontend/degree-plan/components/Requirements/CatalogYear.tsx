@@ -100,6 +100,16 @@ const Error = styled.span`
   color: var(--error-color);
 `;
 
+const ReloadButton = styled.button`
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+`;
+
 interface CatalogYearProps {
   program: PlanProgram;
   planId: DegreePlan["id"];
@@ -124,7 +134,8 @@ const CatalogYear = ({
 }: CatalogYearProps) => {
   const { mutate } = useSWRConfig();
   const [saving, setSaving] = useState(false);
-  const [failed, setFailed] = useState(false);
+  // Once saved, the plan no longer holds the old version, so only a reload is safe.
+  const [failed, setFailed] = useState<"switch" | "reload" | null>(null);
   const [open, setOpen] = useState(false);
   const anchorRef = useRef<HTMLSpanElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -163,37 +174,54 @@ const CatalogYear = ({
     setOpen(false);
     buttonRef.current?.focus();
   };
+  const fulfillmentsKey = `${planKey}/fulfillments`;
+  // Courses and requirements are shown together, so progress never counts one against the
+  // other's old version.
+  const show = async (plan: unknown) => {
+    const fulfillments = await getFetcher(fulfillmentsKey);
+    await beforeSwap();
+    await Promise.all([
+      mutate(fulfillmentsKey, fulfillments, { revalidate: false }),
+      mutate(planKey, plan, { revalidate: false }),
+    ]);
+  };
+  const run = (task: () => Promise<void>) => {
+    setSaving(true);
+    setFailed(null);
+    queueSave(task).finally(() => {
+      setSaving(false);
+      onSwitching(null);
+    });
+  };
+  const reload = async () => {
+    try {
+      await show(await getFetcher(planKey));
+    } catch {
+      setFailed("reload");
+    }
+  };
   const switchTo = (version: typeof versions[number]) => {
     closeMenu();
     if (version.id === program.id) return;
-    setSaving(true);
-    setFailed(false);
     onSwitching(version.label);
-    queueSave(() =>
-      postFetcher(`${planKey}/catalog-year`, {
-        relation: program.relation,
-        from_id: program.id,
-        to_id: version.id,
-      })
-    )
-      .then(async (plan) => {
-        // Courses and requirements are shown together, so progress never counts one against
-        // the other's old version.
-        const fulfillmentsKey = `${planKey}/fulfillments`;
-        const fulfillments = await getFetcher(fulfillmentsKey);
-        await beforeSwap();
-        await Promise.all([
-          mutate(fulfillmentsKey, fulfillments, { revalidate: false }),
-          mutate(planKey, plan, { revalidate: false }),
-        ]);
-        setSaving(false);
-        onSwitching(null);
-      })
-      .catch(() => {
-        setFailed(true);
-        setSaving(false);
-        onSwitching(null);
-      });
+    run(async () => {
+      let plan;
+      try {
+        plan = await postFetcher(`${planKey}/catalog-year`, {
+          relation: program.relation,
+          from_id: program.id,
+          to_id: version.id,
+        });
+      } catch {
+        setFailed("switch");
+        return;
+      }
+      try {
+        await show(plan);
+      } catch {
+        await reload();
+      }
+    });
   };
 
   return (
@@ -259,8 +287,16 @@ const CatalogYear = ({
           ))}
         </YearMenu>
       </Anchor>
-      {failed && (
+      {failed === "switch" && (
         <Error role="alert">Couldn&apos;t change it. Try again.</Error>
+      )}
+      {failed === "reload" && (
+        <Error role="alert">
+          Changed, but couldn&apos;t load it.{" "}
+          <ReloadButton type="button" onClick={() => run(reload)}>
+            Reload
+          </ReloadButton>
+        </Error>
       )}
     </Row>
   );

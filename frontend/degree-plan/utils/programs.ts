@@ -6,6 +6,25 @@ export const NO_CONCENTRATION_CODES = ["NCON", "NONE"];
 export const hasConcentration = (code: string | null | undefined) =>
   !!code && !NO_CONCENTRATION_CODES.includes(code);
 
+// What stays the same across the catalog years of a degree, as the backend matches them.
+export const degreeProgramOf = (degree: {
+  program: string;
+  degree: string;
+  major: string;
+  concentration: string | null;
+}) =>
+  [
+    degree.program,
+    degree.degree,
+    degree.major,
+    hasConcentration(degree.concentration) ? degree.concentration : null,
+  ].join("|");
+
+// What stays the same across the catalog years of a major or minor, e.g. CSCI-BA for CSCI-BA-NCON.
+const NO_CONCENTRATION_SUFFIX = new RegExp(`-(${NO_CONCENTRATION_CODES.join("|")})$`);
+export const programCodeOf = (program: { program_code: string }) =>
+  program.program_code.replace(NO_CONCENTRATION_SUFFIX, "");
+
 // Who each of a program's versions is for, by the fall students started in: a version applies
 // until the next one does, e.g. "Fall 2024–2025" then "Fall 2026 or later".
 export const startingYearsLabels = (catalogYears: number[]) =>
@@ -25,6 +44,7 @@ export interface PlanProgram {
   kind: ProgramKind;
   title: string;
   code: string; // a short label, for when the full title doesn't fit
+  family: string; // the same across the program's catalog years
   year: number;
   catalogYears: { id: number; year: number }[]; // this program's versions, this one included
   rules: Rule[];
@@ -66,6 +86,7 @@ export const planPrograms = (detail: DegreePlan): PlanProgram[] =>
           : ""
       }`,
       code: `${degree.degree} ${degree.major}`,
+      family: degreeProgramOf(degree),
       year: degree.year,
       catalogYears: catalogYearsOf(detail, "degrees", degree),
       rules: degree.rules,
@@ -80,6 +101,7 @@ export const planPrograms = (detail: DegreePlan): PlanProgram[] =>
           : ""
       }`,
       code: major.code,
+      family: programCodeOf(major),
       year: major.year,
       catalogYears: catalogYearsOf(detail, "majors", major),
       rules: major.rules,
@@ -90,6 +112,7 @@ export const planPrograms = (detail: DegreePlan): PlanProgram[] =>
       kind: "minor" as const,
       title: `Minor in ${minor.name}`,
       code: minor.code,
+      family: programCodeOf(minor),
       year: minor.year,
       catalogYears: catalogYearsOf(detail, "minors", minor),
       rules: minor.rules,

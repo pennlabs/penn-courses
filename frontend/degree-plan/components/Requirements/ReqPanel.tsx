@@ -215,7 +215,7 @@ export const WhiteSpace = styled.div<{ $headerHeight: number, $zIndex: number }>
 
 // The same across a program's catalog years, so switching years keeps its tab.
 const programKey = (program: PlanProgram) =>
-  `${program.relation}-${program.title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
+  `${program.relation}-${program.family.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
 
 interface DegreeHeaderProps {
   program: PlanProgram,
@@ -325,9 +325,9 @@ const Degree = ({
   const [collapsed, setCollapsed] = useState(false);
   // Switching catalog years fades the old version out and the new one in.
   const firstVersion = useRef(program.id);
-  const [fadingOutId, setFadingOutId] = useState<number | null>(null);
+  const [fadingOut, setFadingOut] = useState<{ planId: number; programId: number } | null>(null);
   const fadeOut = () => {
-    setFadingOutId(program.id);
+    setFadingOut({ planId: activeDegreeplan.id, programId: program.id });
     onCatalogYearSwapping();
     return new Promise<void>((resolve) => setTimeout(resolve, reducedMotion() ? 0 : FADE_OUT_MS));
   };
@@ -381,7 +381,9 @@ const Degree = ({
           <DegreeBody
             key={program.id}
             $fadeIn={program.id !== firstVersion.current}
-            $fadingOut={fadingOutId === program.id}
+            $fadingOut={
+              fadingOut?.planId === activeDegreeplan.id && fadingOut?.programId === program.id
+            }
           >
             {program.rules.map((rule: any) => (
               <RuleComponent
@@ -468,6 +470,11 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
   const [pendingWaivers, setPendingWaivers] = useState<Record<number, boolean>>({});
   const waiverQueue = useRef<Promise<unknown>>(Promise.resolve());
   const latestWaiverChange = useRef<Record<number, number>>({});
+  const queueSave = useCallback((save: () => Promise<unknown>) => {
+    const sent = waiverQueue.current.then(save, save);
+    waiverQueue.current = sent.catch(() => undefined);
+    return sent;
+  }, []);
   const queueWaiverChange = useCallback((ruleId: number, waived: boolean, save: () => Promise<unknown>) => {
     if (!activeDegreeplan) return;
     const planKey = `/api/degree/degreeplans/${activeDegreeplan.id}`;
@@ -475,23 +482,15 @@ const ReqPanel = ({ activeDegreeplan, isLoading, onEditPrograms }: ReqPanelProps
     latestWaiverChange.current[ruleId] = change;
     setPendingWaivers((pending) => ({ ...pending, [ruleId]: waived }));
 
-    const sent = waiverQueue.current.then(save, save);
-    waiverQueue.current = sent.catch(() => undefined);
     // Saved or not, the plan reloads as the server has it; the server reallocates its courses.
-    sent.catch(() => undefined).then(async () => {
+    queueSave(async () => {
+      await save().catch(() => undefined);
       if (latestWaiverChange.current[ruleId] !== change) return;
       await Promise.all([mutate(planKey), mutate(`${planKey}/fulfillments`)]);
       if (latestWaiverChange.current[ruleId] !== change) return;
       setPendingWaivers(({ [ruleId]: _, ...pending }) => pending);
     });
-  }, [activeDegreeplan, mutate]);
-
-  // Other changes to the plan wait their turn behind waivers, so the server sees them in order.
-  const queueSave = useCallback((save: () => Promise<unknown>) => {
-    const sent = waiverQueue.current.then(save, save);
-    waiverQueue.current = sent.catch(() => undefined);
-    return sent;
-  }, []);
+  }, [activeDegreeplan, mutate, queueSave]);
 
   const waivers = useMemo(() => ({
     setWaived: (ruleId: number, waive: boolean) => {

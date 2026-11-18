@@ -1,7 +1,9 @@
 import { createMajorLabel } from "@/components/FourYearPlan/DegreeModal";
 import { schoolOptions } from "@/components/OnboardingPanels/SharedComponents";
 import { DegreeListing, Major, Minor, SchoolOption } from "@/types";
-import { hasConcentration, NO_CONCENTRATION_CODES } from "@/utils/programs";
+import { degreeProgramOf, hasConcentration, programCodeOf } from "@/utils/programs";
+
+export { degreeProgramOf, programCodeOf };
 const { distance } = require("fastest-levenshtein");
 
 // How far a transcript's wording may sit from a program's name and still be the same thing.
@@ -134,19 +136,6 @@ const applicableVersions = <T extends { year: number }>(
   return [...versions.values()];
 };
 
-// What stays the same across the catalog years of a degree.
-export const degreeProgramOf = (degree: DegreeListing) =>
-  [
-    degree.program,
-    degree.degree,
-    degree.major,
-    hasConcentration(degree.concentration) ? degree.concentration : null,
-  ].join("|");
-
-// What stays the same across the catalog years of a major or minor, e.g. CSCI-BA for CSCI-BA-NCON.
-const NO_CONCENTRATION_SUFFIX = new RegExp(`-(${NO_CONCENTRATION_CODES.join("|")})$`);
-export const programCodeOf = (program: { program_code: string }) =>
-  program.program_code.replace(NO_CONCENTRATION_SUFFIX, "");
 
 // One version of each program: the one for the given starting year, or the newest without one.
 export const versionsForStart = <T extends { year: number }>(
@@ -256,19 +245,21 @@ export const atStartingYear = (
   const degreeVersions = byProgram(degrees, degreeProgramOf);
   const majorVersions = byProgram(majors, programCodeOf);
   const minorVersions = byProgram(minors, programCodeOf);
-  return selections.map((selection) => ({
-    ...selection,
-    primary: selection.primary && {
-      ...selection.primary,
-      value: degreeVersions.get(degreeProgramOf(selection.primary.value)) ?? selection.primary.value,
-    },
-    additional: selection.additional.map((option) =>
-      majorOption(majorVersions.get(programCodeOf(option.value)) ?? option.value, selection.school)
-    ),
-    minors: selection.minors?.map((option) =>
-      minorOption(minorVersions.get(programCodeOf(option.value)) ?? option.value)
-    ),
-  }));
+  return selections.map((selection) => {
+    const degree =
+      selection.primary &&
+      (degreeVersions.get(degreeProgramOf(selection.primary.value)) ?? selection.primary.value);
+    return {
+      ...selection,
+      primary: degree && { value: degree, label: createMajorLabel(degree) },
+      additional: selection.additional.map((option) =>
+        majorOption(majorVersions.get(programCodeOf(option.value)) ?? option.value, selection.school)
+      ),
+      minors: selection.minors?.map((option) =>
+        minorOption(minorVersions.get(programCodeOf(option.value)) ?? option.value)
+      ),
+    };
+  });
 };
 
 // What a transcript says about one program: a school and the majors and minors listed under it,
@@ -537,7 +528,7 @@ export const detectSelections = (
       : null;
 
     const additionalOptions = getAdditionalMajorOptions(
-      applicableVersions(majors, (major) => major.program_code, year),
+      applicableVersions(majors, programCodeOf, year),
       school
     );
     const additional: MajorOptionItem[] = [];
@@ -562,7 +553,7 @@ export const detectSelections = (
 
     // The minors list names each "Minor in X", where a transcript says just "X".
     const minorOptions = takesAdditionalMajors(school)
-      ? getMinorOptions(applicableVersions(minors, (minor) => minor.program_code, year))
+      ? getMinorOptions(applicableVersions(minors, programCodeOf, year))
       : [];
     const chosenMinors: MinorOptionItem[] = [];
     listedMinors.forEach((name) => {
