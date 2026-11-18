@@ -6,6 +6,7 @@ from django.test.utils import CaptureQueriesContext
 from django.urls import reverse
 from rest_framework.test import APIClient
 
+from courses.util import get_or_create_course_and_section
 from degree.models import (
     Degree,
     DegreePlan,
@@ -131,3 +132,15 @@ class PlanProgressTest(TestCase):
     def test_a_waived_requirement_is_complete(self):
         self.plan.waived_rules.add(self.calculus)
         self.assertEqual(self.progress(), 0.5)
+
+    def test_a_course_is_worth_its_latest_records_credits(self):
+        # The latest made first, so the order records are found in can't pick it by chance.
+        for semester, credits in (("2024A", 1), ("2022A", 0.5)):
+            record, *_ = get_or_create_course_and_section("MATH-1400-001", semester)
+            record.credits = credits
+            record.save()
+        self.calculus.num = None
+        self.calculus.credits = 2
+        self.calculus.save()
+        self.place("MATH-1400", self.calculus)
+        self.assertEqual(self.progress(), 0.25)

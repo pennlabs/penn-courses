@@ -456,7 +456,7 @@ class DegreePlanListSerializer(serializers.ModelSerializer):
     def get_programs(self, plan):
         def with_concentration(name, program):
             if program.concentration and program.concentration not in NO_CONCENTRATION:
-                return f"{name} ({program.concentration_name})"
+                return f"{name} ({program.concentration_name or program.concentration})"
             return name
 
         # Some minors' names already say "Minor in".
@@ -473,7 +473,7 @@ class DegreePlanListSerializer(serializers.ModelSerializer):
                 {
                     "kind": "degree",
                     "code": d.major,
-                    "name": with_concentration(f"{d.degree} in {d.major_name}", d),
+                    "name": with_concentration(f"{d.degree} in {d.major_name or d.major}", d),
                     "progress": done("degrees", d),
                 }
                 for d in plan.degrees.all()
@@ -482,7 +482,7 @@ class DegreePlanListSerializer(serializers.ModelSerializer):
                 {
                     "kind": "major",
                     "code": m.code,
-                    "name": with_concentration(f"Major in {m.name}", m),
+                    "name": with_concentration(f"Major in {m.name or m.code}", m),
                     "progress": done("majors", m),
                 }
                 for m in plan.majors.all()

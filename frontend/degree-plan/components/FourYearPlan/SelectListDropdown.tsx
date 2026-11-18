@@ -54,7 +54,7 @@ const TriggerName = styled.span`
   text-overflow: ellipsis;
 `;
 
-export const Menu = styled.div<{ $open: boolean }>`
+export const Menu = styled.div<{ $open: boolean; $wide?: boolean }>`
   position: absolute;
   top: calc(100% + 0.35rem);
   left: -0.5rem;
@@ -62,8 +62,9 @@ export const Menu = styled.div<{ $open: boolean }>`
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
-  min-width: 16rem;
-  max-width: min(24rem, calc(100vw - 2rem));
+  /* Previews take a row's right end, so names keep about 6rem beside four of them. */
+  min-width: ${(props) => (props.$wide ? "min(24rem, calc(100vw - 2rem))" : "16rem")};
+  max-width: min(${(props) => (props.$wide ? "28rem" : "24rem")}, calc(100vw - 2rem));
   padding: 0.35rem;
   background: #fff;
   border-radius: 8px;
@@ -127,6 +128,8 @@ export const Item = styled.div<{ $isActive: boolean }>`
 `;
 
 // Leaves a gap the width of the actions, which the preview slides into when they show.
+const NARROW = "(max-width: 30rem)";
+
 const Preview = styled.span`
   display: flex;
   flex-shrink: 0;
@@ -136,6 +139,9 @@ const Preview = styled.span`
 
   @media (prefers-reduced-motion: reduce) {
     transition: none;
+  }
+  @media ${NARROW} {
+    display: none;
   }
 `;
 
@@ -158,6 +164,12 @@ const Actions = styled.span`
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s ease;
+
+  @media ${NARROW} {
+    position: static;
+    transform: none;
+    flex-shrink: 0;
+  }
 `;
 
 const ActionButton = styled.button`
@@ -297,7 +309,7 @@ const SelectListDropdown = <T extends DBObject>({
         <TriggerName>{getItemName(active)}</TriggerName>
         <i className="fas fa-chevron-down" aria-hidden />
       </Trigger>
-      <Menu role="menu" $open={isOpen}>
+      <Menu role="menu" $open={isOpen} $wide={!!preview}>
         <ItemList>
           {allItems.map((item) => {
             const name = getItemName(item);

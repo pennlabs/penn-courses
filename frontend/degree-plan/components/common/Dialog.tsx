@@ -1,4 +1,4 @@
-import React, { PropsWithChildren, useEffect } from "react";
+import React, { PropsWithChildren, useEffect, useRef } from "react";
 import styled from "@emotion/styled";
 import { keyframes } from "@emotion/react";
 
@@ -35,6 +35,10 @@ const Card = styled.div<{ $width: string }>`
   background: #fff;
   box-shadow: 0 20px 50px rgba(61, 65, 119, 0.25);
   animation: ${rise} 240ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+
+  &:focus {
+    outline: none;
+  }
 
   @media (prefers-reduced-motion: reduce) {
     animation: none;
@@ -159,15 +163,58 @@ interface DialogProps {
   width?: string;
 }
 
-/** A centered card over a blurred page, closed by its ✕, Escape, or a click outside it. */
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/**
+ * A centered card over a blurred page, closed by its ✕, Escape, or a click outside it. Focus
+ * moves into it, Tab stays within it, and closing returns focus to where it was.
+ */
 const Dialog = ({
   close,
   label,
   width = "25rem",
   children,
 }: PropsWithChildren<DialogProps>) => {
+  const card = useRef<HTMLDivElement>(null);
+  // Read on the first render, before anything inside autofocuses.
+  const returnTo = useRef(
+    typeof document === "undefined"
+      ? null
+      : (document.activeElement as HTMLElement | null)
+  );
+
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && close();
+    if (card.current && !card.current.contains(document.activeElement))
+      card.current.focus();
+    const opener = returnTo.current;
+    return () => {
+      if (opener?.isConnected) opener.focus();
+    };
+  }, []);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+      if (e.key !== "Tab" || !card.current) return;
+      const focusable = [
+        ...card.current.querySelectorAll<HTMLElement>(FOCUSABLE),
+      ];
+      if (!focusable.length) {
+        e.preventDefault();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const inside = card.current.contains(document.activeElement);
+      if (e.shiftKey && (document.activeElement === first || !inside)) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && (document.activeElement === last || !inside)) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [close]);
@@ -177,7 +224,14 @@ const Dialog = ({
       // Pressing on the backdrop itself, so a text selection dragged out of the card doesn't close it.
       onMouseDown={(e) => e.target === e.currentTarget && close()}
     >
-      <Card role="dialog" aria-modal="true" aria-label={label} $width={width}>
+      <Card
+        ref={card}
+        role="dialog"
+        aria-modal="true"
+        aria-label={label}
+        tabIndex={-1}
+        $width={width}
+      >
         <CloseButton type="button" aria-label="Close" onClick={close}>
           <i className="fas fa-times" aria-hidden />
         </CloseButton>

@@ -1,6 +1,6 @@
 import styled from "@emotion/styled";
 import type { DegreeListing, DegreePlan } from "@/types";
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { postFetcher, useSWRCrud } from "@/hooks/swrcrud";
 import { hasConcentration } from "@/utils/programs";
 import { useSWRConfig } from "swr";
@@ -77,18 +77,32 @@ const ModalInterior = ({
   );
   const trimmedName = name.trim();
 
+  // A dialog dismissed while its plan is being created leaves the plan where it is.
+  const open = useRef(true);
+  useEffect(
+    () => () => {
+      open.current = false;
+    },
+    []
+  );
+  const [pending, setPending] = useState(false);
+
   const addDegreeplan = async () => {
+    setPending(true);
     try {
       const created = await postFetcher("/api/degree/degreeplans", {
         name: trimmedName,
       });
       await mutate("/api/degree/degreeplans");
+      if (!open.current) return;
       setActiveDegreeplan(created);
+      close();
     } catch (error) {
       showToast(
         errorText(error, "Couldn't create the degree plan. Try again."),
         true
       );
+      if (open.current) setPending(false);
     }
   };
 
@@ -121,9 +135,12 @@ const ModalInterior = ({
       <NameForm
         onSubmit={async (e) => {
           e.preventDefault();
-          if (!trimmedName) return;
-          if (creating) await addDegreeplan();
-          else renameDegreeplan();
+          if (!trimmedName || pending) return;
+          if (creating) {
+            await addDegreeplan();
+            return;
+          }
+          renameDegreeplan();
           close();
         }}
       >
@@ -138,7 +155,7 @@ const ModalInterior = ({
         />
         <DialogButtons>
           {cancel}
-          <DialogButton type="submit" disabled={!trimmedName}>
+          <DialogButton type="submit" disabled={!trimmedName || pending}>
             {creating ? "Create" : "Rename"}
           </DialogButton>
         </DialogButtons>
