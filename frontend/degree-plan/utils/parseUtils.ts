@@ -1,7 +1,7 @@
 import { createMajorLabel } from "@/components/FourYearPlan/DegreeModal";
 import { schoolOptions } from "@/components/OnboardingPanels/SharedComponents";
 import { DegreeListing, Major, Minor, SchoolOption } from "@/types";
-import { degreeProgramOf, hasConcentration, programCodeOf } from "@/utils/programs";
+import { degreeProgramOf, hasConcentration, isPremed, programCodeOf } from "@/utils/programs";
 
 export { degreeProgramOf, programCodeOf };
 const { distance } = require("fastest-levenshtein");
@@ -185,7 +185,8 @@ export const getAdditionalMajorOptions = (
   if (!school || !takesAdditionalMajors(school)) return [];
   const isOwn = (major: Major) => degreeCodeOf(major.program_code) === school.value;
   return majors
-    .filter((major) => !isMasters(degreeCodeOf(major.program_code)))
+    // Pre-med has its own checkbox rather than being picked as a major.
+    .filter((major) => !isMasters(degreeCodeOf(major.program_code)) && !isPremed(major))
     .map((major) => majorOption(major, school))
     .sort(
       (a, b) =>

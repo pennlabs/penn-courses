@@ -58,6 +58,10 @@ _DEGREE_CODE_TO_PROGRAM = {
 }
 
 
+# Pre-med, which a plan holds as a major though it isn't a Penn program (see degree/data/premed.py).
+PREMED_PROGRAM_CODE = "PREMED"
+
+
 def is_college(program: str | None) -> bool:
     return program in college_programs
 
