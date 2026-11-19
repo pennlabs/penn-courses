@@ -62,21 +62,24 @@ def same_block(rule, other) -> bool:
     return (rule.block_type, rule.block_value) == (other.block_type, other.block_value)
 
 
-def target_matches(target, home, other) -> bool:
+def target_matches(target, home, other, same=None) -> bool:
     """
-    Whether one of `home`'s share targets permits it to double count with `other`.
+    Whether one of `home`'s share targets permits it to double count with `other`. `same` says
+    whether they are in one block, if that is not just whether their blocks' codes match.
 
     Every kind but THISBLOCK names a *different* block: within a block, courses are exclusive
     unless THISBLOCK says otherwise. That reading is what makes THISBLOCK meaningful, but the
     audit does not state it, and it is the assumption everything here rests on.
     """
     kind, value = target.get("kind"), target.get("value")
+    if same is None:
+        same = same_block(home, other)
 
     if kind == THIS_BLOCK:
-        return same_block(home, other)
+        return same
     if kind == ANY_BLOCK:
-        return not same_block(home, other)
-    if same_block(home, other) or kind != other.block_type:
+        return not same
+    if same or kind != other.block_type:
         return False
     return value is None or value == other.block_value
 
@@ -91,26 +94,38 @@ def leaf_rules(degree_trees) -> list:
     )
 
 
-def resolve_double_counts(degree_trees, independent_groups=None):
+def resolve_double_counts(degree_trees, independent_groups=None, audits=None):
     """
     Given the rule trees of some degrees (as returned by get_degree_trees), returns a mapping
     from each of their leaf rules to the set of leaf rules it is allowed to double count with.
 
     `independent_groups` maps owners to a group, such as the undergraduate degree they belong
     to. Each degree has its own audit, so rules of different groups share freely.
+
+    `audits` maps owners to the audit they belong to, for owners that still follow their share
+    targets across audits, such as a graduate degree. Blocks of two audits are never one block,
+    even with the same code, as a BSE's and an MSE's in one major have.
     """
     double_counts = defaultdict(set)
     groups_of = defaultdict(set)
+    audits_of = defaultdict(set)
     for owner, rules in degree_trees.items():
         group = (independent_groups or {}).get(owner)
-        if group is not None:
-            for rule in rules:
+        audit = (audits or {}).get(owner)
+        for rule in rules:
+            if group is not None:
                 groups_of[rule.id].add(group)
+            if audit is not None:
+                audits_of[rule.id].add(audit)
 
     for home, other in permutations(leaf_rules(degree_trees), 2):
         home_groups, other_groups = groups_of[home.id], groups_of[other.id]
+        home_audits, other_audits = audits_of[home.id], audits_of[other.id]
+        same = same_block(home, other) and not (
+            home_audits and other_audits and home_audits.isdisjoint(other_audits)
+        )
         if (home_groups and other_groups and home_groups.isdisjoint(other_groups)) or any(
-            target_matches(target, home, other) for target in home.share_targets
+            target_matches(target, home, other, same) for target in home.share_targets
         ):
             double_counts[home].add(other)
             double_counts[other].add(home)

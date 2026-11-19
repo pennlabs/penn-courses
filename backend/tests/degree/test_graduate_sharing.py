@@ -179,6 +179,16 @@ class GraduateSharingTest(TestCase):
         self.assertEqual(sharing.used, Decimal(0))
 
 
+class SameMajorGraduateSharingTest(GraduateSharingTest):
+    """A bachelors and a masters in one major have blocks of the same code, but two audits."""
+
+    def setUp(self):
+        super().setUp()
+        self.plan.degrees.remove(self.mse)
+        self.mse = self.make_degree("EM_MSE", "MSE", "CSCI")
+        self.plan.degrees.add(self.mse)
+
+
 class FulfillmentLevelTest(GraduateSharingTest):
     """
     A submatriculant's transcript says which degree each course is on the books for: a course

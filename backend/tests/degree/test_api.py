@@ -327,6 +327,31 @@ class FulfillmentViewsetTest(TestCase):
         self.assertEqual(set(a.rules.all()), {self.rule3})
         self.assertEqual(set(a.unselected_rules.all()), {self.rule1})
 
+    def test_a_course_displaced_from_its_only_rule_stays_in_the_plan(self):
+        a = Fulfillment.objects.create(
+            degree_plan=self.degree_plan, full_code="CIS-1200", semester=TEST_SEMESTER
+        )
+        a.rules.add(self.rule1)
+        a.unselected_rules.add(self.rule3)
+        b = Fulfillment.objects.create(
+            degree_plan=self.degree_plan, full_code="CIS-1600", semester=TEST_SEMESTER
+        )
+        b.rules.add(self.rule3)
+
+        response = self.client.post(
+            reverse(
+                "degreeplan-fulfillment-switch-rule",
+                kwargs={"degreeplan_pk": self.degree_plan.id, "full_code": a.full_code},
+            ),
+            {"rule_id": self.rule3.id},
+        )
+
+        self.assertEqual(response.status_code, 200, response.json())
+        self.assertEqual(response.json()["displaced"], [{"full_code": "CIS-1600"}])
+        b.refresh_from_db()
+        self.assertEqual(set(b.rules.all()), set())
+        self.assertEqual(set(b.unselected_rules.all()), {self.rule3})
+
     def test_update_fulfillment_add_violated_rule(self):
         a = Fulfillment(
             degree_plan=self.degree_plan,

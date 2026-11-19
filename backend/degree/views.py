@@ -702,8 +702,7 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
 
         If another course was already fulfilling the target rule, that course is
         displaced: the target rule is moved from its ``rules`` to its
-        ``unselected_rules``.  When the displaced course has no remaining selected
-        rules its fulfillment is deleted entirely.
+        ``unselected_rules``. It stays in the plan even if it no longer counts for anything.
         """
         rule_id = request.data.get("rule_id")
         if rule_id is None:
@@ -785,20 +784,13 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
                 other_selected.discard(target_rule)
                 other_unselected.add(target_rule)
 
-                if len(other_selected) == 0:
-                    displaced.append({"full_code": other.full_code, "removed": True})
-                    other.delete()
-                else:
-                    other.rules.set(other_selected)
-                    other.unselected_rules.set(other_unselected)
-                    other.legal = selection_is_legal(
-                        other_selected, rule_to_degree, double_counts, policy
-                    )
-                    other.save()
-                    displaced.append({"full_code": other.full_code, "removed": False})
-
-            if any(entry["removed"] for entry in displaced):
-                degree_plan.refresh_satisfaction()
+                other.rules.set(other_selected)
+                other.unselected_rules.set(other_unselected)
+                other.legal = selection_is_legal(
+                    other_selected, rule_to_degree, double_counts, policy
+                )
+                other.save()
+                displaced.append({"full_code": other.full_code})
 
         data = self.get_serializer(fulfillment).data
         data["displaced"] = displaced

@@ -421,16 +421,13 @@ const CourseComponent = ({
         mutate(`/api/degree/degreeplans/${activeDegreePlanId}`),
       ]);
 
-      const displaced: { full_code: string; removed: boolean }[] =
-        res?.displaced ?? [];
+      const displaced: { full_code: string }[] = res?.displaced ?? [];
       if (displaced.length > 0) {
-        const msgs = displaced.map((d) => {
-          const code = d.full_code.replace("-", " ");
-          return d.removed
-            ? `${code} was removed (it no longer fulfills any rules).`
-            : `${code} was displaced from this rule.`;
-        });
-        const message = msgs.join(" ");
+        const message = displaced
+          .map(
+            (d) => `${d.full_code.replace("-", " ")} was displaced from this rule.`
+          )
+          .join(" ");
         setDisplacedMessage(message);
         showToast(message, false);
         setTimeout(() => {

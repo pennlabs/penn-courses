@@ -1108,9 +1108,16 @@ def map_rules_and_degrees(degree_plan):
         for rule in leaves:
             rule_to_degree[rule] = component
 
-    double_counts = resolve_double_counts(
-        trees, undergraduate_degree_of(degree_plan, composition.components)
-    )
+    groups = undergraduate_degree_of(degree_plan, composition.components)
+    audits = {
+        **groups,
+        **{
+            component: ("graduate", component.owner_id)
+            for component in composition.components
+            if component.relation in DEGREE_RELATIONS and component.is_graduate
+        },
+    }
+    double_counts = resolve_double_counts(trees, groups, audits)
     for left, right in unshared_pairs(composition.dual_program, rule_to_degree):
         double_counts.get(left, set()).discard(right)
         double_counts.get(right, set()).discard(left)
