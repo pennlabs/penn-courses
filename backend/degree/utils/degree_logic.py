@@ -882,7 +882,7 @@ def rebalance_allocations(
         for rule in allocation.selected:
             members[rule].add(allocation)
 
-    def find_closed():
+    def find_closed(courses_of=lambda rule: members[rule]):
         if pick_groups is None:
             return set()
         satisfied = {
@@ -891,10 +891,20 @@ def rebalance_allocations(
             if rule in exempt
             or (
                 (rule.num is not None or rule.credits is not None)
-                and not lacks(rule, members[rule])
+                and not lacks(rule, courses_of(rule))
             )
         }
         return pick_groups.closed(satisfied)
+
+    def closed_after_move(allocation, rule, conflicts):
+        def courses_of(other):
+            if other == rule:
+                return members[other] | {allocation}
+            if other in conflicts:
+                return members[other] - {allocation}
+            return members[other]
+
+        return find_closed(courses_of)
 
     closed = find_closed()
 
@@ -927,10 +937,17 @@ def rebalance_allocations(
         if allows is not None and not allows(allocation.selected, moved):
             return None
 
+        # A conflict the move leaves short needs a replacement, unless the move completes a
+        # "pick N" option that makes the conflict unnecessary, like filling one list of several.
+        short = {
+            conflict
+            for conflict in conflicts
+            if is_short(conflict, members[conflict] - {allocation})
+        }
+        if short:
+            short -= closed_after_move(allocation, rule, conflicts)
         replacements = {}
-        for conflict in conflicts:
-            if not is_short(conflict, members[conflict] - {allocation}):
-                continue
+        for conflict in short:
             replacement = find_replacement(conflict, allocation, set(replacements.values()))
             if replacement is None:
                 return None
@@ -1085,6 +1102,26 @@ def plan_components(degree_plan):
         *degree_plan.majors.all(),
         *degree_plan.minors.all(),
     ]
+
+
+def live_overrides(fulfillment, rule_to_component, waived):
+    """
+    The overrides a course counts for, onto rules still in the plan and not waived. An override
+    the student switched the course away from is left out, so it stays switched away.
+    """
+    active = set(fulfillment.overrides.all()) & set(fulfillment.rules.all())
+    return (active & rule_to_component.keys()) - waived
+
+
+def rule_is_filled(rule, full_codes, credits_cache):
+    """Whether these courses alone meet a leaf rule's course count and CU total."""
+    credits = sum(
+        (credits_cache.get(full_code, DEFAULT_COURSE_CREDITS) for full_code in full_codes),
+        Decimal(0),
+    )
+    return (rule.num is None or len(full_codes) >= rule.num) and (
+        rule.credits is None or credits >= rule.credits
+    )
 
 
 def map_rules_and_degrees(degree_plan):

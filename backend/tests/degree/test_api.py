@@ -15,6 +15,7 @@ from degree.models import (
     SatisfactionStatus,
 )
 from degree.serializers import SimpleCourseSerializer
+from degree.views import update_fulfillments
 from tests.courses.util import fill_course_soft_state
 from tests.degree.util import TEST_SEMESTER, set_semester
 
@@ -327,30 +328,60 @@ class FulfillmentViewsetTest(TestCase):
         self.assertEqual(set(a.rules.all()), {self.rule3})
         self.assertEqual(set(a.unselected_rules.all()), {self.rule1})
 
-    def test_a_course_displaced_from_its_only_rule_stays_in_the_plan(self):
-        a = Fulfillment.objects.create(
-            degree_plan=self.degree_plan, full_code="CIS-1200", semester=TEST_SEMESTER
+    def place(self, full_code, rules, semester=TEST_SEMESTER, overrides=()):
+        fulfillment = Fulfillment.objects.create(
+            degree_plan=self.degree_plan, full_code=full_code, semester=semester
         )
-        a.rules.add(self.rule1)
-        a.unselected_rules.add(self.rule3)
-        b = Fulfillment.objects.create(
-            degree_plan=self.degree_plan, full_code="CIS-1600", semester=TEST_SEMESTER
-        )
-        b.rules.add(self.rule3)
+        fulfillment.rules.add(*rules)
+        fulfillment.overrides.add(*overrides)
+        return fulfillment
 
+    def switch(self, fulfillment, rule):
         response = self.client.post(
             reverse(
                 "degreeplan-fulfillment-switch-rule",
-                kwargs={"degreeplan_pk": self.degree_plan.id, "full_code": a.full_code},
+                kwargs={"degreeplan_pk": self.degree_plan.id, "full_code": fulfillment.full_code},
             ),
-            {"rule_id": self.rule3.id},
+            {"rule_id": rule.id},
         )
-
         self.assertEqual(response.status_code, 200, response.json())
-        self.assertEqual(response.json()["displaced"], [{"full_code": "CIS-1600"}])
-        b.refresh_from_db()
-        self.assertEqual(set(b.rules.all()), set())
-        self.assertEqual(set(b.unselected_rules.all()), {self.rule3})
+        return response.json()["displaced"]
+
+    def test_switching_onto_a_rule_with_room_displaces_nothing(self):
+        a = self.place("CIS-1200", [self.rule1])
+        a.unselected_rules.add(self.rule3)
+        b = self.place("CIS-1600", [self.rule3])
+
+        self.assertEqual(self.switch(a, self.rule3), [])
+        self.assertEqual(set(b.rules.all()), {self.rule3})
+
+    def test_switching_onto_a_full_rule_displaces_only_the_latest_course(self):
+        a = self.place("CIS-1200", [self.rule1])
+        a.unselected_rules.add(self.rule3)
+        earlier = self.place("CIS-1600", [self.rule3], semester="2022C")
+        later = self.place("CIS-1920", [self.rule3], semester="2023A")
+
+        self.assertEqual(self.switch(a, self.rule3), [{"full_code": "CIS-1920"}])
+        self.assertEqual(set(earlier.rules.all()), {self.rule3})
+        # A displaced course stays in the plan, even counting for nothing
+        self.assertEqual(set(later.rules.all()), set())
+        self.assertEqual(set(later.unselected_rules.all()), {self.rule3})
+
+    def test_switching_never_displaces_an_override(self):
+        a = self.place("CIS-1200", [self.rule1])
+        a.unselected_rules.add(self.rule3)
+        self.place("CIS-1600", [self.rule3], overrides=[self.rule3])
+        overridden = self.place("CIS-1920", [self.rule3], semester="2024A", overrides=[self.rule3])
+
+        self.assertEqual(self.switch(a, self.rule3), [])
+        self.assertEqual(set(overridden.rules.all()), {self.rule3})
+
+    def test_reallocating_keeps_an_override(self):
+        overridden = self.place("CIS-1920", [self.rule1], overrides=[self.rule1])
+
+        update_fulfillments(self.degree_plan)
+
+        self.assertIn(self.rule1, overridden.rules.all())
 
     def test_update_fulfillment_add_violated_rule(self):
         a = Fulfillment(
