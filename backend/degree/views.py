@@ -702,8 +702,7 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
 
         If another course was already fulfilling the target rule, that course is
         displaced: the target rule is moved from its ``rules`` to its
-        ``unselected_rules``.  When the displaced course has no remaining selected
-        rules its fulfillment is deleted entirely.
+        ``unselected_rules``. It stays in the plan even if it no longer counts for anything.
         """
         rule_id = request.data.get("rule_id")
         if rule_id is None:
@@ -785,20 +784,13 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
                 other_selected.discard(target_rule)
                 other_unselected.add(target_rule)
 
-                if len(other_selected) == 0:
-                    displaced.append({"full_code": other.full_code, "removed": True})
-                    other.delete()
-                else:
-                    other.rules.set(other_selected)
-                    other.unselected_rules.set(other_unselected)
-                    other.legal = selection_is_legal(
-                        other_selected, rule_to_degree, double_counts, policy
-                    )
-                    other.save()
-                    displaced.append({"full_code": other.full_code, "removed": False})
-
-            if any(entry["removed"] for entry in displaced):
-                degree_plan.refresh_satisfaction()
+                other.rules.set(other_selected)
+                other.unselected_rules.set(other_unselected)
+                other.legal = selection_is_legal(
+                    other_selected, rule_to_degree, double_counts, policy
+                )
+                other.save()
+                displaced.append({"full_code": other.full_code})
 
         data = self.get_serializer(fulfillment).data
         data["displaced"] = displaced
@@ -828,7 +820,8 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
                 }
             )
 
-        rules_per_degree, rule_to_degree, double_counts = map_rules_and_degrees(degree_plan)
+        plan_rules = map_rules_and_degrees(degree_plan)
+        rule_to_degree = plan_rules.rule_to_component
         others = (
             Fulfillment.objects.filter(degree_plan=degree_plan)
             .exclude(full_code=full_code)
@@ -838,13 +831,15 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
         stored = set(fulfillment.rules.all())
         selected_rules, unselected_rules, legal = allocate_rules(
             full_code,
-            rules_per_degree,
+            plan_rules.rules_per_component,
             rule_to_degree,
-            double_counts,
+            plan_rules.double_counts,
             degree_plan=degree_plan,
             is_transfer=fulfillment.is_transfer_credit,
             graduate_sharing=sharing_from_fulfillments(others, rule_to_degree, credits_cache),
             credits_cache=credits_cache,
+            policy=plan_rules.composition.policy,
+            canonical=prewarm_canonical_cache([full_code])[full_code],
             prior_selected=stored,
             level=level,
         )

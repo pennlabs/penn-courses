@@ -153,21 +153,13 @@ const CourseSheetActions = ({
         mutate(fulfillmentsKey),
         mutate(`/api/degree/degreeplans/${degreePlanId}`),
       ]);
-      const displaced: { full_code: string; removed: boolean }[] =
-        res?.displaced ?? [];
+      const displaced: { full_code: string }[] = res?.displaced ?? [];
       showToast(
         displaced.length
           ? displaced
-              .map(({ full_code, removed }) =>
-                removed
-                  ? `${full_code.replace(
-                      "-",
-                      " "
-                    )} was removed (it no longer fulfills any rules).`
-                  : `${full_code.replace(
-                      "-",
-                      " "
-                    )} was displaced from this rule.`
+              .map(
+                ({ full_code }) =>
+                  `${full_code.replace("-", " ")} was displaced from this rule.`
               )
               .join(" ")
           : `${code} now counts for ${rules.get(ruleId)?.title ?? "that rule"}`,
