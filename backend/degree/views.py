@@ -58,10 +58,12 @@ from degree.utils.degree_logic import (
     allocate_plan,
     allocate_rules,
     level_for_course,
+    live_overrides,
     map_rules_and_degrees,
     prewarm_canonical_cache,
     prewarm_credits_cache,
     reconcile_rules,
+    rule_is_filled,
     rule_subtrees,
     selection_is_legal,
     sharing_from_fulfillments,
@@ -180,8 +182,9 @@ def update_fulfillments(degree_plan, keep_choices=False):
     double count with, both change.
 
     With `keep_choices`, each course keeps the rules it counts for, other than waived ones,
-    and only gains rules that can share with them. An override the course no longer counts for
-    stays on offer, but is not chosen for it.
+    and only gains rules that can share with them. Either way a course keeps the overrides it
+    counts for (see live_overrides). An override the course no longer counts for stays on offer,
+    but is not chosen for it.
     """
     plan_rules = map_rules_and_degrees(degree_plan)
     waived = set(degree_plan.waived_rules.all())
@@ -198,7 +201,8 @@ def update_fulfillments(degree_plan, keep_choices=False):
                 fulfillment.full_code,
                 is_transfer=fulfillment.is_transfer_credit,
                 level=fulfillment.level,
-                kept=set(fulfillment.rules.all()) - waived if keep_choices else set(),
+                kept=(set(fulfillment.rules.all()) - waived if keep_choices else set())
+                | live_overrides(fulfillment, plan_rules.rule_to_component, waived),
             )
             for fulfillment in fulfillments
         ],
@@ -206,9 +210,8 @@ def update_fulfillments(degree_plan, keep_choices=False):
     )
 
     for fulfillment, allocation in zip(fulfillments, allocations):
-        if keep_choices:
-            inactive_overrides = set(fulfillment.overrides.all()) - waived - allocation.selected
-            allocation.unselected |= inactive_overrides & plan_rules.rule_to_component.keys()
+        inactive_overrides = set(fulfillment.overrides.all()) - waived - allocation.selected
+        allocation.unselected |= inactive_overrides & plan_rules.rule_to_component.keys()
         fulfillment.legal = allocation.legal
 
     with transaction.atomic():
@@ -700,9 +703,11 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
         demotes any currently selected rules for that same degree into
         `unselected_rules`.
 
-        If another course was already fulfilling the target rule, that course is
-        displaced: the target rule is moved from its ``rules`` to its
-        ``unselected_rules``. It stays in the plan even if it no longer counts for anything.
+        If the target rule is already filled without this course, just enough of the courses
+        counting for it are displaced to make room, latest taken first: the target rule is moved
+        from their ``rules`` to their ``unselected_rules``. A course overridden onto the rule is
+        never displaced, even if that leaves the rule over-filled. A displaced course stays in the
+        plan even if it no longer counts for anything.
         """
         rule_id = request.data.get("rule_id")
         if rule_id is None:
@@ -768,16 +773,25 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
             fulfillment.save()
             lift_waivers(degree_plan, [target_rule])
 
-            other_fulfillments = (
-                Fulfillment.objects.filter(
-                    degree_plan=degree_plan,
-                    rules=target_rule,
-                )
+            occupants = list(
+                Fulfillment.objects.filter(degree_plan=degree_plan, rules=target_rule)
                 .exclude(full_code=full_code)
-                .prefetch_related("rules", "unselected_rules")
+                .prefetch_related("rules", "unselected_rules", "overrides")
             )
+            credits_cache = prewarm_credits_cache([other.full_code for other in occupants])
+            remaining = {other.full_code for other in occupants}
+            to_displace = []
+            for other in sorted(
+                (other for other in occupants if target_rule not in other.overrides.all()),
+                key=lambda other: (other.semester or "", other.full_code),
+                reverse=True,
+            ):
+                if not rule_is_filled(target_rule, remaining, credits_cache):
+                    break
+                remaining.discard(other.full_code)
+                to_displace.append(other)
 
-            for other in other_fulfillments:
+            for other in to_displace:
                 other_selected = set(other.rules.all())
                 other_unselected = set(other.unselected_rules.all())
 
@@ -1140,19 +1154,32 @@ class OnboardFromTranscript(APIView):
         # A course listed twice (e.g. retaken) is stored once, as its last listing.
         last = {full_code: index for index, (_, full_code) in enumerate(listed)}
         listed = [entry for index, entry in enumerate(listed) if last[entry[1]] == index]
+        existing = {
+            fulfillment.full_code: fulfillment
+            for fulfillment in Fulfillment.objects.filter(
+                degree_plan=degree_plan, full_code__in=[full_code for _, full_code in listed]
+            ).prefetch_related("rules", "overrides")
+        }
+        plan_rules = map_rules_and_degrees(degree_plan)
+        waived = set(degree_plan.waived_rules.all())
         # A transcript arrives in the order its courses were taken.
         allocations = allocate_plan(
             degree_plan,
-            map_rules_and_degrees(degree_plan),
+            plan_rules,
             [
                 PlannedCourse(
                     full_code,
                     is_transfer=semester_code == TRANSFER_CREDIT_SEMESTER,
                     level=levels.get(full_code),
+                    kept=(
+                        live_overrides(existing[full_code], plan_rules.rule_to_component, waived)
+                        if full_code in existing
+                        else set()
+                    ),
                 )
                 for semester_code, full_code in listed
             ],
-            set(degree_plan.waived_rules.all()),
+            waived,
         )
 
         latest = {
@@ -1160,12 +1187,6 @@ class OnboardFromTranscript(APIView):
             for (semester_code, full_code), allocation in zip(listed, allocations)
         }
         with transaction.atomic():
-            existing = {
-                fulfillment.full_code: fulfillment
-                for fulfillment in Fulfillment.objects.filter(
-                    degree_plan=degree_plan, full_code__in=latest
-                )
-            }
             choices = []
             for full_code, (semester_code, allocation) in latest.items():
                 fulfillment = existing.get(full_code) or Fulfillment(
