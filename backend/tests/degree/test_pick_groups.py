@@ -154,3 +154,28 @@ class PickGroupTest(TestCase):
 
         self.assertEqual(self.rules_of("BIOL-1121"), {self.lecture})
         self.assertEqual(self.rules_of("BIOL-1123"), {self.lab})
+
+    def test_rebalancing_moves_a_course_onto_the_list_it_completes(self):
+        """
+        The CIS MSE asks for one of several lists of two, which share most of their courses.
+        A course on a shared list leaves it for the list its partner is on.
+        """
+        core = self.group("Core Courses", None, num=1)
+        shared = Q(full_code="CIS-5710")
+        list_one = self.leaf("Core List 1", shared | Q(full_code="CIS-5190"), core)
+        list_two = self.leaf("Core List 2", shared | Q(full_code="CIS-5200"), core)
+        for rule in (list_one, list_two):
+            rule.num = 2
+        rule_to_degree = {rule: self.degree for rule in [list_one, list_two]}
+        cis_5200 = CourseAllocation("CIS-5200", {list_two}, set())
+        cis_5710 = CourseAllocation("CIS-5710", {list_one}, {list_two})
+
+        rebalance_allocations(
+            [cis_5200, cis_5710],
+            rule_to_degree,
+            {},
+            pick_groups=PickGroups(set(rule_to_degree)),
+        )
+
+        self.assertEqual(cis_5710.selected, {list_two})
+        self.assertEqual(cis_5710.unselected, {list_one})
