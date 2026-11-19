@@ -361,6 +361,40 @@ class FulfillmentLevelTest(GraduateSharingTest):
         response = client.post(url, {"level": "BOGUS"}, format="json")
         self.assertEqual(response.status_code, 400)
 
+    def set_level(self, full_code, level):
+        set_semester()
+        PDPBetaUser.objects.get_or_create(person=self.plan.person)
+        client = APIClient()
+        client.force_authenticate(user=self.plan.person)
+        Fulfillment.objects.get_or_create(
+            degree_plan=self.plan, full_code=full_code, defaults={"semester": "2024C"}
+        )
+        response = client.post(
+            reverse(
+                "degreeplan-fulfillment-set-level",
+                kwargs={"degreeplan_pk": self.plan.id, "full_code": full_code},
+            ),
+            {"level": level},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        return Fulfillment.objects.get(degree_plan=self.plan, full_code=full_code)
+
+    def test_changing_a_level_keeps_a_course_to_two_degrees(self):
+        self.plan.degrees.add(self.make_degree("AU_BA", "BA", "MATH"))
+        fulfillment = self.set_level("CIS-5450", SHARED_LEVEL)
+        _, rule_to_degree, _ = map_rules_and_degrees(self.plan)
+        claimed = {rule_to_degree[rule].owner_id for rule in fulfillment.rules.all()}
+        self.assertEqual(len(claimed), 2)
+        self.assertTrue(fulfillment.legal)
+
+    def test_changing_a_level_still_shares_between_the_bachelors_and_masters(self):
+        fulfillment = self.set_level("CIS-5450", SHARED_LEVEL)
+        _, rule_to_degree, _ = map_rules_and_degrees(self.plan)
+        claimed = {rule_to_degree[rule].owner_id for rule in fulfillment.rules.all()}
+        self.assertEqual(claimed, {self.bse.id, self.mse.id})
+        self.assertTrue(fulfillment.legal)
+
     def test_a_course_numbered_below_5000_cannot_be_marked_for_the_masters(self):
         set_semester()
         PDPBetaUser.objects.create(person=self.plan.person)

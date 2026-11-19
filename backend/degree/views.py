@@ -820,7 +820,8 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
                 }
             )
 
-        rules_per_degree, rule_to_degree, double_counts = map_rules_and_degrees(degree_plan)
+        plan_rules = map_rules_and_degrees(degree_plan)
+        rule_to_degree = plan_rules.rule_to_component
         others = (
             Fulfillment.objects.filter(degree_plan=degree_plan)
             .exclude(full_code=full_code)
@@ -830,13 +831,15 @@ class FulfillmentViewSet(viewsets.ModelViewSet):
         stored = set(fulfillment.rules.all())
         selected_rules, unselected_rules, legal = allocate_rules(
             full_code,
-            rules_per_degree,
+            plan_rules.rules_per_component,
             rule_to_degree,
-            double_counts,
+            plan_rules.double_counts,
             degree_plan=degree_plan,
             is_transfer=fulfillment.is_transfer_credit,
             graduate_sharing=sharing_from_fulfillments(others, rule_to_degree, credits_cache),
             credits_cache=credits_cache,
+            policy=plan_rules.composition.policy,
+            canonical=prewarm_canonical_cache([full_code])[full_code],
             prior_selected=stored,
             level=level,
         )
