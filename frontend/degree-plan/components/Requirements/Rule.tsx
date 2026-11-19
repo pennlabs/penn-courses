@@ -505,19 +505,12 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
   const { children, num } = ruleTree;
 
   if (num && children.length > num) {
-    /** 
-    * This was a hack to fix the data format from physics 
-    * requirements for engineering degree
-    */
-    for (let i = 0; i < children.length; i++) {
-      if (children[i].rule.rules.length == 0) {
-        continue;
-      }
-
-      if ((children[i] as FaultyRuleTree).children) {
-        children[i] = (children[i] as FaultyRuleTree).children[0];
-      }
-    }
+    // An option that only wraps one rule (as engineering physics does) shows that rule directly.
+    // One with several, like Economics' Calculus I + II, has to stay whole.
+    const options = children.map((option) => {
+      const wrapped = (option as FaultyRuleTree).children;
+      return wrapped?.length === 1 ? wrapped[0] : option;
+    });
 
     return (
       <PickNWrapper>
@@ -525,7 +518,7 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
           <div>Pick {num}:</div>
           {satisfied && <SatisfiedCheck pop={justSatisfied} />}
         </PickNTitle>
-        {children.map((ruleTree) => (
+        {options.map((ruleTree) => (
           <div key={ruleTree.rule.id}>
             <RuleComponent headerHeight={headerHeight} zIndex={zIndex - 1} depth={depth + 1} {...ruleTree} />
           </div>
