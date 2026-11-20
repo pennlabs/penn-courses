@@ -25,23 +25,15 @@ from operator import and_, or_
 from django.db.models import Q
 
 from courses.util import semester_suffix_map_hum, translate_semester_inv
-from degree.models import (
-    Degree,
-    DegreePlan,
-    Fulfillment,
-    Major,
-    Minor,
-    Rule,
-    graduate_programs,
-)
+from degree.models import Degree, DegreePlan, Fulfillment, Major, Minor, Rule, graduate_programs
 from degree.utils.degree_logic import (
     MIN_GRADUATE_COURSE_NUMBER,
     is_graduate_coursework,
     plan_components,
 )
-from degree.utils.model_utils import q_object_parser
 from degree.utils.departments import ENG_DEPTS, SAS_DEPTS, WH_DEPTS
 from degree.utils.double_counts import ANY_BLOCK, THIS_BLOCK
+from degree.utils.model_utils import q_object_parser
 
 
 logger = logging.getLogger(__name__)
