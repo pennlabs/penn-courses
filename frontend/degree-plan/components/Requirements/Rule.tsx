@@ -62,6 +62,12 @@ export const ProgramKindContext = createContext<ProgramKind | null>(null);
  */
 export const FulfillmentsLoadedContext = createContext(false);
 
+/**
+ * The background the rules below sit on, which the sticky spacer under each rule header has to
+ * match: white in the panel, but light blue inside a "Pick N" box.
+ */
+const RuleBackgroundContext = createContext<string | undefined>(undefined);
+
 /** Changes to the active plan's waivers, saved in the order they are made (see ReqPanel). */
 export const WaiversContext = createContext<{
   setWaived: (ruleId: number, waived: boolean) => void;
@@ -169,6 +175,7 @@ export const SkeletonRule: React.FC<React.PropsWithChildren> = ({
 const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: number, depth?: number }) => {
   const { setCourses, courses } = useContext(ExpandedCoursesPanelContext);
   const programKind = useContext(ProgramKindContext);
+  const background = useContext(RuleBackgroundContext);
   const { type, activeDegreePlanId, rule, progress } = ruleTree;
   const satisfied = progress === 1;
   const { animateProgress, justSatisfied } = useRuleAnimation(satisfied);
@@ -518,11 +525,15 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
           <div>Pick {num}:</div>
           {satisfied && <SatisfiedCheck pop={justSatisfied} />}
         </PickNTitle>
-        {options.map((ruleTree) => (
-          <div key={ruleTree.rule.id}>
-            <RuleComponent headerHeight={headerHeight} zIndex={zIndex - 1} depth={depth + 1} {...ruleTree} />
-          </div>
-        ))}
+        {/* Opaque, since the spacer covers rules scrolling under it, and a translucent one
+            would stack on the box's own translucent background and come out darker. */}
+        <RuleBackgroundContext.Provider value="var(--primary-color-extra-light-opaque)">
+          {options.map((ruleTree) => (
+            <div key={ruleTree.rule.id}>
+              <RuleComponent headerHeight={headerHeight} zIndex={zIndex - 1} depth={depth + 1} {...ruleTree} />
+            </div>
+          ))}
+        </RuleBackgroundContext.Provider>
       </PickNWrapper>
     );
   }
@@ -542,7 +553,7 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
           )}
         </RuleTitle>
       </RuleTitleWrapper>
-      <WhiteSpace $headerHeight={myHeight + (headerHeight ||0) + HEADER_DEFAULT_BUFFER} $zIndex={500} />
+      <WhiteSpace $headerHeight={myHeight + (headerHeight ||0) + HEADER_DEFAULT_BUFFER} $zIndex={500} $background={background} />
       <Collapse open={!collapsed}>
         <Indented $depth={depth}>
           <Column>
