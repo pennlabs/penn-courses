@@ -12,6 +12,7 @@
   --primary-color: #E3E8F4;
   --primary-color-light: #EAEFFB;
   --primary-color-extra-light: #EDF1FCAA; /* Semi-transparent */
+  --primary-color-extra-light-opaque: #F3F6FD; /* What extra-light looks like over white */
   --background-light-grey: #F8F8F8;
   --background-grey: #f3f3f3;
 

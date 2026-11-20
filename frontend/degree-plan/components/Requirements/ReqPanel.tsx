@@ -205,9 +205,9 @@ const ReqContent = styled.div<{ $shown: boolean }>`
 `
 
 export const HEADER_DEFAULT_BUFFER = 8;
-export const WhiteSpace = styled.div<{ $headerHeight: number, $zIndex: number }>`
+export const WhiteSpace = styled.div<{ $headerHeight: number, $zIndex: number, $background?: string }>`
   height: ${HEADER_DEFAULT_BUFFER}px;
-  background-color: white;
+  background-color: ${(props) => props.$background || "white"};
   z-index: ${(props) => props.$zIndex || 500};
   position: sticky;
   top: ${(props) => props.$headerHeight}px;

@@ -156,6 +156,7 @@ export const PickNWrapper = styled.div`
   padding: 0.5rem;
   padding-bottom: 0.25rem;
   border-radius: 0.5rem;
+  margin-bottom: 0.75rem;
 `;
 
 export const PickNTitle = styled.div`
