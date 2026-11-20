@@ -1,9 +1,9 @@
 import re
 from collections import defaultdict, deque
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from decimal import Decimal
 
-from django.db.models import Exists, Q
+from django.db.models import Exists, IntegerField, Q, Value
 
 from courses.models import Course
 from degree.utils.double_counts import resolve_double_counts
@@ -63,6 +63,62 @@ def rule_subtrees(rules) -> set:
     return found
 
 
+class PickGroups:
+    """
+    The groups above some leaf rules that ask for only some of their children, like "one of
+    these tracks". Once such a group has enough satisfied children, its other leaves need no
+    more courses.
+    """
+
+    def __init__(self, leaves):
+        from degree.models import Rule
+
+        nodes = {rule.id: rule for rule in leaves}
+        frontier = {rule.parent_id for rule in leaves if rule.parent_id} - set(nodes)
+        while frontier:
+            fetched = list(Rule.objects.filter(id__in=frontier))
+            nodes.update((rule.id, rule) for rule in fetched)
+            frontier = {rule.parent_id for rule in fetched if rule.parent_id} - set(nodes)
+
+        self.children = defaultdict(list)
+        for rule in nodes.values():
+            if rule.parent_id in nodes:
+                self.children[rule.parent_id].append(rule)
+        self.groups = [
+            rule
+            for rule in nodes.values()
+            if not rule.q and rule.num is not None and len(self.children[rule.id]) > rule.num
+        ]
+
+    def _leaves(self, rule):
+        if rule.q:
+            return [rule]
+        return [leaf for child in self.children[rule.id] for leaf in self._leaves(child)]
+
+    def closed(self, satisfied):
+        """The leaves left unsatisfied under a group that is satisfied without them."""
+        memo = {}
+
+        def is_satisfied(rule):
+            if rule.id not in memo:
+                if rule.q:
+                    memo[rule.id] = rule in satisfied
+                else:
+                    children = self.children[rule.id]
+                    done = sum(is_satisfied(child) for child in children)
+                    needed = len(children) if rule.num is None else rule.num
+                    memo[rule.id] = bool(children) and done >= needed
+            return memo[rule.id]
+
+        return {
+            leaf
+            for group in self.groups
+            if is_satisfied(group)
+            for leaf in self._leaves(group)
+            if leaf not in satisfied
+        }
+
+
 def check_dept(q, dept):
     pattern = r"\('([^']*)',\s*'([^']*)'\)"
     matches = re.findall(pattern, q)
@@ -90,10 +146,10 @@ def matches_without_record(q, full_code):
     fields = {"full_code": full_code, "department__code": department, "code": code}
 
     def leaf(lookup, arg):
-        for field, value in fields.items():
-            if lookup == field:
+        for name, value in fields.items():
+            if lookup == name:
                 return value == arg
-            operator = lookup.removeprefix(f"{field}__")
+            operator = lookup.removeprefix(f"{name}__")
             if operator != lookup and operator in _LOOKUPS:
                 return _LOOKUPS[operator](value, arg)
         return False
@@ -127,20 +183,20 @@ def check_belongs(rule, full_code, belongs_cache, is_transfer=False):
 def prewarm_belongs_cache(rules, full_codes):
     """
     Returns a belongs_cache (see check_belongs) filled in for every combination of the given
-    leaf rules and courses, using one query per rule rather than one per rule/course pair.
+    leaf rules and courses, using one query for all of them rather than one per rule/course pair.
     Worth doing when every course is known up front, e.g. when allocating a whole transcript.
     """
     belongs_cache = {}
     unrecorded = set(full_codes) - recorded_full_codes(full_codes)
+    matches = latest_matching_credits(rules, full_codes)
 
     for rule in rules:
         if not rule.q:
             continue
         q = rule.get_q_object() or Q()
-        matched = set(
-            Course.objects.filter(q, full_code__in=full_codes).values_list("full_code", flat=True)
-        )
-        matched |= {full_code for full_code in unrecorded if matches_without_record(q, full_code)}
+        matched = matches[rule.id].keys() | {
+            full_code for full_code in unrecorded if matches_without_record(q, full_code)
+        }
         for full_code in full_codes:
             belongs_cache[(rule.id, full_code)] = full_code in matched
 
@@ -179,12 +235,87 @@ def prewarm_credits_cache(full_codes):
     Returns the CU of each of the given courses, for weighing against the sharing allowance.
     A course PDP does not know is assumed to be worth DEFAULT_COURSE_CREDITS.
     """
+    # In semester order, so each course keeps its latest record's credits, as Rule.evaluate does.
     return {
         full_code: credits
         for full_code, credits in Course.objects.filter(full_code__in=full_codes)
         .exclude(credits__isnull=True)
+        .order_by("semester")
         .values_list("full_code", "credits")
     }
+
+
+def latest_matching_credits(rules, full_codes):
+    """
+    For each leaf rule, maps each course of `full_codes` with a Course record matching the
+    rule to the credits of its latest matching record, as Rule.evaluate counts them. All the
+    rules are checked in a single query rather than two each.
+    """
+    rules = [rule for rule in rules if rule.q]
+    matches = {rule.id: {} for rule in rules}
+    if not rules or not full_codes:
+        return matches
+    queries = [
+        Course.objects.filter(rule.get_q_object() or Q(), full_code__in=full_codes)
+        .annotate(rule_id=Value(rule.id, output_field=IntegerField()))
+        .values_list("rule_id", "full_code", "semester", "credits")
+        for rule in rules
+    ]
+    latest = {}
+    for rule_id, full_code, semester, credits in Course.objects.none().union(*queries, all=True):
+        if (rule_id, full_code) not in latest or semester > latest[(rule_id, full_code)][0]:
+            latest[(rule_id, full_code)] = (semester, credits)
+    for (rule_id, full_code), (_, credits) in latest.items():
+        matches[rule_id][full_code] = credits
+    return matches
+
+
+def evaluate_rule_trees(top_level_rules, full_codes, waived=frozenset()):
+    """
+    Rule.evaluate for each of the given rules, with the same result, but loading each rule tree
+    a level at a time and checking every leaf in one query, instead of a few queries per rule.
+    """
+    from degree.models import Rule
+
+    full_codes = set(full_codes)
+    children = defaultdict(list)
+    leaves = []
+    level = list(top_level_rules)
+    while level:
+        leaves += [rule for rule in level if rule.q]
+        parents = [rule.id for rule in level if not rule.q]
+        level = list(Rule.objects.filter(parent_id__in=parents)) if parents else []
+        for rule in level:
+            children[rule.parent_id].append(rule)
+
+    matches = latest_matching_credits(leaves, full_codes)
+    unrecorded = full_codes - recorded_full_codes(full_codes)
+
+    def satisfied(rule):
+        if rule.id in waived:
+            return True
+        if rule.q:
+            q = rule.get_q_object() or Q()
+            without_record = sum(matches_without_record(q, full_code) for full_code in unrecorded)
+            total_courses = len(matches[rule.id]) + without_record
+            total_credits = (
+                sum(credits or 0 for credits in matches[rule.id].values())
+                + without_record * DEFAULT_COURSE_CREDITS
+            )
+            assert rule.num is not None or rule.credits is not None
+            if rule.num is not None and total_courses < rule.num:
+                return False
+            return rule.credits is None or total_credits >= rule.credits
+        count = 0
+        for child in children[rule.id]:
+            if not satisfied(child):
+                if rule.num is None:
+                    return False
+            else:
+                count += 1
+        return rule.num is None or count >= rule.num
+
+    return {rule: satisfied(rule) for rule in top_level_rules}
 
 
 def is_graduate(component) -> bool:
@@ -242,7 +373,8 @@ class GraduateSharing:
     were taken, so an allowance goes to the earliest eligible courses. That is a default
     rather than an optimum: the student can still move a course by hand afterwards.
 
-    `used` / `allows` / `take` are the undergraduate-graduate allowance. `program_shared_cu_used`
+    `used` / `allows` / `take` are the undergraduate-graduate allowance, less anything `reserved`
+    for courses still to come that already share. `program_shared_cu_used`
     is a coordinated program's own cap. `claims` records which components already hold a course,
     keyed by the course's canonical (cross-list) code.
     """
@@ -250,11 +382,12 @@ class GraduateSharing:
     def __init__(self, limit=MAX_SHARED_GRADUATE_CREDITS):
         self.limit = limit
         self.used = Decimal(0)
+        self.reserved = Decimal(0)
         self.program_shared_cu_used = Decimal(0)
         self.claims = defaultdict(set)
 
     def allows(self, credits) -> bool:
-        return self.used + credits <= self.limit
+        return self.used + self.reserved + credits <= self.limit
 
     def take(self, credits) -> None:
         self.used += credits
@@ -665,6 +798,7 @@ class CourseAllocation:
     full_code: str
     selected: set
     unselected: set
+    legal: bool = True
 
 
 def within_policy(before, after, rule_to_component, policy):
@@ -707,6 +841,8 @@ def rebalance_allocations(
     credits_cache=None,
     allows=None,
     exempt=frozenset(),
+    pick_groups=None,
+    pinned=None,
 ):
     """
     Moves courses onto short rules when another course can take their place, without leaving any
@@ -715,19 +851,24 @@ def rebalance_allocations(
     Only for allocating a whole plan, since it can move any course. `allocations` must be in the
     order the courses were taken, and is changed in place. `allows(before, after)` vetoes a
     change to one course's rules, e.g. one the plan's sharing caps forbid. Rules in `exempt`,
-    such as waived ones, need no courses and are never short.
+    such as waived ones, need no courses and are never short. Neither are the other options of
+    a satisfied group in `pick_groups`, which is rechecked after every move, since a move can
+    satisfy a group. `pinned` maps an allocation to rules it must keep, such as the student's
+    own choices; a move that would take one away is not made.
     """
     credits_cache = credits_cache or {}
+    pinned = pinned or {}
 
     def credits_of(allocation):
         return credits_cache.get(allocation.full_code, DEFAULT_COURSE_CREDITS)
 
-    def is_short(rule, courses):
-        if rule in exempt:
-            return False
+    def lacks(rule, courses):
         if rule.num and len(courses) < rule.num:
             return True
         return bool(rule.credits and sum(credits_of(c) for c in courses) < rule.credits)
+
+    def is_short(rule, courses):
+        return rule not in exempt and rule not in closed and lacks(rule, courses)
 
     def starts_crossing_levels(allocation, rules):
         def crosses(selected):
@@ -740,6 +881,32 @@ def rebalance_allocations(
     for allocation in allocations:
         for rule in allocation.selected:
             members[rule].add(allocation)
+
+    def find_closed(courses_of=lambda rule: members[rule]):
+        if pick_groups is None:
+            return set()
+        satisfied = {
+            rule
+            for rule in rule_to_degree
+            if rule in exempt
+            or (
+                (rule.num is not None or rule.credits is not None)
+                and not lacks(rule, courses_of(rule))
+            )
+        }
+        return pick_groups.closed(satisfied)
+
+    def closed_after_move(allocation, rule, conflicts):
+        def courses_of(other):
+            if other == rule:
+                return members[other] | {allocation}
+            if other in conflicts:
+                return members[other] - {allocation}
+            return members[other]
+
+        return find_closed(courses_of)
+
+    closed = find_closed()
 
     def find_replacement(rule, leaving, taken):
         options = [
@@ -762,16 +929,25 @@ def rebalance_allocations(
             for other in allocation.selected
             if other in rule_to_degree and not can_share(rule, {other}, double_counts)
         }
+        if conflicts & pinned.get(allocation, set()):
+            return None
         moved = (allocation.selected - conflicts) | {rule}
         if starts_crossing_levels(allocation, moved):
             return None
         if allows is not None and not allows(allocation.selected, moved):
             return None
 
+        # A conflict the move leaves short needs a replacement, unless the move completes a
+        # "pick N" option that makes the conflict unnecessary, like filling one list of several.
+        short = {
+            conflict
+            for conflict in conflicts
+            if is_short(conflict, members[conflict] - {allocation})
+        }
+        if short:
+            short -= closed_after_move(allocation, rule, conflicts)
         replacements = {}
-        for conflict in conflicts:
-            if not is_short(conflict, members[conflict] - {allocation}):
-                continue
+        for conflict in short:
             replacement = find_replacement(conflict, allocation, set(replacements.values()))
             if replacement is None:
                 return None
@@ -800,6 +976,7 @@ def rebalance_allocations(
                 replacement.selected.add(conflict)
                 replacement.unselected.discard(conflict)
                 members[conflict].add(replacement)
+            closed = find_closed()
 
 
 def assign_individual_rule(
@@ -927,6 +1104,26 @@ def plan_components(degree_plan):
     ]
 
 
+def live_overrides(fulfillment, rule_to_component, waived):
+    """
+    The overrides a course counts for, onto rules still in the plan and not waived. An override
+    the student switched the course away from is left out, so it stays switched away.
+    """
+    active = set(fulfillment.overrides.all()) & set(fulfillment.rules.all())
+    return (active & rule_to_component.keys()) - waived
+
+
+def rule_is_filled(rule, full_codes, credits_cache):
+    """Whether these courses alone meet a leaf rule's course count and CU total."""
+    credits = sum(
+        (credits_cache.get(full_code, DEFAULT_COURSE_CREDITS) for full_code in full_codes),
+        Decimal(0),
+    )
+    return (rule.num is None or len(full_codes) >= rule.num) and (
+        rule.credits is None or credits >= rule.credits
+    )
+
+
 def map_rules_and_degrees(degree_plan):
     """
     Given a degree plan, produces mappings of rules to the component they belong to, and of
@@ -935,7 +1132,7 @@ def map_rules_and_degrees(degree_plan):
     The mapping key is a Component. Iterating the return value still yields
     `(rules_per_component, rule_to_component, double_counts)`.
     """
-    from degree.utils.composition import PlanRules, compose
+    from degree.utils.composition import PlanRules, compose, unshared_pairs
 
     composition = compose(degree_plan)
     rules_per_degree = {}
@@ -948,12 +1145,20 @@ def map_rules_and_degrees(degree_plan):
         for rule in leaves:
             rule_to_degree[rule] = component
 
-    return PlanRules(
-        rules_per_degree,
-        rule_to_degree,
-        resolve_double_counts(trees, undergraduate_degree_of(degree_plan, composition.components)),
-        composition,
-    )
+    groups = undergraduate_degree_of(degree_plan, composition.components)
+    audits = {
+        **groups,
+        **{
+            component: ("graduate", component.owner_id)
+            for component in composition.components
+            if component.relation in DEGREE_RELATIONS and component.is_graduate
+        },
+    }
+    double_counts = resolve_double_counts(trees, groups, audits)
+    for left, right in unshared_pairs(composition.dual_program, rule_to_degree):
+        double_counts.get(left, set()).discard(right)
+        double_counts.get(right, set()).discard(left)
+    return PlanRules(rules_per_degree, rule_to_degree, double_counts, composition)
 
 
 # Components that stand for a degree's own audit: the degree itself, or, for a College double
@@ -1126,3 +1331,107 @@ def summarize_plan(degree_plan, fulfillments):
         "violations": violations,
         "cas": cas_credit_summary(composition, fulfillments, credits_cache),
     }
+
+
+@dataclass
+class PlannedCourse:
+    """
+    A course to allocate as part of a whole plan. `kept` is what it already counts for and
+    must keep, when the student's choices are being kept.
+    """
+
+    full_code: str
+    is_transfer: bool = False
+    level: str | None = None
+    kept: set = field(default_factory=set)
+
+
+def allocate_plan(degree_plan, plan_rules, courses, waived):
+    """
+    Allocates every course of a plan at once, in the order given, which should be the order
+    they were taken: each course goes to the scarcest rules still short, then courses are
+    rebalanced onto rules left short. Returns a CourseAllocation per course, in the same order.
+
+    A waived rule needs no courses, so none are allocated to it, and neither are the other
+    options of a "pick N" group once N of them are satisfied (see PickGroups).
+    """
+    rules_per_degree = plan_rules.rules_per_component
+    rule_to_degree = plan_rules.rule_to_component
+    double_counts = plan_rules.double_counts
+    policy = plan_rules.composition.policy
+    leaves = {rule for rules in rules_per_degree.values() for rule in rules}
+    full_codes = [course.full_code for course in courses]
+
+    # Every course is known up front, so check them against the rules in bulk
+    belongs_cache = prewarm_belongs_cache(leaves, full_codes)
+    credits_cache = prewarm_credits_cache(full_codes)
+    canonical_cache = prewarm_canonical_cache(full_codes)
+    pick_groups = PickGroups(leaves)
+
+    def credits_of(course):
+        return credits_cache.get(course.full_code, DEFAULT_COURSE_CREDITS)
+
+    # The allowance goes to the earliest courses eligible for it, after any a course already
+    # shares is set aside for it.
+    graduate_sharing = GraduateSharing()
+    reservations = {
+        index: credits_of(course)
+        for index, course in enumerate(courses)
+        if is_graduate_coursework(course.full_code)
+        and all(split_by_level(course.kept, rule_to_degree))
+    }
+    graduate_sharing.reserved = sum(reservations.values(), Decimal(0))
+
+    # Count and CU are tracked separately: a credit rule is satisfied by the sum of CUs.
+    counts = defaultdict(int)
+    cus = defaultdict(lambda: Decimal(0))
+    satisfied_rules = set(waived)
+    closed = pick_groups.closed(satisfied_rules)
+    allocations = []
+    for index, course in enumerate(courses):
+        graduate_sharing.reserved -= reservations.get(index, Decimal(0))
+        selected_rules, unselected_rules, _ = allocate_rules(
+            course.full_code,
+            rules_per_degree,
+            rule_to_degree,
+            double_counts,
+            degree_plan=degree_plan,
+            satisfied_rules=satisfied_rules | closed,
+            belongs_cache=belongs_cache,
+            is_transfer=course.is_transfer,
+            graduate_sharing=graduate_sharing,
+            credits_cache=credits_cache,
+            level=course.level,
+            policy=policy,
+            canonical=canonical_cache.get(course.full_code),
+            prior_selected=course.kept,
+        )
+        allocations.append(CourseAllocation(course.full_code, selected_rules, unselected_rules))
+
+        for rule in selected_rules:
+            counts[rule.id] += 1
+            cus[rule.id] += credits_of(course)
+            num_ok = rule.num is None or counts[rule.id] >= rule.num
+            cu_ok = rule.credits is None or cus[rule.id] >= rule.credits
+            if (rule.num is not None or rule.credits is not None) and num_ok and cu_ok:
+                satisfied_rules.add(rule)
+        closed = pick_groups.closed(satisfied_rules)
+
+    rebalance_allocations(
+        allocations,
+        rule_to_degree,
+        double_counts,
+        credits_cache,
+        allows=lambda before, after: within_policy(before, after, rule_to_degree, policy),
+        exempt=waived,
+        pick_groups=pick_groups,
+        pinned={
+            allocation: course.kept & allocation.selected
+            for course, allocation in zip(courses, allocations)
+        },
+    )
+    for allocation in allocations:
+        allocation.legal = selection_is_legal(
+            allocation.selected, rule_to_degree, double_counts, policy
+        )
+    return allocations

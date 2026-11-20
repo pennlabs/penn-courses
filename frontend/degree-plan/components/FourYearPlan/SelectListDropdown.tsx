@@ -54,7 +54,7 @@ const TriggerName = styled.span`
   text-overflow: ellipsis;
 `;
 
-const Menu = styled.div<{ $open: boolean }>`
+export const Menu = styled.div<{ $open: boolean; $wide?: boolean }>`
   position: absolute;
   top: calc(100% + 0.35rem);
   left: -0.5rem;
@@ -62,8 +62,9 @@ const Menu = styled.div<{ $open: boolean }>`
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
-  min-width: 16rem;
-  max-width: min(24rem, calc(100vw - 2rem));
+  /* Previews take a row's right end, so names keep about 6rem beside four of them. */
+  min-width: ${(props) => (props.$wide ? "min(24rem, calc(100vw - 2rem))" : "16rem")};
+  max-width: min(${(props) => (props.$wide ? "28rem" : "24rem")}, calc(100vw - 2rem));
   padding: 0.35rem;
   background: #fff;
   border-radius: 8px;
@@ -81,7 +82,22 @@ const Menu = styled.div<{ $open: boolean }>`
   }
 `;
 
-const Item = styled.div<{ $isActive: boolean }>`
+// Scrolls on its own so a long list doesn't run off the page, keeping "Add new" in view.
+const ItemList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  max-height: min(28rem, calc(100vh - 12rem));
+  max-height: min(28rem, calc(100dvh - 12rem));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+`;
+
+// Room for an item's three actions (1.75rem each), which take the right end of a hovered row.
+const ACTIONS_WIDTH = "6rem";
+
+export const Item = styled.div<{ $isActive: boolean }>`
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -101,6 +117,31 @@ const Item = styled.div<{ $isActive: boolean }>`
   &:hover .item-actions,
   &:focus-within .item-actions {
     opacity: 1;
+    pointer-events: auto;
+  }
+
+  &:hover .item-preview,
+  &:focus-within .item-preview {
+    transform: translateX(-${ACTIONS_WIDTH});
+    --preview-open: 1; /* for a preview's own parts to move with it */
+  }
+`;
+
+// Leaves a gap the width of the actions, which the preview slides into when they show.
+const NARROW = "(max-width: 30rem)";
+
+const Preview = styled.span`
+  display: flex;
+  flex-shrink: 0;
+  margin-left: auto;
+  padding-left: calc(${ACTIONS_WIDTH} + 0.5rem);
+  transition: transform 0.2s ease;
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+  }
+  @media ${NARROW} {
+    display: none;
   }
 `;
 
@@ -112,12 +153,23 @@ const ItemName = styled.span`
   text-overflow: ellipsis;
 `;
 
+// Shows at the right end of a hovered row, where its preview was.
 const Actions = styled.span`
+  position: absolute;
+  top: 50%;
+  right: 0.5rem;
+  transform: translateY(-50%);
   display: flex;
-  flex-shrink: 0;
   gap: 0.1rem;
   opacity: 0;
-  transition: opacity 0.1s ease;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+
+  @media ${NARROW} {
+    position: static;
+    transform: none;
+    flex-shrink: 0;
+  }
 `;
 
 const ActionButton = styled.button`
@@ -141,6 +193,18 @@ const ActionButton = styled.button`
   &.danger:hover {
     color: var(--error-color);
   }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+    background: none;
+  }
+`;
+
+const LimitNote = styled.div`
+  padding: 0 0.75rem 0.35rem;
+  font-size: 0.8rem;
+  color: var(--primary-color-extra-dark);
 `;
 
 const Divider = styled.div`
@@ -191,6 +255,9 @@ interface SelectListDropdownProps<T extends DBObject> {
     create: () => void;
   };
   isLoading: boolean;
+  maxItems?: number; // at the limit, nothing more can be added or copied
+  preview?: (item: T) => React.ReactNode; // shown beside each item's name
+  onOpen?: () => void;
 }
 
 const SelectListDropdown = <T extends DBObject>({
@@ -201,6 +268,9 @@ const SelectListDropdown = <T extends DBObject>({
   getItemName,
   mutators: { copy, remove, rename, create },
   isLoading,
+  maxItems,
+  preview,
+  onOpen,
 }: SelectListDropdownProps<T>) => {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -216,6 +286,8 @@ const SelectListDropdown = <T extends DBObject>({
 
   if (!active) return <PanelHeaderSkeleton />;
 
+  const atLimit = maxItems !== undefined && allItems.length >= maxItems;
+
   const action = (run: () => void) => (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsOpen(false);
@@ -229,77 +301,86 @@ const SelectListDropdown = <T extends DBObject>({
         $isOpen={isOpen}
         aria-haspopup="menu"
         aria-expanded={isOpen}
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => {
+          if (!isOpen) onOpen?.();
+          setIsOpen(!isOpen);
+        }}
       >
         <TriggerName>{getItemName(active)}</TriggerName>
         <i className="fas fa-chevron-down" aria-hidden />
       </Trigger>
-      <Menu role="menu" $open={isOpen}>
-        {allItems.map((item) => {
-          const name = getItemName(item);
-          return (
-            <Item
-              key={String(item.id)}
-              role="menuitemradio"
-              aria-checked={item.id === active.id}
-              tabIndex={0}
-              $isActive={item.id === active.id}
-              onClick={() => {
-                selectItem(item.id);
-                setIsOpen(false);
-              }}
-              onKeyDown={(e) => {
-                // Keys pressed on the row's own buttons are theirs.
-                if (e.target !== e.currentTarget) return;
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
+      <Menu role="menu" $open={isOpen} $wide={!!preview}>
+        <ItemList>
+          {allItems.map((item) => {
+            const name = getItemName(item);
+            return (
+              <Item
+                key={String(item.id)}
+                role="menuitemradio"
+                aria-checked={item.id === active.id}
+                tabIndex={0}
+                $isActive={item.id === active.id}
+                onClick={() => {
                   selectItem(item.id);
                   setIsOpen(false);
-                }
-              }}
-            >
-              <ItemName title={name}>{name}</ItemName>
-              <Actions className="item-actions">
-                {rename && (
-                  <ActionButton
-                    type="button"
-                    aria-label={`Rename ${name}`}
-                    title="Rename"
-                    onClick={action(() => rename(item))}
-                  >
-                    <i className="far fa-edit" aria-hidden />
-                  </ActionButton>
-                )}
-                {copy && (
-                  <ActionButton
-                    type="button"
-                    aria-label={`Copy ${name}`}
-                    title="Copy"
-                    onClick={action(() => copy(item))}
-                  >
-                    <i className="far fa-copy" aria-hidden />
-                  </ActionButton>
-                )}
-                {remove && (
-                  <ActionButton
-                    type="button"
-                    className="danger"
-                    aria-label={`Delete ${name}`}
-                    title="Delete"
-                    onClick={action(() => remove(item))}
-                  >
-                    <i className="fas fa-trash" aria-hidden />
-                  </ActionButton>
-                )}
-              </Actions>
-            </Item>
-          );
-        })}
+                }}
+                onKeyDown={(e) => {
+                  // Keys pressed on the row's own buttons are theirs.
+                  if (e.target !== e.currentTarget) return;
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    selectItem(item.id);
+                    setIsOpen(false);
+                  }
+                }}
+              >
+                <ItemName title={name}>{name}</ItemName>
+                {preview && <Preview className="item-preview">{preview(item)}</Preview>}
+                <Actions className="item-actions">
+                  {rename && (
+                    <ActionButton
+                      type="button"
+                      aria-label={`Rename ${name}`}
+                      title="Rename"
+                      onClick={action(() => rename(item))}
+                    >
+                      <i className="far fa-edit" aria-hidden />
+                    </ActionButton>
+                  )}
+                  {copy && (
+                    <ActionButton
+                      type="button"
+                      aria-label={`Copy ${name}`}
+                      title={
+                        atLimit ? `You can have up to ${maxItems}` : "Copy"
+                      }
+                      disabled={atLimit}
+                      onClick={action(() => copy(item))}
+                    >
+                      <i className="far fa-copy" aria-hidden />
+                    </ActionButton>
+                  )}
+                  {remove && (
+                    <ActionButton
+                      type="button"
+                      className="danger"
+                      aria-label={`Delete ${name}`}
+                      title="Delete"
+                      onClick={action(() => remove(item))}
+                    >
+                      <i className="fas fa-trash" aria-hidden />
+                    </ActionButton>
+                  )}
+                </Actions>
+              </Item>
+            );
+          })}
+        </ItemList>
         <Divider />
         <AddNew
           type="button"
           role="menuitem"
-          disabled={isLoading}
+          disabled={isLoading || atLimit}
           onClick={() => {
             setIsOpen(false);
             create();
@@ -308,6 +389,12 @@ const SelectListDropdown = <T extends DBObject>({
           <i className="fas fa-plus" aria-hidden />
           Add new {itemType}
         </AddNew>
+        {atLimit && (
+          <LimitNote>
+            You can have up to {maxItems} {itemType}s. Delete one to add
+            another.
+          </LimitNote>
+        )}
       </Menu>
     </Wrapper>
   );

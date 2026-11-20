@@ -134,11 +134,12 @@ const CourseSheetActions = ({
   const couldCountFor = named(fulfillment?.unselected_rules);
 
   const removeFromPlan = async () => {
-    removeFulfillment(fullCode);
+    const removed = removeFulfillment(fullCode);
     dock({ full_code: fullCode }, fullCode);
-    await mutate(fulfillmentsKey);
     showToast(`Moved ${code} to Docked`, false);
     onDone();
+    // Deleting can free up rules for the courses left behind.
+    if (await removed) mutate(fulfillmentsKey);
   };
 
   const switchTo = async (ruleId: number) => {
@@ -152,21 +153,13 @@ const CourseSheetActions = ({
         mutate(fulfillmentsKey),
         mutate(`/api/degree/degreeplans/${degreePlanId}`),
       ]);
-      const displaced: { full_code: string; removed: boolean }[] =
-        res?.displaced ?? [];
+      const displaced: { full_code: string }[] = res?.displaced ?? [];
       showToast(
         displaced.length
           ? displaced
-              .map(({ full_code, removed }) =>
-                removed
-                  ? `${full_code.replace(
-                      "-",
-                      " "
-                    )} was removed (it no longer fulfills any rules).`
-                  : `${full_code.replace(
-                      "-",
-                      " "
-                    )} was displaced from this rule.`
+              .map(
+                ({ full_code }) =>
+                  `${full_code.replace("-", " ")} was displaced from this rule.`
               )
               .join(" ")
           : `${code} now counts for ${rules.get(ruleId)?.title ?? "that rule"}`,

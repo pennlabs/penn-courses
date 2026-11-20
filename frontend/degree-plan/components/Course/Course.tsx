@@ -262,28 +262,6 @@ const useIsDragRelated = (fullCode: string, isDragging: boolean) => {
   return sameCourseDragging && !isDragging;
 };
 
-const DRAG_IMAGE_WIDTH = 240;
-const STRETCHED_WIDTH = 360;
-
-// The browser snapshots the card as the drag image, so a stretched one, like those in AP &
-// Transfer Credit, is narrowed around the pointer for the moment it takes the snapshot.
-const narrowDragImage = (e: React.DragEvent<HTMLElement>) => {
-  const card = e.currentTarget;
-  const { left, width } = card.getBoundingClientRect();
-  if (width <= STRETCHED_WIDTH) return;
-  const shift = Math.min(
-    Math.max(e.clientX - left - DRAG_IMAGE_WIDTH / 2, 0),
-    width - DRAG_IMAGE_WIDTH
-  );
-  const { width: originalWidth, marginLeft: originalMarginLeft } = card.style;
-  card.style.width = `${DRAG_IMAGE_WIDTH}px`;
-  card.style.marginLeft = `${shift}px`;
-  setTimeout(() => {
-    card.style.width = originalWidth;
-    card.style.marginLeft = originalMarginLeft;
-  });
-};
-
 const CourseComponent = ({
   courseType,
   course,
@@ -443,16 +421,13 @@ const CourseComponent = ({
         mutate(`/api/degree/degreeplans/${activeDegreePlanId}`),
       ]);
 
-      const displaced: { full_code: string; removed: boolean }[] =
-        res?.displaced ?? [];
+      const displaced: { full_code: string }[] = res?.displaced ?? [];
       if (displaced.length > 0) {
-        const msgs = displaced.map((d) => {
-          const code = d.full_code.replace("-", " ");
-          return d.removed
-            ? `${code} was removed (it no longer fulfills any rules).`
-            : `${code} was displaced from this rule.`;
-        });
-        const message = msgs.join(" ");
+        const message = displaced
+          .map(
+            (d) => `${d.full_code.replace("-", " ")} was displaced from this rule.`
+          )
+          .join(" ");
         setDisplacedMessage(message);
         showToast(message, false);
         setTimeout(() => {
@@ -480,7 +455,6 @@ const CourseComponent = ({
             $highlightVariant={highlightVariant}
             $isDragRelated={isDragRelated}
             ref={dragRef}
-            onDragStart={narrowDragImage}
             className={className}
           >
             {!fulfillment?.legal && (
@@ -647,7 +621,6 @@ const CourseComponent = ({
           $highlightVariant={highlightVariant}
           $isDragRelated={isDragRelated}
           ref={dragRef}
-          onDragStart={narrowDragImage}
           className={className}
         >
           <CourseBadge className="course-badge">

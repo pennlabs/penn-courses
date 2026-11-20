@@ -31,8 +31,8 @@ type WelcomeLayoutProps = {
   waitingForPrograms: boolean;
   startingYear: { label: any; value: number } | null;
   setCurrentPage: Dispatch<SetStateAction<number>>;
-  canExit?: boolean;
-  onExit?: () => void;
+  onBack: () => void;
+  onManual: () => void;
 };
 
 export default function WelcomeLayout({
@@ -46,18 +46,16 @@ export default function WelcomeLayout({
   waitingForPrograms,
   startingYear,
   setCurrentPage,
-  canExit = false,
-  onExit,
+  onBack,
+  onManual,
 }: WelcomeLayoutProps) {
   return (
     <CenteredFlexContainer>
       <ChooseContainer $maxWidth="90%" $minWidth="90%">
-        {canExit && onExit && (
-          <ExitButton type="button" onClick={onExit}>
-            <ArrowLeftIcon width={16} height={16} />
-            Back
-          </ExitButton>
-        )}
+        <ExitButton type="button" onClick={onBack}>
+          <ArrowLeftIcon width={16} height={16} />
+          Back
+        </ExitButton>
         <div style={{ display: "none" }}>
           <Document
             file={PDF}
@@ -79,7 +77,7 @@ export default function WelcomeLayout({
           </Document>
         </div>
 
-        <WelcomeTitle>Welcome to Penn Degree Plan!</WelcomeTitle>
+        <WelcomeTitle>Upload your transcript</WelcomeTitle>
         <ContainerGroup>
           <label>
             <input
@@ -121,14 +119,8 @@ export default function WelcomeLayout({
             <PulseLoader size={8} color={"white"} loading={waitingForPrograms} />
           </NextButton>
         </ContainerGroup>
-        <SecondaryButton
-          type="button"
-          onClick={() => {
-            resetParser();
-            setCurrentPage(2);
-          }}
-        >
-          Enter information manually
+        <SecondaryButton type="button" onClick={onManual}>
+          Add courses yourself instead
           <ArrowRightIcon />
         </SecondaryButton>
       </ChooseContainer>

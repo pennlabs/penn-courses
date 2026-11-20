@@ -3,7 +3,12 @@ import styled from "@emotion/styled";
 import { Dispatch, SetStateAction, useMemo, useState } from "react";
 import Select, { StylesConfig } from "react-select";
 import { DegreeListing, Major, Minor } from "@/types";
-import { SchoolSelection } from "@/utils/parseUtils";
+import {
+  degreeProgramOf,
+  programCodeOf,
+  SchoolSelection,
+  versionsForStart,
+} from "@/utils/parseUtils";
 import { schoolOptions } from "./SharedComponents";
 import { color, selectStyles } from "./onboardingStyles";
 import SchoolCard from "./SchoolCard";
@@ -62,8 +67,10 @@ type SchoolsFieldProps = {
   degrees: DegreeListing[] | undefined;
   standaloneMajors: Major[] | undefined;
   minors: Minor[] | undefined;
+  // Each program is offered in its version for this starting year.
+  startingYear: number | null;
   // Minors the plan already holds outside these cards.
-  unavailableMinorIds?: number[];
+  unavailableMinors?: Minor[];
   isLoadingDegrees: boolean;
   isLoadingMajors: boolean;
   isLoadingMinors: boolean;
@@ -72,15 +79,28 @@ type SchoolsFieldProps = {
 export default function SchoolsField({
   selections,
   setSelections,
-  degrees,
-  standaloneMajors,
-  minors,
-  unavailableMinorIds = [],
+  degrees: allDegrees,
+  standaloneMajors: allMajors,
+  minors: allMinors,
+  startingYear,
+  unavailableMinors = [],
   isLoadingDegrees,
   isLoadingMajors,
   isLoadingMinors,
 }: SchoolsFieldProps) {
   const [addingSchool, setAddingSchool] = useState(false);
+  const degrees = useMemo(
+    () => versionsForStart(allDegrees, degreeProgramOf, startingYear),
+    [allDegrees, startingYear]
+  );
+  const standaloneMajors = useMemo(
+    () => versionsForStart(allMajors, programCodeOf, startingYear),
+    [allMajors, startingYear]
+  );
+  const minors = useMemo(
+    () => versionsForStart(allMinors, programCodeOf, startingYear),
+    [allMinors, startingYear]
+  );
 
   const addableSchools = useMemo(
     () =>
@@ -133,14 +153,16 @@ export default function SchoolsField({
               standaloneMajors={standaloneMajors}
               minors={
                 // A plan holds each minor under one degree, so one chosen elsewhere isn't offered.
-                minors?.filter(
-                  (minor) =>
-                    !unavailableMinorIds.includes(minor.id) &&
+                minors?.filter((minor) => {
+                  const sameProgram = (other: Minor) =>
+                    programCodeOf(other) === programCodeOf(minor);
+                  return (
+                    !unavailableMinors.some(sameProgram) &&
                     !selections.some(
-                      (s) =>
-                        s !== selection && s.minors?.some((m) => m.value.id === minor.id)
+                      (s) => s !== selection && s.minors?.some((m) => sameProgram(m.value))
                     )
-                )
+                  );
+                })
               }
               isLoadingDegrees={isLoadingDegrees}
               isLoadingMajors={isLoadingMajors}

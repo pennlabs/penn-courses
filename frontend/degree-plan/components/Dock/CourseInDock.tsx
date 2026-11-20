@@ -1,4 +1,5 @@
 import { useDrag } from "react-dnd";
+import { useCourseDragPreview } from "@/components/common/CourseDragPreview";
 import { ItemTypes } from "@/components/Dock/dnd/constants";
 import { DnDCourse, DockedCourse } from "@/types";
 import CourseComponent from "@/components/Course/Course";
@@ -19,13 +20,14 @@ const CourseInDock = (props : CourseInDockProps) => {
       remove(full_code);
     }
 
-    const [{ isDragging }, drag] = useDrag<DnDCourse, never, { isDragging: boolean }>(() => ({
+    const [{ isDragging }, drag, preview] = useDrag<DnDCourse, never, { isDragging: boolean }>(() => ({
       type: ItemTypes.COURSE_IN_DOCK,
       item: course,
       collect: (monitor) => ({
         isDragging: !!monitor.isDragging()
       })
     }), [course])
+    useCourseDragPreview(preview);
   
     return (
       <CourseComponent courseType={ItemTypes.COURSE_IN_DOCK} dragRef={drag} isDragging={isDragging} removeCourse={handleRemoveCourse} isUsed {...props} />

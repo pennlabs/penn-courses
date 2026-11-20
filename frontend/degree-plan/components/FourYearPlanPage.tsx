@@ -34,6 +34,7 @@ import PhoneSwiper from "./mobile/PhoneSwiper";
 import DockedPanel from "./mobile/DockedPanel";
 import useIsPhone from "@/hooks/useIsPhone";
 import OnboardingTour from "./Tour/OnboardingTour";
+import InviteFriendsModal from "./InviteFriendsModal";
 import { getCsrf } from "@/hooks/swrcrud";
 
 import ExpandedCoursesPanel from "@/components/ExpandedBox/ExpandedCoursesPanel";
@@ -79,6 +80,8 @@ const PanelInteriorWrapper = styled.div`
   position: relative;
   height: 100%;
 `;
+
+const INVITE_PROMPTED_KEY = "PDP-invite-friends-prompted";
 
 const DEFAULT_COLUMN_WIDTHS = {
   "plan+requirements": [62, 38],
@@ -174,6 +177,7 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
   // search panel
   const [searchPanelOpen, setSearchPanelOpen] = useState<boolean>(false);
   const [searchRuleId, setSearchRuleId] = useState<Rule["id"] | null>(null);
+  const [searchRuleTitle, setSearchRuleTitle] = useState<string>("");
   const [searchRuleQuery, setSearchRuleQuery] = useState<string | null>(null); // a query object
   const [planSemesters, setPlanSemesters] = useState<string[]>([]);
   const [searchFulfillments, setSearchFulfillments] = useState<Fulfillment[]>(
@@ -221,6 +225,22 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
       startTour();
     }
   }, [canShowTour, onboardingStatus, startTour]);
+  // The tour opens search for its step, then leaves it as it found it.
+  const searchPanelOpenRef = useRef(searchPanelOpen);
+  searchPanelOpenRef.current = searchPanelOpen;
+  const searchOpenedForTour = useRef(false);
+  const showSearchForTour = useCallback((shown: boolean) => {
+    if (!shown) {
+      if (searchOpenedForTour.current) setSearchPanelOpen(false);
+      searchOpenedForTour.current = false;
+      return;
+    }
+    if (searchPanelOpenRef.current) return;
+    searchOpenedForTour.current = true;
+    setSearchRuleQuery("");
+    setSearchRuleId(null);
+    setSearchPanelOpen(true);
+  }, []);
   const finishTour = useCallback(() => {
     setTourOpen(false);
     if (onboardingStatus?.has_been_onboarded !== false) return;
@@ -241,6 +261,19 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
       { optimisticData: onboarded, rollbackOnError: false }
     ).catch((err) => console.error("Couldn't save that the tour was seen:", err));
   }, [onboardingStatus, mutateOnboardingStatus]);
+
+  // Offered once per browser, to someone who's past onboarding and the tour.
+  const [inviteOpen, setInviteOpen] = useState(false);
+  useEffect(() => {
+    if (!canShowTour || tourOpen || onboardingStatus?.has_been_onboarded !== true) return;
+    try {
+      if (localStorage.getItem(INVITE_PROMPTED_KEY)) return;
+      localStorage.setItem(INVITE_PROMPTED_KEY, "true");
+    } catch {
+      return; // without storage it would pop up on every visit
+    }
+    setInviteOpen(true);
+  }, [canShowTour, tourOpen, onboardingStatus]);
 
   const planPanel = (
     <PanelInteriorWrapper>
@@ -272,8 +305,8 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
     <PanelInteriorWrapper>
       <SearchPanel
         activeDegreeplanId={activeDegreeplan ? activeDegreeplan.id : null}
-        // On phones focusing pops up the keyboard over the results.
-        autoFocus={!isPhone}
+        // On phones focusing pops up the keyboard over the results; the tour keeps its focus.
+        autoFocus={!isPhone && !tourOpen}
       />
     </PanelInteriorWrapper>
   );
@@ -298,6 +331,8 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
           searchPanelOpen,
           setSearchRuleId,
           searchRuleId,
+          setSearchRuleTitle,
+          searchRuleTitle,
           setSearchRuleQuery,
           searchRuleQuery,
           setSearchFulfillments,
@@ -367,8 +402,13 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
               />
             )}
             {tourOpen && canShowTour && (
-              <OnboardingTour isPhone={isPhone} onFinish={finishTour} />
+              <OnboardingTour
+                isPhone={isPhone}
+                showSearch={showSearchForTour}
+                onFinish={finishTour}
+              />
             )}
+            {inviteOpen && <InviteFriendsModal close={() => setInviteOpen(false)} />}
             {editingPrograms && activeDegreeplan && (
               <EditProgramsPanel
                 degreePlanId={activeDegreeplan.id}
@@ -386,6 +426,7 @@ const FourYearPlanPage = ({ updateUser, user }: FourYearPlanPageProps) => {
                 setRequirementsOpen={setRequirementsOpen}
                 showColumnToggles={!showOnboardingModal && !isPhone}
                 onStartTour={canShowTour ? startTour : undefined}
+                onInviteFriends={canShowTour ? () => setInviteOpen(true) : undefined}
               />
               {/* Course popovers keep within the body, so they never cover the footer or dock. */}
               <BodyContainer

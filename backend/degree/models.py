@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+import re
 from collections import defaultdict
 from decimal import Decimal
 from textwrap import dedent
 from typing import Collection, Iterable
 
 from django.contrib.auth import get_user_model
-from django.db import models
-from django.db.models import Count, DecimalField, Q, Sum
+from django.db import models, transaction
+from django.db.models import Case, Count, DecimalField, Q, Sum, Value, When
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
@@ -15,7 +16,9 @@ from courses.models import Course
 from degree.utils.degree_logic import (
     DEFAULT_COURSE_CREDITS,
     FULFILLMENT_LEVELS,
+    PickGroups,
     aggregate_rule_leaves,
+    evaluate_rule_trees,
     matches_without_record,
     plan_components,
     recorded_full_codes,
@@ -55,6 +58,10 @@ _DEGREE_CODE_TO_PROGRAM = {
 }
 
 
+# Pre-med, which a plan holds as a major though it isn't a Penn program (see degree/data/premed.py).
+PREMED_PROGRAM_CODE = "PREMED"
+
+
 def is_college(program: str | None) -> bool:
     return program in college_programs
 
@@ -69,6 +76,10 @@ def program_from_program_code(program_code: str | None) -> str | None:
 # The semester the frontend files AP, IB and other transfer credit under (its
 # TRANSFER_CREDIT_SEMESTER_KEY). Such a fulfillment has no term at Penn.
 TRANSFER_CREDIT_SEMESTER = "_TRAN"
+
+# What some catalog years record a program without a concentration as, where others leave it
+# null: Path's "No Concentration" and "Non Designated".
+NO_CONCENTRATION = ("NCON", "NONE")
 
 
 class Degree(models.Model):
@@ -167,6 +178,20 @@ class Degree(models.Model):
 
     def __str__(self) -> str:
         return f"{self.program} {self.degree} in {self.major} with conc. {self.concentration} ({self.year})"  # noqa E501
+
+    def catalog_years(self):
+        """Every catalog year of this degree, this one included."""
+        concentration = (
+            Q(concentration__isnull=True) | Q(concentration__in=NO_CONCENTRATION)
+            if self.concentration is None or self.concentration in NO_CONCENTRATION
+            else Q(concentration=self.concentration)
+        )
+        return Degree.objects.filter(
+            concentration,
+            program=self.program,
+            degree=self.degree,
+            major=self.major,
+        )
 
 
 class Rule(models.Model):
@@ -295,6 +320,21 @@ class Rule(models.Model):
         ),
         related_name="children",
     )
+
+    position = models.PositiveIntegerField(
+        default=0,
+        db_default=0,
+        help_text=dedent(
+            """
+            Where this rule comes among its siblings in its audit, from 0. Ids can't stand in
+            for it: reloading an audit keeps each rule's id, so a reordered or new rule would
+            sort wrongly.
+            """
+        ),
+    )
+
+    class Meta:
+        ordering = ["position", "id"]
 
     def __str__(self) -> str:
         rules_str = ", ".join([str(rule) for rule in self.children.all()])
@@ -463,6 +503,12 @@ class ProgramComponent(models.Model):
     def __str__(self) -> str:
         return f"{self.program_code} ({self.year})"
 
+    def catalog_years(self):
+        """Every catalog year of this program, this one included."""
+        base = re.sub(rf"-({'|'.join(NO_CONCENTRATION)})$", "", self.program_code)
+        codes = [base, *(f"{base}-{code}" for code in NO_CONCENTRATION)]
+        return type(self).objects.filter(program_code__in=codes)
+
 
 class Major(ProgramComponent):
     """
@@ -500,8 +546,8 @@ class Minor(ProgramComponent):
 class ProgramVariant(models.Model):
     """
     A delta on a Path degree: rules a coordinated program adds, and leaves of the base
-    audit it suppresses. M&T's Wharton side and Huntsman's College side are variants;
-    LSM and VIPER are not, because they use the ordinary audits.
+    audit it suppresses. M&T's Wharton side, both sides of LSM and VIPER's engineering side
+    are variants. Huntsman's College degree is built whole (see huntsman.py).
     """
 
     code = models.CharField(max_length=32, unique=True)
@@ -561,6 +607,17 @@ class DualProgram(models.Model):
         on_delete=models.SET_NULL,
         related_name="dual_programs_right",
     )
+    variants_by_majors = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=dedent(
+            """
+            A different right variant for a pair of majors, as {"left_major", "right_major",
+            "right_variant"} objects naming major and variant codes. A plan's own right_variant
+            still wins.
+            """
+        ),
+    )
     cu_floor = models.DecimalField(decimal_places=2, max_digits=4, null=True, blank=True)
     max_shared_cu = models.DecimalField(
         decimal_places=2,
@@ -569,6 +626,17 @@ class DualProgram(models.Model):
         blank=True,
         help_text=(
             "Cap on CUs counted toward both sides. Null means only the two-claim cap applies."
+        ),
+    )
+    unshared_rules = models.JSONField(
+        default=list,
+        blank=True,
+        help_text=dedent(
+            """
+            Pairs of leaves that may not count the same course, though their degrees otherwise
+            share freely, as {"left": matcher, "right": matcher} objects. A matcher has the
+            fields of a variant's suppressed_rules and matches leaves of that side's programs.
+            """
         ),
     )
 
@@ -580,6 +648,8 @@ class DegreePlan(models.Model):  #
     """
     Stores a users plan for an associated degree.
     """
+
+    MAX_PER_USER = 10
 
     name = models.CharField(max_length=255, help_text="The user's nickname for the degree plan.")
 
@@ -700,14 +770,19 @@ class DegreePlan(models.Model):  #
         stored = {
             status.rule_id: status for status in self.satisfactions.filter(rule__in=top_level_rules)
         }
-        for rule in top_level_rules:
-            satisfied = rule.evaluate(full_codes, waived=waived)
+        results = evaluate_rule_trees(top_level_rules, full_codes, waived=waived)
+        created, changed = [], []
+        now = timezone.now()
+        for rule, satisfied in results.items():
             status = stored.get(rule.id)
             if status is None:
-                SatisfactionStatus.objects.create(degree_plan=self, rule=rule, satisfied=satisfied)
+                created.append(SatisfactionStatus(degree_plan=self, rule=rule, satisfied=satisfied))
             elif status.satisfied != satisfied:
                 status.satisfied = satisfied
-                status.save(update_fields=["satisfied", "last_updated"])
+                status.last_updated = now
+                changed.append(status)
+        SatisfactionStatus.objects.bulk_create(created)
+        SatisfactionStatus.objects.bulk_update(changed, ["satisfied", "last_updated"])
 
     def evaluate_rules(self, rules: list[Rule]) -> tuple[set[Rule], set[DoubleCountRestriction]]:
         """
@@ -775,7 +850,7 @@ class DegreePlan(models.Model):  #
             cu_ok = rule.credits is None or cu >= rule.credits
             if (rule.num is not None or rule.credits is not None) and num_ok and cu_ok:
                 satisfied_rules.add(rule)
-        return satisfied_rules
+        return satisfied_rules | PickGroups(rules).closed(satisfied_rules)
 
     def copy(self, new_name: str) -> DegreePlan:
         """
@@ -1095,14 +1170,182 @@ class DockedCourse(models.Model):
         ]
 
 
-# After beta: delete this (and remove the DegreeWaitlist permission class)
+# After beta: delete this (and remove the InPDPBeta permission class)
 class PDPBetaUser(models.Model):
-    person = models.ForeignKey(
+    """
+    A user's place in the PDP beta: a request to join, or access an admin granted. Only
+    approved users get in.
+    """
+
+    class Status(models.TextChoices):
+        REQUESTED = "REQUESTED", "Requested"
+        APPROVED = "APPROVED", "Approved"
+        DENIED = "DENIED", "Denied"
+
+    person = models.OneToOneField(
         get_user_model(),
         on_delete=models.CASCADE,
-        help_text="The user who has access to the PDP beta",
+        related_name="pdp_beta",
+        help_text="The user this beta access belongs to.",
+    )
+    status = models.CharField(
+        max_length=16,
+        choices=Status.choices,
+        # A row an admin adds by hand is a grant; requests from the site say so explicitly.
+        default=Status.APPROVED,
+        help_text="Whether the user has asked to join, been let in, or been turned down.",
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    decided_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When an admin approved or denied the request. Null while it's pending.",
+    )
+    notified_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When the user was emailed that they're in. Null if they haven't been.",
+    )
+
+    def __str__(self) -> str:
+        return f"{self.person} ({self.get_status_display()})"
+
+    def decide(self, status):
+        """
+        Every change of status goes through here, so an approval always sends its email: once
+        the change is saved, and only to someone who hasn't been emailed before.
+        """
+        self.status = status
+        self.decided_at = None if status == self.Status.REQUESTED else timezone.now()
+        self.save()
+        if status == self.Status.APPROVED and self.notified_at is None:
+            from degree.tasks import send_beta_approval_email
+
+            beta_id = self.id
+            transaction.on_commit(lambda: send_beta_approval_email.delay(beta_id))
+
+    @classmethod
+    def pending_first(cls, queryset):
+        """Requests still waiting on a decision, then everyone else, newest first."""
+        waiting = Case(When(status=cls.Status.REQUESTED, then=Value(0)), default=Value(1))
+        return queryset.annotate(waiting=waiting).order_by("waiting", "-created_at")
+
+
+def penn_address(person):
+    # Penn Labs accounts usually carry the student's email; a PennKey is always an address.
+    return (person.email or f"{person.username}@upenn.edu").lower()
+
+
+class PDPBetaReferral(models.Model):
+    """
+    A beta user's invitation of a friend, by PennKey. Nothing happens until an admin approves
+    it: then the PennKey is let into the beta and the friend gets an email that doesn't say
+    who invited them.
+    """
+
+    MAX_PER_USER = 3
+
+    class Status(models.TextChoices):
+        PENDING = "PENDING", "Pending"
+        APPROVED = "APPROVED", "Approved"
+        DENIED = "DENIED", "Denied"
+
+    referrer = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.CASCADE,
+        related_name="pdp_referrals",
+        help_text="The beta user who sent the invitation.",
+    )
+    pennkey = models.CharField(max_length=16, help_text="The friend's PennKey, lowercased.")
+    status = models.CharField(
+        max_length=16,
+        choices=Status.choices,
+        default=Status.PENDING,
+        help_text="Whether an admin has let the friend in, turned them down, or not decided.",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    decided_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When an admin approved or denied the referral. Null while it's pending.",
+    )
+    emailed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="When the friend was emailed their invitation. Null if they haven't been.",
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["referrer", "pennkey"], name="unique_pdp_referral")
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.referrer} invited {self.pennkey} ({self.get_status_display()})"
+
+    @property
+    def email(self) -> str:
+        return f"{self.pennkey}@upenn.edu"
+
+    def decide(self, status):
+        """
+        Every change of status goes through here. Approving lets the friend in, or marks them
+        to be let in when they first log in, and emails them once per PennKey.
+        """
+        now = timezone.now()
+        with transaction.atomic():
+            self.status = status
+            self.decided_at = None if status == self.Status.PENDING else now
+            self.save()
+            if status != self.Status.APPROVED:
+                return
+
+            same_friend = PDPBetaReferral.objects.filter(pennkey=self.pennkey)
+            # One approval answers everyone who invited this friend.
+            same_friend.filter(status=self.Status.PENDING).update(
+                status=self.Status.APPROVED, decided_at=now
+            )
+            person = get_user_model().objects.filter(username__iexact=self.pennkey).first()
+            if person is not None:
+                beta = PDPBetaUser.objects.filter(person=person).first()
+                if beta is not None and beta.status == PDPBetaUser.Status.APPROVED:
+                    return  # already in; nothing to tell them
+                beta = beta or PDPBetaUser(person=person)
+                beta.status = PDPBetaUser.Status.APPROVED
+                beta.decided_at = now
+                # The invitation is their welcome, so they don't also get the approval email.
+                beta.notified_at = now
+                beta.save()
+            if same_friend.filter(emailed_at__isnull=False).exists():
+                return
+
+            from degree.tasks import send_referral_email
+
+            referral_id = self.id
+            transaction.on_commit(lambda: send_referral_email.delay(referral_id))
+
+    @classmethod
+    def redeem(cls, person):
+        """
+        Let in someone a referral approved before they'd ever logged in. Only for someone with
+        no beta row yet, so an admin's later revoke or deny stands.
+        """
+        if PDPBetaUser.objects.filter(person=person).exists():
+            return False
+        if not cls.objects.filter(
+            pennkey=person.username.lower(), status=cls.Status.APPROVED
+        ).exists():
+            return False
+        now = timezone.now()
+        PDPBetaUser.objects.get_or_create(
+            person=person,
+            defaults={
+                "status": PDPBetaUser.Status.APPROVED,
+                "decided_at": now,
+                "notified_at": now,
+            },
+        )
+        return True
 
 
 class PDPOnboardingStatus(models.Model):

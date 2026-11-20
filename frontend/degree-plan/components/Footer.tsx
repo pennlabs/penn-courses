@@ -40,7 +40,7 @@ const Footer = () => (
         Have feedback about Penn Degree Plan? Let us know {" "}
         {// <Link href="mailto:contact@penncourses.org">contact@penncourses.org</Link>
         }
-        <Link href="https://airtable.com/appFRa4NQvNMEbWsA/shr120VUScuNJywyv">here!</Link>
+        <Link href="https://airtable.com/appFRa4NQvNMEbWsA/pagVmS1n5KsAx6MCu/form">here!</Link>
     </Wrapper>
 );
 

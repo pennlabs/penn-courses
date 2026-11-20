@@ -1,3 +1,4 @@
+import re
 from collections import defaultdict
 from textwrap import dedent
 
@@ -8,6 +9,7 @@ from rest_framework import serializers
 from courses.models import Course
 from courses.util import get_current_semester
 from degree.models import (
+    NO_CONCENTRATION,
     TRANSFER_CREDIT_SEMESTER,
     Degree,
     DegreePlan,
@@ -19,6 +21,8 @@ from degree.models import (
     Fulfillment,
     Major,
     Minor,
+    PDPBetaReferral,
+    PDPBetaUser,
     Rule,
 )
 from degree.utils.composition import compose
@@ -108,13 +112,82 @@ class SimpleCourseSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class BetaRequestSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source="person.username", read_only=True)
+    first_name = serializers.CharField(source="person.first_name", read_only=True)
+    last_name = serializers.CharField(source="person.last_name", read_only=True)
+    email = serializers.CharField(source="person.email", read_only=True)
+    referred_by = serializers.SerializerMethodField(
+        help_text="Usernames of the beta users who invited this person."
+    )
+
+    def get_referred_by(self, beta):
+        referrers = self.context.get("referrers_by_pennkey", {})
+        return sorted(set(referrers.get(beta.person.username, ())))
+
+    class Meta:
+        model = PDPBetaUser
+        fields = [
+            "id",
+            "username",
+            "first_name",
+            "last_name",
+            "email",
+            "status",
+            "created_at",
+            "decided_at",
+            "referred_by",
+        ]
+        read_only_fields = ["created_at", "decided_at"]
+
+
+class InviteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PDPBetaReferral
+        fields = ["pennkey", "status", "created_at"]
+        read_only_fields = fields
+
+
+class ReferralSerializer(serializers.ModelSerializer):
+    referrer_username = serializers.CharField(source="referrer.username", read_only=True)
+    referrer_name = serializers.SerializerMethodField()
+    invitee = serializers.SerializerMethodField(
+        help_text="The invited friend's beta request, or null if they haven't requested access."
+    )
+
+    def get_referrer_name(self, referral):
+        return f"{referral.referrer.first_name} {referral.referrer.last_name}".strip()
+
+    def get_invitee(self, referral):
+        beta = self.context.get("betas_by_pennkey", {}).get(referral.pennkey)
+        if beta is None:
+            return None
+        return {"id": beta.id, "username": beta.person.username, "status": beta.status}
+
+    class Meta:
+        model = PDPBetaReferral
+        fields = [
+            "id",
+            "pennkey",
+            "referrer_username",
+            "referrer_name",
+            "status",
+            "created_at",
+            "decided_at",
+            "emailed_at",
+            "invitee",
+        ]
+        read_only_fields = [field for field in fields if field != "status"]
+
+
 class RuleSerializer(serializers.ModelSerializer):
     q_json = serializers.ReadOnlyField(help_text="JSON representation of the q object")
 
     class Meta:
         model = Rule
-        # deduplicate_rules hashes this output, and a count refreshed at a different time must
-        # not stop two identical rules from matching.
+        # deduplicate_rules hashes this output. A count refreshed at a different time must not
+        # stop two identical rules from matching, but position must: merged rules share one row,
+        # and so one position, which would misorder whichever degree had it elsewhere.
         exclude = ["match_count"]
 
 
@@ -376,9 +449,58 @@ class DualProgramSerializer(serializers.ModelSerializer):
 
 
 class DegreePlanListSerializer(serializers.ModelSerializer):
+    programs = serializers.SerializerMethodField(
+        help_text="The plan's degrees, majors and minors as { kind, code, name, progress }."
+    )
+
+    def get_programs(self, plan):
+        def with_concentration(name, program):
+            if program.concentration and program.concentration not in NO_CONCENTRATION:
+                return f"{name} ({program.concentration_name or program.concentration})"
+            return name
+
+        # Some minors' names already say "Minor in".
+        def minor_name(minor):
+            return re.sub(r"^minor in ", "", minor.name or minor.code, flags=re.IGNORECASE)
+
+        progress = self.context.get("progress", {}).get(plan.id, {})
+
+        def done(relation, program):
+            return round(progress.get((relation, program.id), 0), 3)
+
+        return [
+            *(
+                {
+                    "kind": "degree",
+                    "code": d.major,
+                    "name": with_concentration(f"{d.degree} in {d.major_name or d.major}", d),
+                    "progress": done("degrees", d),
+                }
+                for d in plan.degrees.all()
+            ),
+            *(
+                {
+                    "kind": "major",
+                    "code": m.code,
+                    "name": with_concentration(f"Major in {m.name or m.code}", m),
+                    "progress": done("majors", m),
+                }
+                for m in plan.majors.all()
+            ),
+            *(
+                {
+                    "kind": "minor",
+                    "code": m.code,
+                    "name": f"Minor in {minor_name(m)}",
+                    "progress": done("minors", m),
+                }
+                for m in plan.minors.all()
+            ),
+        ]
+
     class Meta:
         model = DegreePlan
-        fields = ["id", "name", "created_at", "updated_at"]
+        fields = ["id", "name", "created_at", "updated_at", "programs"]
 
 
 class DegreePlanDetailSerializer(serializers.ModelSerializer):
@@ -396,6 +518,16 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
     dual_program = DualProgramSerializer(read_only=True)
     right_variant = serializers.SlugRelatedField(slug_field="code", read_only=True)
     components = serializers.SerializerMethodField()
+
+    catalog_years = serializers.SerializerMethodField(
+        help_text=dedent(
+            """
+        The catalog years each of the plan's degrees, majors and minors has, as
+        `{"degrees": {id: [{"id": id, "year": year}, ...]}, "majors": ..., "minors": ...}`, oldest
+        first. Switch between them through the `catalog-year` route.
+        """
+        )
+    )
 
     major_degrees = serializers.SerializerMethodField(
         help_text=dedent(
@@ -427,7 +559,25 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
     person = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     def get_components(self, obj):
+        # Only a coordinated program (e.g. M&T) changes its programs' requirements; otherwise
+        # this would repeat the degrees, majors and minors above.
+        if obj.dual_program_id is None:
+            return []
         return [serialize_component(component) for component in compose(obj).components]
+
+    def get_catalog_years(self, obj):
+        def years_of(program):
+            # One version a year, the plan's own for its year.
+            by_year = {}
+            for version in program.catalog_years().order_by("year", "id"):
+                by_year.setdefault(version.year, version.id)
+            by_year[program.year] = program.id
+            return [{"id": id, "year": year} for year, id in sorted(by_year.items())]
+
+        return {
+            relation: {program.id: years_of(program) for program in getattr(obj, relation).all()}
+            for relation in ("degrees", "majors", "minors")
+        }
 
     def get_minor_degrees(self, obj):
         return [
@@ -458,6 +608,7 @@ class DegreePlanDetailSerializer(serializers.ModelSerializer):
             "dual_program",
             "right_variant",
             "components",
+            "catalog_years",
             "waived_rules",
             "person",
             "created_at",

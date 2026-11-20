@@ -1,7 +1,5 @@
 import { DBObject, assertValueType } from "@/types";
-import { assert } from "console";
 import useSWR, { useSWRConfig } from "swr";
-import { updateDecorator } from "typescript";
 
 interface SWRCrudError extends Error {
     info: any;
@@ -52,7 +50,8 @@ export const baseFetcher = (init: RequestInit, returnJson: boolean = true) => as
     if (!res.ok) {
         const error = new Error('An error occurred while fetching the data.') as SWRCrudError;
         // Attach extra info to the error object.
-        error.info = await res.json()
+        // An error page (e.g. a 500's HTML) isn't JSON.
+        error.info = await res.json().catch(() => null)
         error.status = res.status
         // TODO: need to figure out how to catch these errors
         throw error;
@@ -160,25 +159,25 @@ export const useSWRCrud = <T extends DBObject, idType = Number | string | null>(
         return updated;
     }
 
-    const remove = async (id: idType) => {
-        if (!id) return;
+    // Resolves to whether the delete went through.
+    const remove = async (id: idType): Promise<boolean> => {
+        if (!id) return false;
         const key = normalizeFinalSlash(endpoint) + id;
-        const removed = await removeFetcher(key)
-        mutate(endpoint, removed, {
-            optimisticData: (list?: Array<T>) => list ? list.filter((item: T) => String(item[idKey]) !== id) : [],
-            populateCache: (_, list?: Array<T>) => {
-                if (!list) return []
-                return list.filter((item: T) => item[idKey] !== id)
-            },
-            revalidate: false
-        })
-        mutate(key, removed, {
-            optimisticData: () => undefined,
-            populateCache: () => undefined,
-            revalidate: false
-        })
-
-        return removed;
+        const without = (list?: Array<T>) =>
+            list ? list.filter((item: T) => String(item[idKey]) !== String(id)) : [];
+        try {
+            await mutate(endpoint, removeFetcher(key), {
+                optimisticData: without,
+                populateCache: (_, list?: Array<T>) => without(list),
+                rollbackOnError: true,
+                revalidate: false
+            })
+        } catch (error) {
+            console.error(`swrcrud: failed to delete ${key}`, error);
+            return false;
+        }
+        mutate(key, undefined, { revalidate: false });
+        return true;
     }
 
     const createOrUpdate = (data: Partial<T>, id: any) => {

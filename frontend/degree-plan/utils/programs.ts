@@ -1,6 +1,29 @@
 import { DegreePlan, Rule } from "@/types";
 
-export type ProgramKind = "degree" | "major" | "minor";
+// Some catalog years record a program without a concentration as Path's "No Concentration" or
+// "Non Designated", where others leave it empty.
+export const NO_CONCENTRATION_CODES = ["NCON", "NONE"];
+export const hasConcentration = (code: string | null | undefined) =>
+  !!code && !NO_CONCENTRATION_CODES.includes(code);
+
+// What stays the same across the catalog years of a degree, as the backend matches them.
+export const degreeProgramOf = (degree: {
+  program: string;
+  degree: string;
+  major: string;
+  concentration: string | null;
+}) =>
+  [
+    degree.program,
+    degree.degree,
+    degree.major,
+    hasConcentration(degree.concentration) ? degree.concentration : null,
+  ].join("|");
+
+// What stays the same across the catalog years of a major or minor, e.g. CSCI-BA for CSCI-BA-NCON.
+const NO_CONCENTRATION_SUFFIX = new RegExp(`-(${NO_CONCENTRATION_CODES.join("|")})$`);
+export const programCodeOf = (program: { program_code: string }) =>
+  program.program_code.replace(NO_CONCENTRATION_SUFFIX, "");
 
 // Requirements Path applies to every catalog year (e.g. the Robotics MSE) are stored under
 // year 0. They have no year worth showing, so every label leaves it out.
@@ -9,13 +32,37 @@ export const OPEN_ENDED_YEAR = 0;
 export const programYear = (year: number): string | null =>
   year === OPEN_ENDED_YEAR ? null : String(year);
 
+// Who each of a program's versions is for, by the fall students started in: a version applies
+// until the next one does, e.g. "Fall 2024–2025" then "Fall 2026 or later". An open-ended
+// version is the oldest, so it covers everyone before the next: "Fall 2025 or earlier".
+export const startingYearsLabels = (catalogYears: number[]) =>
+  catalogYears.map((year, i) => {
+    const next = catalogYears[i + 1];
+    if (year === OPEN_ENDED_YEAR) {
+      return next === undefined ? "Any year" : `Fall ${next - 2} or earlier`;
+    }
+    const first = year - 1;
+    if (next === undefined) return `Fall ${first} or later`;
+    const last = next - 2;
+    return last > first ? `Fall ${first}–${last}` : `Fall ${first}`;
+  });
+
+// Pre-med, which a plan holds as a major though it isn't a Penn program.
+export const PREMED_PROGRAM_CODE = "PREMED";
+export const isPremed = (program: { program_code?: string }) =>
+  program.program_code === PREMED_PROGRAM_CODE;
+
+export type ProgramKind = "degree" | "major" | "minor";
+
 export interface PlanProgram {
   id: number;
   relation: "degrees" | "majors" | "minors";
   kind: ProgramKind;
   title: string;
   code: string; // a short label, for when the full title doesn't fit
+  family: string; // the same across the program's catalog years
   year: number;
+  catalogYears: { id: number; year: number }[]; // this program's versions, this one included
   rules: Rule[];
 }
 
@@ -34,6 +81,15 @@ const withProgramChanges = (
   });
 };
 
+const catalogYearsOf = (
+  detail: DegreePlan,
+  relation: PlanProgram["relation"],
+  program: { id: number; year: number }
+) =>
+  detail.catalog_years?.[relation]?.[program.id] ?? [
+    { id: program.id, year: program.year },
+  ];
+
 export const planPrograms = (detail: DegreePlan): PlanProgram[] =>
   withProgramChanges(detail, [
     ...(detail.degrees ?? []).map((degree) => ({
@@ -41,21 +97,29 @@ export const planPrograms = (detail: DegreePlan): PlanProgram[] =>
       relation: "degrees" as const,
       kind: "degree" as const,
       title: `${degree.degree} in ${degree.major_name}${
-        degree.concentration ? ` (${degree.concentration_name})` : ""
+        hasConcentration(degree.concentration)
+          ? ` (${degree.concentration_name})`
+          : ""
       }`,
       code: `${degree.degree} ${degree.major}`,
+      family: degreeProgramOf(degree),
       year: degree.year,
+      catalogYears: catalogYearsOf(detail, "degrees", degree),
       rules: degree.rules,
     })),
     ...(detail.majors ?? []).map((major) => ({
       id: major.id,
       relation: "majors" as const,
       kind: "major" as const,
-      title: `Major in ${major.name}${
-        major.concentration_name ? ` (${major.concentration_name})` : ""
+      title: isPremed(major) ? major.name ?? "Pre-Medicine" : `Major in ${major.name}${
+        major.concentration_name && hasConcentration(major.concentration)
+          ? ` (${major.concentration_name})`
+          : ""
       }`,
       code: major.code,
+      family: programCodeOf(major),
       year: major.year,
+      catalogYears: catalogYearsOf(detail, "majors", major),
       rules: major.rules,
     })),
     ...(detail.minors ?? []).map((minor) => ({
@@ -64,7 +128,9 @@ export const planPrograms = (detail: DegreePlan): PlanProgram[] =>
       kind: "minor" as const,
       title: `Minor in ${minor.name}`,
       code: minor.code,
+      family: programCodeOf(minor),
       year: minor.year,
+      catalogYears: catalogYearsOf(detail, "minors", minor),
       rules: minor.rules,
     })),
   ]);

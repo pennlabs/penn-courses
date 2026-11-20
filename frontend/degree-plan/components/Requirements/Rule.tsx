@@ -39,6 +39,8 @@ import {
   OverrideModalCard,
   OverrideModalTitle,
   OverrideModalBody,
+  OverrideModalIcon,
+  OverrideModalNote,
   OverrideModalActions,
   OverrideModalButton,
   OverrideCourseName,
@@ -48,6 +50,7 @@ import {
   WaiveButton,
 } from "./Rule.styles";
 import { ProgramKind } from "./ProgramTabs";
+import Collapse, { Chevron } from "./Collapse";
 
 /** The kind of program the rules below belong to, which colors their accents. */
 export const ProgramKindContext = createContext<ProgramKind | null>(null);
@@ -95,17 +98,22 @@ interface OverrideModalProps {
 const OverrideModal = ({ fullCode, ruleTitle, waived, onConfirm, onCancel }: OverrideModalProps) => (
   <OverrideModalOverlay onClick={onCancel}>
     <OverrideModalCard onClick={(e) => e.stopPropagation()}>
-      <OverrideModalTitle>Override Requirement?</OverrideModalTitle>
+      <OverrideModalTitle>
+        <OverrideModalIcon>
+          <i className="fas fa-star" aria-hidden />
+        </OverrideModalIcon>
+        Count it anyway?
+      </OverrideModalTitle>
       <OverrideModalBody>
-        <OverrideCourseName>{fullCode.replace("-", " ")}</OverrideCourseName> doesn't
-        normally satisfy <OverrideCourseName>{ruleTitle || "this requirement"}</OverrideCourseName>.
-        <br /><br />
-        Do you want to manually override this and count it anyway?
+        <p>
+          <OverrideCourseName>{fullCode.replace("-", " ")}</OverrideCourseName> doesn't
+          normally satisfy <OverrideCourseName>{ruleTitle || "this requirement"}</OverrideCourseName>.
+          You can override this and count it toward the requirement anyway.
+        </p>
         {waived && (
-          <>
-            <br /><br />
-            This requirement is currently waived. Counting a course for it removes the waiver.
-          </>
+          <OverrideModalNote>
+            This requirement is waived. Counting a course for it removes the waiver.
+          </OverrideModalNote>
         )}
       </OverrideModalBody>
       <OverrideModalActions>
@@ -443,7 +451,11 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
           </LeafStatus>
           {overrideFulfillments.length > 0 && (
             <OverrideTagWrapper ref={overridePopoverRef}>
-              <OverrideTag onClick={() => setOverridePopoverOpen(!overridePopoverOpen)}>
+              <OverrideTag
+                type="button"
+                aria-expanded={overridePopoverOpen}
+                onClick={() => setOverridePopoverOpen(!overridePopoverOpen)}
+              >
                 <i className="fas fa-star" />
                 {overrideFulfillments.length} {overrideFulfillments.length === 1 ? "override" : "overrides"}
               </OverrideTag>
@@ -454,6 +466,8 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
                     <OverrideItem key={f.full_code}>
                       <OverrideItemName>{f.full_code.replace("-", " ")}</OverrideItemName>
                       <RemoveOverrideButton
+                        type="button"
+                        aria-label={`Remove override for ${f.full_code.replace("-", " ")}`}
                         onClick={() => handleRemoveOverride(f.full_code)}
                         disabled={removingOverride === f.full_code}
                       >
@@ -491,19 +505,12 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
   const { children, num } = ruleTree;
 
   if (num && children.length > num) {
-    /** 
-    * This was a hack to fix the data format from physics 
-    * requirements for engineering degree
-    */
-    for (let i = 0; i < children.length; i++) {
-      if (children[i].rule.rules.length == 0) {
-        continue;
-      }
-
-      if ((children[i] as FaultyRuleTree).children) {
-        children[i] = (children[i] as FaultyRuleTree).children[0];
-      }
-    }
+    // An option that only wraps one rule (as engineering physics does) shows that rule directly.
+    // One with several, like Economics' Calculus I + II, has to stay whole.
+    const options = children.map((option) => {
+      const wrapped = (option as FaultyRuleTree).children;
+      return wrapped?.length === 1 ? wrapped[0] : option;
+    });
 
     return (
       <PickNWrapper>
@@ -511,7 +518,7 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
           <div>Pick {num}:</div>
           {satisfied && <SatisfiedCheck pop={justSatisfied} />}
         </PickNTitle>
-        {children.map((ruleTree) => (
+        {options.map((ruleTree) => (
           <div key={ruleTree.rule.id}>
             <RuleComponent headerHeight={headerHeight} zIndex={zIndex - 1} depth={depth + 1} {...ruleTree} />
           </div>
@@ -530,13 +537,13 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
           </RuleTitleText>
           {rule.rules.length > 0 && (
             <Icon>
-              <i className={`fas fa-chevron-${collapsed ? "right" : "up"}`}></i>
+              <Chevron className="fas fa-chevron-up" $degrees={collapsed ? 90 : 0} />
             </Icon>
           )}
         </RuleTitle>
       </RuleTitleWrapper>
       <WhiteSpace $headerHeight={myHeight + (headerHeight ||0) + HEADER_DEFAULT_BUFFER} $zIndex={500} />
-      {!collapsed && (
+      <Collapse open={!collapsed}>
         <Indented $depth={depth}>
           <Column>
             {children.map((ruleTree) => (
@@ -546,7 +553,7 @@ const RuleComponent = (ruleTree: RuleTree & { headerHeight?: number, zIndex?: nu
             ))}
           </Column>
         </Indented>
-      )}
+      </Collapse>
     </>
   );
 };

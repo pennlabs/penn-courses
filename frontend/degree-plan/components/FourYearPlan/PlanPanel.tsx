@@ -1,4 +1,6 @@
 import SelectListDropdown from "./SelectListDropdown";
+import { useSWRConfig } from "swr";
+import PlanOrbs from "./PlanOrbs";
 import Semesters from "./Semesters";
 import styled from "@emotion/styled";
 import type { DegreePlan } from "@/types";
@@ -11,6 +13,9 @@ import { ModalKey } from "./DegreeModal";
 import { tourTarget } from "@/components/Tour/OnboardingTour";
 
 // Matches SelectListDropdown's own flex sizing, so wrapping it doesn't change the header layout.
+// The backend's DegreePlan.MAX_PER_USER.
+const MAX_DEGREE_PLANS = 10;
+
 const PlanSelectWrapper = styled.div`
     display: flex;
     flex: 1 1 auto;
@@ -60,6 +65,7 @@ const PlanPanel = ({
     
 
     const { copy: copyDegreeplan } = useSWRCrud<DegreePlan>('/api/degree/degreeplans');
+    const { mutate } = useSWRConfig();
     const [showStats, setShowStats] = useState(true);
     const [editMode, setEditMode] = useState(false);
 
@@ -68,7 +74,11 @@ const PlanPanel = ({
                 <PanelHeader>
                     <PlanSelectWrapper {...tourTarget("plan-select")}>
                     <SelectListDropdown
-                        itemType="degree plan" 
+                        itemType="degree plan"
+                        maxItems={MAX_DEGREE_PLANS}
+                        preview={(item: DegreePlan) => <PlanOrbs programs={item.programs} />}
+                        // A plan's programs change elsewhere (e.g. editing them), so its preview is refreshed.
+                        onOpen={() => mutate('/api/degree/degreeplans')}
                         active={activeDegreeplan || undefined}
                         getItemName={(item: DegreePlan) => item.name}
                         allItems={degreeplans || []} 

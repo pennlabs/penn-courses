@@ -1,11 +1,5 @@
 import { ArrowLeftIcon } from "@radix-ui/react-icons";
-import {
-  Dispatch,
-  SetStateAction,
-  useCallback,
-  useEffect,
-  useState,
-} from "react";
+import { useCallback, useEffect, useState } from "react";
 import { BackButton, NextButton } from "./SharedComponents";
 import { PulseLoader } from "react-spinners";
 import {
@@ -23,7 +17,11 @@ import {
 } from "@/components/FourYearPlan/Semesters";
 import { TRANSFER_CREDIT_SEMESTER_KEY } from "@/constants";
 import { postFetcher, getCsrf } from "@/hooks/swrcrud";
-import { CourseLevel, SchoolSelection } from "@/utils/parseUtils";
+import {
+  atStartingYear,
+  CourseLevel,
+  SchoolSelection,
+} from "@/utils/parseUtils";
 import { Field, FieldLabel, Required } from "./onboardingStyles";
 import {
   Body,
@@ -41,6 +39,8 @@ import {
 import SchoolsField from "./SchoolsField";
 import ImportedCourses from "./ImportedCourses";
 import { placePrograms, setDualProgram } from "./placePrograms";
+import PremedField from "./PremedField";
+import { isPremed } from "@/utils/programs";
 import DualProgramField, {
   programError,
   programSides,
@@ -54,7 +54,7 @@ type WelcomeLayoutProps = {
   // Which transcript record each scraped course is on; empty unless the transcript has a
   // masters record.
   courseLevels?: { [course: string]: CourseLevel };
-  setCurrentPage: Dispatch<SetStateAction<number>>;
+  onBack: () => void;
   setActiveDegreeplan: (arg0: DegreePlan) => void;
   inputtedSelections: SchoolSelection[];
   // Code of the coordinated program the transcript names, e.g. "MT".
@@ -69,7 +69,7 @@ export default function CreateWithTranscriptPanel({
   inputtedGraduationYear,
   scrapedCourses,
   courseLevels = {},
-  setCurrentPage,
+  onBack,
   setActiveDegreeplan,
   inputtedSelections,
   inputtedDualProgram = null,
@@ -104,6 +104,8 @@ export default function CreateWithTranscriptPanel({
   const { data: minors, isLoading: isLoadingMinors } = useSWR<Minor[]>(
     `/api/degree/minors`
   );
+  const premedMajor = standaloneMajors?.find(isPremed);
+  const [premed, setPremed] = useState(false);
   const { data: dualPrograms, isLoading: isLoadingDualPrograms } = useSWR<
     DualProgram[]
   >(`/api/degree/dual-programs`);
@@ -113,6 +115,20 @@ export default function CreateWithTranscriptPanel({
   const dualProgram = dualPrograms?.find(
     (program) => program.code === dualProgramCode
   );
+
+  // The programs chosen so far follow the starting year to their versions for it.
+  const changeStartingYear = (year: YearOption | null) => {
+    setStartingYear(year);
+    setSelections((current) =>
+      atStartingYear(
+        current,
+        degrees,
+        standaloneMajors,
+        minors,
+        year?.value ?? null
+      )
+    );
+  };
 
   // Workaround solution to only input courses once degree has been created and degreeID exists.
   // Will likely change in the future!
@@ -207,6 +223,10 @@ export default function CreateWithTranscriptPanel({
             minorIds: (s.minors ?? []).map((m) => m.value.id),
           }))
         );
+        if (premed && premedMajor)
+          await postFetcher(`/api/degree/degreeplans/${_new.id}/majors`, {
+            major_ids: [premedMajor.id],
+          });
         setActiveDegreeplan(_new);
         setDegreeID(_new.id);
       } else if (res.status === 409) {
@@ -263,7 +283,7 @@ export default function CreateWithTranscriptPanel({
         <ScrollArea>
           <ScrollContent>
             <Header>
-              <BackButton type="button" onClick={() => setCurrentPage(0)}>
+              <BackButton type="button" onClick={onBack}>
                 <ArrowLeftIcon width={16} height={16} />
                 Back
               </BackButton>
@@ -313,7 +333,7 @@ export default function CreateWithTranscriptPanel({
                   graduationOptions={graduationYearOptions}
                   startingYear={startingYear}
                   graduationYear={graduationYear}
-                  setStartingYear={setStartingYear}
+                  setStartingYear={changeStartingYear}
                   setGraduationYear={setGraduationYear}
                   isClearable
                 />
@@ -346,11 +366,18 @@ export default function CreateWithTranscriptPanel({
                   degrees={degrees}
                   standaloneMajors={standaloneMajors}
                   minors={minors}
+                  startingYear={startingYear?.value ?? null}
                   isLoadingDegrees={isLoadingDegrees}
                   isLoadingMajors={isLoadingMajors}
                   isLoadingMinors={isLoadingMinors}
                 />
               </Section>
+
+              {premedMajor && (
+                <Section>
+                  <PremedField checked={premed} onChange={setPremed} />
+                </Section>
+              )}
             </Body>
           </ScrollContent>
         </ScrollArea>

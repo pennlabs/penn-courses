@@ -79,6 +79,13 @@ export interface Degree extends DBObject {
 
 export interface DegreePlan extends DBObject {
   id: number;
+  /** The plan's degrees, majors and minors, as the plan list gives them. */
+  programs?: {
+    kind: "degree" | "major" | "minor";
+    code: string;
+    name: string;
+    progress: number; // 0 to 1, as the requirements panel shows it
+  }[];
   degrees: Degree[]
   /** Majors pursued beyond the one this plan's degree already includes. */
   majors: Major[]
@@ -95,6 +102,11 @@ export interface DegreePlan extends DBObject {
   components?: PlanComponent[];
   /** Requirements the student is waived from, e.g. by AP exams; done without any course. */
   waived_rules?: Rule["id"][];
+  /** The catalog years each degree, major and minor comes in, by its id, oldest first. */
+  catalog_years?: Record<
+    "degrees" | "majors" | "minors",
+    Record<string, { id: number; year: number }[]>
+  >;
   name: string;
   updated_at: string;
   created_at: string;
@@ -133,6 +145,7 @@ export interface User {
     first_name: string;
     last_name: string;
     profile: Profile;
+    is_staff?: boolean;
 }
 
 export interface Options {

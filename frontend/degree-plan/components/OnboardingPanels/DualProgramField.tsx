@@ -1,4 +1,5 @@
 import styled from "@emotion/styled";
+import { useEffect, useState } from "react";
 import Select from "react-select";
 import { DegreeListing, DualProgram } from "@/types";
 import { SchoolSelection } from "@/utils/parseUtils";
@@ -22,6 +23,27 @@ const Hint = styled.p`
   margin: 0;
   font-size: 13px;
   color: ${color.muted};
+`;
+
+const Reveal = styled.button`
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px dashed var(--primary-color-extra-dark);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--primary-color-xxx-dark);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    border-style: solid;
+    background: var(--primary-color-light);
+  }
 `;
 
 type Side = "left" | "right";
@@ -94,8 +116,21 @@ export default function DualProgramField({
   selections,
   degrees,
 }: DualProgramFieldProps) {
+  const [open, setOpen] = useState(!!value);
+  useEffect(() => {
+    if (value) setOpen(true);
+  }, [value]);
   const error = programError(value, selections, degrees);
   const sides = value && programSides(value, selections);
+
+  if (!open) {
+    return (
+      <Reveal type="button" onClick={() => setOpen(true)}>
+        <i className="fas fa-plus" aria-hidden />
+        Have a coordinated dual degree?
+      </Reveal>
+    );
+  }
 
   return (
     <Field>

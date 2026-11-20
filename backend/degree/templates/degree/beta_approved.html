@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<div style="width: 100%; background-color: white; margin: 0 auto; max-width: 600px; padding: 15px; font-family: Helvetica, Arial, sans-serif; overflow-x: hidden; color: #3D4177;">
+    <a href="{{ url }}">
+        <img src="{{ url }}/apple-touch-icon.png" alt="Penn Degree Plan" style="width: 40px" />
+    </a>
+    <div style="text-align: center;">
+        <h1 style="margin-bottom: 1em;">You're in the Penn Degree Plan beta!</h1>
+        <p style="font-size: 1.1em; color: #575757;">
+            {% if first_name %}Hi {{ first_name }}, you{% else %}You{% endif %} now have access to the Penn Degree Plan beta.
+            Log in to start planning your courses and see how they count toward your degree.
+        </p>
+        <p style="padding-top: 1em;">
+            <a href="{{ url }}" style="cursor: pointer; border-width: 0; text-decoration: none; padding: 10px 25px; font-size: 1.2em; color: white; background-color: #6C72B6; border-radius: 5px; font-weight: bold;">
+                Open Penn Degree Plan
+            </a>
+        </p>
+        <p style="padding-top: 1.5em; font-size: 0.95em; color: #575757;">
+            Penn Degree Plan is in beta, so some requirements may not match your official audit. Always double-check with your advisor and Path@Penn, and
+            <a href="https://airtable.com/appFRa4NQvNMEbWsA/pagVmS1n5KsAx6MCu/form" style="color: #6C72B6;">tell us what's off</a>.
+        </p>
+    </div>
+
+    <div style="text-align: center; margin-top: 2em; color: #575757;">
+        Made with <span style="color: red">&hearts;</span> by <a href="https://pennlabs.org/">Penn Labs</a>
+    </div>
+</div>

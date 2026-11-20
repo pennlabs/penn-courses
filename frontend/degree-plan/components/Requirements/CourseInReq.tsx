@@ -1,4 +1,5 @@
 import { useDrag } from "react-dnd";
+import { useCourseDragPreview } from "@/components/common/CourseDragPreview";
 import { ItemTypes } from "../Dock/dnd/constants";
 import { GrayIcon } from '../common/bulma_derived_components';
 import styled from '@emotion/styled';
@@ -62,13 +63,14 @@ const CourseInReq = ({ course, isUsed, isUnselectedRule = false, isDisabled, rul
         createOrUpdate({"full_code": full_code}, full_code); 
     }
 
-    const [{ isDragging }, drag] = useDrag<DnDCourse, never, { isDragging: boolean }>(() => ({
+    const [{ isDragging }, drag, preview] = useDrag<DnDCourse, never, { isDragging: boolean }>(() => ({
       type: ItemTypes.COURSE_IN_REQ,
       item: {...course, rule_id: ruleId, fulfillment: fulfillment},
       collect: (monitor) => ({
         isDragging: !!monitor.isDragging()
       })
     }), [course])
+    useCourseDragPreview(preview);
   
     const isOverride = !!fulfillment?.overrides?.includes(ruleId);
 

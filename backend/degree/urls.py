@@ -3,15 +3,19 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_nested.routers import NestedDefaultRouter
 
 from degree.views import (
+    BetaAccessView,
+    BetaRequestViewset,
     DegreePlanViewset,
     DegreeViewset,
     DockedCourseViewset,
     DualProgramViewset,
     FulfillmentViewSet,
+    InviteView,
     MajorViewset,
     MinorViewset,
     OnboardFromTranscript,
     OnboardingStatusView,
+    ReferralViewset,
     SatisfiedRuleList,
 )
 
@@ -23,6 +27,8 @@ router.register(r"majors", MajorViewset, basename="major")
 router.register(r"minors", MinorViewset, basename="minor")
 router.register(r"dual-programs", DualProgramViewset, basename="dual-program")
 router.register(r"docked", DockedCourseViewset)
+router.register(r"beta-requests", BetaRequestViewset, basename="beta-request")
+router.register(r"beta-referrals", ReferralViewset, basename="beta-referral")
 fulfillments_router = NestedDefaultRouter(
     router, r"degreeplans", lookup="degreeplan", trailing_slash=False
 )
@@ -32,13 +38,15 @@ urlpatterns = [
     path("", include(router.urls)),
     path("", include(fulfillments_router.urls)),
     path("onboarding-status", OnboardingStatusView.as_view(), name="onboarding-status"),
+    path("beta-access", BetaAccessView.as_view(), name="beta-access"),
+    path("beta-invites", InviteView.as_view(), name="beta-invites"),
     path(
-        "onboard-from-transcript/<slug:degree_plan_id>",
+        "onboard-from-transcript/<int:degree_plan_id>",
         OnboardFromTranscript.as_view(),
         name="onboard-from-transcript",
     ),
     path(
-        "satisfied-rule-list/<slug:degree_plan_id>/<slug:full_code>/<slug:rule_id>",
+        "satisfied-rule-list/<int:degree_plan_id>/<slug:full_code>/<slug:rule_id>",
         SatisfiedRuleList.as_view(),
         name="satisfied-rule-list",
     ),

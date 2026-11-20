@@ -14,9 +14,11 @@ from dataclasses import dataclass, field, replace
 from decimal import Decimal
 
 from degree.models import (
+    PREMED_PROGRAM_CODE,
     Degree,
     DegreePlan,
     DegreePlanMajor,
+    ProgramVariant,
     graduate_programs,
     is_college,
     program_from_program_code,
@@ -52,6 +54,8 @@ class Component:
     rules: tuple
     roots: tuple
     extra_rules: tuple = ()
+    # The major code a coordinated program's side was matched on.
+    major: str | None = None
     keep_ids: frozenset = field(init=False)
 
     def __post_init__(self):
@@ -121,7 +125,7 @@ def _leaves(rules):
     return leaves
 
 
-def _matcher_hits(rule, matcher) -> bool:
+def matcher_hits(rule, matcher) -> bool:
     block_type = matcher.get("block_type")
     block_value = matcher.get("block_value")
     needle = matcher.get("q_contains")
@@ -145,18 +149,39 @@ def apply_variant(leaves, variant):
     suppressed = []
     kept = []
     for rule in leaves:
-        if any(_matcher_hits(rule, matcher) for matcher in variant.suppressed_rules):
+        if any(matcher_hits(rule, matcher) for matcher in variant.suppressed_rules):
             suppressed.append(rule)
         else:
             kept.append(rule)
     matched = {rule.id for rule in suppressed}
     for matcher in variant.suppressed_rules:
-        if not any(_matcher_hits(rule, matcher) for rule in leaves):
+        if not any(matcher_hits(rule, matcher) for rule in leaves):
             logger.warning("Variant %s matcher %s suppressed no rule.", variant.code, matcher)
 
     extra_roots = tuple(variant.rules.all())
     kept.extend(_leaves(extra_roots))
     return kept, frozenset(matched), extra_roots
+
+
+def unshared_pairs(dual, rule_to_component) -> list[tuple]:
+    """Leaf pairs a coordinated program forbids from counting the same course."""
+    if dual is None or not dual.unshared_rules:
+        return []
+    programs = {"left": dual.left_programs or [], "right": dual.right_programs or []}
+
+    def matching(side, matcher):
+        return [
+            rule
+            for rule, component in rule_to_component.items()
+            if component.program in programs[side] and matcher_hits(rule, matcher)
+        ]
+
+    return [
+        (left, right)
+        for ban in dual.unshared_rules
+        for left in matching("left", ban["left"])
+        for right in matching("right", ban["right"])
+    ]
 
 
 def _degree_title(degree) -> str:
@@ -201,6 +226,8 @@ def _title(owner, relation) -> str:
     if relation == "degrees":
         return _degree_title(owner)
     if relation == "majors":
+        if owner.program_code == PREMED_PROGRAM_CODE:
+            return owner.name
         name = owner.name or owner.code
         if owner.concentration_name:
             return f"Major in {name} ({owner.concentration_name})"
@@ -208,9 +235,10 @@ def _title(owner, relation) -> str:
     return f"Minor in {owner.name or owner.code}"
 
 
-def _side_owners(degree_plan, dual) -> dict[str, str]:
+def _side_owners(degree_plan, dual) -> dict[str, tuple[str, str]]:
     """
-    The component key that fills each side of a coordinated program.
+    The component key that fills each side of a coordinated program, mapped to the side and
+    the major it was matched on.
 
     A side goes to one degree, or failing that one major, from that side's schools and
     allowed majors. The earliest added wins, since setting the program adds its pair first.
@@ -239,11 +267,11 @@ def _side_owners(degree_plan, dual) -> dict[str, str]:
     owners = {}
     for key, program, major in candidates:
         for side, programs, allowed in sides:
-            if side in owners.values() or program not in programs:
+            if side in {owner[0] for owner in owners.values()} or program not in programs:
                 continue
             if allowed and major not in allowed:
                 continue
-            owners[key] = side
+            owners[key] = (side, major)
             break
     return owners
 
@@ -255,7 +283,10 @@ def _gather(degree_plan, dual) -> list[Component]:
         components.append(_base_component(degree, "degrees", role, degree.program))
     for major in degree_plan.majors.order_by("id"):
         program = program_from_program_code(major.program_code)
-        components.append(_base_component(major, "majors", "second_major", program))
+        # Pre-med asks for courses rather than awarding a degree, so it never takes one of the
+        # degree claims a course has.
+        premed = major.program_code == PREMED_PROGRAM_CODE
+        components.append(_base_component(major, "majors", "second_major", program, cap=not premed))
     for minor in degree_plan.minors.order_by("id"):
         program = program_from_program_code(minor.program_code)
         components.append(_base_component(minor, "minors", "minor", program, cap=False))
@@ -263,7 +294,11 @@ def _gather(degree_plan, dual) -> list[Component]:
         return components
     owners = _side_owners(degree_plan, dual)
     return [
-        replace(component, side=owners[component.key]) if component.key in owners else component
+        (
+            replace(component, side=owners[component.key][0], major=owners[component.key][1])
+            if component.key in owners
+            else component
+        )
         for component in components
     ]
 
@@ -274,6 +309,20 @@ def _variant_for(side, dual, override):
     if side == "right" and override is not None:
         return override
     return dual.left_variant if side == "left" else dual.right_variant
+
+
+def _variant_for_majors(dual, components):
+    """
+    The right variant a program gives this pair of majors, e.g. VIPER's thermodynamics course for
+    MATH and CSCI, or None when the pair gets the program's usual one.
+    """
+    if dual is None or not dual.variants_by_majors:
+        return None
+    majors = {component.side: component.major for component in components if component.side}
+    for entry in dual.variants_by_majors:
+        if (majors.get("left"), majors.get("right")) == (entry["left_major"], entry["right_major"]):
+            return ProgramVariant.objects.filter(code=entry["right_variant"]).first()
+    return None
 
 
 def _with_variant(component: Component, variant) -> Component:
@@ -381,7 +430,8 @@ def compose(degree_plan) -> Composition:
     kind = _classify(components, dual)
     if kind == "cas_double_major":
         components = _split_college(components)
-    components = _apply_variants(components, dual, degree_plan.right_variant)
+    override = degree_plan.right_variant or _variant_for_majors(dual, components)
+    components = _apply_variants(components, dual, override)
     return Composition(
         kind=kind,
         components=components,

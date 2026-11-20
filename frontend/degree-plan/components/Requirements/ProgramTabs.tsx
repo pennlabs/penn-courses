@@ -2,7 +2,7 @@ import React, { forwardRef, useEffect, useRef, useState } from "react";
 import styled from "@emotion/styled";
 import { useDragLayer } from "react-dnd";
 
-import { ProgramKind, programYear } from "@/utils/programs";
+import { ProgramKind } from "@/utils/programs";
 
 export type { ProgramKind };
 
@@ -11,7 +11,6 @@ export interface ProgramTab {
   kind: ProgramKind;
   title: string;
   code: string;
-  year: number;
   progress: number; // a number between 0 and 1
 }
 
@@ -53,8 +52,10 @@ const Tab = styled.button<{
   align-items: center;
   justify-content: space-between;
   gap: 0.65rem;
-  padding: 0.55rem 0.7rem 0.65rem;
+  padding: 0.6rem 0.7rem;
   border: none;
+  /* Balances the underline, so the name and ring sit in the middle. */
+  border-top: 2px solid transparent;
   border-bottom: 2px solid
     ${(props) =>
       props.$isActive ? `var(--program-${props.$kind})` : "transparent"};
@@ -82,7 +83,6 @@ const TabCopy = styled.span`
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.15rem;
   flex: 1;
   min-width: 0;
 `;
@@ -95,21 +95,6 @@ const TabName = styled.span<{ $isActive: boolean }>`
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
-`;
-
-const TabYear = styled.span<{ $kind: ProgramKind; $isActive: boolean }>`
-  padding: 0.12rem 0.45rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  line-height: 1.3;
-  letter-spacing: 0.01em;
-  color: ${(props) =>
-    props.$isActive ? "#ffffff" : `var(--program-${props.$kind})`};
-  background: ${(props) =>
-    props.$isActive
-      ? `var(--program-${props.$kind})`
-      : `var(--program-${props.$kind}-bg)`};
 `;
 
 const Ring = styled.span`
@@ -242,9 +227,6 @@ const ProgramTabs = forwardRef<HTMLDivElement, ProgramTabsProps>(
         {tabs.map((tab) => {
           const isActive = tab.key === activeKey;
           const percent = Math.round(tab.progress * 100);
-          const year = programYear(tab.year);
-          const describe = (separator: string, progress: string) =>
-            [tab.title, year, progress].filter(Boolean).join(separator);
           return (
             <Tab
               key={tab.key}
@@ -254,9 +236,9 @@ const ProgramTabs = forwardRef<HTMLDivElement, ProgramTabsProps>(
               role="tab"
               aria-selected={isActive}
               aria-controls={programPanelId(tab.key)}
-              aria-label={describe(", ", `${percent}% complete`)}
+              aria-label={`${tab.title}, ${percent}% complete`}
               tabIndex={isActive ? 0 : -1}
-              title={describe(" · ", `${percent}%`)}
+              title={`${tab.title} · ${percent}%`}
               $kind={tab.kind}
               $isActive={isActive}
               $scrolls={scrolls}
@@ -273,11 +255,6 @@ const ProgramTabs = forwardRef<HTMLDivElement, ProgramTabsProps>(
                 <TabName $isActive={isActive}>
                   {scrolls ? tab.code : tab.title}
                 </TabName>
-                {year && (
-                  <TabYear $kind={tab.kind} $isActive={isActive}>
-                    {year}
-                  </TabYear>
-                )}
               </TabCopy>
               <ProgressRing
                 percent={percent}

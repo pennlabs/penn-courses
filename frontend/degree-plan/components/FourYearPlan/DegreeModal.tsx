@@ -1,10 +1,18 @@
 import styled from "@emotion/styled";
 import type { DegreeListing, DegreePlan } from "@/types";
-import React, { useState, useEffect } from "react";
-import { deleteFetcher, postFetcher, useSWRCrud } from "@/hooks/swrcrud";
+import React, { useContext, useEffect, useRef, useState } from "react";
+import { postFetcher, useSWRCrud } from "@/hooks/swrcrud";
+import { hasConcentration } from "@/utils/programs";
 import { useSWRConfig } from "swr";
-import { programYear } from "@/utils/programs";
-import ModalContainer from "../common/ModalContainer";
+import Dialog, {
+  DialogButton,
+  DialogButtons,
+  DialogContent,
+  DialogInput,
+  DialogSubtitle,
+  DialogTitle,
+} from "../common/Dialog";
+import ToastContext from "../Toast/Toast";
 
 export type ModalKey =
   | "plan-create"
@@ -13,92 +21,29 @@ export type ModalKey =
   | "semester-remove"
   | null; // null is closed
 
-const getModalTitle = (modalState: ModalKey) => {
-  switch (modalState) {
-    case "plan-create":
-      return "Create a new degree plan";
-    case "plan-rename":
-      return "Rename degree plan";
-    case "plan-remove":
-      return "Remove degree plan";
-    case "semester-remove":
-      return "Remove semester";
-    case null:
-      return "";
-    default:
-      throw Error("Invalid modal key: ");
-  }
+const TITLES: Record<NonNullable<ModalKey>, string> = {
+  "plan-create": "Create a new degree plan",
+  "plan-rename": "Rename degree plan",
+  "plan-remove": "Remove degree plan?",
+  "semester-remove": "Remove semester?",
 };
 
-const DELETE_CONFIRMATION_MESSAGE = (subject: string) =>
-  `Are you sure you want to remove this ${subject}? All of your planning for this ${subject} will be lost.`;
+const errorText = (error: any, fallback: string) =>
+  error?.info?.detail ?? error?.info?.warning ?? fallback;
 
-const ModalInteriorWrapper = styled.div<{ $row?: boolean }>`
+const NameForm = styled.form`
   display: flex;
-  flex-direction: ${(props) => (props.$row ? "row" : "column")};
-  align-items: center;
-  gap: 1.2rem;
-  text-align: center;
-`;
-
-const ModalInput = styled.input`
-  background-color: #fff;
-  color: black;
-  height: 32px;
-`;
-
-const ModalTextWrapper = styled.div`
-  text-align: start;
-  width: 100%;
-`;
-
-const ModalText = styled.div`
-  color: var(--modal-text-color);
-  font-size: 0.87rem;
-`;
-
-const ModalButton = styled.button`
-  margin: 0px 0px 0px 0px;
-  height: 32px;
-  width: 5rem;
-  background-color: var(--modal-button-color);
-  border-radius: 0.25rem;
-  padding: 0.25rem 0.5rem;
-  color: white;
-  border: none;
-  &:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-`;
-
-const ButtonRow = styled.div<{ $center?: boolean }>`
-  display: flex;
-  width: 100%;
-  flex-direction: row;
-  justify-content: ${(props) => (props.$center ? "center" : "flex-end")};
-  gap: 0.5rem;
-`;
-
-const CancelButton = styled.button`
-  margin: 0px 0px 0px 0px;
-  height: 29px;
-  width: 4rem;
-  background-color: transparent;
-  border-radius: 0.25rem;
-  padding: 0.25rem 0.5rem;
-  color: var(--modal-button-color);
-  border: none;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 1rem;
 `;
 
 /** Create label for major listings */
 export const createMajorLabel = (degree: DegreeListing) => {
-  const concentration =
-    degree.concentration && degree.concentration !== "NONE"
-      ? ` - ${degree.concentration_name}`
-      : "";
-  const year = programYear(degree.year);
-  return `${degree.major_name}${concentration}${year ? ` (${year})` : ""}`;
+  const concentration = hasConcentration(degree.concentration)
+    ? ` - ${degree.concentration_name}`
+    : "";
+  return `${degree.major_name}${concentration}`;
 };
 
 interface RemoveSemesterProps {
@@ -106,149 +51,143 @@ interface RemoveSemesterProps {
 }
 
 interface ModalInteriorProps {
-  modalKey: ModalKey;
-  modalObject:
-    | DegreePlan
-    | null
-    | RemoveSemesterProps;
+  modalKey: NonNullable<ModalKey>;
+  modalObject: DegreePlan | RemoveSemesterProps | null;
   activeDegreePlan: DegreePlan | null;
   setActiveDegreeplan: (arg0: DegreePlan | null) => void;
   close: () => void;
-  modalRef: React.RefObject<HTMLSelectElement | null>;
 }
+
 const ModalInterior = ({
   modalObject,
   modalKey,
   activeDegreePlan,
   setActiveDegreeplan,
   close,
-  modalRef,
 }: ModalInteriorProps) => {
-  const {
-    create: createDegreeplan,
-    update: updateDegreeplan,
-    remove: deleteDegreeplan,
-  } = useSWRCrud<DegreePlan>("/api/degree/degreeplans");
-
+  const { update: updateDegreeplan, remove: deleteDegreeplan } = useSWRCrud<
+    DegreePlan
+  >("/api/degree/degreeplans");
   const { mutate } = useSWRConfig();
+  const showToast = useContext(ToastContext);
 
-  const [
-    modalRefCurrent,
-    setModalRefCurrent,
-  ] = useState<HTMLSelectElement | null>(null);
+  const plan = modalObject as DegreePlan | null;
+  const [name, setName] = useState(
+    modalKey === "plan-rename" ? plan?.name ?? "" : ""
+  );
+  const trimmedName = name.trim();
 
-  useEffect(() => {
-    setModalRefCurrent(modalRef.current);
-  }, [modalRef]);
+  // A dialog dismissed while its plan is being created leaves the plan where it is.
+  const open = useRef(true);
+  useEffect(
+    () => () => {
+      open.current = false;
+    },
+    []
+  );
+  const [pending, setPending] = useState(false);
 
-  const add_degreeplan = async (name: string) => {
-    const _new = await postFetcher("/api/degree/degreeplans", { name: name });
-    await mutate("/api/degree/degreeplans"); // use updated degree plan returned
-    setActiveDegreeplan(_new);
+  const addDegreeplan = async () => {
+    setPending(true);
+    try {
+      const created = await postFetcher("/api/degree/degreeplans", {
+        name: trimmedName,
+      });
+      await mutate("/api/degree/degreeplans");
+      if (!open.current) return;
+      setActiveDegreeplan(created);
+      close();
+    } catch (error) {
+      showToast(
+        errorText(error, "Couldn't create the degree plan. Try again."),
+        true
+      );
+      if (open.current) setPending(false);
+    }
   };
 
-  const delete_degreeplan = async (id: number) => {
-    await deleteFetcher(`/api/degree/degreeplans/${id}`);
-    await mutate("/api/degree/degreeplans"); // use updated degree plan returned
+  const renameDegreeplan = () => {
+    if (!plan) return;
+    updateDegreeplan({ name: trimmedName }, plan.id)?.catch((error) =>
+      showToast(errorText(error, "Couldn't rename the degree plan."), true)
+    );
+    if (plan.id == activeDegreePlan?.id)
+      setActiveDegreeplan({ ...plan, name: trimmedName });
   };
 
-  const [name, setName] = useState<string>("");
+  const removeDegreeplan = () => {
+    if (!plan) return;
+    deleteDegreeplan(plan.id).then((deleted) => {
+      if (!deleted)
+        showToast("Couldn't remove the degree plan. Try again.", true);
+    });
+  };
 
-  if (!modalKey && !modalObject) return <div></div>;
+  const cancel = (
+    <DialogButton type="button" $quiet onClick={close}>
+      Cancel
+    </DialogButton>
+  );
 
-  switch (modalKey) {
-    case "plan-create":
-      return (
-        <ModalInteriorWrapper $row={false}>
-          <ModalInput
-            type="text"
-            placeholder="Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <ButtonRow>
-            <CancelButton onClick={close}>Cancel</CancelButton>
-            <ModalButton
-              onClick={() => {
-                add_degreeplan(name);
-
-                close();
-              }}
-            >
-              Create
-            </ModalButton>
-          </ButtonRow>
-        </ModalInteriorWrapper>
-      );
-    case "plan-rename":
-      return (
-        <ModalInteriorWrapper>
-          <ModalInput
-            type="text"
-            placeholder="New name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <ModalButton
-            onClick={() => {
-              if (
-                modalObject &&
-                "id" in modalObject &&
-                "name" in modalObject
-              ) {
-                updateDegreeplan({ name }, modalObject.id);
-                if (modalObject.id == activeDegreePlan?.id) {
-                  let newNameDegPlan = modalObject;
-                  newNameDegPlan.name = name;
-                  setActiveDegreeplan(newNameDegPlan);
-                }
-              }
-              close();
-            }}
-          >
-            Rename
-          </ModalButton>
-        </ModalInteriorWrapper>
-      );
-    case "plan-remove":
-      return (
-        <ModalInteriorWrapper>
-          <ModalTextWrapper>
-            <ModalText>
-              Are you sure you want to remove this degree plan?
-            </ModalText>
-          </ModalTextWrapper>
-          <ButtonRow $center={true}>
-            <ModalButton
-              onClick={() => {
-                // TODO: these are not great type casts
-                delete_degreeplan((modalObject as DegreePlan).id);
-                close();
-              }}
-            >
-              Remove
-            </ModalButton>
-          </ButtonRow>
-        </ModalInteriorWrapper>
-      );
-    case "semester-remove":
-      return (
-        <ModalInteriorWrapper>
-          <ModalTextWrapper>
-            <ModalText>{DELETE_CONFIRMATION_MESSAGE("semester")}</ModalText>
-          </ModalTextWrapper>
-          <ModalButton
-            onClick={() => {
-              (modalObject as RemoveSemesterProps).helper();
-              close();
-            }}
-          >
-            Remove
-          </ModalButton>
-        </ModalInteriorWrapper>
-      );
+  if (modalKey === "plan-create" || modalKey === "plan-rename") {
+    const creating = modalKey === "plan-create";
+    return (
+      <NameForm
+        onSubmit={async (e) => {
+          e.preventDefault();
+          if (!trimmedName || pending) return;
+          if (creating) {
+            await addDegreeplan();
+            return;
+          }
+          renameDegreeplan();
+          close();
+        }}
+      >
+        <DialogInput
+          aria-label="Plan name"
+          placeholder={creating ? "Name" : "New name"}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          autoFocus
+          onFocus={(e) => e.target.select()}
+          maxLength={255}
+        />
+        <DialogButtons>
+          {cancel}
+          <DialogButton type="submit" disabled={!trimmedName || pending}>
+            {creating ? "Create" : "Rename"}
+          </DialogButton>
+        </DialogButtons>
+      </NameForm>
+    );
   }
-  return <div></div>;
+
+  const removingPlan = modalKey === "plan-remove";
+  return (
+    <>
+      <DialogSubtitle>
+        {removingPlan
+          ? `“${plan?.name}” and everything planned in it will be deleted.`
+          : "All of your planning for this semester will be lost."}
+      </DialogSubtitle>
+      <DialogButtons>
+        {cancel}
+        <DialogButton
+          type="button"
+          $danger
+          autoFocus
+          onClick={() => {
+            if (removingPlan) removeDegreeplan();
+            else (modalObject as RemoveSemesterProps).helper();
+            close();
+          }}
+        >
+          Remove
+        </DialogButton>
+      </DialogButtons>
+    </>
+  );
 };
 
 interface DegreeModalProps {
@@ -258,27 +197,30 @@ interface DegreeModalProps {
   activeDegreePlan: DegreePlan | null;
   setActiveDegreeplan: (arg0: DegreePlan | null) => void;
 }
+
 const DegreeModal = ({
   setModalKey,
   modalKey,
   modalObject,
   activeDegreePlan,
   setActiveDegreeplan,
-}: DegreeModalProps) => (
-  <ModalContainer
-    title={getModalTitle(modalKey)}
-    close={() => setModalKey(null)}
-    modalKey={modalKey}
-  >
-    {/*
-    // @ts-ignore */}
-    <ModalInterior
-      modalObject={modalObject}
-      activeDegreePlan={activeDegreePlan}
-      setActiveDegreeplan={setActiveDegreeplan}
-      close={() => setModalKey(null)}
-    />
-  </ModalContainer>
-);
+}: DegreeModalProps) => {
+  if (!modalKey) return null;
+  const close = () => setModalKey(null);
+  return (
+    <Dialog close={close} label={TITLES[modalKey]} width="23rem">
+      <DialogContent>
+        <DialogTitle>{TITLES[modalKey]}</DialogTitle>
+        <ModalInterior
+          modalKey={modalKey}
+          modalObject={modalObject}
+          activeDegreePlan={activeDegreePlan}
+          setActiveDegreeplan={setActiveDegreeplan}
+          close={close}
+        />
+      </DialogContent>
+    </Dialog>
+  );
+};
 
 export default DegreeModal;

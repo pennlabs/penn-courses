@@ -119,6 +119,40 @@ class TransferCreditTest(TestCase):
         self.assertEqual(set(fulfillment.rules.all()), {self.calculus})
         self.assertNotIn(self.formal_reasoning, fulfillment.unselected_rules.all())
 
+    def onboard(self, courses):
+        response = self.client.post(
+            reverse("onboard-from-transcript", kwargs={"degree_plan_id": self.plan.id}),
+            {"courses": courses},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+
+    def test_onboarding_updates_a_course_already_in_the_plan(self):
+        existing = Fulfillment.objects.create(
+            degree_plan=self.plan, full_code="MATH-1400", semester="2024C"
+        )
+        existing.rules.set([self.calculus])
+
+        self.onboard([{"sem": TRANSFER_CREDIT_SEMESTER, "courses": ["MATH-1400"]}])
+
+        fulfillment = Fulfillment.objects.get(degree_plan=self.plan, full_code="MATH-1400")
+        self.assertEqual(fulfillment.id, existing.id)
+        self.assertEqual(fulfillment.semester, TRANSFER_CREDIT_SEMESTER)
+        self.assertTrue(fulfillment.from_transcript)
+        self.assertEqual(set(fulfillment.rules.all()), {self.calculus})
+
+    def test_a_course_listed_twice_is_stored_once_as_its_last_listing(self):
+        self.onboard(
+            [
+                {"sem": TRANSFER_CREDIT_SEMESTER, "courses": ["MATH-1400"]},
+                {"sem": "2024C", "courses": ["MATH-1400"]},
+            ]
+        )
+
+        fulfillment = Fulfillment.objects.get(degree_plan=self.plan, full_code="MATH-1400")
+        self.assertEqual(fulfillment.semester, "2024C")
+        self.assertEqual(set(fulfillment.rules.all()), {self.formal_reasoning, self.calculus})
+
     def test_reallocating_a_plan_respects_transfer_credit(self):
         fulfillment = Fulfillment.objects.create(
             degree_plan=self.plan, full_code="MATH-1400", semester=TRANSFER_CREDIT_SEMESTER

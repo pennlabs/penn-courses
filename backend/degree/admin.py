@@ -9,6 +9,7 @@ from degree.models import (
     DoubleCountRestriction,
     DualProgram,
     Fulfillment,
+    PDPBetaReferral,
     PDPBetaUser,
     PDPOnboardingStatus,
     ProgramVariant,
@@ -24,9 +25,71 @@ class RuleAdmin(admin.ModelAdmin):
     list_select_related = ["parent"]
 
 
+class PDPBetaReferralAdmin(admin.ModelAdmin):
+    search_fields = ("pennkey", "referrer__username")
+    autocomplete_fields = ("referrer",)
+    list_display = ("pennkey", "referrer", "status", "created_at", "emailed_at")
+    list_filter = ("status",)
+    list_select_related = ("referrer",)
+    readonly_fields = ("created_at", "decided_at", "emailed_at")
+    actions = ["approve", "deny"]
+
+    def decide(self, request, queryset, status):
+        changed = list(queryset.exclude(status=status))
+        for referral in changed:
+            referral.decide(status)
+        self.message_user(request, f"{len(changed)} referral(s) {status.label.lower()}.")
+
+    @admin.action(description="Approve selected referrals (lets them in and emails them)")
+    def approve(self, request, queryset):
+        self.decide(request, queryset, PDPBetaReferral.Status.APPROVED)
+
+    @admin.action(description="Deny selected referrals")
+    def deny(self, request, queryset):
+        self.decide(request, queryset, PDPBetaReferral.Status.DENIED)
+
+    def save_model(self, request, obj, form, change):
+        if "status" in form.changed_data:
+            obj.decide(obj.status)
+        else:
+            super().save_model(request, obj, form, change)
+
+
 class PDPBetaUserAdmin(admin.ModelAdmin):
-    search_fields = ("person__username", "person__id")
+    search_fields = ("person__username", "person__id", "person__email")
     autocomplete_fields = ("person",)
+    list_display = ("person", "email", "status", "created_at", "decided_at")
+    list_filter = ("status",)
+    readonly_fields = ("created_at", "decided_at")
+    actions = ["approve", "deny"]
+
+    def get_queryset(self, request):
+        return PDPBetaUser.pending_first(super().get_queryset(request).select_related("person"))
+
+    @admin.display(ordering="person__email")
+    def email(self, obj):
+        return obj.person.email
+
+    def decide(self, request, queryset, status):
+        changed = list(queryset.exclude(status=status))
+        for beta in changed:
+            beta.decide(status)
+        self.message_user(request, f"{len(changed)} user(s) {status.label.lower()}.")
+
+    @admin.action(description="Approve selected users")
+    def approve(self, request, queryset):
+        self.decide(request, queryset, PDPBetaUser.Status.APPROVED)
+
+    @admin.action(description="Deny selected users")
+    def deny(self, request, queryset):
+        self.decide(request, queryset, PDPBetaUser.Status.DENIED)
+
+    def save_model(self, request, obj, form, change):
+        # A new row is a decision too: adding someone approved should email them.
+        if not change or "status" in form.changed_data:
+            obj.decide(obj.status)
+        else:
+            super().save_model(request, obj, form, change)
 
 
 class PDPOnboardingStatusAdmin(admin.ModelAdmin):
@@ -84,6 +147,7 @@ admin.site.register(DualProgram)
 admin.site.register(DegreePlan)
 admin.site.register(SatisfactionStatus)
 admin.site.register(PDPBetaUser, PDPBetaUserAdmin)
+admin.site.register(PDPBetaReferral, PDPBetaReferralAdmin)
 admin.site.register(PDPOnboardingStatus, PDPOnboardingStatusAdmin)
 admin.site.register(Fulfillment, FulfillmentAdmin)
 admin.site.register(DoubleCountRestriction, DoubleCountRestrictionAdmin)

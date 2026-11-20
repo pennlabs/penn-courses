@@ -122,6 +122,27 @@ class GraduateSharingTest(TestCase):
         """Courses arrive in the order they were taken, so the first three eligible win it."""
         self.assertEqual(self.allocate(GRADUATE_COURSES, GraduateSharing()), GRADUATE_COURSES[:3])
 
+    def test_kept_choices_hold_the_allowance_against_an_earlier_course(self):
+        (bse_rule,) = self.bse.rules.all()
+        (mse_rule,) = self.mse.rules.all()
+        semesters = ["2025A", "2025C", "2026A", "2026C"]
+        for full_code, semester in zip(GRADUATE_COURSES, semesters):
+            fulfillment = Fulfillment.objects.create(
+                degree_plan=self.plan, full_code=full_code, semester=semester
+            )
+            fulfillment.rules.set([bse_rule, mse_rule])
+        # The student took the earliest course off the masters, which frees its allowance for
+        # the three later courses that already share.
+        earliest = self.plan.fulfillments.get(full_code=GRADUATE_COURSES[0])
+        earliest.rules.set([bse_rule])
+
+        update_fulfillments(self.plan, keep_choices=True)
+
+        self.assertEqual(set(earliest.rules.all()), {bse_rule})
+        for full_code in GRADUATE_COURSES[1:4]:
+            fulfillment = self.plan.fulfillments.get(full_code=full_code)
+            self.assertEqual(set(fulfillment.rules.all()), {bse_rule, mse_rule}, full_code)
+
     def test_a_capped_course_keeps_its_undergraduate_rules(self):
         """Past the allowance a course still counts toward the bachelors, just not the masters."""
         rules_per_degree, rule_to_degree, double_counts = map_rules_and_degrees(self.plan)
@@ -156,6 +177,16 @@ class GraduateSharingTest(TestCase):
         sharing = GraduateSharing()
         self.assertEqual(self.allocate(GRADUATE_COURSES, sharing), [])
         self.assertEqual(sharing.used, Decimal(0))
+
+
+class SameMajorGraduateSharingTest(GraduateSharingTest):
+    """A bachelors and a masters in one major have blocks of the same code, but two audits."""
+
+    def setUp(self):
+        super().setUp()
+        self.plan.degrees.remove(self.mse)
+        self.mse = self.make_degree("EM_MSE", "MSE", "CSCI")
+        self.plan.degrees.add(self.mse)
 
 
 class FulfillmentLevelTest(GraduateSharingTest):
@@ -329,6 +360,40 @@ class FulfillmentLevelTest(GraduateSharingTest):
 
         response = client.post(url, {"level": "BOGUS"}, format="json")
         self.assertEqual(response.status_code, 400)
+
+    def set_level(self, full_code, level):
+        set_semester()
+        PDPBetaUser.objects.get_or_create(person=self.plan.person)
+        client = APIClient()
+        client.force_authenticate(user=self.plan.person)
+        Fulfillment.objects.get_or_create(
+            degree_plan=self.plan, full_code=full_code, defaults={"semester": "2024C"}
+        )
+        response = client.post(
+            reverse(
+                "degreeplan-fulfillment-set-level",
+                kwargs={"degreeplan_pk": self.plan.id, "full_code": full_code},
+            ),
+            {"level": level},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        return Fulfillment.objects.get(degree_plan=self.plan, full_code=full_code)
+
+    def test_changing_a_level_keeps_a_course_to_two_degrees(self):
+        self.plan.degrees.add(self.make_degree("AU_BA", "BA", "MATH"))
+        fulfillment = self.set_level("CIS-5450", SHARED_LEVEL)
+        _, rule_to_degree, _ = map_rules_and_degrees(self.plan)
+        claimed = {rule_to_degree[rule].owner_id for rule in fulfillment.rules.all()}
+        self.assertEqual(len(claimed), 2)
+        self.assertTrue(fulfillment.legal)
+
+    def test_changing_a_level_still_shares_between_the_bachelors_and_masters(self):
+        fulfillment = self.set_level("CIS-5450", SHARED_LEVEL)
+        _, rule_to_degree, _ = map_rules_and_degrees(self.plan)
+        claimed = {rule_to_degree[rule].owner_id for rule in fulfillment.rules.all()}
+        self.assertEqual(claimed, {self.bse.id, self.mse.id})
+        self.assertTrue(fulfillment.legal)
 
     def test_a_course_numbered_below_5000_cannot_be_marked_for_the_masters(self):
         set_semester()

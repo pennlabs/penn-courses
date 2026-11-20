@@ -1,18 +1,19 @@
 """
 Coordinated-program deltas that Path audits do not state on their own.
 
-M&T, Huntsman and LSM edit a base degree (extra courses, a suppressed capstone, a different
-liberal-arts shape). VIPER is a pair of ordinary majors and carries no variant.
+M&T, LSM and Huntsman's Wharton side edit a base degree (extra courses, a suppressed capstone, a
+different liberal-arts shape). Huntsman's College degree has no Path audit at all, so huntsman.py
+builds the whole degree. VIPER only adds its own block to the engineering degree.
 """
 
 from django.db import transaction
 from django.db.models import Q
 
-from degree.data.dual_programs import huntsman, lsm, mt
-from degree.models import DualProgram, ProgramVariant, Rule
+from degree.data.dual_programs import huntsman, lsm, mt, viper
+from degree.models import DegreePlan, DualProgram, Fulfillment, ProgramVariant, Rule
 
 
-VARIANTS = {**mt.VARIANTS, **huntsman.VARIANTS, **lsm.VARIANTS}
+VARIANTS = {**mt.VARIANTS, **huntsman.VARIANTS, **lsm.VARIANTS, **viper.VARIANTS}
 
 # Variants are named by code and resolved when loading.
 PROGRAMS = [
@@ -33,12 +34,13 @@ PROGRAMS = [
         "name": "Huntsman Program in International Studies and Business",
         "left_programs": ["AU_BA"],
         "right_programs": ["WU_BS"],
-        "left_allowed_majors": ["INST"],
+        "left_allowed_majors": [huntsman.MAJOR],
         "right_allowed_majors": [],
-        "left_variant": "INST_HUNTSMAN",
-        "right_variant": None,
+        "left_variant": None,
+        "right_variant": "WH_HUNTSMAN",
         "cu_floor": None,
         "max_shared_cu": None,
+        "unshared_rules": huntsman.UNSHARED_RULES,
     },
     {
         "code": "LSM",
@@ -55,19 +57,22 @@ PROGRAMS = [
     {
         "code": "VIPER",
         "name": "Vagelos Integrated Program in Energy Research",
+        # From https://www.viper.upenn.edu/academics/dual-degree-curriculum. Biology and
+        # Bioengineering are open only to the Class of 2029 and earlier.
         "left_programs": ["AU_BA"],
-        "right_programs": ["EU_BSE", "EU_BAS"],
-        "left_allowed_majors": ["PHYS", "MATH", "CHEM", "EESC"],
-        "right_allowed_majors": [],
+        "right_programs": ["EU_BSE"],
+        "left_allowed_majors": ["PHYS", "MATH", "CHEM", "EESC", "BIOL"],
+        "right_allowed_majors": ["CSCI", "CBE", "MSE", "MEAM", "EE", "CMPE", "BE"],
         "left_variant": None,
-        "right_variant": None,
-        "cu_floor": None,
+        "right_variant": "EU_VIPER",
+        "variants_by_majors": viper.VARIANTS_BY_MAJORS,
+        "cu_floor": 46,
         "max_shared_cu": None,
     },
 ]
 
 
-def _save_tree(spec: dict, parent: Rule | None, saved: set[int]) -> Rule:
+def _save_tree(spec: dict, parent: Rule | None, saved: set[int], position: int) -> Rule:
     rule, _ = Rule.objects.update_or_create(
         title=spec["title"],
         block_type=spec["block_type"],
@@ -79,11 +84,12 @@ def _save_tree(spec: dict, parent: Rule | None, saved: set[int]) -> Rule:
             "credits": spec["credits"],
             "share_targets": spec["share_targets"],
             "transfer_credit_allowed": True,
+            "position": position,
         },
     )
     saved.add(rule.id)
-    for child in spec["children"]:
-        _save_tree(child, rule, saved)
+    for child_position, child in enumerate(spec["children"]):
+        _save_tree(child, rule, saved, child_position)
     return rule
 
 
@@ -97,28 +103,51 @@ def variant_blocks(codes) -> Q:
 
 def load() -> list[str]:
     """
-    Make the database match VARIANTS and PROGRAMS. Safe to run more than once: rules are
+    Make the database match VARIANTS and PROGRAMS, and build Huntsman's International Studies
+    degree for each catalog year that has College degrees. Safe to run more than once: rules are
     keyed by title, block and parent. Variants, programs and variant rules no longer
     listed here are deleted; plans on a deleted program fall back to an ordinary plan.
     Returns the codes of deleted variants and programs.
     """
     with transaction.atomic():
-        return _load()
+        displaced = set()
+        removed = _load(displaced)
+        # Courses on a deleted rule lost it, so their plans are allocated again.
+        from degree.views import update_fulfillments
+
+        for plan in DegreePlan.objects.filter(id__in=displaced):
+            update_fulfillments(plan, keep_choices=True)
+        return removed
 
 
-def _load() -> list[str]:
+def _plans_on(rules) -> set[int]:
+    """The plans with a course counting, or offered to count, toward one of the rules."""
+    return set(
+        Fulfillment.objects.filter(Q(rules__in=rules) | Q(unselected_rules__in=rules)).values_list(
+            "degree_plan_id", flat=True
+        )
+    )
+
+
+def _load(displaced: set[int]) -> list[str]:
+    huntsman.load_degrees()
     variants = {}
     for code, (name, rules_fn, suppressed) in VARIANTS.items():
         variant, _ = ProgramVariant.objects.update_or_create(
             code=code, defaults={"name": name, "suppressed_rules": suppressed}
         )
         saved = set()
-        variant.rules.set([_save_tree(spec, None, saved) for spec in rules_fn()])
-        Rule.objects.filter(variant_blocks([code])).exclude(id__in=saved).delete()
+        variant.rules.set(
+            [_save_tree(spec, None, saved, position) for position, spec in enumerate(rules_fn())]
+        )
+        stale = Rule.objects.filter(variant_blocks([code])).exclude(id__in=saved)
+        displaced |= _plans_on(stale)
+        stale.delete()
         variants[code] = variant
 
     for spec in PROGRAMS:
-        defaults = {key: value for key, value in spec.items() if key != "code"}
+        defaults = {"unshared_rules": [], "variants_by_majors": []}
+        defaults.update({key: value for key, value in spec.items() if key != "code"})
         for side in ("left_variant", "right_variant"):
             defaults[side] = variants[spec[side]] if spec[side] else None
         DualProgram.objects.update_or_create(code=spec["code"], defaults=defaults)
@@ -134,13 +163,17 @@ def _load() -> list[str]:
     DualProgram.objects.filter(code__in=stale_programs).delete()
     ProgramVariant.objects.filter(code__in=stale_variants).delete()
     if stale_variants:
-        Rule.objects.filter(variant_blocks(stale_variants)).delete()
+        stale = Rule.objects.filter(variant_blocks(stale_variants))
+        displaced |= _plans_on(stale)
+        stale.delete()
     return stale_programs + stale_variants
 
 
 def referenced_attribute_codes() -> set[str]:
-    return mt.ATTRIBUTE_CODES | huntsman.ATTRIBUTE_CODES | lsm.ATTRIBUTE_CODES
+    return (
+        mt.ATTRIBUTE_CODES | huntsman.ATTRIBUTE_CODES | lsm.ATTRIBUTE_CODES | viper.ATTRIBUTE_CODES
+    )
 
 
 def referenced_full_codes() -> set[str]:
-    return mt.FULL_CODES | huntsman.FULL_CODES | lsm.FULL_CODES
+    return mt.FULL_CODES | huntsman.FULL_CODES | lsm.FULL_CODES | viper.FULL_CODES

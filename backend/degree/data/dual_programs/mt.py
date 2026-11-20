@@ -57,8 +57,8 @@ INTRODUCTORY_ECONOMICS = (
     "(AND: ('department__code', 'ECON'), ('semester__lt', '2022B')))>"
 )
 TECHNOLOGY_INNOVATION = (
-    "<Q: (OR: ('attributes__code__in', ['WUTI']), ('full_code', 'OIDD-4770'), "
-    "('full_code', 'STAT-4770'), ('full_code', 'MGMT-2370'))>"
+    "<Q: (AND: (OR: ('attributes__code__in', ['WUTI']), ('full_code', 'OIDD-4770'), "
+    "('full_code', 'STAT-4770')), (NOT (AND: ('full_code', 'MGMT-2370'))))>"
 )
 CRITICAL_WRITING = (
     "<Q: (AND: ('code__gte', '0000'), ('code__lte', '0991'), ('department__code', 'WRIT'), "
@@ -83,6 +83,9 @@ def _blocks(code: str) -> list[dict]:
     liberal_arts = f"{code}:U-WLAS"
     breadth = f"{code}:U-WBBR2"
     program = f"{code}:U-MT"
+    # MGMT 2370's own block within Technology, Innovation, and Analytics, which unlike the
+    # rest of it may share with business breadth.
+    management_of_technology = f"{code}:U-MTTIA"
 
     def business_leaf(title, q, **kwargs):
         return leaf(title, q, business, share_targets=[MINOR], **kwargs)
@@ -175,12 +178,32 @@ def _blocks(code: str) -> list[dict]:
                 ),
                 business_leaf("Global Economy, Business and Society", GLOBAL_ECONOMY, credits=1),
                 # Shares with the M&T block, so MGMT 2370 also counts as Management of Technology.
-                leaf(
+                # MGMT 2370 may count toward business breadth as well, which other courses
+                # here may not, so it is an option of its own.
+                group(
                     "Technology, Innovation, and Analytics",
-                    TECHNOLOGY_INNOVATION,
-                    business,
-                    credits=1,
-                    share_targets=[MINOR, {"kind": "VARIANT", "value": program}],
+                    management_of_technology,
+                    [
+                        leaf(
+                            "Technology, Innovation, and Analytics",
+                            TECHNOLOGY_INNOVATION,
+                            business,
+                            credits=1,
+                            share_targets=[MINOR, {"kind": "VARIANT", "value": program}],
+                        ),
+                        leaf(
+                            "Management of Technology (MGMT 2370)",
+                            q_course("MGMT-2370"),
+                            management_of_technology,
+                            num=1,
+                            share_targets=[
+                                MINOR,
+                                {"kind": "VARIANT", "value": program},
+                                {"kind": "VARIANT", "value": breadth},
+                            ],
+                        ),
+                    ],
+                    num=1,
                 ),
             ],
         ),

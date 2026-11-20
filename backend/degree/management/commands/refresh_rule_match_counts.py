@@ -9,7 +9,7 @@ from degree.utils.model_utils import q_object_parser
 
 
 def refresh_rule_match_counts(verbose=False):
-    queries = list(Rule.objects.exclude(q="").values_list("q", flat=True).distinct())
+    queries = list(Rule.objects.exclude(q="").order_by().values_list("q", flat=True).distinct())
     for q in tqdm(queries, disable=not verbose, desc="Counting rule matches"):
         count = (
             Course.objects.filter(q_object_parser.parse(q))

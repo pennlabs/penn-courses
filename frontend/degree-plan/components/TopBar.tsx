@@ -1,6 +1,7 @@
 import React from "react";
 import styled from "@emotion/styled";
 import { useRouter } from "next/router";
+import Link from "next/link";
 // TODO: Move shared components to typescript
 // @ts-ignore
 import AccountIndicator from "pcx-shared-components/src/accounts/AccountIndicator";
@@ -112,6 +113,7 @@ interface TopBarProps {
   setRequirementsOpen: (open: boolean) => void;
   showColumnToggles: boolean; // the columns don't exist during onboarding
   onStartTour?: () => void; // the tour has nothing to show during onboarding
+  onInviteFriends?: () => void;
 }
 
 const TopBar = ({
@@ -124,13 +126,14 @@ const TopBar = ({
   setRequirementsOpen,
   showColumnToggles,
   onStartTour,
+  onInviteFriends,
 }: TopBarProps) => {
   const { asPath } = useRouter();
 
   return (
     <Bar>
       <Brand>
-        <Logo src="pdp-logo.svg" alt="" width="30" height="45" />
+        <Logo src="/pdp-logo.svg" alt="" width="30" height="45" />
         <Title>Penn Degree Plan</Title>
       </Brand>
       <Actions>
@@ -167,6 +170,23 @@ const TopBar = ({
           >
             <i className="far fa-question-circle" aria-hidden />
           </TourButton>
+        )}
+        {onInviteFriends && (
+          <TourButton
+            type="button"
+            aria-label="Invite friends"
+            title="Invite friends"
+            onClick={onInviteFriends}
+          >
+            <i className="fas fa-user-plus" aria-hidden />
+          </TourButton>
+        )}
+        {user?.is_staff && (
+          <Link href="/admin-dashboard" passHref legacyBehavior>
+            <TourButton as="a" aria-label="Admin dashboard" title="Admin dashboard">
+              <i className="fas fa-user-check" aria-hidden />
+            </TourButton>
+          </Link>
         )}
         {user && <NotificationBell />}
         <AccountIndicator
