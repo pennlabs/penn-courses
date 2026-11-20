@@ -618,7 +618,7 @@ def block_allows_transfer_credit(block) -> bool:
 
 def catalog_year_of(block) -> int | None:
     year = block.get("Cat_yr_start")
-    return int(year) if year and year.isdigit() and int(year) > 0 else None
+    return int(year) if year and year.isdigit() else None
 
 
 def apply_block_identity(rules: list[Rule], block: ParsedBlock) -> None:
@@ -698,7 +698,7 @@ def parse_audit(audit_xml: str, degree: Degree) -> ParsedAudit | None:
         return None
 
     degree_block = next((block for block in blocks if block.req_type == "DEGREE"), None)
-    years = {block.catalog_year for block in blocks if block.catalog_year}
+    years = {block.catalog_year for block in blocks if block.catalog_year is not None}
 
     return ParsedAudit(
         degree_credits=degree_block.credits if degree_block else None,
