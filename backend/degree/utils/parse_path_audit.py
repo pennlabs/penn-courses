@@ -25,8 +25,21 @@ from operator import and_, or_
 from django.db.models import Q
 
 from courses.util import semester_suffix_map_hum, translate_semester_inv
-from degree.models import Degree, DegreePlan, Fulfillment, Major, Minor, Rule
-from degree.utils.degree_logic import plan_components
+from degree.models import (
+    Degree,
+    DegreePlan,
+    Fulfillment,
+    Major,
+    Minor,
+    Rule,
+    graduate_programs,
+)
+from degree.utils.degree_logic import (
+    MIN_GRADUATE_COURSE_NUMBER,
+    is_graduate_coursework,
+    plan_components,
+)
+from degree.utils.model_utils import q_object_parser
 from degree.utils.departments import ENG_DEPTS, SAS_DEPTS, WH_DEPTS
 from degree.utils.double_counts import ANY_BLOCK, THIS_BLOCK
 
@@ -673,6 +686,32 @@ def parse_block(block, degree: Degree) -> tuple[ParsedBlock, list[Rule]]:
     return parsed, rules
 
 
+def names_only_graduate_coursework(q) -> bool:
+    if isinstance(q, tuple):
+        lookup, value = q
+        if lookup == "full_code":
+            return is_graduate_coursework(value)
+        if lookup == "full_code__in":
+            return bool(value) and all(map(is_graduate_coursework, value))
+        if lookup == "code__gte":
+            return str(value) >= str(MIN_GRADUATE_COURSE_NUMBER)
+        return False
+    if q.negated:
+        return False
+    results = [names_only_graduate_coursework(child) for child in q.children]
+    return any(results) if q.connector == Q.AND else bool(results) and all(results)
+
+
+def restrict_to_graduate_coursework(q: Q) -> Q:
+    """
+    Audits for a masters degree leave the graduate-only rule unstated: an elective such as
+    "Advisor Approved Electives" reads `@ @`, yet only 5000+ coursework counts toward the degree.
+    """
+    if names_only_graduate_coursework(q):
+        return q
+    return q & Q(code__gte=str(MIN_GRADUATE_COURSE_NUMBER))
+
+
 def parse_audit(audit_xml: str, degree: Degree) -> ParsedAudit | None:
     """
     A Path@Penn audit as Rules, the degree's credit requirement and its share policy, or None
@@ -696,6 +735,11 @@ def parse_audit(audit_xml: str, degree: Degree) -> ParsedAudit | None:
     if not any(rule.q for rule in rules):
         logger.error("Skipped audit because it has no rules a course can fulfill.")
         return None
+
+    if degree.program in graduate_programs:
+        for rule in rules:
+            if rule.q:
+                rule.q = repr(restrict_to_graduate_coursework(q_object_parser.parse(rule.q)))
 
     degree_block = next((block for block in blocks if block.req_type == "DEGREE"), None)
     years = {block.catalog_year for block in blocks if block.catalog_year}

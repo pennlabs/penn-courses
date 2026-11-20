@@ -11,9 +11,11 @@ from degree.utils.parse_path_audit import (
     ANY_BLOCK,
     ShareTarget,
     block_allows_transfer_credit,
+    names_only_graduate_coursework,
     parse_audit,
     parse_term,
     parse_terms,
+    restrict_to_graduate_coursework,
 )
 
 
@@ -278,3 +280,26 @@ class TermRestrictionTest(TestCase):
         # Silently excluding every course would be worse than ignoring the restriction.
         self.assertEqual(parse_terms(["not a term"], "="), Q())
         self.assertEqual(parse_terms(["Spring 2020"], "~="), Q())
+
+
+class GraduateCourseworkTest(TestCase):
+    def test_masters_rules_only_accept_graduate_coursework(self):
+        mse = Degree(program="EM_MSE", degree="MSE", major="CMPE", concentration=None)
+        parsed = parse_audit(load_audit("CMPE-BSE-2026.xml"), mse)
+        for rule in parsed.rules:
+            if rule.q:
+                self.assertTrue(names_only_graduate_coursework(q_object_parser.parse(rule.q)))
+
+    def test_rules_already_naming_graduate_courses_are_unchanged(self):
+        q = Q(full_code="CIS-5200") | Q(full_code__in=["CIS-5450", "ESE-6500"])
+        self.assertEqual(restrict_to_graduate_coursework(q), q)
+        self.assertEqual(
+            restrict_to_graduate_coursework(Q(full_code="CIS-5200") | Q(full_code="CIS-4710")),
+            (Q(full_code="CIS-5200") | Q(full_code="CIS-4710")) & Q(code__gte="5000"),
+        )
+
+    def test_undergraduate_rules_are_unrestricted(self):
+        cmpe = Degree(program="EU_BSE", degree="BSE", major="CMPE", concentration=None)
+        parsed = parse_audit(load_audit("CMPE-BSE-2026.xml"), cmpe)
+        for rule in parsed.rules:
+            self.assertNotIn("code__gte', '5000'", rule.q or "")
