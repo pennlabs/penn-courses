@@ -1,4 +1,4 @@
-from os import path
+from os import listdir, path
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
@@ -263,8 +263,35 @@ class DirectSaveTest(TestCase):
 
 
 class OpenEndedMinorTest(TestCase):
-    def test_a_minor_for_every_catalog_year_is_saved_under_year_0(self):
-        audit = load_audit("CSCI-MINOR.xml").replace('Cat_yr_start="2027"', 'Cat_yr_start="0000"')
+    def minor_years(self, audit):
+        self.fetch(audit)
+        return list(Minor.objects.filter(program_code="CSCI-MINOR").values_list("year", flat=True))
+
+    def wrapped(self, minor_year, degree_year="2027"):
+        """
+        The minor inside a degree of its own year, the way Path serves a minor's audit. A
+        minor_year of None leaves the minor's block without one.
+        """
+        audit = load_audit("CSCI-MINOR.xml").replace(
+            'Cat_yr_start="2027" ',
+            "" if minor_year is None else f'Cat_yr_start="{minor_year}" ',
+        )
+        wrapper = (
+            f'<Block Cat_yr_start="{degree_year}" Req_type="DEGREE" Req_value="BA" '
+            'Title="Bachelor of Arts" />\n    '
+        )
+        return audit.replace("<Block ", wrapper + "<Block ", 1)
+
+    def test_an_open_ended_minor_in_a_dated_degree_is_saved_under_year_0(self):
+        self.assertEqual(self.minor_years(self.wrapped("0000")), [0])
+
+    def test_a_minor_keeps_its_own_year_over_its_degrees(self):
+        self.assertEqual(self.minor_years(self.wrapped("2025")), [2025])
+
+    def test_a_minor_without_a_year_is_skipped_rather_than_given_its_degrees(self):
+        self.assertEqual(self.minor_years(self.wrapped(None)), [])
+
+    def fetch(self, audit):
         with patch(f"{COMMAND}.PathClient") as client:
             client.return_value.undergraduate_programs.return_value = []
             client.return_value.masters_programs.return_value = []
@@ -277,7 +304,36 @@ class OpenEndedMinorTest(TestCase):
             }
             call_command("fetch_degrees_from_path", srcdb=["202530", "202630"], verbosity=0)
 
-        self.assertEqual(
-            list(Minor.objects.filter(program_code="CSCI-MINOR").values_list("year", flat=True)),
-            [0],
-        )
+    def test_a_minor_for_every_catalog_year_is_saved_under_year_0(self):
+        audit = load_audit("CSCI-MINOR.xml").replace('Cat_yr_start="2027"', 'Cat_yr_start="0000"')
+        self.assertEqual(self.minor_years(audit), [0])
+
+
+class BlockCatalogYearTest(TestCase):
+    """Each parsed block carries the catalog year from its own Cat_yr_start."""
+
+    def blocks(self, audit):
+        degree = Degree(program="AU_BA", degree="BA", major="CSCI", year=0)
+        return parse_audit(audit, degree).blocks
+
+    def test_every_block_of_every_recorded_audit_has_a_year(self):
+        for name in sorted(listdir(FIXTURES)):
+            if not name.endswith(".xml"):
+                continue
+            for block in self.blocks(load_audit(name)):
+                with self.subTest(audit=name, block=block.title):
+                    self.assertIsNotNone(block.catalog_year)
+
+    def test_a_minors_block_has_its_own_year(self):
+        (block,) = self.blocks(load_audit("CSCI-MINOR.xml"))
+        self.assertEqual((block.req_type, block.catalog_year), ("MINOR", 2027))
+
+    def test_year_0000_is_year_0(self):
+        audit = load_audit("CSCI-MINOR.xml").replace('Cat_yr_start="2027"', 'Cat_yr_start="0000"')
+        (block,) = self.blocks(audit)
+        self.assertEqual(block.catalog_year, 0)
+
+    def test_a_block_without_cat_yr_start_has_no_year(self):
+        audit = load_audit("CSCI-MINOR.xml").replace('Cat_yr_start="2027" ', "")
+        (block,) = self.blocks(audit)
+        self.assertIsNone(block.catalog_year)

@@ -322,10 +322,10 @@ class Command(BaseCommand):
             return 0
 
         block = find_block(parsed, "MINOR") if parsed else None
-        if parsed is None or block is None or parsed.catalog_year is None:
+        if parsed is None or block is None or block.catalog_year is None:
             tally.skip(code, "no MINOR block or no catalog year")
             return 0
-        year = parsed.catalog_year
+        year = block.catalog_year
         if is_outdated(year):
             return 0
         if self.is_superseded(code, year, tally):
