@@ -2,7 +2,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from textwrap import dedent
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from degree.management.commands.deduplicate_rules import deduplicate_rules
@@ -129,9 +129,21 @@ class Command(BaseCommand):
                 """
             ),
         )
+        parser.add_argument(
+            "--masters-only",
+            action="store_true",
+            help=dedent(
+                """
+                Only fetch the masters programs submatriculants pursue, without undergraduate
+                programs or minors.
+                """
+            ),
+        )
         parser.add_argument("--deduplicate-rules", action="store_true")
 
     def handle(self, *args, **options):
+        if options["masters_only"] and (options["skip_masters"] or options["program"]):
+            raise CommandError("--masters-only cannot be used with --skip-masters or --program")
         self.options = options
         self.verbosity = options["verbosity"]
         self.dry_run = options["dry_run"]
@@ -143,7 +155,7 @@ class Command(BaseCommand):
 
         for srcdb in sorted(options["srcdb"], reverse=True):
             self.fetch_degrees(client, srcdb, tally)
-            if not options["skip_minors"] and not options["program"]:
+            if not (options["skip_minors"] or options["program"] or options["masters_only"]):
                 self.fetch_minors(client, srcdb, tally)
 
         tally.report()
@@ -193,6 +205,8 @@ class Command(BaseCommand):
     def fetch_degrees(self, client, srcdb, tally):
         if self.options["program"]:
             programs = [{"code": code, "title": ""} for code in self.options["program"]]
+        elif self.options["masters_only"]:
+            programs = client.masters_programs(srcdb)
         else:
             programs = client.undergraduate_programs(srcdb)
             if not self.options["skip_masters"]:
