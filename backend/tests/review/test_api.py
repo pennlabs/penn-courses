@@ -728,6 +728,14 @@ class TwoInstructorsMultipleSemestersTestCase(TestCase, PCRTestMixin):
             },
         )
 
+    def test_instructor_counts_only_own_sections(self):
+        create_review("CIS-120-002", TEST_SEMESTER, "Instructor Two", {"instructor_quality": 1})
+        self.assertRequestContainsAppx(
+            "instructor-reviews",
+            self.instructor1.pk,
+            {"num_sections": 2, "num_sections_recent": 1},
+        )
+
 
 class TwoDepartmentTestCase(TestCase, PCRTestMixin):
     def setUp(self):
