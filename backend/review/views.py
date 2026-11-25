@@ -531,12 +531,7 @@ def instructor_reviews(request, instructor_id):
 
     num_sections, num_sections_recent = get_num_sections(
         section_filters_pcr,
-        course_id__in=Subquery(
-            Course.objects.filter(
-                course_filters_pcr,
-                sections__instructors__id=instructor_id,
-            ).values("id")
-        ),
+        instructors__id=instructor_id,
     )
 
     # Return the most recent course taught by this instructor, for each topic
