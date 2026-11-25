@@ -12,8 +12,10 @@ from courses.util import (
     add_restrictions,
     get_or_create_course_and_section,
     invalidate_current_semester_cache,
+    set_instructors,
     upsert_course_from_opendata,
 )
+from review.models import Review
 
 
 TEST_SEMESTER = "2019A"
@@ -120,3 +122,27 @@ class ParseOpendataResponseTestCase(TestCase):
         self.assertEqual(23, Section.objects.count())
         self.assertEqual(3, Meeting.objects.count())
         self.assertEqual(2, Instructor.objects.count())
+
+
+class SetInstructorsTestCase(TestCase):
+    def setUp(self):
+        _, self.section, _, _ = get_or_create_course_and_section("MATH-1300-920", "2026B")
+        self.reviewed = Instructor.objects.create(name="Reviewed Instructor")
+        self.unreviewed = Instructor.objects.create(name="Unreviewed Instructor")
+        self.section.instructors.add(self.reviewed, self.unreviewed)
+        Review.objects.create(section=self.section, instructor=self.reviewed, responses=10)
+        self.opendata_instructor = {
+            "first_name": "New",
+            "middle_initial": None,
+            "last_name": "Instructor",
+            "penn_id": "12345678",
+        }
+
+    def test_empty_opendata_keeps_existing_instructors(self):
+        set_instructors(self.section, [])
+        self.assertEqual({self.reviewed, self.unreviewed}, set(self.section.instructors.all()))
+
+    def test_opendata_replaces_instructors_but_keeps_reviewed(self):
+        set_instructors(self.section, [self.opendata_instructor])
+        names = set(self.section.instructors.values_list("name", flat=True))
+        self.assertEqual({"Reviewed Instructor", "New Instructor"}, names)
