@@ -421,7 +421,11 @@ def import_instructor(pennid, name, stat=None):
 
 
 def set_instructors(section, instructors):
-    instructor_obs = []
+    # OpenData often omits instructors (e.g. summer terms), and reviews attach their
+    # instructor to the section, so never drop links we can't confirm are wrong.
+    if not instructors:
+        return
+    instructor_obs = list(Instructor.objects.filter(review__section=section))
     for instructor in instructors:
         middle_initial = instructor["middle_initial"]
         if middle_initial:
