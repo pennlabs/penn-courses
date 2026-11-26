@@ -5,6 +5,7 @@ import { getFetcher, postFetcher } from "@/hooks/swrcrud";
 import { Item, Menu } from "../FourYearPlan/SelectListDropdown";
 import { DegreePlan } from "@/types";
 import {
+  OPEN_ENDED_YEAR,
   PlanProgram,
   ProgramKind,
   startingYearsLabels,
@@ -160,6 +161,8 @@ const CatalogYear = ({
     return () => document.removeEventListener("mousedown", close);
   }, [open, current]);
 
+  // Requirements that apply to every year have no starting year to point out or switch from.
+  if (versions.length < 2 && program.year === OPEN_ENDED_YEAR) return null;
   if (versions.length < 2)
     return (
       <Row>

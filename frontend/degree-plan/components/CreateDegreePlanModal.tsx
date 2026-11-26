@@ -1,4 +1,5 @@
 import { Degree, DegreePlan } from "@/types";
+import { programYear } from "@/utils/programs";
 import {
   Autocomplete,
   Box,
@@ -75,15 +76,11 @@ const CreateDegreePlanModal = ({
       .then((res) => {
         setDegreeOptions(
           res.map((degree: Degree) => {
+            const year = programYear(degree.year);
+            const concentration = degree.concentration || "";
+            const text = `${degree.program} ${degree.major} ${concentration}`;
             return {
-              label:
-                degree.year +
-                ": " +
-                degree.program +
-                " " +
-                degree.major +
-                " " +
-                (degree.concentration || ""),
+              label: year ? `${year}: ${text}` : text,
               value: degree,
             };
           })

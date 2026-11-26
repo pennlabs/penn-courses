@@ -25,12 +25,23 @@ const NO_CONCENTRATION_SUFFIX = new RegExp(`-(${NO_CONCENTRATION_CODES.join("|")
 export const programCodeOf = (program: { program_code: string }) =>
   program.program_code.replace(NO_CONCENTRATION_SUFFIX, "");
 
+// Requirements Path applies to every catalog year (e.g. the Robotics MSE) are stored under
+// year 0. They have no year worth showing, so every label leaves it out.
+export const OPEN_ENDED_YEAR = 0;
+
+export const programYear = (year: number): string | null =>
+  year === OPEN_ENDED_YEAR ? null : String(year);
+
 // Who each of a program's versions is for, by the fall students started in: a version applies
-// until the next one does, e.g. "Fall 2024–2025" then "Fall 2026 or later".
+// until the next one does, e.g. "Fall 2024–2025" then "Fall 2026 or later". An open-ended
+// version is the oldest, so it covers everyone before the next: "Fall 2025 or earlier".
 export const startingYearsLabels = (catalogYears: number[]) =>
   catalogYears.map((year, i) => {
-    const first = year - 1;
     const next = catalogYears[i + 1];
+    if (year === OPEN_ENDED_YEAR) {
+      return next === undefined ? "Any year" : `Fall ${next - 2} or earlier`;
+    }
+    const first = year - 1;
     if (next === undefined) return `Fall ${first} or later`;
     const last = next - 2;
     return last > first ? `Fall ${first}–${last}` : `Fall ${first}`;
