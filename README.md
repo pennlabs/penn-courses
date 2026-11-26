@@ -10,6 +10,8 @@ This is the unified home of all [Penn Courses](https://penncourses.org) products
 
 Note that you need the backend to run the frontend.
 
+There is also an [MCP server](https://github.com/pennlabs/penn-courses/blob/master/mcp/README.md) under `mcp/` that exposes the Penn Courses API to LLM clients (such as Claude) for course planning. It talks to the API over HTTP and runs independently of the backend.
+
 ### Using Dev Containers
 
 This repository has a built-in dev container that you can use to develop the project. To use it, you need to have [Docker](https://www.docker.com/products/docker-desktop) and [VSCode](https://code.visualstudio.com/) installed.

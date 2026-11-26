@@ -1,0 +1,910 @@
+{
+  "id": "CIS-1200",
+  "title": "Prog Lang & Tech I",
+  "description": "A fast-paced introduction to the fundamental concepts of programming and software design. This course assumes some previous programming experience, at the level of a high school computer science class or CIS 1100. (If you got at least 4 in the AP Computer Science A or AB exam, you will do great.) No specific programming language background is assumed: basic experience with any language (for instance Java, C, C++, VB, Python, Perl, or Scheme) is fine. If you have never programmed before, you should take CIS 1100 first.",
+  "syllabus_url": null,
+  "semester": "2026C",
+  "prerequisites": "",
+  "course_quality": 2.807,
+  "instructor_quality": 2.872,
+  "difficulty": 3.04,
+  "work_required": 3.329,
+  "credits": 1.0,
+  "crosslistings": [],
+  "pre_ngss_requirements": [],
+  "attributes": [
+    {
+      "code": "ACSE",
+      "school": "SAS",
+      "description": "COMM C NonC-DNSC Elec"
+    },
+    {
+      "code": "ADEL",
+      "school": "SAS",
+      "description": "DSGN M Elective"
+    },
+    {
+      "code": "EUNG",
+      "school": "SEAS",
+      "description": "SEAS Engineering"
+    },
+    {
+      "code": "ALNR",
+      "school": "SAS",
+      "description": "ASLD Related Courses"
+    },
+    {
+      "code": "ALCN",
+      "school": "SAS",
+      "description": "LGIC Minor- Logic, Info, and Computing Elective"
+    },
+    {
+      "code": "AU16",
+      "school": "SAS",
+      "description": "College 16 CU Requiremen"
+    },
+    {
+      "code": "ACGC",
+      "school": "SAS",
+      "description": "COGS Computation and Cognition"
+    },
+    {
+      "code": "QU",
+      "school": "MODE",
+      "description": "Grade Mode: Stsfctry/Unstsftry"
+    },
+    {
+      "code": "QS",
+      "school": "MODE",
+      "description": "Grade Mode: Standard Lettr Grd"
+    },
+    {
+      "code": "QP",
+      "school": "MODE",
+      "description": "Grade Mode: Pass/Fail"
+    },
+    {
+      "code": "AUFR",
+      "school": "SAS",
+      "description": "COL Foundational Appr. - Formal Reason&Analysis"
+    },
+    {
+      "code": "WUNM",
+      "school": "WH",
+      "description": "Wharton UG General Education - Nat Sci, Math, Eng"
+    },
+    {
+      "code": "NURS",
+      "school": "NUR",
+      "description": "NU Sector ReaSys&Relationship"
+    }
+  ],
+  "sections": [
+    {
+      "id": "CIS-1200-001",
+      "status": "O",
+      "activity": "LEC",
+      "credits": 1.0,
+      "capacity": 240,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "F",
+          "start": 10.15,
+          "end": 11.14,
+          "room": "STIT 261"
+        },
+        {
+          "day": "M",
+          "start": 10.15,
+          "end": 11.14,
+          "room": "STIT 261"
+        },
+        {
+          "day": "W",
+          "start": 10.15,
+          "end": 11.14,
+          "room": "STIT 261"
+        }
+      ],
+      "instructors": [
+        {
+          "id": 6,
+          "name": "Swapneel Sheth"
+        },
+        {
+          "id": 4764,
+          "name": "Benjamin Pierce"
+        }
+      ],
+      "course_quality": 2.862,
+      "instructor_quality": 3.088,
+      "difficulty": 3.025,
+      "work_required": 3.269,
+      "associated_sections": [
+        {
+          "id": "CIS-1200-223",
+          "activity": ""
+        },
+        {
+          "id": "CIS-1200-222",
+          "activity": ""
+        },
+        {
+          "id": "CIS-1200-216",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-215",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-214",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-213",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-212",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-211",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-210",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-209",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-208",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-207",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-206",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-205",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-204",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-203",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-202",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-201",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-217",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-218",
+          "activity": "REC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "CIS-1200-002",
+      "status": "O",
+      "activity": "LEC",
+      "credits": 1.0,
+      "capacity": 240,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "F",
+          "start": 12.0,
+          "end": 12.59,
+          "room": "STIT 261"
+        },
+        {
+          "day": "M",
+          "start": 12.0,
+          "end": 12.59,
+          "room": "STIT 261"
+        },
+        {
+          "day": "W",
+          "start": 12.0,
+          "end": 12.59,
+          "room": "STIT 261"
+        }
+      ],
+      "instructors": [
+        {
+          "id": 6,
+          "name": "Swapneel Sheth"
+        },
+        {
+          "id": 4764,
+          "name": "Benjamin Pierce"
+        }
+      ],
+      "course_quality": 2.862,
+      "instructor_quality": 3.088,
+      "difficulty": 3.025,
+      "work_required": 3.269,
+      "associated_sections": [
+        {
+          "id": "CIS-1200-223",
+          "activity": ""
+        },
+        {
+          "id": "CIS-1200-222",
+          "activity": ""
+        },
+        {
+          "id": "CIS-1200-216",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-215",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-214",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-213",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-212",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-211",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-210",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-209",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-208",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-207",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-206",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-205",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-204",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-203",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-202",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-201",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-217",
+          "activity": "REC"
+        },
+        {
+          "id": "CIS-1200-218",
+          "activity": "REC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "CIS-1200-201",
+      "status": "O",
+      "activity": "REC",
+      "credits": 0.0,
+      "capacity": 20,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "W",
+          "start": 12.0,
+          "end": 12.59,
+          "room": "AGH 216A"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "CIS-1200-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "CIS-1200-002",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "CIS-1200-202",
+      "status": "O",
+      "activity": "REC",
+      "credits": 0.0,
+      "capacity": 20,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "W",
+          "start": 13.45,
+          "end": 14.44,
+          "room": "AGH 216A"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "CIS-1200-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "CIS-1200-002",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "CIS-1200-203",
+      "status": "O",
+      "activity": "REC",
+      "credits": 0.0,
+      "capacity": 20,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "W",
+          "start": 13.45,
+          "end": 14.44,
+          "room": "AGH 216B"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "CIS-1200-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "CIS-1200-002",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "CIS-1200-204",
+      "status": "O",
+      "activity": "REC",
+      "credits": 0.0,
+      "capacity": 20,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "W",
+          "start": 15.3,
+          "end": 16.29,
+          "room": "AGH 216A"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "CIS-1200-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "CIS-1200-002",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "CIS-1200-205",
+      "status": "O",
+      "activity": "REC",
+      "credits": 0.0,
+      "capacity": 20,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "W",
+          "start": 15.3,
+          "end": 16.29,
+          "room": "AGH 216B"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "CIS-1200-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "CIS-1200-002",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "CIS-1200-206",
+      "status": "O",
+      "activity": "REC",
+      "credits": 0.0,
+      "capacity": 20,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "W",
+          "start": 17.15,
+          "end": 18.14,
+          "room": "AGH 216A"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "CIS-1200-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "CIS-1200-002",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "CIS-1200-207",
+      "status": "O",
+      "activity": "REC",
+      "credits": 0.0,
+      "capacity": 20,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "W",
+          "start": 17.15,
+          "end": 18.14,
+          "room": "AGH 216B"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "CIS-1200-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "CIS-1200-002",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "CIS-1200-208",
+      "status": "O",
+      "activity": "REC",
+      "credits": 0.0,
+      "capacity": 20,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "W",
+          "start": 19.0,
+          "end": 19.59,
+          "room": "AGH 216A"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "CIS-1200-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "CIS-1200-002",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "CIS-1200-209",
+      "status": "O",
+      "activity": "REC",
+      "credits": 0.0,
+      "capacity": 20,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "W",
+          "start": 13.45,
+          "end": 14.44,
+          "room": "AGH 214"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "CIS-1200-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "CIS-1200-002",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "CIS-1200-210",
+      "status": "O",
+      "activity": "REC",
+      "credits": 0.0,
+      "capacity": 20,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "R",
+          "start": 12.0,
+          "end": 12.59,
+          "room": "AGH 216A"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "CIS-1200-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "CIS-1200-002",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "CIS-1200-211",
+      "status": "O",
+      "activity": "REC",
+      "credits": 0.0,
+      "capacity": 20,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "R",
+          "start": 12.0,
+          "end": 12.59,
+          "room": "AGH 216B"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "CIS-1200-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "CIS-1200-002",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "CIS-1200-212",
+      "status": "O",
+      "activity": "REC",
+      "credits": 0.0,
+      "capacity": 20,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "R",
+          "start": 13.45,
+          "end": 14.44,
+          "room": "AGH 200"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "CIS-1200-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "CIS-1200-002",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "CIS-1200-213",
+      "status": "O",
+      "activity": "REC",
+      "credits": 0.0,
+      "capacity": 20,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "R",
+          "start": 13.45,
+          "end": 14.44,
+          "room": "AGH 216B"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "CIS-1200-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "CIS-1200-002",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "CIS-1200-214",
+      "status": "O",
+      "activity": "REC",
+      "credits": 0.0,
+      "capacity": 20,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "R",
+          "start": 15.3,
+          "end": 16.29,
+          "room": "AGH 216A"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "CIS-1200-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "CIS-1200-002",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "CIS-1200-215",
+      "status": "O",
+      "activity": "REC",
+      "credits": 0.0,
+      "capacity": 20,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "R",
+          "start": 15.3,
+          "end": 16.29,
+          "room": "AGH 216B"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "CIS-1200-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "CIS-1200-002",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "CIS-1200-216",
+      "status": "O",
+      "activity": "REC",
+      "credits": 0.0,
+      "capacity": 20,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "R",
+          "start": 17.15,
+          "end": 18.14,
+          "room": "AGH 216A"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "CIS-1200-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "CIS-1200-002",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "CIS-1200-217",
+      "status": "O",
+      "activity": "REC",
+      "credits": 0.0,
+      "capacity": 20,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "W",
+          "start": 15.3,
+          "end": 16.29,
+          "room": "AGH 214"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "CIS-1200-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "CIS-1200-002",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    },
+    {
+      "id": "CIS-1200-218",
+      "status": "O",
+      "activity": "REC",
+      "credits": 0.0,
+      "capacity": 20,
+      "semester": "2026C",
+      "meetings": [
+        {
+          "day": "R",
+          "start": 15.3,
+          "end": 16.29,
+          "room": "AGH 214"
+        }
+      ],
+      "instructors": [],
+      "course_quality": null,
+      "instructor_quality": null,
+      "difficulty": null,
+      "work_required": null,
+      "associated_sections": [
+        {
+          "id": "CIS-1200-001",
+          "activity": "LEC"
+        },
+        {
+          "id": "CIS-1200-002",
+          "activity": "LEC"
+        }
+      ],
+      "registration_volume": 0
+    }
+  ]
+}
