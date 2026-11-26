@@ -14,7 +14,7 @@ export type FilterKey = keyof FilterState;
 export const DEFAULT_FILTERS: FilterState = {
   departments: [],
   attributes: [],
-  time: "6.00-22.00",
+  time: "6.00-23.59",
   days: ["M", "T", "W", "R", "F"],
   semester: "Next Available",
   course_quality: [0, 4],
@@ -44,16 +44,24 @@ const toMinutes = (time: string): number => {
   return hours * 60 + minutes;
 };
 
+// 6:00 AM
+export const EARLIEST_TIME_MINUTES = 360;
+
+const fromMinutes = (minutes: number): string =>
+  `${Math.floor(minutes / 60)}.${String(minutes % 60).padStart(2, "0")}`;
+
 /*
- Time ranges stay within a single day (00:00-23:59) and never cross midnight, so a reversed
- range like "6.00-4.25" is reordered to "4.25-6.00". Returns null for malformed or empty ranges.
+ Time ranges stay within a single day (06:00-23:59) and never cross midnight, so a reversed
+ range like "9.00-7.25" is reordered to "7.25-9.00". A start before 6:00 AM is moved up to
+ 6:00 AM. Returns null for malformed ranges and ranges that are empty after that.
  */
 export const normalizeTimeString = (value: string): string | null => {
   if (!TIME_PATTERN.test(value)) return null;
-  const [start, end] = value.split("-");
-  const delta = toMinutes(end) - toMinutes(start);
-  if (delta === 0) return null;
-  return delta > 0 ? value : `${end}-${start}`;
+  const [a, b] = value.split("-").map(toMinutes);
+  const start = Math.max(Math.min(a, b), EARLIEST_TIME_MINUTES);
+  const end = Math.max(a, b);
+  if (end <= start) return null;
+  return `${fromMinutes(start)}-${fromMinutes(end)}`;
 };
 
 export const isFilterDefault = <K extends FilterKey>(

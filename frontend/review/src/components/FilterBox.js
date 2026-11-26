@@ -1,5 +1,6 @@
 import styled, { css } from "styled-components";
 import { SlArrowRight } from "react-icons/sl";
+import { HiMiniXCircle } from "react-icons/hi2";
 import { useState } from "react";
 import Collapse from "./common/Collapse";
 import { hoverState, interactiveTransition } from "../styles/mixins";
@@ -11,7 +12,7 @@ import TimeSelect from "./TimeSelect";
 import { useQuery } from "@tanstack/react-query";
 import { apiAttributes, apiAutocomplete, queryKeys } from "../utils/api";
 import { useFilterState, useFilterDispatch } from "../utils/FilterContext";
-import { isFilterDefault } from "../utils/filters";
+import { DEFAULT_FILTERS, isFilterDefault } from "../utils/filters";
 
 const Container = styled.div`
   display: flex;
@@ -99,7 +100,28 @@ const ResetButton = styled.button`
   `)}
 `;
 
-const FilterDropdown = ({ title, renderContent, active }) => {
+const ClearFilterButton = styled.button`
+  all: unset;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: ${({ theme }) => theme.color.text.secondary};
+  opacity: 0.35;
+  ${interactiveTransition}
+
+  ${hoverState(css`
+    opacity: 0.8;
+  `)}
+
+  &:focus-visible {
+    opacity: 0.8;
+    outline: 2px solid ${({ theme }) => theme.color.border.default};
+    outline-offset: 2px;
+    border-radius: 50%;
+  }
+`;
+
+const FilterDropdown = ({ title, renderContent, active, onReset }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -109,16 +131,15 @@ const FilterDropdown = ({ title, renderContent, active }) => {
 
         <div style={{ display: "flex", alignItems: "center", gap: "30px" }}>
           {active && (
-            <div
-              style={{
-                width: "6px",
-                height: "6px",
-                borderRadius: "3px",
-                backgroundColor: "var(--pcr-color-text-secondary)",
-                display: "inline-block",
-                marginLeft: "6px"
-              }}
-            />
+            <ClearFilterButton
+              type="button"
+              aria-label={`Reset ${title} filter`}
+              title={`Reset ${title}`}
+              onMouseDown={e => e.stopPropagation()}
+              onClick={onReset}
+            >
+              <HiMiniXCircle size={22} />
+            </ClearFilterButton>
           )}
           <DownArrow $isOpen={isOpen}>
             <SlArrowRight size={15} color="var(--pcr-color-text-secondary)" />
@@ -174,6 +195,17 @@ const FilterBox = () => {
   const filterHasChanged = filterName =>
     !isFilterDefault(filterName, filters[filterName]);
 
+  const resetFilter = filterName => {
+    const def = DEFAULT_FILTERS[filterName];
+    dispatch({
+      type: "SET_ALL",
+      payload: {
+        ...filters,
+        [filterName]: Array.isArray(def) ? [...def] : def
+      }
+    });
+  };
+
   return (
     <>
       <Container>
@@ -181,6 +213,7 @@ const FilterBox = () => {
           <FilterDropdown
             title="Semester Offered"
             active={filterHasChanged("semester")}
+            onReset={() => resetFilter("semester")}
             renderContent={() => (
               <SemesterSelect
                 chosenSemester={filters.semester}
@@ -193,6 +226,7 @@ const FilterBox = () => {
           <FilterDropdown
             title="Department"
             active={filterHasChanged("departments")}
+            onReset={() => resetFilter("departments")}
             renderContent={() => (
               <SelectBox
                 options={filters.departments}
@@ -208,6 +242,7 @@ const FilterBox = () => {
           <FilterDropdown
             title="Attributes"
             active={filterHasChanged("attributes")}
+            onReset={() => resetFilter("attributes")}
             renderContent={() => (
               <SelectBox
                 options={filters.attributes}
@@ -223,6 +258,7 @@ const FilterBox = () => {
           <FilterDropdown
             title="Time Offered"
             active={filterHasChanged("time")}
+            onReset={() => resetFilter("time")}
             renderContent={() => (
               <TimeSelect
                 timeString={filters.time}
@@ -235,6 +271,7 @@ const FilterBox = () => {
           <FilterDropdown
             title="Days Offered"
             active={filterHasChanged("days")}
+            onReset={() => resetFilter("days")}
             renderContent={() => (
               <DaySelect
                 daysOfferedList={filters.days}
@@ -247,6 +284,7 @@ const FilterBox = () => {
           <FilterDropdown
             title="Course Quality"
             active={filterHasChanged("course_quality")}
+            onReset={() => resetFilter("course_quality")}
             renderContent={() => (
               <SliderSelect
                 ratingValues={filters.course_quality}
@@ -260,6 +298,7 @@ const FilterBox = () => {
           <FilterDropdown
             title="Course Difficulty"
             active={filterHasChanged("difficulty")}
+            onReset={() => resetFilter("difficulty")}
             renderContent={() => (
               <SliderSelect
                 ratingValues={filters.difficulty}
@@ -273,6 +312,7 @@ const FilterBox = () => {
           <FilterDropdown
             title="Instructor Quality"
             active={filterHasChanged("instructor_quality")}
+            onReset={() => resetFilter("instructor_quality")}
             renderContent={() => (
               <SliderSelect
                 ratingValues={filters.instructor_quality}

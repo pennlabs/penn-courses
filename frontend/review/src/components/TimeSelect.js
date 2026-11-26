@@ -3,7 +3,11 @@ import styled from "styled-components";
 import RangeSlider from "react-range-slider-input";
 import CustomDropdown from "./CustomDropdown";
 import { SliderContainer } from "./SliderSelect";
-import { DEFAULT_FILTERS, normalizeTimeString } from "../utils/filters";
+import {
+  DEFAULT_FILTERS,
+  EARLIEST_TIME_MINUTES,
+  normalizeTimeString
+} from "../utils/filters";
 import { useSliderCommit } from "../utils/hooks";
 
 const Container = styled.div`
@@ -63,14 +67,15 @@ const ExtendedRangeMarkers = styled.div`
 `;
 
 const SLIDER_STEP = 5;
-const SLIDER_MAX = 1440;
+const SLIDER_MIN = EARLIEST_TIME_MINUTES; // 6:00 AM
+const SLIDER_MAX = 1440; // 12:00 AM
 const LAST_MINUTE = 1439;
 
 const toSlider = m => (m === LAST_MINUTE ? SLIDER_MAX : m);
 const fromSlider = m => Math.min(m, LAST_MINUTE);
 
-const isValidRange = ({ start, end }) =>
-  toSlider(end) - toSlider(start) >= SLIDER_STEP;
+// Any non-empty range is valid; only the slider is limited to SLIDER_STEP increments
+const isValidRange = ({ start, end }) => end > start;
 
 // "9.30-17.00" <-> { start: 570, end: 1020 }, in minutes since midnight
 const parseTimeString = timeString => {
@@ -170,7 +175,12 @@ const TimeSelect = ({ timeString, setTimeString }) => {
     if (nextString !== timeString) setTimeString(nextString);
   };
 
-  const change = next => {
+  const change = ({ start, end }) => {
+    // Typed times and AM/PM switches can't go earlier than the slider does
+    const next = {
+      start: Math.max(start, SLIDER_MIN),
+      end: Math.max(end, SLIDER_MIN)
+    };
     if (isValidRange(next)) commit(next);
     else setDraft({ base: timeString, ...next });
   };
@@ -227,7 +237,7 @@ const TimeSelect = ({ timeString, setTimeString }) => {
       >
         <SliderContainer>
           <RangeSlider
-            min={0}
+            min={SLIDER_MIN}
             max={SLIDER_MAX}
             step={SLIDER_STEP}
             value={[toSlider(value.start), toSlider(value.end)]}
@@ -237,8 +247,7 @@ const TimeSelect = ({ timeString, setTimeString }) => {
           />
         </SliderContainer>
         <ExtendedRangeMarkers>
-          <div>12 AM</div>
-          <div>12 PM</div>
+          <div>6 AM</div>
           <div>11:59 PM</div>
         </ExtendedRangeMarkers>
       </div>
